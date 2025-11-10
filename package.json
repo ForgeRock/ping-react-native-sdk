@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "name": "react-native-pingidentity",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "codegen:storage": "yarn workspace @react-native-pingidentity/storage run codegen",
+    "codegen:browser": "cd packages/browser && yarn react-native codegen",
+    "codegen:all": "yarn codegen:storage && yarn codegen:browser",
+    "packages:force-install": "yarn install --force",
+    "packages:info": "yarn workspaces info",
+    "sample:clean-install": "cd PingSampleApp && yarn clean-install && cd ..",
+    "sample:run:ios": "cd PingSampleApp && yarn ios && cd ..",
+    "sample:run:android": "cd PingSampleApp && yarn android && cd ..",
+    "sample:restart:metro": "cd PingSampleApp && yarn reset-cache && cd .."
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "devDependencies": {
+    "@react-native/codegen": "^0.82.1"
+  }
+}
