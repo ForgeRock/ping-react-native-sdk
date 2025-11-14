@@ -13,13 +13,13 @@ const config = {
   resolver: {
     nodeModulesPaths: [
       path.resolve(__dirname, 'node_modules'),
-      path.resolve(oidcPackage, 'node_modules'),
+      //path.resolve(oidcPackage, 'node_modules'),
       path.resolve(journeyPackage, 'node_modules'),
       path.resolve(storagePackage, 'node_modules'),
       path.resolve(workspaceRoot, 'node_modules')
     ],
     extraNodeModules: {
-      '@react-native-pingidentity/oidc': oidcPackage,
+      //'@react-native-pingidentity/oidc': oidcPackage,
       '@react-native-pingidentity/journey': journeyPackage,
       '@react-native-pingidentity/storage': storagePackage,
     },

@@ -10,74 +10,109 @@ import {
 } from 'react-native';
 
 type Dog = { name: string; type: string };
+type Cat = { name: string; color: string };
 
-export default function DogStorageScreen() {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [dog, setDog] = useState<Dog | null| undefined>(null);
+export default function MultiStorageScreen() {
+  // ---------------- DOG STATE ----------------
+  const [dogName, setDogName] = useState('');
+  const [dogType, setDogType] = useState('');
+  const [dog, setDog] = useState<Dog | null>(null);
   const [dogStorage, setDogStorage] = useState<StorageInstance<Dog> | null>(
     null,
   );
 
-  const configureStorage = async () => {
+  // ---------------- CAT STATE ----------------
+  const [catName, setCatName] = useState('');
+  const [catColor, setCatColor] = useState('');
+  const [cat, setCat] = useState<Cat | null>(null);
+  const [catStorage, setCatStorage] = useState<StorageInstance<Cat> | null>(
+    null,
+  );
+
+  // ---------------- DOG STORAGE ----------------
+  const configureDogStorage = async () => {
     console.log('[DogStorage] Configuring storage...');
-    setDogStorage(
-      await storage<Dog>({
-        type: 'memory',
-        keyAlias: 'dogKeyAlias',
-        cacheStrategy: 'no_cache',
-      }),
-    );
-    console.log('[DogStorage] Storage configured ✅');
+    const dogStore = await storage<Dog>({
+      type: 'memory',
+      keyAlias: 'dogKeyAlias',
+      cacheStrategy: 'no_cache',
+    });
+    
+    setDogStorage(dogStore);
+    console.log('[DogStorage] Storage configured ✅', dogStore.id);
   };
 
   const saveDog = async () => {
-    if (!name || !type) {
-      console.warn('[DogStorage] Cannot save dog — missing name or type');
-      return;
-    }
-    const newDog = { name, type };
-    console.log('[DogStorage] Saving dog:', newDog);
+    if (!dogName || !dogType) return;
+    const newDog = { name: dogName, type: dogType };
     await dogStorage?.save(newDog);
-    setName('');
-    setType('');
-    console.log('[DogStorage] Dog saved ✅');
+    setDogName('');
+    setDogType('');
+    console.log('[DogStorage] Dog saved:', newDog);
   };
 
   const getDog = async () => {
-    console.log('[DogStorage] Fetching dog...');
     const storedDog = await dogStorage?.get();
-    console.log('[DogStorage] Retrieved:', storedDog);
-    setDog(storedDog);
+    setDog(storedDog ?? null);
   };
 
   const deleteDog = async () => {
-    console.log('[DogStorage] Deleting stored dog...');
     await dogStorage?.remove();
     setDog(null);
-    console.log('[DogStorage] Dog deleted ✅');
+  };
+
+  // ---------------- CAT STORAGE ----------------
+  const configureCatStorage = async () => {
+    console.log('[CatStorage] Configuring storage...');
+    const catStore = await storage<Cat>({
+      type: 'memory',
+      keyAlias: 'catKeyAlias',
+      cacheStrategy: 'no_cache',
+    });
+    setCatStorage(catStore);
+    console.log(`[CatStorage] Storage configured ✅ with id`);
+  };
+
+  const saveCat = async () => {
+    if (!catName || !catColor) return;
+    const newCat = { name: catName, color: catColor };
+    await catStorage?.save(newCat);
+    setCatName('');
+    setCatColor('');
+    console.log('[CatStorage] Cat saved:', newCat);
+  };
+
+  const getCat = async () => {
+    const storedCat = await catStorage?.get();
+    setCat(storedCat ?? null);
+  };
+
+  const deleteCat = async () => {
+    await catStorage?.remove();
+    setCat(null);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* ---------------- DOG SECTION ---------------- */}
       <Text style={styles.title}>🐶 Dog Storage</Text>
 
       <View style={styles.section}>
-        <Button title="Configure Storage" onPress={configureStorage} />
+        <Button title="Configure Dog Storage" onPress={configureDogStorage} />
       </View>
 
       <View style={styles.section}>
         <TextInput
           style={styles.input}
-          placeholder="Enter Dog Name"
-          value={name}
-          onChangeText={setName}
+          placeholder="Dog Name"
+          value={dogName}
+          onChangeText={setDogName}
         />
         <TextInput
           style={styles.input}
-          placeholder="Enter Dog Type"
-          value={type}
-          onChangeText={setType}
+          placeholder="Dog Type"
+          value={dogType}
+          onChangeText={setDogType}
         />
       </View>
 
@@ -95,6 +130,44 @@ export default function DogStorageScreen() {
 
       <Text style={styles.output}>
         {dog ? `Stored Dog: ${dog.name} (${dog.type})` : 'No dog stored'}
+      </Text>
+
+      {/* ---------------- CAT SECTION ---------------- */}
+      <Text style={[styles.title, { marginTop: 40 }]}>🐱 Cat Storage</Text>
+
+      <View style={styles.section}>
+        <Button title="Configure Cat Storage" onPress={configureCatStorage} />
+      </View>
+
+      <View style={styles.section}>
+        <TextInput
+          style={styles.input}
+          placeholder="Cat Name"
+          value={catName}
+          onChangeText={setCatName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Cat Color"
+          value={catColor}
+          onChangeText={setCatColor}
+        />
+      </View>
+
+      <View style={styles.buttonRow}>
+        <View style={styles.button}>
+          <Button title="Save Cat" onPress={saveCat} />
+        </View>
+        <View style={styles.button}>
+          <Button title="Get Cat" onPress={getCat} />
+        </View>
+        <View style={styles.button}>
+          <Button title="Delete Cat" onPress={deleteCat} />
+        </View>
+      </View>
+
+      <Text style={styles.output}>
+        {cat ? `Stored Cat: ${cat.name} (${cat.color})` : 'No cat stored'}
       </Text>
     </ScrollView>
   );

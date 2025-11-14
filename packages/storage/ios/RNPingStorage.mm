@@ -46,28 +46,31 @@ RCT_EXPORT_MODULE()
 }
 
 // save(item): Promise<boolean>
-- (void)save:(NSDictionary *)item
+- (void)save:(NSString *)id
+        item:(NSDictionary *)item
       resolve:(RCTPromiseResolveBlock)resolve
        reject:(RCTPromiseRejectBlock)reject
 {
   NSLog(@"RNPingStorage: save called");
-  [[self swiftImpl] save:item resolver:resolve rejecter:reject];
+  [[self swiftImpl] save:id item:item resolver:resolve rejecter:reject];
 }
 
 // get(): Promise<Object | null>
-- (void)get:(RCTPromiseResolveBlock)resolve
-     reject:(RCTPromiseRejectBlock)reject
+- (void)get:(NSString *)id
+     resolve:(RCTPromiseResolveBlock)resolve
+      reject:(RCTPromiseRejectBlock)reject
 {
   NSLog(@"RNPingStorage: get called");
-  [[self swiftImpl] get:nil resolver:resolve rejecter:reject];
+  [[self swiftImpl] get:id resolver:resolve rejecter:reject];
 }
 
 // remove(): Promise<boolean>
-- (void)remove:(RCTPromiseResolveBlock)resolve
+- (void)remove:(NSString *)id
+       resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject
 {
   NSLog(@"RNPingStorage: remove called");
-  [[self swiftImpl] remove:nil resolver:resolve rejecter:reject];
+  [[self swiftImpl] remove:id resolver:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
