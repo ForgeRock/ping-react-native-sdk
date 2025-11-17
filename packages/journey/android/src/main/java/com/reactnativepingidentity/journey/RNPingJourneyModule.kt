@@ -1,4 +1,4 @@
-package com.journey
+package com.reactnativepingidentity.journey
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule

@@ -26,7 +26,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.journey"
+  namespace "com.reactnativepingidentity.journey"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
