@@ -1,7 +1,7 @@
 {
-  "name": "@react-native-pingidentity/journey",
+  "name": "@react-native-pingidentity/journey-poc",
   "version": "0.1.0",
-  "description": "Ping Identity Journey TurboModule for React Native",
+  "description": "Ping Identity Journey POC TurboModule",
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -17,24 +17,14 @@
     "clean": "rimraf lib"
   },
   "peerDependencies": {
-    "@react-native-pingidentity/storage": "*",
     "react": "*",
     "react-native": "*"
   },
   "devDependencies": {
-    "@react-native-pingidentity/storage": "*",
-    "react-native-builder-bob": "^0.40.14",
+    "react-native-builder-bob": "^0.40.15",
     "typescript": "^5.9.2"
   },
   "license": "MIT",
-  "codegenConfig": {
-    "name": "RNPingJourneySpec",
-    "type": "modules",
-    "jsSrcsDir": "src",
-    "android": {
-      "javaPackageName": "com.reactnativepingidentity.journey"
-    }
-  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",
@@ -52,5 +42,13 @@
         }
       ]
     ]
+  },
+  "codegenConfig": {
+    "name": "RNPingJourneyPOCSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.reactnativepingidentity.journeypoc"
+    }
   }
 }

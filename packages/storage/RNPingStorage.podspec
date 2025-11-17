@@ -5,18 +5,27 @@ package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 Pod::Spec.new do |s|
   s.name         = "RNPingStorage"
   s.version      = package["version"]
-  s.summary      = package["description"]
-  s.homepage     = package["homepage"]
-  s.license      = package["license"]
-  s.authors      = package["author"]
+  s.summary      = package["description"] || "Ping Identity Storage TurboModule"
+  s.homepage     = package["homepage"] || "https://pingidentity.com"
+  s.license      = package["license"] || "MIT"
 
-  s.platforms    = { :ios => min_ios_version_supported }
-  s.source       = { :git => "https://github.com/pingidentity-gaurav/react-native-pingidentity-storage.git", :tag => "#{s.version}" }
+  # CocoaPods requires this to be a hash
+  s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
+
+  # Minimum iOS version
+  s.platforms    = { :ios => "13.0" }
+
+  # IMPORTANT: local monorepo source path (not git)
+  s.source       = { :path => "." }
 
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
+  s.swift_version = "5.0"
+  s.requires_arc = true
 
+  # Native Ping SDK dependency (your internal iOS SDK)
   s.dependency "PingStorage"
 
+  # RN New Architecture helper
   install_modules_dependencies(s)
 end

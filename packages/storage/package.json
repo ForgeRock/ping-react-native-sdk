@@ -1,14 +1,9 @@
 {
   "name": "@react-native-pingidentity/storage",
   "version": "0.1.0",
-  "description": "RN Ping Identity Storage",
+  "description": "Ping Identity Storage TurboModule",
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
-  "scripts": {
-    "codegen": "react-native-codegen --config ./codegenConfig.json",
-    "build": "bob build",
-    "clean": "rimraf lib"
-  },
   "files": [
     "src",
     "lib",
@@ -16,6 +11,11 @@
     "ios",
     "*.podspec"
   ],
+  "scripts": {
+    "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
+    "build": "bob build",
+    "clean": "rimraf lib"
+  },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
@@ -32,5 +32,23 @@
     "android": {
       "javaPackageName": "com.reactnativepingidentity.storage"
     }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
   }
 }

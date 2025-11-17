@@ -2286,36 +2286,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingOidc (0.1.0):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - PingOidc
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -2490,9 +2460,8 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
-  - "RNPingJourney (from `../node_modules/@react-native-pingidentity/journey`)"
-  - "RNPingOidc (from `../node_modules/@react-native-pingidentity/oidc`)"
-  - "RNPingStorage (from `../node_modules/@react-native-pingidentity/storage`)"
+  - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
+  - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
@@ -2661,11 +2630,9 @@ EXTERNAL SOURCES:
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
   RNPingJourney:
-    :path: "../node_modules/@react-native-pingidentity/journey"
-  RNPingOidc:
-    :path: "../node_modules/@react-native-pingidentity/oidc"
+    :path: "../../node_modules/@react-native-pingidentity/journey"
   RNPingStorage:
-    :path: "../node_modules/@react-native-pingidentity/storage"
+    :path: "../../node_modules/@react-native-pingidentity/storage"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   Yoga:
@@ -2751,9 +2718,8 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingJourney: e2c55a10df099c687b01a61074939e5a54efa606
-  RNPingOidc: bd0ba43d5560ccf7986d1d77dc3422f94fe8e912
-  RNPingStorage: fcb5ed06e7d3c90c9f320d65d19ff23673347a87
+  RNPingJourney: 7922aa6b3f8d54877767657e24f56f944766deae
+  RNPingStorage: 282208f40476926a4baccd49aa9c219f3c00b33f
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
