@@ -2,23 +2,28 @@ const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 // Path to local library package (adjust the relative path if needed)
-const oidcPackage = path.resolve(__dirname, '../packages/oidc');
+//const oidcPackage = path.resolve(__dirname, '../packages/oidc');
 const journeyPackage = path.resolve(__dirname, '../packages/journey');
 const storagePackage = path.resolve(__dirname, '../packages/storage');
+const journeyPocPackage = path.resolve(__dirname, '../packages/journey-poc');
+
+const workspaceRoot = path.resolve(__dirname, '..');
 
 const config = {
-  watchFolders: [ oidcPackage, journeyPackage, storagePackage],
+  watchFolders: [journeyPocPackage, journeyPackage, storagePackage, workspaceRoot],
   resolver: {
     nodeModulesPaths: [
       path.resolve(__dirname, 'node_modules'),
-    //  path.resolve(storagePackage, 'node_modules'),
-      path.resolve(oidcPackage, 'node_modules'),
+      //path.resolve(oidcPackage, 'node_modules'),
       path.resolve(journeyPackage, 'node_modules'),
-      path.resolve(storagePackage, 'node_modules')
+      path.resolve(storagePackage, 'node_modules'),
+      path.resolve(workspaceRoot, 'node_modules'),
+      path.resolve(journeyPocPackage, 'node_modules'),
     ],
     extraNodeModules: {
-      '@react-native-pingidentity/oidc': oidcPackage,
+      //'@react-native-pingidentity/oidc': oidcPackage,
       '@react-native-pingidentity/journey': journeyPackage,
+      '@react-native-pingidentity/journey-poc': journeyPocPackage,
       '@react-native-pingidentity/storage': storagePackage,
     },
   },

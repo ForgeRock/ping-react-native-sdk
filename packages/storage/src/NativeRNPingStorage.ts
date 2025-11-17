@@ -27,26 +27,26 @@ export interface Spec extends TurboModule {
    * @param config Storage configuration object.
    * @returns Promise<boolean> indicating success.
    */
-  configure(config: StorageConfig): Promise<boolean>;
+  configure(config: StorageConfig): Promise<string>;
 
   /**
    * Save a JSON-serializable object.
    * @param item Object to store.
    * @returns Promise<boolean> indicating success.
    */
-  save(item: Object): Promise<boolean>;
+  save(id: string, item: Object): Promise<boolean>;
 
   /**
    * Get the stored object (or null if not found).
    * @returns Promise<object | null>
    */
-  get(): Promise<Object | null>;
+  get(id: string): Promise<Object | null>;
 
   /**
    * Remove the stored object.
    * @returns Promise<boolean> indicating success.
    */
-  remove(): Promise<boolean>;
+  remove(id: string): Promise<boolean>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');

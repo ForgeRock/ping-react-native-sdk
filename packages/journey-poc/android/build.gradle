@@ -1,6 +1,6 @@
 buildscript {
   ext.getExtOrDefault = {name ->
-    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['RNPingJourney_' + name]
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['RNPingJourneyPOC_' + name]
   }
 
   repositories {
@@ -22,11 +22,11 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["RNPingJourney_" + name]).toInteger()
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["RNPingJourneyPOC_" + name]).toInteger()
 }
 
 android {
-  namespace "com.reactnativepingidentity.journey"
+  namespace "com.reactnativepingidentity.journeypoc"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
@@ -74,6 +74,4 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation "com.pingidentity.sdks:journey:1.3.0-beta2"
-  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
 }

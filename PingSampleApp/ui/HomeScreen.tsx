@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
+import {multiply} from '@react-native-pingidentity/journey-poc'
 
 type RootStackParamList = {
   Home: undefined;
@@ -24,6 +25,7 @@ export default function HomeScreen({ navigation }: Props) {
         source={require('../assets/ping-logo.jpg')}
         style={commonStyles.homeLogo}
       />
+      <Text>Result from Journey POC TM multiple() - {multiply(2,3)}</Text>
 
       {menuItems.map((item, index) => (
         <TouchableOpacity

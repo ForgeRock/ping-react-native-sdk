@@ -8,6 +8,7 @@ import {
   startJourney,
 } from './journeyMethods';
 import type { JourneyConfig } from './types';
+import type { StorageInstance } from '@react-native-pingidentity/storage';
 
 /**
  * useJourney
@@ -15,7 +16,10 @@ import type { JourneyConfig } from './types';
  * start, continue, resume, and manage the user session
  * for the Ping Journey SDK.
  */
-export function useJourney(journeyConfig: JourneyConfig) {
+export function useJourney(
+  journeyConfig: JourneyConfig,
+  _storage: StorageInstance<any>
+) {
   const [node, setNode] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

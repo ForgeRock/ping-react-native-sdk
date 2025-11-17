@@ -8,22 +8,22 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "clean-install": "rm -rf node_modules package-lock.json && cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && npm install && cd ios && bundle install && bundle exec pod install && cd ..",
+    "clean-install": "rm -rf node_modules package-lock.json && cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && yarn install && cd ios && bundle install && bundle exec pod install && cd ..",
     "codegen": "npx react-native codegen",
     "reset-cache": "react-native start --reset-cache"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-pingidentity/journey": "workspace:*",
+    "@react-native-pingidentity/journey-poc": "workspace:*",
+    "@react-native-pingidentity/storage": "workspace:*",
     "@react-native/new-app-screen": "0.80.1",
+    "@react-navigation/native": "^7.1.17",
+    "@react-navigation/native-stack": "^7.3.26",
     "react": "19.1.0",
     "react-native": "0.80.1",
     "react-native-safe-area-context": "^5.6.1",
-    "@react-navigation/native": "^7.1.17",
-    "@react-navigation/native-stack": "^7.3.26",
-    "react-native-screens": "^4.16.0",
-    "@react-native-pingidentity/journey": "file:../packages/journey",
-    "@react-native-pingidentity/oidc": "file:../packages/oidc",
-    "@react-native-pingidentity/storage": "file:../packages/storage"
+    "react-native-screens": "^4.16.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -15,6 +15,7 @@ import {
 } from '@react-native-pingidentity/journey';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
+import { storage, StorageInstance } from '@react-native-pingidentity/storage';
 
 const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',
@@ -27,9 +28,25 @@ const journeyConfig = {
   scopes: ['openid', 'email', 'profile', 'address'],
 };
 
+type Dog = { name: string; type: string };
+
 export default function JourneyScreen() {
+  const [dogStorage, setDogStorage] = useState<StorageInstance<Dog> | null>(
+    null,
+  );
+
+  const createStorage = async () => {
+    setDogStorage(
+      await storage<Dog>({
+        type: 'memory',
+        keyAlias: 'dogKeyAlias',
+        cacheStrategy: 'no_cache',
+      }),
+    );
+  };
+
   const [node, { start, next, resume, user, logoutUser, loading, error }] =
-    useJourney(journeyConfig);
+    useJourney(journeyConfig, dogStorage);
 
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [session, setSession] = useState<any>(null);

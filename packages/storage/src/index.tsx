@@ -4,6 +4,7 @@ import NativeRNPingStorage, { type StorageConfig } from './NativeRNPingStorage';
  * Strongly-typed interface returned from `storage<T>()`.
  */
 export interface StorageInstance<T> {
+  id: string;
   save(value: T): Promise<boolean>;
   get(): Promise<T | null>;
   remove(): Promise<boolean>;
@@ -25,26 +26,29 @@ export async function storage<T = any>(
     );
   }
 
-  const ok = await NativeRNPingStorage.configure(config);
-  if (!ok) {
+  const id = await NativeRNPingStorage.configure(config);
+  if (!id) {
     throw new Error(
       '[@react-native-pingidentity/storage] Failed to configure native storage'
     );
   }
 
+  console.log('Storage configured : ', id);
+
   return {
+    id,
     /**
      * Save a typed object
      */
     async save(value: T): Promise<boolean> {
-      return await NativeRNPingStorage.save(value as Object);
+      return await NativeRNPingStorage.save(id, value as Object);
     },
 
     /**
      * Retrieve stored value
      */
     async get(): Promise<T | null> {
-      const result = await NativeRNPingStorage.get();
+      const result = await NativeRNPingStorage.get(id);
       return result ? (result as T) : null;
     },
 
@@ -52,7 +56,7 @@ export async function storage<T = any>(
      * Remove stored value
      */
     async remove(): Promise<boolean> {
-      return await NativeRNPingStorage.remove();
+      return await NativeRNPingStorage.remove(id);
     },
   };
 }

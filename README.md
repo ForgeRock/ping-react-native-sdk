@@ -6,10 +6,10 @@ This repository demonstrates the **Ping Identity React Native SDK (Proof of Conc
 
 ## Setup: Prepare Packages
 
-Install all workspace dependencies for the SDK packages:
+Install all workspace dependencies and rebuild SDK packages:
 
 ```bash
-yarn packages:force-install
+yarn packages:build
 ````
 
 This ensures all local modules under `packages/*` are properly bootstrapped before running the sample app.
@@ -37,7 +37,6 @@ yarn sample:run:ios
 ## Notes
 
 * `sample:clean-install` clears and reinstalls dependencies inside the sample app (`PingSampleApp`).
-* The sample app lives **outside** the monorepo workspace but consumes the local packages directly.
 
 ---
 

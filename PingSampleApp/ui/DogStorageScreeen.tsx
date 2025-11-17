@@ -1,143 +1,183 @@
-import { storage, StorageInstance } from '@react-native-pingidentity/storage';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { storage, StorageInstance } from '@react-native-pingidentity/storage';
+import { commonStyles } from '../src/styles/common';
 
 type Dog = { name: string; type: string };
+type Cat = { name: string; color: string };
 
-export default function DogStorageScreen() {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [dog, setDog] = useState<Dog | null| undefined>(null);
-  const [dogStorage, setDogStorage] = useState<StorageInstance<Dog> | null>(
-    null,
-  );
+export default function MultiStorageScreen() {
+  // ----- DOG -----
+  const [dogName, setDogName] = useState('');
+  const [dogType, setDogType] = useState('');
+  const [dog, setDog] = useState<Dog | null>(null);
+  const [dogStorage, setDogStorage] = useState<StorageInstance<Dog> | null>(null);
 
-  const configureStorage = async () => {
-    console.log('[DogStorage] Configuring storage...');
-    setDogStorage(
-      await storage<Dog>({
-        type: 'memory',
-        keyAlias: 'dogKeyAlias',
-        cacheStrategy: 'no_cache',
-      }),
-    );
-    console.log('[DogStorage] Storage configured ✅');
+  // ----- CAT -----
+  const [catName, setCatName] = useState('');
+  const [catColor, setCatColor] = useState('');
+  const [cat, setCat] = useState<Cat | null>(null);
+  const [catStorage, setCatStorage] = useState<StorageInstance<Cat> | null>(null);
+
+  // ----- DOG STORAGE -----
+  const configureDogStorage = async () => {
+    const dogStore = await storage<Dog>({
+      type: 'memory',
+      keyAlias: 'dogKeyAlias',
+      cacheStrategy: 'no_cache',
+    });
+    setDogStorage(dogStore);
   };
 
   const saveDog = async () => {
-    if (!name || !type) {
-      console.warn('[DogStorage] Cannot save dog — missing name or type');
-      return;
-    }
-    const newDog = { name, type };
-    console.log('[DogStorage] Saving dog:', newDog);
-    await dogStorage?.save(newDog);
-    setName('');
-    setType('');
-    console.log('[DogStorage] Dog saved ✅');
+    if (!dogName || !dogType) return;
+    await dogStorage?.save({ name: dogName, type: dogType });
+    setDogName('');
+    setDogType('');
   };
 
   const getDog = async () => {
-    console.log('[DogStorage] Fetching dog...');
     const storedDog = await dogStorage?.get();
-    console.log('[DogStorage] Retrieved:', storedDog);
-    setDog(storedDog);
+    setDog(storedDog ?? null);
   };
 
   const deleteDog = async () => {
-    console.log('[DogStorage] Deleting stored dog...');
     await dogStorage?.remove();
     setDog(null);
-    console.log('[DogStorage] Dog deleted ✅');
+  };
+
+  // ----- CAT STORAGE -----
+  const configureCatStorage = async () => {
+    const catStore = await storage<Cat>({
+      type: 'memory',
+      keyAlias: 'catKeyAlias',
+      cacheStrategy: 'no_cache',
+    });
+    setCatStorage(catStore);
+  };
+
+  const saveCat = async () => {
+    if (!catName || !catColor) return;
+    await catStorage?.save({ name: catName, color: catColor });
+    setCatName('');
+    setCatColor('');
+  };
+
+  const getCat = async () => {
+    const storedCat = await catStorage?.get();
+    setCat(storedCat ?? null);
+  };
+
+  const deleteCat = async () => {
+    await catStorage?.remove();
+    setCat(null);
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>🐶 Dog Storage</Text>
+    <ScrollView contentContainerStyle={commonStyles.container}>
 
-      <View style={styles.section}>
-        <Button title="Configure Storage" onPress={configureStorage} />
+      {/* DOG CARD */}
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.journeySectionTitle}>🐶 Dog Storage</Text>
+
+        {!dogStorage ? (
+          <TouchableOpacity style={commonStyles.buttonPrimary} onPress={configureDogStorage}>
+            <Text style={commonStyles.buttonText}>Configure Dog Storage</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            {/* Dog Name */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={commonStyles.inputLabel}>Dog Name</Text>
+              <TextInput
+                style={commonStyles.input}
+                value={dogName}
+                onChangeText={setDogName}
+                placeholder="Enter dog name"
+              />
+            </View>
+
+            {/* Dog Type */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={commonStyles.inputLabel}>Dog Type</Text>
+              <TextInput
+                style={commonStyles.input}
+                value={dogType}
+                onChangeText={setDogType}
+                placeholder="Enter dog type"
+              />
+            </View>
+
+            <TouchableOpacity style={commonStyles.buttonPrimary} onPress={saveDog}>
+              <Text style={commonStyles.buttonText}>Save Dog</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={commonStyles.buttonSecondary} onPress={getDog}>
+              <Text style={commonStyles.buttonTextSecondary}>Get Dog</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={commonStyles.buttonDanger} onPress={deleteDog}>
+              <Text style={commonStyles.buttonText}>Delete Dog</Text>
+            </TouchableOpacity>
+
+            <Text style={commonStyles.textSuccess}>
+              {dog ? `Dog: ${dog.name} (${dog.type})` : 'No dog stored'}
+            </Text>
+          </>
+        )}
       </View>
 
-      <View style={styles.section}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Dog Name"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Dog Type"
-          value={type}
-          onChangeText={setType}
-        />
+      {/* CAT CARD */}
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.journeySectionTitle}>🐱 Cat Storage</Text>
+
+        {!catStorage ? (
+          <TouchableOpacity style={commonStyles.buttonPrimary} onPress={configureCatStorage}>
+            <Text style={commonStyles.buttonText}>Configure Cat Storage</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            {/* Cat Name */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={commonStyles.inputLabel}>Cat Name</Text>
+              <TextInput
+                style={commonStyles.input}
+                value={catName}
+                onChangeText={setCatName}
+                placeholder="Enter cat name"
+              />
+            </View>
+
+            {/* Cat Color */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={commonStyles.inputLabel}>Cat Color</Text>
+              <TextInput
+                style={commonStyles.input}
+                value={catColor}
+                onChangeText={setCatColor}
+                placeholder="Enter cat color"
+              />
+            </View>
+
+            <TouchableOpacity style={commonStyles.buttonPrimary} onPress={saveCat}>
+              <Text style={commonStyles.buttonText}>Save Cat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={commonStyles.buttonSecondary} onPress={getCat}>
+              <Text style={commonStyles.buttonTextSecondary}>Get Cat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={commonStyles.buttonDanger} onPress={deleteCat}>
+              <Text style={commonStyles.buttonText}>Delete Cat</Text>
+            </TouchableOpacity>
+
+            <Text style={commonStyles.textSuccess}>
+              {cat ? `Cat: ${cat.name} (${cat.color})` : 'No cat stored'}
+            </Text>
+          </>
+        )}
       </View>
 
-      <View style={styles.buttonRow}>
-        <View style={styles.button}>
-          <Button title="Save Dog" onPress={saveDog} />
-        </View>
-        <View style={styles.button}>
-          <Button title="Get Dog" onPress={getDog} />
-        </View>
-        <View style={styles.button}>
-          <Button title="Delete Dog" onPress={deleteDog} />
-        </View>
-      </View>
-
-      <Text style={styles.output}>
-        {dog ? `Stored Dog: ${dog.name} (${dog.type})` : 'No dog stored'}
-      </Text>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'flex-start',
-    padding: 20,
-    backgroundColor: '#f9f9f9',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginVertical: 8,
-    backgroundColor: '#fff',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 15,
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  output: {
-    marginTop: 30,
-    fontSize: 16,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    color: '#333',
-  },
-});

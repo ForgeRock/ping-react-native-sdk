@@ -5,20 +5,26 @@ package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 Pod::Spec.new do |s|
   s.name         = "RNPingJourney"
   s.version      = package["version"]
-  s.summary      = package["description"]
-  s.homepage     = package["homepage"]
-  s.license      = package["license"]
-  s.authors      = package["author"]
+  s.summary      = package["description"] || "Ping Identity Journey TurboModule"
+  s.homepage     = package["homepage"] || "https://pingidentity.com"
+  s.license      = package["license"] || "MIT"
 
-  s.platforms    = { :ios => min_ios_version_supported }
+  # Must be a HASH — cannot use package["author"] directly
+  s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
+
+  s.platforms    = { :ios => "13.0" }
+
+  # Local monorepo source
   s.source       = { :path => "." }
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}" ## add swift files
-  s.swift_version = "5.0" # add swift version
+  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
   s.requires_arc  = true
+  s.swift_version = "5.0"
 
-  s.dependency "PingJourney" ## Only for POC. Should include version in real world
+  # Native Ping SDK (POC)
+  s.dependency "PingJourney"
 
+  # New Architecture helper
   install_modules_dependencies(s)
 end

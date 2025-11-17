@@ -5,22 +5,21 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "codegen:storage": "yarn workspace @react-native-pingidentity/storage run codegen",
-    "codegen:browser": "cd packages/browser && yarn react-native codegen",
-    "codegen:all": "yarn codegen:storage && yarn codegen:browser",
-    "packages:force-install": "yarn install --force",
-    "packages:info": "yarn workspaces info",
-    "sample:clean-install": "cd PingSampleApp && yarn clean-install && cd ..",
-    "sample:run:ios": "cd PingSampleApp && yarn ios && cd ..",
-    "sample:run:android": "cd PingSampleApp && yarn android && cd ..",
-    "sample:restart:metro": "cd PingSampleApp && yarn reset-cache && cd .."
+    "packages:build": "yarn install && yarn workspaces foreach -A -tv run build",
+    "packages:info": "yarn workspaces list",
+    "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
+    "sample:run:ios": "yarn workspace PingSampleApp run ios",
+    "sample:run:android": "yarn workspace PingSampleApp run android",
+    "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache"
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/*",
+      "PingSampleApp"
     ]
   },
   "devDependencies": {
     "@react-native/codegen": "^0.82.1"
-  }
+  },
+  "packageManager": "yarn@4.11.0"
 }
