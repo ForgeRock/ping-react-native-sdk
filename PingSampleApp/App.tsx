@@ -2,13 +2,13 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DogStorageScreen from './ui/DogStorageScreeen';
+import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
 
 export type RootStackParamList = {
   Home: undefined;
-  DogStorage: undefined;
+  Storage: undefined;
   Journey: undefined;
 };
 
@@ -24,9 +24,9 @@ export default function App() {
           options={{ title: 'PingIdentity Demo', headerShown: false }}
         />
         <Stack.Screen
-          name="DogStorage"
-          component={DogStorageScreen}
-          options={{ title: 'Dog Storage' }}
+          name="Storage"
+          component={MultiStorageScreen}
+          options={{ title: 'Storage' }}
         />
         <Stack.Screen
           name="Journey"

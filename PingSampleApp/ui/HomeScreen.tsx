@@ -6,7 +6,7 @@ import {multiply} from '@react-native-pingidentity/journey-poc'
 
 type RootStackParamList = {
   Home: undefined;
-  DogStorage: undefined;
+  Storage: undefined;
   Journey: undefined;
 };
 
@@ -15,7 +15,7 @@ type Props = { navigation: HomeScreenNavProp };
 
 export default function HomeScreen({ navigation }: Props) {
   const menuItems = [
-    { title: '🐶 Go to Dog Storage', screen: 'DogStorage' },
+    { title: '📦 Launch Storage', screen: 'Storage' },
     { title: '🌐 Launch Journey', screen: 'Journey' },
   ];
 
