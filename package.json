@@ -5,11 +5,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "codegen:storage": "yarn workspace @react-native-pingidentity/storage run codegen",
-    "codegen:browser": "yarn workspace @react-native-pingidentity/browser run codegen",
-    "codegen:all": "yarn codegen:storage && yarn codegen:browser",
-    "packages:force-install": "yarn install --force",
-    "packages:info": "yarn workspaces info",
+    "packages:build": "yarn install && yarn workspaces foreach -A -tv run build",
+    "packages:info": "yarn workspaces list",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
