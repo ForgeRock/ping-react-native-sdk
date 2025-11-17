@@ -3,7 +3,9 @@ import PingJourney
 import PingLogger
 import PingOrchestrate
 import React
+import RNPingCore
 
+@available(iOS 16.0.0, *) // Keeping 16 for POC
 @objc(RNPingJourneyImpl)
 public class RNPingJourneyImpl: NSObject {
 
@@ -47,7 +49,7 @@ public class RNPingJourneyImpl: NSObject {
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     print("RNPingJourney: configureJourney called with \(config)")
-
+    StorageRegistry.shared.printAllRegisteredIds()
     guard let serverUrl = config["serverUrl"] as? String else {
       let error = NSError(
         domain: "RNPingJourney",

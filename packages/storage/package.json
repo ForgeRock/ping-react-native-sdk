@@ -16,6 +16,9 @@
     "build": "bob build",
     "clean": "rimraf lib"
   },
+  "dependencies": {
+    "@react-native-pingidentity/core": "*"
+  },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"

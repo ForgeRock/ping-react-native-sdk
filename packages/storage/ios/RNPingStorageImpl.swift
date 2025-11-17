@@ -1,48 +1,7 @@
 import Foundation
 import PingStorage
 import React
-
-// 🔥 NEW: Registry for multiple storage instances
-@available(iOS 16.0.0, *)
-class StorageRegistry {
-  static let shared = StorageRegistry()
-  private var instances: [String: any Storage<String>] = [:]
-
-  func create(config: NSDictionary) -> String {
-    let id = UUID().uuidString
-
-    let type = config["type"] as? String ?? "encrypted"
-    let keyAlias = config["keyAlias"] as? String ?? "com.pingidentity.rnsampleapp.keyalias"
-    let cacheStrategyRaw = (config["cacheStrategy"] as? String)?.uppercased()
-
-    let base: any Storage<String>
-    switch type.lowercased() {
-    case "memory":
-      base = MemoryStorage<String>()
-    case "encrypted", "datastore":
-      base = KeychainStorage<String>(
-        account: keyAlias,
-        encryptor: NoEncryptor()
-      )
-    default:
-      base = MemoryStorage<String>()
-    }
-
-    let finalInstance: any Storage<String>
-    if cacheStrategyRaw == "CACHE" {
-      finalInstance = StorageDelegate(delegate: base, cacheable: true)
-    } else {
-      finalInstance = base
-    }
-
-    instances[id] = finalInstance
-    return id
-  }
-
-  func get(_ id: String) -> (any Storage<String>)? {
-    return instances[id]
-  }
-}
+import RNPingCore
 
 @available(iOS 16.0.0, *)
 @objcMembers
@@ -83,23 +42,22 @@ public class RNPingStorageImpl: NSObject {
   ) {
     print("RNPingStorage: configure called with config: \(config)")
 
-    // 🔥 CHANGE: Create a NEW instance and return its ID
     let id = StorageRegistry.shared.create(config: config)
     print("✅ RNPingStorage: created storage instance \(id)")
     resolve(id)
   }
 
   // MARK: - Save
-  @objc(save:item:resolver:rejecter:)   // 🔥 CHANGE signature
+  @objc(save:item:resolver:rejecter:)  
   public func save(
-    _ id: String,                        // 🔥 CHANGE
-    item: NSDictionary,                  // 🔥 CHANGE
+    _ id: String,                    
+    item: NSDictionary,               
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     print("RNPingStorage: save called with item: \(item)")
 
-    // 🔥 CHANGE: lookup instance
+    // lookup instance
     guard let storage = StorageRegistry.shared.get(id) else {
       reject("E_SAVE_FAILED", "Invalid storage id", nil)
       return
@@ -121,9 +79,9 @@ public class RNPingStorageImpl: NSObject {
   }
 
   // MARK: - Get
-  @objc(get:resolver:rejecter:)        // 🔥 CHANGE signature
+  @objc(get:resolver:rejecter:)      
   public func get(
-    _ id: String,                        // 🔥 CHANGE
+    _ id: String,                       
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
@@ -156,9 +114,9 @@ public class RNPingStorageImpl: NSObject {
   }
 
   // MARK: - Remove
-  @objc(remove:resolver:rejecter:)     // 🔥 CHANGE signature
+  @objc(remove:resolver:rejecter:)    
   public func remove(
-    _ id: String,                        // 🔥 CHANGE
+    _ id: String,                 
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {

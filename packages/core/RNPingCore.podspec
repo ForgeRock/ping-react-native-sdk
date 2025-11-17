@@ -3,9 +3,9 @@ require "json"
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 Pod::Spec.new do |s|
-  s.name         = "RNPingStorage"
+  s.name         = "RNPingCore"
   s.version      = package["version"]
-  s.summary      = package["description"] || "Ping Identity Storage TurboModule"
+  s.summary      = package["description"] || "Ping Identity Core TurboModule"
   s.homepage     = package["homepage"] || "https://pingidentity.com"
   s.license      = package["license"] || "MIT"
 
@@ -23,9 +23,8 @@ Pod::Spec.new do |s|
   s.swift_version = "5.0"
   s.requires_arc = true
 
-  # Native Ping SDK dependency (internal iOS SDK)
+  # Native Ping SDK dependency (your internal iOS SDK)
   s.dependency "PingStorage"
-  s.dependency "RNPingCore"
 
   # RN New Architecture helper
   install_modules_dependencies(s)
