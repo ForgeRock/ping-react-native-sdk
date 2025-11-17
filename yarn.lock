@@ -2232,7 +2232,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-pingidentity/journey-poc@workspace:packages/journey-poc":
+"@react-native-pingidentity/journey-poc@workspace:*, @react-native-pingidentity/journey-poc@workspace:packages/journey-poc":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/journey-poc@workspace:packages/journey-poc"
   dependencies:
@@ -3030,6 +3030,7 @@ __metadata:
     "@react-native-community/cli-platform-android": "npm:19.0.0"
     "@react-native-community/cli-platform-ios": "npm:19.0.0"
     "@react-native-pingidentity/journey": "workspace:*"
+    "@react-native-pingidentity/journey-poc": "workspace:*"
     "@react-native-pingidentity/storage": "workspace:*"
     "@react-native/babel-preset": "npm:0.80.1"
     "@react-native/eslint-config": "npm:0.80.1"
