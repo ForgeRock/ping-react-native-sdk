@@ -10,9 +10,13 @@ import type {
  * Configure the Journey SDK.
  */
 export async function configureJourney(
-  config: JourneyConfig
+  config: JourneyConfig,
+  storageId?: string
 ): Promise<boolean> {
-  return await NativeRNPingJourney.configureJourney(config);
+  return await NativeRNPingJourney.configureJourney({
+    ...config,
+    storageId, // Storage ID to get instance from Registry
+  });
 }
 
 /**

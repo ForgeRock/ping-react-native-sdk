@@ -34,17 +34,15 @@ public class RNPingStorageImpl: NSObject {
   }
 
   // MARK: - Configure
-  @objc(configure:resolver:rejecter:)
+  @objc
   public func configure(
     _ config: NSDictionary,
-    resolver resolve: RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
+  ) -> String {
     print("RNPingStorage: configure called with config: \(config)")
 
     let id = StorageRegistry.shared.create(config: config)
     print("✅ RNPingStorage: created storage instance \(id)")
-    resolve(id)
+    return id
   }
 
   // MARK: - Save

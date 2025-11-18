@@ -18,7 +18,7 @@ import type { StorageInstance } from '@react-native-pingidentity/storage';
  */
 export function useJourney(
   journeyConfig: JourneyConfig,
-  _storage: StorageInstance<any>
+  storage?: StorageInstance<any>
 ) {
   const [node, setNode] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ export function useJourney(
         setLoading(true);
         setError(null);
 
-        await configureJourney(journeyConfig);
+        await configureJourney(journeyConfig, storage?.id);
         const result = await startJourney(journeyName, {
           forceAuth: false,
           noSession: false,

@@ -66,7 +66,8 @@ public class RNPingJourneyImpl: NSObject {
     let discoveryEndpoint = config["discoveryEndpoint"] as? String
     let redirectUri = config["redirectUri"] as? String
     let scopes = config["scopes"] as? [String] ?? ["openid", "email", "profile"]
-
+    let storageId = config["storageId"] as? String
+    
     // Create and configure Journey
     self.journey = Journey.createJourney { journeyConfig in
       journeyConfig.serverUrl = serverUrl
@@ -74,6 +75,14 @@ public class RNPingJourneyImpl: NSObject {
       if let cookie = cookieName { journeyConfig.cookie = cookie }
       journeyConfig.timeout = 30
       journeyConfig.logger = LogManager.standard
+      
+//      if(storageId != nil){
+//        let st = StorageRegistry.shared.get(storageId!)
+//        journeyConfig.module(SessionModule.config)  { sessionValue in
+//          sessionValue.storage = st
+//        }
+//      }
+//      
 
       // Optional OIDC configuration
       if let clientId = clientId,
