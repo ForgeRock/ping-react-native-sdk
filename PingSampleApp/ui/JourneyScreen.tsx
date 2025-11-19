@@ -31,19 +31,12 @@ const journeyConfig = {
 type Dog = { name: string; type: string };
 
 export default function JourneyScreen() {
-  const [dogStorage, setDogStorage] = useState<StorageInstance<Dog> | null>(
-    null,
-  );
+  const dogStorage = storage<Dog>({
+    type: 'memory',
+    keyAlias: 'dogKeyAlias',
+    cacheStrategy: 'no_cache',
+  });
 
-  const createStorage = async () => {
-    setDogStorage(
-      await storage<Dog>({
-        type: 'memory',
-        keyAlias: 'dogKeyAlias',
-        cacheStrategy: 'no_cache',
-      }),
-    );
-  };
 
   const [node, { start, next, resume, user, logoutUser, loading, error }] =
     useJourney(journeyConfig, dogStorage);

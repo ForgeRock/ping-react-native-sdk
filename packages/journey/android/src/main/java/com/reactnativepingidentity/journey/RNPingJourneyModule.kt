@@ -41,6 +41,7 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.File
 import okhttp3.OkHttpClient
+import com.reactnativepingidentity.core.registries.StorageRegistry
 //import okhttp3.logging.HttpLoggingInterceptor
 
 @ReactModule(name = RNPingJourneyModule.NAME)
@@ -127,7 +128,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
       Log.d("RNPingJourney", "Serialized node map: ${map.toString()}")
       return map
   }
-    
+
   override fun configureJourney(config: ReadableMap, promise: Promise) {
       try {
           Log.d("RNPingJourney", "configureJourney called with: $config")
@@ -146,19 +147,19 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
           val redirectUri = config.getString("redirectUri")
           val scopesArray = config.getArray("scopes")?.toArrayList()?.mapNotNull { it.toString() }
 
-          // Initialize the Journey SDK 
+          // Initialize the Journey SDK
           Log.d("RNPingJourney", "Initializing Journey SDK...")
-          
+
           this.journey = Journey {
               this.timeout = 30000 // Network request timeout in milliseconds (default: 15000ms)
               this.serverUrl = serverUrl
               realm?.let { this.realm = it }
-              cookieName?.let { 
+              cookieName?.let {
                   this.cookie = it
 
               }
-              
-              // Configure OIDC module 
+
+              // Configure OIDC module
               if (clientId != null && discoveryEndpoint != null && redirectUri != null) {
                     Log.d("RNPingJourney", "Configuring OIDC module...")
                   this.module(Oidc) {
@@ -237,16 +238,16 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
       // Apply input from the ReadableMap to the corresponding callbacks
       try {
           val inputMap = input.toHashMap()
-          
+
           if (inputMap.containsKey("callbacks")) {
               val callbacksArray = inputMap["callbacks"] as? ArrayList<*>
               Log.d("RNPingJourney", "Found callbacks array with ${callbacksArray?.size} items")
-              
+
               callbacksArray?.forEach { callbackData ->
                   val callbackMap = callbackData as? HashMap<*, *>
                   val type = callbackMap?.get("type") as? String
                   val value = callbackMap?.get("value") as? String ?: ""
-                  
+
                   when (type) {
                       "NameCallback" -> {
                           val nameCB = currentNode.callbacks.firstOrNull { it is NameCallback } as? NameCallback
@@ -293,13 +294,13 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   override fun resume(uri: String, promise: Promise) {
       Log.d("RNPingJourney", "resume called with uri: $uri")
-      
+
       val journeyInstance = this.journey
       if (journeyInstance == null) {
           promise.reject("NOT_CONFIGURED", "Journey SDK has not been configured. Call configureJourney() first.")
           return
       }
-      
+
       scope.launch {
           try {
               val resumedNode = journeyInstance.resume(android.net.Uri.parse(uri))
@@ -314,13 +315,13 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
   }
 
   override fun getSession(promise: Promise) {
-      
+
       val journeyInstance = this.journey
       if (journeyInstance == null) {
           promise.reject("NOT_CONFIGURED", "Journey SDK has not been configured. Call configureJourney() first.")
           return
       }
-      
+
       scope.launch {
           try {
               Log.d("RNPingJourney", "Starting getting user session...")
@@ -332,14 +333,14 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                   promise.resolve(null)
                   return@launch
               }
-              
+
               Log.d("RNPingJourney", "User object retrieved, fetching session data...")
-              
+
               // Fetch token()  - returns Result<Token, OidcError>
               when (val tokenResult = user.token()) {
                   is Result.Success -> {
                       val token = tokenResult.value
-                      
+
                       // Fetch userinfo() only if token was successful - returns Result<JsonObject, OidcError>
                       var userInfoMap: WritableMap? = null
                       when (val result = user.userinfo(false)) {
@@ -377,7 +378,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                       resultMap.putString("accessToken", token.accessToken)
                       resultMap.putString("refreshToken", token.refreshToken ?: "")
                       resultMap.putLong("expiresIn", token.expiresIn)
-                      
+
                       if (userInfoMap != null) {
                           resultMap.putMap("userInfo", userInfoMap)
                       }
@@ -399,13 +400,13 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
   }
 
   override fun logout(promise: Promise) {
-      
+
       val journeyInstance = this.journey
       if (journeyInstance == null) {
           promise.reject("NOT_CONFIGURED", "Journey SDK has not been configured. Call configureJourney() first.")
           return
       }
-      
+
       scope.launch {
           try {
               val user = journeyInstance.user()
