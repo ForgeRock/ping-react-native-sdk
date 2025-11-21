@@ -158,6 +158,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                         this.clientId = clientId
                         this.discoveryEndpoint = discoveryEndpoint
                         this.redirectUri = redirectUri
+                      this.storage
                         this.scopes = scopesArray?.toMutableSet()
                             ?: mutableSetOf("openid", "email", "address", "profile", "phone")
                     }

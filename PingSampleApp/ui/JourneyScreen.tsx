@@ -16,11 +16,16 @@ import {
 } from '@react-native-pingidentity/journey';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
-import { loginClient } from '../src/clients';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+
+type JourneyRouteProp = RouteProp<RootStackParamList, 'Journey'>;
 
 export default function JourneyScreen() {
+  const route = useRoute<JourneyRouteProp>();
+  const { journeyClient } = route.params;
   const [node, { start, next, resume, user, logoutUser, loading, error }] =
-    useJourney(loginClient);
+    useJourney(journeyClient);
   const [nativeStorageIds, setNativeStorageIds] = useState<string[]>([]);
 
   const [inputs, setInputs] = useState<Record<string, string>>({});
@@ -214,6 +219,9 @@ export default function JourneyScreen() {
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.textSmall}>Jounrey UUID:{`\n\n`}{journeyClient.getId()}</Text>
+      </View>
       <View style={commonStyles.card}>
         {showJourneyInput && (
           <>

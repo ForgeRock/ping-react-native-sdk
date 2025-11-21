@@ -4,19 +4,22 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
-import { loginClient } from './src/clients';
+import { loginClient, loginClient2 } from './src/clients';
+import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
 
 export type RootStackParamList = {
   Home: undefined;
   Storage: undefined;
-  Journey: undefined;
+  Journey: { journeyClient: JourneyClient };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   useEffect(() => {
-    loginClient.init() // Init Login client
+    // Init login clients
+    loginClient.init()
+    loginClient2.init(); 
   }, []);
   return (
     <NavigationContainer>
