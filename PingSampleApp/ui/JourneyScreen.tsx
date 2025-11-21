@@ -220,7 +220,7 @@ export default function JourneyScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
       <View style={commonStyles.card}>
-        <Text style={commonStyles.textSmall}>Jounrey UUID:{`\n\n`}{journeyClient.getId()}</Text>
+        <Text style={commonStyles.textSmall}>Journey UUID:{`\n\n`}{journeyClient.getId()}</Text>
       </View>
       <View style={commonStyles.card}>
         {showJourneyInput && (
