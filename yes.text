@@ -1,6 +1,0 @@
-Here what we did:
-
-1. Jounrey and Storage registries\
-2. Multiple Storages and Clients with UUIDs
-3. Now we do jounrey.init() at app start and assign that to useJounrey, rather than configuring it in the useJounrey like before
-4. We are now displaying registered Storage UUID from core in Jounrey screen to show how its being tied togehtr
