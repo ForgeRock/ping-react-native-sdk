@@ -11,15 +11,15 @@ public class RNPingJourneyImpl: NSObject {
 
   // Singleton instance
   @objc public static let shared = RNPingJourneyImpl()
-  
   // Private initializer to enforce singleton
   @objc private override init() {
     super.init()
   }
 
-  private var journey: Journey?
-  private var lastNode: Node?
-  
+  // Store nodes per journey instance
+  private var nodeMap: [String: Node?] = [:]
+
+  // MARK: - Node Serialization 
   private func serializeNode(_ node: Node) -> NSDictionary {
     var dict: [String: Any] = ["id": UUID().uuidString]
     switch node {
@@ -27,7 +27,7 @@ public class RNPingJourneyImpl: NSObject {
       dict["type"] = "ContinueNode"
       dict["callbacks"] = c.callbacks.map { cb in
         ["type": String(describing: type(of: cb)),
-         "prompt": (cb as? TextOutputCallback)?.message ?? "",
+          "prompt": (cb as? TextOutputCallback)?.message ?? "",
          "value": NSNull()]
       }
     case let e as ErrorNode:
@@ -66,29 +66,21 @@ public class RNPingJourneyImpl: NSObject {
     let discoveryEndpoint = config["discoveryEndpoint"] as? String
     let redirectUri = config["redirectUri"] as? String
     let scopes = config["scopes"] as? [String] ?? ["openid", "email", "profile"]
-    let storageId = config["storageId"] as? String
-    
-    // Create and configure Journey
-    self.journey = Journey.createJourney { journeyConfig in
-      journeyConfig.serverUrl = serverUrl
-      if let realm = realm { journeyConfig.realm = realm }
-      if let cookie = cookieName { journeyConfig.cookie = cookie }
-      journeyConfig.timeout = 30
-      journeyConfig.logger = LogManager.standard
-      
-//      if(storageId != nil){
-//        let st = StorageRegistry.shared.get(storageId!)
-//        journeyConfig.module(SessionModule.config)  { sessionValue in
-//          sessionValue.storage = st
-//        }
-//      }
-//      
 
-      // Optional OIDC configuration
+    // Create Journey instance 
+    let journey = Journey.createJourney { j in
+      j.serverUrl = serverUrl
+      if let realm = realm { j.realm = realm }
+      if let cookie = cookieName { j.cookie = cookie }
+      j.timeout = 30
+      j.logger = LogManager.standard
+
+      // Optional OIDC block
       if let clientId = clientId,
-         let discoveryEndpoint = discoveryEndpoint,
-         let redirectUri = redirectUri {
-        journeyConfig.module(PingJourney.OidcModule.config) { oidc in
+        let discoveryEndpoint = discoveryEndpoint,
+        let redirectUri = redirectUri
+      {
+        j.module(PingJourney.OidcModule.config) { oidc in
           oidc.clientId = clientId
           oidc.discoveryEndpoint = discoveryEndpoint
           oidc.redirectUri = redirectUri
@@ -97,111 +89,142 @@ public class RNPingJourneyImpl: NSObject {
       }
     }
 
-    if let journey = self.journey {
-      print("✅ Journey configured successfully")
-      resolve(true)
-    } else {
-      let error = NSError(
-        domain: "RNPingJourney",
-        code: 500,
-        userInfo: [NSLocalizedDescriptionKey: "Failed to configure Journey"]
-      )
-      reject("E_CONFIGURE_FAILED", "Failed to configure Journey", error)
-    }
+    // Store using Core Registry
+    let journeyId = JourneyRegistry.shared.add(journey)
+
+    print("RNPingJourney: Journey registered → \(journeyId)")
+    resolve(journeyId)
   }
 
-  // MARK: - Start
-  @objc(start:options:resolver:rejecter:)
-  public func start(_ journeyName: String,
-             options: NSDictionary?,
-             resolver resolve: @escaping RCTPromiseResolveBlock,
-             rejecter reject: @escaping RCTPromiseRejectBlock) {
-    guard let journey = self.journey else {
-      reject("500", "Journey not configured", nil)
+  // MARK: - Start Journey
+  @objc(start:journeyName:options:resolver:rejecter:)
+  public func start(
+    _ journeyId: String,
+    journeyName: String,
+    options: NSDictionary?,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+      reject("NOT_CONFIGURED", "Journey not found for id \(journeyId)", nil)
       return
     }
+
     let forceAuth = options?["forceAuth"] as? Bool ?? false
     let noSession = options?["noSession"] as? Bool ?? false
+
     Task {
       let node = await journey.start(journeyName) { $0.forceAuth = forceAuth; $0.noSession = noSession }
-      self.lastNode = node
+      nodeMap[journeyId] = node
       resolve(self.serializeNode(node))
     }
   }
 
   // MARK: - Next
-  @objc(next:input:resolver:rejecter:)
-  public func next(_ nodeId: NSString,
-            input: NSDictionary,
-            resolver resolve: @escaping RCTPromiseResolveBlock,
-            rejecter reject: @escaping RCTPromiseRejectBlock) {
-    guard let current = self.lastNode as? ContinueNode else {
-      reject("404", "No active ContinueNode", nil)
+  @objc(next:nodeId:input:resolver:rejecter:)
+  public func next(
+    _ journeyId: NSString,
+    nodeId: NSString,
+    input: NSDictionary,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let id = journeyId as String
+
+    // Get the current node for this journey
+    guard let current = nodeMap[id] as? ContinueNode else {
+      reject("NO_ACTIVE_JOURNEY", "No active ContinueNode for journeyId=\(id)", nil)
       return
     }
     if let callbacks = input["callbacks"] as? [[String: Any]] {
       for cb in callbacks {
         switch cb["type"] as? String {
         case "NameCallback":
-          (current.callbacks.first { $0 is NameCallback } as? NameCallback)?.name = cb["value"] as? String ?? ""
+          (current.callbacks.first { $0 is NameCallback } as? NameCallback)?
+            .name = cb["value"] as? String ?? ""
         case "PasswordCallback":
-          (current.callbacks.first { $0 is PasswordCallback } as? PasswordCallback)?.password = cb["value"] as? String ?? ""
-        default: break
+          (current.callbacks.first { $0 is PasswordCallback } as? PasswordCallback)?
+            .password = cb["value"] as? String ?? ""
+        default:
+          break
         }
       }
     }
+
     Task {
       let nextNode = await current.next()
-      self.lastNode = nextNode
+      // Store new node for this journey instance
+      nodeMap[id] = nextNode
       resolve(self.serializeNode(nextNode))
     }
   }
 
   // MARK: - Resume
-  @objc(resume:resolver:rejecter:)
-  public func resume(_ uri: NSString,
-              resolver resolve: @escaping RCTPromiseResolveBlock,
-              rejecter reject: @escaping RCTPromiseRejectBlock) {
-    guard let journey = self.journey else {
-      reject("400", "Journey not configured", nil)
+  @objc(resume:uri:resolver:rejecter:)
+  public func resume(
+    _ journeyId: NSString,
+    uri: NSString,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    let id = journeyId as String
+
+    guard let journey = JourneyRegistry.shared.get(id) else {
+      reject("NOT_CONFIGURED", "Journey not configured for id=\(id)", nil)
       return
     }
+
     guard let resumeUrl = URL(string: uri as String) else {
       reject("422", "Invalid resume URI", nil)
       return
     }
+
     Task {
       let node = await journey.resume(resumeUrl)
-      self.lastNode = node
+
+      // Save resumed node for this journey instance
+      nodeMap[id] = node
+
       resolve(self.serializeNode(node))
     }
   }
 
   // MARK: - Get Session
-  @objc(getSession:rejecter:)
-  public func getSession(_ resolve: @escaping RCTPromiseResolveBlock,
-                  rejecter reject: @escaping RCTPromiseRejectBlock) {
-    guard let journey = self.journey else {
-      reject("400", "Journey not configured", nil)
+  @objc(getSession:resolver:rejecter:)
+  public func getSession(
+    _ journeyId: String,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+      reject("NOT_CONFIGURED", "Journey not found", nil)
       return
     }
+
     Task {
       let user = await journey.journeyUser()
       let token = await user?.token()
+
       switch token {
-      case .success(let t): resolve(["accessToken": t.accessToken])
-      case .failure(let e): reject("401", e.localizedDescription, e)
-      case .none: resolve(nil)
+      case .success(let t):
+        resolve(["accessToken": t.accessToken])
+      case .failure(let err):
+        reject("NO_SESSION", err.localizedDescription, err)
+      case .none:
+        resolve(nil)
       }
     }
   }
 
   // MARK: - Logout
-  @objc(logout:rejecter:)
-  public func logout(_ resolve: @escaping RCTPromiseResolveBlock,
-              rejecter reject: @escaping RCTPromiseRejectBlock) {
-    guard let journey = self.journey else {
-      reject("400", "Journey not configured", nil)
+  @objc(logout:resolver:rejecter:)
+  public func logout(
+    _ journeyId: String,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+      reject("NOT_CONFIGURED", "Journey not found", nil)
       return
     }
     Task {
@@ -209,5 +232,16 @@ public class RNPingJourneyImpl: NSObject {
       await user?.logout()
       resolve(true)
     }
+  }
+
+  // MARK: - List Registered Storages
+  @objc
+  public func listRegisteredStoragesFromCore(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let ids = StorageRegistry.shared.listIds()
+    print("Reporting StorageRegistry IDs: \(ids)")
+    resolve(ids)
   }
 }

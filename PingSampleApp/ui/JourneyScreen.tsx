@@ -12,34 +12,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   useJourney,
   JourneyUserSession,
+  listRegisteredStoragesFromCore,
 } from '@react-native-pingidentity/journey';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
-import { storage, StorageInstance } from '@react-native-pingidentity/storage';
-
-const journeyConfig = {
-  serverUrl: 'https://openam-sdks.forgeblocks.com/am',
-  realm: 'alpha',
-  cookie: '5421aeddf91aa20',
-  clientId: 'sdkPublicClient',
-  discoveryEndpoint:
-    'https://openam-sdks.forgeblocks.com/am/oauth2/alpha/.well-known/openid-configuration',
-  redirectUri: 'org.forgerock.demo://oauth2redirect',
-  scopes: ['openid', 'email', 'profile', 'address'],
-};
-
-type Dog = { name: string; type: string };
+import { loginClient } from '../src/clients';
 
 export default function JourneyScreen() {
-  const dogStorage = storage<Dog>({
-    type: 'memory',
-    keyAlias: 'dogKeyAlias',
-    cacheStrategy: 'no_cache',
-  });
-
-
   const [node, { start, next, resume, user, logoutUser, loading, error }] =
-    useJourney(journeyConfig, dogStorage);
+    useJourney(loginClient);
+  const [nativeStorageIds, setNativeStorageIds] = useState<string[]>([]);
 
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [session, setSession] = useState<any>(null);
@@ -55,6 +37,8 @@ export default function JourneyScreen() {
       try {
         const stored = await AsyncStorage.getItem('recentJourneys');
         if (stored) setSuggestedJourneys(JSON.parse(stored));
+        const ids = await listRegisteredStoragesFromCore();
+        setNativeStorageIds(ids);
       } catch (e) {
         console.warn('⚠️ Failed to load recent journeys', e);
       }
@@ -314,6 +298,24 @@ export default function JourneyScreen() {
           </Text>
         </View>
       )}
+
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.journeySectionTitle}>
+          📦 Registered Native Storages from Core
+        </Text>
+
+        {nativeStorageIds.length === 0 ? (
+          <Text style={commonStyles.textSmall}>
+            No storages registered yet.
+          </Text>
+        ) : (
+          nativeStorageIds.map(id => (
+            <Text key={id} style={commonStyles.textSmall}>
+              • {id}
+            </Text>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }

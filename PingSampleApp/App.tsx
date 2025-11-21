@@ -1,10 +1,10 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
+import { loginClient } from './src/clients';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -15,6 +15,9 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  useEffect(() => {
+    loginClient.init() // Init Login client
+  }, []);
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">

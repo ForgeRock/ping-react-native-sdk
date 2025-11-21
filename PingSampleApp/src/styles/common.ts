@@ -273,4 +273,10 @@ export const commonStyles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 18,
   },
+
+  textSmall: {
+    fontSize: 12,
+    color: colors.success,
+    marginVertical: 6,
+  },
 });

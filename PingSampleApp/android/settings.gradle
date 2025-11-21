@@ -7,5 +7,5 @@ includeBuild('../../node_modules/@react-native/gradle-plugin')
 include(":react-native-pingidentity-core")
 project(":react-native-pingidentity-core").projectDir = file("../../packages/core/android")
 
-// include(":react-native-pingidentity_journey")
-// project(":react-native-pingidentity_journey").projectDir = file("../../packages/journey/android")
+include(":react-native-pingidentity-journey")
+project(":react-native-pingidentity-journey").projectDir = file("../../packages/journey/android")

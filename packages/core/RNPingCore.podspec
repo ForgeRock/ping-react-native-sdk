@@ -23,8 +23,9 @@ Pod::Spec.new do |s|
   s.swift_version = "5.0"
   s.requires_arc = true
 
-  # Native Ping SDK dependency (your internal iOS SDK)
+  # Native Ping SDK dependency
   s.dependency "PingStorage"
+  s.dependency "PingJourney"
 
   # RN New Architecture helper
   install_modules_dependencies(s)

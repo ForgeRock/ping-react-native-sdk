@@ -53,4 +53,8 @@ public class StorageRegistry {
         }
     }
   }
+
+  public func listIds() -> [String] {
+    return Array(instances.keys)
+  }
 }

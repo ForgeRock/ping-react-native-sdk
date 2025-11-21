@@ -88,4 +88,8 @@ object StorageRegistry {
       }
     }
   }
+
+  fun listIds(): List<String> {
+    return instances.keys.toList()
+  }
 }
