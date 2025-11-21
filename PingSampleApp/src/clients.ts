@@ -22,15 +22,7 @@ const journeyConfig2 = { // This config looks wrong. Revisit TBD
   scopes: ['openid', 'email', 'profile', 'address'],
 };
 
-journey(journeyConfig, {
-  oidc: {
-    ..
-    storage: oidcStorage()
-  },
-  session: {
-    stroage: sessionStroage()
-  }
-})
+journey(journeyConfig)
 
 export const loginClient = journey(
   journeyConfig,
