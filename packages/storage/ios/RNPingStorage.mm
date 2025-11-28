@@ -23,10 +23,8 @@ RCT_EXPORT_MODULE()
   return [RNPingStorageImpl shared];
 }
 
-// configure(config): Promise<boolean>
-- (void)configure:(JS::NativeRNPingStorage::StorageConfig &)config
-          resolve:(RCTPromiseResolveBlock)resolve
-           reject:(RCTPromiseRejectBlock)reject
+// configure(config): string
+- (NSString *)configure:(JS::NativeRNPingStorage::StorageConfig &)config
 {
   NSLog(@"RNPingStorage: configure called");
 
@@ -42,7 +40,7 @@ RCT_EXPORT_MODULE()
     dict[@"cacheStrategy"] = config.cacheStrategy();
   }
 
-  [[self swiftImpl] configure:dict resolver:resolve rejecter:reject];
+  return [[self swiftImpl] configure:dict];
 }
 
 // save(item): Promise<boolean>

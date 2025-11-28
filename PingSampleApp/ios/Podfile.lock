@@ -2256,6 +2256,37 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNPingCore (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingJourney
+    - PingStorage
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNPingJourney (0.1.0):
     - boost
     - DoubleConversion
@@ -2284,35 +2315,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
-  - RNPingJourneyPOC (0.1.0):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
+    - RNPingCore
     - SocketRocket
     - Yoga
   - RNPingStorage (0.1.0):
@@ -2343,6 +2346,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - RNPingCore
     - SocketRocket
     - Yoga
   - RNScreens (4.18.0):
@@ -2489,8 +2493,8 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
+  - RNPingCore (from `../../packages/core`)
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
-  - "RNPingJourneyPOC (from `../../node_modules/@react-native-pingidentity/journey-poc`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2659,10 +2663,10 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon"
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
+  RNPingCore:
+    :path: "../../packages/core"
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
-  RNPingJourneyPOC:
-    :path: "../../node_modules/@react-native-pingidentity/journey-poc"
   RNPingStorage:
     :path: "../../node_modules/@react-native-pingidentity/storage"
   RNScreens:
@@ -2750,13 +2754,13 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingJourney: 7922aa6b3f8d54877767657e24f56f944766deae
-  RNPingJourneyPOC: c8fcdfd4ac837d59708a2825706317d6ecbd57c5
-  RNPingStorage: 282208f40476926a4baccd49aa9c219f3c00b33f
+  RNPingCore: e6ad0a1d0c78bb6e606b6e06ed6949bd554b096e
+  RNPingJourney: 2d5cad6ab6b008feeb3e2a5a4df42f4f17581171
+  RNPingStorage: 5d3ec20a5c26b80251e21713304c8517ba638cf9
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 03f856bfb754e7914ea2329cd526ce28af8850f7
+PODFILE CHECKSUM: 07d5a94a261035b5d5187e1120ab6ed60b3fd76e
 
 COCOAPODS: 1.15.2

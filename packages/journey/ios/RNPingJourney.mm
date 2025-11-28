@@ -14,34 +14,35 @@
 // Auto-generated Swift header
 #import "RNPingJourney-Swift.h"
 
-
 @implementation RNPingJourney
 RCT_EXPORT_MODULE()
 
 // Helper to get the Swift singleton
-- (RNPingJourneyImpl *)swiftImpl
-{
+- (RNPingJourneyImpl *)swiftImpl {
   return [RNPingJourneyImpl shared];
 }
 
-// configureJourney(config): Promise<boolean>
+// ------------------------------------------
+// configureJourney(config): Promise<string>
+// ------------------------------------------
 - (void)configureJourney:(NSDictionary *)config
                  resolve:(RCTPromiseResolveBlock)resolve
-                  reject:(RCTPromiseRejectBlock)reject
-{
+                  reject:(RCTPromiseRejectBlock)reject {
   NSLog(@"RNPingJourney: configureJourney called");
   [[self swiftImpl] configureJourney:config resolver:resolve rejecter:reject];
 }
 
-// start(journeyName, options): Promise<Node>
-- (void)start:(NSString *)journeyName
-      options:(JS::NativeRNPingJourney::JourneyOptions &)options
-      resolve:(RCTPromiseResolveBlock)resolve
-       reject:(RCTPromiseRejectBlock)reject
-{
-  NSLog(@"RNPingJourney: start called with journeyName: %@", journeyName);
-  
-  // Convert C++ options struct to NSDictionary for Swift
+// ------------------------------------------
+// start(journeyId, journeyName, options)
+// ------------------------------------------
+- (void)start:(NSString *)journeyId
+    journeyName:(NSString *)journeyName
+        options:(JS::NativeRNPingJourney::JourneyOptions &)options
+        resolve:(RCTPromiseResolveBlock)resolve
+         reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: start called with journeyId=%@, journeyName=%@",
+        journeyId, journeyName);
+
   NSMutableDictionary *opts = [NSMutableDictionary new];
   if (options.forceAuth().has_value()) {
     opts[@"forceAuth"] = @(options.forceAuth().value());
@@ -49,49 +50,77 @@ RCT_EXPORT_MODULE()
   if (options.noSession().has_value()) {
     opts[@"noSession"] = @(options.noSession().value());
   }
-  
-  [[self swiftImpl] start:journeyName options:opts resolver:resolve rejecter:reject];
+
+  [[self swiftImpl] start:journeyId
+              journeyName:journeyName
+                  options:opts
+                 resolver:resolve
+                 rejecter:reject];
 }
 
-// next(nodeId, input): Promise<Node>
-- (void)next:(NSString *)nodeId
+// ------------------------------------------
+// next(journeyId, nodeId, input)
+// ------------------------------------------
+- (void)next:(NSString *)journeyId
+      nodeId:(NSString *)nodeId
        input:(NSDictionary *)input
      resolve:(RCTPromiseResolveBlock)resolve
-      reject:(RCTPromiseRejectBlock)reject
-{
-  NSLog(@"RNPingJourney: next called with nodeId: %@", nodeId);
-  [[self swiftImpl] next:nodeId input:input resolver:resolve rejecter:reject];
+      reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: next called for journeyId=%@ nodeId=%@", journeyId,
+        nodeId);
+
+  [[self swiftImpl] next:journeyId
+                  nodeId:nodeId
+                   input:input
+                resolver:resolve
+                rejecter:reject];
 }
 
-// resume(uri): Promise<Node>
-- (void)resume:(NSString *)uri
+// ------------------------------------------
+// resume(journeyId, uri)
+// ------------------------------------------
+- (void)resume:(NSString *)journeyId
+           uri:(NSString *)uri
        resolve:(RCTPromiseResolveBlock)resolve
-        reject:(RCTPromiseRejectBlock)reject
-{
-  NSLog(@"RNPingJourney: resume called with uri: %@", uri);
-  [[self swiftImpl] resume:uri resolver:resolve rejecter:reject];
+        reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: resume called journeyId=%@ uri=%@", journeyId, uri);
+
+  [[self swiftImpl] resume:journeyId uri:uri resolver:resolve rejecter:reject];
 }
 
-// getSession(): Promise<Object | null>
-- (void)getSession:(RCTPromiseResolveBlock)resolve
-            reject:(RCTPromiseRejectBlock)reject
-{
-  NSLog(@"RNPingJourney: getSession called");
-  [[self swiftImpl] getSession:resolve rejecter:reject];
+// ------------------------------------------
+// getSession(journeyId)
+// ------------------------------------------
+- (void)getSession:(NSString *)journeyId
+           resolve:(RCTPromiseResolveBlock)resolve
+            reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: getSession called for journeyId=%@", journeyId);
+  [[self swiftImpl] getSession:journeyId resolver:resolve rejecter:reject];
 }
 
-// logout(): Promise<boolean>
-- (void)logout:(RCTPromiseResolveBlock)resolve
-        reject:(RCTPromiseRejectBlock)reject
-{
-  NSLog(@"RNPingJourney: logout called");
-  [[self swiftImpl] logout:resolve rejecter:reject];
+// ------------------------------------------
+// logout(journeyId)
+// ------------------------------------------
+- (void)logout:(NSString *)journeyId
+       resolve:(RCTPromiseResolveBlock)resolve
+        reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: logout called for journeyId=%@", journeyId);
+  [[self swiftImpl] logout:journeyId resolver:resolve rejecter:reject];
+}
+
+// ------------------------------------------
+// listRegisteredStoragesFromCore(): Promise<string[]>
+// ------------------------------------------
+- (void)listRegisteredStoragesFromCore:(RCTPromiseResolveBlock)resolve
+                                reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: listRegisteredStoragesFromCore called");
+  [[self swiftImpl] listRegisteredStoragesFromCore:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
-    return std::make_shared<facebook::react::NativeRNPingJourneySpecJSI>(params);
+  return std::make_shared<facebook::react::NativeRNPingJourneySpecJSI>(params);
 }
 
 @end

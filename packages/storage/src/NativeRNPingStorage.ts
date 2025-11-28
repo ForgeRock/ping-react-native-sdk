@@ -27,7 +27,7 @@ export interface Spec extends TurboModule {
    * @param config Storage configuration object.
    * @returns Promise<boolean> indicating success.
    */
-  configure(config: StorageConfig): Promise<string>;
+  configure(config: StorageConfig): string;
 
   /**
    * Save a JSON-serializable object.

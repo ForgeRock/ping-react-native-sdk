@@ -9,6 +9,7 @@ This repository demonstrates the **Ping Identity React Native SDK (Proof of Conc
 Install all workspace dependencies and rebuild SDK packages:
 
 ```bash
+yarn packages:install
 yarn packages:build
 ````
 

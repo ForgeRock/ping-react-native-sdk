@@ -1,14 +1,5 @@
-import { useCallback, useState } from 'react';
-import {
-  configureJourney,
-  nextNode,
-  resumeJourney,
-  getSession,
-  logout,
-  startJourney,
-} from './journeyMethods';
-import type { JourneyConfig } from './types';
-import type { StorageInstance } from '@react-native-pingidentity/storage';
+import { useCallback, useState } from "react";
+import type { JourneyClient } from "./types";
 
 /**
  * useJourney
@@ -16,10 +7,7 @@ import type { StorageInstance } from '@react-native-pingidentity/storage';
  * start, continue, resume, and manage the user session
  * for the Ping Journey SDK.
  */
-export function useJourney(
-  journeyConfig: JourneyConfig,
-  _storage: StorageInstance<any>
-) {
+export function useJourney(client: JourneyClient) {
   const [node, setNode] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -31,8 +19,7 @@ export function useJourney(
         setLoading(true);
         setError(null);
 
-        await configureJourney(journeyConfig);
-        const result = await startJourney(journeyName, {
+        const result = await client.start(journeyName, {
           forceAuth: false,
           noSession: false,
         });
@@ -40,14 +27,14 @@ export function useJourney(
         setNode(result);
         return result;
       } catch (err: any) {
-        console.error('❌ useJourney.start error:', err);
+        console.error("❌ useJourney.start error:", err);
         setError(err);
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [journeyConfig]
+    [client]
   );
 
   // Continue a Journey (submit callbacks)
@@ -56,7 +43,7 @@ export function useJourney(
       if (!node?.id) return;
       try {
         setLoading(true);
-        const nextN = await nextNode(node.id, input);
+        const nextN = await client.next(node.id, input);
         setNode(nextN);
         return nextN;
       } catch (err: any) {
@@ -66,43 +53,45 @@ export function useJourney(
         setLoading(false);
       }
     },
-    [node]
+    [node, client]
   );
 
   // Resume a suspended Journey
-  const resume = useCallback(async (uri: string) => {
-    try {
-      setLoading(true);
-      const resumedNode = await resumeJourney(uri);
-      setNode(resumedNode);
-      return resumedNode;
-    } catch (err: any) {
-      setError(err);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const resume = useCallback(
+    async (uri: string) => {
+      try {
+        setLoading(true);
+        const resumedNode = await client.resume(uri);
+        setNode(resumedNode);
+        return resumedNode;
+      } catch (err: any) {
+        setError(err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [client]
+  );
 
   // Retrieve current user/session info
   const user = useCallback(async () => {
     try {
-      const userT = await getSession();
-      return userT;
+      return await client.user();
     } catch (err: any) {
-      console.error('⚠️ useJourney.user error:', err);
+      console.error("⚠️ useJourney.user error:", err);
       return null;
     }
-  }, []);
+  }, [client]);
 
   const logoutUser = useCallback(async () => {
     try {
-      await logout();
+      await client.logoutUser();
       setNode(null);
     } catch (err) {
-      console.error('⚠️ logout failed:', err);
+      console.error("⚠️ logout failed:", err);
     }
-  }, []);
+  }, [client]);
 
   return [
     node,

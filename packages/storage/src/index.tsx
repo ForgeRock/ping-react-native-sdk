@@ -16,9 +16,9 @@ export interface StorageInstance<T> {
  * const secureStorage = storage<User>({ type: 'encrypted' });
  * await secureStorage.save({ id: 1, name: 'Gaurav' });
  */
-export async function storage<T = any>(
+export function storage<T = any>(
   config?: StorageConfig
-): Promise<StorageInstance<T>> {
+): StorageInstance<T> {
   if (!config || !config.type) {
     throw new Error(
       '[@react-native-pingidentity/storage] Missing configuration: ' +
@@ -26,14 +26,12 @@ export async function storage<T = any>(
     );
   }
 
-  const id = await NativeRNPingStorage.configure(config);
+  const id = NativeRNPingStorage.configure(config);
   if (!id) {
     throw new Error(
       '[@react-native-pingidentity/storage] Failed to configure native storage'
     );
   }
-
-  console.log('Storage configured : ', id);
 
   return {
     id,

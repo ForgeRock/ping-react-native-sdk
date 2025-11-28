@@ -40,3 +40,27 @@ export type JourneyOptions = {
   forceAuth?: boolean;
   noSession?: boolean;
 };
+
+export type JourneyClient = {
+  /** Explicit initialization helper for app startup */
+  init: () => Promise<any>;
+  
+  /** Returns the native journeyId */
+  getId: () => Promise<string>;
+
+  /** Start a journey */
+  start: (journeyName: string, options?: any) => Promise<Node>;
+
+  /** Continue an active flow */
+  next: (nodeId: string, input: Record<string, any>) => Promise<Node>;
+
+  /** Resume a suspended flow */
+  resume: (uri: string) => Promise<Node>;
+
+  /** Retrieve session */
+  user: () => Promise<JourneyUserSession | null>;
+
+  /** Logout */
+  logoutUser: () => Promise<boolean>;
+};
+

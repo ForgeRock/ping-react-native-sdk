@@ -2,21 +2,25 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
-import {multiply} from '@react-native-pingidentity/journey-poc'
-
-type RootStackParamList = {
-  Home: undefined;
-  DogStorage: undefined;
-  Journey: undefined;
-};
+import { RootStackParamList } from '../App';
+import { loginClient, loginClient2 } from '../src/clients';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type Props = { navigation: HomeScreenNavProp };
 
 export default function HomeScreen({ navigation }: Props) {
   const menuItems = [
-    { title: '🐶 Go to Dog Storage', screen: 'DogStorage' },
-    { title: '🌐 Launch Journey', screen: 'Journey' },
+    { title: '📦 Launch Storage', screen: 'Storage' },
+    {
+      title: '🌐 Launch Journey',
+      screen: 'Journey',
+      params: { journeyClient: loginClient },
+    },
+    {
+      title: '🌐 Launch Journey 2',
+      screen: 'Journey',
+      params: { journeyClient: loginClient2 },
+    },
   ];
 
   return (
@@ -25,13 +29,12 @@ export default function HomeScreen({ navigation }: Props) {
         source={require('../assets/ping-logo.jpg')}
         style={commonStyles.homeLogo}
       />
-      <Text>Result from Journey POC TM multiple() - {multiply(2,3)}</Text>
 
       {menuItems.map((item, index) => (
         <TouchableOpacity
           key={index}
           style={commonStyles.homeRow}
-          onPress={() => navigation.navigate(item.screen as any)}
+          onPress={() => navigation.navigate(item.screen as any, item.params)}
         >
           <Text style={commonStyles.homeRowText}>{item.title}</Text>
         </TouchableOpacity>

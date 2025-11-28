@@ -24,6 +24,7 @@ Pod::Spec.new do |s|
 
   # Native Ping SDK (POC)
   s.dependency "PingJourney"
+  s.dependency "RNPingCore"
 
   # New Architecture helper
   install_modules_dependencies(s)
