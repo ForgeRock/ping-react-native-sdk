@@ -18,6 +18,12 @@ Pod::Spec.new do |s|
   # IMPORTANT: local monorepo source path (not git)
   s.source       = { :path => "." }
 
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+  else
+    s.source_files = "ios/RNPingStorageClassic.mm"
+  end
+
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.private_header_files = "ios/**/*.h"
   s.swift_version = "5.0"
@@ -27,6 +33,16 @@ Pod::Spec.new do |s|
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
 
-  # RN New Architecture helper
-  install_modules_dependencies(s)
+
+  # Compiler flag toggle
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
+  else
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
+  end
+
+  # Gating of codegen
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    install_modules_dependencies(s)
+  end
 end

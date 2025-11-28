@@ -1,4 +1,4 @@
-import NativeRNPingStorage, { type StorageConfig } from './NativeRNPingStorage';
+import { getNativeModule, type StorageConfig } from "./NativeRNPingStorage";
 
 /**
  * Strongly-typed interface returned from `storage<T>()`.
@@ -16,20 +16,20 @@ export interface StorageInstance<T> {
  * const secureStorage = storage<User>({ type: 'encrypted' });
  * await secureStorage.save({ id: 1, name: 'Gaurav' });
  */
-export function storage<T = any>(
-  config?: StorageConfig
-): StorageInstance<T> {
+export function storage<T = any>(config?: StorageConfig): StorageInstance<T> {
   if (!config || !config.type) {
     throw new Error(
-      '[@react-native-pingidentity/storage] Missing configuration: ' +
+      "[@react-native-pingidentity/storage] Missing configuration: " +
         'You must provide a valid storage config, e.g. { type: "encrypted" }.'
     );
   }
 
+  const NativeRNPingStorage = getNativeModule();
+
   const id = NativeRNPingStorage.configure(config);
   if (!id) {
     throw new Error(
-      '[@react-native-pingidentity/storage] Failed to configure native storage'
+      "[@react-native-pingidentity/storage] Failed to configure native storage"
     );
   }
 
