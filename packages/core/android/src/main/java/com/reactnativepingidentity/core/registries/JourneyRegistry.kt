@@ -4,6 +4,7 @@ import com.pingidentity.journey.*
 import java.util.UUID
 
 object JourneyRegistry {
+    // TODO Guard with Mutex
     private val instances = mutableMapOf<String, Journey>()
 
     fun create(config: Journey): String {

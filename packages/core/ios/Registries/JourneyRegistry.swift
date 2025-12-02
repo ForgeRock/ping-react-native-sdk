@@ -3,7 +3,7 @@ import Foundation
 import PingJourney
 
 @available(iOS 16.0, *)
-public final class JourneyRegistry {
+public final class JourneyRegistry { // TODO Make Actor
 
     public static let shared = JourneyRegistry()
 

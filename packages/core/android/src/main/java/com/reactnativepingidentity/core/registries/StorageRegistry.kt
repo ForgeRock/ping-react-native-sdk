@@ -9,10 +9,22 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 
 object StorageRegistry {
 
+  private val mutex = Mutex()
   private val instances = mutableMapOf<String, Storage<String>>()
+
+  suspend fun getOrCreate(id: String, factory: () -> Storage<String>): Storage<String> =
+        mutex.withLock {
+            instances[id] ?: factory().also { instances[id] = it }
+        }
+
+  suspend fun get(id: String): Storage<String>? =
+        mutex.withLock { instances[id] }
 
   fun configure(config: Map<String, Any?>, context: Context): String {
     Log.d("StorageRegistry", "Configuring storage with: $config")
@@ -67,7 +79,7 @@ object StorageRegistry {
     return id
   }
 
-  fun get(id: String): Storage<String>? = instances[id]
+//  fun get(id: String): Storage<String>? = instances[id]
 
   private fun createStringDataStore(context: Context, fileName: String): DataStore<String?> {
     return DataStoreFactory.create(

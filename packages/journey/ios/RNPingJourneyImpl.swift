@@ -49,7 +49,6 @@ public class RNPingJourneyImpl: NSObject {
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     print("RNPingJourney: configureJourney called with \(config)")
-    StorageRegistry.shared.printAllRegisteredIds()
     guard let serverUrl = config["serverUrl"] as? String else {
       let error = NSError(
         domain: "RNPingJourney",
@@ -237,11 +236,13 @@ public class RNPingJourneyImpl: NSObject {
   // MARK: - List Registered Storages
   @objc
   public func listRegisteredStoragesFromCore(
-    _ resolve: RCTPromiseResolveBlock,
-    rejecter reject: RCTPromiseRejectBlock
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    let ids = StorageRegistry.shared.listIds()
-    print("Reporting StorageRegistry IDs: \(ids)")
-    resolve(ids)
+    Task {
+      let ids = await StorageRegistry.shared.listIds()
+      print("Reporting StorageRegistry IDs: \(ids)")
+      resolve(ids)
+    }
   }
 }
