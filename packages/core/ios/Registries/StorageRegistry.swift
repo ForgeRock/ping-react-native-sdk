@@ -3,10 +3,12 @@ import Foundation
 
 // Registry for multiple storage instances
 @available(iOS 16.0.0, *) // Keeping it 16 only for the POC
-public class StorageRegistry {
+public actor StorageRegistry {
   public static let shared = StorageRegistry()
+
   private var instances: [String: any Storage<String>] = [:]
 
+  // MARK: - Create
   public func create(config: NSDictionary) -> String {
     let id = UUID().uuidString
 
@@ -38,22 +40,24 @@ public class StorageRegistry {
     return id
   }
 
+  // MARK: - Get
   public func get(_ id: String) -> (any Storage<String>)? {
     return instances[id]
   }
 
+  // MARK: - Debug Print
   public func printAllRegisteredIds() {
-    let keys = instances.keys
     print("📦 [StorageRegistry] Registered Storage Instances:")
-    if keys.isEmpty {
-        print("   — none —")
+    if instances.isEmpty {
+      print("   — none —")
     } else {
-        for key in keys {
-            print("   • \(key)")
-        }
+      for key in instances.keys {
+        print("   • \(key)")
+      }
     }
   }
 
+  // MARK: - List IDs
   public func listIds() -> [String] {
     return Array(instances.keys)
   }

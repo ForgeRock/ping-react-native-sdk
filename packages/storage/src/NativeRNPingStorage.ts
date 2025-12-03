@@ -1,5 +1,5 @@
 import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import { NativeModules, TurboModuleRegistry } from 'react-native';
 
 export type StorageConfig = {
   /**
@@ -20,6 +20,11 @@ export type StorageConfig = {
    */
   cacheStrategy?: 'no_cache' | 'cache' | 'cache_on_failure';
 };
+
+// Detect New Architecture (Turbo)
+const isNewArchEnabled =
+  typeof global.__turboModuleProxy !== 'undefined' &&
+  global.__turboModuleProxy != null;
 
 export interface Spec extends TurboModule {
   /**
@@ -49,4 +54,23 @@ export interface Spec extends TurboModule {
   remove(id: string): Promise<boolean>;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');
+export function getNativeModule(): Spec {
+  if (isNewArchEnabled) {
+    return TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');
+  }
+
+  const classic = NativeModules.RNPingStorage;
+  if (!classic) {
+    const available = Object.keys(NativeModules)
+      .slice(0, 10); // avoid huge logs
+
+    throw new Error(
+      '[@react-native-pingidentity/storage] Classic RNPingStorage native module not found.\n' +
+      'Available NativeModules: ' + JSON.stringify(available)
+    );
+  }
+
+  return classic as Spec;
+}
+
+export default getNativeModule();
