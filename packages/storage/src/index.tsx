@@ -12,7 +12,7 @@ import type {
 export interface StorageInstance<T> {
   id: string;
   save(value: T): Promise<boolean>;
-  get(): Promise<T | null>;
+  getItem(): Promise<T | null>;
   remove(): Promise<boolean>;
 }
 
@@ -51,7 +51,7 @@ export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T>
     /**
      * Retrieve stored value
      */
-    async get(): Promise<T | null> {
+    async getItem(): Promise<T | null> {
       const result = await NativeRNPingStorage.get(id);
       return result ? (result as T) : null;
     },
