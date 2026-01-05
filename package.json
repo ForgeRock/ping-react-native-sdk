@@ -8,6 +8,7 @@
     "packages:install": "yarn install",
     "packages:build": "yarn workspaces foreach -A -t --topological-dev run build",
     "packages:info": "yarn workspaces info",
+    "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
