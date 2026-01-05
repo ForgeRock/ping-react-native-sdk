@@ -1,25 +1,6 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
-
-export type StorageConfig = {
-  /**
-   * Storage type: "memory", "encrypted", or "datastore"
-   */
-  type?: string;
-
-  /**
-   * Optional encryption alias for keychain or secure store.
-   */
-  keyAlias?: string;
-
-  /**
-   * Cache strategy behavior.
-   * - "no_cache" (default)
-   * - "cache"
-   * - "cache_on_failure"
-   */
-  cacheStrategy?: 'no_cache' | 'cache' | 'cache_on_failure';
-};
+import type { BaseStorageConfig } from './types';
 
 // Detect New Architecture (Turbo)
 const isNewArchEnabled =
@@ -32,7 +13,7 @@ export interface Spec extends TurboModule {
    * @param config Storage configuration object.
    * @returns Promise<boolean> indicating success.
    */
-  configure(config: StorageConfig): string;
+  configure(config: BaseStorageConfig): string;
 
   /**
    * Save a JSON-serializable object.
@@ -45,7 +26,7 @@ export interface Spec extends TurboModule {
    * Get the stored object (or null if not found).
    * @returns Promise<object | null>
    */
-  get(id: string): Promise<Object | null>;
+  getItem(id: string): Promise<Object | null>;
 
   /**
    * Remove the stored object.
