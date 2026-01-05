@@ -240,9 +240,8 @@ public class RNPingJourneyImpl: NSObject {
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     Task {
-      let ids = await StorageRegistry.shared.listIds()
-      print("Reporting StorageRegistry IDs: \(ids)")
-      resolve(ids)
+      //let ids = await StorageRegistry.shared.listIds()
+      resolve([""])
     }
   }
 }

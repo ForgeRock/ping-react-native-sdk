@@ -2235,12 +2235,6 @@ __metadata:
 "@react-native-pingidentity/core@npm:*, @react-native-pingidentity/core@workspace:*, @react-native-pingidentity/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/core@workspace:packages/core"
-  dependencies:
-    react-native-builder-bob: "npm:^0.40.15"
-    typescript: "npm:^5.9.2"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
   languageName: unknown
   linkType: soft
 

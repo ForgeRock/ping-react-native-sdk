@@ -1,56 +1,15 @@
 {
   "name": "@react-native-pingidentity/core",
   "version": "0.1.0",
-  "description": "Ping Identity Core Module for React Native",
-  "main": "lib/module/index.js",
-  "types": "lib/typescript/src/index.d.ts",
-  "files": [
-    "src",
-    "lib",
-    "android",
-    "ios",
-    "*.podspec",
-    "*.swift",
-    "*.kt"
-  ],
-  "scripts": {
-    "build": "bob build",
-    "clean": "rimraf lib"
-  },
-  "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
-  },
-  "devDependencies": {
-    "react-native-builder-bob": "^0.40.15",
-    "typescript": "^5.9.2"
-  },
+  "private": true,
+  "description": "Core utilities for Ping Identity React Native modules.",
+  "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
-  "codegenConfig": {
-    "name": "RNPingCoreSpec",
-    "type": "modules",
-    "jsSrcsDir": "src",
-    "android": {
-      "javaPackageName": "com.reactnativepingidentity.core"
-    }
-  },
-  "react-native": "android",
-  "react-native-builder-bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      [
-        "module",
-        {
-          "esm": true
-        }
-      ],
-      [
-        "typescript",
-        {
-          "project": "tsconfig.build.json"
-        }
-      ]
-    ]
-  }
+  "author": "Ping Identity",
+  "files": [
+    "ios",
+    "android",
+    "RNPingCore.podspec",
+    "index.js"
+  ]
 }

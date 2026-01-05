@@ -6,20 +6,24 @@ import RNPingCore
 @objcMembers
 public class RNPingStorageCommon: NSObject {
 
+  // MARK: - Native Handle (POC)
+  // Wrapping Storage<String> so it can live in Core's NativeHandle registry.
+  final class StorageHandle: NativeHandle {
+    let storage: any Storage<String>
+    init(_ storage: any Storage<String>) { self.storage = storage }
+  }
+
   // MARK: - Create
   @objc
   public static func create(_ config: NSDictionary) -> String {
     print("RNPingStorage: create called with config: \(config)")
 
     var id = ""
-    // ⚠️ Temporary for POC:
-    // StorageRegistry is an actor, so `create` is async.
-    // React Native's TurboModule binding for this method is synchronous,
-    // so we use a semaphore *only for the POC* to bridge async → sync.
+    // POC bridge: async -> sync via semaphore
     let semaphore = DispatchSemaphore(value: 0)
 
     Task {
-      id = await StorageRegistry.shared.create(config: config)
+      id = await createAndRegister(config: config)
       semaphore.signal()
     }
 
@@ -46,8 +50,7 @@ public class RNPingStorageCommon: NSObject {
     print("RNPingStorage: save called with item: \(item)")
 
     Task {
-      // Actor call: await get(id)
-      guard let storage = await StorageRegistry.shared.get(id) else {
+      guard let storage = await resolveStorage(id: id) else {
         rejecter("E_SAVE_FAILED", "Invalid storage id", nil)
         return
       }
@@ -77,7 +80,7 @@ public class RNPingStorageCommon: NSObject {
     print("RNPingStorage: get called")
 
     Task {
-      guard let storage = await StorageRegistry.shared.get(id) else {
+      guard let storage = await resolveStorage(id: id) else {
         rejecter("E_GET_FAILED", "Invalid storage id", nil)
         return
       }
@@ -114,27 +117,69 @@ public class RNPingStorageCommon: NSObject {
     print("RNPingStorage: remove called")
 
     Task {
-      guard let raw = await StorageRegistry.shared.get(id) else {
+      guard let storage = await resolveStorage(id: id) else {
         rejecter("E_REMOVE_FAILED", "Invalid storage id", nil)
         return
       }
 
       do {
-        guard let storage = raw as? any Storage<String> else {
-          throw NSError(
-            domain: "TYPE_ERROR",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "Instance is not Storage<String>"])
-        }
-
         try await storage.delete()
+        await CoreRuntime.storageRegistry.remove(id)  // drop handle after delete
         print("✅ RNPingStorage: Remove successful")
         resolver(true)
-
       } catch {
         print("❌ RNPingStorage: Error removing item: \(error)")
         rejecter("E_REMOVE_FAILED", "Failed to remove item", error as NSError)
       }
     }
+  }
+}
+
+// MARK: - Internal helpers (kept inside this file for POC)
+
+@available(iOS 16.0.0, *)
+private extension RNPingStorageCommon {
+
+  /// Old StorageRegistry.create(config:) logic, but registers into CoreRuntime.
+  static func createAndRegister(config: NSDictionary) async -> String {
+    let type = config["type"] as? String ?? "encrypted"
+    let keyAlias = config["keyAlias"] as? String ?? "com.pingidentity.rnsampleapp.keyalias"
+    let cacheStrategyRaw = (config["cacheStrategy"] as? String)?.uppercased()
+
+    let base: any Storage<String>
+    switch type.lowercased() {
+    case "memory":
+      base = MemoryStorage<String>()
+
+    case "encrypted", "datastore":
+      base = KeychainStorage<String>(
+        account: keyAlias,
+        encryptor: NoEncryptor()
+      )
+
+    default:
+      base = MemoryStorage<String>()
+    }
+
+    let finalInstance: any Storage<String>
+    if cacheStrategyRaw == "CACHE" {
+      finalInstance = StorageDelegate(delegate: base, cacheable: true)
+    } else {
+      finalInstance = base
+    }
+
+    // ✅ Core owns ids + lifecycle
+    let id = await CoreRuntime.storageRegistry.register(StorageHandle(finalInstance))
+    return id
+  }
+
+  /// Resolves the Storage<String> instance from CoreRuntime for a given id.
+  static func resolveStorage(id: String) async -> (any Storage<String>)? {
+    guard let raw = await CoreRuntime.storageRegistry.resolve(id),
+      let handle = raw as? StorageHandle
+    else {
+      return nil
+    }
+    return handle.storage
   }
 }
