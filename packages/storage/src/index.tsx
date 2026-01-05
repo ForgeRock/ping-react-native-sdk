@@ -1,4 +1,10 @@
-import { getNativeModule, type StorageConfig } from "./NativeRNPingStorage";
+import { getNativeModule } from "./NativeRNPingStorage";
+import type { 
+  BaseStorageConfig, 
+  SessionStorageConfig,
+  OidcStorageConfig,
+  SessionStorage, 
+  OidcStorage } from "./types";
 
 /**
  * Strongly-typed interface returned from `storage<T>()`.
@@ -16,7 +22,7 @@ export interface StorageInstance<T> {
  * const secureStorage = storage<User>({ type: 'encrypted' });
  * await secureStorage.save({ id: 1, name: 'Gaurav' });
  */
-export function storage<T = any>(config?: StorageConfig): StorageInstance<T> {
+export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T> {
   if (!config || !config.type) {
     throw new Error(
       "[@react-native-pingidentity/storage] Missing configuration: " +
@@ -57,4 +63,20 @@ export function storage<T = any>(config?: StorageConfig): StorageInstance<T> {
       return await NativeRNPingStorage.remove(id);
     },
   };
+}
+
+/**
+ * Factory function to create a storage instance specialized for SessionStorage.
+ * @param config Optional storage configuration.
+ */
+export function createSessionStorage(config?: SessionStorageConfig): StorageInstance<SessionStorage> {
+  return storage<SessionStorage>(config);
+}
+
+/**
+ * Factory function to create a storage instance specialized for OidcStorage.
+ * @param config Optional storage configuration.
+ */
+export function createOidcStorage(config?: OidcStorageConfig): StorageInstance<OidcStorage> {
+  return storage<OidcStorage>(config);
 }
