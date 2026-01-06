@@ -30,6 +30,25 @@ export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T>
     );
   }
 
+  // Runtime checks
+  const validTypes = ['memory', 'encrypted', 'datastore'];
+  if (!validTypes.includes(config.type)) {
+    throw new Error(
+      `[@react-native-pingidentity/storage] Invalid storage type: "${config.type}". ` +
+      `Must be one of: ${validTypes.join(', ')}`
+    );
+  }
+
+  if (config.cacheStrategy) {
+    const validStrategies = ['NO_CACHE', 'CACHE_ON_FAILURE', 'CACHE'];
+    if (!validStrategies.includes(config.cacheStrategy)) {
+      throw new Error(
+        `[@react-native-pingidentity/storage] Invalid cache strategy: "${config.cacheStrategy}". ` +
+        `Must be one of: ${validStrategies.join(', ')}`
+      );
+    }
+  }
+
   const NativeRNPingStorage = getNativeModule();
 
   const id = NativeRNPingStorage.configure(config);
