@@ -29,10 +29,10 @@ export interface Spec extends TurboModule {
   getItem(id: string): Promise<Object | null>;
 
   /**
-   * Remove the stored object.
+   * Delete the stored object.
    * @returns Promise<boolean> indicating success.
    */
-  remove(id: string): Promise<boolean>;
+  delete(id: string): Promise<boolean>;
 }
 
 export function getNativeModule(): Spec {
