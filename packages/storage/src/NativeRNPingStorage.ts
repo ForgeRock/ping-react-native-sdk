@@ -1,6 +1,7 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
-import type { BaseStorageConfig } from './types';
+
+
 
 // Detect New Architecture (Turbo)
 const isNewArchEnabled =
@@ -13,7 +14,7 @@ export interface Spec extends TurboModule {
    * @param config Storage configuration object.
    * @returns Promise<boolean> indicating success.
    */
-  configure(config: BaseStorageConfig): string;
+  configure(config: Object): string;
 
   /**
    * Save a JSON-serializable object.
@@ -29,7 +30,7 @@ export interface Spec extends TurboModule {
   getItem(id: string): Promise<Object | null>;
 
   /**
-   * Delete the stored object.
+   * Remove the stored object.
    * @returns Promise<boolean> indicating success.
    */
   delete(id: string): Promise<boolean>;
