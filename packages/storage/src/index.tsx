@@ -13,7 +13,7 @@ export interface StorageInstance<T> {
   id: string;
   save(value: T): Promise<boolean>;
   getItem(): Promise<T | null>;
-  remove(): Promise<boolean>;
+  delete(): Promise<boolean>;
 }
 
 /**
@@ -52,15 +52,15 @@ export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T>
      * Retrieve stored value
      */
     async getItem(): Promise<T | null> {
-      const result = await NativeRNPingStorage.get(id);
+      const result = await NativeRNPingStorage.getItem(id);
       return result ? (result as T) : null;
     },
 
     /**
      * Remove stored value
      */
-    async remove(): Promise<boolean> {
-      return await NativeRNPingStorage.remove(id);
+    async delete(): Promise<boolean> {
+      return await NativeRNPingStorage.delete(id);
     },
   };
 }
