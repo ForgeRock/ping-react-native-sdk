@@ -40,9 +40,9 @@ RCT_EXPORT_METHOD(save : (NSString *)storageId item : (NSDictionary *)
 
 #pragma mark - Get
 
-RCT_EXPORT_METHOD(get : (NSString *)storageId resolver : (
+RCT_EXPORT_METHOD(getItem : (NSString *)storageId resolver : (
     RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon get:storageId
+  [RNPingStorageCommon getItem:storageId
       resolver:^(NSDictionary *result) {
         resolve(result);
       }
@@ -51,11 +51,11 @@ RCT_EXPORT_METHOD(get : (NSString *)storageId resolver : (
       }];
 }
 
-#pragma mark - Remove
+#pragma mark - Delete
 
-RCT_EXPORT_METHOD(remove : (NSString *)storageId resolver : (
+RCT_EXPORT_METHOD(delete : (NSString *)storageId resolver : (
     RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon remove:storageId
+  [RNPingStorageCommon delete:storageId
       resolver:^(BOOL ok) {
         resolve(@(ok));
       }

@@ -67,7 +67,7 @@ object RNPingStorageCommon {
   // GET
   // -------------------------------------------------------
   @JvmStatic
-  fun get(id: String, promise: Promise) {
+  fun getItem(id: String, promise: Promise) {
     scope.launch {
       try {
         val storage = resolveStorage(id)
@@ -102,7 +102,7 @@ object RNPingStorageCommon {
   // REMOVE
   // -------------------------------------------------------
   @JvmStatic
-  fun remove(id: String, promise: Promise) {
+  fun delete(id: String, promise: Promise) {
     scope.launch {
       try {
         val storage = resolveStorage(id)

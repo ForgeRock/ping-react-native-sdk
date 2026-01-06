@@ -54,16 +54,16 @@ RCT_EXPORT_MODULE()
 }
 
 // get(): Promise<Object | null>
-- (void)get:(NSString *)id
+- (void)getItem:(NSString *)id
      resolve:(RCTPromiseResolveBlock)resolve
       reject:(RCTPromiseRejectBlock)reject
 {
   NSLog(@"RNPingStorage: get called");
-  [[self swiftImpl] get:id resolver:resolve rejecter:reject];
+  [[self swiftImpl] getItem:id resolver:resolve rejecter:reject];
 }
 
-// remove(): Promise<boolean>
-- (void)remove:(NSString *)id
+// delete(): Promise<boolean>
+- (void)delete:(NSString *)id
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject
 {
