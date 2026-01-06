@@ -17,7 +17,7 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@react-native-pingidentity/core": "*"
+    "@react-native-pingidentity/core": "^0.1.0"
   },
   "peerDependencies": {
     "@react-native-pingidentity/storage": "*",
@@ -25,7 +25,7 @@
     "react-native": "*"
   },
   "devDependencies": {
-    "@react-native-pingidentity/storage": "*",
+    "@react-native-pingidentity/storage": "^0.1.0",
     "react-native-builder-bob": "^0.40.14",
     "typescript": "^5.9.2"
   },

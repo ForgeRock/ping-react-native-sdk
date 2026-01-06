@@ -5,4 +5,5 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export {};
+// Native-only package. Intentionally no JS exports.
+module.exports = {};
