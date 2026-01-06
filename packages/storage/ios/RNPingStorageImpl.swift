@@ -18,7 +18,7 @@ public class RNPingStorageImpl: NSObject {
   public func configure(_ config: NSDictionary) -> String {
     print("RNPingStorage: configure called with config: \(config)")
     let id = RNPingStorageCommon.configure(config)
-    print("✅ RNPingStorage: created storage instance \(id)")
+    print("RNPingStorage: created storage instance \(id)")
     return id
   }
 
@@ -36,19 +36,19 @@ public class RNPingStorageImpl: NSObject {
       id,
       item: item,
       resolver: { success in
-        print("✅ RNPingStorage: Save successful")
+        print("RNPingStorage: Save successful")
         resolve(success)
       },
       rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error saving item: \(error.debugDescription)")
+        print("RNPingStorage: Error saving item: \(error.debugDescription)")
         reject(code, message, error)
       }
     )
   }
 
   // MARK: - Get
-  @objc(get:resolver:rejecter:)
-  public func get(
+  @objc(getItem:resolver:rejecter:)
+  public func getItem(
     _ id: String,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
@@ -67,29 +67,29 @@ public class RNPingStorageImpl: NSObject {
         }
       },
       rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error getting item: \(error.debugDescription)")
+        print("RNPingStorage: Error getting item: \(error.debugDescription)")
         reject(code, message, error)
       }
     )
   }
 
   // MARK: - Remove
-  @objc(remove:resolver:rejecter:)
-  public func remove(
+  @objc(delete:resolver:rejecter:)
+  public func delete(
     _ id: String,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    print("RNPingStorage: remove called")
+    print("RNPingStorage: delete called")
 
-    RNPingStorageCommon.remove(
+    RNPingStorageCommon.delete(
       id,
       resolver: { success in
-        print("✅ RNPingStorage: Remove successful")
+        print("RNPingStorage: Delete successful")
         resolve(success)
       },
       rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error removing item: \(error.debugDescription)")
+        print("RNPingStorage: Error deleting item: \(error.debugDescription)")
         reject(code, message, error)
       }
     )

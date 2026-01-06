@@ -28,7 +28,7 @@ public class RNPingStorageCommon: NSObject {
     }
 
     semaphore.wait()
-    print("✅ RNPingStorage: registered storage instance \(id)")
+    print("RNPingStorage: registered storage instance \(id)")
     return id
   }
 
@@ -61,10 +61,10 @@ public class RNPingStorageCommon: NSObject {
         print("RNPingStorage: Saving jsonString: \(jsonString)")
 
         try await storage.save(item: jsonString)
-        print("✅ RNPingStorage: Save successful")
+        print("RNPingStorage: Save successful")
         resolver(true)
       } catch {
-        print("❌ RNPingStorage: Error saving item: \(error)")
+        print("RNPingStorage: Error saving item: \(error)")
         rejecter("E_SAVE_FAILED", "Failed to save item", error as NSError)
       }
     }
@@ -72,7 +72,7 @@ public class RNPingStorageCommon: NSObject {
 
   // MARK: - Get
   @objc
-  public static func get(
+  public static func getItem(
     _ id: String,
     resolver: @escaping (NSDictionary?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
@@ -101,35 +101,35 @@ public class RNPingStorageCommon: NSObject {
           resolver(nil)
         }
       } catch {
-        print("❌ RNPingStorage: Error getting item: \(error)")
+        print("RNPingStorage: Error getting item: \(error)")
         rejecter("E_GET_FAILED", "Failed to get item", error as NSError)
       }
     }
   }
 
-  // MARK: - Remove
+  // MARK: - Delete
   @objc
-  public static func remove(
+  public static func delete(
     _ id: String,
     resolver: @escaping (Bool) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    print("RNPingStorage: remove called")
+    print("RNPingStorage: delete called")
 
     Task {
       guard let storage = await resolveStorage(id: id) else {
-        rejecter("E_REMOVE_FAILED", "Invalid storage id", nil)
+        rejecter("E_DELETE_FAILED", "Invalid storage id", nil)
         return
       }
 
       do {
         try await storage.delete()
         await CoreRuntime.storageRegistry.remove(id)  // drop handle after delete
-        print("✅ RNPingStorage: Remove successful")
+        print("RNPingStorage: Delete successful")
         resolver(true)
       } catch {
-        print("❌ RNPingStorage: Error removing item: \(error)")
-        rejecter("E_REMOVE_FAILED", "Failed to remove item", error as NSError)
+        print("RNPingStorage: Error deleting item: \(error)")
+        rejecter("E_DELETE_FAILED", "Failed to delete item", error as NSError)
       }
     }
   }

@@ -35,7 +35,7 @@ class RNPingStorageClassicModule(
     // GET (ASYNC)
     // --------------------------------------------------
     @ReactMethod
-    fun get(id: String, promise: Promise) {
+    fun getItem(id: String, promise: Promise) {
         RNPingStorageCommon.get(id, promise)
     }
 
@@ -43,7 +43,7 @@ class RNPingStorageClassicModule(
     // REMOVE (ASYNC)
     // --------------------------------------------------
     @ReactMethod
-    fun remove(id: String, promise: Promise) {
+    fun delete(id: String, promise: Promise) {
         RNPingStorageCommon.remove(id, promise)
     }
 }
