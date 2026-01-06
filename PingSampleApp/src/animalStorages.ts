@@ -11,7 +11,7 @@ export function configureDogStorage() {
     dogStorage = storage<Dog>({
       type: "memory",
       keyAlias: "dogKeyAlias",
-      cacheStrategy: "no_cache",
+      cacheStrategy: "NO_CACHE",
     });
     console.log("🐶 Created Dog Storage:", dogStorage.id);
   }
@@ -23,7 +23,7 @@ export function configureCatStorage() {
     catStorage = storage<Cat>({
       type: "memory",
       keyAlias: "catKeyAlias",
-      cacheStrategy: "no_cache",
+      cacheStrategy: "NO_CACHE",
     });
     console.log("🐱 Created Cat Storage:", catStorage.id);
   }

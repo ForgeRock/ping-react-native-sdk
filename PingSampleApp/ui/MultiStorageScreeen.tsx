@@ -84,10 +84,20 @@ export default function MultiStorageScreen() {
             <TouchableOpacity
               style={commonStyles.buttonSecondary}
               onPress={async () => {
-                setDog(await dogStorage.get());
+                setDog(await dogStorage.getItem());
               }}
             >
               <Text style={commonStyles.buttonTextSecondary}>Get Dog</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={commonStyles.buttonSecondary}
+              onPress={async () => {
+                await dogStorage.delete();
+                setDog(null);
+              }}
+            >
+              <Text style={commonStyles.buttonTextSecondary}>Delete Dog</Text>
             </TouchableOpacity>
 
             <Text style={commonStyles.textSuccess}>
@@ -147,7 +157,7 @@ export default function MultiStorageScreen() {
             <TouchableOpacity
               style={commonStyles.buttonSecondary}
               onPress={async () => {
-                setCat(await catStorage.get());
+                setCat(await catStorage.getItem());
               }}
             >
               <Text style={commonStyles.buttonTextSecondary}>Get Cat</Text>
