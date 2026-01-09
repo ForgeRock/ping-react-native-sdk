@@ -25,17 +25,19 @@ object RNPingStorageCommon {
   // -------------------------------------------------------
   @JvmStatic
   fun configure(config: ReadableMap, context: ReactApplicationContext): String {
-    val map = config.toHashMap()
-    Log.d(TAG, "configure called with $map")
+    return try {
+      val map = config.toHashMap()
 
-    // POC sync bridge: registry/register is suspend, but TM binding is sync
-    val id = runBlocking {
-      val storage = buildStorage(map, context)
-      CoreRuntime.storageRegistry.register(StorageHandle(storage))
+      // Use background dispatcher to avoid blocking main thread
+      val id = runBlocking(Dispatchers.IO) {
+        val storage = buildStorage(map, context)
+        CoreRuntime.storageRegistry.register(StorageHandle(storage))
+      }
+      id
+    } catch (e: Exception) {
+      Log.e(TAG, "Error configuring storage", e)
+      throw e
     }
-
-    Log.d(TAG, "created storage instance $id")
-    return id
   }
 
   // -------------------------------------------------------
@@ -52,7 +54,6 @@ object RNPingStorageCommon {
         }
 
         val json = JSONObject(item.toHashMap()).toString()
-        Log.d(TAG, "Saving item for id=$id: $json")
 
         storage.save(json)
         promise.resolve(true)
@@ -102,7 +103,7 @@ object RNPingStorageCommon {
   // REMOVE
   // -------------------------------------------------------
   @JvmStatic
-  fun delete(id: String, promise: Promise) {
+  fun deleteItem(id: String, promise: Promise) {
     scope.launch {
       try {
         val storage = resolveStorage(id)
@@ -134,9 +135,9 @@ object RNPingStorageCommon {
   }
 
   private fun buildStorage(config: Map<String, Any?>, context: Context): Storage<String> {
-    Log.d(TAG, "Configuring storage with: $config")
 
-    val type = config["type"] as? String ?: "encrypted"
+    val type = config["type"] as? String
+      ?: throw IllegalArgumentException("Missing required 'type' parameter in storage configuration")
     val fileName = config["fileName"] as? String ?: "secure_prefs"
 
     val cacheStrategy = when ((config["cacheStrategy"] as? String)?.uppercase()) {
@@ -147,12 +148,10 @@ object RNPingStorageCommon {
 
     return when (type.lowercase()) {
       "memory" -> {
-        Log.d(TAG, "Using MemoryStorage")
         MemoryStorage()
       }
 
       "datastore" -> {
-        Log.d(TAG, "Using DataStoreStorage fileName=$fileName")
         val dataStore = createStringDataStore(context, fileName)
         DataStoreStorage(
           dataStore = dataStore,
@@ -160,14 +159,9 @@ object RNPingStorageCommon {
         )
       }
 
-      else -> {
+      "encrypted" -> {
         val keyAlias = (config["keyAlias"] as? String) ?: "defaultKey"
         val strongBox = config["strongBoxPreferred"] as? Boolean ?: false
-
-        Log.d(
-          TAG,
-          "Using EncryptedDataStoreStorage fileName=$fileName keyAlias=$keyAlias strongBox=$strongBox"
-        )
 
         EncryptedDataStoreStorage<String> {
           this.fileName = fileName
@@ -176,14 +170,19 @@ object RNPingStorageCommon {
           this.strongBoxPreferred = strongBox
         }
       }
+
+      else -> {
+        throw IllegalArgumentException("Invalid storage type '$type'. Must be 'memory', 'encrypted', or 'datastore'")
+      }
     }
   }
 
   // Same helper from old StorageRegistry (kept as-is for POC parity)
+  // Reuses the shared scope to avoid leaking coroutine scopes/threads on repeated configure calls
   private fun createStringDataStore(context: Context, fileName: String): DataStore<String?> {
     return DataStoreFactory.create(
       serializer = DataToJsonSerializer(),
-      scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+      scope = scope
     ) {
       File(context.filesDir, "datastore/$fileName")
     }
