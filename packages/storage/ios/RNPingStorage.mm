@@ -24,10 +24,8 @@ RCT_EXPORT_MODULE()
 }
 
 // configure(config): string
-- (NSString *)configure:(JS::NativeRNPingStorage::StorageConfig &)config
+- (NSString *)configure:(JS::NativeRNPingStorage::BaseStorageConfig &)config
 {
-  NSLog(@"RNPingStorage: configure called");
-
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
   if (config.type() != nil) {
@@ -49,26 +47,23 @@ RCT_EXPORT_MODULE()
       resolve:(RCTPromiseResolveBlock)resolve
        reject:(RCTPromiseRejectBlock)reject
 {
-  NSLog(@"RNPingStorage: save called");
   [[self swiftImpl] save:id item:item resolver:resolve rejecter:reject];
 }
 
-// get(): Promise<Object | null>
+// getItem(): Promise<Object | null>
 - (void)getItem:(NSString *)id
      resolve:(RCTPromiseResolveBlock)resolve
       reject:(RCTPromiseRejectBlock)reject
 {
-  NSLog(@"RNPingStorage: get called");
   [[self swiftImpl] getItem:id resolver:resolve rejecter:reject];
 }
 
-// delete(): Promise<boolean>
-- (void)delete:(NSString *)id
+// deleteItem(): Promise<boolean>
+- (void)deleteItem:(NSString *)id
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject
 {
-  NSLog(@"RNPingStorage: remove called");
-  [[self swiftImpl] remove:id resolver:resolve rejecter:reject];
+  [[self swiftImpl] deleteItem:id resolver:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

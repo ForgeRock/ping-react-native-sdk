@@ -13,11 +13,7 @@ RCT_EXPORT_MODULE(RNPingStorage)
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configure:(NSDictionary *)config)
 {
-  NSLog(@"[RNPingStorageClassic] configure called with config: %@", config);
-
   NSString *storageId = [RNPingStorageCommon configure:config];
-
-  NSLog(@"[RNPingStorageClassic] created storage instance %@", storageId);
 
   return storageId;
 }
@@ -53,9 +49,9 @@ RCT_EXPORT_METHOD(getItem : (NSString *)storageId resolver : (
 
 #pragma mark - Delete
 
-RCT_EXPORT_METHOD(delete : (NSString *)storageId resolver : (
+RCT_EXPORT_METHOD(deleteItem : (NSString *)storageId resolver : (
     RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon delete:storageId
+  [RNPingStorageCommon deleteItem:storageId
       resolver:^(BOOL ok) {
         resolve(@(ok));
       }

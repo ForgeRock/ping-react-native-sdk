@@ -16,9 +16,7 @@ public class RNPingStorageImpl: NSObject {
   // MARK: - Configure
   @objc
   public func configure(_ config: NSDictionary) -> String {
-    print("RNPingStorage: configure called with config: \(config)")
     let id = RNPingStorageCommon.configure(config)
-    print("RNPingStorage: created storage instance \(id)")
     return id
   }
 
@@ -30,13 +28,10 @@ public class RNPingStorageImpl: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    print("RNPingStorage: save called with item: \(item)")
-
     RNPingStorageCommon.save(
       id,
       item: item,
       resolver: { success in
-        print("RNPingStorage: Save successful")
         resolve(success)
       },
       rejecter: { code, message, error in
@@ -53,16 +48,12 @@ public class RNPingStorageImpl: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    print("RNPingStorage: get called")
-
-    RNPingStorageCommon.get(
+    RNPingStorageCommon.getItem(
       id,
       resolver: { item in
         if let item = item {
-          print("RNPingStorage: Retrieved json: \(item)")
           resolve(item)
         } else {
-          print("RNPingStorage: No data found in storage")
           resolve(nil)
         }
       },
@@ -74,18 +65,15 @@ public class RNPingStorageImpl: NSObject {
   }
 
   // MARK: - Remove
-  @objc(delete:resolver:rejecter:)
-  public func delete(
+  @objc(deleteItem:resolver:rejecter:)
+  public func deleteItem(
     _ id: String,
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    print("RNPingStorage: delete called")
-
-    RNPingStorageCommon.delete(
+    RNPingStorageCommon.deleteItem(
       id,
       resolver: { success in
-        print("RNPingStorage: Delete successful")
         resolve(success)
       },
       rejecter: { code, message, error in
