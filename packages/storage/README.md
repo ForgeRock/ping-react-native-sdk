@@ -32,44 +32,64 @@ type Dog = {
 const storageInstance = storage<Dog>({
   type: 'encrypted',
   keyAlias: 'ping-storage-key',
-  fileName: 'dogs.json',
+  fileName: 'dogs_file',
 });
 
-await storageInstance.save({ name: 'Lucky', type: 'Golden Retriever' });
+await storageInstance.save({ name: 'Chewie', type: 'Poodle' });
 const storedData = await storageInstance.getItem();
-await storageInstance.delete();
+await storageInstance.deleteItem();
 ```
 
 Encrypted storage uses the platform keystore to store data securely.
 
 ### Enabling cache for the storage
 
-You can enable cache for the storage as follows, by default cache is disabled:
+You can enable cache for the storage as follows. By default, cache is disabled (`no_cache`):
 
 ```ts
 const storageInstance = storage<Dog>({
   type: 'encrypted',
-  cacheStrategy: 'CACHE',
+  cacheStrategy: 'cache',
 });
 ```
 
-Note: cache strategies store data in memory as plain text.
+Available cache strategies:
+- `no_cache` - No caching, always fetch fresh data (default)
+- `cache` - Cache the item in memory, even if storage operation fails
+- `cache_on_failure` - Cache only if storage operation fails only available in Android devices
 
-### Adding encryption behavior
+Note: Cached data is stored in plain text and not encrypted.
 
-Encrypted storage uses the platform keystore by default. You can tune encryption
-behavior for Android by specifying a key alias and enforcing asymmetric key
-usage:
+### Working with multiple storage instances
+
+You can create multiple storage instances for different data types. Each instance is independent and has its own unique identifier:
 
 ```ts
-const storageInstance = storage<Dog>({
+import { storage } from '@react-native-pingidentity/storage';
+
+type User = { id: string; name: string };
+type Settings = { theme: string; notifications: boolean };
+
+// Create separate storage instances
+const userStorage = storage<User>({
   type: 'encrypted',
-  keyAlias: 'ping-storage-key',
-  enforceAsymmetricKey: true,
+  keyAlias: 'user-key',
+  fileName: 'secure_file',
 });
+
+const settingsStorage = storage<Settings>({
+  type: 'datastore',
+  fileName: 'my_file_name',
+});
+
+// Use them independently
+await userStorage.save({ id: '123', name: 'Alice' });
+await settingsStorage.save({ theme: 'dark', notifications: true });
 ```
 
 ### Session and OIDC helpers
+
+Helper functions are provided to create storage instances for common use cases:
 
 ```ts
 import {
@@ -77,33 +97,16 @@ import {
   createOidcStorage,
 } from '@react-native-pingidentity/storage';
 
-const sessionStorage = createSessionStorage({ type: 'encrypted' });
-const oidcStorage = createOidcStorage({ type: 'datastore' });
+// Create session storage for Journey SSO tokens
+const sessionStorage = createSessionStorage({
+  type: 'encrypted',
+  encrypted: true,
+});
+
+// Create OIDC storage for OAuth/OIDC tokens
+const oidcStorage = createOidcStorage({
+  type: 'datastore',
+  encrypted: false,
+});
 ```
 
-## API reference
-
-### storage<T>(config)
-
-Creates a strongly typed storage instance. `config.type` is required and must be
-one of:
-
-- `memory` - in-memory storage
-- `encrypted` - secure storage backed by the platform keystore
-- `datastore` - persistent datastore storage
-
-### StorageInstance<T>
-
-- `id: string` - native storage identifier
-- `save(value: T): Promise<boolean>`
-- `getItem(): Promise<T | null>`
-- `delete(): Promise<boolean>`
-
-### Configuration options
-
-- `type` (required): `memory | encrypted | datastore`
-- `keyAlias` (optional): key alias for encrypted storage
-- `fileName` (optional): file name for encrypted or datastore storage
-- `strongBoxPreferred` (optional): Android StrongBox preference
-- `cacheStrategy` (optional): `NO_CACHE | CACHE | CACHE_ON_FAILURE`
-- `enforceAsymmetricKey` (optional): enforce asymmetric key usage for encrypted storage
