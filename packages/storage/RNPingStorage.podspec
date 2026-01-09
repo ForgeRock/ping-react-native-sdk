@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
 
   # Minimum iOS version
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "16.0" }
 
   # IMPORTANT: local monorepo source path (not git)
   s.source       = { :path => "." }
@@ -25,6 +25,7 @@ Pod::Spec.new do |s|
   end
 
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+  s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
   s.swift_version = "5.0"
   s.requires_arc = true
@@ -32,6 +33,13 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
+
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift,m,mm}"
+    test_spec.dependency "PingStorage"
+    test_spec.dependency "RNPingCore"
+    test_spec.dependency "OCMock"
+  end
 
 
   # Compiler flag toggle
