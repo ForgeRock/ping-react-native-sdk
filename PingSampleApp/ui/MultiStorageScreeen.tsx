@@ -26,10 +26,12 @@ export default function MultiStorageScreen() {
   const [dogName, setDogName] = useState('');
   const [dogType, setDogType] = useState('');
   const [dog, setDog] = useState<Dog | null>(null);
+  const [dogDeleteSuccess, setDogDeleteSuccess] = useState('');
 
   const [catName, setCatName] = useState('');
   const [catColor, setCatColor] = useState('');
   const [cat, setCat] = useState<Cat | null>(null);
+  const [catDeleteSuccess, setCatDeleteSuccess] = useState('');
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
@@ -85,6 +87,7 @@ export default function MultiStorageScreen() {
               style={commonStyles.buttonSecondary}
               onPress={async () => {
                 setDog(await dogStorage.getItem());
+                setDogDeleteSuccess('');
               }}
             >
               <Text style={commonStyles.buttonTextSecondary}>Get Dog</Text>
@@ -93,8 +96,13 @@ export default function MultiStorageScreen() {
             <TouchableOpacity
               style={commonStyles.buttonSecondary}
               onPress={async () => {
-                await dogStorage.delete();
-                setDog(null);
+                const success = await dogStorage.deleteItem();
+                if (success) {
+                  setDog(null);
+                  setDogDeleteSuccess('Dog deleted successfully!');
+                } else {
+                  setDogDeleteSuccess('Failed to delete dog');
+                }
               }}
             >
               <Text style={commonStyles.buttonTextSecondary}>Delete Dog</Text>
@@ -103,6 +111,10 @@ export default function MultiStorageScreen() {
             <Text style={commonStyles.textSuccess}>
               {dog ? `Dog: ${dog.name} (${dog.type})` : 'No dog stored'}
             </Text>
+
+            {dogDeleteSuccess ? (
+              <Text style={commonStyles.textSuccess}>{dogDeleteSuccess}</Text>
+            ) : null}
           </>
         )}
       </View>
@@ -158,14 +170,34 @@ export default function MultiStorageScreen() {
               style={commonStyles.buttonSecondary}
               onPress={async () => {
                 setCat(await catStorage.getItem());
+                setCatDeleteSuccess('');
               }}
             >
               <Text style={commonStyles.buttonTextSecondary}>Get Cat</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={commonStyles.buttonSecondary}
+              onPress={async () => {
+                const success = await catStorage.deleteItem();
+                if (success) {
+                  setCat(null);
+                  setCatDeleteSuccess('Cat deleted successfully!');
+                } else {
+                  setCatDeleteSuccess('Failed to delete cat');
+                }
+              }}
+            >
+              <Text style={commonStyles.buttonTextSecondary}>Delete Cat</Text>
+            </TouchableOpacity>
+
             <Text style={commonStyles.textSuccess}>
               {cat ? `Cat: ${cat.name} (${cat.color})` : 'No cat stored'}
             </Text>
+
+            {catDeleteSuccess ? (
+              <Text style={commonStyles.textSuccess}>{catDeleteSuccess}</Text>
+            ) : null}
           </>
         )}
       </View>
