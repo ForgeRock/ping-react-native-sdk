@@ -1,10 +1,12 @@
 import { getNativeModule } from "./NativeRNPingStorage";
-import type { 
-  BaseStorageConfig, 
+import type {
   SessionStorageConfig,
   OidcStorageConfig,
-  SessionStorage, 
-  OidcStorage } from "./types";
+  SessionStorage,
+  OidcStorage,
+  SSOToken,
+  Tokens } from "./types";
+import type { BaseStorageConfig } from "./NativeRNPingStorage";
 
 /**
  * Strongly-typed interface returned from `storage<T>()`.
@@ -13,7 +15,7 @@ export interface StorageInstance<T> {
   id: string;
   save(value: T): Promise<boolean>;
   getItem(): Promise<T | null>;
-  delete(): Promise<boolean>;
+  deleteItem(): Promise<boolean>;
 }
 
 /**
@@ -22,7 +24,7 @@ export interface StorageInstance<T> {
  * const secureStorage = storage<User>({ type: 'encrypted' });
  * await secureStorage.save({ id: 1, name: 'Gaurav' });
  */
-export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T> {
+export function storage<T = any>(config: BaseStorageConfig): StorageInstance<T> {
   if (!config || !config.type) {
     throw new Error(
       "[@react-native-pingidentity/storage] Missing configuration: " +
@@ -40,7 +42,11 @@ export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T>
   }
 
   if (config.cacheStrategy) {
-    const validStrategies = ['NO_CACHE', 'CACHE_ON_FAILURE', 'CACHE'];
+    const validStrategies: Array<BaseStorageConfig['cacheStrategy']> = [
+      'no_cache',
+      'cache_on_failure',
+      'cache',
+    ];
     if (!validStrategies.includes(config.cacheStrategy)) {
       throw new Error(
         `[@react-native-pingidentity/storage] Invalid cache strategy: "${config.cacheStrategy}". ` +
@@ -78,24 +84,46 @@ export function storage<T = any>(config?: BaseStorageConfig): StorageInstance<T>
     /**
      * Remove stored value
      */
-    async delete(): Promise<boolean> {
-      return await NativeRNPingStorage.delete(id);
+    async deleteItem(): Promise<boolean> {
+      return await NativeRNPingStorage.deleteItem(id);
     },
   };
 }
 
 /**
  * Factory function to create a storage instance specialized for SessionStorage.
- * @param config Optional storage configuration.
+ * @param config Storage configuration.
  */
-export function createSessionStorage(config?: SessionStorageConfig): StorageInstance<SessionStorage> {
-  return storage<SessionStorage>(config);
+export function createSessionStorage(config: SessionStorageConfig): SessionStorage {
+  const instance = storage<SSOToken>(config);
+  return {
+    async set(token) {
+      await instance.save(token);
+    },
+    async getSSOToken() {
+      return await instance.getItem();
+    },
+    async deleteSSOToken() {
+      await instance.deleteItem();
+    },
+  };
 }
 
 /**
  * Factory function to create a storage instance specialized for OidcStorage.
- * @param config Optional storage configuration.
+ * @param config Storage configuration.
  */
-export function createOidcStorage(config?: OidcStorageConfig): StorageInstance<OidcStorage> {
-  return storage<OidcStorage>(config);
+export function createOidcStorage(config: OidcStorageConfig): OidcStorage {
+  const instance = storage<Tokens>(config);
+  return {
+    async set(tokens) {
+      await instance.save(tokens);
+    },
+    async getTokens() {
+      return await instance.getItem();
+    },
+    async deleteTokens() {
+      await instance.deleteItem();
+    },
+  };
 }

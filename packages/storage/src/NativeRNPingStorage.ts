@@ -1,7 +1,40 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 
+export type BaseStorageConfig = {
+  /**
+   * Storage type: "memory", "encrypted", or "datastore"
+  */
+  type: 'memory' | 'encrypted' | 'datastore';
 
+  /**
+   * Optional encryption alias for keychain or secure store.
+   */
+  keyAlias?: string;
+
+  /**
+   * Optional file name for persistent storage.
+   * Used when storage type is "encrypted" or "datastore".
+  */
+  fileName?: string;
+  
+  /**
+    * Optional StrongBox preference for Android.
+  */
+  strongBoxPreferred?: boolean;
+
+  cacheStrategy?: 'no_cache' | 'cache' | 'cache_on_failure';
+
+  /**
+   * Optional account for iOS.
+   */
+  account?: string;
+
+  /**
+   * Optional Encryptor for keychain (iOS). Defaults to false (NoEncryptor).
+   */
+  encryptor?: boolean;
+};
 
 // Detect New Architecture (Turbo)
 const isNewArchEnabled =
@@ -14,7 +47,7 @@ export interface Spec extends TurboModule {
    * @param config Storage configuration object.
    * @returns Promise<boolean> indicating success.
    */
-  configure(config: Object): string;
+  configure(config: BaseStorageConfig): string;
 
   /**
    * Save a JSON-serializable object.
@@ -33,9 +66,15 @@ export interface Spec extends TurboModule {
    * Remove the stored object.
    * @returns Promise<boolean> indicating success.
    */
-  delete(id: string): Promise<boolean>;
+  deleteItem(id: string): Promise<boolean>;
 }
 
+/**
+ * Gets the native storage module, supporting both New Architecture (Turbo Modules) and legacy architecture.
+ * 
+ * @returns The native RNPingStorage module implementation.
+ * @throws Error if the classic native module is not found in legacy architecture.
+ */
 export function getNativeModule(): Spec {
   if (isNewArchEnabled) {
     return TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');
