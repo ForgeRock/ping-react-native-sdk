@@ -2253,6 +2253,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@react-native-pingidentity/logger@workspace:*, @react-native-pingidentity/logger@workspace:packages/logger":
+  version: 0.0.0-use.local
+  resolution: "@react-native-pingidentity/logger@workspace:packages/logger"
+  dependencies:
+    "@react-native-pingidentity/core": "npm:^0.1.0"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@react-native-pingidentity/storage@npm:^0.1.0, @react-native-pingidentity/storage@workspace:*, @react-native-pingidentity/storage@workspace:packages/storage":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/storage@workspace:packages/storage"
@@ -3026,6 +3040,7 @@ __metadata:
     "@react-native-community/cli-platform-android": "npm:19.0.0"
     "@react-native-community/cli-platform-ios": "npm:19.0.0"
     "@react-native-pingidentity/journey": "workspace:*"
+    "@react-native-pingidentity/logger": "workspace:*"
     "@react-native-pingidentity/storage": "workspace:*"
     "@react-native/babel-preset": "npm:0.80.1"
     "@react-native/eslint-config": "npm:0.80.1"

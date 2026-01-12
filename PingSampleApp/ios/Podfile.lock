@@ -8,6 +8,7 @@ PODS:
   - hermes-engine (0.80.1):
     - hermes-engine/Pre-built (= 0.80.1)
   - hermes-engine/Pre-built (0.80.1)
+  - OCMock (3.9.4)
   - PingBrowser (1.3.0-beta2):
     - PingLogger (~> 1.3.0-beta2)
   - PingJourney (1.3.0-beta2):
@@ -2316,6 +2317,36 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingLogger (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -2419,6 +2450,7 @@ DEPENDENCIES:
   - fmt (from `../../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
+  - OCMock (~> 3.9.1)
   - PingJourney (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4325-Journey-POC-RN/PingJourney.podspec`)
   - PingLogger (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingLogger.podspec`)
   - PingOidc (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOidc.podspec`)
@@ -2493,6 +2525,7 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
+  - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2500,6 +2533,7 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - OCMock
     - PingBrowser
     - SocketRocket
 
@@ -2665,6 +2699,8 @@ EXTERNAL SOURCES:
     :path: "../../packages/core"
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
+  RNPingLogger:
+    :path: "../../node_modules/@react-native-pingidentity/logger"
   RNPingStorage:
     :path: "../../node_modules/@react-native-pingidentity/storage"
   RNScreens:
@@ -2680,6 +2716,7 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
+  OCMock: 589f2c84dacb1f5aaf6e4cec1f292551fe748e74
   PingBrowser: c2bb331cfcfd0da71bd6dd5cb449f11311576c5c
   PingJourney: ab6bd3da279566ca68eceed65330bc347ab95134
   PingLogger: ed7c77239e9cee7fd42f2b155cf5ae2d1535bf9f
@@ -2754,11 +2791,12 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingCore: c778df8bc4a917f2cb3b9f9bd676da5371fcc350
   RNPingJourney: 2d5cad6ab6b008feeb3e2a5a4df42f4f17581171
-  RNPingStorage: 4d3c4f043f9f043067109b3a9403ae92ec587e80
+  RNPingLogger: c8d97b119db8f69cbede9cd35331c463b9c1158a
+  RNPingStorage: d3ec7a06944b6bd0b8b7c9e145cf7937d64740f0
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: e94c9b7f950fcc9865020f077bc61c47feeeed2a
+PODFILE CHECKSUM: ee37c0b91c8ef87d98a8bb1f43c14d0b14d46dd2
 
 COCOAPODS: 1.15.2
