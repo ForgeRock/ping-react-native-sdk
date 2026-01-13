@@ -4,12 +4,12 @@ import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
-import com.facebook.react.bridge.*
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableMap
 import com.reactnativepingidentity.core.CoreRuntime
 import com.reactnativepingidentity.core.registry.NativeHandle
 import com.pingidentity.storage.*
 import kotlinx.coroutines.*
-import org.json.JSONObject
 import java.io.File
 
 object RNPingStorageCommon {
@@ -17,123 +17,79 @@ object RNPingStorageCommon {
   private const val TAG = "RNPingStorageCommon"
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-  // Wrap Storage<String> so Core registry stays type-agnostic
+  /** Wrap Storage<String> so Core registry stays type-agnostic */
   private class StorageHandle(val storage: Storage<String>) : NativeHandle
 
-  // -------------------------------------------------------
-  // CONFIGURE (SYNC)
-  // -------------------------------------------------------
+  /**
+   * Configure session storage with the provided configuration.
+   * @param config Configuration map containing storage settings
+   * @param context React application context
+   * @return Unique ID for the configured storage
+   */
   @JvmStatic
-  fun configure(config: ReadableMap, context: ReactApplicationContext): String {
+  fun configureSessionStorage(config: ReadableMap, context: ReactApplicationContext): String {
     return try {
       val map = config.toHashMap()
 
-      // Use background dispatcher to avoid blocking main thread
       val id = runBlocking(Dispatchers.IO) {
         val storage = buildStorage(map, context)
-        CoreRuntime.storageRegistry.register(StorageHandle(storage))
+        registerSessionStorage(storage)
       }
       id
     } catch (e: Exception) {
-      Log.e(TAG, "Error configuring storage", e)
+      Log.e(TAG, "Error configuring session storage", e)
       throw e
     }
   }
 
-  // -------------------------------------------------------
-  // SAVE
-  // -------------------------------------------------------
+  /**
+   * Configure OIDC storage with the provided configuration.
+   * @param config Configuration map containing storage settings
+   * @param context React application context
+   * @return Unique ID for the configured storage
+   */
   @JvmStatic
-  fun save(id: String, item: ReadableMap, promise: Promise) {
-    scope.launch {
-      try {
-        val storage = resolveStorage(id)
-        if (storage == null) {
-          promise.reject("SAVE_ERROR", "Invalid storage id")
-          return@launch
-        }
+  fun configureOidcStorage(config: ReadableMap, context: ReactApplicationContext): String {
+    return try {
+      val map = config.toHashMap()
 
-        val json = JSONObject(item.toHashMap()).toString()
-
-        storage.save(json)
-        promise.resolve(true)
-      } catch (e: Exception) {
-        Log.e(TAG, "Error saving item", e)
-        promise.reject("SAVE_ERROR", e)
+      val id = runBlocking(Dispatchers.IO) {
+        val storage = buildStorage(map, context)
+        registerOidcStorage(storage)
       }
+      id
+    } catch (e: Exception) {
+      Log.e(TAG, "Error configuring OIDC storage", e)
+      throw e
     }
   }
 
-  // -------------------------------------------------------
-  // GET
-  // -------------------------------------------------------
-  @JvmStatic
-  fun getItem(id: String, promise: Promise) {
-    scope.launch {
-      try {
-        val storage = resolveStorage(id)
-        if (storage == null) {
-          promise.reject("GET_ERROR", "Invalid storage id")
-          return@launch
-        }
-
-        val jsonString = storage.get()
-        if (jsonString == null) {
-          promise.resolve(null)
-          return@launch
-        }
-
-        val json = JSONObject(jsonString)
-        val out = Arguments.createMap()
-
-        // POC behavior: write everything back as string (same as before)
-        json.keys().forEach { key ->
-          out.putString(key, json.optString(key, null))
-        }
-
-        promise.resolve(out)
-      } catch (e: Exception) {
-        Log.e(TAG, "Error getting item", e)
-        promise.reject("GET_ERROR", e)
-      }
-    }
+  /**
+   * Register session storage in the core registry.
+   * @param storage The storage instance to register
+   * @return The unique ID for the registered storage
+   */
+  private suspend fun registerSessionStorage(storage: Storage<String>): String {
+    val handle = StorageHandle(storage)
+    return CoreRuntime.sessionStorageRegistry.register(handle)
   }
 
-  // -------------------------------------------------------
-  // REMOVE
-  // -------------------------------------------------------
-  @JvmStatic
-  fun deleteItem(id: String, promise: Promise) {
-    scope.launch {
-      try {
-        val storage = resolveStorage(id)
-        if (storage == null) {
-          promise.reject("DELETE_ERROR", "Invalid storage id")
-          return@launch
-        }
-
-        storage.delete()
-
-        // Mirror iOS: drop the handle after deletion
-        CoreRuntime.storageRegistry.remove(id)
-
-        promise.resolve(true)
-      } catch (e: Exception) {
-        Log.e(TAG, "Error deleting item", e)
-        promise.reject("DELETE_ERROR", e)
-      }
-    }
+  /**
+   * Register OIDC storage in the core registry.
+   * @param storage The storage instance to register
+   * @return The unique ID for the registered storage
+   */
+  private suspend fun registerOidcStorage(storage: Storage<String>): String {
+    val handle = StorageHandle(storage)
+    return CoreRuntime.oidcStorageRegistry.register(handle)
   }
 
-  // -------------------------------------------------------
-  // Internal helpers
-  // -------------------------------------------------------
-  private suspend fun resolveStorage(id: String): Storage<String>? {
-    val raw = CoreRuntime.storageRegistry.resolve(id) ?: return null
-    val handle = raw as? StorageHandle ?: return null
-    return handle.storage
-  }
-
+  /**
+   * Build a storage instance based on the provided configuration.
+   * @param config Configuration map containing storage type and settings
+   * @param context Android context
+   * @return Configured storage instance
+   */
   private fun buildStorage(config: Map<String, Any?>, context: Context): Storage<String> {
 
     val type = config["type"] as? String
@@ -177,8 +133,14 @@ object RNPingStorageCommon {
     }
   }
 
-  // Same helper from old StorageRegistry (kept as-is for POC parity)
-  // Reuses the shared scope to avoid leaking coroutine scopes/threads on repeated configure calls
+  /**
+   * Create a DataStore for string values.
+   * Same helper from old StorageRegistry (kept as-is for POC parity).
+   * Reuses the shared scope to avoid leaking coroutine scopes/threads on repeated configure calls.
+   * @param context Android context
+   * @param fileName Name of the file for the DataStore
+   * @return DataStore instance for nullable strings
+   */
   private fun createStringDataStore(context: Context, fileName: String): DataStore<String?> {
     return DataStoreFactory.create(
       serializer = DataToJsonSerializer(),

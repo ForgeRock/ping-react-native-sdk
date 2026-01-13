@@ -38,7 +38,6 @@ Pod::Spec.new do |s|
     test_spec.source_files = "ios/Tests/**/*.{swift,m,mm}"
     test_spec.dependency "PingStorage"
     test_spec.dependency "RNPingCore"
-    test_spec.dependency "OCMock"
   end
 
 

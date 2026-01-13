@@ -8,13 +8,13 @@ import {
 } from './journeyMethods';
 
 import type { JourneyClient, JourneyConfig, JourneyOptions } from './types';
-import type { StorageInstance } from '@react-native-pingidentity/storage';
+import type { SessionStorage } from '@react-native-pingidentity/storage';
 
 export function journey(
   config: JourneyConfig,
   modules?: { // TBD
     session: {
-      storage: StorageInstance<any>
+      storage: SessionStorage
     }
   }
 ) : JourneyClient{

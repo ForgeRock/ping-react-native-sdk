@@ -11,20 +11,27 @@
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
-// Auto-generated Swift header
+/// Auto-generated Swift header
 #import "RNPingStorage-Swift.h"
 
 @implementation RNPingStorage
 RCT_EXPORT_MODULE()
 
-// Helper to get the Swift singleton 
+/**
+ Returns the shared Swift implementation instance.
+ */
 - (RNPingStorageImpl *)swiftImpl
 {
   return [RNPingStorageImpl shared];
 }
 
-// configure(config): string
-- (NSString *)configure:(JS::NativeRNPingStorage::BaseStorageConfig &)config
+/**
+ Configures a session storage instance.
+ 
+ - Parameter config: Storage configuration.
+ - Returns: Unique storage identifier.
+ */
+- (NSString *)configureSessionStorage:(JS::NativeRNPingStorage::BaseStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
@@ -38,38 +45,30 @@ RCT_EXPORT_MODULE()
     dict[@"cacheStrategy"] = config.cacheStrategy();
   }
 
-  return [[self swiftImpl] configure:dict];
+  return [[self swiftImpl] configureSessionStorage:dict];
 }
 
-// save(item): Promise<boolean>
-- (void)save:(NSString *)id
-        item:(NSDictionary *)item
-      resolve:(RCTPromiseResolveBlock)resolve
-       reject:(RCTPromiseRejectBlock)reject
+/**
+ Configures an OIDC storage instance.
+ 
+ - Parameter config: Storage configuration.
+ - Returns: Unique storage identifier.
+ */
+- (NSString *)configureOidcStorage:(JS::NativeRNPingStorage::BaseStorageConfig &)config
 {
-  [[self swiftImpl] save:id item:item resolver:resolve rejecter:reject];
-}
+  NSMutableDictionary *dict = [NSMutableDictionary new];
 
-// getItem(): Promise<Object | null>
-- (void)getItem:(NSString *)id
-     resolve:(RCTPromiseResolveBlock)resolve
-      reject:(RCTPromiseRejectBlock)reject
-{
-  [[self swiftImpl] getItem:id resolver:resolve rejecter:reject];
-}
+  if (config.type() != nil) {
+    dict[@"type"] = config.type();
+  }
+  if (config.keyAlias() != nil) {
+    dict[@"keyAlias"] = config.keyAlias();
+  }
+  if (config.cacheStrategy() != nil) {
+    dict[@"cacheStrategy"] = config.cacheStrategy();
+  }
 
-// deleteItem(): Promise<boolean>
-- (void)deleteItem:(NSString *)id
-       resolve:(RCTPromiseResolveBlock)resolve
-        reject:(RCTPromiseRejectBlock)reject
-{
-  [[self swiftImpl] deleteItem:id resolver:resolve rejecter:reject];
-}
-
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-    (const facebook::react::ObjCTurboModule::InitParams &)params
-{
-    return std::make_shared<facebook::react::NativeRNPingStorageSpecJSI>(params);
+  return [[self swiftImpl] configureOidcStorage:dict];
 }
 
 @end

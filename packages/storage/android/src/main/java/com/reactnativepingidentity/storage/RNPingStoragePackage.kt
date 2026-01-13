@@ -7,28 +7,35 @@ import com.facebook.react.module.model.ReactModuleInfo
 import com.facebook.react.module.model.ReactModuleInfoProvider
 import java.util.HashMap
 
+/**
+ * React Native package for Ping Storage.
+ * Provides the appropriate module implementation based on the architecture.
+ */
 class RNPingStoragePackage : BaseReactPackage() {
 
-    // ------------------------------------------------------------
-    // Detect New Architecture
-    // ------------------------------------------------------------
+    /**
+     * Detect if New Architecture is enabled.
+     */
     private val isNewArchEnabled: Boolean
         get() {
             val flag = System.getProperty("newArchEnabled") ?: "false"
             return flag.equals("true", ignoreCase = true)
         }
 
-    // ------------------------------------------------------------
-    // Return module instance based on arch
-    // ------------------------------------------------------------
+    /**
+     * Return module instance based on architecture.
+     * @param name Module name
+     * @param reactContext React application context
+     * @return NativeModule instance or null
+     */
     override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
         return when (name) {
             RNPingStorageModule.NAME -> {
                 if (isNewArchEnabled) {
-                    // --- Turbo path ---
+                    /** Turbo path */
                     RNPingStorageModule(reactContext)
                 } else {
-                    // --- Classic fallback ---
+                    /** Classic fallback */
                     RNPingStorageClassicModule(reactContext)
                 }
             }
@@ -36,9 +43,10 @@ class RNPingStoragePackage : BaseReactPackage() {
         }
     }
 
-    // ------------------------------------------------------------
-    // ReactModuleInfo must change depending on architecture
-    // ------------------------------------------------------------
+    /**
+     * Provide ReactModuleInfo based on architecture.
+     * @return ReactModuleInfoProvider with module information
+     */
     override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
         return ReactModuleInfoProvider {
             val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()

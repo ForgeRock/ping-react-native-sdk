@@ -15,13 +15,15 @@ final class RNPingStorageCommonTests: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
-    // Clear registry before each test
-    await CoreRuntime.storageRegistry.removeAll()
+    // Clear registries before each test
+    await CoreRuntime.sessionStorageRegistry.removeAll()
+    await CoreRuntime.oidcStorageRegistry.removeAll()
   }
 
   override func tearDown() async throws {
-    // Clean up registry after each test
-    await CoreRuntime.storageRegistry.removeAll()
+    // Clean up registries after each test
+    await CoreRuntime.sessionStorageRegistry.removeAll()
+    await CoreRuntime.oidcStorageRegistry.removeAll()
     try await super.tearDown()
   }
 
@@ -40,10 +42,10 @@ final class RNPingStorageCommonTests: XCTestCase {
   func testConfigureMemoryStorageReturnsValidId() async throws {
     let config: NSDictionary = [
       "type": "memory",
-      "keyAlias": "test.keyalias"
+      "account": "test.account"
     ]
 
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
 
     XCTAssertFalse(id.isEmpty)
   }
@@ -51,10 +53,10 @@ final class RNPingStorageCommonTests: XCTestCase {
   func testConfigureEncryptedStorageReturnsValidId() async throws {
     let config: NSDictionary = [
       "type": "encrypted",
-      "keyAlias": "test.encrypted.keyalias"
+      "account": "test.encrypted.account"
     ]
 
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
 
     XCTAssertFalse(id.isEmpty)
   }
@@ -62,11 +64,11 @@ final class RNPingStorageCommonTests: XCTestCase {
   func testConfigureWithCacheStrategyReturnsValidId() async throws {
     let config: NSDictionary = [
       "type": "memory",
-      "keyAlias": "test.cache.keyalias",
+      "account": "test.cache.account",
       "cacheStrategy": "CACHE"
     ]
 
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
 
     XCTAssertFalse(id.isEmpty)
   }
@@ -77,65 +79,84 @@ final class RNPingStorageCommonTests: XCTestCase {
       "account": "test.datastore.account"
     ]
 
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
 
     XCTAssertFalse(id.isEmpty)
   }
   
-  func testConfigureWithoutTypeThrowsError() async throws {
+  func testConfigureOidcStorageReturnsValidId() async throws {
     let config: NSDictionary = [
-      "keyAlias": "test.default.keyalias"
+      "type": "memory",
+      "account": "test.oidc.account"
     ]
 
-    // This should trigger a fatalError, which we can't easily test in XCTest
-    // In production, the JS layer validates this before calling native
-    // But we document the expected behavior here
-    // XCTAssertThrowsError would not catch fatalError
+    let id = RNPingStorageCommon.configureOidcStorage(config)
+
+    XCTAssertFalse(id.isEmpty)
   }
   
-  func testConfigureWithUnknownTypeThrowsError() async throws {
+  func testConfigureOidcStorageRegistersInOidcRegistry() async throws {
     let config: NSDictionary = [
-      "type": "unknown-type",
-      "keyAlias": "test.unknown.keyalias"
+      "type": "memory",
+      "account": "test.oidc.registry.account"
     ]
 
-    // This should trigger a fatalError for invalid type
-    // In production, the JS layer validates this before calling native
-    // But we document the expected behavior here
-    // XCTAssertThrowsError would not catch fatalError
-  }
+    let id = RNPingStorageCommon.configureOidcStorage(config)
 
+    // Verify storage is registered in OIDC registry
+    let resolved = await CoreRuntime.oidcStorageRegistry.resolve(id)
+    XCTAssertNotNil(resolved)
+    XCTAssertTrue(resolved is RNPingStorageCommon.StorageHandle)
+  }
+  
+  func testConfigureOidcStorageNotInSessionRegistry() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.oidc.notsession.account"
+    ]
+
+    let id = RNPingStorageCommon.configureOidcStorage(config)
+
+    // Verify storage is NOT in session registry
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNil(resolved)
+    
+    // But IS in OIDC registry
+    let oidcResolved = await CoreRuntime.oidcStorageRegistry.resolve(id)
+    XCTAssertNotNil(oidcResolved)
+  }
+  
   // MARK: - Registry Integration Tests
 
   func testConfigureRegistersStorageInCoreRuntime() async throws {
     let config: NSDictionary = [
       "type": "memory",
-      "keyAlias": "test.registry.keyalias"
+      "account": "test.registry.account"
     ]
 
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
 
     // Verify storage is registered
-    let resolved = await CoreRuntime.storageRegistry.resolve(id)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
     XCTAssertNotNil(resolved)
     XCTAssertTrue(resolved is RNPingStorageCommon.StorageHandle)
   }
 
   func testMultipleStorageInstancesProduceDistinctIds() async throws {
-    let config1: NSDictionary = ["type": "memory", "keyAlias": "test.1"]
-    let config2: NSDictionary = ["type": "memory", "keyAlias": "test.2"]
+    let config1: NSDictionary = ["type": "memory", "account": "test.1"]
+    let config2: NSDictionary = ["type": "memory", "account": "test.2"]
 
-    let id1 = RNPingStorageCommon.configure(config1)
-    let id2 = RNPingStorageCommon.configure(config2)
+    let id1 = RNPingStorageCommon.configureSessionStorage(config1)
+    let id2 = RNPingStorageCommon.configureSessionStorage(config2)
 
     XCTAssertNotEqual(id1, id2)
   }
   
   func testRegisteredStorageHandleContainsCorrectStorageType() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.handle.type"]
-    let id = RNPingStorageCommon.configure(config)
+    let config: NSDictionary = ["type": "memory", "account": "test.handle.type"]
+    let id = RNPingStorageCommon.configureSessionStorage(config)
     
-    let resolved = await CoreRuntime.storageRegistry.resolve(id)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
     XCTAssertNotNil(resolved)
     
     guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
@@ -149,12 +170,12 @@ final class RNPingStorageCommonTests: XCTestCase {
   func testCachedStorageIsWrappedInStorageDelegate() async throws {
     let config: NSDictionary = [
       "type": "memory",
-      "keyAlias": "test.cached",
+      "account": "test.cached",
       "cacheStrategy": "CACHE"
     ]
-    let id = RNPingStorageCommon.configure(config)
+    let id = RNPingStorageCommon.configureSessionStorage(config)
     
-    let resolved = await CoreRuntime.storageRegistry.resolve(id)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
     guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
       XCTFail("Resolved object should be a StorageHandle")
       return
@@ -162,322 +183,232 @@ final class RNPingStorageCommonTests: XCTestCase {
     
     XCTAssertTrue(handle.storage is StorageDelegate<String>)
   }
-
-  // MARK: - Save Tests
-
-  func testSaveItemSuccess() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.save"]
-    let id = RNPingStorageCommon.configure(config)
-
-    let item: NSDictionary = ["key": "value", "number": 42]
-
-    let expectation = XCTestExpectation(description: "Save completes")
-    var saveSuccess = false
-
-    RNPingStorageCommon.save(
-      id,
-      item: item,
-      resolver: { success in
-        saveSuccess = success
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Save should not reject")
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertTrue(saveSuccess)
-  }
-
-  func testSaveWithInvalidIdRejects() async throws {
-    let item: NSDictionary = ["key": "value"]
-
-    let expectation = XCTestExpectation(description: "Save rejects")
-    var errorCode: String?
-
-    RNPingStorageCommon.save(
-      "invalid-id",
-      item: item,
-      resolver: { _ in
-        XCTFail("Should not resolve with invalid id")
-        expectation.fulfill()
-      },
-      rejecter: { code, _, _ in
-        errorCode = code
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertEqual(errorCode, "E_SAVE_FAILED")
-  }
-
-  func testSaveWithEmptyDictionaryUsesDefaultJson() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.save.empty"]
-    let id = RNPingStorageCommon.configure(config)
-
-    // Empty dictionary should still be serializable and saved
-    let item: NSDictionary = [:]
-
-    let expectation = XCTestExpectation(description: "Save completes")
-    var saveSuccess = false
-
-    RNPingStorageCommon.save(
-      id,
-      item: item,
-      resolver: { success in
-        saveSuccess = success
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Save should not reject with empty dictionary")
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertTrue(saveSuccess)
-
-    // Verify the data was saved (it should be "{}" as JSON)
-    let getExpectation = XCTestExpectation(description: "Get completes")
-    var retrievedItem: NSDictionary?
-
-    RNPingStorageCommon.getItem(
-      id,
-      resolver: { item in
-        retrievedItem = item
-        getExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Get should not reject")
-        getExpectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [getExpectation], timeout: 2.0)
-    XCTAssertNotNil(retrievedItem)
-    XCTAssertEqual(retrievedItem?.count, 0) // Should be empty dictionary
-  }
-
-  // MARK: - Get Tests
-
-  func testGetItemReturnsNilWhenEmpty() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.get.empty"]
-    let id = RNPingStorageCommon.configure(config)
-
-    let expectation = XCTestExpectation(description: "Get completes")
-    var retrievedItem: NSDictionary?
-
-    RNPingStorageCommon.getItem(
-      id,
-      resolver: { item in
-        retrievedItem = item
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Get should not reject")
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertNil(retrievedItem)
-  }
-
-  func testGetItemReturnsStoredData() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.get.data"]
-    let id = RNPingStorageCommon.configure(config)
-
-    let savedItem: NSDictionary = ["key": "value", "number": 42]
-
-    // First save
-    let saveExpectation = XCTestExpectation(description: "Save completes")
-    RNPingStorageCommon.save(
-      id,
-      item: savedItem,
-      resolver: { _ in saveExpectation.fulfill() },
-      rejecter: { _, _, _ in saveExpectation.fulfill() }
-    )
-    await fulfillment(of: [saveExpectation], timeout: 2.0)
-
-    // Then get
-    let getExpectation = XCTestExpectation(description: "Get completes")
-    var retrievedItem: NSDictionary?
-
-    RNPingStorageCommon.getItem(
-      id,
-      resolver: { item in
-        retrievedItem = item
-        getExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Get should not reject")
-        getExpectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [getExpectation], timeout: 2.0)
-    XCTAssertNotNil(retrievedItem)
-    XCTAssertEqual(retrievedItem?["key"] as? String, "value")
-    XCTAssertEqual(retrievedItem?["number"] as? Int, 42)
-  }
-
-  func testGetItemWithInvalidIdRejects() async throws {
-    let expectation = XCTestExpectation(description: "Get rejects")
-    var errorCode: String?
-
-    RNPingStorageCommon.getItem(
-      "invalid-id",
-      resolver: { _ in
-        XCTFail("Should not resolve with invalid id")
-        expectation.fulfill()
-      },
-      rejecter: { code, _, _ in
-        errorCode = code
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertEqual(errorCode, "E_GET_FAILED")
-  }
-
-  // MARK: - Delete Tests
-
-  func testDeleteItemSuccess() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.delete"]
-    let id = RNPingStorageCommon.configure(config)
-
-    // First save an item
-    let saveExpectation = XCTestExpectation(description: "Save completes")
-    RNPingStorageCommon.save(
-      id,
-      item: ["key": "value"],
-      resolver: { _ in saveExpectation.fulfill() },
-      rejecter: { _, _, _ in saveExpectation.fulfill() }
-    )
-    await fulfillment(of: [saveExpectation], timeout: 2.0)
-
-    // Then delete
-    let deleteExpectation = XCTestExpectation(description: "Delete completes")
-    var deleteSuccess = false
-
-    RNPingStorageCommon.deleteItem(
-      id,
-      resolver: { success in
-        deleteSuccess = success
-        deleteExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("Delete should not reject")
-        deleteExpectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [deleteExpectation], timeout: 2.0)
-    XCTAssertTrue(deleteSuccess)
-
-    // Verify item is removed from registry
-    let resolved = await CoreRuntime.storageRegistry.resolve(id)
-    XCTAssertNil(resolved)
-  }
-
-  func testDeleteItemRemovesFromRegistry() async throws {
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.delete.registry"]
-    let id = RNPingStorageCommon.configure(config)
-
-    // Verify initially registered
-    let initialResolve = await CoreRuntime.storageRegistry.resolve(id)
-    XCTAssertNotNil(initialResolve)
-
-    // Delete
-    let deleteExpectation = XCTestExpectation(description: "Delete completes")
-    RNPingStorageCommon.deleteItem(
-      id,
-      resolver: { _ in deleteExpectation.fulfill() },
-      rejecter: { _, _, _ in deleteExpectation.fulfill() }
-    )
-    await fulfillment(of: [deleteExpectation], timeout: 2.0)
-
-    // Verify removed from registry
-    let afterResolve = await CoreRuntime.storageRegistry.resolve(id)
-    XCTAssertNil(afterResolve)
-  }
-
-  func testDeleteItemWithInvalidIdRejects() async throws {
-    let expectation = XCTestExpectation(description: "Delete rejects")
-    var errorCode: String?
-
-    RNPingStorageCommon.deleteItem(
-      "invalid-id",
-      resolver: { _ in
-        XCTFail("Should not resolve with invalid id")
-        expectation.fulfill()
-      },
-      rejecter: { code, _, _ in
-        errorCode = code
-        expectation.fulfill()
-      }
-    )
-
-    await fulfillment(of: [expectation], timeout: 2.0)
-    XCTAssertEqual(errorCode, "E_DELETE_FAILED")
-  }
-
-  func testFullStorageLifecycle() async throws {
-    // Create
-    let config: NSDictionary = ["type": "memory", "keyAlias": "test.lifecycle"]
-    let id = RNPingStorageCommon.configure(config)
+  
+  // MARK: - Default Value Tests
+  
+  func testConfigureWithoutAccountUsesDefaultValue() async throws {
+    let config: NSDictionary = [
+      "type": "memory"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
     XCTAssertFalse(id.isEmpty)
-
-    // Save
-    let saveExpectation = XCTestExpectation(description: "Save completes")
-    var saveSuccess = false
-    RNPingStorageCommon.save(
-      id,
-      item: ["data": "test"],
-      resolver: { success in
-        saveSuccess = success
-        saveExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in saveExpectation.fulfill() }
-    )
-    await fulfillment(of: [saveExpectation], timeout: 2.0)
-    XCTAssertTrue(saveSuccess)
-
-    // Get
-    let getExpectation = XCTestExpectation(description: "Get completes")
-    var retrievedItem: NSDictionary?
-    RNPingStorageCommon.getItem(
-      id,
-      resolver: { item in
-        retrievedItem = item
-        getExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in getExpectation.fulfill() }
-    )
-    await fulfillment(of: [getExpectation], timeout: 2.0)
-    XCTAssertNotNil(retrievedItem)
-    XCTAssertEqual(retrievedItem?["data"] as? String, "test")
-
-    // Delete
-    let deleteExpectation = XCTestExpectation(description: "Delete completes")
-    var deleteSuccess = false
-    RNPingStorageCommon.deleteItem(
-      id,
-      resolver: { success in
-        deleteSuccess = success
-        deleteExpectation.fulfill()
-      },
-      rejecter: { _, _, _ in deleteExpectation.fulfill() }
-    )
-    await fulfillment(of: [deleteExpectation], timeout: 2.0)
-    XCTAssertTrue(deleteSuccess)
-
-    // Verify removed
-    let resolved = await CoreRuntime.storageRegistry.resolve(id)
-    XCTAssertNil(resolved)
+    // Storage should be created successfully with default account
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNotNil(resolved)
   }
+  
+  // MARK: - Encryptor Configuration Tests
+  
+  func testConfigureWithEncryptorFalseUsesNoEncryptor() async throws {
+    let config: NSDictionary = [
+      "type": "encrypted",
+      "account": "test.no.encryptor",
+      "encryptor": false
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    XCTAssertFalse(id.isEmpty)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNotNil(resolved)
+    
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    XCTAssertTrue(handle.storage is KeychainStorage<String>)
+  }
+  
+  func testConfigureEncryptedStorageWithEncryptorTrue() async throws {
+    let config: NSDictionary = [
+      "type": "encrypted",
+      "account": "test.with.encryptor",
+      "encryptor": true
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    XCTAssertFalse(id.isEmpty)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNotNil(resolved)
+  }
+  
+  // MARK: - Case Sensitivity Tests
+  
+  func testConfigureWithMixedCaseStorageType() async throws {
+    let configs: [NSDictionary] = [
+      ["type": "Memory", "account": "test.mixed.1"],
+      ["type": "ENCRYPTED", "account": "test.mixed.2"],
+      ["type": "DataStore", "account": "test.mixed.3"],
+      ["type": "DATASTORE", "account": "test.mixed.4"]
+    ]
+    
+    for config in configs {
+      let id = RNPingStorageCommon.configureSessionStorage(config)
+      XCTAssertFalse(id.isEmpty)
+      
+      let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+      XCTAssertNotNil(resolved)
+    }
+  }
+  
+  func testConfigureWithLowercaseCacheStrategy() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.lowercase.cache",
+      "cacheStrategy": "cache"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    // Should be wrapped in StorageDelegate due to uppercased check
+    XCTAssertTrue(handle.storage is StorageDelegate<String>)
+  }
+  
+  func testConfigureWithMixedCaseCacheStrategy() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.mixedcase.cache",
+      "cacheStrategy": "CaCHe"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    // Should be wrapped in StorageDelegate due to uppercased check
+    XCTAssertTrue(handle.storage is StorageDelegate<String>)
+  }
+  
+  // MARK: - Non-Cache Strategy Tests
+  
+  func testConfigureWithNonCacheStrategyDoesNotWrap() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.no.cache.wrap",
+      "cacheStrategy": "NO_CACHE"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    // Should NOT be wrapped in StorageDelegate
+    XCTAssertTrue(handle.storage is MemoryStorage<String>)
+    XCTAssertTrue(type(of: handle.storage) == MemoryStorage<String>.self)
+  }
+  
+  func testConfigureWithoutCacheStrategyDoesNotWrap() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.no.strategy"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    // Should NOT be wrapped in StorageDelegate
+    XCTAssertTrue(handle.storage is MemoryStorage<String>)
+    XCTAssertTrue(type(of: handle.storage) == MemoryStorage<String>.self)
+  }
+  
+  // MARK: - Registry Separation Tests
+  
+  func testConfigureSessionStorageNotInOidcRegistry() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": "test.session.nooidc"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    // Verify storage is NOT in OIDC registry
+    let oidcResolved = await CoreRuntime.oidcStorageRegistry.resolve(id)
+    XCTAssertNil(oidcResolved)
+    
+    // But IS in session registry
+    let sessionResolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNotNil(sessionResolved)
+  }
+  
+  // MARK: - Edge Cases
+  
+  func testConfigureWithEmptyAccount() async throws {
+    let config: NSDictionary = [
+      "type": "memory",
+      "account": ""
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    // Should still create storage with empty account string
+    XCTAssertFalse(id.isEmpty)
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    XCTAssertNotNil(resolved)
+  }
+  
+  func testConfigureMultipleEncryptedStoragesWithDifferentAccounts() async throws {
+    let config1: NSDictionary = [
+      "type": "encrypted",
+      "account": "test.encrypted.1"
+    ]
+    let config2: NSDictionary = [
+      "type": "encrypted",
+      "account": "test.encrypted.2"
+    ]
+    
+    let id1 = RNPingStorageCommon.configureSessionStorage(config1)
+    let id2 = RNPingStorageCommon.configureSessionStorage(config2)
+    
+    XCTAssertNotEqual(id1, id2)
+    
+    let resolved1 = await CoreRuntime.sessionStorageRegistry.resolve(id1)
+    let resolved2 = await CoreRuntime.sessionStorageRegistry.resolve(id2)
+    
+    XCTAssertNotNil(resolved1)
+    XCTAssertNotNil(resolved2)
+  }
+  
+  func testConfigureDatastoreWithCacheStrategy() async throws {
+    let config: NSDictionary = [
+      "type": "datastore",
+      "account": "test.datastore.cached",
+      "cacheStrategy": "CACHE"
+    ]
+    
+    let id = RNPingStorageCommon.configureSessionStorage(config)
+    
+    let resolved = await CoreRuntime.sessionStorageRegistry.resolve(id)
+    guard let handle = resolved as? RNPingStorageCommon.StorageHandle else {
+      XCTFail("Resolved object should be a StorageHandle")
+      return
+    }
+    
+    // Should be wrapped in StorageDelegate
+    XCTAssertTrue(handle.storage is StorageDelegate<String>)
+  }
+
+  
 }

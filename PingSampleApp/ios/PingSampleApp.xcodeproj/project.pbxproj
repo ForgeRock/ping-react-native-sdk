@@ -9,44 +9,26 @@
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-PingSampleApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-PingSampleApp.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		344692FB2F0EF9AA001EF2C5 /* RNPingStorageImplTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344692FA2F0EF9AA001EF2C5 /* RNPingStorageImplTests.swift */; };
-		344692FD2F0EFB75001EF2C5 /* RNPingStorageTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 344692FC2F0EFB75001EF2C5 /* RNPingStorageTests.mm */; };
-		344692FF2F0EFC5A001EF2C5 /* RNPingStorageCommonTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344692FE2F0EFC5A001EF2C5 /* RNPingStorageCommonTests.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9AB93DE9EBD16069E9C8DF74 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
-		DDC9A1AA00A66CDD7AAE61B6 /* libPods-RNStorageTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 87441255FCB493A1307CDB35 /* libPods-RNStorageTests.a */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		344692E72F0EDCA7001EF2C5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = PingSampleApp;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
+		0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.release.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PingSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PingSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = PingSampleApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PingSampleApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = PingSampleApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		344692DB2F0EC3FC001EF2C5 /* libRNPingStorage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNPingStorage.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		344692E32F0EDCA7001EF2C5 /* RNStorageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RNStorageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		344692FA2F0EF9AA001EF2C5 /* RNPingStorageImplTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RNPingStorageImplTests.swift; path = "/Users/thaisdamasceno/Documents/new-sdk/ping-react-native-sdk/packages/storage/ios/Tests/RNPingStorageImplTests.swift"; sourceTree = "<absolute>"; };
-		344692FC2F0EFB75001EF2C5 /* RNPingStorageTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = RNPingStorageTests.mm; path = "/Users/thaisdamasceno/Documents/new-sdk/ping-react-native-sdk/packages/storage/ios/Tests/RNPingStorageTests.mm"; sourceTree = "<absolute>"; };
-		344692FE2F0EFC5A001EF2C5 /* RNPingStorageCommonTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RNPingStorageCommonTests.swift; path = "/Users/thaisdamasceno/Documents/new-sdk/ping-react-native-sdk/packages/storage/ios/Tests/RNPingStorageCommonTests.swift"; sourceTree = "<absolute>"; };
 		3B4392A12AC88292D35C810B /* Pods-PingSampleApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.debug.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.release.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-PingSampleApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PingSampleApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PingSampleApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = PingSampleApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		87441255FCB493A1307CDB35 /* libPods-RNStorageTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RNStorageTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A312A8464DF0D1392C32F02E /* Pods-RNStorageTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.debug.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.debug.xcconfig"; sourceTree = "<group>"; };
+		8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.debug.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.debug.xcconfig"; sourceTree = "<group>"; };
+		ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RNStorageTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		FB9FDBDC8F1BF35C9AECCB1E /* Pods-RNStorageTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.release.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,14 +37,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-PingSampleApp.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		344692E02F0EDCA7001EF2C5 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				DDC9A1AA00A66CDD7AAE61B6 /* libPods-RNStorageTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,19 +61,9 @@
 				344692DB2F0EC3FC001EF2C5 /* libRNPingStorage.a */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-PingSampleApp.a */,
-				87441255FCB493A1307CDB35 /* libPods-RNStorageTests.a */,
+				ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		344692F02F0EE119001EF2C5 /* RNStorageTests */ = {
-			isa = PBXGroup;
-			children = (
-				344692FE2F0EFC5A001EF2C5 /* RNPingStorageCommonTests.swift */,
-				344692FC2F0EFB75001EF2C5 /* RNPingStorageTests.mm */,
-				344692FA2F0EF9AA001EF2C5 /* RNPingStorageImplTests.swift */,
-			);
-			path = RNStorageTests;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -114,7 +78,6 @@
 			children = (
 				13B07FAE1A68108700A75B9A /* PingSampleApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				344692F02F0EE119001EF2C5 /* RNStorageTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -128,7 +91,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* PingSampleApp.app */,
-				344692E32F0EDCA7001EF2C5 /* RNStorageTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -138,8 +100,8 @@
 			children = (
 				3B4392A12AC88292D35C810B /* Pods-PingSampleApp.debug.xcconfig */,
 				5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */,
-				A312A8464DF0D1392C32F02E /* Pods-RNStorageTests.debug.xcconfig */,
-				FB9FDBDC8F1BF35C9AECCB1E /* Pods-RNStorageTests.release.xcconfig */,
+				8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */,
+				0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -168,25 +130,6 @@
 			productReference = 13B07F961A680F5B00A75B9A /* PingSampleApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		344692E22F0EDCA7001EF2C5 /* RNStorageTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 344692E92F0EDCA7001EF2C5 /* Build configuration list for PBXNativeTarget "RNStorageTests" */;
-			buildPhases = (
-				A139C8CD8AD7E45E88AA6D04 /* [CP] Check Pods Manifest.lock */,
-				344692DF2F0EDCA7001EF2C5 /* Sources */,
-				344692E02F0EDCA7001EF2C5 /* Frameworks */,
-				344692E12F0EDCA7001EF2C5 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				344692E82F0EDCA7001EF2C5 /* PBXTargetDependency */,
-			);
-			name = RNStorageTests;
-			productName = RNStorageTests;
-			productReference = 344692E32F0EDCA7001EF2C5 /* RNStorageTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -198,11 +141,6 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
-					};
-					344692E22F0EDCA7001EF2C5 = {
-						CreatedOnToolsVersion = 26.2;
-						LastSwiftMigration = 2620;
-						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 				};
 			};
@@ -220,7 +158,6 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* PingSampleApp */,
-				344692E22F0EDCA7001EF2C5 /* RNStorageTests */,
 			);
 		};
 /* End PBXProject section */
@@ -233,13 +170,6 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				9AB93DE9EBD16069E9C8DF74 /* PrivacyInfo.xcprivacy in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		344692E12F0EDCA7001EF2C5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,28 +207,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		A139C8CD8AD7E45E88AA6D04 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-RNStorageTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
@@ -351,25 +259,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		344692DF2F0EDCA7001EF2C5 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				344692FF2F0EFC5A001EF2C5 /* RNPingStorageCommonTests.swift in Sources */,
-				344692FD2F0EFB75001EF2C5 /* RNPingStorageTests.mm in Sources */,
-				344692FB2F0EF9AA001EF2C5 /* RNPingStorageImplTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		344692E82F0EDCA7001EF2C5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* PingSampleApp */;
-			targetProxy = 344692E72F0EDCA7001EF2C5 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -423,85 +313,6 @@
 				PRODUCT_NAME = PingSampleApp;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
-			};
-			name = Release;
-		};
-		344692EA2F0EDCA7001EF2C5 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = A312A8464DF0D1392C32F02E /* Pods-RNStorageTests.debug.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "$(inherited)";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = QXX7WN94SM;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.RNStorageTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "RNStorageTests/RNStorageTests-Bridging-Header.h";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PingSampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PingSampleApp";
-			};
-			name = Debug;
-		};
-		344692EB2F0EDCA7001EF2C5 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = FB9FDBDC8F1BF35C9AECCB1E /* Pods-RNStorageTests.release.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "$(inherited)";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = QXX7WN94SM;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.RNStorageTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "RNStorageTests/RNStorageTests-Bridging-Header.h";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PingSampleApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PingSampleApp";
 			};
 			name = Release;
 		};
@@ -665,15 +476,6 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		344692E92F0EDCA7001EF2C5 /* Build configuration list for PBXNativeTarget "RNStorageTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				344692EA2F0EDCA7001EF2C5 /* Debug */,
-				344692EB2F0EDCA7001EF2C5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
