@@ -3,10 +3,17 @@ import PingStorage
 import React
 import RNPingCore
 
+/**
+ Implementation class for the RNPingStorage module.
+ 
+ This class provides React Native bridge methods for storage operations,
+ delegating to `RNPingStorageCommon` for the actual implementation.
+ */
 @available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingStorageImpl: NSObject {
 
+  /// Shared singleton instance.
   @objc public static let shared = RNPingStorageImpl()
 
   @objc private override init() {
@@ -14,72 +21,28 @@ public class RNPingStorageImpl: NSObject {
   }
 
   // MARK: - Configure
+  
+  /**
+   Configures a session storage instance.
+   
+   - Parameter config: Configuration dictionary for the storage.
+   - Returns: A unique identifier for the configured storage.
+   */
   @objc
-  public func configure(_ config: NSDictionary) -> String {
-    let id = RNPingStorageCommon.configure(config)
+  public func configureSessionStorage(_ config: NSDictionary) -> String {
+    let id = RNPingStorageCommon.configureSessionStorage(config)
     return id
   }
 
-  // MARK: - Save
-  @objc(save:item:resolver:rejecter:)
-  public func save(
-    _ id: String,
-    item: NSDictionary,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    RNPingStorageCommon.save(
-      id,
-      item: item,
-      resolver: { success in
-        resolve(success)
-      },
-      rejecter: { code, message, error in
-        print("RNPingStorage: Error saving item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
-  }
-
-  // MARK: - Get
-  @objc(getItem:resolver:rejecter:)
-  public func getItem(
-    _ id: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    RNPingStorageCommon.getItem(
-      id,
-      resolver: { item in
-        if let item = item {
-          resolve(item)
-        } else {
-          resolve(nil)
-        }
-      },
-      rejecter: { code, message, error in
-        print("RNPingStorage: Error getting item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
-  }
-
-  // MARK: - Remove
-  @objc(deleteItem:resolver:rejecter:)
-  public func deleteItem(
-    _ id: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    RNPingStorageCommon.deleteItem(
-      id,
-      resolver: { success in
-        resolve(success)
-      },
-      rejecter: { code, message, error in
-        print("RNPingStorage: Error deleting item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
+  /**
+   Configures an OIDC storage instance.
+   
+   - Parameter config: Configuration dictionary for the storage.
+   - Returns: A unique identifier for the configured storage.
+   */
+  @objc
+  public func configureOidcStorage(_ config: NSDictionary) -> String {
+    let id = RNPingStorageCommon.configureOidcStorage(config)
+    return id
   }
 }

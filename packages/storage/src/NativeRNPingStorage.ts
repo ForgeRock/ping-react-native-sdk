@@ -19,10 +19,14 @@ export type BaseStorageConfig = {
   fileName?: string;
   
   /**
-    * Optional StrongBox preference for Android.
+   * Optional StrongBox preference for Android.
   */
   strongBoxPreferred?: boolean;
 
+  /** 
+   * Optional cache strategy.
+   */
+  
   cacheStrategy?: 'no_cache' | 'cache' | 'cache_on_failure';
 
   /**
@@ -34,6 +38,7 @@ export type BaseStorageConfig = {
    * Optional Encryptor for keychain (iOS). Defaults to false (NoEncryptor).
    */
   encryptor?: boolean;
+
 };
 
 // Detect New Architecture (Turbo)
@@ -43,30 +48,16 @@ const isNewArchEnabled =
 
 export interface Spec extends TurboModule {
   /**
-   * Configure the native storage engine.
+   * Configure and register a session storage instance.
    * @param config Storage configuration object.
-   * @returns Promise<boolean> indicating success.
    */
-  configure(config: BaseStorageConfig): string;
+  configureSessionStorage(config: BaseStorageConfig): string;
 
   /**
-   * Save a JSON-serializable object.
-   * @param item Object to store.
-   * @returns Promise<boolean> indicating success.
+   * Configure and register an OIDC storage instance.
+   * @param config Storage configuration object.
    */
-  save(id: string, item: Object): Promise<boolean>;
-
-  /**
-   * Get the stored object (or null if not found).
-   * @returns Promise<object | null>
-   */
-  getItem(id: string): Promise<Object | null>;
-
-  /**
-   * Remove the stored object.
-   * @returns Promise<boolean> indicating success.
-   */
-  deleteItem(id: string): Promise<boolean>;
+  configureOidcStorage(config: BaseStorageConfig): string;
 }
 
 /**

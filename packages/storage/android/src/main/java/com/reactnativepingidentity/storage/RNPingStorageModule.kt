@@ -5,6 +5,9 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.module.annotations.ReactModule
 
+/**
+ * React Native module for Ping Storage (New Architecture/Turbo Module).
+ */
 @ReactModule(name = RNPingStorageModule.NAME)
 class RNPingStorageModule(reactContext: ReactApplicationContext) :
     NativeRNPingStorageSpec(reactContext) {
@@ -15,32 +18,21 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
         const val NAME = "RNPingStorage"
     }
 
-    // ---------------------------
-    // CONFIGURE
-    // ---------------------------
-    override fun configure(config: ReadableMap): String {
-        // Native common handles validation + registry; keep module thin
-        return RNPingStorageCommon.configure(config, reactApplicationContext)
+    /**
+     * Configure session storage.
+     * @param config Storage configuration
+     * @return Storage instance ID
+     */
+    override fun configureSessionStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.configureSessionStorage(config, reactApplicationContext)
     }
 
-    // ---------------------------
-    // SAVE
-    // ---------------------------
-    override fun save(id: String, item: ReadableMap, promise: Promise) {
-        RNPingStorageCommon.save(id, item, promise)
-    }
-
-    // ---------------------------
-    // GET
-    // ---------------------------
-    override fun getItem(id: String, promise: Promise) {
-        RNPingStorageCommon.getItem(id, promise)
-    }
-
-    // ---------------------------
-    // DELETE
-    // ---------------------------
-    override fun deleteItem(id: String, promise: Promise) {
-        RNPingStorageCommon.deleteItem(id, promise)
+    /**
+     * Configure OIDC storage.
+     * @param config Storage configuration
+     * @return Storage instance ID
+     */
+    override fun configureOidcStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.configureOidcStorage(config, reactApplicationContext)
     }
 }

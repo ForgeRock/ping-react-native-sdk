@@ -1,30 +1,16 @@
-import { getNativeModule } from "./NativeRNPingStorage";
 import type {
-  SessionStorageConfig,
-  OidcStorageConfig,
   SessionStorage,
   OidcStorage,
-  SSOToken,
-  Tokens } from "./types";
+} from "./types";
+import { getNativeModule } from "./NativeRNPingStorage";
 import type { BaseStorageConfig } from "./NativeRNPingStorage";
 
-/**
- * Strongly-typed interface returned from `storage<T>()`.
- */
-export interface StorageInstance<T> {
-  id: string;
-  save(value: T): Promise<boolean>;
-  getItem(): Promise<T | null>;
-  deleteItem(): Promise<boolean>;
-}
+export type {
+  SessionStorage,
+  OidcStorage,
+} from "./types";
 
-/**
- * Strongly-typed storage wrapper around the native RNPingStorage TurboModule.
- * @example
- * const secureStorage = storage<User>({ type: 'encrypted' });
- * await secureStorage.save({ id: 1, name: 'Gaurav' });
- */
-export function storage<T = any>(config: BaseStorageConfig): StorageInstance<T> {
+function validateStorageConfig(config: BaseStorageConfig) {
   if (!config || !config.type) {
     throw new Error(
       "[@react-native-pingidentity/storage] Missing configuration: " +
@@ -33,31 +19,37 @@ export function storage<T = any>(config: BaseStorageConfig): StorageInstance<T> 
   }
 
   // Runtime checks
-  const validTypes = ['memory', 'encrypted', 'datastore'];
+  const validTypes = ["memory", "encrypted", "datastore"];
   if (!validTypes.includes(config.type)) {
     throw new Error(
       `[@react-native-pingidentity/storage] Invalid storage type: "${config.type}". ` +
-      `Must be one of: ${validTypes.join(', ')}`
+        `Must be one of: ${validTypes.join(", ")}`
     );
   }
 
   if (config.cacheStrategy) {
-    const validStrategies: Array<BaseStorageConfig['cacheStrategy']> = [
-      'no_cache',
-      'cache_on_failure',
-      'cache',
+    const validStrategies: Array<BaseStorageConfig["cacheStrategy"]> = [
+      "no_cache",
+      "cache_on_failure",
+      "cache",
     ];
     if (!validStrategies.includes(config.cacheStrategy)) {
       throw new Error(
         `[@react-native-pingidentity/storage] Invalid cache strategy: "${config.cacheStrategy}". ` +
-        `Must be one of: ${validStrategies.join(', ')}`
+          `Must be one of: ${validStrategies.join(", ")}`
       );
     }
   }
+}
 
+/**
+ * Factory function to create a storage instance specialized for SessionStorage.
+ * @param config Storage configuration.
+ */
+export function createSessionStorage(config: BaseStorageConfig): SessionStorage {
+  validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
-
-  const id = NativeRNPingStorage.configure(config);
+  const id = NativeRNPingStorage.configureSessionStorage(config);
   if (!id) {
     throw new Error(
       "[@react-native-pingidentity/storage] Failed to configure native storage"
@@ -65,47 +57,7 @@ export function storage<T = any>(config: BaseStorageConfig): StorageInstance<T> 
   }
 
   return {
-    id,
-    /**
-     * Save a typed object
-     */
-    async save(value: T): Promise<boolean> {
-      return await NativeRNPingStorage.save(id, value as Object);
-    },
-
-    /**
-     * Retrieve stored value
-     */
-    async getItem(): Promise<T | null> {
-      const result = await NativeRNPingStorage.getItem(id);
-      return result ? (result as T) : null;
-    },
-
-    /**
-     * Remove stored value
-     */
-    async deleteItem(): Promise<boolean> {
-      return await NativeRNPingStorage.deleteItem(id);
-    },
-  };
-}
-
-/**
- * Factory function to create a storage instance specialized for SessionStorage.
- * @param config Storage configuration.
- */
-export function createSessionStorage(config: SessionStorageConfig): SessionStorage {
-  const instance = storage<SSOToken>(config);
-  return {
-    async set(token) {
-      await instance.save(token);
-    },
-    async getSSOToken() {
-      return await instance.getItem();
-    },
-    async deleteSSOToken() {
-      await instance.deleteItem();
-    },
+    id
   };
 }
 
@@ -113,17 +65,17 @@ export function createSessionStorage(config: SessionStorageConfig): SessionStora
  * Factory function to create a storage instance specialized for OidcStorage.
  * @param config Storage configuration.
  */
-export function createOidcStorage(config: OidcStorageConfig): OidcStorage {
-  const instance = storage<Tokens>(config);
+export function createOidcStorage(config: BaseStorageConfig): OidcStorage {
+  validateStorageConfig(config);
+  const NativeRNPingStorage = getNativeModule();
+  const id = NativeRNPingStorage.configureOidcStorage(config);
+  if (!id) {
+    throw new Error(
+      "[@react-native-pingidentity/storage] Failed to configure native storage"
+    );
+  }
+
   return {
-    async set(tokens) {
-      await instance.save(tokens);
-    },
-    async getTokens() {
-      return await instance.getItem();
-    },
-    async deleteTokens() {
-      await instance.deleteItem();
-    },
-  };
+    id
+  }
 }

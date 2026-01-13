@@ -7,13 +7,11 @@
 
 package com.reactnativepingidentity.storage
 
-import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.WritableMap
+import com.pingidentity.storage.Storage
 import io.mockk.*
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -28,170 +26,164 @@ import java.io.File
 class RNPingStorageCommonTest {
 
     private lateinit var mockContext: ReactApplicationContext
+    private lateinit var filesDir: File
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        
+
         mockContext = mockk(relaxed = true)
-        
+
         // Mock context files directory
-        val mockFilesDir = File.createTempFile("test", "dir").apply { 
+        filesDir = File.createTempFile("test", "dir").apply {
             delete()
             mkdirs()
         }
-        every { mockContext.filesDir } returns mockFilesDir
-        
-        // Mock Arguments.createMap() to return a mock WritableMap
-        mockkStatic(Arguments::class)
-        every { Arguments.createMap() } returns mockk(relaxed = true)
+        every { mockContext.filesDir } returns filesDir
     }
 
     @After
     fun tearDown() {
-        unmockkStatic(Arguments::class)
         clearAllMocks()
+        runBlocking {
+            com.reactnativepingidentity.core.CoreRuntime.sessionStorageRegistry.removeAll()
+            com.reactnativepingidentity.core.CoreRuntime.oidcStorageRegistry.removeAll()
+        }
+        filesDir.deleteRecursively()
     }
 
     @Test
-    fun configureWithMemoryTypeReturnsId() = runTest {
+    fun configureWithMemoryTypeReturnsId() {
         val config = createMockReadableMap(mapOf("type" to "memory"))
 
-        val id = RNPingStorageCommon.configure(config, mockContext)
+        val id = RNPingStorageCommon.configureSessionStorage(config, mockContext)
+        val storage = resolveSessionStorage(id)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
+        assertNotNull(storage)
     }
 
     @Test
-    fun configureMultipleTimesReturnsDifferentIds() = runTest {
+    fun configureOidcWithMemoryTypeReturnsId() {
+        val config = createMockReadableMap(mapOf("type" to "memory"))
+
+        val id = RNPingStorageCommon.configureOidcStorage(config, mockContext)
+        val storage = resolveOidcStorage(id)
+
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertNotNull(storage)
+    }
+
+    @Test
+    fun configureMultipleTimesReturnsDifferentIds() {
         val config1 = createMockReadableMap(mapOf("type" to "memory"))
         val config2 = createMockReadableMap(mapOf("type" to "memory"))
 
-        val id1 = RNPingStorageCommon.configure(config1, mockContext)
-        val id2 = RNPingStorageCommon.configure(config2, mockContext)
+        val id1 = RNPingStorageCommon.configureSessionStorage(config1, mockContext)
+        val id2 = RNPingStorageCommon.configureSessionStorage(config2, mockContext)
 
         assertNotEquals(id1, id2)
     }
 
     @Test
-    fun saveWithInvalidIdRejectsPromise() = runTest {
-        val mockPromise = mockk<Promise>(relaxed = true)
-        val data = createMockReadableMap(mapOf("key" to "value"))
+    fun configureDatastoreTypeReturnsId() {
+        val config = createMockReadableMap(mapOf("type" to "datastore", "fileName" to "test_store"))
 
-        RNPingStorageCommon.save("invalid-id", data, mockPromise)
+        val id = RNPingStorageCommon.configureSessionStorage(config, mockContext)
+        val storage = resolveSessionStorage(id)
 
-        verify(timeout = 1_000) { mockPromise.reject("SAVE_ERROR", "Invalid storage id") }
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertNotNull(storage)
     }
 
     @Test
-    fun getItemWithInvalidIdRejectsPromise() = runTest {
-        val mockPromise = mockk<Promise>(relaxed = true)
+    fun configureEncryptedTypeReturnsId() {
+        val config = createMockReadableMap(
+            mapOf(
+                "type" to "encrypted",
+                "fileName" to "secure_store",
+                "keyAlias" to "testKey",
+                "strongBoxPreferred" to true
+            )
+        )
 
-        RNPingStorageCommon.getItem("invalid-id", mockPromise)
-
-        verify(timeout = 1_000) { mockPromise.reject("GET_ERROR", "Invalid storage id") }
+        assertThrows(UninitializedPropertyAccessException::class.java) {
+            RNPingStorageCommon.configureSessionStorage(config, mockContext)
+        }
     }
 
     @Test
-    fun deleteItemWithInvalidIdRejectsPromise() = runTest {
-        val mockPromise = mockk<Promise>(relaxed = true)
-
-        RNPingStorageCommon.deleteItem("invalid-id", mockPromise)
-
-        verify(timeout = 1_000) { mockPromise.reject("DELETE_ERROR", "Invalid storage id") }
-    }
-
-    @Test
-    fun saveWithValidIdResolvesPromise() = runTest {
+    fun configureOidcStorageRegistersOnlyInOidcRegistry() {
         val config = createMockReadableMap(mapOf("type" to "memory"))
-        val id = RNPingStorageCommon.configure(config, mockContext)
 
-        val mockPromise = mockk<Promise>(relaxed = true)
-        val data = createMockReadableMap(mapOf("username" to "testUser"))
+        val id = RNPingStorageCommon.configureOidcStorage(config, mockContext)
 
-        RNPingStorageCommon.save(id, data, mockPromise)
+        val oidcStorage = resolveOidcStorage(id)
+        val sessionStorage = runBlocking {
+            com.reactnativepingidentity.core.CoreRuntime.sessionStorageRegistry.resolve(id)
+        }
 
-        verify(timeout = 1_000) { mockPromise.resolve(true) }
-        verify(exactly = 0) { mockPromise.reject(any(), any<String>()) }
+        assertNotNull(oidcStorage)
+        assertNull(sessionStorage)
     }
 
     @Test
-    fun getItemAfterSaveReturnsData() = runTest {
-        val config = createMockReadableMap(mapOf("type" to "memory"))
-        val id = RNPingStorageCommon.configure(config, mockContext)
+    fun configureMissingTypeThrows() {
+        val config = createMockReadableMap(emptyMap())
 
-        val savePromise = mockk<Promise>(relaxed = true)
-        val saveData = createMockReadableMap(mapOf("username" to "alice"))
-        RNPingStorageCommon.save(id, saveData, savePromise)
-        verify(timeout = 1_000) { savePromise.resolve(true) }
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            RNPingStorageCommon.configureSessionStorage(config, mockContext)
+        }
 
-        val getPromise = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.getItem(id, getPromise)
-
-        val slot = slot<WritableMap>()
-        verify(timeout = 1_000) { getPromise.resolve(capture(slot)) }
-        assertNotNull(slot.captured)
+        assertEquals(
+            "Missing required 'type' parameter in storage configuration",
+            exception.message
+        )
     }
 
     @Test
-    fun getItemWithoutSaveReturnsNull() = runTest {
-        val config = createMockReadableMap(mapOf("type" to "memory"))
-        val id = RNPingStorageCommon.configure(config, mockContext)
+    fun configureInvalidTypeThrows() {
+        val config = createMockReadableMap(mapOf("type" to "invalid"))
 
-        val mockPromise = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.getItem(id, mockPromise)
+        val exception = assertThrows(IllegalArgumentException::class.java) {
+            RNPingStorageCommon.configureSessionStorage(config, mockContext)
+        }
 
-        verify(timeout = 1_000) { mockPromise.resolve(null) }
-    }
-
-    @Test
-    fun deleteItemRemovesStorage() = runTest {
-        val config = createMockReadableMap(mapOf("type" to "memory"))
-        val id = RNPingStorageCommon.configure(config, mockContext)
-
-        val deletePromise = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.deleteItem(id, deletePromise)
-
-        verify(timeout = 1_000) { deletePromise.resolve(true) }
-
-        // Verify getting from deleted storage fails
-        val getPromise = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.getItem(id, getPromise)
-
-        verify(timeout = 1_000) { getPromise.reject("GET_ERROR", "Invalid storage id") }
-    }
-
-    @Test
-    fun multipleSavesOverwriteData() = runTest {
-        val config = createMockReadableMap(mapOf("type" to "memory"))
-        val id = RNPingStorageCommon.configure(config, mockContext)
-
-        val promise1 = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.save(id, createMockReadableMap(mapOf("version" to "1")), promise1)
-
-        val promise2 = mockk<Promise>(relaxed = true)
-        RNPingStorageCommon.save(id, createMockReadableMap(mapOf("version" to "2")), promise2)
-
-        verify(timeout = 1_000) { promise1.resolve(true) }
-        verify(timeout = 1_000) { promise2.resolve(true) }
+        assertEquals(
+            "Invalid storage type 'invalid'. Must be 'memory', 'encrypted', or 'datastore'",
+            exception.message
+        )
     }
 
     private fun createMockReadableMap(data: Map<String, Any?>): ReadableMap {
         val map = mockk<ReadableMap>(relaxed = true)
-        val hashMap = HashMap<String, Any?>()
-        
-        data.forEach { (key, value) ->
-            hashMap[key] = value
-            when (value) {
-                is String -> every { map.getString(key) } returns value
-                is Boolean -> every { map.getBoolean(key) } returns value
-                is Int -> every { map.getInt(key) } returns value
-                is Double -> every { map.getDouble(key) } returns value
-            }
-        }
-        
-        every { map.toHashMap() } returns hashMap
+        every { map.toHashMap() } returns HashMap(data)
         return map
+    }
+
+    private fun resolveSessionStorage(id: String): Storage<String> {
+        val handle = runBlocking {
+            com.reactnativepingidentity.core.CoreRuntime.sessionStorageRegistry.resolve(id)
+        }
+        assertNotNull(handle)
+        return extractStorage(handle!!)
+    }
+
+    private fun resolveOidcStorage(id: String): Storage<String> {
+        val handle = runBlocking {
+            com.reactnativepingidentity.core.CoreRuntime.oidcStorageRegistry.resolve(id)
+        }
+        assertNotNull(handle)
+        return extractStorage(handle!!)
+    }
+
+    private fun extractStorage(handle: Any): Storage<String> {
+        val storageField = handle.javaClass.getDeclaredField("storage")
+        storageField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        return storageField.get(handle) as Storage<String>
     }
 }

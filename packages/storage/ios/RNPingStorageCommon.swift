@@ -7,8 +7,11 @@ import RNPingCore
 public class RNPingStorageCommon: NSObject {
   
   // MARK: - Nested Types
-  
-  /// Wrapping Storage<String> so it can live in Core's NativeHandle registry.
+    
+  /**
+   A wrapper class for `Storage<String>` that conforms to `NativeHandle`.
+   This allows storage instances to be registered in Core's NativeHandle registry.
+   */
   final class StorageHandle: NativeHandle {
     let storage: any Storage<String>
     init(_ storage: any Storage<String>) { self.storage = storage }
@@ -16,11 +19,15 @@ public class RNPingStorageCommon: NSObject {
   
   // MARK: - Private Properties
   
+  /// A dispatch-specific key for identifying the create queue.
   private static let createQueueKey = DispatchSpecificKey<Void>()
   
-  /// Dedicated serial queue so we can safely block while still enforcing a known execution context.
-  /// A one-off dispatch around create wouldn't prevent callers from blocking main or
-  /// other critical threads when waiting synchronously for the async register to finish.
+  /**
+   Dedicated serial queue for safe blocking while enforcing a known execution context.
+   
+   This prevents callers from blocking the main thread or other critical threads
+   when waiting synchronously for async registration to complete.
+   */
   private static let createQueue: DispatchQueue = {
     let q = DispatchQueue(label: "com.ping.storage.create", qos: .userInitiated)
     q.setSpecific(key: createQueueKey, value: ())
@@ -30,15 +37,25 @@ public class RNPingStorageCommon: NSObject {
   // MARK: - Public Methods - Configuration
   
   @objc
-  public static func configure(_ config: NSDictionary) -> String {
+  public static func configureSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      create(config)
+      create(config, register: registerSessionStorage)
+    }
+  }
+
+  @objc
+  public static func configureOidcStorage(_ config: NSDictionary) -> String {
+    return createQueue.sync {
+      create(config, register: registerOidcStorage)
     }
   }
   
   // MARK: - Private Methods - Configuration
   
-  private static func create(_ config: NSDictionary) -> String {
+  private static func create(
+    _ config: NSDictionary,
+    register: @escaping (StorageHandle) async -> String
+  ) -> String {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
       "RNPingStorageCommon.create must be called on createQueue"
@@ -49,7 +66,8 @@ public class RNPingStorageCommon: NSObject {
 
     Task {
       let instance = await createStorageInstance(from: config)
-      id = await registerStorage(instance)
+      let handle = StorageHandle(instance)
+      id = await register(handle)
       semaphore.signal()
     }
 
@@ -57,93 +75,14 @@ public class RNPingStorageCommon: NSObject {
     return id
   }
   
-  // MARK: - Public Methods - CRUD Operations
-  
-  @objc
-  public static func save(
-    _ id: String,
-    item: NSDictionary,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
-  ) {
-    Task {
-      guard let storage = await resolveStorage(id: id) else {
-        rejecter("E_SAVE_FAILED", "Invalid storage id", nil)
-        return
-      }
-
-      do {
-        let data = try JSONSerialization.data(withJSONObject: item, options: [])
-        guard let jsonString = String(data: data, encoding: .utf8) else {
-          throw NSError(domain: "RNPingStorage", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert JSON data to UTF-8 string"])
-        }
-
-        try await storage.save(item: jsonString)
-        resolver(true)
-      } catch {
-        print("RNPingStorage: Error saving item: \(error)")
-        rejecter("E_SAVE_FAILED", "Failed to save item", error as NSError)
-      }
-    }
-  }
-  
-  @objc
-  public static func getItem(
-    _ id: String,
-    resolver: @escaping (NSDictionary?) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
-  ) {
-    Task {
-      guard let storage = await resolveStorage(id: id) else {
-        rejecter("E_GET_FAILED", "Invalid storage id", nil)
-        return
-      }
-
-      do {
-        if let json = try await storage.get() {
-          if let data = json.data(using: .utf8),
-            let item = try JSONSerialization.jsonObject(with: data) as? NSDictionary
-          {
-            resolver(item)
-          } else {
-            resolver(nil)
-          }
-        } else {
-          resolver(nil)
-        }
-      } catch {
-        print("RNPingStorage: Error getting item: \(error)")
-        rejecter("E_GET_FAILED", "Failed to get item", error as NSError)
-      }
-    }
-  }
-  
-  @objc
-  public static func deleteItem(
-    _ id: String,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
-  ) {
-    Task {
-      guard let storage = await resolveStorage(id: id) else {
-        rejecter("E_DELETE_FAILED", "Invalid storage id", nil)
-        return
-      }
-
-      do {
-        try await storage.delete()
-        await CoreRuntime.storageRegistry.remove(id)  // drop handle after delete
-        resolver(true)
-      } catch {
-        print("RNPingStorage: Error deleting item: \(error)")
-        rejecter("E_DELETE_FAILED", "Failed to delete item", error as NSError)
-      }
-    }
-  }
-  
   // MARK: - Private Helpers
   
-  /// Creates a storage instance based on the provided configuration.
+  /**
+   Creates a storage instance based on the provided configuration.
+   
+   - Parameter config: A dictionary containing storage configuration including type, account, cache strategy, and encryptor settings.
+   - Returns: A configured `Storage<String>` instance.
+   */
   private static func createStorageInstance(from config: NSDictionary) -> any Storage<String> {
     guard let type = config["type"] as? String else {
       fatalError("RNPingStorage: Missing required 'type' parameter in configuration")
@@ -190,19 +129,23 @@ public class RNPingStorageCommon: NSObject {
     return finalInstance
   }
   
-  /// Registers a storage instance into CoreRuntime and returns its id.
-  private static func registerStorage(_ instance: any Storage<String>) async -> String {
-    let id = await CoreRuntime.storageRegistry.register(StorageHandle(instance))
-    return id
+  /**
+   Registers a session storage instance into CoreRuntime.
+   
+   - Parameter handle: The storage handle to register.
+   - Returns: A unique identifier for the registered storage.
+   */
+  private static func registerSessionStorage(_ handle: StorageHandle) async -> String {
+    return await CoreRuntime.sessionStorageRegistry.register(handle)
   }
-  
-  /// Resolves the Storage<String> instance from CoreRuntime for a given id.
-  private static func resolveStorage(id: String) async -> (any Storage<String>)? {
-    guard let raw = await CoreRuntime.storageRegistry.resolve(id),
-      let handle = raw as? StorageHandle
-    else {
-      return nil
-    }
-    return handle.storage
+
+  /**
+   Registers an OIDC storage instance into CoreRuntime.
+   
+   - Parameter handle: The storage handle to register.
+   - Returns: A unique identifier for the registered storage.
+   */
+  private static func registerOidcStorage(_ handle: StorageHandle) async -> String {
+    return await CoreRuntime.oidcStorageRegistry.register(handle)
   }
 }

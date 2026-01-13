@@ -4,6 +4,9 @@ import com.facebook.react.bridge.*
 import com.facebook.react.module.annotations.ReactModule
 import com.reactnativepingidentity.storage.RNPingStorageCommon
 
+/**
+ * React Native module for Ping Storage (Classic/Old Architecture).
+ */
 @ReactModule(name = RNPingStorageClassicModule.NAME)
 class RNPingStorageClassicModule(
     reactContext: ReactApplicationContext
@@ -15,35 +18,23 @@ class RNPingStorageClassicModule(
 
     override fun getName(): String = NAME
 
-    // --------------------------------------------------
-    // CONFIGURE (SYNC)
-    // --------------------------------------------------
+    /**
+     * Configure session storage (synchronous blocking method).
+     * @param config Storage configuration
+     * @return Storage instance ID
+     */
     @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configure(config: ReadableMap): String {
-        return RNPingStorageCommon.configure(config, reactApplicationContext)
+    fun configureSessionStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.configureSessionStorage(config, reactApplicationContext)
     }
 
-    // --------------------------------------------------
-    // SAVE (ASYNC)
-    // --------------------------------------------------
-    @ReactMethod
-    fun save(id: String, item: ReadableMap, promise: Promise) {
-        RNPingStorageCommon.save(id, item, promise)
-    }
-
-    // --------------------------------------------------
-    // GET (ASYNC)
-    // --------------------------------------------------
-    @ReactMethod
-    fun getItem(id: String, promise: Promise) {
-        RNPingStorageCommon.getItem(id, promise)
-    }
-
-    // --------------------------------------------------
-    // REMOVE (ASYNC)
-    // --------------------------------------------------
-    @ReactMethod
-    fun deleteItem(id: String, promise: Promise) {
-        RNPingStorageCommon.deleteItem(id, promise)
+    /**
+     * Configure OIDC storage (synchronous blocking method).
+     * @param config Storage configuration
+     * @return Storage instance ID
+     */
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun configureOidcStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.configureOidcStorage(config, reactApplicationContext)
     }
 }
