@@ -22,8 +22,5 @@ object CoreRuntime {
     /** Registry for OIDC storage instances (used for OAuth/OIDC tokens) */
     val oidcStorageRegistry: Registry = SimpleRegistry()
     
-    /** Generic storage registry for other storage use cases */
-    val storageRegistry: Registry = SimpleRegistry()
-    
     // val mfaRegistry: Registry = SimpleRegistry()
 }

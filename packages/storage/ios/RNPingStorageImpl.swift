@@ -19,8 +19,6 @@ public class RNPingStorageImpl: NSObject {
   @objc private override init() {
     super.init()
   }
-
-  // MARK: - Configure
   
   /**
    Configures a session storage instance.
