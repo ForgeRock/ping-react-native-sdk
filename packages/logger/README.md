@@ -14,11 +14,13 @@ npm install @react-native-pingidentity/logger
 
 
 ```js
-import { multiply } from '@react-native-pingidentity/logger';
+import { logger } from '@react-native-pingidentity/logger';
 
-// ...
-
-const result = multiply(3, 7);
+const log = logger({ level: 'info' });
+log.info('Application started');
+log.warn('Potential issue detected');
+log.error('An error occurred');
+log.changeLevel('debug');
 ```
 
 
