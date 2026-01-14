@@ -41,3 +41,4 @@ const oidcStorage: OidcStorage = createOidcStorage({
   fileName: 'ping_oidc_tokens',
 });
 ```
+### TODO: Document upcoming error shapes.
