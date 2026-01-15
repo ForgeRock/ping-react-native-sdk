@@ -2324,6 +2324,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingLogger
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2790,8 +2791,8 @@ SPEC CHECKSUMS:
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingCore: c778df8bc4a917f2cb3b9f9bd676da5371fcc350
-  RNPingJourney: 2d5cad6ab6b008feeb3e2a5a4df42f4f17581171
-  RNPingLogger: c8d97b119db8f69cbede9cd35331c463b9c1158a
+  RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
+  RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
   RNPingStorage: d3ec7a06944b6bd0b8b7c9e145cf7937d64740f0
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

@@ -22,7 +22,8 @@ Pod::Spec.new do |s|
   s.swift_version    = "5.0"
   s.requires_arc     = true
 
-  # Native Ping SDK (POC)
+  # Native Ping SDK
+  s.dependency "PingLogger"
   s.dependency "RNPingCore"
 
   # New Architecture helper

@@ -1,4 +1,4 @@
-import { TurboModuleRegistry, type TurboModule } from 'react-native';
+import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
 
 export type LoggerLevel =
   | 'debug'
@@ -26,4 +26,34 @@ export interface Spec extends TurboModule {
   syncLogger(config: LoggerSyncOptions): void;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('Logger');
+// Detect New Architecture (Turbo)
+const isNewArchEnabled =
+  typeof global.__turboModuleProxy !== 'undefined' &&
+  global.__turboModuleProxy != null;
+
+/**
+ * Gets the native logger module, supporting both New Architecture (Turbo Modules) and legacy architecture.
+ *
+ * @returns The native Logger module implementation.
+ * @throws Error if the classic native module is not found in legacy architecture.
+ */
+export function getNativeModule(): Spec {
+  if (isNewArchEnabled) {
+    return TurboModuleRegistry.getEnforcing<Spec>('Logger');
+  }
+
+  const classic = NativeModules.Logger;
+  if (!classic) {
+    const available = Object.keys(NativeModules)
+      .slice(0, 10); // avoid huge logs
+
+    throw new Error(
+      '[@react-native-pingidentity/logger] Classic Logger native module not found.\n' +
+      'Available NativeModules: ' + JSON.stringify(available)
+    );
+  }
+
+  return classic as Spec;
+}
+
+export default getNativeModule();

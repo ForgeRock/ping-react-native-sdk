@@ -3,10 +3,13 @@ import PingLogger
 import React
 import RNPingCore
 
+/// Implementation of the native logger bridge for React Native.
+/// Manages logger creation, configuration, and synchronization with the PingLogger framework.
 @available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingLoggerImpl: NSObject {
 
+  /// Shared singleton instance.
   @objc public static let shared = RNPingLoggerImpl()
 
   @objc private override init() {
@@ -15,7 +18,8 @@ public class RNPingLoggerImpl: NSObject {
 
   // MARK: - Native Logger Level
 
-  private enum NativeLoggerLevel: String {
+  /// Supported native logger levels.
+  enum NativeLoggerLevel: String {
     case standard = "STANDARD"
     case warn = "WARN"
     case none = "NONE"
@@ -23,21 +27,31 @@ public class RNPingLoggerImpl: NSObject {
 
   // MARK: - Registry Handle
 
+  /// Handle for storing logger configuration in the registry.
   final class LoggerHandle: NativeHandle {
+    /// The native log level for this logger instance.
     var level: NativeLoggerLevel
+    
+    /// Creates a new logger handle with the specified level.
+    /// - Parameter level: The native log level to use.
     init(level: NativeLoggerLevel) { self.level = level }
   }
 
   // MARK: - Configure
 
+  /// Specific key for identifying the create queue.
   private static let createQueueKey = DispatchSpecificKey<Void>()
 
+  /// Serial queue for synchronizing logger creation.
   private static let createQueue: DispatchQueue = {
     let queue = DispatchQueue(label: "com.ping.logger.create", qos: .userInitiated)
     queue.setSpecific(key: createQueueKey, value: ())
     return queue
   }()
 
+  /// Registers a new logger instance with the specified configuration.
+  /// - Parameter config: Dictionary containing logger configuration, including "level".
+  /// - Returns: The registry ID for the newly created logger.
   @objc
   public func registerLogger(_ config: NSDictionary) -> String {
     return Self.createQueue.sync {
@@ -45,6 +59,9 @@ public class RNPingLoggerImpl: NSObject {
     }
   }
 
+  /// Internal method for creating a logger on the create queue.
+  /// - Parameter config: Dictionary containing logger configuration.
+  /// - Returns: The registry ID for the created logger.
   private static func create(_ config: NSDictionary) -> String {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
@@ -68,6 +85,10 @@ public class RNPingLoggerImpl: NSObject {
 
   // MARK: - Sync
 
+  /// Synchronizes the logger configuration by updating its level.
+  /// - Parameters:
+  ///   - id: The registry ID of the logger to update.
+  ///   - level: The new log level as a string.
   @objc
   public func syncLogger(_ id: String, level: String) {
     guard let parsedLevel = NativeLoggerLevel(rawValue: level) else {
@@ -88,6 +109,9 @@ public class RNPingLoggerImpl: NSObject {
 
   // MARK: - Helpers
 
+  /// Parses a log level value from configuration.
+  /// - Parameter value: The value to parse, expected to be a string.
+  /// - Returns: The parsed native logger level, or `.none` if parsing fails.
   private static func parseLevel(_ value: Any?) -> NativeLoggerLevel {
     guard let level = value as? String,
           let parsed = NativeLoggerLevel(rawValue: level) else {
@@ -96,6 +120,8 @@ public class RNPingLoggerImpl: NSObject {
     return parsed
   }
 
+  /// Applies the specified log level to the native LogManager.
+  /// - Parameter level: The native logger level to apply.
   private static func applyNativeLevel(_ level: NativeLoggerLevel) {
     switch level {
     case .standard:
@@ -108,6 +134,9 @@ public class RNPingLoggerImpl: NSObject {
   }
 
 #if DEBUG
+  /// Test helper to retrieve the current level for a logger.
+  /// - Parameter id: The registry ID of the logger.
+  /// - Returns: The current log level as a string, or nil if the logger is not found.
   @objc
   public func _testLevel(_ id: String) async -> String? {
     guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle else {

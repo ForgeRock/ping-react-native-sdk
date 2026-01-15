@@ -27,9 +27,12 @@ object RNPingLoggerCommon {
 
   private class LoggerHandle(var level: NativeLoggerLevel) : NativeHandle
 
-  // -------------------------------------------------------
-  // CONFIGURE (SYNC)
-  // -------------------------------------------------------
+  /**
+   * Configures the logger synchronously with the provided configuration.
+   *
+   * @param config A ReadableMap containing the logger configuration with a "level" key
+   * @return The unique identifier (ID) for the registered logger
+   */
   @JvmStatic
   fun configure(config: ReadableMap): String {
     val level = parseLevel(config.getString("level")) ?: NativeLoggerLevel.NONE
@@ -42,9 +45,13 @@ object RNPingLoggerCommon {
     return id
   }
 
-  // -------------------------------------------------------
-  // SYNC
-  // -------------------------------------------------------
+  /**
+   * Synchronizes the logger configuration asynchronously.
+   *
+   * Updates the logger level for a previously registered logger identified by its ID.
+   *
+   * @param config A ReadableMap containing "id" and "level" keys
+   */
   @JvmStatic
   fun sync(config: ReadableMap) {
     val id = config.getString("id")
@@ -77,9 +84,12 @@ object RNPingLoggerCommon {
     }
   }
 
-  // -------------------------------------------------------
-  // Internal helpers
-  // -------------------------------------------------------
+  /**
+   * Parses a string representation of a log level into a NativeLoggerLevel enum.
+   *
+   * @param level The string representation of the log level ("STANDARD", "WARN", or "NONE")
+   * @return The corresponding NativeLoggerLevel enum value, or null if invalid
+   */
   private fun parseLevel(level: String?): NativeLoggerLevel? {
     return when (level) {
       "STANDARD" -> NativeLoggerLevel.STANDARD
@@ -89,6 +99,11 @@ object RNPingLoggerCommon {
     }
   }
 
+  /**
+   * Applies the native logger level to the PingIdentity Logger.
+   *
+   * @param level The NativeLoggerLevel to apply
+   */
   private fun applyNativeLevel(level: NativeLoggerLevel) {
     Logger.logger = when (level) {
       NativeLoggerLevel.STANDARD -> Logger.STANDARD

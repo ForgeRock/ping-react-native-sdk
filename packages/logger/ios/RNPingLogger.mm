@@ -33,7 +33,7 @@ RCT_EXPORT_MODULE()
 // ------------------------------------------
 - (void)syncLogger:(JS::NativeRNPingLogger::LoggerSyncOptions &)config
 {
-  NSString *loggerId = config.id();
+  NSString *loggerId = config.id_();
   NSString *level = config.level();
   [[self swiftImpl] syncLogger:loggerId level:level];
 }
@@ -42,11 +42,6 @@ RCT_EXPORT_MODULE()
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
     return std::make_shared<facebook::react::NativeRNPingLoggerSpecJSI>(params);
-}
-
-+ (NSString *)moduleName
-{
-  return @"Logger";
 }
 
 @end
