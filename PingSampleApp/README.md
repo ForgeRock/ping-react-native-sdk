@@ -32,6 +32,13 @@ npm run android
 yarn android
 ```
 
+If Gradle sync fails in Android Studio with a missing `node` error, launch Android Studio
+from a terminal that has Node on PATH:
+
+```sh
+open -a "Android Studio"
+```
+
 ### iOS
 
 For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).

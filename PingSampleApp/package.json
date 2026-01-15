@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-pingidentity/browser": "workspace:*",
     "@react-native-pingidentity/journey": "workspace:*",
     "@react-native-pingidentity/storage": "workspace:*",
     "@react-native/new-app-screen": "0.80.1",

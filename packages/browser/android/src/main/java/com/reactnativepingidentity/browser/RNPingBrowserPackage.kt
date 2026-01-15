@@ -8,24 +8,47 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 import java.util.HashMap
 
 class RNPingBrowserPackage : BaseReactPackage() {
+
+  private val isNewArchEnabled: Boolean
+    get() {
+      val flag = System.getProperty("newArchEnabled") ?: "false"
+      return flag.equals("true", ignoreCase = true)
+    }
+
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
-    return if (name == RNPingBrowserModule.NAME) {
-      RNPingBrowserModule(reactContext)
-    } else {
-      null
+    return when (name) {
+      RNPingBrowserModule.NAME -> {
+        if (isNewArchEnabled) {
+          RNPingBrowserModule(reactContext)
+        } else {
+          null
+        }
+      }
+      RNPingBrowserClassicModule.NAME -> {
+        if (isNewArchEnabled) {
+          null
+        } else {
+          RNPingBrowserClassicModule(reactContext)
+        }
+      }
+      else -> null
     }
   }
 
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
-      moduleInfos[RNPingBrowserModule.NAME] = ReactModuleInfo(
-        RNPingBrowserModule.NAME,
-        RNPingBrowserModule.NAME,
+      val isTurbo = isNewArchEnabled
+      val moduleName =
+        if (isTurbo) RNPingBrowserModule.NAME else RNPingBrowserClassicModule.NAME
+
+      moduleInfos[moduleName] = ReactModuleInfo(
+        moduleName,
+        moduleName,
         false,  // canOverrideExistingModule
         false,  // needsEagerInit
         false,  // isCxxModule
-        true // isTurboModule
+        isTurbo // isTurboModule
       )
       moduleInfos
     }

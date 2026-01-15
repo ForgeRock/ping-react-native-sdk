@@ -2232,9 +2232,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-pingidentity/browser@workspace:*, @react-native-pingidentity/browser@workspace:packages/browser":
+  version: 0.0.0-use.local
+  resolution: "@react-native-pingidentity/browser@workspace:packages/browser"
+  dependencies:
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@react-native-pingidentity/core@npm:^0.1.0, @react-native-pingidentity/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/core@workspace:packages/core"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
   languageName: unknown
   linkType: soft
 
@@ -3037,6 +3052,7 @@ __metadata:
     "@react-native-community/cli": "npm:19.0.0"
     "@react-native-community/cli-platform-android": "npm:19.0.0"
     "@react-native-community/cli-platform-ios": "npm:19.0.0"
+    "@react-native-pingidentity/browser": "workspace:*"
     "@react-native-pingidentity/journey": "workspace:*"
     "@react-native-pingidentity/storage": "workspace:*"
     "@react-native/babel-preset": "npm:0.80.1"
