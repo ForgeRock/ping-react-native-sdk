@@ -2,6 +2,9 @@ import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 import type { BrowserResult } from './types';
 
+/**
+ * Native configuration payload sent over the bridge (Android only).
+ */
 type NativeBrowserConfig = {
   browserPackage?: string;
   customTabs?: {
@@ -24,6 +27,9 @@ const isNewArchEnabled =
   typeof global.__turboModuleProxy !== 'undefined' &&
   global.__turboModuleProxy != null;
 
+/**
+ * Native module contract for the browser package.
+ */
 export interface Spec extends TurboModule {
   /**
    * Configure global browser behavior (Android only).
@@ -46,6 +52,11 @@ export interface Spec extends TurboModule {
   ): Promise<BrowserResult>;
 }
 
+/**
+ * Resolve the native module, preferring TurboModules when enabled.
+ *
+ * @throws If the classic module is missing at runtime.
+ */
 export function getNativeModule(): Spec {
   if (isNewArchEnabled) {
     try {
