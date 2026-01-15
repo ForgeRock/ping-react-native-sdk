@@ -1,20 +1,23 @@
 package com.reactnativepingidentity.logger
 
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
 @ReactModule(name = LoggerModule.NAME)
 class LoggerModule(reactContext: ReactApplicationContext) :
-  NativeLoggerSpec(reactContext) {
+  NativeRNPingLoggerSpec(reactContext) {
 
   override fun getName(): String {
     return NAME
   }
 
-  // Example method
-  // See https://reactnative.dev/docs/native-modules-android
-  override fun multiply(a: Double, b: Double): Double {
-    return a * b
+  override fun registerLogger(config: ReadableMap): String {
+    return RNPingLoggerCommon.configure(config)
+  }
+
+  override fun syncLogger(config: ReadableMap) {
+    RNPingLoggerCommon.sync(config)
   }
 
   companion object {

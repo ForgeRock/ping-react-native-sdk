@@ -6,7 +6,6 @@
   "author": "Ping Identity",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
-  "react-native": "index.js",
   "files": [
     "src",
     "lib",
@@ -21,8 +20,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@react-native-pingidentity/core": "^0.1.0",
-    "@forgerock/sdk-logger": "^1.3.0"
+    "@forgerock/sdk-logger": "^1.3.0",
+    "@react-native-pingidentity/core": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

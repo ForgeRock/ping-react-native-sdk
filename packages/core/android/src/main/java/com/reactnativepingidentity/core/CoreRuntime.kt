@@ -17,5 +17,6 @@ import com.reactnativepingidentity.core.registry.SimpleRegistry
  */
 object CoreRuntime {
     val storageRegistry: Registry = SimpleRegistry()
+    val loggerRegistry: Registry = SimpleRegistry()
     // val mfaRegistry: Registry = SimpleRegistry()
 }

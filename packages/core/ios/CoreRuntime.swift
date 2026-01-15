@@ -12,5 +12,6 @@ import Foundation
 /// Keeps native handles alive across calls from the React Native bridge.
 public enum CoreRuntime {
     public static let storageRegistry: Registry = SimpleRegistry()
+    public static let loggerRegistry: Registry = SimpleRegistry()
     // public static let mfaRegistry: Registry = SimpleRegistry()
 }

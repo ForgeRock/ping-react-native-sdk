@@ -1,5 +1,2 @@
-import Logger from './NativeLogger';
-
-export function multiply(a: number, b: number): number {
-  return Logger.multiply(a, b);
-}
+export { configureLogger, logger } from './logger';
+export type * from './types';

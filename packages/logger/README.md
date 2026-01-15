@@ -14,13 +14,19 @@ npm install @react-native-pingidentity/logger
 
 
 ```js
-import { logger } from '@react-native-pingidentity/logger';
+import { configureLogger, logger } from '@react-native-pingidentity/logger';
 
 const log = logger({ level: 'info' });
 log.info('Application started');
 log.warn('Potential issue detected');
 log.error('An error occurred');
 log.changeLevel('debug');
+
+// Defaults to level "none" when omitted
+const silentLog = logger();
+
+// Get native logger id for other modules (e.g. journey config)
+const logId = configureLogger({ level: 'info' });
 ```
 
 

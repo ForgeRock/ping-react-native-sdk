@@ -7,13 +7,23 @@ export type LoggerLevel =
   | 'error'
   | 'none';
 
+export type NativeLoggerLevel =
+  | 'STANDARD'
+  | 'WARN'
+  | 'NONE';
+
 export type LoggerOptions = {
+  level: NativeLoggerLevel;
+};
+
+export type LoggerSyncOptions = {
   id: string;
-  level: LoggerLevel;
+  level: NativeLoggerLevel;
 };
 
 export interface Spec extends TurboModule {
-  syncLogger(config: LoggerOptions): void;
+  registerLogger(config: LoggerOptions): string;
+  syncLogger(config: LoggerSyncOptions): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('Logger');
