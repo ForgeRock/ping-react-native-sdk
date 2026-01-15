@@ -5,7 +5,6 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import { open } from '@react-native-pingidentity/browser';
 import { commonStyles } from '../src/styles/common';
@@ -38,6 +37,10 @@ export default function BrowserScreen() {
       const response = await open(overrideUrl ?? url, {
         callbackUrlScheme,
         redirectUri: redirectUri.trim() ? redirectUri : undefined,
+        ios: {
+          browserMode: 'login',
+          browserType: 'authSession'
+        }
       });
       setResult(JSON.stringify(response, null, 2));
     } catch (e: any) {

@@ -7,6 +7,9 @@ export type BrowserResult =
 
 /**
  * Configuration for launching the browser.
+ *
+ * @remarks
+ * The `callbackUrlScheme` is required to receive the redirect back into the app.
  */
 export type BrowserOpenOptions = {
   /**
@@ -42,7 +45,9 @@ export type BrowserOpenOptions = {
   ios?: {
     /**
      * Browser type for iOS.
-     * Only authSession and ephemeralAuthSession are implemented.
+     *
+     * @remarks
+     * Only `authSession` and `ephemeralAuthSession` are implemented.
      */
     browserType?: 'authSession' | 'ephemeralAuthSession';
 
@@ -53,25 +58,64 @@ export type BrowserOpenOptions = {
   };
 };
 
+/**
+ * Android-only global configuration for browser sessions.
+ */
 export type AndroidBrowserConfig = {
+  /**
+   * Force a specific browser package (e.g. Chrome, Edge).
+   */
   browserPackage?: string;
   customTabs?: {
+    /**
+     * Show or hide the page title.
+     */
     showTitle?: boolean;
+    /**
+     * Allow the URL bar to hide while scrolling.
+     */
     urlBarHidingEnabled?: boolean;
+    /**
+     * Toolbar color override.
+     */
     toolbarColor?: string;
+    /**
+     * Color scheme preference for the tab UI.
+     */
     colorScheme?: 'system' | 'light' | 'dark';
   };
   authTabs?: {
+    /**
+     * Prefer ephemeral browsing where supported.
+     */
     ephemeral?: boolean;
+    /**
+     * Color scheme preference for the tab UI.
+     */
     colorScheme?: 'system' | 'light' | 'dark';
+    /**
+     * Toolbar color override.
+     */
     toolbarColor?: string;
+    /**
+     * Navigation bar color override.
+     */
     navigationBarColor?: string;
+    /**
+     * Divider color between navigation bar and content.
+     */
     navigationBarDividerColor?: string;
   };
 };
 
+/**
+ * iOS-only global configuration.
+ */
 export type IOSBrowserConfig = {};
 
+/**
+ * Cross-platform configuration wrapper.
+ */
 export type BrowserConfig = {
   android?: AndroidBrowserConfig;
   ios?: IOSBrowserConfig;

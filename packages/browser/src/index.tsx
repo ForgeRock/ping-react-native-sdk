@@ -10,11 +10,9 @@ import type {
 /**
  * Configure global browser behavior.
  *
- * Android:
- *  - Applies Custom Tabs / intent settings globally.
+ * Android applies Custom Tabs/Auth Tabs settings globally; iOS is a no-op.
  *
- * iOS:
- *  - No-op (reserved for future).
+ * @param config Platform-specific browser configuration.
  */
 export function configureBrowser(config: BrowserConfig): void {
   if (Platform.OS !== 'android') {
@@ -27,11 +25,7 @@ export function configureBrowser(config: BrowserConfig): void {
 /**
  * Reset any in-flight browser session.
  *
- * iOS:
- *  - Cancels the current browser flow if active.
- *
- * Android:
- *  - No-op.
+ * iOS cancels the current browser flow if active; Android is a no-op.
  */
 export function resetBrowser(): void {
   if (Platform.OS !== 'ios') {
@@ -44,9 +38,11 @@ export function resetBrowser(): void {
 /**
  * Launch a secure system browser and wait for redirect or cancellation.
  *
- * Native behavior:
- *  - Android: Automatically selects Auth Tabs or Custom Tabs.
- *  - iOS: Uses ASWebAuthenticationSession (or ephemeral variant internally).
+ * Android uses Auth Tabs/Custom Tabs; iOS uses ASWebAuthenticationSession.
+ *
+ * @param url Target URL to open.
+ * @param options Per-launch options and callback configuration.
+ * @returns The browser result when the redirect is received or the user cancels.
  */
 export function open(
   url: string,

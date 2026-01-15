@@ -1,21 +1,29 @@
-# @react-native-pingidentity/browser
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-android-sdk)
 
-Ping Browser
+# Ping Identity React Native Browser
 
-## Installation
+The Ping Identity React Native Browser module provides a safe, system-browser flow for OIDC/OAuth
+logins. It launches Custom Tabs/Auth Tabs on Android and ASWebAuthenticationSession on iOS, then
+returns the redirect URL to JavaScript.
 
+## Integrating the SDK into your project
 
-```sh
-npm install @react-native-pingidentity/browser
+Add the package and let autolinking wire the native code:
+
+```bash
+yarn add @react-native-pingidentity/browser
+cd ios && pod install
 ```
 
+## How to Use the SDK
 
-## Usage
+### Configure (Android only)
+
+Apply global customization for Custom Tabs/Auth Tabs. iOS currently ignores these options.
 
 ```ts
-import { configureBrowser, open } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@react-native-pingidentity/browser';
 
-// Optional: Android-only global configuration.
 configureBrowser({
   android: {
     customTabs: {
@@ -28,31 +36,25 @@ configureBrowser({
     },
   },
 });
+```
+
+### Open a browser session
+
+```ts
+import { open } from '@react-native-pingidentity/browser';
 
 const result = await open('https://example.com', {
   callbackUrlScheme: 'com.example.app',
   redirectUri: 'com.example.app://callback',
+  ios: {
+    browserType: 'authSession',
+    browserMode: 'login',
+  },
 });
 
 // result: { type: 'success', url } | { type: 'cancel' }
 ```
 
-### Platform notes
+## TODO
 
-- Android: `configureBrowser` applies Custom Tabs and Auth Tabs customization.
-- iOS: `configureBrowser` is a no-op (reserved for future). Use `open` with `callbackUrlScheme`.
-
-
-## Contributing
-
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-
-## License
-
-MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+- Implement standardized error types and logger configuration once the related tickets are complete.
