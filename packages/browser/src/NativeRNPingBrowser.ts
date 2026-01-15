@@ -67,5 +67,3 @@ export function getNativeModule(): Spec {
 
   return classic as Spec;
 }
-
-export default getNativeModule();

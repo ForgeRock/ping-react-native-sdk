@@ -17,6 +17,7 @@
   "scripts": {
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
+    "test": "jest",
     "clean": "rimraf lib"
   },
   "peerDependencies": {

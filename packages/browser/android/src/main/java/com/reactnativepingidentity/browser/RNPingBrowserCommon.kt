@@ -9,14 +9,16 @@ package com.reactnativepingidentity.browser
 
 import android.graphics.Color
 import androidx.browser.auth.AuthTabColorSchemeParams
+import androidx.browser.auth.AuthTabIntent
+import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
-import com.pingidentity.browser.BrowserLauncher
 import java.net.URL
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +30,8 @@ object RNPingBrowserCommon {
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
   private var appContext: ReactApplicationContext? = null
+  internal var browserLauncher: BrowserLauncherAdapter = DefaultBrowserLauncherAdapter
+  internal var mapFactory: () -> WritableMap = { Arguments.createMap() }
 
   /**
    * Apply global browser configuration from JS.
@@ -53,7 +57,9 @@ object RNPingBrowserCommon {
       null
     }
 
-    BrowserLauncher.customTabsCustomizer = {
+    browserLauncher.customTabsCustomizer = {
+      val colorParamsBuilder = CustomTabColorSchemeParams.Builder()
+      var hasColors = false
       customTabsConfig?.let { map ->
         if (map.hasKey("showTitle")) {
           setShowTitle(map.getBoolean("showTitle"))
@@ -64,7 +70,8 @@ object RNPingBrowserCommon {
         if (map.hasKey("toolbarColor")) {
           val colorValue = map.getString("toolbarColor")
           if (!colorValue.isNullOrBlank()) {
-            setToolbarColor(Color.parseColor(colorValue))
+            colorParamsBuilder.setToolbarColor(Color.parseColor(colorValue))
+            hasColors = true
           }
         }
         if (map.hasKey("colorScheme")) {
@@ -75,9 +82,12 @@ object RNPingBrowserCommon {
           }
         }
       }
+      if (hasColors) {
+        setDefaultColorSchemeParams(colorParamsBuilder.build())
+      }
     }
 
-    BrowserLauncher.authTabCustomizer = {
+    browserLauncher.authTabCustomizer = {
       authTabsConfig?.let { map ->
         if (map.hasKey("ephemeral")) {
           val enabled = map.getBoolean("ephemeral")
@@ -123,7 +133,7 @@ object RNPingBrowserCommon {
       null
     }
 
-    BrowserLauncher.intentCustomizer = {
+    browserLauncher.intentCustomizer = {
       if (!resolvedPackage.isNullOrBlank()) {
         setPackage(resolvedPackage)
       }
@@ -143,8 +153,8 @@ object RNPingBrowserCommon {
 
     scope.launch {
       val result = try {
-        val resolvedRedirectUri = redirectUri?.toUri() ?: BrowserLauncher.redirectUri
-        BrowserLauncher.launch(URL(url), resolvedRedirectUri)
+        val resolvedRedirectUri = redirectUri?.toUri() ?: browserLauncher.redirectUri
+        browserLauncher.launch(URL(url), resolvedRedirectUri)
       } catch (e: Exception) {
         Result.failure(e)
       }
@@ -152,13 +162,13 @@ object RNPingBrowserCommon {
       if (result.isSuccess) {
         val uri = result.getOrNull()
         if (uri == null) {
-          val payload = Arguments.createMap()
+          val payload = mapFactory()
           payload.putString("type", "cancel")
           promise.resolve(payload)
           return@launch
         }
 
-        val payload = Arguments.createMap()
+        val payload = mapFactory()
         payload.putString("type", "success")
         payload.putString("url", uri.toString())
         promise.resolve(payload)
@@ -167,7 +177,7 @@ object RNPingBrowserCommon {
 
       val error = result.exceptionOrNull()
       if (error is BrowserCanceledException || error is CancellationException) {
-        val payload = Arguments.createMap()
+        val payload = mapFactory()
         payload.putString("type", "cancel")
         promise.resolve(payload)
         return@launch

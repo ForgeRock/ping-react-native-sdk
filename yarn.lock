@@ -2810,7 +2810,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/jest@npm:^29.5.13":
+"@types/jest@npm:^29.5.14":
   version: 29.5.14
   resolution: "@types/jest@npm:29.5.14"
   dependencies:
@@ -3116,11 +3116,9 @@ __metadata:
     "@react-native/typescript-config": "npm:0.80.1"
     "@react-navigation/native": "npm:^7.1.17"
     "@react-navigation/native-stack": "npm:^7.3.26"
-    "@types/jest": "npm:^29.5.13"
     "@types/react": "npm:^19.1.0"
     "@types/react-test-renderer": "npm:^19.1.0"
     eslint: "npm:^8.19.0"
-    jest: "npm:^29.6.3"
     prettier: "npm:2.8.8"
     react: "npm:19.1.0"
     react-native: "npm:0.80.1"
@@ -6762,7 +6760,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest@npm:^29.6.3":
+"jest@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest@npm:29.7.0"
   dependencies:
@@ -8392,6 +8390,9 @@ __metadata:
   resolution: "react-native-pingidentity@workspace:."
   dependencies:
     "@react-native/codegen": "npm:^0.82.1"
+    "@types/jest": "npm:^29.5.14"
+    babel-jest: "npm:^29.7.0"
+    jest: "npm:^29.7.0"
     typedoc: "npm:^0.27.7"
   languageName: unknown
   linkType: soft
