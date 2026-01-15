@@ -27,8 +27,7 @@ final class RNPingLoggerCommonTests: XCTestCase {
   func testSyncCreatesRegistryEntry() async {
     let config: NSDictionary = [
       "id": "js.logger.1",
-      "level": "STANDARD",
-      "role": "sdk"
+      "level": "STANDARD"
     ]
 
     RNPingLoggerCommon.sync(config)
@@ -39,15 +38,13 @@ final class RNPingLoggerCommonTests: XCTestCase {
     if let registryId = registryId {
       let handle = await waitForHandle(registryId)
       XCTAssertEqual(handle?.level, "STANDARD", "sync should store the provided level")
-      XCTAssertEqual(handle?.role, "sdk", "sync should store the provided role")
     }
   }
 
   func testSyncUpdatesExistingHandle() async {
     let firstConfig: NSDictionary = [
       "id": "js.logger.2",
-      "level": "STANDARD",
-      "role": "alpha"
+      "level": "STANDARD"
     ]
 
     RNPingLoggerCommon.sync(firstConfig)
@@ -63,32 +60,6 @@ final class RNPingLoggerCommonTests: XCTestCase {
       RNPingLoggerCommon.sync(updatedConfig)
       let handle = await waitForHandle(registryId)
       XCTAssertEqual(handle?.level, "WARN", "sync should update the level on existing handle")
-      XCTAssertEqual(handle?.role, "alpha", "sync should preserve role when none is provided")
-    }
-  }
-
-  func testSyncUpdatesRoleWhenProvided() async {
-    let initialConfig: NSDictionary = [
-      "id": "js.logger.3",
-      "level": "STANDARD",
-      "role": "alpha"
-    ]
-
-    RNPingLoggerCommon.sync(initialConfig)
-    let registryId = await waitForRegistryId("js.logger.3")
-    XCTAssertNotNil(registryId, "sync should register the initial handle")
-
-    if let registryId = registryId {
-      let updatedConfig: NSDictionary = [
-        "id": "js.logger.3",
-        "level": "WARN",
-        "role": "beta"
-      ]
-
-      RNPingLoggerCommon.sync(updatedConfig)
-      let handle = await waitForHandle(registryId)
-      XCTAssertEqual(handle?.level, "WARN", "sync should update the level on existing handle")
-      XCTAssertEqual(handle?.role, "beta", "sync should update the role when provided")
     }
   }
 

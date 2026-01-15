@@ -11,16 +11,10 @@ public class RNPingLoggerCommon: NSObject {
   final class LoggerHandle: NativeHandle {
     /// The log level for this logger instance.
     var level: String
-    /// Optional role identifier for the logger.
-    var role: String?
-
     /// Creates a new logger handle with the specified configuration.
-    /// - Parameters:
-    ///   - level: The log level to use.
-    ///   - role: Optional role identifier for the logger.
-    init(level: String, role: String?) {
+    /// - Parameter level: The log level to use.
+    init(level: String) {
       self.level = level
-      self.role = role
     }
   }
 
@@ -38,7 +32,7 @@ public class RNPingLoggerCommon: NSObject {
   private static var jsIdToRegistryId: [String: String] = [:]
 
   /// Synchronizes logger configuration from JavaScript to native.
-  /// - Parameter config: Dictionary containing logger configuration with "id", "level", and optional "role".
+  /// - Parameter config: Dictionary containing logger configuration with "id" and "level".
   @objc
   public static func sync(_ config: NSDictionary) {
     guard
@@ -48,9 +42,8 @@ public class RNPingLoggerCommon: NSObject {
       return
     }
 
-    let role = config["role"] as? String
     syncQueue.async {
-      syncInternal(id: id, level: level, role: role)
+      syncInternal(id: id, level: level)
     }
   }
 
@@ -58,8 +51,7 @@ public class RNPingLoggerCommon: NSObject {
   /// - Parameters:
   ///   - id: The JavaScript logger ID.
   ///   - level: The log level to apply.
-  ///   - role: Optional role identifier.
-  private static func syncInternal(id: String, level: String, role: String?) {
+  private static func syncInternal(id: String, level: String) {
     precondition(
       DispatchQueue.getSpecific(key: syncQueueKey) != nil,
       "RNPingLoggerCommon.syncInternal must be called on syncQueue"
@@ -72,14 +64,11 @@ public class RNPingLoggerCommon: NSObject {
       if let registryId = registryId,
          let handle = await CoreRuntime.loggerRegistry.resolve(registryId) as? LoggerHandle {
         handle.level = level
-        if let role = role {
-          handle.role = role
-        }
         semaphore.signal()
         return
       }
 
-      let handle = LoggerHandle(level: level, role: role)
+      let handle = LoggerHandle(level: level)
       let newId = await CoreRuntime.loggerRegistry.register(handle)
       registryId = newId
       semaphore.signal()
