@@ -1,10 +1,4 @@
 /**
- * Public Browser module types.
- * Extend as native/browser APIs are added.
- */
-export type MultiplyFn = (a: number, b: number) => number;
-
-/**
  * Result of a browser launch.
  */
 export type BrowserResult =
@@ -41,4 +35,28 @@ export type BrowserOpenOptions = {
    *   Typically handled by the authentication layer; ignored if not applicable.
    */
   redirectUri?: string;
+};
+
+export type AndroidBrowserConfig = {
+  browserPackage?: string;
+  customTabs?: {
+    showTitle?: boolean;
+    urlBarHidingEnabled?: boolean;
+    toolbarColor?: string;
+    colorScheme?: 'system' | 'light' | 'dark';
+  };
+  authTabs?: {
+    ephemeral?: boolean;
+    colorScheme?: 'system' | 'light' | 'dark';
+    toolbarColor?: string;
+    navigationBarColor?: string;
+    navigationBarDividerColor?: string;
+  };
+};
+
+export type IOSBrowserConfig = {};
+
+export type BrowserConfig = {
+  android?: AndroidBrowserConfig;
+  ios?: IOSBrowserConfig;
 };

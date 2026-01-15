@@ -7,6 +7,7 @@ import JourneyScreen from './ui/JourneyScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
+import { configureBrowser } from '@react-native-pingidentity/browser';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -21,7 +22,23 @@ export default function App() {
   useEffect(() => {
     // Init login clients
     loginClient.init()
-    loginClient2.init(); 
+    loginClient2.init();
+
+    configureBrowser({
+      android: {
+        customTabs: {
+          showTitle: false,
+          urlBarHidingEnabled: true,
+          colorScheme: 'dark',
+        },
+        authTabs: {
+          ephemeral: true,
+          colorScheme: 'dark',
+          toolbarColor: '#0057B8',
+          navigationBarColor: '#001F3F',
+        },
+      },
+    });
   }, []);
   return (
     <NavigationContainer>

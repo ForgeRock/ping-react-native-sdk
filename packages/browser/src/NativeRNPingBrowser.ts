@@ -9,6 +9,26 @@ const isNewArchEnabled =
 
 export interface Spec extends TurboModule {
   /**
+   * Configure global browser behavior (Android only).
+   */
+  configure(config: {
+    browserPackage?: string;
+    customTabs?: {
+      showTitle?: boolean;
+      urlBarHidingEnabled?: boolean;
+      toolbarColor?: string;
+      colorScheme?: string;
+    };
+    authTabs?: {
+      ephemeral?: boolean;
+      colorScheme?: string;
+      toolbarColor?: string;
+      navigationBarColor?: string;
+      navigationBarDividerColor?: string;
+    };
+  }): void;
+
+  /**
    * Launch the native browser session and resolve with either:
    * - { type: 'success', url } when a redirect is captured
    * - { type: 'cancel' } when the user cancels/dismisses
@@ -24,16 +44,9 @@ export interface Spec extends TurboModule {
 
 export function getNativeModule(): Spec {
   if (isNewArchEnabled) {
-    // Temporary debug to confirm TurboModule availability in runtime.
-    console.warn(
-      '[@react-native-pingidentity/browser] TurboModule proxy present; trying TurboModule.'
-    );
     try {
       return TurboModuleRegistry.getEnforcing<Spec>('RNPingBrowser');
     } catch {
-      console.warn(
-        '[@react-native-pingidentity/browser] TurboModule not registered; falling back to classic.'
-      );
       // Fall back to classic if TurboModule isn't registered at runtime.
     }
   }

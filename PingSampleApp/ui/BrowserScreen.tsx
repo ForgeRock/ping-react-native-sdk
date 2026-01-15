@@ -11,7 +11,8 @@ import { commonStyles } from '../src/styles/common';
 
 export default function BrowserScreen() {
   const [url, setUrl] = useState(
-    'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
+    'https://www.pingidentity.com',
+   // 'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
   );
   const [callbackUrlScheme, setCallbackUrlScheme] = useState(
     'com.pingidentity.sampleapp',
@@ -21,6 +22,11 @@ export default function BrowserScreen() {
   );
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
+
+  const suggestedUrls = [
+    'https://www.pingidentity.com',
+    'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
+  ];
 
   const handleOpen = async () => {
     setError('');
@@ -51,6 +57,17 @@ export default function BrowserScreen() {
           autoCapitalize="none"
           autoCorrect={false}
         />
+        <View style={commonStyles.suggestionContainer}>
+          {suggestedUrls.map(item => (
+            <TouchableOpacity
+              key={item}
+              onPress={() => setUrl(item)}
+              style={commonStyles.suggestionChip}
+            >
+              <Text style={commonStyles.suggestionText}>🔗 {item}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={commonStyles.inputLabel}>Callback URL Scheme</Text>
         <TextInput

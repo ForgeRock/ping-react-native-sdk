@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2025 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 package com.reactnativepingidentity.browser
 
 import com.facebook.react.BaseReactPackage
@@ -9,12 +16,18 @@ import java.util.HashMap
 
 class RNPingBrowserPackage : BaseReactPackage() {
 
+  /**
+   * Detect whether the new architecture is enabled at build time.
+   */
   private val isNewArchEnabled: Boolean
     get() {
       val flag = System.getProperty("newArchEnabled") ?: "false"
       return flag.equals("true", ignoreCase = true)
     }
 
+  /**
+   * Provide the correct module implementation for the current architecture.
+   */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return when (name) {
       RNPingBrowserModule.NAME -> {
@@ -35,6 +48,9 @@ class RNPingBrowserPackage : BaseReactPackage() {
     }
   }
 
+  /**
+   * Register module metadata for React Native.
+   */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
