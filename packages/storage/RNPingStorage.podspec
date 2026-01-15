@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
 
   # Minimum iOS version
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "16.0" }
 
   # IMPORTANT: local monorepo source path (not git)
   s.source       = { :path => "." }

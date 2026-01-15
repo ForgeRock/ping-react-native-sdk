@@ -5,6 +5,7 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { open } from '@react-native-pingidentity/browser';
 import { commonStyles } from '../src/styles/common';
@@ -26,14 +27,15 @@ export default function BrowserScreen() {
   const suggestedUrls = [
     'https://www.pingidentity.com',
     'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
+    'https://example.com',
   ];
 
-  const handleOpen = async () => {
+  const handleOpen = async (overrideUrl?: string) => {
     setError('');
     setResult('');
 
     try {
-      const response = await open(url, {
+      const response = await open(overrideUrl ?? url, {
         callbackUrlScheme,
         redirectUri: redirectUri.trim() ? redirectUri : undefined,
       });
@@ -42,6 +44,7 @@ export default function BrowserScreen() {
       setError(e?.message ?? 'Browser open failed');
     }
   };
+
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
@@ -91,7 +94,7 @@ export default function BrowserScreen() {
 
         <TouchableOpacity
           style={commonStyles.buttonPrimary}
-          onPress={handleOpen}
+          onPress={() => handleOpen()}
         >
           <Text style={commonStyles.buttonText}>Open Browser</Text>
         </TouchableOpacity>

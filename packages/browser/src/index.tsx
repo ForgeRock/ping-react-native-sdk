@@ -25,6 +25,23 @@ export function configureBrowser(config: BrowserConfig): void {
 }
 
 /**
+ * Reset any in-flight browser session.
+ *
+ * iOS:
+ *  - Cancels the current browser flow if active.
+ *
+ * Android:
+ *  - No-op.
+ */
+export function resetBrowser(): void {
+  if (Platform.OS !== 'ios') {
+    return;
+  }
+
+  getNativeModule().reset();
+}
+
+/**
  * Launch a secure system browser and wait for redirect or cancellation.
  *
  * Native behavior:
@@ -35,7 +52,7 @@ export function open(
   url: string,
   options: BrowserOpenOptions
 ): Promise<BrowserResult> {
-  return getNativeModule().open(url, options);
+  return getNativeModule().open(url, options as unknown as Object);
 }
 
 export type * from './types';

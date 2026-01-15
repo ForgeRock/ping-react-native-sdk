@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ping Identity Corporation. All rights reserved.
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
  *
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
@@ -9,7 +9,6 @@ package com.reactnativepingidentity.browser
 
 import android.graphics.Color
 import androidx.browser.auth.AuthTabColorSchemeParams
-import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import com.facebook.react.bridge.Arguments
@@ -176,6 +175,14 @@ object RNPingBrowserCommon {
 
       promise.reject("OPEN_ERROR", error?.message, error)
     }
+  }
+
+  /**
+   * Reset any in-flight browser session (no-op on Android).
+   */
+  @JvmStatic
+  fun reset() {
+    // Android BrowserLauncher does not expose a public reset API.
   }
 
   /**

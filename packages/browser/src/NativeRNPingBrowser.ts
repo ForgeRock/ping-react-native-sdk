@@ -2,6 +2,23 @@ import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 import type { BrowserResult } from './types';
 
+type NativeBrowserConfig = {
+  browserPackage?: string;
+  customTabs?: {
+    showTitle?: boolean;
+    urlBarHidingEnabled?: boolean;
+    toolbarColor?: string;
+    colorScheme?: string;
+  };
+  authTabs?: {
+    ephemeral?: boolean;
+    colorScheme?: string;
+    toolbarColor?: string;
+    navigationBarColor?: string;
+    navigationBarDividerColor?: string;
+  };
+};
+
 // Detect New Architecture (Turbo)
 const isNewArchEnabled =
   typeof global.__turboModuleProxy !== 'undefined' &&
@@ -11,22 +28,12 @@ export interface Spec extends TurboModule {
   /**
    * Configure global browser behavior (Android only).
    */
-  configure(config: {
-    browserPackage?: string;
-    customTabs?: {
-      showTitle?: boolean;
-      urlBarHidingEnabled?: boolean;
-      toolbarColor?: string;
-      colorScheme?: string;
-    };
-    authTabs?: {
-      ephemeral?: boolean;
-      colorScheme?: string;
-      toolbarColor?: string;
-      navigationBarColor?: string;
-      navigationBarDividerColor?: string;
-    };
-  }): void;
+  configure(config: NativeBrowserConfig): void;
+
+  /**
+   * Reset any in-flight browser session (iOS only).
+   */
+  reset(): void;
 
   /**
    * Launch the native browser session and resolve with either:
@@ -35,10 +42,7 @@ export interface Spec extends TurboModule {
    */
   open(
     url: string,
-    options: {
-      callbackUrlScheme: string;
-      redirectUri?: string;
-    }
+    options: Object
   ): Promise<BrowserResult>;
 }
 

@@ -26,6 +26,8 @@ Pod::Spec.new do |s|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
   end
 
+  s.dependency "PingJourney"
+
   # RN New Architecture helper
   install_modules_dependencies(s)
 end

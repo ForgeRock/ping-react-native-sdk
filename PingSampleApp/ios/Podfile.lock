@@ -2256,6 +2256,36 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNPingBrowser (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingBrowser (= 1.3.0-beta2)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNPingCore (0.1.0):
     - boost
     - DoubleConversion
@@ -2263,6 +2293,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingJourney
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2491,6 +2522,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
@@ -2661,6 +2693,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon"
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
+  RNPingBrowser:
+    :path: "../../node_modules/@react-native-pingidentity/browser"
   RNPingCore:
     :path: "../../packages/core"
   RNPingJourney:
@@ -2752,13 +2786,14 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingCore: c778df8bc4a917f2cb3b9f9bd676da5371fcc350
+  RNPingBrowser: 7571323f6b11d4e9739a4a472c0883acad1a002e
+  RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
   RNPingJourney: 2d5cad6ab6b008feeb3e2a5a4df42f4f17581171
-  RNPingStorage: 4d3c4f043f9f043067109b3a9403ae92ec587e80
+  RNPingStorage: 902ed7058a49efc060014ad2eeb6452e2cc2bf41
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: e94c9b7f950fcc9865020f077bc61c47feeeed2a
+PODFILE CHECKSUM: ba20ff146ca4722684dcacbf71a617914f81e122
 
 COCOAPODS: 1.15.2

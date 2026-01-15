@@ -43,7 +43,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <View style={commonStyles.homeFooter}>
         <Text style={commonStyles.homeFooterText}>
-          React Native Unified SDK — POC Build
+          React Native Unified SDK
         </Text>
       </View>
     </View>

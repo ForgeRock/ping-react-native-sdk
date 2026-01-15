@@ -1,6 +1,6 @@
 # @react-native-pingidentity/browser
 
-Browser
+Ping Browser
 
 ## Installation
 
@@ -12,14 +12,35 @@ npm install @react-native-pingidentity/browser
 
 ## Usage
 
+```ts
+import { configureBrowser, open } from '@react-native-pingidentity/browser';
 
-```js
-import { multiply } from '@react-native-pingidentity/browser';
+// Optional: Android-only global configuration.
+configureBrowser({
+  android: {
+    customTabs: {
+      showTitle: false,
+      urlBarHidingEnabled: true,
+      colorScheme: 'system',
+    },
+    authTabs: {
+      ephemeral: true,
+    },
+  },
+});
 
-// ...
+const result = await open('https://example.com', {
+  callbackUrlScheme: 'com.example.app',
+  redirectUri: 'com.example.app://callback',
+});
 
-const result = multiply(3, 7);
+// result: { type: 'success', url } | { type: 'cancel' }
 ```
+
+### Platform notes
+
+- Android: `configureBrowser` applies Custom Tabs and Auth Tabs customization.
+- iOS: `configureBrowser` is a no-op (reserved for future). Use `open` with `callbackUrlScheme`.
 
 
 ## Contributing

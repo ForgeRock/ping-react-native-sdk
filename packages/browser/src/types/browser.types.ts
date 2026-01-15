@@ -35,6 +35,22 @@ export type BrowserOpenOptions = {
    *   Typically handled by the authentication layer; ignored if not applicable.
    */
   redirectUri?: string;
+
+  /**
+   * iOS-only options.
+   */
+  ios?: {
+    /**
+     * Browser type for iOS.
+     * Only authSession and ephemeralAuthSession are implemented.
+     */
+    browserType?: 'authSession' | 'ephemeralAuthSession';
+
+    /**
+     * Browser mode (reserved; currently informational).
+     */
+    browserMode?: 'login' | 'logout' | 'custom';
+  };
 };
 
 export type AndroidBrowserConfig = {
