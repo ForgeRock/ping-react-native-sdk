@@ -12,7 +12,6 @@ import { commonStyles } from '../src/styles/common';
 export default function BrowserScreen() {
   const [url, setUrl] = useState(
     'https://www.pingidentity.com',
-   // 'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
   );
   const [callbackUrlScheme, setCallbackUrlScheme] = useState(
     'com.pingidentity.sampleapp',
@@ -26,7 +25,6 @@ export default function BrowserScreen() {
   const suggestedUrls = [
     'https://www.pingidentity.com',
     'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
-    'https://example.com',
   ];
 
   const handleOpen = async (overrideUrl?: string) => {
@@ -39,7 +37,7 @@ export default function BrowserScreen() {
         redirectUri: redirectUri.trim() ? redirectUri : undefined,
         ios: {
           browserMode: 'login',
-          browserType: 'authSession'
+          browserType: 'ephemeralAuthSession'
         }
       });
       setResult(JSON.stringify(response, null, 2));

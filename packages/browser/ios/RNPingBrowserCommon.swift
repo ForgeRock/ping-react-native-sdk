@@ -15,6 +15,21 @@ import AuthenticationServices
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
 
+  /// Adapter used to launch and reset the native browser session.
+  internal static var browserLauncher: BrowserLaunching = DefaultBrowserLauncherAdapter()
+
+#if DEBUG
+  /// Replace the browser launcher for unit tests.
+  public static func _setBrowserLauncherForTesting(_ launcher: BrowserLaunching) {
+    browserLauncher = launcher
+  }
+
+  /// Reset the browser launcher after tests.
+  public static func _resetBrowserLauncherForTesting() {
+    browserLauncher = DefaultBrowserLauncherAdapter()
+  }
+#endif
+
   /// iOS has no global configuration for this SDK yet (no-op).
   @objc
   public static func configure(_ config: NSDictionary) {
@@ -22,14 +37,22 @@ public class RNPingBrowserCommon: NSObject {
   }
 
   /// Reset any in-flight browser session.
+  ///
+  /// This cancels the current browser flow when supported by the native launcher.
   @objc
   public static func reset() {
     Task { @MainActor in
-      BrowserLauncher.currentBrowser.reset()
+      browserLauncher.reset()
     }
   }
 
   /// Launch a browser session and resolve with success/cancel, or reject on error.
+  ///
+  /// - Parameters:
+  ///   - url: The URL to launch in the system browser.
+  ///   - options: Launch options including callback scheme and iOS settings.
+  ///   - resolver: Callback for successful results.
+  ///   - rejecter: Callback for validation or launch errors.
   @objc
   public static func open(
     _ url: String,
@@ -70,7 +93,7 @@ public class RNPingBrowserCommon: NSObject {
 
     Task { @MainActor in
       do {
-        let result = try await BrowserLauncher.currentBrowser.launch(
+        let result = try await browserLauncher.launch(
           url: launchUrl,
           customParams: nil,
           browserType: browserType,

@@ -58,3 +58,4 @@ const result = await open('https://example.com', {
 ## TODO
 
 - Implement standardized error types and logger configuration once the related tickets are complete.
+- Add an iOS test runner target to execute module unit tests.
