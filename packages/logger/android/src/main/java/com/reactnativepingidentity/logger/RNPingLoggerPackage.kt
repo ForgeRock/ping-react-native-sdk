@@ -27,10 +27,10 @@ class LoggerPackage : BaseReactPackage() {
     }
 
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
-    return if (name == LoggerModule.NAME) {
+    return if (name == RNPingLoggerModule.NAME) {
       if (isNewArchEnabled) {
         // --- Turbo path ---
-        LoggerModule(reactContext)
+        RNPingLoggerModule(reactContext)
       } else {
         // --- Classic fallback ---
         LoggerClassicModule(reactContext)
@@ -44,9 +44,9 @@ class LoggerPackage : BaseReactPackage() {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
       val isTurbo = isNewArchEnabled
-      moduleInfos[LoggerModule.NAME] = ReactModuleInfo(
-        LoggerModule.NAME,
-        LoggerModule.NAME,
+      moduleInfos[RNPingLoggerModule.NAME] = ReactModuleInfo(
+        RNPingLoggerModule.NAME,
+        RNPingLoggerModule.NAME,
         false,  // canOverrideExistingModule
         false,  // needsEagerInit
         false,  // isCxxModule

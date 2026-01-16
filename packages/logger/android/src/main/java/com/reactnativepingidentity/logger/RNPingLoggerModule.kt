@@ -11,8 +11,8 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
-@ReactModule(name = LoggerModule.NAME)
-class LoggerModule(reactContext: ReactApplicationContext) :
+@ReactModule(name = RNPingLoggerModule.NAME)
+class RNPingLoggerModule(reactContext: ReactApplicationContext) :
   NativeRNPingLoggerSpec(reactContext) {
 
   override fun getName(): String {
