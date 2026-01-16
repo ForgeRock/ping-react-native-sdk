@@ -1,4 +1,6 @@
-# @react-native-pingidentity/logger
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
+
+# Ping Identity React Native Logger
 
 The logger module provides a unified logging abstraction for the Ping Identity unified react native SDK.
 
