@@ -32,4 +32,4 @@
  */
 
 export { configureLogger, logger } from './logger';
-export type * from './types';
+export type * from './types/logger.types';

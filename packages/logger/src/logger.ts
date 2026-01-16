@@ -6,7 +6,7 @@
  */
 
 import { logger as sdkLogger } from '@forgerock/sdk-logger';
-import type { LogLevel, LoggerConfig, LoggerInstance, LogMessage } from './types';
+import type { LogLevel, LoggerConfig, LoggerInstance, LogMessage } from './types/logger.types';
 import NativeLogger, { type NativeLoggerLevel } from './NativeRNPingLogger';
 
 const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
