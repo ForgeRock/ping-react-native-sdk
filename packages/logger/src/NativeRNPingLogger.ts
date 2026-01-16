@@ -49,13 +49,13 @@ export function getNativeModule(): Spec {
     return TurboModuleRegistry.getEnforcing<Spec>('Logger');
   }
 
-  const classic = NativeModules.Logger;
+  const classic = NativeModules.Logger ?? NativeModules.RNPingLogger;
   if (!classic) {
     const available = Object.keys(NativeModules)
       .slice(0, 10); // avoid huge logs
 
     throw new Error(
-      '[@react-native-pingidentity/logger] Classic Logger native module not found.\n' +
+      '[@react-native-pingidentity/logger] Classic Logger (or RNPingLogger) native module not found.\n' +
       'Available NativeModules: ' + JSON.stringify(available)
     );
   }

@@ -15,9 +15,26 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 import java.util.HashMap
 
 class LoggerPackage : BaseReactPackage() {
+  /**
+   * Detects whether the New Architecture is enabled.
+   *
+   * @return true if the New Architecture is enabled, false otherwise
+   */
+  private val isNewArchEnabled: Boolean
+    get() {
+      val flag = System.getProperty("newArchEnabled") ?: "false"
+      return flag.equals("true", ignoreCase = true)
+    }
+
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return if (name == LoggerModule.NAME) {
-      LoggerModule(reactContext)
+      if (isNewArchEnabled) {
+        // --- Turbo path ---
+        LoggerModule(reactContext)
+      } else {
+        // --- Classic fallback ---
+        LoggerClassicModule(reactContext)
+      }
     } else {
       null
     }
@@ -26,13 +43,14 @@ class LoggerPackage : BaseReactPackage() {
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
+      val isTurbo = isNewArchEnabled
       moduleInfos[LoggerModule.NAME] = ReactModuleInfo(
         LoggerModule.NAME,
         LoggerModule.NAME,
         false,  // canOverrideExistingModule
         false,  // needsEagerInit
         false,  // isCxxModule
-        true // isTurboModule
+        isTurbo // isTurboModule
       )
       moduleInfos
     }

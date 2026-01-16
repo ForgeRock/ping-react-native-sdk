@@ -5,5 +5,31 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+/**
+ * @packageDocumentation
+ * @module @react-native-pingidentity/logger
+ * 
+ * A React Native logger module that provides unified logging across JavaScript and native platforms.
+ * 
+ * @remarks
+ * This module provides a logger that works seamlessly across React Native's JavaScript layer
+ * and native iOS/Android code. It supports different log levels and custom logger implementations.
+ * 
+ * @example
+ * Basic usage:
+ * ```typescript
+ * import { logger } from '@react-native-pingidentity/logger';
+ * 
+ * const log = logger({ level: 'debug' });
+ * log.debug('This is a debug message');
+ * log.info('This is an info message');
+ * log.warn('This is a warning');
+ * log.error('This is an error');
+ * 
+ * // Change log level dynamically
+ * log.changeLevel('error');
+ * ```
+ */
+
 export { configureLogger, logger } from './logger';
 export type * from './types';

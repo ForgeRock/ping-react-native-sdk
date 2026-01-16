@@ -17,10 +17,16 @@ const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
   none: 'NONE',
 };
 
+//TODO: Use SDK tag version from SDK package when available
+const sdkTag = "[PingRNSDK <version>]";
+
 // Provide a default custom logger that returns a truthy value so the SDK
 // logger does not fall back to console.error (LogBox warnings in dev).
-function createCustomLogger(custom: LoggerConfig['custom']): Required<LoggerConfig>['custom'] {
-  return (
+function createCustomLogger(
+  custom: LoggerConfig['custom'],
+  tag: string
+): Required<LoggerConfig>['custom'] {
+  const base =
     custom ?? {
       error: (...args: LogMessage[]) => {
         console.log(...args);
@@ -38,8 +44,14 @@ function createCustomLogger(custom: LoggerConfig['custom']): Required<LoggerConf
         console.debug(...args);
         return true;
       },
-    }
-  );
+    };
+
+  return {
+    error: (...args: LogMessage[]) => base.error(tag, ...args),
+    warn: (...args: LogMessage[]) => base.warn(tag, ...args),
+    info: (...args: LogMessage[]) => base.info(tag, ...args),
+    debug: (...args: LogMessage[]) => base.debug(tag, ...args),
+  };
 }
 
 function syncNativeLogger(id: string, level: LogLevel) {
@@ -49,6 +61,16 @@ function syncNativeLogger(id: string, level: LogLevel) {
   });
 }
 
+/**
+ * Configures and registers a native logger instance.
+ * @param config - Logger configuration options
+ * @returns The unique identifier for the registered native logger
+ * @throws {Error} If the native logger registration fails
+ * @public
+ * @remarks
+ * This function registers a logger with the native platform (iOS/Android)
+ * and returns an identifier that can be used to sync logger settings.
+ */
 export function configureLogger(config: LoggerConfig = {}): string {
   const level = config.level ?? 'none';
   const id = NativeLogger.registerLogger({
@@ -64,11 +86,46 @@ export function configureLogger(config: LoggerConfig = {}): string {
   return id;
 }
 
+/**
+ * Creates and configures a logger instance.
+ * @param config - Logger configuration options
+ * @returns A configured logger instance with methods for logging at different levels
+ * @public
+ * @remarks
+ * This is the main entry point for creating a logger. It configures both
+ * JavaScript and native loggers and provides a unified interface for logging.
+ * 
+ * @example
+ * Basic usage:
+ * ```typescript
+ * import { logger } from '@react-native-pingidentity/logger';
+ * 
+ * const log = logger({ level: 'debug' });
+ * log.debug('Debug message');
+ * log.info('Info message');
+ * log.warn('Warning message');
+ * log.error('Error message');
+ * ```
+ * 
+ * @example
+ * With custom logger:
+ * ```typescript
+ * const log = logger({
+ *   level: 'info',
+ *   custom: {
+ *     error: (...args) => { sendToAnalytics(args); return true; },
+ *     warn: (...args) => { sendToAnalytics(args); return true; },
+ *     info: (...args) => { console.log(args); return true; },
+ *     debug: (...args) => { console.debug(args); return true; },
+ *   }
+ * });
+ * ```
+ */
 export function logger(config: LoggerConfig = {}): LoggerInstance {
   let logLevel = config.level ?? 'none';
   const jsLogger = sdkLogger({
     level: logLevel,
-    custom: createCustomLogger(config.custom),
+    custom: createCustomLogger(config.custom, sdkTag),
   });
   const id = configureLogger({ level: logLevel });
 
