@@ -1,37 +1,57 @@
-# @react-native-pingidentity/core
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
-RN Ping Core
+# Ping Identity React Native Core
 
-## Installation
+The Ping Identity React Native Core module hosts shared runtime utilities for Ping RN SDKs. It
+provides process-wide registries for native handles so modules can keep platform resources alive
+across bridge calls.
 
+## Integrating the SDK into your project
 
-```sh
-npm install @react-native-pingidentity/core
+Add the package and let autolinking wire the native code:
+
+```bash
+yarn add @react-native-pingidentity/core
+cd ios && pod install
 ```
 
+## How to Use the SDK
 
-## Usage
+### Register native handles (Android)
 
+Use the shared registry to keep native objects alive and retrievable by id:
 
-```js
-import { multiply } from '@react-native-pingidentity/core';
+```kotlin
+import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.registry.NativeHandle
 
-// ...
+class MyHandle : NativeHandle
 
-const result = multiply(3, 7);
+val id = CoreRuntime.storageRegistry.register(MyHandle())
+val handle = CoreRuntime.storageRegistry.resolve(id)
+CoreRuntime.storageRegistry.remove(id)
 ```
 
+### Register native handles (iOS)
 
-## Contributing
+```swift
+import RNPingCore
 
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+final class MyHandle: NativeHandle {}
 
-## License
+let id = await CoreRuntime.storageRegistry.register(MyHandle())
+let handle = await CoreRuntime.storageRegistry.resolve(id)
+await CoreRuntime.storageRegistry.remove(id)
+```
 
-MIT
+### Clearing registries
 
----
+Both platforms support clearing all tracked handles:
 
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+```kotlin
+CoreRuntime.storageRegistry.removeAll()
+```
+
+```swift
+await CoreRuntime.storageRegistry.removeAll()
+```

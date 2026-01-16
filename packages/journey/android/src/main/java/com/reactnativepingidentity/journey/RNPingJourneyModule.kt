@@ -41,8 +41,8 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.File
 import okhttp3.OkHttpClient
-import com.reactnativepingidentity.core.registries.StorageRegistry
-import com.reactnativepingidentity.core.registries.JourneyRegistry
+import com.reactnativepingidentity.core.CoreRuntime
+import java.util.UUID
 
 @ReactModule(name = RNPingJourneyModule.NAME)
 class RNPingJourneyModule(reactContext: ReactApplicationContext) :
@@ -50,6 +50,8 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
+    // Local registry of Journey instances keyed by generated id
+    private val journeyMap = mutableMapOf<String, Journey>()
     // Store nodes *per Journey instance*, not global
     private val nodeMap = mutableMapOf<String, Node?>()
 
@@ -165,8 +167,9 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                 }
             }
 
-            // Register instance AFTER creation
-            val journeyId = JourneyRegistry.create(journey)
+            // Register instance locally
+            val journeyId = UUID.randomUUID().toString()
+            journeyMap[journeyId] = journey
 
             Log.d("RNPingJourney", "Journey instance created: $journeyId")
             promise.resolve(journeyId)
@@ -184,7 +187,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
         Log.d("RNPingJourney", "Start called for journey: $journeyName")
 
         // Get instance from registry
-        val journeyInstance = JourneyRegistry.get(journeyId)
+        val journeyInstance = journeyMap[journeyId]
         if (journeyInstance == null) {
             promise.reject("NOT_CONFIGURED", "Journey instance not found. Did you configure it?")
             return
@@ -217,7 +220,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
         Log.d("RNPingJourney", "next called for")
 
         // Get instance
-        val journeyInstance = JourneyRegistry.get(journeyId)
+        val journeyInstance = journeyMap[journeyId]
         if (journeyInstance == null) {
             promise.reject("NOT_CONFIGURED", "Journey instance not found for id=$journeyId.")
             return
@@ -271,7 +274,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
     override fun resume(journeyId: String, uri: String, promise: Promise) {
         Log.d("RNPingJourney", "resume called with uri: $uri")
 
-        val journeyInstance = JourneyRegistry.get(journeyId)
+        val journeyInstance = journeyMap[journeyId]
         if (journeyInstance == null) {
             promise.reject("NOT_CONFIGURED", "Journey instance not found for id=$journeyId.")
             return
@@ -294,7 +297,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
      * Get an existing session if available.
      */
     override fun getSession(journeyId: String, promise: Promise) {
-        val journeyInstance = JourneyRegistry.get(journeyId)
+        val journeyInstance = journeyMap[journeyId]
         if (journeyInstance == null) {
             promise.reject("NOT_CONFIGURED", "Journey instance not found for id=$journeyId.")
             return
@@ -378,7 +381,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
      * Logout and clear session.
      */
     override fun logout(journeyId: String, promise: Promise) {
-        val journeyInstance = JourneyRegistry.get(journeyId)
+        val journeyInstance = journeyMap[journeyId]
         if (journeyInstance == null) {
             promise.reject("NOT_CONFIGURED", "Journey instance not found for id=$journeyId.")
             return
@@ -398,11 +401,10 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
     override fun listRegisteredStoragesFromCore(promise: Promise) {
         try {
-            val ids = StorageRegistry.listIds()
-            val array = Arguments.createArray()
-            ids.forEach { array.pushString(it) }
-            promise.resolve(array)
-            Log.d("RNPingJourney", "Reporting StorageRegistry IDs: $ids")
+            // CoreRuntime.storageRegistry does not expose IDs; return empty for now.
+            val ids = Arguments.createArray()
+            promise.resolve(ids)
+            Log.d("RNPingJourney", "Storage registry listing not supported; returning empty array.")
         } catch (e: Exception) {
             promise.reject("LIST_ERROR", "Failed to list storage IDs", e)
         }

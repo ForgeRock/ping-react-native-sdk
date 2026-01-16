@@ -2232,7 +2232,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-pingidentity/core@npm:*, @react-native-pingidentity/core@workspace:*, @react-native-pingidentity/core@workspace:packages/core":
+"@react-native-pingidentity/core@npm:^0.1.0, @react-native-pingidentity/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/core@workspace:packages/core"
   languageName: unknown
@@ -2254,8 +2254,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/journey@workspace:packages/journey"
   dependencies:
-    "@react-native-pingidentity/core": "npm:*"
-    "@react-native-pingidentity/storage": "npm:*"
+    "@react-native-pingidentity/core": "npm:^0.1.0"
+    "@react-native-pingidentity/storage": "npm:^0.1.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
@@ -2265,11 +2265,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-pingidentity/storage@npm:*, @react-native-pingidentity/storage@workspace:*, @react-native-pingidentity/storage@workspace:packages/storage":
+"@react-native-pingidentity/storage@npm:^0.1.0, @react-native-pingidentity/storage@workspace:*, @react-native-pingidentity/storage@workspace:packages/storage":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/storage@workspace:packages/storage"
   dependencies:
-    "@react-native-pingidentity/core": "workspace:*"
+    "@react-native-pingidentity/core": "npm:^0.1.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:

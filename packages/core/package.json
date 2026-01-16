@@ -1,11 +1,16 @@
 {
   "name": "@react-native-pingidentity/core",
   "version": "0.1.0",
-  "private": true,
   "description": "Core utilities for Ping Identity React Native modules.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
   "author": "Ping Identity",
+  "main": "index.js",
+  "react-native": "index.js",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
   "files": [
     "ios",
     "android",
