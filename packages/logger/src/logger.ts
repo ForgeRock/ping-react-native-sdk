@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import { logger as sdkLogger } from '@forgerock/sdk-logger';
 import type { LogLevel, LoggerConfig, LoggerInstance, LogMessage } from './types';
 import NativeLogger, { type NativeLoggerLevel } from './NativeRNPingLogger';
