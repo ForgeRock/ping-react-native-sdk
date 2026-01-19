@@ -55,6 +55,9 @@ const result = await open('https://example.com', {
 // result: { type: 'success', url } | { type: 'cancel' }
 ```
 
+Security note: The module does not validate or sanitize the `url` you pass to `open`. Only launch
+trusted URLs in your app (for example, enforce an `https` scheme and allow-listed hosts).
+
 ## TODO
 
 - Implement standardized error types and logger configuration once the related tickets are complete.
