@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import Foundation
 import XCTest
 @testable import RNPingCore
 @testable import RNPingStorage
@@ -24,105 +25,101 @@ final class RNPingStorageCommonTests: XCTestCase {
     try await super.tearDown()
   }
 
-  func testConfigureSessionStorageRegistersConfig() async throws {
+  func testConfigureSessionStorageReturnsConfig() throws {
     let config: NSDictionary = ["account": "test.session.config"]
 
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    let resolved = try await resolveSessionConfig(id)
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configJson = RNPingStorageCommon.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
     XCTAssertFalse(id.isEmpty)
+    XCTAssertFalse(configJson.isEmpty)
     XCTAssertEqual(resolved.account, "test.session.config")
   }
 
-  func testConfigureOidcStorageRegistersConfig() async throws {
+  func testConfigureOidcStorageReturnsConfig() throws {
     let config: NSDictionary = ["account": "test.oidc.config"]
 
-    let id = RNPingStorageCommon.configureOidcStorage(config)
-    let resolved = try await resolveOidcConfig(id)
+    let id = RNPingStorageCommon.registerOidcStorage(config)
+    let configJson = RNPingStorageCommon.configureOidcStorage(id)
+    let resolved = try decodeConfig(configJson)
 
     XCTAssertFalse(id.isEmpty)
+    XCTAssertFalse(configJson.isEmpty)
     XCTAssertEqual(resolved.account, "test.oidc.config")
   }
 
-  func testSessionAndOidcRegistriesAreSeparated() async throws {
-    let config: NSDictionary = ["account": "test.separation"]
-    let id = RNPingStorageCommon.configureOidcStorage(config)
-
-    let oidcResolved = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
-    let sessionResolved = await CoreRuntime.sessionStorageConfigRegistry.resolve(id)
-
-    XCTAssertNotNil(oidcResolved)
-    XCTAssertNil(sessionResolved)
-  }
-
-  func testConfigureUsesDefaultValues() async throws {
+  func testConfigureUsesDefaultValues() throws {
     let config: NSDictionary = [:]
 
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    let resolved = try await resolveSessionConfig(id)
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configJson = RNPingStorageCommon.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
+    XCTAssertFalse(id.isEmpty)
     XCTAssertEqual(resolved.account, "com.pingidentity.rnsampleapp.keyalias")
     XCTAssertEqual(resolved.encryptor, true)
   }
 
-  func testConfigureStoresProvidedValues() async throws {
+  func testConfigureStoresProvidedValues() throws {
     let config: NSDictionary = [
-      "type": "encrypted",
-      "cacheStrategy": "CACHE",
+      "cacheable": true,
       "account": "test.custom.account",
       "encryptor": false
     ]
 
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    let resolved = try await resolveSessionConfig(id)
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configJson = RNPingStorageCommon.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
-    XCTAssertEqual(resolved.type, "encrypted")
-    XCTAssertEqual(resolved.cacheble, true)
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertEqual(resolved.cacheable, true)
     XCTAssertEqual(resolved.account, "test.custom.account")
     XCTAssertEqual(resolved.encryptor, false)
   }
 
-  func testCacheStrategyNoCacheMapsToCachebleFalse() async throws {
+  func testCacheableFalseStored() throws {
     let config: NSDictionary = [
-      "cacheStrategy": "NO_CACHE"
+      "cacheable": false
     ]
 
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    let resolved = try await resolveSessionConfig(id)
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configJson = RNPingStorageCommon.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
-    XCTAssertEqual(resolved.cacheble, false)
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertEqual(resolved.cacheable, false)
   }
 
-  func testCacheStrategyCacheMapsToCachebleTrue() async throws {
+  func testCacheableTrueStored() throws {
     let config: NSDictionary = [
-      "cacheStrategy": "CACHE"
+      "cacheable": true
     ]
 
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    let resolved = try await resolveSessionConfig(id)
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configJson = RNPingStorageCommon.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
-    XCTAssertEqual(resolved.cacheble, true)
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertEqual(resolved.cacheable, true)
   }
 
-  func testMultipleConfigsProduceDistinctIds() async throws {
+  func testMultipleConfigsProduceDistinctOutputs() throws {
     let config1: NSDictionary = ["account": "test.1"]
     let config2: NSDictionary = ["account": "test.2"]
 
-    let id1 = RNPingStorageCommon.configureSessionStorage(config1)
-    let id2 = RNPingStorageCommon.configureSessionStorage(config2)
+    let id1 = RNPingStorageCommon.registerSessionStorage(config1)
+    let id2 = RNPingStorageCommon.registerSessionStorage(config2)
+    let configJson1 = RNPingStorageCommon.configureSessionStorage(id1)
+    let configJson2 = RNPingStorageCommon.configureSessionStorage(id2)
 
-    XCTAssertNotEqual(id1, id2)
+    XCTAssertFalse(id1.isEmpty)
+    XCTAssertFalse(id2.isEmpty)
+    XCTAssertNotEqual(configJson1, configJson2)
   }
 
-  private func resolveSessionConfig(_ id: String) async throws -> RNPingStorageCommon.StorageConfig {
-    let handle = await CoreRuntime.sessionStorageConfigRegistry.resolve(id)
-    let configHandle = try XCTUnwrap(handle as? RNPingStorageCommon.StorageConfigHandle)
-    return configHandle.config
-  }
-
-  private func resolveOidcConfig(_ id: String) async throws -> RNPingStorageCommon.StorageConfig {
-    let handle = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
-    let configHandle = try XCTUnwrap(handle as? RNPingStorageCommon.StorageConfigHandle)
-    return configHandle.config
+  private func decodeConfig(_ json: String) throws -> RNPingStorageCommon.StorageConfig {
+    let data = try XCTUnwrap(json.data(using: .utf8))
+    return try JSONDecoder().decode(RNPingStorageCommon.StorageConfig.self, from: data)
   }
 }

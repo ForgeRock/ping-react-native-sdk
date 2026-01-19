@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 #import <React/RCTBridgeModule.h>
 #import <React/RCTLog.h>
 #import "RNPingStorage-Swift.h"
@@ -11,17 +17,31 @@ RCT_EXPORT_MODULE(RNPingStorage)
 
 #pragma mark - Configure
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureSessionStorage:(NSDictionary *)config)
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerSessionStorage:(NSDictionary *)config)
 {
-  NSString *storageId = [RNPingStorageCommon configureSessionStorage:config];
+  NSString *storageId = [RNPingStorageCommon registerSessionStorage:config];
 
   return storageId;
 }
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOidcStorage:(NSDictionary *)config)
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerOidcStorage:(NSDictionary *)config)
 {
-  NSString *storageId = [RNPingStorageCommon configureOidcStorage:config];
+  NSString *storageId = [RNPingStorageCommon registerOidcStorage:config];
 
   return storageId;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureSessionStorage:(NSString *)storageId)
+{
+  NSString *configJson = [RNPingStorageCommon configureSessionStorage:storageId];
+
+  return configJson;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOidcStorage:(NSString *)storageId)
+{
+  NSString *configJson = [RNPingStorageCommon configureOidcStorage:storageId];
+
+  return configJson;
 }
 @end

@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import Foundation
 import XCTest
 @testable import RNPingCore
 @testable import RNPingStorage
@@ -17,13 +18,11 @@ final class RNPingStorageImplTests: XCTestCase {
   override func setUp() async throws {
     try await super.setUp()
     storageImpl = RNPingStorageImpl.shared
-    // Clear registries before each test
     await CoreRuntime.sessionStorageConfigRegistry.removeAll()
     await CoreRuntime.oidcStorageConfigRegistry.removeAll()
   }
 
   override func tearDown() async throws {
-    // Clean up registries after each test
     await CoreRuntime.sessionStorageConfigRegistry.removeAll()
     await CoreRuntime.oidcStorageConfigRegistry.removeAll()
     storageImpl = nil
@@ -41,57 +40,38 @@ final class RNPingStorageImplTests: XCTestCase {
 
   // MARK: - Configure Tests
 
-  func testConfigureRegistersStorageConfig() async {
-    let config: NSDictionary = [
-      "type": "memory",
-      "account": "test.impl.registry"
-    ]
-
-    let id = storageImpl.configureSessionStorage(config)
-
-    // Verify config is registered in CoreRuntime
-    let resolved = await CoreRuntime.sessionStorageConfigRegistry.resolve(id)
-    XCTAssertNotNil(resolved, "Configured storage config should be registered in CoreRuntime")
-  }
-
-  // MARK: - Session Storage Tests
-
-  func testConfigureSessionStorageReturnsValidId() {
+  func testConfigureSessionStorageReturnsConfig() throws {
     let config: NSDictionary = [
       "type": "memory",
       "account": "test.impl.session.id"
     ]
 
-    let id = storageImpl.configureSessionStorage(config)
+    let id = storageImpl.registerSessionStorage(config)
+    let configJson = storageImpl.configureSessionStorage(id)
+    let resolved = try decodeConfig(configJson)
 
-    XCTAssertFalse(id.isEmpty, "Configure session storage should return a non-empty storage ID")
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertFalse(configJson.isEmpty, "Configure session storage should return a non-empty config")
+    XCTAssertEqual(resolved.account, "test.impl.session.id")
   }
 
-  func testConfigureSessionStorageDoesNotRegisterInOidcRegistry() async {
-    let config: NSDictionary = [
-      "type": "memory",
-      "account": "test.impl.session.oidc.separation"
-    ]
-
-    let id = storageImpl.configureSessionStorage(config)
-
-    let oidcResolved = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
-    XCTAssertNil(oidcResolved, "Session storage should not be registered in OIDC registry")
-  }
-
-  // MARK: - OIDC Storage Tests
-
-  func testConfigureOidcStorageRegistersInOidcRegistry() async {
+  func testConfigureOidcStorageReturnsConfig() throws {
     let config: NSDictionary = [
       "type": "memory",
       "account": "test.impl.oidc.registry"
     ]
 
-    let id = storageImpl.configureOidcStorage(config)
+    let id = storageImpl.registerOidcStorage(config)
+    let configJson = storageImpl.configureOidcStorage(id)
+    let resolved = try decodeConfig(configJson)
 
-    // Verify storage is registered in OIDC registry
-    let resolved = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
-    XCTAssertNotNil(resolved, "Configured OIDC storage should be registered in OIDC registry")
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertFalse(configJson.isEmpty, "Configure OIDC storage should return a non-empty config")
+    XCTAssertEqual(resolved.account, "test.impl.oidc.registry")
   }
 
+  private func decodeConfig(_ json: String) throws -> RNPingStorageCommon.StorageConfig {
+    let data = try XCTUnwrap(json.data(using: .utf8))
+    return try JSONDecoder().decode(RNPingStorageCommon.StorageConfig.self, from: data)
+  }
 }

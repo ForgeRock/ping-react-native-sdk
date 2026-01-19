@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 import React, { useState } from 'react';
 import {
   View,
@@ -8,8 +14,8 @@ import {
 import { commonStyles } from '../src/styles/common';
 import {
   getTokenStorages,
-  configureOidcStorage,
-  configureSessionStorage,
+  configureOidcStorageInfo,
+  configureSessionStorageInfo,
 } from '../src/tokenStorages';
 
 export default function MultiStorageScreen() {
@@ -30,15 +36,20 @@ export default function MultiStorageScreen() {
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
             onPress={() => {
-              setOidcStorage(configureOidcStorage());
+              setOidcStorage(configureOidcStorageInfo());
             }}
           >
             <Text style={commonStyles.buttonText}>Configure OIDC Storage</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={commonStyles.textSmall}>
-            Storage ID: {oidcStorage.id}
-          </Text>
+          <View>
+            <Text style={commonStyles.textSmall}>
+              Storage ID: {oidcStorage.id}
+            </Text>
+            <Text style={commonStyles.textSmall}>
+              Config: {JSON.stringify(oidcStorage.config, null, 2)}
+            </Text>
+          </View>
         )}
       </View>
 
@@ -50,15 +61,20 @@ export default function MultiStorageScreen() {
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
             onPress={() => {
-              setSessionStorage(configureSessionStorage());
+              setSessionStorage(configureSessionStorageInfo());
             }}
           >
             <Text style={commonStyles.buttonText}>Configure Session Storage</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={commonStyles.textSmall}>
-            Storage ID: {sessionStorage.id}
-          </Text>
+          <View>
+            <Text style={commonStyles.textSmall}>
+              Storage ID: {sessionStorage.id}
+            </Text>
+            <Text style={commonStyles.textSmall}>
+              Config: {JSON.stringify(sessionStorage.config, null, 2)}
+            </Text>
+          </View>
         )}
       </View>
     </ScrollView>

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 //
 //  RNPingStorage.mm
 //  RNPingStorage
@@ -26,20 +32,15 @@ RCT_EXPORT_MODULE()
 }
 
 /**
- Configures a session storage instance.
+ Registers a session storage configuration.
  
  - Parameter config: Storage configuration.
  - Returns: Unique storage identifier.
  */
-- (NSString *)configureSessionStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
+- (NSString *)registerSessionStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
-  NSString *cacheStrategy = config.cacheStrategy();
-  if (cacheStrategy != nil) {
-    dict[@"cacheStrategy"] = cacheStrategy;
-  }
-  
   NSString *account = config.account();
   if (account != nil) {
     dict[@"account"] = account;
@@ -50,24 +51,24 @@ RCT_EXPORT_MODULE()
     dict[@"encryptor"] = @(encryptor.value());
   }
 
-  return [[self swiftImpl] configureSessionStorage:dict];
+  auto cacheable = config.cacheable();
+  if (cacheable.has_value()) {
+    dict[@"cacheable"] = @(cacheable.value());
+  }
+
+  return [[self swiftImpl] registerSessionStorage:dict];
 }
 
 /**
- Configures an OIDC storage instance.
+ Registers an OIDC storage configuration.
  
  - Parameter config: Storage configuration.
  - Returns: Unique storage identifier.
  */
-- (NSString *)configureOidcStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
+- (NSString *)registerOidcStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
-  NSString *cacheStrategy = config.cacheStrategy();
-  if (cacheStrategy != nil) {
-    dict[@"cacheStrategy"] = cacheStrategy;
-  }
-  
   NSString *account = config.account();
   if (account != nil) {
     dict[@"account"] = account;
@@ -78,7 +79,34 @@ RCT_EXPORT_MODULE()
     dict[@"encryptor"] = @(encryptor.value());
   }
 
-  return [[self swiftImpl] configureOidcStorage:dict];
+  auto cacheable = config.cacheable();
+  if (cacheable.has_value()) {
+    dict[@"cacheable"] = @(cacheable.value());
+  }
+
+  return [[self swiftImpl] registerOidcStorage:dict];
+}
+
+/**
+ Resolves a session storage configuration by id.
+ 
+ - Parameter storageId: Storage configuration identifier.
+ - Returns: Serialized storage configuration string.
+ */
+- (NSString *)configureSessionStorage:(NSString *)storageId
+{
+  return [[self swiftImpl] configureSessionStorage:storageId];
+}
+
+/**
+ Resolves an OIDC storage configuration by id.
+ 
+ - Parameter storageId: Storage configuration identifier.
+ - Returns: Serialized storage configuration string.
+ */
+- (NSString *)configureOidcStorage:(NSString *)storageId
+{
+  return [[self swiftImpl] configureOidcStorage:storageId];
 }
 
 @end

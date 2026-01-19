@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 package com.reactnativepingidentity.storage
 
 import android.util.Log
@@ -5,6 +11,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.reactnativepingidentity.core.CoreRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.
@@ -16,33 +23,31 @@ object RNPingStorageCommon {
 
   /** Tag for logging purposes */
   private const val TAG = "RNPingStorageCommon"
-  
+
   /** Registry for session storage configurations */
   private val sessionConfigRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
-  
+
   /** Registry for OIDC storage configurations */
   private val oidcConfigRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
 
   /**
-   * Configure session storage with the provided configuration.
-   * 
+   * Register session storage with the provided configuration.
+   *
    * Creates a storage configuration and registers it with the Core SDK's session storage registry.
    * The actual storage instance is created lazily when first accessed.
    *
    * @param config Configuration map containing storage settings (fileName, keyAlias, etc.)
-   * @return Unique ID for the configured storage that can be used to reference this configuration
+   * @return Unique ID for the registered storage configuration
    * @throws Exception if configuration fails
    */
   @JvmStatic
-  fun configureSessionStorage(config: ReadableMap): String {
+  fun registerSessionStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
-
-      val id = runBlocking(Dispatchers.IO) {
-        val storageConfig = buildStorageConfig(map)
+      val storageConfig = buildStorageConfig(map)
+      runBlocking(Dispatchers.IO) {
         sessionConfigRegistry.register(storageConfig)
       }
-      id
     } catch (e: Exception) {
       Log.e(TAG, "Error configuring session storage", e)
       throw e
@@ -50,25 +55,23 @@ object RNPingStorageCommon {
   }
 
   /**
-   * Configure OIDC storage with the provided configuration.
-   * 
+   * Register OIDC storage with the provided configuration.
+   *
    * Creates a storage configuration and registers it with the Core SDK's OIDC storage registry.
    * The actual storage instance is created lazily when first accessed.
    *
    * @param config Configuration map containing storage settings (fileName, keyAlias, etc.)
-   * @return Unique ID for the configured storage that can be used to reference this configuration
+   * @return Unique ID for the registered storage configuration
    * @throws Exception if configuration fails
    */
   @JvmStatic
-  fun configureOidcStorage(config: ReadableMap): String {
+  fun registerOidcStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
-
-      val id = runBlocking(Dispatchers.IO) {
-        val storageConfig = buildStorageConfig(map)
+      val storageConfig = buildStorageConfig(map)
+      runBlocking(Dispatchers.IO) {
         oidcConfigRegistry.register(storageConfig)
       }
-      id
     } catch (e: Exception) {
       Log.e(TAG, "Error configuring OIDC storage", e)
       throw e
@@ -97,5 +100,46 @@ object RNPingStorageCommon {
       strongBoxPreferred = strongBoxPreferred,
       cacheStrategy = cacheStrategy
     )
+  }
+
+  @JvmStatic
+  fun configureSessionStorage(id: String): String {
+    return try {
+      val resolvedConfig = runBlocking(Dispatchers.IO) {
+        sessionConfigRegistry.resolve(id)
+      }
+      encodeConfig(resolvedConfig)
+    } catch (e: Exception) {
+      Log.e(TAG, "Error resolving session storage config", e)
+      throw e
+    }
+  }
+
+  @JvmStatic
+  fun configureOidcStorage(id: String): String {
+    return try {
+      val resolvedConfig = runBlocking(Dispatchers.IO) {
+        oidcConfigRegistry.resolve(id)
+      }
+      encodeConfig(resolvedConfig)
+    } catch (e: Exception) {
+      Log.e(TAG, "Error resolving OIDC storage config", e)
+      throw e
+    }
+  }
+
+  private fun encodeConfig(config: StorageConfig): String {
+    return try {
+      val json = JSONObject().apply {
+        config.keyAlias?.let { put("keyAlias", it) }
+        config.fileName?.let { put("fileName", it) }
+        config.strongBoxPreferred?.let { put("strongBoxPreferred", it) }
+        config.cacheStrategy?.let { put("cacheStrategy", it) }
+      }
+      json.toString()
+    } catch (e: Exception) {
+      Log.e(TAG, "Error encoding storage config", e)
+      "{}"
+    }
   }
 }

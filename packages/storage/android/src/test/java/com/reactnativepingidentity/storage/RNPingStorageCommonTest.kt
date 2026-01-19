@@ -10,6 +10,7 @@ package com.reactnativepingidentity.storage
 import com.facebook.react.bridge.ReadableMap
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -37,63 +38,71 @@ class RNPingStorageCommonTest {
     }
 
     @Test
-    fun configureWithMemoryTypeReturnsId() {
+    fun configureWithDefaultsReturnsConfig() {
         val config = createMockReadableMap(emptyMap())
 
-        val id = RNPingStorageCommon.configureSessionStorage(config)
-        val storageConfig = resolveSessionConfig(id)
+        val id = RNPingStorageCommon.registerSessionStorage(config)
+        val configJson = RNPingStorageCommon.configureSessionStorage(id)
+        val storageConfig = JSONObject(configJson)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(storageConfig)
-        assertEquals("defaultKey", storageConfig.keyAlias)
-        assertEquals("secure_prefs", storageConfig.fileName)
-        assertNull(storageConfig.strongBoxPreferred)
-        assertNull(storageConfig.cacheStrategy)
+        assertNotNull(configJson)
+        assertTrue(configJson.isNotEmpty())
+        assertEquals("defaultKey", storageConfig.getString("keyAlias"))
+        assertEquals("secure_prefs", storageConfig.getString("fileName"))
+        assertFalse(storageConfig.has("strongBoxPreferred"))
+        assertFalse(storageConfig.has("cacheStrategy"))
     }
 
     @Test
-    fun configureOidcWithMemoryTypeReturnsId() {
+    fun configureOidcWithDefaultsReturnsConfig() {
         val config = createMockReadableMap(emptyMap())
 
-        val id = RNPingStorageCommon.configureOidcStorage(config)
-        val storageConfig = resolveOidcConfig(id)
+        val id = RNPingStorageCommon.registerOidcStorage(config)
+        val configJson = RNPingStorageCommon.configureOidcStorage(id)
+        val storageConfig = JSONObject(configJson)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(storageConfig)
-        assertEquals("defaultKey", storageConfig.keyAlias)
-        assertEquals("secure_prefs", storageConfig.fileName)
-        assertNull(storageConfig.strongBoxPreferred)
-        assertNull(storageConfig.cacheStrategy)
+        assertNotNull(configJson)
+        assertTrue(configJson.isNotEmpty())
+        assertEquals("defaultKey", storageConfig.getString("keyAlias"))
+        assertEquals("secure_prefs", storageConfig.getString("fileName"))
+        assertFalse(storageConfig.has("strongBoxPreferred"))
+        assertFalse(storageConfig.has("cacheStrategy"))
     }
 
     @Test
-    fun configureMultipleTimesReturnsDifferentIds() {
+    fun configureMultipleTimesReturnsSameConfig() {
         val config1 = createMockReadableMap(emptyMap())
         val config2 = createMockReadableMap(emptyMap())
 
-        val id1 = RNPingStorageCommon.configureSessionStorage(config1)
-        val id2 = RNPingStorageCommon.configureSessionStorage(config2)
+        val id1 = RNPingStorageCommon.registerSessionStorage(config1)
+        val id2 = RNPingStorageCommon.registerSessionStorage(config2)
+        val configJson1 = RNPingStorageCommon.configureSessionStorage(id1)
+        val configJson2 = RNPingStorageCommon.configureSessionStorage(id2)
 
-        assertNotEquals(id1, id2)
+        assertEquals(configJson1, configJson2)
     }
 
     @Test
-    fun configureDatastoreTypeReturnsId() {
+    fun configureDatastoreTypeReturnsConfig() {
         val config = createMockReadableMap(mapOf("fileName" to "test_store"))
 
-        val id = RNPingStorageCommon.configureSessionStorage(config)
-        val storageConfig = resolveSessionConfig(id)
+        val id = RNPingStorageCommon.registerSessionStorage(config)
+        val configJson = RNPingStorageCommon.configureSessionStorage(id)
+        val storageConfig = JSONObject(configJson)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(storageConfig)
-        assertEquals("test_store", storageConfig.fileName)
+        assertNotNull(configJson)
+        assertTrue(configJson.isNotEmpty())
+        assertEquals("test_store", storageConfig.getString("fileName"))
     }
 
     @Test
-    fun configureEncryptedTypeReturnsId() {
+    fun configureEncryptedTypeReturnsConfig() {
         val config = createMockReadableMap(
             mapOf(
                 "fileName" to "secure_store",
@@ -103,32 +112,18 @@ class RNPingStorageCommonTest {
             )
         )
 
-        val id = RNPingStorageCommon.configureSessionStorage(config)
-        val storageConfig = resolveSessionConfig(id)
+        val id = RNPingStorageCommon.registerSessionStorage(config)
+        val configJson = RNPingStorageCommon.configureSessionStorage(id)
+        val storageConfig = JSONObject(configJson)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(storageConfig)
-        assertEquals("secure_store", storageConfig.fileName)
-        assertEquals("testKey", storageConfig.keyAlias)
-        assertEquals(true, storageConfig.strongBoxPreferred)
-        assertEquals("cache_on_failure", storageConfig.cacheStrategy)
-    }
-
-    @Test
-    fun configureOidcStorageRegistersOnlyInOidcRegistry() {
-        val config = createMockReadableMap(emptyMap())
-
-        val id = RNPingStorageCommon.configureOidcStorage(config)
-
-        val oidcStorage = resolveOidcConfig(id)
-
-        assertNotNull(oidcStorage)
-        assertThrows(IllegalStateException::class.java) {
-            runBlocking {
-                StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).resolve(id)
-            }
-        }
+        assertNotNull(configJson)
+        assertTrue(configJson.isNotEmpty())
+        assertEquals("secure_store", storageConfig.getString("fileName"))
+        assertEquals("testKey", storageConfig.getString("keyAlias"))
+        assertEquals(true, storageConfig.getBoolean("strongBoxPreferred"))
+        assertEquals("cache_on_failure", storageConfig.getString("cacheStrategy"))
     }
 
     private fun createMockReadableMap(data: Map<String, Any?>): ReadableMap {
@@ -137,15 +132,4 @@ class RNPingStorageCommonTest {
         return map
     }
 
-    private fun resolveSessionConfig(id: String): StorageConfig {
-        return runBlocking {
-            StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).resolve(id)
-        }
-    }
-
-    private fun resolveOidcConfig(id: String): StorageConfig {
-        return runBlocking {
-            StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.oidcStorageConfigRegistry).resolve(id)
-        }
-    }
 }

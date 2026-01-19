@@ -1,6 +1,20 @@
-import { CacheStrategy, configureSessionStorage, configureOidcStorage } from "../index";
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+import {
+  CacheStrategy,
+  configureSessionStorage,
+  configureOidcStorage,
+  registerSessionStorage,
+  registerOidcStorage,
+} from "../index";
 // Mock the Native Module
 const mockNativeRNPingStorage = {
+  registerSessionStorage: jest.fn(),
+  registerOidcStorage: jest.fn(),
   configureSessionStorage: jest.fn(),
   configureOidcStorage: jest.fn(),
 };
@@ -20,21 +34,16 @@ describe("Storage API", () => {
   });
 
   describe("Factory functions", () => {
-    it("configureSessionStorage creates a storage instance", () => {
-      const mockId = "session-id";
-      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(mockId);
+    it("configureSessionStorage returns the config", () => {
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue("{}");
 
-      const instance = configureSessionStorage({});
+      const instance = configureSessionStorage("session-id");
 
-      expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith({
-      });
-      expect(instance.id).toBe(mockId);
+      expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith("session-id");
+      expect(instance).toEqual({});
     });
 
     it("configureSessionStorage can be created with all config options", () => {
-      const mockId = "session-id";
-      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(mockId);
-
       const config = {
         keyAlias: "session-key",
         fileName: "session.dat",
@@ -43,40 +52,39 @@ describe("Storage API", () => {
         ios: {
           account: "com.example.session",
           encryptor: true,
+          cacheable: true,
         },
       };
 
-      configureSessionStorage(config);
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(
+        JSON.stringify({
+          keyAlias: "session-key",
+          fileName: "session.dat",
+          strongBoxPreferred: true,
+          cacheStrategy: "cache_on_failure",
+          account: "com.example.session",
+          encryptor: true,
+          cacheable: true,
+        })
+      );
 
-      expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith({
-        keyAlias: "session-key",
-        fileName: "session.dat",
-        strongBoxPreferred: true,
-        cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
-        account: "com.example.session",
-        encryptor: true,
-      });
+      expect(configureSessionStorage("session-id")).toEqual(config);
     });
 
     it("configureSessionStorage validates config", () => {
-      expect(() => configureSessionStorage(null as any)).toThrow(/Missing configuration/);
+      expect(() => configureSessionStorage("" as any)).toThrow(/Missing storage id/);
     });
 
-    it("configureOidcStorage creates a storage instance", () => {
-      const mockId = "oidc-id";
-      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(mockId);
+    it("configureOidcStorage returns the config", () => {
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue("{}");
 
-      const instance = configureOidcStorage({});
+      const instance = configureOidcStorage("oidc-id");
 
-      expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith({
-      });
-      expect(instance.id).toBe(mockId);
+      expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith("oidc-id");
+      expect(instance).toEqual({});
     });
 
     it("configureOidcStorage can be created with all config options", () => {
-      const mockId = "oidc-id";
-      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(mockId);
-
       const config = {
         keyAlias: "oidc-key",
         fileName: "oidc.dat",
@@ -85,23 +93,47 @@ describe("Storage API", () => {
         ios: {
           account: "com.example.oidc",
           encryptor: false,
+          cacheable: false,
         },
       };
 
-      configureOidcStorage(config);
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(
+        JSON.stringify({
+          keyAlias: "oidc-key",
+          fileName: "oidc.dat",
+          strongBoxPreferred: false,
+          cacheStrategy: "no_cache",
+          account: "com.example.oidc",
+          encryptor: false,
+          cacheable: false,
+        })
+      );
 
-      expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith({
-        keyAlias: "oidc-key",
-        fileName: "oidc.dat",
-        strongBoxPreferred: false,
-        cacheStrategy: CacheStrategy.NO_CACHE,
-        account: "com.example.oidc",
-        encryptor: false,
-      });
+      expect(configureOidcStorage("oidc-id")).toEqual(config);
     });
 
     it("configureOidcStorage validates config", () => {
-      expect(() => configureOidcStorage(undefined as any)).toThrow(/Missing configuration/);
+      expect(() => configureOidcStorage("" as any)).toThrow(/Missing storage id/);
+    });
+
+    it("registerSessionStorage returns the id", () => {
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
+
+      const id = registerSessionStorage({});
+
+      expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
+      });
+      expect(id).toBe("session-id");
+    });
+
+    it("registerOidcStorage returns the id", () => {
+      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
+
+      const id = registerOidcStorage({});
+
+      expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
+      });
+      expect(id).toBe("oidc-id");
     });
   });
 });

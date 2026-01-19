@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 import Foundation
 import React
 import RNPingCore
@@ -20,26 +26,46 @@ public class RNPingStorageImpl: NSObject {
   }
   
   /**
-   Configures and registers a session storage configuration.
+   Registers a session storage configuration.
    
    - Parameter config: Configuration dictionary for the storage.
    - Returns: A unique identifier for the registered configuration.
    */
   @objc
-  public func configureSessionStorage(_ config: NSDictionary) -> String {
-    let id = RNPingStorageCommon.configureSessionStorage(config)
-    return id
+  public func registerSessionStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerSessionStorage(config)
   }
 
   /**
-   Configures and registers an OIDC storage configuration.
+   Registers an OIDC storage configuration.
    
    - Parameter config: Configuration dictionary for the storage.
    - Returns: A unique identifier for the registered configuration.
    */
   @objc
-  public func configureOidcStorage(_ config: NSDictionary) -> String {
-    let id = RNPingStorageCommon.configureOidcStorage(config)
-    return id
+  public func registerOidcStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerOidcStorage(config)
+  }
+
+  /**
+   Resolves a session storage configuration by id.
+   
+   - Parameter id: Storage configuration identifier.
+   - Returns: A serialized storage configuration string.
+   */
+  @objc
+  public func configureSessionStorage(_ id: String) -> String {
+    return RNPingStorageCommon.configureSessionStorage(id)
+  }
+
+  /**
+   Resolves an OIDC storage configuration by id.
+   
+   - Parameter id: Storage configuration identifier.
+   - Returns: A serialized storage configuration string.
+   */
+  @objc
+  public func configureOidcStorage(_ id: String) -> String {
+    return RNPingStorageCommon.configureOidcStorage(id)
   }
 }

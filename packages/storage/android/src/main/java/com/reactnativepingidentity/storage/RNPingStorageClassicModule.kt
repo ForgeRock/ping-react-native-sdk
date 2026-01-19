@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 package com.reactnativepingidentity.storage
 
 import com.facebook.react.bridge.*
@@ -24,24 +30,46 @@ class RNPingStorageClassicModule(
     override fun getName(): String = NAME
 
     /**
-     * Configure and register session storage configuration (synchronous blocking method).
+     * Register session storage configuration (synchronous blocking method).
      *
      * @param config Storage configuration containing fileName and keyAlias
      * @return Unique ID that can be used to reference this storage configuration
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureSessionStorage(config: ReadableMap): String {
-        return RNPingStorageCommon.configureSessionStorage(config)
+    fun registerSessionStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerSessionStorage(config)
     }
 
     /**
-     * Configure and register OIDC storage configuration (synchronous blocking method).
+     * Register OIDC storage configuration (synchronous blocking method).
      *
      * @param config Storage configuration containing fileName and keyAlias
      * @return Unique ID that can be used to reference this storage configuration
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureOidcStorage(config: ReadableMap): String {
-        return RNPingStorageCommon.configureOidcStorage(config)
+    fun registerOidcStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerOidcStorage(config)
+    }
+
+    /**
+     * Resolve session storage configuration by id (synchronous blocking method).
+     *
+     * @param id Storage configuration id
+     * @return Serialized storage configuration string
+     */
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun configureSessionStorage(id: String): String {
+        return RNPingStorageCommon.configureSessionStorage(id)
+    }
+
+    /**
+     * Resolve OIDC storage configuration by id (synchronous blocking method).
+     *
+     * @param id Storage configuration id
+     * @return Serialized storage configuration string
+     */
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun configureOidcStorage(id: String): String {
+        return RNPingStorageCommon.configureOidcStorage(id)
     }
 }

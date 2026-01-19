@@ -8,18 +8,19 @@ import {
 } from './journeyMethods';
 
 import type { JourneyClient, JourneyConfig, JourneyOptions } from './types';
-import type { SessionStorage } from '@react-native-pingidentity/storage';
+
+type JourneyModules = {
+  session?: {
+    storageId?: string;
+  };
+};
 
 export function journey(
   config: JourneyConfig,
-  modules?: { // TBD
-    session: {
-      storage: SessionStorage
-    }
-  }
+  modules?: JourneyModules
 ) : JourneyClient{
   let journeyId: string | null = null;
-  let sessionStorageId = modules?.session.storage.id
+  let sessionStorageId = modules?.session?.storageId;
   // Lazily configures first time it's actually used
   async function ensureConfigured() {
     if (!journeyId) {
