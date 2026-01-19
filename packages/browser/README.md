@@ -38,6 +38,20 @@ configureBrowser({
 });
 ```
 
+### Android manifest placeholder
+
+Configure the manifest placeholder for your app's redirect URI scheme. This is used as a fallback
+when Auth Tabs are not available and Custom Tabs must rely on the manifest scheme:
+
+```gradle
+android {
+  defaultConfig {
+    // For redirect URI "com.example.app://callback", configure:
+    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
+  }
+}
+```
+
 ### Open a browser session
 
 ```ts
