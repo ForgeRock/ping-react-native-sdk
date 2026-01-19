@@ -2255,7 +2255,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-pingidentity/core@npm:^0.1.0, @react-native-pingidentity/core@workspace:packages/core":
+"@react-native-pingidentity/core@npm:*, @react-native-pingidentity/core@workspace:*, @react-native-pingidentity/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/core@workspace:packages/core"
   peerDependencies:
