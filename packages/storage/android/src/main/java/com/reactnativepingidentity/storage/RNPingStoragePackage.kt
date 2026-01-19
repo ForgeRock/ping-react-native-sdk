@@ -59,14 +59,25 @@ class RNPingStoragePackage : BaseReactPackage() {
 
             val isTurbo = isNewArchEnabled
 
-            moduleInfos[RNPingStorageModule.NAME] = ReactModuleInfo(
-                RNPingStorageModule.NAME,   // name
-                RNPingStorageModule.NAME,   // className in JS
-                false,                      // canOverrideExistingModule
-                false,                      // needsEagerInit
-                false,                      // isCxxModule
-                isTurbo                     // isTurboModule
-            )
+            if (isTurbo) {
+                moduleInfos[RNPingStorageModule.NAME] = ReactModuleInfo(
+                    RNPingStorageModule.NAME,   // name
+                    RNPingStorageModule.NAME,   // className in JS
+                    false,                      // canOverrideExistingModule
+                    false,                      // needsEagerInit
+                    false,                      // isCxxModule
+                    true                        // isTurboModule
+                )
+            } else {
+                moduleInfos[RNPingStorageClassicModule.NAME] = ReactModuleInfo(
+                    RNPingStorageClassicModule.NAME, // name
+                    RNPingStorageClassicModule.NAME, // className in JS
+                    false,                           // canOverrideExistingModule
+                    false,                           // needsEagerInit
+                    false,                           // isCxxModule
+                    false                            // isTurboModule
+                )
+            }
             moduleInfos
         }
     }

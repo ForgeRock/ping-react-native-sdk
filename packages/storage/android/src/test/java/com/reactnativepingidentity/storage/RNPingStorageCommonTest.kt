@@ -8,7 +8,6 @@
 package com.reactnativepingidentity.storage
 
 import com.facebook.react.bridge.ReadableMap
-import com.reactnativepingidentity.core.storage.StorageConfig
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.After

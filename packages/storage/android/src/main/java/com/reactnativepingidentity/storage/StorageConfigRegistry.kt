@@ -8,8 +8,6 @@
 package com.reactnativepingidentity.storage
 
 import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.core.storage.StorageConfig
-import com.reactnativepingidentity.core.storage.StorageConfigHandle
 
 /**
  * Registry for managing storage configurations.

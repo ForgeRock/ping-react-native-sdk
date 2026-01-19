@@ -14,7 +14,7 @@ export function configureOidcStorage() {
     oidcStorage = registerOidcStorage({
       keyAlias: "ping.oidc",
       fileName: "ping_oidc_tokens",
-      cacheStrategy: CacheStrategy.NO_CACHE,
+      cacheStrategy: "no_cache",
       ios: {
         account: "com.pingidentity.rnsampleapp.oidc",
         encryptor: true,

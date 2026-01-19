@@ -135,7 +135,7 @@ export function getNativeModule(): Spec {
     return TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');
   }
 
-  const classic = NativeModules.RNPingStorageClassic;
+  const classic = NativeModules.RNPingStorage;
   if (!classic) {
     const available = Object.keys(NativeModules)
       .slice(0, 10); // avoid huge logs

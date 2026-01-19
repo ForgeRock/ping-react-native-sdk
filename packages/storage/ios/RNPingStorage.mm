@@ -31,15 +31,23 @@ RCT_EXPORT_MODULE()
  - Parameter config: Storage configuration.
  - Returns: Unique storage identifier.
  */
-- (NSString *)configureSessionStorage:(JS::NativeRNPingStorage::BaseStorageConfig &)config
+- (NSString *)configureSessionStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
-  if (config.type() != nil) {
-    dict[@"type"] = config.type();
+  NSString *cacheStrategy = config.cacheStrategy();
+  if (cacheStrategy != nil) {
+    dict[@"cacheStrategy"] = cacheStrategy;
   }
-  if (config.cacheStrategy() != nil) {
-    dict[@"cacheStrategy"] = config.cacheStrategy();
+  
+  NSString *account = config.account();
+  if (account != nil) {
+    dict[@"account"] = account;
+  }
+  
+  auto encryptor = config.encryptor();
+  if (encryptor.has_value()) {
+    dict[@"encryptor"] = @(encryptor.value());
   }
 
   return [[self swiftImpl] configureSessionStorage:dict];
@@ -51,15 +59,23 @@ RCT_EXPORT_MODULE()
  - Parameter config: Storage configuration.
  - Returns: Unique storage identifier.
  */
-- (NSString *)configureOidcStorage:(JS::NativeRNPingStorage::BaseStorageConfig &)config
+- (NSString *)configureOidcStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
-  if (config.type() != nil) {
-    dict[@"type"] = config.type();
+  NSString *cacheStrategy = config.cacheStrategy();
+  if (cacheStrategy != nil) {
+    dict[@"cacheStrategy"] = cacheStrategy;
   }
-  if (config.cacheStrategy() != nil) {
-    dict[@"cacheStrategy"] = config.cacheStrategy();
+  
+  NSString *account = config.account();
+  if (account != nil) {
+    dict[@"account"] = account;
+  }
+  
+  auto encryptor = config.encryptor();
+  if (encryptor.has_value()) {
+    dict[@"encryptor"] = @(encryptor.value());
   }
 
   return [[self swiftImpl] configureOidcStorage:dict];

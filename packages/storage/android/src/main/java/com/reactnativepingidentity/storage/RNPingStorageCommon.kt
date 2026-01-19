@@ -3,7 +3,6 @@ package com.reactnativepingidentity.storage
 import android.util.Log
 import com.facebook.react.bridge.ReadableMap
 import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.storage.StorageConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 

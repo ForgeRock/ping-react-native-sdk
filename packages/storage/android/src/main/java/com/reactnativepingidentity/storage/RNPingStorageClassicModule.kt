@@ -18,7 +18,7 @@ class RNPingStorageClassicModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
     companion object {
-        const val NAME = "RNPingStorageClassic"
+        const val NAME = "RNPingStorage"
     }
 
     override fun getName(): String = NAME
