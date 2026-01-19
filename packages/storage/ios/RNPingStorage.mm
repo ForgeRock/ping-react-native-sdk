@@ -38,9 +38,6 @@ RCT_EXPORT_MODULE()
   if (config.type() != nil) {
     dict[@"type"] = config.type();
   }
-  if (config.keyAlias() != nil) {
-    dict[@"keyAlias"] = config.keyAlias();
-  }
   if (config.cacheStrategy() != nil) {
     dict[@"cacheStrategy"] = config.cacheStrategy();
   }
@@ -60,9 +57,6 @@ RCT_EXPORT_MODULE()
 
   if (config.type() != nil) {
     dict[@"type"] = config.type();
-  }
-  if (config.keyAlias() != nil) {
-    dict[@"keyAlias"] = config.keyAlias();
   }
   if (config.cacheStrategy() != nil) {
     dict[@"cacheStrategy"] = config.cacheStrategy();

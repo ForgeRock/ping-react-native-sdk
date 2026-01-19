@@ -9,12 +9,16 @@ import java.util.HashMap
 
 /**
  * React Native package for Ping Storage.
+ *
  * Provides the appropriate module implementation based on the architecture.
+ * Supports both Classic and New Architecture (Turbo Modules).
  */
 class RNPingStoragePackage : BaseReactPackage() {
 
     /**
      * Detect if New Architecture is enabled.
+     *
+     * @return true if the newArchEnabled system property is set to "true", false otherwise
      */
     private val isNewArchEnabled: Boolean
         get() {
@@ -24,18 +28,19 @@ class RNPingStoragePackage : BaseReactPackage() {
 
     /**
      * Return module instance based on architecture.
-     * @param name Module name
+     *
+     * @param name Module name to create
      * @param reactContext React application context
-     * @return NativeModule instance or null
+     * @return [NativeModule] instance or null if name doesn't match
      */
     override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
         return when (name) {
             RNPingStorageModule.NAME -> {
                 if (isNewArchEnabled) {
-                    /** Turbo path */
+                    // Turbo Module path (New Architecture)
                     RNPingStorageModule(reactContext)
                 } else {
-                    /** Classic fallback */
+                    // Classic Module fallback (Old Architecture)
                     RNPingStorageClassicModule(reactContext)
                 }
             }
@@ -45,7 +50,8 @@ class RNPingStoragePackage : BaseReactPackage() {
 
     /**
      * Provide ReactModuleInfo based on architecture.
-     * @return ReactModuleInfoProvider with module information
+     *
+     * @return [ReactModuleInfoProvider] with module information including Turbo Module flag
      */
     override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
         return ReactModuleInfoProvider {

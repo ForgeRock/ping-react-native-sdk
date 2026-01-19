@@ -1,5 +1,4 @@
 import Foundation
-import PingStorage
 import React
 import RNPingCore
 
@@ -21,10 +20,10 @@ public class RNPingStorageImpl: NSObject {
   }
   
   /**
-   Configures a session storage instance.
+   Configures and registers a session storage configuration.
    
    - Parameter config: Configuration dictionary for the storage.
-   - Returns: A unique identifier for the configured storage.
+   - Returns: A unique identifier for the registered configuration.
    */
   @objc
   public func configureSessionStorage(_ config: NSDictionary) -> String {
@@ -33,10 +32,10 @@ public class RNPingStorageImpl: NSObject {
   }
 
   /**
-   Configures an OIDC storage instance.
+   Configures and registers an OIDC storage configuration.
    
    - Parameter config: Configuration dictionary for the storage.
-   - Returns: A unique identifier for the configured storage.
+   - Returns: A unique identifier for the registered configuration.
    */
   @objc
   public func configureOidcStorage(_ config: NSDictionary) -> String {

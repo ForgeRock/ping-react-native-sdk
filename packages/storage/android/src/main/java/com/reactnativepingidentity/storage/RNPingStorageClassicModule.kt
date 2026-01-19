@@ -6,6 +6,11 @@ import com.reactnativepingidentity.storage.RNPingStorageCommon
 
 /**
  * React Native module for Ping Storage (Classic/Old Architecture).
+ *
+ * This module provides storage configuration methods for the old React Native architecture.
+ * It delegates to [RNPingStorageCommon] for actual implementation.
+ *
+ * @param reactContext The React application context
  */
 @ReactModule(name = RNPingStorageClassicModule.NAME)
 class RNPingStorageClassicModule(
@@ -19,22 +24,24 @@ class RNPingStorageClassicModule(
     override fun getName(): String = NAME
 
     /**
-     * Configure session storage (synchronous blocking method).
-     * @param config Storage configuration
-     * @return Storage instance ID
+     * Configure and register session storage configuration (synchronous blocking method).
+     *
+     * @param config Storage configuration containing fileName and keyAlias
+     * @return Unique ID that can be used to reference this storage configuration
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
     fun configureSessionStorage(config: ReadableMap): String {
-        return RNPingStorageCommon.configureSessionStorage(config, reactApplicationContext)
+        return RNPingStorageCommon.configureSessionStorage(config)
     }
 
     /**
-     * Configure OIDC storage (synchronous blocking method).
-     * @param config Storage configuration
-     * @return Storage instance ID
+     * Configure and register OIDC storage configuration (synchronous blocking method).
+     *
+     * @param config Storage configuration containing fileName and keyAlias
+     * @return Unique ID that can be used to reference this storage configuration
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
     fun configureOidcStorage(config: ReadableMap): String {
-        return RNPingStorageCommon.configureOidcStorage(config, reactApplicationContext)
+        return RNPingStorageCommon.configureOidcStorage(config)
     }
 }

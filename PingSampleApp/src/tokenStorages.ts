@@ -1,6 +1,7 @@
 import {
-  createOidcStorage,
-  createSessionStorage,
+  CacheStrategy,
+  configureOidcStorage as registerOidcStorage,
+  configureSessionStorage as registerSessionStorage,
   type OidcStorage,
   type SessionStorage,
 } from "@react-native-pingidentity/storage";
@@ -10,10 +11,14 @@ let sessionStorage: SessionStorage | null = null;
 
 export function configureOidcStorage() {
   if (!oidcStorage) {
-    oidcStorage = createOidcStorage({
-      type: "memory",
-      keyAlias: "oidcKeyAlias",
-      cacheStrategy: "no_cache",
+    oidcStorage = registerOidcStorage({
+      keyAlias: "ping.oidc",
+      fileName: "ping_oidc_tokens",
+      cacheStrategy: CacheStrategy.NO_CACHE,
+      ios: {
+        account: "com.pingidentity.rnsampleapp.oidc",
+        encryptor: true,
+      },
     });
     console.log("🔑 Created OIDC Storage:", oidcStorage.id);
   }
@@ -22,10 +27,14 @@ export function configureOidcStorage() {
 
 export function configureSessionStorage() {
   if (!sessionStorage) {
-    sessionStorage = createSessionStorage({
-      type: "memory",
-      keyAlias: "sessionKeyAlias",
-      cacheStrategy: "no_cache",
+    sessionStorage = registerSessionStorage({
+      keyAlias: "ping.session",
+      fileName: "ping_session_store",
+      cacheStrategy: CacheStrategy.NO_CACHE,
+      ios: {
+        account: "com.pingidentity.rnsampleapp.session",
+        encryptor: true,
+      },
     });
     console.log("🎫 Created Session Storage:", sessionStorage.id);
   }

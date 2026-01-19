@@ -16,11 +16,11 @@ import com.reactnativepingidentity.core.registry.SimpleRegistry
  * Keeps native handles alive across calls from the React Native bridge.
  */
 object CoreRuntime {
-    /** Registry for session storage instances (used by Journey for SSO tokens) */
-    val sessionStorageRegistry: Registry = SimpleRegistry()
-    
-    /** Registry for OIDC storage instances (used for OAuth/OIDC tokens) */
-    val oidcStorageRegistry: Registry = SimpleRegistry()
+    /** Registry for session storage configuration */
+    val sessionStorageConfigRegistry: Registry = SimpleRegistry()
+
+    /** Registry for OIDC storage configuration */
+    val oidcStorageConfigRegistry: Registry = SimpleRegistry()
     
     // val mfaRegistry: Registry = SimpleRegistry()
 }

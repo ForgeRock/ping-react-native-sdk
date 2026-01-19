@@ -1,5 +1,4 @@
-import { createSessionStorage, createOidcStorage } from "../index";
-
+import { CacheStrategy, configureSessionStorage, configureOidcStorage } from "../index";
 // Mock the Native Module
 const mockNativeRNPingStorage = {
   configureSessionStorage: jest.fn(),
@@ -7,6 +6,11 @@ const mockNativeRNPingStorage = {
 };
 
 jest.mock("../NativeRNPingStorage", () => ({
+  CacheStrategy: {
+    CACHE_ON_FAILURE: "cache_on_failure",
+    NO_CACHE: "no_cache",
+    CACHE: "cache",
+  },
   getNativeModule: () => mockNativeRNPingStorage,
 }));
 
@@ -16,78 +20,88 @@ describe("Storage API", () => {
   });
 
   describe("Factory functions", () => {
-    it("createSessionStorage creates a storage instance", () => {
+    it("configureSessionStorage creates a storage instance", () => {
       const mockId = "session-id";
       mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(mockId);
 
-      const instance = createSessionStorage({ type: "encrypted" });
+      const instance = configureSessionStorage({});
 
       expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith({
-        type: "encrypted",
       });
       expect(instance.id).toBe(mockId);
     });
 
-    it("createSessionStorage can be created with all config options", () => {
+    it("configureSessionStorage can be created with all config options", () => {
       const mockId = "session-id";
       mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(mockId);
 
       const config = {
-        type: "encrypted" as const,
-        encrypted: true,
         keyAlias: "session-key",
         fileName: "session.dat",
+        strongBoxPreferred: true,
+        cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        ios: {
+          account: "com.example.session",
+          encryptor: true,
+        },
       };
 
-      createSessionStorage(config);
+      configureSessionStorage(config);
 
       expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith({
-        ...config,
+        keyAlias: "session-key",
+        fileName: "session.dat",
+        strongBoxPreferred: true,
+        cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        account: "com.example.session",
+        encryptor: true,
       });
     });
 
-    it("createSessionStorage validates config", () => {
-      expect(() => createSessionStorage({} as any)).toThrow(/Missing configuration/);
-      expect(() => createSessionStorage({ type: "invalid" as any })).toThrow(
-        /Invalid storage type/
-      );
+    it("configureSessionStorage validates config", () => {
+      expect(() => configureSessionStorage(null as any)).toThrow(/Missing configuration/);
     });
 
-    it("createOidcStorage creates a storage instance", () => {
+    it("configureOidcStorage creates a storage instance", () => {
       const mockId = "oidc-id";
       mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(mockId);
 
-      const instance = createOidcStorage({ type: "encrypted" });
+      const instance = configureOidcStorage({});
 
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith({
-        type: "encrypted",
       });
       expect(instance.id).toBe(mockId);
     });
 
-    it("createOidcStorage can be created with all config options", () => {
+    it("configureOidcStorage can be created with all config options", () => {
       const mockId = "oidc-id";
       mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(mockId);
 
       const config = {
-        type: "encrypted" as const,
-        encrypted: true,
         keyAlias: "oidc-key",
         fileName: "oidc.dat",
+        strongBoxPreferred: false,
+        cacheStrategy: CacheStrategy.NO_CACHE,
+        ios: {
+          account: "com.example.oidc",
+          encryptor: false,
+        },
       };
 
-      createOidcStorage(config);
+      configureOidcStorage(config);
 
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith({
-        ...config,
+        keyAlias: "oidc-key",
+        fileName: "oidc.dat",
+        strongBoxPreferred: false,
+        cacheStrategy: CacheStrategy.NO_CACHE,
+        account: "com.example.oidc",
+        encryptor: false,
       });
     });
 
-    it("createOidcStorage validates config", () => {
-      expect(() => createOidcStorage({} as any)).toThrow(/Missing configuration/);
-      expect(() => createOidcStorage({ type: "invalid" as any })).toThrow(
-        /Invalid storage type/
-      );
+    it("configureOidcStorage validates config", () => {
+      expect(() => configureOidcStorage(undefined as any)).toThrow(/Missing configuration/);
     });
   });
 });

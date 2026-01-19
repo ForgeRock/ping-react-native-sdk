@@ -1,5 +1,4 @@
 import Foundation
-import PingStorage
 import RNPingCore
 
 @available(iOS 16.0.0, *)
@@ -9,12 +8,24 @@ public class RNPingStorageCommon: NSObject {
   // MARK: - Nested Types
     
   /**
-   A wrapper class for `Storage<String>` that conforms to `NativeHandle`.
-   This allows storage instances to be registered in Core's NativeHandle registry.
+   Configuration for storage registration.
+   Stores platform-specific configuration values without creating actual storage instances.
+   The actual storage instances are created lazily by the Core SDK when needed.
    */
-  final class StorageHandle: NativeHandle {
-    let storage: any Storage<String>
-    init(_ storage: any Storage<String>) { self.storage = storage }
+  struct StorageConfig {
+    let type: String?
+    let cacheable: Bool?
+    let account: String?
+    let encryptor: Bool?
+  }
+
+  /**
+   A wrapper class for storage configuration that conforms to `NativeHandle`.
+   This allows storage configs to be registered in Core's NativeHandle registry.
+   */
+  final class StorageConfigHandle: NativeHandle {
+    let config: StorageConfig
+    init(_ config: StorageConfig) { self.config = config }
   }
   
   // MARK: - Private Properties
@@ -54,7 +65,7 @@ public class RNPingStorageCommon: NSObject {
   
   private static func create(
     _ config: NSDictionary,
-    register: @escaping (StorageHandle) async -> String
+    register: @escaping (StorageConfigHandle) async -> String
   ) -> String {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
@@ -65,8 +76,8 @@ public class RNPingStorageCommon: NSObject {
     let semaphore = DispatchSemaphore(value: 0)
 
     Task {
-      let instance = await createStorageInstance(from: config)
-      let handle = StorageHandle(instance)
+      let config = buildStorageConfig(from: config)
+      let handle = StorageConfigHandle(config)
       id = await register(handle)
       semaphore.signal()
     }
@@ -78,74 +89,60 @@ public class RNPingStorageCommon: NSObject {
   // MARK: - Private Helpers
   
   /**
-   Creates a storage instance based on the provided configuration.
+   Builds storage configuration based on the provided dictionary.
    
-   - Parameter config: A dictionary containing storage configuration including type, account, cache strategy, and encryptor settings.
-   - Returns: A configured `Storage<String>` instance.
+   - Parameter config: A dictionary containing storage configuration values (account, encryptor, cacheStrategy, etc.).
+   - Returns: A normalized `StorageConfig` for later use by the Core SDK.
    */
-  private static func createStorageInstance(from config: NSDictionary) -> any Storage<String> {
-    guard let type = config["type"] as? String else {
-      fatalError("RNPingStorage: Missing required 'type' parameter in configuration")
-    }
+  private static func buildStorageConfig(from config: NSDictionary) -> StorageConfig {
+    let type = config["type"] as? String
+    let cacheStrategy = (config["cacheStrategy"] as? String)?.uppercased()
+    let cacheable = resolveCacheable(from: cacheStrategy)
     let account = config["account"] as? String ?? "com.pingidentity.rnsampleapp.keyalias"
-    let cacheStrategyRaw = (config["cacheStrategy"] as? String)?.uppercased()
-    let shouldUseEncryptor = config["encryptor"] as? Bool ?? true
+    let encryptor = config["encryptor"] as? Bool ?? true
 
-    let base: any Storage<String>
-    switch type.lowercased() {
-    case "memory":
-      base = MemoryStorage<String>()
+    return StorageConfig(
+      type: type,
+      cacheable: cacheable,
+      account: account,
+      encryptor: encryptor
+    )
+  }
 
-    case "encrypted", "datastore":
-      let encryptor: any Encryptor
-      if shouldUseEncryptor, let securedEncryptor = SecuredKeyEncryptor() {
-        encryptor = securedEncryptor
-      } else {
-        if shouldUseEncryptor {
-          print(
-            "RNPingStorage: Failed to initialize SecuredKeyEncryptor; " +
-              "falling back to NoEncryptor. Set encryptor=false to suppress this warning."
-          )
-        }
-        encryptor = NoEncryptor()
-      }
-
-      base = KeychainStorage<String>(
-        account: account,
-        encryptor: encryptor
-      )
-
+  /**
+   Resolves the cacheable flag from the cache strategy string.
+   
+   - Parameter cacheStrategy: The cache strategy string (NO_CACHE, CACHE, or CACHE_ON_FAILURE).
+   - Returns: `false` for NO_CACHE, `true` for CACHE, or `nil` for CACHE_ON_FAILURE or unrecognized values.
+   */
+  private static func resolveCacheable(from cacheStrategy: String?) -> Bool? {
+    switch cacheStrategy {
+    case "NO_CACHE":
+      return false
+    case "CACHE":
+      return true
     default:
-      fatalError("RNPingStorage: Invalid storage type '\(type)'. Must be 'memory', 'encrypted', or 'datastore'")
+      return nil
     }
-
-    let finalInstance: any Storage<String>
-    if cacheStrategyRaw == "CACHE" {
-      finalInstance = StorageDelegate(delegate: base, cacheable: true)
-    } else {
-      finalInstance = base
-    }
-
-    return finalInstance
   }
   
   /**
-   Registers a session storage instance into CoreRuntime.
+   Registers a session storage config into CoreRuntime.
    
-   - Parameter handle: The storage handle to register.
-   - Returns: A unique identifier for the registered storage.
+   - Parameter handle: The storage config handle to register.
+   - Returns: A unique identifier for the registered storage config.
    */
-  private static func registerSessionStorage(_ handle: StorageHandle) async -> String {
-    return await CoreRuntime.sessionStorageRegistry.register(handle)
+  private static func registerSessionStorage(_ handle: StorageConfigHandle) async -> String {
+    return await CoreRuntime.sessionStorageConfigRegistry.register(handle)
   }
 
   /**
-   Registers an OIDC storage instance into CoreRuntime.
+   Registers an OIDC storage config into CoreRuntime.
    
-   - Parameter handle: The storage handle to register.
-   - Returns: A unique identifier for the registered storage.
+   - Parameter handle: The storage config handle to register.
+   - Returns: A unique identifier for the registered storage config.
    */
-  private static func registerOidcStorage(_ handle: StorageHandle) async -> String {
-    return await CoreRuntime.oidcStorageRegistry.register(handle)
+  private static func registerOidcStorage(_ handle: StorageConfigHandle) async -> String {
+    return await CoreRuntime.oidcStorageConfigRegistry.register(handle)
   }
 }

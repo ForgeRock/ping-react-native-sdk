@@ -1,39 +1,47 @@
 package com.reactnativepingidentity.storage
 
-import android.content.Context
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
-import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.registry.NativeHandle
-import com.pingidentity.storage.*
-import kotlinx.coroutines.*
-import java.io.File
+import com.reactnativepingidentity.core.storage.StorageConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
+/**
+ * Common storage configuration logic shared between Classic and New Architecture modules.
+ *
+ * This object provides the core implementation for configuring session and OIDC storage,
+ * managing storage configuration registries, and building storage configurations.
+ */
 object RNPingStorageCommon {
 
+  /** Tag for logging purposes */
   private const val TAG = "RNPingStorageCommon"
-  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-  /** Wrap Storage<String> so Core registry stays type-agnostic */
-  private class StorageHandle(val storage: Storage<String>) : NativeHandle
+  
+  /** Registry for session storage configurations */
+  private val sessionConfigRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
+  
+  /** Registry for OIDC storage configurations */
+  private val oidcConfigRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
 
   /**
    * Configure session storage with the provided configuration.
-   * @param config Configuration map containing storage settings
-   * @param context React application context
-   * @return Unique ID for the configured storage
+   * 
+   * Creates a storage configuration and registers it with the Core SDK's session storage registry.
+   * The actual storage instance is created lazily when first accessed.
+   *
+   * @param config Configuration map containing storage settings (fileName, keyAlias, etc.)
+   * @return Unique ID for the configured storage that can be used to reference this configuration
+   * @throws Exception if configuration fails
    */
   @JvmStatic
-  fun configureSessionStorage(config: ReadableMap, context: ReactApplicationContext): String {
+  fun configureSessionStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
 
       val id = runBlocking(Dispatchers.IO) {
-        val storage = buildStorage(map, context)
-        registerSessionStorage(storage)
+        val storageConfig = buildStorageConfig(map)
+        sessionConfigRegistry.register(storageConfig)
       }
       id
     } catch (e: Exception) {
@@ -44,18 +52,22 @@ object RNPingStorageCommon {
 
   /**
    * Configure OIDC storage with the provided configuration.
-   * @param config Configuration map containing storage settings
-   * @param context React application context
-   * @return Unique ID for the configured storage
+   * 
+   * Creates a storage configuration and registers it with the Core SDK's OIDC storage registry.
+   * The actual storage instance is created lazily when first accessed.
+   *
+   * @param config Configuration map containing storage settings (fileName, keyAlias, etc.)
+   * @return Unique ID for the configured storage that can be used to reference this configuration
+   * @throws Exception if configuration fails
    */
   @JvmStatic
-  fun configureOidcStorage(config: ReadableMap, context: ReactApplicationContext): String {
+  fun configureOidcStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
 
       val id = runBlocking(Dispatchers.IO) {
-        val storage = buildStorage(map, context)
-        registerOidcStorage(storage)
+        val storageConfig = buildStorageConfig(map)
+        oidcConfigRegistry.register(storageConfig)
       }
       id
     } catch (e: Exception) {
@@ -65,88 +77,26 @@ object RNPingStorageCommon {
   }
 
   /**
-   * Register session storage in the core registry.
-   * @param storage The storage instance to register
-   * @return The unique ID for the registered storage
+   * Build a storage configuration based on the provided configuration map.
+   *
+   * @param config Configuration map containing optional storage settings:
+   *   - fileName: File name for persistent storage (default: "secure_prefs")
+   *   - keyAlias: Encryption key alias for Android Keystore (default: "defaultKey")
+   *   - strongBoxPreferred: Whether to prefer StrongBox-backed keys (default: null)
+   *   - cacheStrategy: Cache strategy string (NO_CACHE, CACHE, or CACHE_ON_FAILURE)
+   * @return Normalized [StorageConfig] instance with all configuration values
    */
-  private suspend fun registerSessionStorage(storage: Storage<String>): String {
-    val handle = StorageHandle(storage)
-    return CoreRuntime.sessionStorageRegistry.register(handle)
-  }
+  private fun buildStorageConfig(config: Map<String, Any?>): StorageConfig {
 
-  /**
-   * Register OIDC storage in the core registry.
-   * @param storage The storage instance to register
-   * @return The unique ID for the registered storage
-   */
-  private suspend fun registerOidcStorage(storage: Storage<String>): String {
-    val handle = StorageHandle(storage)
-    return CoreRuntime.oidcStorageRegistry.register(handle)
-  }
-
-  /**
-   * Build a storage instance based on the provided configuration.
-   * @param config Configuration map containing storage type and settings
-   * @param context Android context
-   * @return Configured storage instance
-   */
-  private fun buildStorage(config: Map<String, Any?>, context: Context): Storage<String> {
-
-    val type = config["type"] as? String
-      ?: throw IllegalArgumentException("Missing required 'type' parameter in storage configuration")
     val fileName = config["fileName"] as? String ?: "secure_prefs"
-
-    val cacheStrategy = when ((config["cacheStrategy"] as? String)?.uppercase()) {
-      "CACHE" -> CacheStrategy.CACHE
-      "CACHE_ON_FAILURE" -> CacheStrategy.CACHE_ON_FAILURE
-      else -> CacheStrategy.NO_CACHE
-    }
-
-    return when (type.lowercase()) {
-      "memory" -> {
-        MemoryStorage()
-      }
-
-      "datastore" -> {
-        val dataStore = createStringDataStore(context, fileName)
-        DataStoreStorage(
-          dataStore = dataStore,
-          cacheStrategy = cacheStrategy
-        )
-      }
-
-      "encrypted" -> {
-        val keyAlias = (config["keyAlias"] as? String) ?: "defaultKey"
-        val strongBox = config["strongBoxPreferred"] as? Boolean ?: false
-
-        EncryptedDataStoreStorage<String> {
-          this.fileName = fileName
-          this.cacheStrategy = cacheStrategy
-          this.keyAlias = keyAlias
-          this.strongBoxPreferred = strongBox
-        }
-      }
-
-      else -> {
-        throw IllegalArgumentException("Invalid storage type '$type'. Must be 'memory', 'encrypted', or 'datastore'")
-      }
-    }
-  }
-
-  /**
-   * Create a DataStore for string values.
-   * Same helper from old StorageRegistry (kept as-is for POC parity).
-   * Reuses the shared scope to avoid leaking coroutine scopes/threads on repeated configure calls.
-   * @param context Android context
-   * @param fileName Name of the file for the DataStore
-   * @return DataStore instance for nullable strings
-   */
-  private fun createStringDataStore(context: Context, fileName: String): DataStore<String?> {
-    return DataStoreFactory.create(
-      serializer = DataToJsonSerializer(),
-      scope = scope
-    ) {
-      File(context.filesDir, "datastore/$fileName")
-    }
+    val keyAlias = (config["keyAlias"] as? String) ?: "defaultKey"
+    val strongBoxPreferred = config["strongBoxPreferred"] as? Boolean
+    val cacheStrategy = config["cacheStrategy"] as? String
+    return StorageConfig(
+      keyAlias = keyAlias,
+      fileName = fileName,
+      strongBoxPreferred = strongBoxPreferred,
+      cacheStrategy = cacheStrategy
+    )
   }
 }
