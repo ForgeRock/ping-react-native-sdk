@@ -21,17 +21,35 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Common logger functionality for managing logger instances across the React Native bridge.
+ * Handles synchronization of logger configuration from JavaScript to native Kotlin.
+ *
+ * This object provides methods to configure and synchronize logger settings,
+ * managing the lifecycle of logger instances through the CoreRuntime registry.
+ */
 object RNPingLoggerCommon {
 
   private const val TAG = "RNPingLoggerCommon"
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+  /**
+   * Native logger levels supported by the PingIdentity Logger.
+   */
   private enum class NativeLoggerLevel {
+    /** Standard logging level - logs all messages */
     STANDARD,
+    /** Warning logging level - logs warnings and errors only */
     WARN,
+    /** No logging - disables all log output */
     NONE,
   }
 
+  /**
+   * Handle for storing logger configuration in the registry.
+   *
+   * @property level The log level for this logger instance
+   */
   private class LoggerHandle(var level: NativeLoggerLevel) : NativeHandle
 
   /**
