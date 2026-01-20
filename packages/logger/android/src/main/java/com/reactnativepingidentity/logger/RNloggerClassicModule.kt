@@ -19,8 +19,8 @@ import com.facebook.react.module.annotations.ReactModule
  *
  * @param reactContext The React application context
  */
-@ReactModule(name = LoggerClassicModule.NAME)
-class LoggerClassicModule(
+@ReactModule(name = RNloggerClassicModule.NAME)
+class RNloggerClassicModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 

@@ -38,7 +38,7 @@ class LoggerPackage : BaseReactPackage() {
         RNPingLoggerModule(reactContext)
       } else {
         // --- Classic fallback ---
-        LoggerClassicModule(reactContext)
+        RNloggerClassicModule(reactContext)
       }
     } else {
       null
