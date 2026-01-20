@@ -38,16 +38,20 @@ import type {
 
 // Register session storage for Journey SSO tokens (Android configuration)
 const sessionId = registerSessionStorage({
-  keyAlias: 'ping.session',
-  fileName: 'ping_session_store',
-  cacheStrategy: CacheStrategy.CACHE,
+  android: {
+    keyAlias: 'ping.session',
+    fileName: 'ping_session_store',
+    cacheStrategy: CacheStrategy.CACHE,
+  },
 });
 const sessionStorage: SessionStorage = configureSessionStorage(sessionId);
 
 // Register OIDC storage for OAuth/OIDC tokens (Android configuration)
 const oidcId = registerOidcStorage({
-  keyAlias: 'ping.oidc',
-  fileName: 'ping_oidc_tokens',
+  android: {
+    keyAlias: 'ping.oidc',
+    fileName: 'ping_oidc_tokens',
+  },
   ios: {
     account: 'com.example.app.oidc',
     encryptor: true,
@@ -57,12 +61,12 @@ const oidcStorage: OidcStorage = configureOidcStorage(oidcId);
 ```
 
 Notes:
-- Android uses encrypted storage by default; `keyAlias`, `fileName`, and
-  `strongBoxPreferred` are optional.
+- Android uses encrypted storage by default; `android.keyAlias` and other
+  `android` options (including `fileName`, `strongBoxPreferred`) are optional.
 - iOS uses Keychain storage and supports `ios.account` (Keychain account)
   and `ios.encryptor` (true uses an Encryptor, false uses NoEncryptor).
-- `cacheStrategy` controls how the SDK caches data when native storage
-  is unavailable (Android only).
+- `android.cacheStrategy` controls how the SDK caches data when native storage
+  is unavailable.
 
 ### StorageConfig type
 
@@ -74,8 +78,10 @@ that accept inline storage configuration.
 import type { StorageConfig } from '@react-native-pingidentity/storage';
 
 const oidcCfg: StorageConfig = {
-  keyAlias: 'ping.oidc',
-  fileName: 'ping_oidc_tokens',
+  android: {
+    keyAlias: 'ping.oidc',
+    fileName: 'ping_oidc_tokens',
+  },
 };
 
 const oidcId = registerOidcStorage(oidcCfg);
@@ -91,8 +97,10 @@ config fields explicitly so the same JS code works on both platforms:
 ```ts
 const oidcId = registerOidcStorage({
   // Android-only fields
-  keyAlias: 'ping.oidc',
-  fileName: 'ping_oidc_tokens',
+  android: {
+    keyAlias: 'ping.oidc',
+    fileName: 'ping_oidc_tokens',
+  },
   // iOS-only fields
   ios: {
     account: 'com.example.app.oidc',
@@ -107,10 +115,12 @@ const journey = configureJourney({
     oidc: {
       storage: {
         // Android fields (ignored on iOS)
-        keyAlias: oidcConfig.keyAlias,
-        fileName: oidcConfig.fileName,
-        strongBoxPreferred: oidcConfig.strongBoxPreferred,
-        cacheStrategy: oidcConfig.cacheStrategy,
+        android: {
+          keyAlias: oidcConfig.android?.keyAlias,
+          fileName: oidcConfig.android?.fileName,
+          strongBoxPreferred: oidcConfig.android?.strongBoxPreferred,
+          cacheStrategy: oidcConfig.android?.cacheStrategy,
+        },
         // iOS fields (ignored on Android)
         ios: {
           account: oidcConfig.ios?.account,

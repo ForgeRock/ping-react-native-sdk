@@ -27,8 +27,10 @@ import type { BaseStorageConfig } from "../NativeRNPingStorage";
  * 
  * // Register the storage configuration
  * const sessionId = registerSessionStorage({
- *   keyAlias: 'session_key',
- *   fileName: 'session_data'
+ *   android: {
+ *     keyAlias: 'session_key',
+ *     fileName: 'session_data'
+ *   }
  * });
  * 
  * // Retrieve the configuration for use
@@ -61,8 +63,10 @@ export type SessionStorage = BaseStorageConfig;
  * 
  * // Register the storage configuration
  * const oidcId = registerOidcStorage({
- *   keyAlias: 'oidc_key',
- *   fileName: 'oidc_tokens'
+ *   android: {
+ *     keyAlias: 'oidc_key',
+ *     fileName: 'oidc_tokens'
+ *   }
  * });
  * 
  * // Retrieve the configuration for use

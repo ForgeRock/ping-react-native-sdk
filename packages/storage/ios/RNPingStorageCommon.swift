@@ -152,11 +152,12 @@ public class RNPingStorageCommon: NSObject {
   /// - Parameters:
   ///   - id: The unique identifier of the storage configuration to resolve
   ///   - resolve: An async closure that handles the actual resolution
-  /// - Returns: The resolved storage configuration, or nil if not found
+  /// - Returns: The resolved storage configuration
+  /// - Throws: Raises an exception when no configuration is registered for the id
   private static func resolveConfig(
     _ id: String,
     resolve: @escaping (String) async -> StorageConfig?
-  ) -> StorageConfig? {
+  ) -> StorageConfig {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
       "RNPingStorageCommon.resolveConfig must be called on createQueue"
@@ -171,6 +172,14 @@ public class RNPingStorageCommon: NSObject {
     }
 
     semaphore.wait()
+    guard let resolvedConfig else {
+      NSException(
+        name: .invalidArgumentException,
+        reason: "No storage config registered for id=\(id)",
+        userInfo: nil
+      ).raise()
+      return StorageConfig(cacheable: nil, account: nil, encryptor: nil)
+    }
     return resolvedConfig
   }
   

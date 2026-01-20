@@ -45,10 +45,12 @@ describe("Storage API", () => {
 
     it("configureSessionStorage can be created with all config options", () => {
       const config = {
-        keyAlias: "session-key",
-        fileName: "session.dat",
-        strongBoxPreferred: true,
-        cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        android: {
+          keyAlias: "session-key",
+          fileName: "session.dat",
+          strongBoxPreferred: true,
+          cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        },
         ios: {
           account: "com.example.session",
           encryptor: true,
@@ -84,10 +86,12 @@ describe("Storage API", () => {
 
     it("configureOidcStorage can be created with all config options", () => {
       const config = {
-        keyAlias: "oidc-key",
-        fileName: "oidc.dat",
-        strongBoxPreferred: false,
-        cacheStrategy: CacheStrategy.NO_CACHE,
+        android: {
+          keyAlias: "oidc-key",
+          fileName: "oidc.dat",
+          strongBoxPreferred: false,
+          cacheStrategy: CacheStrategy.NO_CACHE,
+        },
         ios: {
           account: "com.example.oidc",
           encryptor: false,

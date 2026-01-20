@@ -30,7 +30,7 @@ export {
  * @internal
  * @example
  * ```typescript
- * validateStorageConfig({ keyAlias: 'myKey', fileName: 'myFile' });
+ * validateStorageConfig({ android: { keyAlias: 'myKey', fileName: 'myFile' } });
  * // No error thrown - valid config
  * 
  * validateStorageConfig(null);
@@ -48,18 +48,20 @@ function validateStorageConfig(config: BaseStorageConfig) {
 
 /**
  * Builds the native storage configuration from the base configuration.
- * Flattens the iOS-specific options into the top-level config object
+ * Flattens platform-specific options into the top-level config object
  * for easier consumption by native modules.
  *
  * @param config - The base storage configuration
- * @returns The native storage configuration object with flattened iOS options
+ * @returns The native storage configuration object with flattened platform options
  * 
  * @internal
  * @example
  * ```typescript
  * const config: BaseStorageConfig = {
- *   keyAlias: 'session_key',
- *   fileName: 'session_data',
+ *   android: {
+ *     keyAlias: 'session_key',
+ *     fileName: 'session_data',
+ *   },
  *   ios: {
  *     account: 'com.example.app',
  *     encryptor: true
@@ -77,12 +79,12 @@ function validateStorageConfig(config: BaseStorageConfig) {
  */
 function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
   return {
-    ...(config.keyAlias ? { keyAlias: config.keyAlias } : {}),
-    ...(config.fileName ? { fileName: config.fileName } : {}),
-    ...(config.strongBoxPreferred !== undefined
-      ? { strongBoxPreferred: config.strongBoxPreferred }
+    ...(config.android?.keyAlias ? { keyAlias: config.android.keyAlias } : {}),
+    ...(config.android?.fileName ? { fileName: config.android.fileName } : {}),
+    ...(config.android?.strongBoxPreferred !== undefined
+      ? { strongBoxPreferred: config.android.strongBoxPreferred }
       : {}),
-    ...(config.cacheStrategy ? { cacheStrategy: config.cacheStrategy } : {}),
+    ...(config.android?.cacheStrategy ? { cacheStrategy: config.android.cacheStrategy } : {}),
     ...(config.ios?.account ? { account: config.ios.account } : {}),
     ...(config.ios?.encryptor !== undefined ? { encryptor: config.ios.encryptor } : {}),
     ...(config.ios?.cacheable !== undefined ? { cacheable: config.ios.cacheable } : {}),
@@ -95,7 +97,7 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * platform-specific options properly nested.
  *
  * @param nativeResult - Native storage configuration object
- * @returns The normalized base storage configuration with structured iOS options
+ * @returns The normalized base storage configuration with structured platform options
  * @throws {Error} If the native result is not a valid configuration object
  * 
  * @internal
@@ -110,8 +112,10 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * 
  * const config = normalizeStorageConfig(nativeResult);
  * // Returns: {
- * //   keyAlias: 'session_key',
- * //   fileName: 'session_data',
+ * //   android: {
+ * //     keyAlias: 'session_key',
+ * //     fileName: 'session_data'
+ * //   },
  * //   ios: {
  * //     account: 'com.example.app',
  * //     encryptor: true
@@ -119,34 +123,63 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * // }
  * ```
  */
-function normalizeStorageConfig(
+function validateNormalizedResult(
   nativeResult: NativeStorageConfig | null | undefined
-): BaseStorageConfig {
+) {
   if (nativeResult !== null && nativeResult !== undefined && typeof nativeResult !== "object") {
     throw new Error(
       "[@react-native-pingidentity/storage] Failed to resolve storage configuration."
     );
   }
+}
 
-  const parsed = nativeResult ?? {};
-  const ios =
+function buildIosConfig(parsed: NativeStorageConfig) {
+  const hasIosValues =
     parsed.account !== undefined ||
     parsed.encryptor !== undefined ||
-    parsed.cacheable !== undefined
-      ? {
-          ...(parsed.account ? { account: parsed.account } : {}),
-          ...(parsed.encryptor !== undefined ? { encryptor: parsed.encryptor } : {}),
-          ...(parsed.cacheable !== undefined ? { cacheable: parsed.cacheable } : {}),
-        }
-      : undefined;
+    parsed.cacheable !== undefined;
+  if (!hasIosValues) {
+    return undefined;
+  }
 
   return {
-    ...(parsed.keyAlias ? { keyAlias: parsed.keyAlias } : {}),
-    ...(parsed.fileName ? { fileName: parsed.fileName } : {}),
+    ...(parsed.account !== undefined ? { account: parsed.account } : {}),
+    ...(parsed.encryptor !== undefined ? { encryptor: parsed.encryptor } : {}),
+    ...(parsed.cacheable !== undefined ? { cacheable: parsed.cacheable } : {}),
+  };
+}
+
+function buildAndroidConfig(parsed: NativeStorageConfig) {
+  const hasAndroidValues =
+    parsed.keyAlias !== undefined ||
+    parsed.fileName !== undefined ||
+    parsed.strongBoxPreferred !== undefined ||
+    parsed.cacheStrategy !== undefined;
+  if (!hasAndroidValues) {
+    return undefined;
+  }
+
+  return {
+    ...(parsed.keyAlias !== undefined ? { keyAlias: parsed.keyAlias } : {}),
+    ...(parsed.fileName !== undefined ? { fileName: parsed.fileName } : {}),
     ...(parsed.strongBoxPreferred !== undefined
       ? { strongBoxPreferred: parsed.strongBoxPreferred }
       : {}),
-    ...(parsed.cacheStrategy ? { cacheStrategy: parsed.cacheStrategy } : {}),
+    ...(parsed.cacheStrategy !== undefined ? { cacheStrategy: parsed.cacheStrategy } : {}),
+  };
+}
+
+function normalizeStorageConfig(
+  nativeResult: NativeStorageConfig | null | undefined
+): BaseStorageConfig {
+  validateNormalizedResult(nativeResult);
+
+  const parsed = nativeResult ?? {};
+  const ios = buildIosConfig(parsed);
+  const android = buildAndroidConfig(parsed);
+
+  return {
+    ...(android ? { android } : {}),
     ...(ios ? { ios } : {}),
   };
 }
@@ -191,9 +224,11 @@ function validateStorageId(id: string) {
  * ```typescript
  * // First, register the storage configuration
  * const sessionId = registerSessionStorage({
- *   keyAlias: 'session_key',
- *   fileName: 'session_data',
- *   strongBoxPreferred: true
+ *   android: {
+ *     keyAlias: 'session_key',
+ *     fileName: 'session_data',
+ *     strongBoxPreferred: true
+ *   }
  * });
  * 
  * // Then retrieve it for use with Journey
@@ -225,8 +260,10 @@ export function configureSessionStorage(id: string): SessionStorage {
  * ```typescript
  * // First, register the storage configuration
  * const oidcId = registerOidcStorage({
- *   keyAlias: 'oidc_key',
- *   fileName: 'oidc_tokens',
+ *   android: {
+ *     keyAlias: 'oidc_key',
+ *     fileName: 'oidc_tokens',
+ *   },
  *   ios: {
  *     account: 'com.example.app',
  *     encryptor: true,
@@ -265,10 +302,12 @@ export function configureOidcStorage(id: string): OidcStorage {
  * Basic Android configuration:
  * ```typescript
  * const sessionId = registerSessionStorage({
- *   keyAlias: 'session_encryption_key',
- *   fileName: 'session_prefs',
- *   strongBoxPreferred: true,
- *   cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   android: {
+ *     keyAlias: 'session_encryption_key',
+ *     fileName: 'session_prefs',
+ *     strongBoxPreferred: true,
+ *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   }
  * });
  * ```
  * 
@@ -288,9 +327,11 @@ export function configureOidcStorage(id: string): OidcStorage {
  * Cross-platform configuration:
  * ```typescript
  * const sessionId = registerSessionStorage({
- *   keyAlias: 'session_key',      // Android only
- *   fileName: 'session_data',       // Android only
- *   strongBoxPreferred: true,       // Android only
+ *   android: {
+ *     keyAlias: 'session_key',      // Android only
+ *     fileName: 'session_data',       // Android only
+ *     strongBoxPreferred: true,       // Android only
+ *   },
  *   ios: {
  *     account: 'com.example.app',   // iOS only
  *     encryptor: true,               // iOS only
@@ -323,10 +364,12 @@ export function registerSessionStorage(config: BaseStorageConfig): string {
  * Basic Android configuration:
  * ```typescript
  * const oidcId = registerOidcStorage({
- *   keyAlias: 'oidc_encryption_key',
- *   fileName: 'oidc_secure_prefs',
- *   strongBoxPreferred: true,
- *   cacheStrategy: CacheStrategy.NO_CACHE
+ *   android: {
+ *     keyAlias: 'oidc_encryption_key',
+ *     fileName: 'oidc_secure_prefs',
+ *     strongBoxPreferred: true,
+ *     cacheStrategy: CacheStrategy.NO_CACHE
+ *   }
  * });
  * ```
  * 
@@ -346,10 +389,12 @@ export function registerSessionStorage(config: BaseStorageConfig): string {
  * Cross-platform configuration:
  * ```typescript
  * const oidcId = registerOidcStorage({
- *   keyAlias: 'oauth_tokens',         // Android only
- *   fileName: 'oauth_storage',        // Android only
- *   strongBoxPreferred: true,         // Android only
- *   cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+ *   android: {
+ *     keyAlias: 'oauth_tokens',         // Android only
+ *     fileName: 'oauth_storage',        // Android only
+ *     strongBoxPreferred: true,         // Android only
+ *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+ *   },
  *   ios: {
  *     account: 'com.example.oauth',   // iOS only
  *     encryptor: true,                 // iOS only

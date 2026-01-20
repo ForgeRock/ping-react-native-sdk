@@ -18,20 +18,26 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
  * ```typescript
  * // Use CACHE_ON_FAILURE for resilient storage
  * const config = {
- *   keyAlias: 'myKey',
- *   cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   android: {
+ *     keyAlias: 'myKey',
+ *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   }
  * };
  * 
  * // Use NO_CACHE for sensitive data
  * const secureConfig = {
- *   keyAlias: 'tokenKey',
- *   cacheStrategy: CacheStrategy.NO_CACHE
+ *   android: {
+ *     keyAlias: 'tokenKey',
+ *     cacheStrategy: CacheStrategy.NO_CACHE
+ *   }
  * };
  * 
  * // Use CACHE for frequently accessed data
  * const fastConfig = {
- *   keyAlias: 'sessionKey',
- *   cacheStrategy: CacheStrategy.CACHE
+ *   android: {
+ *     keyAlias: 'sessionKey',
+ *     cacheStrategy: CacheStrategy.CACHE
+ *   }
  * };
  * ```
  */
@@ -61,17 +67,19 @@ export enum CacheStrategy {
  * Base configuration for storage instances across platforms.
  * 
  * This configuration object supports both Android and iOS platforms with
- * platform-specific options. Android options are specified at the top level,
- * while iOS options are nested under the `ios` property.
+ * platform-specific options. Android options are nested under the `android`
+ * property, while iOS options are nested under the `ios` property.
  * 
  * @example
  * Android-only configuration:
  * ```typescript
  * const androidConfig: BaseStorageConfig = {
- *   keyAlias: 'my_encryption_key',
- *   fileName: 'secure_storage',
- *   strongBoxPreferred: true,
- *   cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   android: {
+ *     keyAlias: 'my_encryption_key',
+ *     fileName: 'secure_storage',
+ *     strongBoxPreferred: true,
+ *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
+ *   }
  * };
  * ```
  * 
@@ -92,10 +100,12 @@ export enum CacheStrategy {
  * ```typescript
  * const config: BaseStorageConfig = {
  *   // Android-specific
- *   keyAlias: 'app_key',
- *   fileName: 'app_storage',
- *   strongBoxPreferred: true,
- *   cacheStrategy: CacheStrategy.CACHE,
+ *   android: {
+ *     keyAlias: 'app_key',
+ *     fileName: 'app_storage',
+ *     strongBoxPreferred: true,
+ *     cacheStrategy: CacheStrategy.CACHE,
+ *   },
  *   // iOS-specific
  *   ios: {
  *     account: 'com.example.app',
@@ -109,69 +119,73 @@ export enum CacheStrategy {
  * Minimal configuration (uses defaults):
  * ```typescript
  * const minimalConfig: BaseStorageConfig = {
- *   keyAlias: 'default_key'
+ *   android: {
+ *     keyAlias: 'default_key'
+ *   }
  * };
  * ```
  */
 export type BaseStorageConfig = {
   /**
-   * Encryption key alias for Android encrypted storage.
+   * Android-specific configuration options.
    * 
-   * Used by the Android Keystore system to identify the encryption key.
-   * Each storage instance should have a unique key alias to ensure proper
-   * data isolation.
-   * 
-   * **Platform:** Android only (ignored on iOS)
-   * 
-   * @defaultValue 'defaultKey'
-   * 
-   * @example
-   * ```typescript
-   * { keyAlias: 'user_session_key' }
-   * { keyAlias: 'oauth_tokens_key' }
-   * ```
+   * This nested object contains all Android storage settings.
+   * All properties within this object are ignored on iOS.
    */
-  keyAlias?: string;
+  android?: {
+    /**
+     * Encryption key alias for Android encrypted storage.
+     * 
+     * Used by the Android Keystore system to identify the encryption key.
+     * Each storage instance should have a unique key alias to ensure proper
+     * data isolation.
+     * 
+     * **Platform:** Android only
+     * 
+     * @defaultValue 'defaultKey'
+     */
+    keyAlias?: string;
 
-  /**
-   * File name for Android persistent storage.
-   * 
-   * Specifies the SharedPreferences file name where encrypted data is stored.
-   * Different storage instances should use different file names to prevent
-   * data conflicts.
-   * 
-   * **Platform:** Android only (ignored on iOS)
-   * 
-   * @defaultValue 'secure_prefs'
-   */
-  fileName?: string;
+    /**
+     * File name for Android persistent storage.
+     * 
+     * Specifies the SharedPreferences file name where encrypted data is stored.
+     * Different storage instances should use different file names to prevent
+     * data conflicts.
+     * 
+     * **Platform:** Android only
+     * 
+     * @defaultValue 'secure_prefs'
+     */
+    fileName?: string;
 
-  /**
-   * StrongBox preference for Android keystore operations.
-   * 
-   * When set to true, the SDK attempts to use hardware-backed StrongBox
-   * for enhanced security. StrongBox is a hardware security module that
-   * provides stronger protection against physical attacks.
-   * 
-   * Falls back to standard Keystore if StrongBox is not available on the device.
-   * 
-   * **Platform:** Android only (ignored on iOS)
-   * 
-   * @defaultValue false
-   */
-  strongBoxPreferred?: boolean;
+    /**
+     * StrongBox preference for Android keystore operations.
+     * 
+     * When set to true, the SDK attempts to use hardware-backed StrongBox
+     * for enhanced security. StrongBox is a hardware security module that
+     * provides stronger protection against physical attacks.
+     * 
+     * Falls back to standard Keystore if StrongBox is not available on the device.
+     * 
+     * **Platform:** Android only
+     * 
+     * @defaultValue false
+     */
+    strongBoxPreferred?: boolean;
 
-  /**
-   * Cache strategy for storage operations.
-   * 
-   * Defines how the SDK handles caching behavior when storing and retrieving data.
-   * Different strategies offer different trade-offs between performance and security.
-   * 
-   * **Platform:** Android only (ignored on iOS)
-   * 
-   * @see {@link CacheStrategy} for available options
-   */
-  cacheStrategy?: CacheStrategy;
+    /**
+     * Cache strategy for storage operations.
+     * 
+     * Defines how the SDK handles caching behavior when storing and retrieving data.
+     * Different strategies offer different trade-offs between performance and security.
+     * 
+     * **Platform:** Android only
+     * 
+     * @see {@link CacheStrategy} for available options
+     */
+    cacheStrategy?: CacheStrategy;
+  };
 
   /**
    * iOS-specific configuration options.
@@ -227,7 +241,8 @@ export type BaseStorageConfig = {
  * Native storage configuration passed to the native module.
  * 
  * This is a flattened version of {@link BaseStorageConfig} where iOS-specific options
- * are merged into the top level for easier consumption by native code.
+ * and Android-specific options are merged into the top level for easier consumption
+ * by native code.
  * 
  * This type is primarily for internal use and represents the structure that
  * the native bridge expects to receive.
