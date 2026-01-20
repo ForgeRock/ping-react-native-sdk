@@ -8,7 +8,7 @@ package com.reactnativepingidentity.storage
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 
 /**
@@ -53,9 +53,9 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
      * Resolve session storage configuration by id.
      *
      * @param id Storage configuration id
-     * @return Serialized storage configuration string
+     * @return Storage configuration map
      */
-    override fun configureSessionStorage(id: String): String {
+    override fun configureSessionStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureSessionStorage(id)
     }
 
@@ -63,9 +63,9 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
      * Resolve OIDC storage configuration by id.
      *
      * @param id Storage configuration id
-     * @return Serialized storage configuration string
+     * @return Storage configuration map
      */
-    override fun configureOidcStorage(id: String): String {
+    override fun configureOidcStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureOidcStorage(id)
     }
 }

@@ -143,12 +143,6 @@ export type BaseStorageConfig = {
    * **Platform:** Android only (ignored on iOS)
    * 
    * @defaultValue 'secure_prefs'
-   * 
-   * @example
-   * ```typescript
-   * { fileName: 'user_session_data' }
-   * { fileName: 'app_tokens' }
-   * ```
    */
   fileName?: string;
 
@@ -164,15 +158,6 @@ export type BaseStorageConfig = {
    * **Platform:** Android only (ignored on iOS)
    * 
    * @defaultValue false
-   * 
-   * @example
-   * ```typescript
-   * // Enable StrongBox for maximum security
-   * { strongBoxPreferred: true }
-   * 
-   * // Use standard Keystore
-   * { strongBoxPreferred: false }
-   * ```
    */
   strongBoxPreferred?: boolean;
 
@@ -185,18 +170,6 @@ export type BaseStorageConfig = {
    * **Platform:** Android only (ignored on iOS)
    * 
    * @see {@link CacheStrategy} for available options
-   * 
-   * @example
-   * ```typescript
-   * // No caching for sensitive data
-   * { cacheStrategy: CacheStrategy.NO_CACHE }
-   * 
-   * // Cache for performance
-   * { cacheStrategy: CacheStrategy.CACHE }
-   * 
-   * // Cache only on failure for reliability
-   * { cacheStrategy: CacheStrategy.CACHE_ON_FAILURE }
-   * ```
    */
   cacheStrategy?: CacheStrategy;
 
@@ -206,16 +179,6 @@ export type BaseStorageConfig = {
    * This nested object contains all iOS Keychain-specific settings.
    * All properties within this object are ignored on Android.
    * 
-   * @example
-   * ```typescript
-   * {
-   *   ios: {
-   *     account: 'com.example.app.storage',
-   *     encryptor: true,
-   *     cacheable: false
-   *   }
-   * }
-   * ```
    */
   ios?: {
     /**
@@ -228,12 +191,6 @@ export type BaseStorageConfig = {
      * **Platform:** iOS only
      * 
      * @defaultValue 'com.pingidentity.rnsampleapp.keyalias'
-     * 
-     * @example
-     * ```typescript
-     * { account: 'com.example.app.session' }
-     * { account: 'com.example.app.tokens' }
-     * ```
      */
     account?: string;
 
@@ -248,14 +205,6 @@ export type BaseStorageConfig = {
      * 
      * @defaultValue true
      * 
-     * @example
-     * ```typescript
-     * // Enable additional encryption
-     * { encryptor: true }
-     * 
-     * // Use only Keychain's native encryption
-     * { encryptor: false }
-     * ```
      */
     encryptor?: boolean;
 
@@ -269,14 +218,6 @@ export type BaseStorageConfig = {
      * 
      * @defaultValue undefined (uses platform defaults)
      * 
-     * @example
-     * ```typescript
-     * // Enable memory cache fallback
-     * { cacheable: true }
-     * 
-     * // Disable caching entirely
-     * { cacheable: false }
-     * ```
      */
     cacheable?: boolean;
   };
@@ -387,15 +328,15 @@ export interface Spec extends TurboModule {
    * from native code using its unique identifier.
    * 
    * @param id - Registered storage configuration identifier
-   * @returns A JSON-serialized storage configuration string
+   * @returns A storage configuration object
    * 
    * @example
    * ```typescript
-   * const configJson = nativeModule.configureSessionStorage('session_storage_abc123');
-   * // Returns: '{"keyAlias":"session_key","fileName":"session_file"}'
+   * const config = nativeModule.configureSessionStorage('session_storage_abc123');
+   * // Returns: { keyAlias: 'session_key', fileName: 'session_file' }
    * ```
    */
-  configureSessionStorage(id: string): string;
+  configureSessionStorage(id: string): NativeStorageConfig;
 
   /**
    * Resolve an OIDC storage configuration by identifier.
@@ -404,15 +345,15 @@ export interface Spec extends TurboModule {
    * from native code using its unique identifier.
    * 
    * @param id - Registered storage configuration identifier
-   * @returns A JSON-serialized storage configuration string
+   * @returns A storage configuration object
    * 
    * @example
    * ```typescript
-   * const configJson = nativeModule.configureOidcStorage('oidc_storage_xyz789');
-   * // Returns: '{"keyAlias":"oidc_key","fileName":"oidc_tokens","account":"com.example.app"}'
+   * const config = nativeModule.configureOidcStorage('oidc_storage_xyz789');
+   * // Returns: { keyAlias: 'oidc_key', fileName: 'oidc_tokens', account: 'com.example.app' }
    * ```
    */
-  configureOidcStorage(id: string): string;
+  configureOidcStorage(id: string): NativeStorageConfig;
 }
 
 /**

@@ -7,11 +7,12 @@
 package com.reactnativepingidentity.storage
 
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.reactnativepingidentity.core.CoreRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.
@@ -103,7 +104,7 @@ object RNPingStorageCommon {
   }
 
   @JvmStatic
-  fun configureSessionStorage(id: String): String {
+  fun configureSessionStorage(id: String): WritableMap {
     return try {
       val resolvedConfig = runBlocking(Dispatchers.IO) {
         sessionConfigRegistry.resolve(id)
@@ -116,7 +117,7 @@ object RNPingStorageCommon {
   }
 
   @JvmStatic
-  fun configureOidcStorage(id: String): String {
+  fun configureOidcStorage(id: String): WritableMap {
     return try {
       val resolvedConfig = runBlocking(Dispatchers.IO) {
         oidcConfigRegistry.resolve(id)
@@ -128,18 +129,12 @@ object RNPingStorageCommon {
     }
   }
 
-  private fun encodeConfig(config: StorageConfig): String {
-    return try {
-      val json = JSONObject().apply {
-        config.keyAlias?.let { put("keyAlias", it) }
-        config.fileName?.let { put("fileName", it) }
-        config.strongBoxPreferred?.let { put("strongBoxPreferred", it) }
-        config.cacheStrategy?.let { put("cacheStrategy", it) }
-      }
-      json.toString()
-    } catch (e: Exception) {
-      Log.e(TAG, "Error encoding storage config", e)
-      "{}"
-    }
+  private fun encodeConfig(config: StorageConfig): WritableMap {
+    val map = Arguments.createMap()
+    config.keyAlias?.let { map.putString("keyAlias", it) }
+    config.fileName?.let { map.putString("fileName", it) }
+    config.strongBoxPreferred?.let { map.putBoolean("strongBoxPreferred", it) }
+    config.cacheStrategy?.let { map.putString("cacheStrategy", it) }
+    return map
   }
 }

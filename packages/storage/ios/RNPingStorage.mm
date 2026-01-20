@@ -91,9 +91,9 @@ RCT_EXPORT_MODULE()
  Resolves a session storage configuration by id.
  
  - Parameter storageId: Storage configuration identifier.
- - Returns: Serialized storage configuration string.
+ - Returns: Storage configuration dictionary.
  */
-- (NSString *)configureSessionStorage:(NSString *)storageId
+- (NSDictionary *)configureSessionStorage:(NSString *)storageId
 {
   return [[self swiftImpl] configureSessionStorage:storageId];
 }
@@ -102,9 +102,9 @@ RCT_EXPORT_MODULE()
  Resolves an OIDC storage configuration by id.
  
  - Parameter storageId: Storage configuration identifier.
- - Returns: Serialized storage configuration string.
+ - Returns: Storage configuration dictionary.
  */
-- (NSString *)configureOidcStorage:(NSString *)storageId
+- (NSDictionary *)configureOidcStorage:(NSString *)storageId
 {
   return [[self swiftImpl] configureOidcStorage:storageId];
 }

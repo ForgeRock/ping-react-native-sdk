@@ -51,10 +51,10 @@ public class RNPingStorageImpl: NSObject {
    Resolves a session storage configuration by id.
    
    - Parameter id: Storage configuration identifier.
-   - Returns: A serialized storage configuration string.
+   - Returns: A storage configuration dictionary.
    */
   @objc
-  public func configureSessionStorage(_ id: String) -> String {
+  public func configureSessionStorage(_ id: String) -> NSDictionary {
     return RNPingStorageCommon.configureSessionStorage(id)
   }
 
@@ -62,10 +62,10 @@ public class RNPingStorageImpl: NSObject {
    Resolves an OIDC storage configuration by id.
    
    - Parameter id: Storage configuration identifier.
-   - Returns: A serialized storage configuration string.
+   - Returns: A storage configuration dictionary.
    */
   @objc
-  public func configureOidcStorage(_ id: String) -> String {
+  public func configureOidcStorage(_ id: String) -> NSDictionary {
     return RNPingStorageCommon.configureOidcStorage(id)
   }
 }

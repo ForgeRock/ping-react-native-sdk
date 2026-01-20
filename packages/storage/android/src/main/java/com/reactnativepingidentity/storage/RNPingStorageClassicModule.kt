@@ -55,10 +55,10 @@ class RNPingStorageClassicModule(
      * Resolve session storage configuration by id (synchronous blocking method).
      *
      * @param id Storage configuration id
-     * @return Serialized storage configuration string
+     * @return Storage configuration map
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureSessionStorage(id: String): String {
+    fun configureSessionStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureSessionStorage(id)
     }
 
@@ -66,10 +66,10 @@ class RNPingStorageClassicModule(
      * Resolve OIDC storage configuration by id (synchronous blocking method).
      *
      * @param id Storage configuration id
-     * @return Serialized storage configuration string
+     * @return Storage configuration map
      */
     @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureOidcStorage(id: String): String {
+    fun configureOidcStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureOidcStorage(id)
     }
 }

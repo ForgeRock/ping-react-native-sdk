@@ -89,9 +89,9 @@ public class RNPingStorageCommon: NSObject {
   /// Retrieves and encodes a previously registered session storage configuration.
   ///
   /// - Parameter id: The unique identifier of the storage configuration to retrieve
-  /// - Returns: A JSON string representation of the storage configuration
+  /// - Returns: A dictionary representation of the storage configuration
   @objc
-  public static func configureSessionStorage(_ id: String) -> String {
+  public static func configureSessionStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
       let resolvedConfig = resolveConfig(id, resolve: resolveSessionStorage)
       return encodeConfig(resolvedConfig)
@@ -101,9 +101,9 @@ public class RNPingStorageCommon: NSObject {
   /// Retrieves and encodes a previously registered OIDC storage configuration.
   ///
   /// - Parameter id: The unique identifier of the storage configuration to retrieve
-  /// - Returns: A JSON string representation of the storage configuration
+  /// - Returns: A dictionary representation of the storage configuration
   @objc
-  public static func configureOidcStorage(_ id: String) -> String {
+  public static func configureOidcStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
       let resolvedConfig = resolveConfig(id, resolve: resolveOidcStorage)
       return encodeConfig(resolvedConfig)
@@ -176,22 +176,27 @@ public class RNPingStorageCommon: NSObject {
   
   // MARK: - Private Helpers
   
-  /// Encodes a storage configuration to a JSON string.
+  /// Encodes a storage configuration to a dictionary.
   ///
   /// - Parameter config: The storage configuration to encode, or nil
-  /// - Returns: A JSON string representation of the config, or "{}" if config is nil or encoding fails
-  private static func encodeConfig(_ config: StorageConfig?) -> String {
+  /// - Returns: A dictionary representation of the config, or an empty dictionary if config is nil
+  private static func encodeConfig(_ config: StorageConfig?) -> NSDictionary {
     guard let config else {
-      return "{}"
+      return [:]
     }
 
-    let encoder = JSONEncoder()
-    guard let data = try? encoder.encode(config),
-          let json = String(data: data, encoding: .utf8) else {
-      return "{}"
+    var dict: [String: Any] = [:]
+    if let cacheable = config.cacheable {
+      dict["cacheable"] = cacheable
+    }
+    if let account = config.account {
+      dict["account"] = account
+    }
+    if let encryptor = config.encryptor {
+      dict["encryptor"] = encryptor
     }
 
-    return json
+    return dict as NSDictionary
   }
 
   /**

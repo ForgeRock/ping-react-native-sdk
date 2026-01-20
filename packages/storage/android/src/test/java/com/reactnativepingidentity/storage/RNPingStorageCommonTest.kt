@@ -7,10 +7,11 @@
 
 package com.reactnativepingidentity.storage
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -26,10 +27,38 @@ class RNPingStorageCommonTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
+        
+        // Mock Arguments.createMap() to return a proper WritableMap
+        mockkStatic(Arguments::class)
+        every { Arguments.createMap() } answers {
+            val map = mockk<WritableMap>(relaxed = true)
+            val storage = mutableMapOf<String, Any?>()
+            
+            every { map.putString(any(), any()) } answers {
+                storage[firstArg()] = secondArg()
+                Unit
+            }
+            every { map.putBoolean(any(), any()) } answers {
+                storage[firstArg()] = secondArg()
+                Unit
+            }
+            every { map.getString(any()) } answers {
+                storage[firstArg()] as? String
+            }
+            every { map.getBoolean(any()) } answers {
+                storage[firstArg()] as? Boolean ?: false
+            }
+            every { map.hasKey(any()) } answers {
+                storage.containsKey(firstArg())
+            }
+            
+            map
+        }
     }
 
     @After
     fun tearDown() {
+        unmockkStatic(Arguments::class)
         clearAllMocks()
         runBlocking {
             StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).clear()
@@ -42,17 +71,15 @@ class RNPingStorageCommonTest {
         val config = createMockReadableMap(emptyMap())
 
         val id = RNPingStorageCommon.registerSessionStorage(config)
-        val configJson = RNPingStorageCommon.configureSessionStorage(id)
-        val storageConfig = JSONObject(configJson)
+        val configMap = RNPingStorageCommon.configureSessionStorage(id)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(configJson)
-        assertTrue(configJson.isNotEmpty())
-        assertEquals("defaultKey", storageConfig.getString("keyAlias"))
-        assertEquals("secure_prefs", storageConfig.getString("fileName"))
-        assertFalse(storageConfig.has("strongBoxPreferred"))
-        assertFalse(storageConfig.has("cacheStrategy"))
+        assertNotNull(configMap)
+        assertEquals("defaultKey", configMap.getString("keyAlias"))
+        assertEquals("secure_prefs", configMap.getString("fileName"))
+        assertFalse(configMap.hasKey("strongBoxPreferred"))
+        assertFalse(configMap.hasKey("cacheStrategy"))
     }
 
     @Test
@@ -60,17 +87,15 @@ class RNPingStorageCommonTest {
         val config = createMockReadableMap(emptyMap())
 
         val id = RNPingStorageCommon.registerOidcStorage(config)
-        val configJson = RNPingStorageCommon.configureOidcStorage(id)
-        val storageConfig = JSONObject(configJson)
+        val configMap = RNPingStorageCommon.configureOidcStorage(id)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(configJson)
-        assertTrue(configJson.isNotEmpty())
-        assertEquals("defaultKey", storageConfig.getString("keyAlias"))
-        assertEquals("secure_prefs", storageConfig.getString("fileName"))
-        assertFalse(storageConfig.has("strongBoxPreferred"))
-        assertFalse(storageConfig.has("cacheStrategy"))
+        assertNotNull(configMap)
+        assertEquals("defaultKey", configMap.getString("keyAlias"))
+        assertEquals("secure_prefs", configMap.getString("fileName"))
+        assertFalse(configMap.hasKey("strongBoxPreferred"))
+        assertFalse(configMap.hasKey("cacheStrategy"))
     }
 
     @Test
@@ -80,10 +105,11 @@ class RNPingStorageCommonTest {
 
         val id1 = RNPingStorageCommon.registerSessionStorage(config1)
         val id2 = RNPingStorageCommon.registerSessionStorage(config2)
-        val configJson1 = RNPingStorageCommon.configureSessionStorage(id1)
-        val configJson2 = RNPingStorageCommon.configureSessionStorage(id2)
+        val configMap1 = RNPingStorageCommon.configureSessionStorage(id1)
+        val configMap2 = RNPingStorageCommon.configureSessionStorage(id2)
 
-        assertEquals(configJson1, configJson2)
+        assertEquals(configMap1.getString("keyAlias"), configMap2.getString("keyAlias"))
+        assertEquals(configMap1.getString("fileName"), configMap2.getString("fileName"))
     }
 
     @Test
@@ -91,14 +117,12 @@ class RNPingStorageCommonTest {
         val config = createMockReadableMap(mapOf("fileName" to "test_store"))
 
         val id = RNPingStorageCommon.registerSessionStorage(config)
-        val configJson = RNPingStorageCommon.configureSessionStorage(id)
-        val storageConfig = JSONObject(configJson)
+        val configMap = RNPingStorageCommon.configureSessionStorage(id)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(configJson)
-        assertTrue(configJson.isNotEmpty())
-        assertEquals("test_store", storageConfig.getString("fileName"))
+        assertNotNull(configMap)
+        assertEquals("test_store", configMap.getString("fileName"))
     }
 
     @Test
@@ -113,17 +137,15 @@ class RNPingStorageCommonTest {
         )
 
         val id = RNPingStorageCommon.registerSessionStorage(config)
-        val configJson = RNPingStorageCommon.configureSessionStorage(id)
-        val storageConfig = JSONObject(configJson)
+        val configMap = RNPingStorageCommon.configureSessionStorage(id)
 
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
-        assertNotNull(configJson)
-        assertTrue(configJson.isNotEmpty())
-        assertEquals("secure_store", storageConfig.getString("fileName"))
-        assertEquals("testKey", storageConfig.getString("keyAlias"))
-        assertEquals(true, storageConfig.getBoolean("strongBoxPreferred"))
-        assertEquals("cache_on_failure", storageConfig.getString("cacheStrategy"))
+        assertNotNull(configMap)
+        assertEquals("secure_store", configMap.getString("fileName"))
+        assertEquals("testKey", configMap.getString("keyAlias"))
+        assertEquals(true, configMap.getBoolean("strongBoxPreferred"))
+        assertEquals("cache_on_failure", configMap.getString("cacheStrategy"))
     }
 
     private fun createMockReadableMap(data: Map<String, Any?>): ReadableMap {

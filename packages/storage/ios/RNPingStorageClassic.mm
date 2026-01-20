@@ -33,15 +33,15 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerOidcStorage:(NSDictionary *)confi
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureSessionStorage:(NSString *)storageId)
 {
-  NSString *configJson = [RNPingStorageCommon configureSessionStorage:storageId];
+  NSDictionary *config = [RNPingStorageCommon configureSessionStorage:storageId];
 
-  return configJson;
+  return config;
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOidcStorage:(NSString *)storageId)
 {
-  NSString *configJson = [RNPingStorageCommon configureOidcStorage:storageId];
+  NSDictionary *config = [RNPingStorageCommon configureOidcStorage:storageId];
 
-  return configJson;
+  return config;
 }
 @end

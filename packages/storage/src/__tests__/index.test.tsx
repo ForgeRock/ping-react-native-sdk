@@ -35,7 +35,7 @@ describe("Storage API", () => {
 
   describe("Factory functions", () => {
     it("configureSessionStorage returns the config", () => {
-      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue("{}");
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({});
 
       const instance = configureSessionStorage("session-id");
 
@@ -56,17 +56,15 @@ describe("Storage API", () => {
         },
       };
 
-      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue(
-        JSON.stringify({
-          keyAlias: "session-key",
-          fileName: "session.dat",
-          strongBoxPreferred: true,
-          cacheStrategy: "cache_on_failure",
-          account: "com.example.session",
-          encryptor: true,
-          cacheable: true,
-        })
-      );
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({
+        keyAlias: "session-key",
+        fileName: "session.dat",
+        strongBoxPreferred: true,
+        cacheStrategy: "cache_on_failure",
+        account: "com.example.session",
+        encryptor: true,
+        cacheable: true,
+      });
 
       expect(configureSessionStorage("session-id")).toEqual(config);
     });
@@ -76,7 +74,7 @@ describe("Storage API", () => {
     });
 
     it("configureOidcStorage returns the config", () => {
-      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue("{}");
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({});
 
       const instance = configureOidcStorage("oidc-id");
 
@@ -97,17 +95,15 @@ describe("Storage API", () => {
         },
       };
 
-      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue(
-        JSON.stringify({
-          keyAlias: "oidc-key",
-          fileName: "oidc.dat",
-          strongBoxPreferred: false,
-          cacheStrategy: "no_cache",
-          account: "com.example.oidc",
-          encryptor: false,
-          cacheable: false,
-        })
-      );
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({
+        keyAlias: "oidc-key",
+        fileName: "oidc.dat",
+        strongBoxPreferred: false,
+        cacheStrategy: "no_cache",
+        account: "com.example.oidc",
+        encryptor: false,
+        cacheable: false,
+      });
 
       expect(configureOidcStorage("oidc-id")).toEqual(config);
     });

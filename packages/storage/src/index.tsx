@@ -94,19 +94,19 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * Converts a flattened native configuration into a structured configuration with
  * platform-specific options properly nested.
  *
- * @param nativeResult - JSON string from native module containing storage configuration
+ * @param nativeResult - Native storage configuration object
  * @returns The normalized base storage configuration with structured iOS options
- * @throws {Error} If the native result cannot be parsed
+ * @throws {Error} If the native result is not a valid configuration object
  * 
  * @internal
  * @example
  * ```typescript
- * const nativeResult = JSON.stringify({
+ * const nativeResult = {
  *   keyAlias: 'session_key',
  *   fileName: 'session_data',
  *   account: 'com.example.app',
  *   encryptor: true
- * });
+ * };
  * 
  * const config = normalizeStorageConfig(nativeResult);
  * // Returns: {
@@ -119,34 +119,36 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * // }
  * ```
  */
-function normalizeStorageConfig(nativeResult: string): BaseStorageConfig {
-  try {
-    const parsed = JSON.parse(nativeResult) as NativeStorageConfig;
-    const ios =
-      parsed.account !== undefined ||
-      parsed.encryptor !== undefined ||
-      parsed.cacheable !== undefined
-        ? {
-            ...(parsed.account ? { account: parsed.account } : {}),
-            ...(parsed.encryptor !== undefined ? { encryptor: parsed.encryptor } : {}),
-            ...(parsed.cacheable !== undefined ? { cacheable: parsed.cacheable } : {}),
-          }
-        : undefined;
-
-    return {
-      ...(parsed.keyAlias ? { keyAlias: parsed.keyAlias } : {}),
-      ...(parsed.fileName ? { fileName: parsed.fileName } : {}),
-      ...(parsed.strongBoxPreferred !== undefined
-        ? { strongBoxPreferred: parsed.strongBoxPreferred }
-        : {}),
-      ...(parsed.cacheStrategy ? { cacheStrategy: parsed.cacheStrategy } : {}),
-      ...(ios ? { ios } : {}),
-    };
-  } catch {
+function normalizeStorageConfig(
+  nativeResult: NativeStorageConfig | null | undefined
+): BaseStorageConfig {
+  if (nativeResult !== null && nativeResult !== undefined && typeof nativeResult !== "object") {
     throw new Error(
       "[@react-native-pingidentity/storage] Failed to resolve storage configuration."
     );
   }
+
+  const parsed = nativeResult ?? {};
+  const ios =
+    parsed.account !== undefined ||
+    parsed.encryptor !== undefined ||
+    parsed.cacheable !== undefined
+      ? {
+          ...(parsed.account ? { account: parsed.account } : {}),
+          ...(parsed.encryptor !== undefined ? { encryptor: parsed.encryptor } : {}),
+          ...(parsed.cacheable !== undefined ? { cacheable: parsed.cacheable } : {}),
+        }
+      : undefined;
+
+  return {
+    ...(parsed.keyAlias ? { keyAlias: parsed.keyAlias } : {}),
+    ...(parsed.fileName ? { fileName: parsed.fileName } : {}),
+    ...(parsed.strongBoxPreferred !== undefined
+      ? { strongBoxPreferred: parsed.strongBoxPreferred }
+      : {}),
+    ...(parsed.cacheStrategy ? { cacheStrategy: parsed.cacheStrategy } : {}),
+    ...(ios ? { ios } : {}),
+  };
 }
 
 /**

@@ -47,12 +47,11 @@ final class RNPingStorageImplTests: XCTestCase {
     ]
 
     let id = storageImpl.registerSessionStorage(config)
-    let configJson = storageImpl.configureSessionStorage(id)
-    let resolved = try decodeConfig(configJson)
+    let configDict = storageImpl.configureSessionStorage(id)
 
     XCTAssertFalse(id.isEmpty)
-    XCTAssertFalse(configJson.isEmpty, "Configure session storage should return a non-empty config")
-    XCTAssertEqual(resolved.account, "test.impl.session.id")
+    XCTAssertFalse(configDict.allKeys.isEmpty, "Configure session storage should return a non-empty config")
+    XCTAssertEqual(configDict["account"] as? String, "test.impl.session.id")
   }
 
   func testConfigureOidcStorageReturnsConfig() throws {
@@ -62,16 +61,10 @@ final class RNPingStorageImplTests: XCTestCase {
     ]
 
     let id = storageImpl.registerOidcStorage(config)
-    let configJson = storageImpl.configureOidcStorage(id)
-    let resolved = try decodeConfig(configJson)
+    let configDict = storageImpl.configureOidcStorage(id)
 
     XCTAssertFalse(id.isEmpty)
-    XCTAssertFalse(configJson.isEmpty, "Configure OIDC storage should return a non-empty config")
-    XCTAssertEqual(resolved.account, "test.impl.oidc.registry")
-  }
-
-  private func decodeConfig(_ json: String) throws -> RNPingStorageCommon.StorageConfig {
-    let data = try XCTUnwrap(json.data(using: .utf8))
-    return try JSONDecoder().decode(RNPingStorageCommon.StorageConfig.self, from: data)
+    XCTAssertFalse(configDict.allKeys.isEmpty, "Configure OIDC storage should return a non-empty config")
+    XCTAssertEqual(configDict["account"] as? String, "test.impl.oidc.registry")
   }
 }
