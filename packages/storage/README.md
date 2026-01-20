@@ -67,10 +67,11 @@ Notes:
 
 You can import `StorageConfig` to type storage configuration objects that can be
 passed to `configureSessionStorage`/`configureOidcStorage` or reused by modules
-that accept inline storage configuration.
+that accept inline storage configuration. The configured outputs are branded
+as `SessionStorage` or `OidcStorage` for type safety.
 
 ```ts
-import type { StorageConfig } from '@react-native-pingidentity/storage';
+import type { OidcStorage, StorageConfig } from '@react-native-pingidentity/storage';
 
 const oidcCfg: StorageConfig = {
   android: {
@@ -79,7 +80,7 @@ const oidcCfg: StorageConfig = {
   },
 };
 
-const oidcStorage = configureOidcStorage(oidcCfg);
+const oidcStorage: OidcStorage = configureOidcStorage(oidcCfg);
 ```
 
 ### Journey module usage
@@ -89,7 +90,9 @@ Because the native storage fields differ between Android and iOS, pass the norma
 config fields explicitly so the same JS code works on both platforms:
 
 ```ts
-const oidcConfig: StorageConfig = configureOidcStorage({
+import type { OidcStorage } from '@react-native-pingidentity/storage';
+
+const oidcConfig: OidcStorage = configureOidcStorage({
   // Android-only fields
   android: {
     keyAlias: 'ping.oidc',

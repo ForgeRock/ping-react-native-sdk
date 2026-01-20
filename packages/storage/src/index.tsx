@@ -28,14 +28,6 @@ export {
  * @throws {Error} If the configuration is missing or invalid
  * 
  * @internal
- * @example
- * ```typescript
- * validateStorageConfig({ android: { keyAlias: 'myKey', fileName: 'myFile' } });
- * // No error thrown - valid config
- * 
- * validateStorageConfig(null);
- * // Throws: "[@react-native-pingidentity/storage] Missing configuration..."
- * ```
  */
 function validateStorageConfig(config: BaseStorageConfig) {
   if (!config) {
@@ -55,27 +47,6 @@ function validateStorageConfig(config: BaseStorageConfig) {
  * @returns The native storage configuration object with flattened platform options
  * 
  * @internal
- * @example
- * ```typescript
- * const config: BaseStorageConfig = {
- *   android: {
- *     keyAlias: 'session_key',
- *     fileName: 'session_data',
- *   },
- *   ios: {
- *     account: 'com.example.app',
- *     encryptor: true
- *   }
- * };
- * 
- * const nativeConfig = buildNativeConfig(config);
- * // Returns: {
- * //   keyAlias: 'session_key',
- * //   fileName: 'session_data',
- * //   account: 'com.example.app',
- * //   encryptor: true
- * // }
- * ```
  */
 function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
   return {
@@ -92,38 +63,6 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
 }
 
 /**
- * Normalizes the native storage configuration result back into a BaseStorageConfig.
- * Converts a flattened native configuration into a structured configuration with
- * platform-specific options properly nested.
- *
- * @param nativeResult - Native storage configuration object
- * @returns The normalized base storage configuration with structured platform options
- * @throws {Error} If the native result is not a valid configuration object
- * 
- * @internal
- * @example
- * ```typescript
- * const nativeResult = {
- *   keyAlias: 'session_key',
- *   fileName: 'session_data',
- *   account: 'com.example.app',
- *   encryptor: true
- * };
- * 
- * const config = normalizeStorageConfig(nativeResult);
- * // Returns: {
- * //   android: {
- * //     keyAlias: 'session_key',
- * //     fileName: 'session_data'
- * //   },
- * //   ios: {
- * //     account: 'com.example.app',
- * //     encryptor: true
- * //   }
- * // }
- * ```
- */
-/**
  * Validates the native storage configuration result.
  * Ensures the result is a valid object type and throws an error if it's not.
  *
@@ -131,17 +70,6 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * @throws {Error} If the native result is not null, undefined, or an object
  * 
  * @internal
- * @example
- * ```typescript
- * validateNormalizedResult({ keyAlias: 'test' });
- * // No error - valid object
- * 
- * validateNormalizedResult(null);
- * // No error - null is acceptable
- * 
- * validateNormalizedResult("invalid");
- * // Throws: "Failed to resolve storage configuration."
- * ```
  */
 function validateNormalizedResult(
   nativeResult: NativeStorageConfig | null | undefined
@@ -162,21 +90,6 @@ function validateNormalizedResult(
  * @returns iOS configuration object or undefined if no iOS values exist
  * 
  * @internal
- * @example
- * ```typescript
- * const parsed = {
- *   account: 'com.example.app',
- *   encryptor: true,
- *   keyAlias: 'android_key'
- * };
- * 
- * const iosConfig = buildIosConfig(parsed);
- * // Returns: { account: 'com.example.app', encryptor: true }
- * 
- * const androidOnly = { keyAlias: 'test' };
- * const noIos = buildIosConfig(androidOnly);
- * // Returns: undefined
- * ```
  */
 function buildIosConfig(parsed: NativeStorageConfig) {
   const hasIosValues =
@@ -203,22 +116,6 @@ function buildIosConfig(parsed: NativeStorageConfig) {
  * @returns Android configuration object or undefined if no Android values exist
  * 
  * @internal
- * @example
- * ```typescript
- * const parsed = {
- *   keyAlias: 'session_key',
- *   fileName: 'session_data',
- *   strongBoxPreferred: true,
- *   account: 'com.example.app'
- * };
- * 
- * const androidConfig = buildAndroidConfig(parsed);
- * // Returns: { keyAlias: 'session_key', fileName: 'session_data', strongBoxPreferred: true }
- * 
- * const iosOnly = { account: 'test' };
- * const noAndroid = buildAndroidConfig(iosOnly);
- * // Returns: undefined
- * ```
  */
 function buildAndroidConfig(parsed: NativeStorageConfig) {
   const hasAndroidValues =
@@ -250,21 +147,6 @@ function buildAndroidConfig(parsed: NativeStorageConfig) {
  * @throws {Error} If the native result is not a valid configuration object
  * 
  * @internal
- * @example
- * ```typescript
- * const nativeConfig = {
- *   keyAlias: 'session_key',
- *   fileName: 'session_data',
- *   account: 'com.example.app',
- *   encryptor: true
- * };
- * 
- * const normalized = normalizeStorageConfig(nativeConfig);
- * // Returns: {
- * //   android: { keyAlias: 'session_key', fileName: 'session_data' },
- * //   ios: { account: 'com.example.app', encryptor: true }
- * // }
- * ```
  */
 function normalizeStorageConfig(
   nativeResult: NativeStorageConfig | null | undefined
