@@ -8,8 +8,6 @@ import {
   CacheStrategy,
   configureSessionStorage,
   configureOidcStorage,
-  registerSessionStorage,
-  registerOidcStorage,
 } from "../index";
 // Mock the Native Module
 const mockNativeRNPingStorage = {
@@ -35,10 +33,18 @@ describe("Storage API", () => {
 
   describe("Factory functions", () => {
     it("configureSessionStorage returns the config", () => {
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
       mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({});
 
-      const instance = configureSessionStorage("session-id");
+      const instance = configureSessionStorage({
+        android: {
+          keyAlias: "session-key",
+        },
+      });
 
+      expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
+        keyAlias: "session-key",
+      });
       expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith("session-id");
       expect(instance).toEqual({});
     });
@@ -58,6 +64,7 @@ describe("Storage API", () => {
         },
       };
 
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
       mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({
         keyAlias: "session-key",
         fileName: "session.dat",
@@ -68,18 +75,26 @@ describe("Storage API", () => {
         cacheable: true,
       });
 
-      expect(configureSessionStorage("session-id")).toEqual(config);
+      expect(configureSessionStorage(config)).toEqual(config);
     });
 
     it("configureSessionStorage validates config", () => {
-      expect(() => configureSessionStorage("" as any)).toThrow(/Missing storage id/);
+      expect(() => configureSessionStorage(null as any)).toThrow(/Missing configuration/);
     });
 
     it("configureOidcStorage returns the config", () => {
+      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
       mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({});
 
-      const instance = configureOidcStorage("oidc-id");
+      const instance = configureOidcStorage({
+        android: {
+          keyAlias: "oidc-key",
+        },
+      });
 
+      expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
+        keyAlias: "oidc-key",
+      });
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith("oidc-id");
       expect(instance).toEqual({});
     });
@@ -99,6 +114,7 @@ describe("Storage API", () => {
         },
       };
 
+      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
       mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({
         keyAlias: "oidc-key",
         fileName: "oidc.dat",
@@ -109,31 +125,11 @@ describe("Storage API", () => {
         cacheable: false,
       });
 
-      expect(configureOidcStorage("oidc-id")).toEqual(config);
+      expect(configureOidcStorage(config)).toEqual(config);
     });
 
     it("configureOidcStorage validates config", () => {
-      expect(() => configureOidcStorage("" as any)).toThrow(/Missing storage id/);
-    });
-
-    it("registerSessionStorage returns the id", () => {
-      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
-
-      const id = registerSessionStorage({});
-
-      expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
-      });
-      expect(id).toBe("session-id");
-    });
-
-    it("registerOidcStorage returns the id", () => {
-      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
-
-      const id = registerOidcStorage({});
-
-      expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
-      });
-      expect(id).toBe("oidc-id");
+      expect(() => configureOidcStorage(null as any)).toThrow(/Missing configuration/);
     });
   });
 });

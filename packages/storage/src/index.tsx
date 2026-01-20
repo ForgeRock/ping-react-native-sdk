@@ -123,6 +123,26 @@ function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
  * // }
  * ```
  */
+/**
+ * Validates the native storage configuration result.
+ * Ensures the result is a valid object type and throws an error if it's not.
+ *
+ * @param nativeResult - The native storage configuration to validate
+ * @throws {Error} If the native result is not null, undefined, or an object
+ * 
+ * @internal
+ * @example
+ * ```typescript
+ * validateNormalizedResult({ keyAlias: 'test' });
+ * // No error - valid object
+ * 
+ * validateNormalizedResult(null);
+ * // No error - null is acceptable
+ * 
+ * validateNormalizedResult("invalid");
+ * // Throws: "Failed to resolve storage configuration."
+ * ```
+ */
 function validateNormalizedResult(
   nativeResult: NativeStorageConfig | null | undefined
 ) {
@@ -133,6 +153,31 @@ function validateNormalizedResult(
   }
 }
 
+/**
+ * Builds the iOS-specific storage configuration from a parsed native config.
+ * Extracts iOS-related properties (account, encryptor, cacheable) and returns
+ * them as a structured object, or undefined if no iOS values are present.
+ *
+ * @param parsed - The parsed native storage configuration
+ * @returns iOS configuration object or undefined if no iOS values exist
+ * 
+ * @internal
+ * @example
+ * ```typescript
+ * const parsed = {
+ *   account: 'com.example.app',
+ *   encryptor: true,
+ *   keyAlias: 'android_key'
+ * };
+ * 
+ * const iosConfig = buildIosConfig(parsed);
+ * // Returns: { account: 'com.example.app', encryptor: true }
+ * 
+ * const androidOnly = { keyAlias: 'test' };
+ * const noIos = buildIosConfig(androidOnly);
+ * // Returns: undefined
+ * ```
+ */
 function buildIosConfig(parsed: NativeStorageConfig) {
   const hasIosValues =
     parsed.account !== undefined ||
@@ -149,6 +194,32 @@ function buildIosConfig(parsed: NativeStorageConfig) {
   };
 }
 
+/**
+ * Builds the Android-specific storage configuration from a parsed native config.
+ * Extracts Android-related properties (keyAlias, fileName, strongBoxPreferred, cacheStrategy)
+ * and returns them as a structured object, or undefined if no Android values are present.
+ *
+ * @param parsed - The parsed native storage configuration
+ * @returns Android configuration object or undefined if no Android values exist
+ * 
+ * @internal
+ * @example
+ * ```typescript
+ * const parsed = {
+ *   keyAlias: 'session_key',
+ *   fileName: 'session_data',
+ *   strongBoxPreferred: true,
+ *   account: 'com.example.app'
+ * };
+ * 
+ * const androidConfig = buildAndroidConfig(parsed);
+ * // Returns: { keyAlias: 'session_key', fileName: 'session_data', strongBoxPreferred: true }
+ * 
+ * const iosOnly = { account: 'test' };
+ * const noAndroid = buildAndroidConfig(iosOnly);
+ * // Returns: undefined
+ * ```
+ */
 function buildAndroidConfig(parsed: NativeStorageConfig) {
   const hasAndroidValues =
     parsed.keyAlias !== undefined ||
@@ -169,6 +240,32 @@ function buildAndroidConfig(parsed: NativeStorageConfig) {
   };
 }
 
+/**
+ * Normalizes a native storage configuration into a structured BaseStorageConfig.
+ * Takes a flattened native configuration object and restructures it into
+ * platform-specific sections (android and ios).
+ *
+ * @param nativeResult - The native storage configuration to normalize
+ * @returns Normalized BaseStorageConfig with platform-specific options properly nested
+ * @throws {Error} If the native result is not a valid configuration object
+ * 
+ * @internal
+ * @example
+ * ```typescript
+ * const nativeConfig = {
+ *   keyAlias: 'session_key',
+ *   fileName: 'session_data',
+ *   account: 'com.example.app',
+ *   encryptor: true
+ * };
+ * 
+ * const normalized = normalizeStorageConfig(nativeConfig);
+ * // Returns: {
+ * //   android: { keyAlias: 'session_key', fileName: 'session_data' },
+ * //   ios: { account: 'com.example.app', encryptor: true }
+ * // }
+ * ```
+ */
 function normalizeStorageConfig(
   nativeResult: NativeStorageConfig | null | undefined
 ): BaseStorageConfig {
@@ -185,45 +282,18 @@ function normalizeStorageConfig(
 }
 
 /**
- * Validates that a storage identifier is provided and not empty.
+ * Registers and resolves a session storage configuration.
  * 
- * @param id - The storage identifier to validate
- * @throws {Error} If the storage id is missing or empty
- * 
- * @internal
- * @example
- * ```typescript
- * validateStorageId('storage_123');
- * // No error thrown - valid id
- * 
- * validateStorageId('');
- * // Throws: "[@react-native-pingidentity/storage] Missing storage id..."
- * ```
- */
-function validateStorageId(id: string) {
-  if (!id) {
-    throw new Error(
-      "[@react-native-pingidentity/storage] Missing storage id: " +
-        "You must provide a valid storage id."
-    );
-  }
-}
-
-/**
- * Resolves a session storage configuration by its unique identifier.
- * 
- * This function retrieves a previously registered session storage configuration
- * and returns it in a format that can be passed to other modules or SDKs.
- * Use this after registering a session storage with {@link registerSessionStorage}.
+ * This function handles registration internally and returns a normalized
+ * storage configuration that can be passed to other modules or SDKs.
  *
- * @param id - Storage configuration identifier returned from {@link registerSessionStorage}
+ * @param config - Storage configuration parameters with platform-specific options
  * @returns A SessionStorage configuration object ready to use with Journey SDK
- * @throws {Error} If the configuration id is invalid, empty, or resolution fails
+ * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
  * ```typescript
- * // First, register the storage configuration
- * const sessionId = registerSessionStorage({
+ * const sessionStorage = configureSessionStorage({
  *   android: {
  *     keyAlias: 'session_key',
  *     fileName: 'session_data',
@@ -231,35 +301,31 @@ function validateStorageId(id: string) {
  *   }
  * });
  * 
- * // Then retrieve it for use with Journey
- * const sessionStorage = configureSessionStorage(sessionId);
- * 
  * // Pass to Journey SDK
  * // initJourney({ sessionStorage, ... });
  * ```
  */
-export function configureSessionStorage(id: string): SessionStorage {
-  validateStorageId(id);
+export function configureSessionStorage(config: BaseStorageConfig): SessionStorage {
+  validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
-  const result = NativeRNPingStorage.configureSessionStorage(id);
+  const storageId = NativeRNPingStorage.registerSessionStorage(buildNativeConfig(config));
+  const result = NativeRNPingStorage.configureSessionStorage(storageId);
   return normalizeStorageConfig(result);
 }
 
 /**
- * Resolves an OIDC storage configuration by its unique identifier.
+ * Registers and resolves an OIDC storage configuration.
  * 
- * This function retrieves a previously registered OIDC storage configuration
- * and returns it in a format that can be passed to other modules or SDKs.
- * Use this after registering an OIDC storage with {@link registerOidcStorage}.
+ * This function handles registration internally and returns a normalized
+ * storage configuration that can be passed to other modules or SDKs.
  *
- * @param id - Storage configuration identifier returned from {@link registerOidcStorage}
+ * @param config - Storage configuration parameters with platform-specific options
  * @returns An OidcStorage configuration object ready to use with OIDC flows
- * @throws {Error} If the configuration id is invalid, empty, or resolution fails
+ * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
  * ```typescript
- * // First, register the storage configuration
- * const oidcId = registerOidcStorage({
+ * const oidcStorage = configureOidcStorage({
  *   android: {
  *     keyAlias: 'oidc_key',
  *     fileName: 'oidc_tokens',
@@ -271,140 +337,14 @@ export function configureSessionStorage(id: string): SessionStorage {
  *   }
  * });
  * 
- * // Then retrieve it for use with OIDC
- * const oidcStorage = configureOidcStorage(oidcId);
- * 
  * // Pass to OIDC configuration
  * // configureOidc({ storage: oidcStorage, ... });
  * ```
  */
-export function configureOidcStorage(id: string): OidcStorage {
-  validateStorageId(id);
+export function configureOidcStorage(config: BaseStorageConfig): OidcStorage {
+  validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
-  const result = NativeRNPingStorage.configureOidcStorage(id);
+  const storageId = NativeRNPingStorage.registerOidcStorage(buildNativeConfig(config));
+  const result = NativeRNPingStorage.configureOidcStorage(storageId);
   return normalizeStorageConfig(result);
-}
-
-/**
- * Registers a session storage configuration and returns a unique identifier.
- * 
- * This function creates a new session storage configuration with the specified
- * platform-specific settings. The returned identifier can be used with
- * {@link configureSessionStorage} to retrieve the configuration for use with the Journey SDK.
- * 
- * Session storage is typically used for storing temporary session data during authentication flows.
- *
- * @param config - Storage configuration parameters with platform-specific options
- * @returns A unique storage configuration identifier to use with {@link configureSessionStorage}
- * @throws {Error} If the configuration is missing or invalid
- * 
- * @example
- * Basic Android configuration:
- * ```typescript
- * const sessionId = registerSessionStorage({
- *   android: {
- *     keyAlias: 'session_encryption_key',
- *     fileName: 'session_prefs',
- *     strongBoxPreferred: true,
- *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
- *   }
- * });
- * ```
- * 
- * @example
- * iOS-specific configuration:
- * ```typescript
- * const sessionId = registerSessionStorage({
- *   ios: {
- *     account: 'com.example.app.session',
- *     encryptor: true,
- *     cacheable: true
- *   }
- * });
- * ```
- * 
- * @example
- * Cross-platform configuration:
- * ```typescript
- * const sessionId = registerSessionStorage({
- *   android: {
- *     keyAlias: 'session_key',      // Android only
- *     fileName: 'session_data',       // Android only
- *     strongBoxPreferred: true,       // Android only
- *   },
- *   ios: {
- *     account: 'com.example.app',   // iOS only
- *     encryptor: true,               // iOS only
- *     cacheable: false               // iOS only
- *   }
- * });
- * ```
- */
-export function registerSessionStorage(config: BaseStorageConfig): string {
-  validateStorageConfig(config);
-  const NativeRNPingStorage = getNativeModule();
-  return NativeRNPingStorage.registerSessionStorage(buildNativeConfig(config));
-}
-
-/**
- * Registers an OIDC storage configuration and returns a unique identifier.
- * 
- * This function creates a new OIDC storage configuration with the specified
- * platform-specific settings. The returned identifier can be used with
- * {@link configureOidcStorage} to retrieve the configuration for OAuth/OIDC flows.
- * 
- * OIDC storage is used for securely storing OAuth tokens, refresh tokens, and
- * authorization state during authentication flows.
- *
- * @param config - Storage configuration parameters with platform-specific options
- * @returns A unique storage configuration identifier to use with {@link configureOidcStorage}
- * @throws {Error} If the configuration is missing or invalid
- * 
- * @example
- * Basic Android configuration:
- * ```typescript
- * const oidcId = registerOidcStorage({
- *   android: {
- *     keyAlias: 'oidc_encryption_key',
- *     fileName: 'oidc_secure_prefs',
- *     strongBoxPreferred: true,
- *     cacheStrategy: CacheStrategy.NO_CACHE
- *   }
- * });
- * ```
- * 
- * @example
- * iOS-specific configuration:
- * ```typescript
- * const oidcId = registerOidcStorage({
- *   ios: {
- *     account: 'com.example.app.oidc',
- *     encryptor: true,
- *     cacheable: false  // Disable cache for sensitive token data
- *   }
- * });
- * ```
- * 
- * @example
- * Cross-platform configuration:
- * ```typescript
- * const oidcId = registerOidcStorage({
- *   android: {
- *     keyAlias: 'oauth_tokens',         // Android only
- *     fileName: 'oauth_storage',        // Android only
- *     strongBoxPreferred: true,         // Android only
- *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
- *   },
- *   ios: {
- *     account: 'com.example.oauth',   // iOS only
- *     encryptor: true,                 // iOS only
- *     cacheable: false                 // iOS only
- *   }
- * });
- * ```
- */
-export function registerOidcStorage(config: BaseStorageConfig): string {
-  validateStorageConfig(config);
-  const NativeRNPingStorage = getNativeModule();
-  return NativeRNPingStorage.registerOidcStorage(buildNativeConfig(config));
 }

@@ -19,14 +19,11 @@ cd ios && pod install
 ### Session and OIDC helpers
 
 The storage SDK exposes two helpers for common use cases.
-Use `register*` to create an id, then `configure*` to resolve the config for
-inline module usage:
+Use `configure*` to register and resolve the config for inline module usage:
 
 ```ts
 import {
   CacheStrategy,
-  registerSessionStorage,
-  registerOidcStorage,
   configureSessionStorage,
   configureOidcStorage,
 } from '@react-native-pingidentity/storage';
@@ -36,18 +33,17 @@ import type {
   StorageConfig,
 } from '@react-native-pingidentity/storage';
 
-// Register session storage for Journey SSO tokens (Android configuration)
-const sessionId = registerSessionStorage({
+// Configure session storage for Journey SSO tokens (Android configuration)
+const sessionStorage: SessionStorage = configureSessionStorage({
   android: {
     keyAlias: 'ping.session',
     fileName: 'ping_session_store',
     cacheStrategy: CacheStrategy.CACHE,
   },
 });
-const sessionStorage: SessionStorage = configureSessionStorage(sessionId);
 
-// Register OIDC storage for OAuth/OIDC tokens (Android configuration)
-const oidcId = registerOidcStorage({
+// Configure OIDC storage for OAuth/OIDC tokens (Android configuration)
+const oidcStorage: OidcStorage = configureOidcStorage({
   android: {
     keyAlias: 'ping.oidc',
     fileName: 'ping_oidc_tokens',
@@ -57,7 +53,6 @@ const oidcId = registerOidcStorage({
     encryptor: true,
   },
 });
-const oidcStorage: OidcStorage = configureOidcStorage(oidcId);
 ```
 
 Notes:
@@ -71,7 +66,7 @@ Notes:
 ### StorageConfig type
 
 You can import `StorageConfig` to type storage configuration objects that can be
-passed to `registerSessionStorage`/`registerOidcStorage` or reused by modules
+passed to `configureSessionStorage`/`configureOidcStorage` or reused by modules
 that accept inline storage configuration.
 
 ```ts
@@ -84,8 +79,7 @@ const oidcCfg: StorageConfig = {
   },
 };
 
-const oidcId = registerOidcStorage(oidcCfg);
-const oidcStorage = configureOidcStorage(oidcId);
+const oidcStorage = configureOidcStorage(oidcCfg);
 ```
 
 ### Journey module usage
@@ -95,7 +89,7 @@ Because the native storage fields differ between Android and iOS, pass the norma
 config fields explicitly so the same JS code works on both platforms:
 
 ```ts
-const oidcId = registerOidcStorage({
+const oidcConfig: StorageConfig = configureOidcStorage({
   // Android-only fields
   android: {
     keyAlias: 'ping.oidc',
@@ -107,8 +101,6 @@ const oidcId = registerOidcStorage({
     encryptor: true,
   },
 });
-
-const oidcConfig: StorageConfig = configureOidcStorage(oidcId);
 
 const journey = configureJourney({
   modules: {

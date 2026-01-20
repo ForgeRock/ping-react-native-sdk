@@ -6,8 +6,6 @@
  */
 import {
   CacheStrategy,
-  registerOidcStorage,
-  registerSessionStorage,
   configureOidcStorage,
   configureSessionStorage,
   type StorageConfig,
@@ -16,11 +14,9 @@ import {
 /**
  * Information about a registered storage instance.
  *
- * @property id - Unique identifier for the storage instance
  * @property config - Configuration object for the storage
  */
 export type StorageInfo = {
-  id: string;
   config: StorageConfig;
 };
 
@@ -31,7 +27,7 @@ let sessionStorage: StorageInfo | null = null;
  * Configures and returns the OIDC storage instance.
  * Uses a singleton pattern - creates the storage on first call and returns the same instance on subsequent calls.
  *
- * @returns The OIDC storage information containing the storage ID and configuration
+ * @returns The OIDC storage information containing the resolved configuration
  */
 export function configureOidcStorageInfo(): StorageInfo {
   if (!oidcStorage) {
@@ -47,10 +43,9 @@ export function configureOidcStorageInfo(): StorageInfo {
         cacheable: false,
       },
     };
-    const id = registerOidcStorage(baseConfig);
-    const resolvedConfig = configureOidcStorage(id);
-    oidcStorage = { id, config: resolvedConfig };
-    console.log("🔑 Created OIDC Storage:", id, resolvedConfig);
+    const resolvedConfig = configureOidcStorage(baseConfig);
+    oidcStorage = { config: resolvedConfig };
+    console.log("🔑 Created OIDC Storage:", resolvedConfig);
   }
   return oidcStorage;
 }
@@ -59,7 +54,7 @@ export function configureOidcStorageInfo(): StorageInfo {
  * Configures and returns the session storage instance.
  * Uses a singleton pattern - creates the storage on first call and returns the same instance on subsequent calls.
  *
- * @returns The session storage information containing the storage ID and configuration
+ * @returns The session storage information containing the resolved configuration
  */
 export function configureSessionStorageInfo(): StorageInfo {
   if (!sessionStorage) {
@@ -75,10 +70,9 @@ export function configureSessionStorageInfo(): StorageInfo {
         cacheable: false,
       },
     };
-    const id = registerSessionStorage(baseConfig);
-    const resolvedConfig = configureSessionStorage(id);
-    sessionStorage = { id, config: resolvedConfig };
-    console.log("🎫 Created Session Storage:", id, resolvedConfig);
+    const resolvedConfig = configureSessionStorage(baseConfig);
+    sessionStorage = { config: resolvedConfig };
+    console.log("🎫 Created Session Storage:", resolvedConfig);
   }
   return sessionStorage;
 }
