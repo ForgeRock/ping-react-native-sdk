@@ -14,6 +14,11 @@ import com.facebook.react.module.model.ReactModuleInfo
 import com.facebook.react.module.model.ReactModuleInfoProvider
 import java.util.HashMap
 
+/**
+ * React Native package that provides the PingLogger module.
+ * Automatically selects between Turbo Module (New Architecture) and Classic module
+ * based on the runtime configuration.
+ */
 class LoggerPackage : BaseReactPackage() {
   /**
    * Detects whether the New Architecture is enabled.

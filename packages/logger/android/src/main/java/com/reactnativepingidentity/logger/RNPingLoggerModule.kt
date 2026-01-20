@@ -11,6 +11,12 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
+/**
+ * Turbo Module implementation for PingLogger.
+ * This module is used when the New Architecture is enabled.
+ *
+ * @param reactContext The React application context
+ */
 @ReactModule(name = RNPingLoggerModule.NAME)
 class RNPingLoggerModule(reactContext: ReactApplicationContext) :
   NativeRNPingLoggerSpec(reactContext) {

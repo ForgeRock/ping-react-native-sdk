@@ -13,6 +13,12 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 
+/**
+ * Classic (non-Turbo) React Native module for PingLogger.
+ * This module is used when the New Architecture is disabled.
+ *
+ * @param reactContext The React application context
+ */
 @ReactModule(name = LoggerClassicModule.NAME)
 class LoggerClassicModule(
   reactContext: ReactApplicationContext

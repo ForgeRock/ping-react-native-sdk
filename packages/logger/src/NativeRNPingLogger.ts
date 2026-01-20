@@ -7,6 +7,10 @@
 
 import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
 
+/**
+ * JavaScript-level logger levels.
+ * These are mapped to native logger levels internally.
+ */
 export type LoggerLevel =
   | 'debug'
   | 'info'
@@ -14,20 +18,35 @@ export type LoggerLevel =
   | 'error'
   | 'none';
 
+/**
+ * Native logger levels supported by the underlying platform logger.
+ */
 export type NativeLoggerLevel =
   | 'STANDARD'
   | 'WARN'
   | 'NONE';
 
+/**
+ * Configuration options for registering a logger.
+ */
 export type LoggerOptions = {
+  /** The native log level to use */
   level: NativeLoggerLevel;
 };
 
+/**
+ * Configuration options for synchronizing a logger.
+ */
 export type LoggerSyncOptions = {
+  /** The logger instance identifier */
   id: string;
+  /** The native log level to update to */
   level: NativeLoggerLevel;
 };
 
+/**
+ * TurboModule specification for the native logger module.
+ */
 export interface Spec extends TurboModule {
   registerLogger(config: LoggerOptions): string;
   syncLogger(config: LoggerSyncOptions): void;
