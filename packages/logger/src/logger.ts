@@ -8,6 +8,7 @@
 import { logger as sdkLogger } from '@forgerock/sdk-logger';
 import type { LogLevel, LoggerConfig, LoggerInstance, LogMessage } from './types/logger.types';
 import NativeLogger, { type NativeLoggerLevel } from './NativeRNPingLogger';
+import pkg from '@react-native-pingidentity/logger/package.json';
 
 const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
   debug: 'STANDARD',
@@ -17,8 +18,7 @@ const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
   none: 'NONE',
 };
 
-//TODO: Use SDK tag version from SDK package when available
-const sdkTag = "[PingRNSDK <version>]";
+const sdkTag = `[RNPingSDK v${pkg.version}]`;
 
 // Provide a default custom logger that returns a truthy value so the SDK
 // logger does not fall back to console.error (LogBox warnings in dev).
@@ -47,10 +47,10 @@ function createCustomLogger(
     };
 
   return {
-    error: (...args: LogMessage[]) => base.error(tag, ...args),
-    warn: (...args: LogMessage[]) => base.warn(tag, ...args),
-    info: (...args: LogMessage[]) => base.info(tag, ...args),
-    debug: (...args: LogMessage[]) => base.debug(tag, ...args),
+    error: (...args: LogMessage[]) => base.error(`${tag} ${args.join(' ')}`),
+    warn: (...args: LogMessage[]) => base.warn(`${tag} ${args.join(' ')}`),
+    info: (...args: LogMessage[]) => base.info(`${tag} ${args.join(' ')}`),
+    debug: (...args: LogMessage[]) => base.debug(`${tag} ${args.join(' ')}`),
   };
 }
 
