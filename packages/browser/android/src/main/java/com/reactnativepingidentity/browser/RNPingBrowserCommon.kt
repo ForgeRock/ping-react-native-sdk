@@ -26,6 +26,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
+/**
+ * Common utilities for the Ping Browser module.
+ */
 object RNPingBrowserCommon {
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)

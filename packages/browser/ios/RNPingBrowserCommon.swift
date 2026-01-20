@@ -12,6 +12,7 @@ import Foundation
 import PingBrowser
 import AuthenticationServices
 
+/// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
 
@@ -30,13 +31,15 @@ public class RNPingBrowserCommon: NSObject {
   }
 #endif
 
-  /// iOS has no global configuration for this SDK yet (no-op).
+  /// Accepts configuration from JavaScript (currently a no-op on iOS).
+  ///
+  /// - Parameter config: Optional configuration payload from the JS layer.
   @objc
   public static func configure(_ config: NSDictionary) {
     // Reserved for future iOS customization.
   }
 
-  /// Reset any in-flight browser session.
+  /// Resets any in-flight browser session.
   ///
   /// This cancels the current browser flow when supported by the native launcher.
   @objc
@@ -46,13 +49,13 @@ public class RNPingBrowserCommon: NSObject {
     }
   }
 
-  /// Launch a browser session and resolve with success/cancel, or reject on error.
+  /// Launches a browser session and reports success, cancel, or error.
   ///
   /// - Parameters:
   ///   - url: The URL to launch in the system browser.
   ///   - options: Launch options including callback scheme and iOS settings.
-  ///   - resolver: Callback for successful results.
-  ///   - rejecter: Callback for validation or launch errors.
+  ///   - resolver: Callback invoked with the result payload.
+  ///   - rejecter: Callback invoked for validation or launch errors.
   @objc
   public static func open(
     _ url: String,

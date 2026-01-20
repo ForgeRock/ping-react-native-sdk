@@ -11,6 +11,7 @@
 #import <React/RCTBridgeModule.h>
 #import "RNPingBrowser-Swift.h"
 
+/// React Native bridge module for classic (non-TurboModule) access.
 @interface RNPingBrowserClassic : NSObject <RCTBridgeModule>
 @end
 
@@ -20,7 +21,7 @@ RCT_EXPORT_MODULE(RNPingBrowserClassic)
 
 #pragma mark - Configure (no-op on iOS)
 
-// configure(config): void
+/// Receives configuration from JavaScript (currently a no-op on iOS).
 RCT_EXPORT_METHOD(configure:(NSDictionary *)config)
 {
   [RNPingBrowserCommon configure:config];
@@ -28,7 +29,7 @@ RCT_EXPORT_METHOD(configure:(NSDictionary *)config)
 
 #pragma mark - Open
 
-// open(url, options): Promise<BrowserResult>
+/// Launches a browser flow and resolves or rejects the JS promise.
 RCT_EXPORT_METHOD(open:(NSString *)url
                   options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
@@ -39,7 +40,7 @@ RCT_EXPORT_METHOD(open:(NSString *)url
 
 #pragma mark - Reset
 
-// reset(): void
+/// Cancels any in-flight browser session when supported.
 RCT_EXPORT_METHOD(reset)
 {
   [RNPingBrowserCommon reset];

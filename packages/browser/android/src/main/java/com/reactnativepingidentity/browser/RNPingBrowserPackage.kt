@@ -14,6 +14,9 @@ import com.facebook.react.module.model.ReactModuleInfo
 import com.facebook.react.module.model.ReactModuleInfoProvider
 import java.util.HashMap
 
+/**
+ * React Native package for the Ping Browser module.
+ */
 class RNPingBrowserPackage : BaseReactPackage() {
 
   /**
