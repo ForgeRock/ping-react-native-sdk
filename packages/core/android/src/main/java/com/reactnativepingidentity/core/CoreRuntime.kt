@@ -21,6 +21,7 @@ object CoreRuntime {
 
     /** Registry for OIDC storage configuration */
     val oidcStorageConfigRegistry: Registry = SimpleRegistry()
-    
+    /** Registry for logger instances */
+    val loggerRegistry: Registry = SimpleRegistry()
     // val mfaRegistry: Registry = SimpleRegistry()
 }
