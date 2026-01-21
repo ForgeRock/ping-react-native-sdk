@@ -21,6 +21,7 @@ export default function HomeScreen({ navigation }: Props) {
       screen: 'Journey',
       params: { journeyClient: loginClient2 },
     },
+    { title: '🧭 Launch Browser', screen: 'Browser' },
     {
       title: '🧪 Logger Demo',
       screen: 'Logger',
@@ -46,7 +47,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       <View style={commonStyles.homeFooter}>
         <Text style={commonStyles.homeFooterText}>
-          React Native Unified SDK — POC Build
+          React Native Unified SDK
         </Text>
       </View>
     </View>
