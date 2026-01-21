@@ -1,0 +1,43 @@
+{
+  "name": "@ping-identity/rn-types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript contracts for Ping Identity React Native SDKs.",
+  "homepage": "https://www.pingidentity.com/",
+  "license": "MIT",
+  "author": "Ping Identity",
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "src",
+    "lib"
+  ],
+  "scripts": {
+    "build": "bob build",
+    "clean": "rimraf lib"
+  },
+  "dependencies": {
+    "@forgerock/sdk-types": "^1.3.0"
+  },
+  "devDependencies": {
+    "react-native-builder-bob": "^0.40.14",
+    "typescript": "^5.9.2"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}

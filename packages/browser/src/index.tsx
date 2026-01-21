@@ -58,4 +58,10 @@ export function open(
   return getNativeModule().open(url, options as unknown as Object);
 }
 
-export type * from './types';
+export type {
+  BrowserConfig,
+  BrowserError,
+  BrowserErrorCode,
+  BrowserOpenOptions,
+  BrowserResult,
+} from './types';

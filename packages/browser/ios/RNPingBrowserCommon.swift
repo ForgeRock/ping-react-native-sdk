@@ -11,10 +11,18 @@
 import Foundation
 import PingBrowser
 import AuthenticationServices
+import RNPingCore
 
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
+
+  /// Stable error codes emitted by the Browser module.
+  ///
+  /// Keep these in sync with JS `BrowserErrorCode` and Android `BrowserErrorCodes`.
+  private enum BrowserErrorCode: String {
+    case openError = "BROWSER_OPEN_ERROR"
+  }
 
   /// Adapter used to launch and reset the native browser session.
   internal static var browserLauncher: BrowserLaunching = DefaultBrowserLauncherAdapter()
@@ -63,14 +71,25 @@ public class RNPingBrowserCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    // Validate required options before launching.
     guard let callbackScheme = options["callbackUrlScheme"] as? String,
           !callbackScheme.isEmpty else {
-      rejecter("OPEN_ERROR", "callbackUrlScheme is required", nil)
+      let error = GenericError(
+        type: .argumentError,
+        error: BrowserErrorCode.openError.rawValue,
+        message: "callbackUrlScheme is required"
+      )
+      reject(error, rejecter: rejecter)
       return
     }
 
     guard let launchUrl = URL(string: url) else {
-      rejecter("OPEN_ERROR", "Invalid URL", nil)
+      let error = GenericError(
+        type: .argumentError,
+        error: BrowserErrorCode.openError.rawValue,
+        message: "Invalid URL"
+      )
+      reject(error, rejecter: rejecter)
       return
     }
 
@@ -112,16 +131,33 @@ public class RNPingBrowserCommon: NSObject {
         if case .externalUserAgentCancelled = error {
           resolver(["type": "cancel"])
         } else {
-          rejecter("OPEN_ERROR", error.localizedDescription, error as NSError)
+          // Browser errors are mapped to the shared native error contract.
+          let mapped = GenericError(
+            type: .internalError,
+            error: BrowserErrorCode.openError.rawValue,
+            message: error.localizedDescription
+          )
+          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
         }
       } catch let error as ASWebAuthenticationSessionError {
         if error.code == .canceledLogin {
           resolver(["type": "cancel"])
         } else {
-          rejecter("OPEN_ERROR", error.localizedDescription, error as NSError)
+          let mapped = GenericError(
+            type: .internalError,
+            error: BrowserErrorCode.openError.rawValue,
+            message: error.localizedDescription,
+            code: error.code.rawValue
+          )
+          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
         }
       } catch {
-        rejecter("OPEN_ERROR", error.localizedDescription, error as NSError)
+        let mapped = GenericError(
+          type: .internalError,
+          error: BrowserErrorCode.openError.rawValue,
+          message: error.localizedDescription
+        )
+        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }

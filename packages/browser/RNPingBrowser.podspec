@@ -17,6 +17,7 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
 
   s.dependency 'PingBrowser', '1.3.0-beta2'
+  s.dependency 'RNPingCore'
 
   install_modules_dependencies(s)
 end
