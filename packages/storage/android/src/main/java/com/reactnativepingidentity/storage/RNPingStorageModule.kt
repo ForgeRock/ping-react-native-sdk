@@ -1,10 +1,24 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 package com.reactnativepingidentity.storage
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 
+/**
+ * React Native module for Ping Storage (New Architecture/Turbo Module).
+ *
+ * This module provides storage configuration methods for the new React Native architecture.
+ * It delegates to [RNPingStorageCommon] for actual implementation.
+ *
+ * @param reactContext The React application context
+ */
 @ReactModule(name = RNPingStorageModule.NAME)
 class RNPingStorageModule(reactContext: ReactApplicationContext) :
     NativeRNPingStorageSpec(reactContext) {
@@ -15,32 +29,43 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
         const val NAME = "RNPingStorage"
     }
 
-    // ---------------------------
-    // CONFIGURE
-    // ---------------------------
-    override fun configure(config: ReadableMap): String {
-        // Native common handles validation + registry; keep module thin
-        return RNPingStorageCommon.configure(config, reactApplicationContext)
+    /**
+     * Register session storage configuration.
+     *
+     * @param config Storage configuration containing fileName and keyAlias
+     * @return Unique ID that can be used to reference this storage configuration
+     */
+    override fun registerSessionStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerSessionStorage(config)
     }
 
-    // ---------------------------
-    // SAVE
-    // ---------------------------
-    override fun save(id: String, item: ReadableMap, promise: Promise) {
-        RNPingStorageCommon.save(id, item, promise)
+    /**
+     * Register OIDC storage configuration.
+     *
+     * @param config Storage configuration containing fileName and keyAlias
+     * @return Unique ID that can be used to reference this storage configuration
+     */
+    override fun registerOidcStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerOidcStorage(config)
     }
 
-    // ---------------------------
-    // GET
-    // ---------------------------
-    override fun get(id: String, promise: Promise) {
-        RNPingStorageCommon.get(id, promise)
+    /**
+     * Resolve session storage configuration by id.
+     *
+     * @param id Storage configuration id
+     * @return Storage configuration map
+     */
+    override fun configureSessionStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configureSessionStorage(id)
     }
 
-    // ---------------------------
-    // REMOVE
-    // ---------------------------
-    override fun remove(id: String, promise: Promise) {
-        RNPingStorageCommon.remove(id, promise)
+    /**
+     * Resolve OIDC storage configuration by id.
+     *
+     * @param id Storage configuration id
+     * @return Storage configuration map
+     */
+    override fun configureOidcStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configureOidcStorage(id)
     }
 }

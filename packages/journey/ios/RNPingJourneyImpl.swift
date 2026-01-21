@@ -16,6 +16,8 @@ public class RNPingJourneyImpl: NSObject {
     super.init()
   }
 
+  // Local registry of Journey instances keyed by generated id
+  private var journeyMap: [String: Journey] = [:]
   // Store nodes per journey instance
   private var nodeMap: [String: Node?] = [:]
 
@@ -88,8 +90,9 @@ public class RNPingJourneyImpl: NSObject {
       }
     }
 
-    // Store using Core Registry
-    let journeyId = JourneyRegistry.shared.add(journey)
+    // Register instance locally
+    let journeyId = UUID().uuidString
+    journeyMap[journeyId] = journey
 
     print("RNPingJourney: Journey registered → \(journeyId)")
     resolve(journeyId)
@@ -104,7 +107,7 @@ public class RNPingJourneyImpl: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+    guard let journey = journeyMap[journeyId] else {
       reject("NOT_CONFIGURED", "Journey not found for id \(journeyId)", nil)
       return
     }
@@ -168,7 +171,7 @@ public class RNPingJourneyImpl: NSObject {
   ) {
     let id = journeyId as String
 
-    guard let journey = JourneyRegistry.shared.get(id) else {
+    guard let journey = journeyMap[id] else {
       reject("NOT_CONFIGURED", "Journey not configured for id=\(id)", nil)
       return
     }
@@ -195,7 +198,7 @@ public class RNPingJourneyImpl: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+    guard let journey = journeyMap[journeyId] else {
       reject("NOT_CONFIGURED", "Journey not found", nil)
       return
     }
@@ -222,7 +225,7 @@ public class RNPingJourneyImpl: NSObject {
     resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    guard let journey = JourneyRegistry.shared.get(journeyId) else {
+    guard let journey = journeyMap[journeyId] else {
       reject("NOT_CONFIGURED", "Journey not found", nil)
       return
     }

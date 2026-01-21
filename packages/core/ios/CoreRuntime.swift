@@ -11,6 +11,11 @@ import Foundation
 ///
 /// Keeps native handles alive across calls from the React Native bridge.
 public enum CoreRuntime {
-    public static let storageRegistry: Registry = SimpleRegistry()
+    /// Registry for session storage configuration (used by Journey for SSO tokens)
+    public static let sessionStorageConfigRegistry: Registry = SimpleRegistry()
+    
+    /// Registry for OIDC storage configuration (used for OAuth/OIDC tokens)
+    public static let oidcStorageConfigRegistry: Registry = SimpleRegistry()
+    
     // public static let mfaRegistry: Registry = SimpleRegistry()
 }

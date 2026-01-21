@@ -1,162 +1,80 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { commonStyles } from '../src/styles/common';
 import {
-  getAnimalStorages,
-  Dog,
-  Cat,
-  configureDogStorage,
-  configureCatStorage,
-} from '../src/animalStorages';
+  getTokenStorages,
+  configureOidcStorageInfo,
+  configureSessionStorageInfo,
+} from '../src/tokenStorages';
 
 export default function MultiStorageScreen() {
-  const [dogStorage, setDogStorage] = useState(
-    () => getAnimalStorages().dogStorage,
+  const [oidcStorage, setOidcStorage] = useState(
+    () => getTokenStorages().oidcStorage,
   );
-  const [catStorage, setCatStorage] = useState(
-    () => getAnimalStorages().catStorage,
+  const [sessionStorage, setSessionStorage] = useState(
+    () => getTokenStorages().sessionStorage,
   );
-
-  const [dogName, setDogName] = useState('');
-  const [dogType, setDogType] = useState('');
-  const [dog, setDog] = useState<Dog | null>(null);
-
-  const [catName, setCatName] = useState('');
-  const [catColor, setCatColor] = useState('');
-  const [cat, setCat] = useState<Cat | null>(null);
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      {/* DOG CARD */}
+      {/* OIDC STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🐶 Dog Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>🔑 OIDC Storage</Text>
 
-        {!dogStorage ? (
+        {!oidcStorage ? (
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
             onPress={() => {
-              setDogStorage(configureDogStorage());
+              setOidcStorage(configureOidcStorageInfo());
             }}
           >
-            <Text style={commonStyles.buttonText}>Configure Dog Storage</Text>
+            <Text style={commonStyles.buttonText}>Configure OIDC Storage</Text>
           </TouchableOpacity>
         ) : (
-          <>
-            {/* Show storage id */}
+          <View>
             <Text style={commonStyles.textSmall}>
-              Storage ID: {dogStorage.id}
+              Storage ID: {oidcStorage.id}
             </Text>
-
-            {/* Dog fields */}
-            <Text style={commonStyles.inputLabel}>Name</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={dogName}
-              onChangeText={setDogName}
-              placeholder="Enter dog name"
-            />
-
-            <Text style={commonStyles.inputLabel}>Type</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={dogType}
-              onChangeText={setDogType}
-              placeholder="Enter dog type"
-            />
-
-            <TouchableOpacity
-              style={commonStyles.buttonPrimary}
-              onPress={async () => {
-                await dogStorage.save({ name: dogName, type: dogType });
-                setDogName('');
-                setDogType('');
-              }}
-            >
-              <Text style={commonStyles.buttonText}>Save Dog</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={commonStyles.buttonSecondary}
-              onPress={async () => {
-                setDog(await dogStorage.get());
-              }}
-            >
-              <Text style={commonStyles.buttonTextSecondary}>Get Dog</Text>
-            </TouchableOpacity>
-
-            <Text style={commonStyles.textSuccess}>
-              {dog ? `Dog: ${dog.name} (${dog.type})` : 'No dog stored'}
+            <Text style={commonStyles.textSmall}>
+              Config: {JSON.stringify(oidcStorage.config, null, 2)}
             </Text>
-          </>
+          </View>
         )}
       </View>
 
-      {/* CAT CARD */}
+      {/* SESSION STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🐱 Cat Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>🎫 Session Storage</Text>
 
-        {!catStorage ? (
+        {!sessionStorage ? (
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
             onPress={() => {
-              setCatStorage(configureCatStorage());
+              setSessionStorage(configureSessionStorageInfo());
             }}
           >
-            <Text style={commonStyles.buttonText}>Configure Cat Storage</Text>
+            <Text style={commonStyles.buttonText}>Configure Session Storage</Text>
           </TouchableOpacity>
         ) : (
-          <>
-            {/* Show storage id */}
+          <View>
             <Text style={commonStyles.textSmall}>
-              Storage ID: {catStorage.id}
+              Storage ID: {sessionStorage.id}
             </Text>
-
-            <Text style={commonStyles.inputLabel}>Name</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={catName}
-              onChangeText={setCatName}
-              placeholder="Enter cat name"
-            />
-
-            <Text style={commonStyles.inputLabel}>Color</Text>
-            <TextInput
-              style={commonStyles.input}
-              value={catColor}
-              onChangeText={setCatColor}
-              placeholder="Enter cat color"
-            />
-
-            <TouchableOpacity
-              style={commonStyles.buttonPrimary}
-              onPress={async () => {
-                await catStorage.save({ name: catName, color: catColor });
-                setCatName('');
-                setCatColor('');
-              }}
-            >
-              <Text style={commonStyles.buttonText}>Save Cat</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={commonStyles.buttonSecondary}
-              onPress={async () => {
-                setCat(await catStorage.get());
-              }}
-            >
-              <Text style={commonStyles.buttonTextSecondary}>Get Cat</Text>
-            </TouchableOpacity>
-
-            <Text style={commonStyles.textSuccess}>
-              {cat ? `Cat: ${cat.name} (${cat.color})` : 'No cat stored'}
+            <Text style={commonStyles.textSmall}>
+              Config: {JSON.stringify(sessionStorage.config, null, 2)}
             </Text>
-          </>
+          </View>
         )}
       </View>
     </ScrollView>

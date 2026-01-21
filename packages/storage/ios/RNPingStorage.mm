@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 //
 //  RNPingStorage.mm
 //  RNPingStorage
@@ -11,70 +17,96 @@
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
-// Auto-generated Swift header
+/// Auto-generated Swift header
 #import "RNPingStorage-Swift.h"
 
 @implementation RNPingStorage
 RCT_EXPORT_MODULE()
 
-// Helper to get the Swift singleton 
+/**
+ Returns the shared Swift implementation instance.
+ */
 - (RNPingStorageImpl *)swiftImpl
 {
   return [RNPingStorageImpl shared];
 }
 
-// configure(config): string
-- (NSString *)configure:(JS::NativeRNPingStorage::StorageConfig &)config
+/**
+ Registers a session storage configuration.
+ 
+ - Parameter config: Storage configuration.
+ - Returns: Unique storage identifier.
+ */
+- (NSString *)registerSessionStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
-  NSLog(@"RNPingStorage: configure called");
-
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
-  if (config.type() != nil) {
-    dict[@"type"] = config.type();
+  NSString *account = config.account();
+  if (account != nil) {
+    dict[@"account"] = account;
   }
-  if (config.keyAlias() != nil) {
-    dict[@"keyAlias"] = config.keyAlias();
+  
+  auto encryptor = config.encryptor();
+  if (encryptor.has_value()) {
+    dict[@"encryptor"] = @(encryptor.value());
   }
-  if (config.cacheStrategy() != nil) {
-    dict[@"cacheStrategy"] = config.cacheStrategy();
+
+  auto cacheable = config.cacheable();
+  if (cacheable.has_value()) {
+    dict[@"cacheable"] = @(cacheable.value());
   }
 
-  return [[self swiftImpl] configure:dict];
+  return [[self swiftImpl] registerSessionStorage:dict];
 }
 
-// save(item): Promise<boolean>
-- (void)save:(NSString *)id
-        item:(NSDictionary *)item
-      resolve:(RCTPromiseResolveBlock)resolve
-       reject:(RCTPromiseRejectBlock)reject
+/**
+ Registers an OIDC storage configuration.
+ 
+ - Parameter config: Storage configuration.
+ - Returns: Unique storage identifier.
+ */
+- (NSString *)registerOidcStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
-  NSLog(@"RNPingStorage: save called");
-  [[self swiftImpl] save:id item:item resolver:resolve rejecter:reject];
+  NSMutableDictionary *dict = [NSMutableDictionary new];
+
+  NSString *account = config.account();
+  if (account != nil) {
+    dict[@"account"] = account;
+  }
+  
+  auto encryptor = config.encryptor();
+  if (encryptor.has_value()) {
+    dict[@"encryptor"] = @(encryptor.value());
+  }
+
+  auto cacheable = config.cacheable();
+  if (cacheable.has_value()) {
+    dict[@"cacheable"] = @(cacheable.value());
+  }
+
+  return [[self swiftImpl] registerOidcStorage:dict];
 }
 
-// get(): Promise<Object | null>
-- (void)get:(NSString *)id
-     resolve:(RCTPromiseResolveBlock)resolve
-      reject:(RCTPromiseRejectBlock)reject
+/**
+ Resolves a session storage configuration by id.
+ 
+ - Parameter storageId: Storage configuration identifier.
+ - Returns: Storage configuration dictionary.
+ */
+- (NSDictionary *)configureSessionStorage:(NSString *)storageId
 {
-  NSLog(@"RNPingStorage: get called");
-  [[self swiftImpl] get:id resolver:resolve rejecter:reject];
+  return [[self swiftImpl] configureSessionStorage:storageId];
 }
 
-// remove(): Promise<boolean>
-- (void)remove:(NSString *)id
-       resolve:(RCTPromiseResolveBlock)resolve
-        reject:(RCTPromiseRejectBlock)reject
+/**
+ Resolves an OIDC storage configuration by id.
+ 
+ - Parameter storageId: Storage configuration identifier.
+ - Returns: Storage configuration dictionary.
+ */
+- (NSDictionary *)configureOidcStorage:(NSString *)storageId
 {
-  NSLog(@"RNPingStorage: remove called");
-  [[self swiftImpl] remove:id resolver:resolve rejecter:reject];
-}
-
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-    (const facebook::react::ObjCTurboModule::InitParams &)params
-{
-    return std::make_shared<facebook::react::NativeRNPingStorageSpecJSI>(params);
+  return [[self swiftImpl] configureOidcStorage:storageId];
 }
 
 @end
