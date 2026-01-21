@@ -16,7 +16,12 @@ import com.reactnativepingidentity.core.registry.SimpleRegistry
  * Keeps native handles alive across calls from the React Native bridge.
  */
 object CoreRuntime {
-    val storageRegistry: Registry = SimpleRegistry()
+    /** Registry for session storage configuration */
+    val sessionStorageConfigRegistry: Registry = SimpleRegistry()
+
+    /** Registry for OIDC storage configuration */
+    val oidcStorageConfigRegistry: Registry = SimpleRegistry()
+    /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()
     // val mfaRegistry: Registry = SimpleRegistry()
 }

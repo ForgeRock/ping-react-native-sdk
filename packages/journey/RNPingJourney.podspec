@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   # Must be a HASH — cannot use package["author"] directly
   s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
 
-  s.platforms    = { :ios => "13.0" }
+  s.platforms    = { :ios => "16.0" }
 
   # Local monorepo source
   s.source       = { :path => "." }

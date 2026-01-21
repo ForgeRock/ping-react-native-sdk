@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 #import <React/RCTBridgeModule.h>
 #import <React/RCTLog.h>
 #import "RNPingStorage-Swift.h"
@@ -11,57 +17,31 @@ RCT_EXPORT_MODULE(RNPingStorage)
 
 #pragma mark - Configure
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configure:(NSDictionary *)config)
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerSessionStorage:(NSDictionary *)config)
 {
-  NSLog(@"[RNPingStorageClassic] configure called with config: %@", config);
-
-  NSString *storageId = [RNPingStorageCommon configure:config];
-
-  NSLog(@"[RNPingStorageClassic] created storage instance %@", storageId);
+  NSString *storageId = [RNPingStorageCommon registerSessionStorage:config];
 
   return storageId;
 }
 
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerOidcStorage:(NSDictionary *)config)
+{
+  NSString *storageId = [RNPingStorageCommon registerOidcStorage:config];
 
-#pragma mark - Save
-
-RCT_EXPORT_METHOD(save : (NSString *)storageId item : (NSDictionary *)
-                      item resolver : (RCTPromiseResolveBlock)
-                          resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon save:storageId
-      item:item
-      resolver:^(BOOL ok) {
-        resolve(@(ok));
-      }
-      rejecter:^(NSString *code, NSString *message, NSError *error) {
-        reject(code, message, error);
-      }];
+  return storageId;
 }
 
-#pragma mark - Get
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureSessionStorage:(NSString *)storageId)
+{
+  NSDictionary *config = [RNPingStorageCommon configureSessionStorage:storageId];
 
-RCT_EXPORT_METHOD(get : (NSString *)storageId resolver : (
-    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon get:storageId
-      resolver:^(NSDictionary *result) {
-        resolve(result);
-      }
-      rejecter:^(NSString *code, NSString *message, NSError *error) {
-        reject(code, message, error);
-      }];
+  return config;
 }
 
-#pragma mark - Remove
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOidcStorage:(NSString *)storageId)
+{
+  NSDictionary *config = [RNPingStorageCommon configureOidcStorage:storageId];
 
-RCT_EXPORT_METHOD(remove : (NSString *)storageId resolver : (
-    RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-  [RNPingStorageCommon remove:storageId
-      resolver:^(BOOL ok) {
-        resolve(@(ok));
-      }
-      rejecter:^(NSString *code, NSString *message, NSError *error) {
-        reject(code, message, error);
-      }];
+  return config;
 }
-
 @end
