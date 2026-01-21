@@ -25,6 +25,7 @@ Pod::Spec.new do |s|
   end
 
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+  s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
   s.swift_version = "5.0"
   s.requires_arc = true
@@ -32,6 +33,12 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
+
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift,m,mm}"
+    test_spec.dependency "PingStorage"
+    test_spec.dependency "RNPingCore"
+  end
 
 
   # Compiler flag toggle

@@ -14,7 +14,8 @@
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
-    "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache"
+    "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",
+    "storage:test": "yarn workspace @react-native-pingidentity/storage run test"
   },
   "workspaces": {
     "packages": [

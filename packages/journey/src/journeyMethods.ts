@@ -6,6 +6,8 @@ import type {
   JourneyUserSession,
 } from './types';
 
+
+
 /**
  * Configure the Journey SDK.
  * Returns a unique journeyId that maps to an instance in native JourneyRegistry.

@@ -5,6 +5,7 @@ import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
 import BrowserScreen from './ui/BrowserScreen';
+import LoggerScreen from './ui/LoggerScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
 import { configureBrowser } from '@react-native-pingidentity/browser';
@@ -14,6 +15,7 @@ export type RootStackParamList = {
   Storage: undefined;
   Journey: { journeyClient: JourneyClient };
   Browser: undefined;
+  Logger: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -61,7 +63,12 @@ export default function App() {
         <Stack.Screen
           name="Browser"
           component={BrowserScreen}
-          options={{ title: 'Browser' }}
+          options={{ title: 'Browser Demo' }}
+        />
+        <Stack.Screen
+          name="Logger"
+          component={LoggerScreen}
+          options={{ title: 'Logger Demo' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

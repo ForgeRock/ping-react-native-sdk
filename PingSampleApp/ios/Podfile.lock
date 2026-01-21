@@ -2347,6 +2347,37 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingLogger (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -2525,6 +2556,7 @@ DEPENDENCIES:
   - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
+  - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2699,6 +2731,8 @@ EXTERNAL SOURCES:
     :path: "../../packages/core"
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
+  RNPingLogger:
+    :path: "../../node_modules/@react-native-pingidentity/logger"
   RNPingStorage:
     :path: "../../node_modules/@react-native-pingidentity/storage"
   RNScreens:
@@ -2789,11 +2823,12 @@ SPEC CHECKSUMS:
   RNPingBrowser: 7571323f6b11d4e9739a4a472c0883acad1a002e
   RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
   RNPingJourney: 2d5cad6ab6b008feeb3e2a5a4df42f4f17581171
-  RNPingStorage: 902ed7058a49efc060014ad2eeb6452e2cc2bf41
+  RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
+  RNPingStorage: 4d3c4f043f9f043067109b3a9403ae92ec587e80
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: ba20ff146ca4722684dcacbf71a617914f81e122
+PODFILE CHECKSUM: d6b8d475778f0a2ec0795766914f895eceeda96e
 
 COCOAPODS: 1.15.2

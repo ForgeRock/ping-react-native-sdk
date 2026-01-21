@@ -15,15 +15,19 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.release.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PingSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PingSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = PingSampleApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PingSampleApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = PingSampleApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		344692DB2F0EC3FC001EF2C5 /* libRNPingStorage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNPingStorage.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-PingSampleApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.debug.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.release.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-PingSampleApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PingSampleApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PingSampleApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = PingSampleApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.debug.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.debug.xcconfig"; sourceTree = "<group>"; };
+		ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RNStorageTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -54,8 +58,10 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				344692DB2F0EC3FC001EF2C5 /* libRNPingStorage.a */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-PingSampleApp.a */,
+				ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -94,6 +100,8 @@
 			children = (
 				3B4392A12AC88292D35C810B /* Pods-PingSampleApp.debug.xcconfig */,
 				5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */,
+				8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */,
+				0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -128,6 +136,7 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1210;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {

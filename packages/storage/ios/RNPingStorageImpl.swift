@@ -1,97 +1,71 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 import Foundation
-import PingStorage
 import React
 import RNPingCore
 
+/**
+ Implementation class for the RNPingStorage module.
+ 
+ This class provides React Native bridge methods for storage operations,
+ delegating to `RNPingStorageCommon` for the actual implementation.
+ */
 @available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingStorageImpl: NSObject {
 
+  /// Shared singleton instance.
   @objc public static let shared = RNPingStorageImpl()
 
   @objc private override init() {
     super.init()
   }
-
-  // MARK: - Configure
+  
+  /**
+   Registers a session storage configuration.
+   
+   - Parameter config: Configuration dictionary for the storage.
+   - Returns: A unique identifier for the registered configuration.
+   */
   @objc
-  public func configure(_ config: NSDictionary) -> String {
-    print("RNPingStorage: configure called with config: \(config)")
-    let id = RNPingStorageCommon.configure(config)
-    print("✅ RNPingStorage: created storage instance \(id)")
-    return id
+  public func registerSessionStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerSessionStorage(config)
   }
 
-  // MARK: - Save
-  @objc(save:item:resolver:rejecter:)
-  public func save(
-    _ id: String,
-    item: NSDictionary,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    print("RNPingStorage: save called with item: \(item)")
-
-    RNPingStorageCommon.save(
-      id,
-      item: item,
-      resolver: { success in
-        print("✅ RNPingStorage: Save successful")
-        resolve(success)
-      },
-      rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error saving item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
+  /**
+   Registers an OIDC storage configuration.
+   
+   - Parameter config: Configuration dictionary for the storage.
+   - Returns: A unique identifier for the registered configuration.
+   */
+  @objc
+  public func registerOidcStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerOidcStorage(config)
   }
 
-  // MARK: - Get
-  @objc(get:resolver:rejecter:)
-  public func get(
-    _ id: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    print("RNPingStorage: get called")
-
-    RNPingStorageCommon.get(
-      id,
-      resolver: { item in
-        if let item = item {
-          print("RNPingStorage: Retrieved json: \(item)")
-          resolve(item)
-        } else {
-          print("RNPingStorage: No data found in storage")
-          resolve(nil)
-        }
-      },
-      rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error getting item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
+  /**
+   Resolves a session storage configuration by id.
+   
+   - Parameter id: Storage configuration identifier.
+   - Returns: A storage configuration dictionary.
+   */
+  @objc
+  public func configureSessionStorage(_ id: String) -> NSDictionary {
+    return RNPingStorageCommon.configureSessionStorage(id)
   }
 
-  // MARK: - Remove
-  @objc(remove:resolver:rejecter:)
-  public func remove(
-    _ id: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    print("RNPingStorage: remove called")
-
-    RNPingStorageCommon.remove(
-      id,
-      resolver: { success in
-        print("✅ RNPingStorage: Remove successful")
-        resolve(success)
-      },
-      rejecter: { code, message, error in
-        print("❌ RNPingStorage: Error removing item: \(error.debugDescription)")
-        reject(code, message, error)
-      }
-    )
+  /**
+   Resolves an OIDC storage configuration by id.
+   
+   - Parameter id: Storage configuration identifier.
+   - Returns: A storage configuration dictionary.
+   */
+  @objc
+  public func configureOidcStorage(_ id: String) -> NSDictionary {
+    return RNPingStorageCommon.configureOidcStorage(id)
   }
 }

@@ -22,6 +22,10 @@ export default function HomeScreen({ navigation }: Props) {
       params: { journeyClient: loginClient2 },
     },
     { title: '🧭 Launch Browser', screen: 'Browser' },
+    {
+      title: '🧪 Logger Demo',
+      screen: 'Logger',
+    },
   ];
 
   return (
