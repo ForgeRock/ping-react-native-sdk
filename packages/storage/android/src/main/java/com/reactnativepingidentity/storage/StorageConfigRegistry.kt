@@ -25,7 +25,7 @@ class StorageConfigRegistry(private val registry: Registry) {
      * @param config The storage configuration to register
      * @return Unique ID for the registered configuration
      */
-    suspend fun register(config: StorageConfig): String {
+    fun register(config: StorageConfig): String {
         return registry.register(StorageConfigHandle(config))
     }
 
@@ -36,7 +36,7 @@ class StorageConfigRegistry(private val registry: Registry) {
      * @return The [StorageConfig] associated with the ID
      * @throws IllegalStateException if no configuration is found for the given ID
      */
-    suspend fun resolve(id: String): StorageConfig {
+    fun resolve(id: String): StorageConfig {
         val handle = registry.resolve(id) as? StorageConfigHandle
         return handle?.config ?: error("No storage config registered for id=$id")
     }
@@ -46,14 +46,14 @@ class StorageConfigRegistry(private val registry: Registry) {
      *
      * @param id The unique ID of the storage configuration to remove
      */
-    suspend fun remove(id: String) {
+    fun remove(id: String) {
         registry.remove(id)
     }
 
     /**
      * Clear all registered storage configurations.
      */
-    suspend fun clear() {
+    fun clear() {
         registry.removeAll()
     }
 }
