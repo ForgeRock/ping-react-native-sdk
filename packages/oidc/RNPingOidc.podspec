@@ -15,14 +15,15 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platforms    = { :ios => min_ios_version_supported }
+  # Minimum iOS version
+  s.platforms        = { :ios => "16.0" }
   s.source       = { :git => "https://github.com/pingidentity-gaurav/ping-identity-rn-oidc.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
   s.private_header_files = "ios/**/*.h"
 
-  s.dependency "PingOidc"
-  s.dependency "RNPingCore"
+  s.dependency 'PingOidc', '1.3.0-beta2'
+  s.dependency 'RNPingCore'
 
   install_modules_dependencies(s)
 end

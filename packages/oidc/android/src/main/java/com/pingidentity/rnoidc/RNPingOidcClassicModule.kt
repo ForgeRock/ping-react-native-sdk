@@ -9,71 +9,78 @@ package com.pingidentity.rnoidc
 
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.module.annotations.ReactModule
 
-@ReactModule(name = RNPingOidcModule.NAME)
+@ReactModule(name = RNPingOidcClassicModule.NAME)
 /**
- * TurboModule entry point for the OIDC API on Android.
+ * Classic (non-Turbo) module entry point for the OIDC API on Android.
  */
-class RNPingOidcModule(reactContext: ReactApplicationContext) :
-  NativeRNPingOidcSpec(reactContext) {
+class RNPingOidcClassicModule(
+  reactContext: ReactApplicationContext
+) : ReactContextBaseJavaModule(reactContext) {
 
-  /**
-   * Expose the module name to React Native.
-   */
+  companion object {
+    const val NAME = "RNPingOidcClassic"
+  }
+
   override fun getName(): String = NAME
 
   /**
    * Create a native-backed OIDC client and return its core identifier.
    */
-  override fun createClient(config: ReadableMap): String {
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun createClient(config: ReadableMap): String {
     return RNPingOidcCommon.createClient(config)
   }
 
   /**
    * Create a native-backed OIDC web client from an existing client id.
    */
-  override fun createWebClient(clientId: String): String {
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun createWebClient(clientId: String): String {
     return RNPingOidcCommon.createWebClient(clientId)
   }
 
   /**
    * Launch an authorization flow in the system browser.
    */
-  override fun authorize(webClientId: String, options: ReadableMap, promise: Promise) {
+  @ReactMethod
+  fun authorize(webClientId: String, options: ReadableMap, promise: Promise) {
     RNPingOidcCommon.authorize(webClientId, options, promise)
   }
 
   /**
    * Resolve whether a user is available for the given web client.
    */
-  override fun hasUser(webClientId: String, promise: Promise) {
+  @ReactMethod
+  fun hasUser(webClientId: String, promise: Promise) {
     RNPingOidcCommon.hasUser(webClientId, promise)
   }
 
   /**
    * Resolve the current user's tokens.
    */
-  override fun token(webClientId: String, promise: Promise) {
+  @ReactMethod
+  fun token(webClientId: String, promise: Promise) {
     RNPingOidcCommon.token(webClientId, promise)
   }
 
   /**
    * Revoke tokens for the current user.
    */
-  override fun revoke(webClientId: String, promise: Promise) {
+  @ReactMethod
+  fun revoke(webClientId: String, promise: Promise) {
     RNPingOidcCommon.revoke(webClientId, promise)
   }
 
   /**
    * Logout the current user.
    */
-  override fun logout(webClientId: String, promise: Promise) {
+  @ReactMethod
+  fun logout(webClientId: String, promise: Promise) {
     RNPingOidcCommon.logout(webClientId, promise)
-  }
-
-  companion object {
-    const val NAME = "RNPingOidc"
   }
 }

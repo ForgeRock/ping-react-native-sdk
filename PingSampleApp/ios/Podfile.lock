@@ -2386,7 +2386,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingOidc
+    - PingOidc (= 1.3.0-beta2)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2515,7 +2515,6 @@ DEPENDENCIES:
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - PingJourney (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4325-Journey-POC-RN/PingJourney.podspec`)
   - PingLogger (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingLogger.podspec`)
-  - PingOidc (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOidc.podspec`)
   - PingOrchestrate (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOrchestrate.podspec`)
   - PingStorage (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingStorage.podspec`)
   - RCT-Folly (from `../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2598,6 +2597,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - PingBrowser
+    - PingOidc
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2620,8 +2620,6 @@ EXTERNAL SOURCES:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4325-Journey-POC-RN/PingJourney.podspec
   PingLogger:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingLogger.podspec
-  PingOidc:
-    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOidc.podspec
   PingOrchestrate:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOrchestrate.podspec
   PingStorage:
@@ -2855,16 +2853,16 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBrowser: 284612b8398596ccd7cf4e4f464bd2353a99d341
+  RNPingBrowser: c57c84eff69b8d5d688f938d6e9d98bf26721e03
   RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
   RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
   RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
-  RNPingOidc: 417312080b44bd37d6d974015880c426ec2658ba
+  RNPingOidc: 884800053a57bd4b38ed045ee795c9cb8f9acca6
   RNPingStorage: 5d7da183c7fbb0a3fa0b1c936c155015c34c5479
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 25e727c2d513dd0a4d292c29438d17e258af7907
+PODFILE CHECKSUM: 2be7bed8a0386113ed66776204781c409f9ab3ab
 
 COCOAPODS: 1.15.2

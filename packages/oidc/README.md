@@ -1,37 +1,64 @@
-# @ping-identity/rn-oidc
+<!--
+Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
 
-Ping Identity React Native OIDC package
+This software may be modified and distributed under the terms
+of the MIT license. See the LICENSE file for details.
+-->
 
-## Installation
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
+# Ping Identity React Native OIDC
 
-```sh
-npm install @ping-identity/rn-oidc
+The Ping Identity React Native OIDC module exposes native-backed OIDC clients for PingOne and
+ForgeRock platforms. It delegates all protocol-sensitive operations to the native SDKs while
+presenting a clear JavaScript API.
+
+## Integrating the SDK into your project
+
+Add the package and let autolinking wire the native code:
+
+```bash
+yarn add @ping-identity/rn-oidc
+cd ios && pod install
 ```
 
+## How to Use the SDK
 
-## Usage
+### Create the base OIDC client
 
+```ts
+import { createOidcClient } from '@ping-identity/rn-oidc';
 
-```js
-import { multiply } from '@ping-identity/rn-oidc';
-
-// ...
-
-const result = multiply(3, 7);
+const oidcClient = createOidcClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+});
 ```
 
+### Create the web-capable client and authorize
 
-## Contributing
+```ts
+import { createOidcWebClient } from '@ping-identity/rn-oidc';
 
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+const oidcWebClient = createOidcWebClient(oidcClient);
+const result = await oidcWebClient.authorize();
 
-## License
+// result: { type: 'success', code, state? } | { type: 'cancel' }
+```
 
-MIT
+### Work with user state
 
----
+```ts
+if (await oidcWebClient.hasUser()) {
+  const user = await oidcWebClient.user();
+  const tokens = await user?.token();
+  await user?.revoke();
+  await user?.logout();
+}
+```
 
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+## TODO
+
+- Document storage integration and browser configuration.
