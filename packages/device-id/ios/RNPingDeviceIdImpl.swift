@@ -16,6 +16,32 @@ public class RNPingDeviceIdImpl: NSObject {
   /// Shared singleton instance.
   @objc public static let shared = RNPingDeviceIdImpl()
 
+  /// Resolves the most useful message from SDK errors, unwrapping nested errors when available.
+  private static func errorMessage(from error: Error) -> String {
+    switch error {
+    case let deviceError as DeviceIdentifierError:
+      switch deviceError {
+      case .keyGenerationFailed(let underlying),
+           .externalRepresentationFailed(let underlying):
+        return underlying.localizedDescription
+      case .encryptionInitializationFailed:
+        return "Encryption initialization failed."
+      case .publicKeyExtractionFailed:
+        return "Public key extraction failed."
+      case .keychainItemNotFound:
+        return "Keychain item not found."
+      case .keychainUnexpectedData:
+        return "Unexpected keychain data."
+      case .keychainUnexpectedStatus(let status):
+        return "Unexpected keychain status: \(status)."
+      default:
+        return deviceError.localizedDescription
+      }
+    default:
+      return error.localizedDescription
+    }
+  }
+
   private static let defaultIdentifierResult: Result<any DeviceIdentifier, Error> = {
     do {
       return .success(try DefaultDeviceIdentifier())
@@ -44,10 +70,10 @@ public class RNPingDeviceIdImpl: NSObject {
           let deviceId = try await identifier.id
           resolve(deviceId)
         } catch {
-          reject("DEVICE_ID_ERROR", error.localizedDescription, error)
+          reject("DEVICE_ID_ERROR", Self.errorMessage(from: error), error as NSError)
         }
       case .failure(let error):
-        reject("DEVICE_ID_ERROR", error.localizedDescription, error)
+        reject("DEVICE_ID_ERROR", Self.errorMessage(from: error), error as NSError)
       }
     }
   }
