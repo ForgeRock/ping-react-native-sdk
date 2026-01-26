@@ -2520,7 +2520,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ping-identity/rn-types@npm:^0.1.0, @ping-identity/rn-types@workspace:packages/types":
+"@ping-identity/rn-types@npm:^0.1.0, @ping-identity/rn-types@workspace:*, @ping-identity/rn-types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-types@workspace:packages/types"
   dependencies:
@@ -3757,6 +3757,7 @@ __metadata:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-types": "workspace:*"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"
     "@react-native-community/cli": "npm:19.0.0"
     "@react-native-community/cli-platform-android": "npm:19.0.0"

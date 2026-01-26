@@ -14,12 +14,33 @@ import {
   JourneyUserSession,
   listRegisteredStoragesFromCore,
 } from '@react-native-pingidentity/journey';
+import type {
+  Callback,
+  GetAuthorizationUrlOptions,
+  Node,
+  NodeCallback,
+  ServerConfig,
+  Step,
+  Tokens,
+} from '@ping-identity/rn-types';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 
 type JourneyRouteProp = RouteProp<RootStackParamList, 'Journey'>;
+
+// Compile-time ergonomics checks for shared RN types (no runtime behavior).
+const _typeErgonomicsCheck: {
+  callback: Callback;
+  node: Node;
+  nodeCallback: NodeCallback;
+  step: Step;
+  serverConfig: ServerConfig;
+  authOptions: GetAuthorizationUrlOptions;
+  tokens: Tokens;
+} | null = null;
+_typeErgonomicsCheck
 
 export default function JourneyScreen() {
   const route = useRoute<JourneyRouteProp>();

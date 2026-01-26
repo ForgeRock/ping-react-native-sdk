@@ -16,9 +16,49 @@ export * from '@forgerock/sdk-types';
 import type { GenericError } from '@forgerock/sdk-types';
 
 /**
+ * Explicit exports for core auth flow shapes used across modules.
+ */
+export type {
+  Callback,
+  CallbackType,
+  Step,
+  StepDetail,
+  AuthResponse,
+  FailureDetail,
+  PolicyRequirement,
+  PolicyParams,
+  ServerConfig,
+  AsyncServerConfig,
+  LegacyConfigOptions,
+  ValidLegacyConfigOptions,
+  WellKnownResponse,
+  Tokens,
+  CustomStorageObject,
+  OAuthConfig,
+  DavinciOAuthConfig,
+  PathsConfig,
+  GetAuthorizationUrlOptions,
+  GenerateAndStoreAuthUrlValues,
+  ResponseType,
+} from '@forgerock/sdk-types';
+
+/**
  * Error category used across native-backed RN modules.
  *
  * @remarks
  * Derived from ForgeRock SDK types to keep error categories in sync.
  */
 export type ErrorType = GenericError['type'];
+
+/**
+ * Alias for a Journey node in RN flows.
+ *
+ * @remarks
+ * ForgeRock SDK refers to these as `Step` objects.
+ */
+export type Node = import('@forgerock/sdk-types').Step;
+
+/**
+ * Alias for callback payloads used in RN flows.
+ */
+export type NodeCallback = import('@forgerock/sdk-types').Callback;
