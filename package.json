@@ -12,6 +12,7 @@
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @react-native-pingidentity/browser test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
+    "sample:clean-android": "rm -rf PingSampleApp/android/app/build PingSampleApp/android/build PingSampleApp/android/.gradle && (rm -f ~/.gradle/wrapper/dists/gradle-8.14.1-bin/*/gradle-8.14.1-bin.zip.lck || true) && (cd PingSampleApp/android && ./gradlew clean)",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
     "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",

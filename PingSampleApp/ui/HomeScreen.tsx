@@ -26,6 +26,10 @@ export default function HomeScreen({ navigation }: Props) {
       title: '🧪 Logger Demo',
       screen: 'Logger',
     },
+    {
+      title: '🔐 Launch OIDC',
+      screen: 'Oidc',
+    },
   ];
 
   return (

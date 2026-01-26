@@ -1,0 +1,102 @@
+buildscript {
+  ext.RNPingOidc = [
+    kotlinVersion: "2.0.21",
+    minSdkVersion: 24,
+    compileSdkVersion: 36,
+    targetSdkVersion: 36
+  ]
+
+  ext.getExtOrDefault = { prop ->
+    if (rootProject.ext.has(prop)) {
+      return rootProject.ext.get(prop)
+    }
+
+    return RNPingOidc[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+  }
+}
+
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "com.facebook.react"
+
+def newArchEnabled = project.hasProperty("newArchEnabled") &&
+        project.newArchEnabled.toBoolean()
+
+println("[RNPingOidc] newArchEnabled = ${newArchEnabled}")
+
+android {
+  namespace "com.pingidentity.rnoidc"
+
+  compileSdkVersion getExtOrDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrDefault("minSdkVersion")
+    targetSdkVersion getExtOrDefault("targetSdkVersion")
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lint {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  sourceSets {
+    main {
+      if (newArchEnabled) {
+        java.srcDirs += ["generated/java", "generated/jni"]
+      } else {
+        println("[RNPingOidc] Skipping generated/java and jni (New Arch disabled)")
+        java.srcDirs -= ["generated/java", "generated/jni"]
+      }
+    }
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+}
+
+//
+// Disable all Turbo/JSI/CMake/codegen tasks
+//
+if (!newArchEnabled) {
+    println("[RNPingOidc] Disabling TurboModule codegen + CMake tasks...")
+
+    tasks.configureEach { task ->
+        if (task.name.contains("Codegen") ||
+            task.name.contains("generateCodegen") ||
+            task.name.contains("generateSchema") ||
+            task.name.contains("configureCMake") ||
+            task.name.contains("externalNativeBuild") ||
+            task.name.contains("buildCMake")
+        ) {
+            task.enabled = false
+            println("[RNPingOidc] Disabled task: ${task.name}")
+        }
+    }
+}
