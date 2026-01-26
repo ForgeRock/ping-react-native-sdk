@@ -25,7 +25,6 @@ Pod::Spec.new do |s|
 
   # Native Ping SDK dependency
   s.dependency "PingBrowser", "1.3.0-beta2"
-  s.dependency "RNPingCore"
 
   # New Architecture helper
   install_modules_dependencies(s)
