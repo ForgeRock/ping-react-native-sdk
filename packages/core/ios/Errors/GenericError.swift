@@ -66,7 +66,7 @@ public struct GenericError {
     return payload
   }
 
-  public func asNSError(domain: String = "com.pingidentity.reactnative", code: Int = 0) -> NSError {
+  public func asNSError(domain: String = "com.pingidentity", code: Int = 0) -> NSError {
     NSError(domain: domain, code: code, userInfo: asDictionary() as? [String: Any] ?? [:])
   }
 }
