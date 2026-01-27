@@ -7,7 +7,6 @@
 package com.pingidentity.rndeviceid
 
 import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.ReactApplicationContext
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.device.id.DeviceIdentifier
 import kotlinx.coroutines.CoroutineScope
@@ -26,19 +25,6 @@ object RNPingDeviceIdCommon {
 
   /** Coroutine scope for executing device ID operations asynchronously on the IO dispatcher. */
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-  /**
-   * Initialize the Ping Android SDK context provider.
-   *
-   * This must be called before any device ID operations to ensure the SDK
-   * has access to the Android application context.
-   *
-   * @param reactContext The React Native application context.
-   */
-  @JvmStatic
-  fun initialize(reactContext: ReactApplicationContext) {
-    ContextProvider.init(reactContext.applicationContext)
-  }
 
   /**
    * Return the default secure device identifier.

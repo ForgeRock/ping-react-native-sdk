@@ -17,10 +17,6 @@ import com.facebook.react.module.annotations.ReactModule
 class RNPingDeviceIdModule(reactContext: ReactApplicationContext) :
   NativeRNPingDeviceIdSpec(reactContext) {
 
-  init {
-    RNPingDeviceIdCommon.initialize(reactContext)
-  }
-
   override fun getName(): String = NAME
 
   /**

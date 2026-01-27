@@ -5,9 +5,9 @@ package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 Pod::Spec.new do |s|
   s.name         = "RNPingBrowser"
   s.version      = package["version"]
-  s.summary      = package["description"] || "Ping Identity Browser TurboModule"
-  s.homepage     = package["homepage"] || "https://pingidentity.com"
-  s.license      = package["license"] || "MIT"
+  s.summary      = package["description"] 
+  s.homepage     = package["homepage"] 
+  s.license      = package["license"] 
 
   # Must be a HASH — cannot use package["author"] directly
   s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }

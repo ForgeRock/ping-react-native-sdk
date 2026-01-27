@@ -26,10 +26,6 @@ class RNPingDeviceIdClassicModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 
-  init {
-    RNPingDeviceIdCommon.initialize(reactContext)
-  }
-
   override fun getName(): String = NAME
 
   /**
