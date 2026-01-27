@@ -16,6 +16,9 @@ export type NativeOidcClientConfig = {
   discoveryEndpoint: string;
   redirectUri: string;
   scopes: string[];
+  /**
+   * Storage configuration id resolved from the Storage module.
+   */
   storageId?: string;
   acrValues?: string;
   loginHint?: string;
@@ -41,8 +44,6 @@ export type NativeOidcAuthorizeOptions = {
 export type NativeOidcAuthorizeResult =
   | {
       type: 'success';
-      code: string;
-      state?: string;
     }
   | {
       type: 'cancel';

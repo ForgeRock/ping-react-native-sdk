@@ -14,15 +14,24 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.module.annotations.ReactModule
 
-@ReactModule(name = RNPingOidcClassicModule.NAME)
 /**
  * Classic (non-Turbo) module entry point for the OIDC API on Android.
+ *
+ * @remarks
+ * Mirrors [RNPingOidcModule] for legacy React Native setups and forwards
+ * all work to [RNPingOidcCommon] to keep behavior consistent.
  */
+@ReactModule(name = RNPingOidcClassicModule.NAME)
 class RNPingOidcClassicModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 
+  init {
+    RNPingOidcCommon.configure(reactContext)
+  }
+
   companion object {
+    /** Name used for React Native module registration. */
     const val NAME = "RNPingOidcClassic"
   }
 
@@ -30,6 +39,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Create a native-backed OIDC client and return its core identifier.
+   *
+   * @param config JS-provided client configuration
+   * @return Stable client identifier
    */
   @ReactMethod(isBlockingSynchronousMethod = true)
   fun createClient(config: ReadableMap): String {
@@ -38,6 +50,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Create a native-backed OIDC web client from an existing client id.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @return Stable web client identifier
    */
   @ReactMethod(isBlockingSynchronousMethod = true)
   fun createWebClient(clientId: String): String {
@@ -46,6 +61,10 @@ class RNPingOidcClassicModule(
 
   /**
    * Launch an authorization flow in the system browser.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param options Optional per-request overrides
+   * @param promise Promise resolved with success/cancel or rejected with GenericError
    */
   @ReactMethod
   fun authorize(webClientId: String, options: ReadableMap, promise: Promise) {
@@ -54,6 +73,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Resolve whether a user is available for the given web client.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Promise resolved with a boolean or rejected with GenericError
    */
   @ReactMethod
   fun hasUser(webClientId: String, promise: Promise) {
@@ -62,6 +84,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Resolve the current user's tokens.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Promise resolved with token payload or rejected with GenericError
    */
   @ReactMethod
   fun token(webClientId: String, promise: Promise) {
@@ -70,6 +95,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Revoke tokens for the current user.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Promise resolved on success or rejected with GenericError
    */
   @ReactMethod
   fun revoke(webClientId: String, promise: Promise) {
@@ -78,6 +106,9 @@ class RNPingOidcClassicModule(
 
   /**
    * Logout the current user.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Promise resolved on success or rejected with GenericError
    */
   @ReactMethod
   fun logout(webClientId: String, promise: Promise) {

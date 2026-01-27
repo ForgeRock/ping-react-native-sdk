@@ -170,7 +170,7 @@ function normalizeStorageConfig(
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
- * @returns A SessionStorage configuration object ready to use with Journey SDK
+ * @returns A SessionStorage configuration object with a native storage id
  * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
@@ -192,7 +192,10 @@ export function configureSessionStorage(config: BaseStorageConfig): SessionStora
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerSessionStorage(buildNativeConfig(config));
   const result = NativeRNPingStorage.configureSessionStorage(storageId);
-  return normalizeStorageConfig(result);
+  return {
+    id: storageId,
+    ...normalizeStorageConfig(result),
+  };
 }
 
 /**
@@ -202,7 +205,7 @@ export function configureSessionStorage(config: BaseStorageConfig): SessionStora
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
- * @returns An OidcStorage configuration object ready to use with OIDC flows
+ * @returns An OidcStorage configuration object with a native storage id
  * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
@@ -228,5 +231,8 @@ export function configureOidcStorage(config: BaseStorageConfig): OidcStorage {
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerOidcStorage(buildNativeConfig(config));
   const result = NativeRNPingStorage.configureOidcStorage(storageId);
-  return normalizeStorageConfig(result);
+  return {
+    id: storageId,
+    ...normalizeStorageConfig(result),
+  };
 }

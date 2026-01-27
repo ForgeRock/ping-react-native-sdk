@@ -22,6 +22,9 @@ yarn add @ping-identity/rn-oidc
 cd ios && pod install
 ```
 
+The native OIDC SDK already bundles the required browser components, so you do not need the
+React Native Browser package unless you plan to use it directly elsewhere in your app.
+
 ## How to Use the SDK
 
 ### Create the base OIDC client
@@ -37,6 +40,31 @@ const oidcClient = createOidcClient({
 });
 ```
 
+### Configure token storage (optional)
+
+If you want to customize native token storage, configure it with the Storage module and pass the
+handle into the OIDC client configuration.
+
+```ts
+import { configureOidcStorage } from '@react-native-pingidentity/storage';
+import { createOidcClient } from '@ping-identity/rn-oidc';
+
+const oidcStorage = configureOidcStorage({
+  fileName: 'ping-oidc',
+  keyAlias: 'ping-oidc',
+  strongBoxPreferred: true,
+  cacheStrategy: 'cache_on_failure',
+});
+
+const oidcClient = createOidcClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+  storage: oidcStorage,
+});
+```
+
 ### Create the web-capable client and authorize
 
 ```ts
@@ -45,7 +73,7 @@ import { createOidcWebClient } from '@ping-identity/rn-oidc';
 const oidcWebClient = createOidcWebClient(oidcClient);
 const result = await oidcWebClient.authorize();
 
-// result: { type: 'success', code, state? } | { type: 'cancel' }
+// result: { type: 'success' } | { type: 'cancel' }
 ```
 
 ### Work with user state
@@ -59,6 +87,33 @@ if (await oidcWebClient.hasUser()) {
 }
 ```
 
-## TODO
+## Android redirect configuration
 
-- Document storage integration and browser configuration.
+Configure the app redirect scheme for Custom Tabs/Auth Tabs. For a redirect URI of
+`com.example.app://callback`, add the manifest placeholder:
+
+```gradle
+android {
+  defaultConfig {
+    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
+  }
+}
+```
+
+For HTTPS redirect URIs, add an App Links intent filter that matches your redirect URL and host.
+See the Android App Links documentation for `assetlinks.json` setup.
+
+## Error handling
+
+All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+
+```ts
+import type { OidcError } from '@ping-identity/rn-oidc';
+
+try {
+  await oidcWebClient.authorize();
+} catch (error) {
+  const oidcError = error as OidcError;
+  console.log(oidcError.type, oidcError.error, oidcError.message);
+}
+```

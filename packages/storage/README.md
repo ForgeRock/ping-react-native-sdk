@@ -56,6 +56,8 @@ const oidcStorage: OidcStorage = configureOidcStorage({
 ```
 
 Notes:
+- `configureSessionStorage` / `configureOidcStorage` return a normalized config
+  with an `id` you can pass into native-backed modules that accept storage handles.
 - Android uses encrypted storage by default; `android.keyAlias` and other
   `android` options (including `fileName`, `strongBoxPreferred`) are optional.
 - iOS uses Keychain storage and supports `ios.account` (Keychain account)
@@ -81,6 +83,9 @@ const oidcCfg: StorageConfig = {
 };
 
 const oidcStorage: OidcStorage = configureOidcStorage(oidcCfg);
+
+// Pass the storage handle to modules that accept storage ids.
+// createOidcClient({ storage: oidcStorage, ... });
 ```
 
 ### Journey module usage

@@ -5,7 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { Tokens } from '@ping-identity/rn-types';
+import type { GenericError, Tokens } from '@ping-identity/rn-types';
+import type { StorageConfig } from '@react-native-pingidentity/storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -36,9 +37,13 @@ export type OidcClientConfig = {
   scopes: string[];
 
   /**
-   * Optional storage identifier created by the storage module.
+   * Optional storage configuration created by the storage module.
+   *
+   * @remarks
+   * Pass the object returned by `configureOidcStorage`. The native layer uses
+   * the embedded `id` to resolve the registered storage configuration.
    */
-  storageId?: string;
+  storage?: StorageConfig;
 
   /**
    * Optional authentication context class reference values.
@@ -83,12 +88,30 @@ export type OidcAuthorizeOptions = {
 export type OidcAuthorizeResult =
   | {
       type: 'success';
-      code: string;
-      state?: string;
     }
   | {
       type: 'cancel';
     };
+
+/**
+ * Error payload returned when OIDC operations fail.
+ *
+ * Matches the shared native/JS error contract defined in @ping-identity/rn-types.
+ */
+export type OidcError = GenericError;
+
+/**
+ * Stable error codes emitted by the OIDC module.
+ *
+ * @remarks
+ * Keep these in sync with the native error constants.
+ */
+export type OidcErrorCode =
+  | 'OIDC_AUTHORIZE_ERROR'
+  | 'OIDC_HAS_USER_ERROR'
+  | 'OIDC_TOKEN_ERROR'
+  | 'OIDC_REVOKE_ERROR'
+  | 'OIDC_LOGOUT_ERROR';
 
 /**
  * Native-backed OIDC client handle.

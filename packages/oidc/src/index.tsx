@@ -11,16 +11,37 @@ import type {
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
+  // OidcError,
+  // OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';
 
 /**
  * Create a native-backed OIDC client.
+ *
+ * @remarks
+ * If you configured storage with `configureOidcStorage`, pass the returned
+ * configuration in `config.storage` to bind the native token storage.
  */
 export function createOidcClient(config: OidcClientConfig): OidcClient {
-  const clientId = getNativeModule().createClient(config);
+  const clientId = getNativeModule().createClient({
+    ...config,
+    storageId: resolveStorageId(config.storage),
+  });
   return { id: clientId };
+}
+
+function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (!value.id) {
+    throw new Error(
+      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+    );
+  }
+  return value.id;
 }
 
 /**
@@ -52,6 +73,8 @@ export type {
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
+  OidcError,
+  OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';

@@ -1,6 +1,6 @@
 import { journey } from "@react-native-pingidentity/journey";
 
-const journeyConfig = {
+export const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',
   realm: 'alpha',
   cookie: '5421aeddf91aa20',
@@ -31,5 +31,4 @@ export const loginClient = journey(
 export const loginClient2 = journey(
   journeyConfig2, 
 );
-
 
