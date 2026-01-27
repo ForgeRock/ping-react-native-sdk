@@ -14,6 +14,7 @@
 
 - (void)collectDeviceProfileForJourney:(NSString *)journeyId
                             collectors:(NSArray<NSString *> *)collectors
+                        callbackPayload:(NSDictionary *)callbackPayload
                                resolve:(RCTPromiseResolveBlock)resolve
                                 reject:(RCTPromiseRejectBlock)reject
 {

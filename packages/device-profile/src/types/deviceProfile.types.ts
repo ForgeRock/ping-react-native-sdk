@@ -37,14 +37,23 @@ export type DeviceProfile = {
  * @remarks
  * JavaScript must not reshape this payload.
  */
-export type AicDeviceProfile = {
+export type DeviceProfileCallbackInputValue = {
   identifier?: string;
+  alias?: string;
   metadata?: Record<string, unknown>;
   location?: {
     latitude?: number;
     longitude?: number;
   };
 };
+
+/**
+ * Represents a raw callback payload for Device Profile collection in Journey flows.
+ *
+ * @remarks
+ * This should match the native callback JSON structure expected by the SDK.
+ */
+export type DeviceProfileCallbackPayload = Record<string, unknown>;
 
 /**
  * Minimal Journey instance contract required by device profile collection.

@@ -7,9 +7,10 @@
 
 import { getNativeModule } from './NativeRNPingDeviceProfile';
 import type {
-  AicDeviceProfile,
+  DeviceProfileCallbackInputValue,
   DeviceProfile,
   DeviceProfileCollector,
+  DeviceProfileCallbackPayload,
   JourneyInstance,
 } from './types';
 
@@ -36,16 +37,19 @@ export async function collectDeviceProfile(
  *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
+ * @param callbackPayload - Optional raw callback payload when available from Journey.
  * @returns A PingOne AIC-ready device profile payload.
  */
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,
-  collectors: DeviceProfileCollector[]
-): Promise<AicDeviceProfile> {
+  collectors: DeviceProfileCollector[],
+  callbackPayload?: DeviceProfileCallbackPayload
+): Promise<DeviceProfileCallbackInputValue> {
   const journeyId = await journey.getId();
   return await getNativeModule().collectDeviceProfileForJourney(
     journeyId,
-    collectors
+    collectors,
+    callbackPayload
   );
 }
 
