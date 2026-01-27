@@ -27,7 +27,7 @@
  */
 @implementation RNPingDeviceIdClassic
 
-RCT_EXPORT_MODULE(RNPingDeviceId)
+RCT_EXPORT_MODULE(RNPingDeviceIdClassic)
 
 #pragma mark - Default Device ID
 

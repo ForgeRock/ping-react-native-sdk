@@ -43,6 +43,6 @@ class RNPingDeviceIdClassicModule(
   }
 
   companion object {
-    const val NAME = "RNPingDeviceId"
+    const val NAME = "RNPingDeviceIdClassic"
   }
 }

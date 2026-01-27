@@ -8,12 +8,10 @@ import { getDeviceId } from '../index';
 
 jest.mock('../NativeRNPingDeviceId', () => ({
   __esModule: true,
-  default: {
-    getDefaultDeviceId: jest.fn(),
-  },
+  getNativeModule: jest.fn(),
 }));
 
-import NativeRNPingDeviceId from '../NativeRNPingDeviceId';
+import { getNativeModule } from '../NativeRNPingDeviceId';
 
 describe('Device ID API', () => {
   beforeEach(() => {
@@ -21,9 +19,10 @@ describe('Device ID API', () => {
   });
 
   it('getDeviceId forwards to native', async () => {
-    (NativeRNPingDeviceId.getDefaultDeviceId as jest.Mock).mockResolvedValue('default-id');
+    const getDefaultDeviceId = jest.fn().mockResolvedValue('default-id');
+    (getNativeModule as jest.Mock).mockReturnValue({ getDefaultDeviceId });
 
     await expect(getDeviceId()).resolves.toBe('default-id');
-    expect(NativeRNPingDeviceId.getDefaultDeviceId).toHaveBeenCalledTimes(1);
+    expect(getDefaultDeviceId).toHaveBeenCalledTimes(1);
   });
 });

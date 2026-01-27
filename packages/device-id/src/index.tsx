@@ -4,7 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import RNPingDeviceId from './NativeRNPingDeviceId';
+import { getNativeModule } from './NativeRNPingDeviceId';
 
 /**
  * Returns the default secure device identifier as determined by the native platform.
@@ -44,5 +44,5 @@ import RNPingDeviceId from './NativeRNPingDeviceId';
  * ```
  */
 export async function getDeviceId(): Promise<string> {
-  return await RNPingDeviceId.getDefaultDeviceId();
+  return await getNativeModule().getDefaultDeviceId();
 }

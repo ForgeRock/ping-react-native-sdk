@@ -37,7 +37,7 @@ class RNPingDeviceIdTest {
    */
   @Test
   fun classicModuleNameIsCorrect() {
-    assertEquals("RNPingDeviceId", RNPingDeviceIdClassicModule.NAME)
+    assertEquals("RNPingDeviceIdClassic", RNPingDeviceIdClassicModule.NAME)
   }
 
   /**

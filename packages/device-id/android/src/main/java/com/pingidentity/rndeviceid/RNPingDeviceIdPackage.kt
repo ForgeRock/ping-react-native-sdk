@@ -36,6 +36,13 @@ class RNPingDeviceIdPackage : BaseReactPackage() {
         if (isNewArchEnabled) {
           RNPingDeviceIdModule(reactContext)
         } else {
+          null
+        }
+      }
+      RNPingDeviceIdClassicModule.NAME -> {
+        if (isNewArchEnabled) {
+          null
+        } else {
           RNPingDeviceIdClassicModule(reactContext)
         }
       }
@@ -50,9 +57,12 @@ class RNPingDeviceIdPackage : BaseReactPackage() {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
       val isTurbo = isNewArchEnabled
-      moduleInfos[RNPingDeviceIdModule.NAME] = ReactModuleInfo(
-        RNPingDeviceIdModule.NAME,
-        RNPingDeviceIdModule.NAME,
+      val moduleName =
+        if (isTurbo) RNPingDeviceIdModule.NAME else RNPingDeviceIdClassicModule.NAME
+
+      moduleInfos[moduleName] = ReactModuleInfo(
+        moduleName,
+        moduleName,
         false,  // canOverrideExistingModule
         false,  // needsEagerInit
         false,  // isCxxModule
