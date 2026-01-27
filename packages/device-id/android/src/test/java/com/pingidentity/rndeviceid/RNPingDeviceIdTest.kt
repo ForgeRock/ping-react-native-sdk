@@ -10,7 +10,6 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.pingidentity.device.id.DeviceIdentifier
-import com.pingidentity.device.id.DeviceIdentifierDelegate
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
@@ -56,7 +55,7 @@ class RNPingDeviceIdTest {
   @Test
   fun getDefaultDeviceIdResolvesValue() {
     val promise = TestPromise()
-    withDefaultIdentifier(delegateReturning("test-device-id")) {
+    withDefaultIdentifier(identifierReturning("test-device-id")) {
       RNPingDeviceIdCommon.getDefaultDeviceId(promise)
       assertTrue(promise.await())
       assertEquals("test-device-id", promise.resolvedValue)
@@ -71,7 +70,7 @@ class RNPingDeviceIdTest {
   fun getDefaultDeviceIdRejectsOnException() {
     val error = IllegalStateException("boom")
     val promise = TestPromise()
-    withDefaultIdentifier(delegateThrowing(error)) {
+    withDefaultIdentifier(identifierThrowing(error)) {
       RNPingDeviceIdCommon.getDefaultDeviceId(promise)
       assertTrue(promise.await())
       assertEquals("DEVICE_ID_ERROR", promise.rejectedCode)
@@ -82,32 +81,28 @@ class RNPingDeviceIdTest {
   }
 
   private fun withDefaultIdentifier(
-    delegate: DeviceIdentifierDelegate,
+    identifier: DeviceIdentifier,
     block: () -> Unit
   ): Unit {
-    val field = RNPingDeviceIdCommon::class.java.getDeclaredField("defaultIdentifier")
-    field.isAccessible = true
-    val original = field.get(RNPingDeviceIdCommon) as DeviceIdentifierDelegate
+    val original = DeviceIdentifier.identifier
     try {
-      field.set(RNPingDeviceIdCommon, delegate)
+      DeviceIdentifier.identifier = identifier
       block()
     } finally {
-      field.set(RNPingDeviceIdCommon, original)
+      DeviceIdentifier.identifier = original
     }
   }
 
-  private fun delegateReturning(value: String): DeviceIdentifierDelegate {
-    val identifier = object : DeviceIdentifier {
+  private fun identifierReturning(value: String): DeviceIdentifier {
+    return object : DeviceIdentifier {
       override val id: suspend () -> String = { value }
     }
-    return DeviceIdentifierDelegate(identifier)
   }
 
-  private fun delegateThrowing(error: Exception): DeviceIdentifierDelegate {
-    val identifier = object : DeviceIdentifier {
+  private fun identifierThrowing(error: Exception): DeviceIdentifier {
+    return object : DeviceIdentifier {
       override val id: suspend () -> String = { throw error }
     }
-    return DeviceIdentifierDelegate(identifier)
   }
 
   private class TestPromise : Promise {
