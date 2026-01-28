@@ -16,8 +16,20 @@ export type NativeOidcClientConfig = {
   discoveryEndpoint: string;
   redirectUri: string;
   scopes: string[];
+  /**
+   * Storage configuration id resolved from the Storage module.
+   */
   storageId?: string;
+  /**
+   * Logger configuration id resolved from the Logger module.
+   */
+  loggerId?: string;
   acrValues?: string;
+  signOutRedirectUri?: string;
+  state?: string;
+  nonce?: string;
+  uiLocales?: string;
+  refreshThreshold?: number;
   loginHint?: string;
   display?: string;
   prompt?: string;
@@ -29,6 +41,9 @@ export type NativeOidcClientConfig = {
  */
 export type NativeOidcAuthorizeOptions = {
   acrValues?: string;
+  state?: string;
+  nonce?: string;
+  uiLocales?: string;
   loginHint?: string;
   display?: string;
   prompt?: string;
@@ -41,8 +56,6 @@ export type NativeOidcAuthorizeOptions = {
 export type NativeOidcAuthorizeResult =
   | {
       type: 'success';
-      code: string;
-      state?: string;
     }
   | {
       type: 'cancel';
@@ -70,8 +83,10 @@ export interface Spec extends TurboModule {
   ): Promise<NativeOidcAuthorizeResult>;
   hasUser(webClientId: string): Promise<boolean>;
   token(webClientId: string): Promise<NativeOidcTokens>;
+  refresh(webClientId: string): Promise<NativeOidcTokens>;
+  userinfo(webClientId: string, cache: boolean): Promise<Record<string, unknown>>;
   revoke(webClientId: string): Promise<void>;
-  logout(webClientId: string): Promise<void>;
+  logout(webClientId: string): Promise<boolean>;
 }
 
 /**

@@ -57,6 +57,18 @@ RCT_EXPORT_MODULE()
   [[self swiftImpl] token:webClientId resolver:resolve rejecter:reject];
 }
 
+// userinfo(webClientId, cache): Promise<Record<string, unknown>>
+- (void)userinfo:(NSString *)webClientId
+           cache:(BOOL)cache
+         resolve:(RCTPromiseResolveBlock)resolve
+          reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] userinfo:webClientId
+                       cache:cache
+                    resolver:resolve
+                    rejecter:reject];
+}
+
 // revoke(webClientId): Promise<void>
 - (void)revoke:(NSString *)webClientId
        resolve:(RCTPromiseResolveBlock)resolve
@@ -69,7 +81,7 @@ RCT_EXPORT_MODULE()
                   rejecter:reject];
 }
 
-// logout(webClientId): Promise<void>
+// logout(webClientId): Promise<boolean>
 - (void)logout:(NSString *)webClientId
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject

@@ -66,6 +66,15 @@ RCT_EXPORT_METHOD(token:(NSString *)webClientId
   [RNPingOidcCommon token:webClientId resolver:resolve rejecter:reject];
 }
 
+/// Fetch user profile data from the userinfo endpoint.
+RCT_EXPORT_METHOD(userinfo:(NSString *)webClientId
+                 cache:(BOOL)cache
+              resolver:(RCTPromiseResolveBlock)resolve
+              rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon userinfo:webClientId cache:cache resolver:resolve rejecter:reject];
+}
+
 /// Revoke tokens for the current user.
 RCT_EXPORT_METHOD(revoke:(NSString *)webClientId
                resolver:(RCTPromiseResolveBlock)resolve

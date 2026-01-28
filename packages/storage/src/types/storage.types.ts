@@ -15,6 +15,10 @@ import type { BaseStorageConfig } from "../NativeRNPingStorage";
  * 
  * Session storage typically stores temporary authentication state and session
  * data during Journey flows.
+ *
+ * @remarks
+ * The returned object includes an `id` that can be passed into native-backed
+ * modules requiring a storage handle.
  * 
  * @see {@link BaseStorageConfig} for configuration options
  * @see {@link configureSessionStorage} to register and resolve a configuration
@@ -46,6 +50,10 @@ export type SessionStorage = BaseStorageConfig;
  * 
  * OIDC storage is critical for securely managing authentication tokens and
  * should use appropriate security settings for your application's requirements.
+ *
+ * @remarks
+ * The returned object includes an `id` that can be passed into native-backed
+ * modules requiring a storage handle.
  * 
  * @see {@link BaseStorageConfig} for configuration options
  * @see {@link configureOidcStorage} to register and resolve a configuration

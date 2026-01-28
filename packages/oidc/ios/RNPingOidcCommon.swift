@@ -62,6 +62,17 @@ public class RNPingOidcCommon: NSObject {
     rejecter("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented", nil)
   }
 
+  /// Fetch user profile data from the userinfo endpoint.
+  @objc
+  public static func userinfo(
+    _ webClientId: String,
+    cache: Bool,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    rejecter("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented", nil)
+  }
+
   /// Revoke tokens for the current user.
   @objc
   public static func revoke(

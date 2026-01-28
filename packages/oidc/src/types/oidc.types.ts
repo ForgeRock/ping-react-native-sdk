@@ -5,7 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { Tokens } from '@ping-identity/rn-types';
+import type { GenericError, Tokens } from '@ping-identity/rn-types';
+import type { StorageConfig } from '@react-native-pingidentity/storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -36,14 +37,52 @@ export type OidcClientConfig = {
   scopes: string[];
 
   /**
-   * Optional storage identifier created by the storage module.
+   * Optional storage configuration created by the storage module.
+   *
+   * @remarks
+   * Pass the object returned by `configureOidcStorage`. The native layer uses
+   * the embedded `id` to resolve the registered storage configuration.
    */
-  storageId?: string;
+  storage?: StorageConfig;
 
   /**
    * Optional authentication context class reference values.
    */
   acrValues?: string;
+
+  /**
+   * Optional sign-out redirect URI for end-session flows.
+   */
+  signOutRedirectUri?: string;
+
+  /**
+   * Optional state parameter for the authorization request.
+   */
+  state?: string;
+
+  /**
+   * Optional nonce parameter for the authorization request.
+   */
+  nonce?: string;
+
+  /**
+   * Optional UI locales parameter for the authorization request.
+   */
+  uiLocales?: string;
+
+  /**
+   * Optional token refresh threshold in seconds.
+   */
+  refreshThreshold?: number;
+
+  /**
+   * Optional logger configuration or a previously registered logger handle.
+   *
+   * @remarks
+   * Pass the same config you would use with `configureLogger`, or pass
+   * `{ id }` from a manual `configureLogger()` call to reuse an existing logger.
+   */
+  logger?: { id: string };
 
   /**
    * Optional login hint for the authorization request.
@@ -70,10 +109,37 @@ export type OidcClientConfig = {
  * Optional overrides when launching an authorization request.
  */
 export type OidcAuthorizeOptions = {
+  /**
+   * Optional ACR values override for this authorization request.
+   */
   acrValues?: string;
+  /**
+   * Optional state override for this authorization request.
+   */
+  state?: string;
+  /**
+   * Optional nonce override for this authorization request.
+   */
+  nonce?: string;
+  /**
+   * Optional UI locales override for this authorization request.
+   */
+  uiLocales?: string;
+  /**
+   * Optional login hint for the authorization request.
+   */
   loginHint?: string;
+  /**
+   * Optional display parameter for the authorization request.
+   */
   display?: string;
+  /**
+   * Optional prompt parameter for the authorization request.
+   */
   prompt?: string;
+  /**
+   * Additional provider-specific parameters.
+   */
   additionalParameters?: Record<string, string>;
 };
 
@@ -83,12 +149,32 @@ export type OidcAuthorizeOptions = {
 export type OidcAuthorizeResult =
   | {
       type: 'success';
-      code: string;
-      state?: string;
     }
   | {
       type: 'cancel';
     };
+
+/**
+ * Error payload returned when OIDC operations fail.
+ *
+ * Matches the shared native/JS error contract defined in @ping-identity/rn-types.
+ */
+export type OidcError = GenericError;
+
+/**
+ * Stable error codes emitted by the OIDC module.
+ *
+ * @remarks
+ * Keep these in sync with the native error constants.
+ */
+export type OidcErrorCode =
+  | 'OIDC_AUTHORIZE_ERROR'
+  | 'OIDC_HAS_USER_ERROR'
+  | 'OIDC_TOKEN_ERROR'
+  | 'OIDC_REFRESH_ERROR'
+  | 'OIDC_USERINFO_ERROR'
+  | 'OIDC_REVOKE_ERROR'
+  | 'OIDC_LOGOUT_ERROR';
 
 /**
  * Native-backed OIDC client handle.
@@ -110,14 +196,28 @@ export type OidcUser = {
   token(): Promise<Tokens>;
 
   /**
+   * Force-refresh the token bundle.
+   */
+  refresh(): Promise<Tokens>;
+
+  /**
+   * Fetch user profile data from the userinfo endpoint.
+   *
+   * @param cache When true, reuse cached userinfo if available.
+   */
+  userinfo(cache?: boolean): Promise<Record<string, unknown>>;
+
+  /**
    * Revoke the current token bundle.
    */
   revoke(): Promise<void>;
 
   /**
    * Logout the current user session.
+   *
+   * @returns Whether the end-session flow completed successfully.
    */
-  logout(): Promise<void>;
+  logout(): Promise<boolean>;
 };
 
 /**

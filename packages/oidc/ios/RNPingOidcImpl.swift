@@ -59,6 +59,16 @@ public class RNPingOidcImpl: NSObject {
     RNPingOidcCommon.token(webClientId, resolver: resolver, rejecter: rejecter)
   }
 
+  /// Fetch user profile data from the userinfo endpoint.
+  public func userinfo(
+    _ webClientId: String,
+    cache: Bool,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.userinfo(webClientId, cache: cache, resolver: resolver, rejecter: rejecter)
+  }
+
   /// Revoke tokens for the current user.
   public func revoke(
     _ webClientId: String,

@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 buildscript {
   ext.getExtOrDefault = {name ->
     return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['Logger_' + name]
@@ -33,6 +35,8 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    def pkg = new JsonSlurper().parse(file("../package.json"))
+    buildConfigField "String", "VERSION_NAME", "\"${pkg.version}\""
   }
 
   buildFeatures {
@@ -74,7 +78,7 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation "com.pingidentity.sdks:logger:1.3.0-beta2"
+  implementation "com.pingidentity.sdks:logger:2.0.0-beta1"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":react-native-pingidentity-core"))
 

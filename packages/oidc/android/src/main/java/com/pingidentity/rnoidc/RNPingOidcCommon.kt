@@ -10,64 +10,426 @@ package com.pingidentity.rnoidc
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
-import java.util.concurrent.atomic.AtomicInteger
+import com.facebook.react.bridge.ReactApplicationContext
+import android.util.Log
+import com.pingidentity.android.ContextProvider
+import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.oidc.OidcClient
+import com.pingidentity.oidc.OidcWeb
+import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.error.ErrorType
+import com.reactnativepingidentity.core.error.GenericError
+import com.reactnativepingidentity.core.error.mapThrowableToGenericError
+import com.reactnativepingidentity.core.error.reject
+import com.reactnativepingidentity.core.registry.NativeHandle
+import com.reactnativepingidentity.logger.RNPingLoggerCommon
+import com.reactnativepingidentity.storage.StorageConfigRegistry
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Shared Android implementation for the Ping OIDC React Native module.
+ *
+ * @remarks
+ * This object manages lifecycle-safe, JS-facing handles for native OIDC clients
+ * and web clients. It keeps native instances in-memory to preserve state across
+ * bridge calls and ensures promise rejections map to the shared GenericError
+ * contract.
  */
 object RNPingOidcCommon {
 
-  private val clientCounter = AtomicInteger(0)
-  private val webClientCounter = AtomicInteger(0)
+  private const val TAG = "RNPingOidcCommon"
+
+  /** Scope for all async work dispatched by the bridge. */
+  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+  /** Core registry storing OIDC client configurations. */
+  private val clientRegistry = CoreRuntime.oidcClientRegistry
+  /** Core registry storing OIDC web clients. */
+  private val webRegistry = CoreRuntime.oidcWebClientRegistry
+  /** Core registry storing OIDC storage configurations. */
+  private val oidcStorageRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+  /** Factory for building native OIDC clients/web clients. */
+  private val clientFactory = OidcClientFactory(oidcStorageRegistry) { id ->
+    RNPingLoggerCommon.applyLogger(id)
+  }
+  /** Cached React context for resolving activity when needed. */
+  private var appContext: ReactApplicationContext? = null
+
+  /**
+   * Handle for a stored OIDC client configuration.
+   */
+  private data class OidcClientHandle(
+    val payload: OidcClientPayload,
+    val client: OidcClient
+  ) : NativeHandle
+
+  /**
+   * Handle for a configured web client.
+   *
+   * @property clientId The parent OIDC client id
+   * @property web The native OidcWeb instance
+   */
+  private data class OidcWebHandle(
+    val clientId: String,
+    val web: OidcWeb
+  ) : NativeHandle
+
+  /**
+   * Ensure the native Ping SDK is initialized with the app context.
+   *
+   * @param reactContext React application context from the module instance
+   */
+  @JvmStatic
+  fun configure(reactContext: ReactApplicationContext) {
+    appContext = reactContext
+    ContextProvider.init(reactContext.applicationContext)
+  }
 
   /**
    * Create a native-backed OIDC client and return its core identifier.
+   *
+   * @param config JS-provided config map
+   * @return Stable identifier for the stored client config
    */
   fun createClient(config: ReadableMap): String {
-    return "oidc-client-${clientCounter.incrementAndGet()}"
+    val parsed = OidcConfigParser.parseClientConfig(config)
+    val client = clientFactory.buildOidcClient(parsed)
+    return clientRegistry.register(OidcClientHandle(parsed, client))
   }
 
   /**
    * Create a native-backed OIDC web client from an existing client id.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @return Stable identifier for the created web client
    */
   fun createWebClient(clientId: String): String {
-    return "oidc-web-${webClientCounter.incrementAndGet()}"
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+      ?: throw IllegalArgumentException("Unknown OIDC client id: $clientId")
+    val webClientId = webRegistry.register(
+      OidcWebHandle(clientId, clientFactory.buildWebClient(handle.payload))
+    )
+    return webClientId
   }
 
   /**
    * Launch an authorization flow in the system browser.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param options Optional per-request overrides
+   * @param promise Bridge promise resolved with success/cancel or rejected with GenericError
    */
   fun authorize(webClientId: String, options: ReadableMap, promise: Promise) {
-    val result = Arguments.createMap()
-    result.putString("type", "cancel")
-    promise.resolve(result)
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_AUTHORIZE_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    val authorizeParams = OidcConfigParser.buildAuthorizeParams(options)
+    scope.launch {
+      updateCurrentActivity()
+      val result = try {
+        handle.web.authorize {
+          authorizeParams.forEach { (key, value) -> this[key] = value }
+        }
+      } catch (e: Exception) {
+        if (e is BrowserCanceledException || e is CancellationException) {
+          val canceled = Arguments.createMap()
+          canceled.putString("type", "cancel")
+          promise.resolve(canceled)
+          return@launch
+        }
+        promise.reject(OidcErrorMapper.mapAuthorizeThrowable(e), e)
+        return@launch
+      }
+
+      if (result.isSuccess) {
+        val payload = Arguments.createMap()
+        payload.putString("type", "success")
+        promise.resolve(payload)
+        return@launch
+      }
+
+      val error = result.exceptionOrNull()
+      if (error is BrowserCanceledException || error is CancellationException) {
+        val canceled = Arguments.createMap()
+        canceled.putString("type", "cancel")
+        promise.resolve(canceled)
+        return@launch
+      }
+
+      val mapped = OidcErrorMapper.mapAuthorizeThrowable(error)
+      promise.reject(mapped, error)
+    }
   }
 
   /**
    * Resolve whether a user is available for the given web client.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Bridge promise resolved with a boolean or rejected with GenericError
    */
   fun hasUser(webClientId: String, promise: Promise) {
-    promise.resolve(false)
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_HAS_USER_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        promise.resolve(user != null)
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_HAS_USER_ERROR), e)
+      }
+    }
   }
 
   /**
    * Resolve the current user's tokens.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
    */
   fun token(webClientId: String, promise: Promise) {
-    promise.reject("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented")
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_TOKEN_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        if (user == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_TOKEN_ERROR,
+            message = "No authenticated user is available for this OIDC web client"
+          )
+          promise.reject(error)
+          return@launch
+        }
+
+        when (val result = user.token()) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_TOKEN_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Force-refresh tokens for the current user.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
+   */
+  fun refresh(webClientId: String, promise: Promise) {
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_REFRESH_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        if (user == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_REFRESH_ERROR,
+            message = "No authenticated user is available for this OIDC web client"
+          )
+          promise.reject(error)
+          return@launch
+        }
+
+        when (val result = user.refresh()) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REFRESH_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Fetch user profile data from the userinfo endpoint.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param cache When true, return cached userinfo if available
+   * @param promise Bridge promise resolved with userinfo map or rejected with GenericError
+   */
+  fun userinfo(webClientId: String, cache: Boolean, promise: Promise) {
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_USERINFO_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        if (user == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_USERINFO_ERROR,
+            message = "No authenticated user is available for this OIDC web client"
+          )
+          promise.reject(error)
+          return@launch
+        }
+
+        when (val result = user.userinfo(cache)) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_USERINFO_ERROR), e)
+      }
+    }
   }
 
   /**
    * Revoke tokens for the current user.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Bridge promise resolved on success or rejected with GenericError
    */
   fun revoke(webClientId: String, promise: Promise) {
-    promise.resolve(null)
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_REVOKE_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        if (user == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_REVOKE_ERROR,
+            message = "No authenticated user is available for this OIDC web client"
+          )
+          promise.reject(error)
+          return@launch
+        }
+        user.revoke()
+        promise.resolve(null)
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REVOKE_ERROR), e)
+      }
+    }
   }
 
   /**
    * Logout the current user.
+   *
+   * @param webClientId Identifier returned by [createWebClient]
+   * @param promise Bridge promise resolved on success or rejected with GenericError
    */
   fun logout(webClientId: String, promise: Promise) {
-    promise.resolve(null)
+    val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
+        message = "No OIDC web client found for id $webClientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = handle.web.user()
+        if (user == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
+            message = "No authenticated user is available for this OIDC web client"
+          )
+          promise.reject(error)
+          return@launch
+        }
+        val clientHandle = clientRegistry.resolve(handle.clientId) as? OidcClientHandle
+        if (clientHandle == null) {
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
+            message = "No OIDC client found for id ${handle.clientId}"
+          )
+          promise.reject(error)
+          return@launch
+        }
+        val result = clientHandle.client.endSession()
+        promise.resolve(result)
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_LOGOUT_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Update any native activity context if needed.
+   *
+   * @remarks
+   * The Ping SDK's ContextProvider exposes currentActivity internally, so we
+   * cannot set it here. This hook exists for future SDK visibility changes.
+   */
+  private fun updateCurrentActivity() {
+    // ContextProvider exposes currentActivity as internal; no-op for now.
   }
 }

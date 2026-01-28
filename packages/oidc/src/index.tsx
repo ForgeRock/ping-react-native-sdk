@@ -5,22 +5,51 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { configureLogger } from '@react-native-pingidentity/logger';
 import { getNativeModule } from './NativeRNPingOidc';
 import type {
   OidcAuthorizeOptions,
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
+  // OidcError,
+  // OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';
 
 /**
  * Create a native-backed OIDC client.
+ *
+ * @remarks
+ * If you configured storage with `configureOidcStorage`, pass the returned
+ * configuration in `config.storage` to bind the native token storage.
  */
 export function createOidcClient(config: OidcClientConfig): OidcClient {
-  const clientId = getNativeModule().createClient(config);
+  const loggerId =
+    config.logger && 'id' in config.logger
+      ? config.logger.id
+      : config.logger
+      ? configureLogger(config.logger)
+      : undefined;
+  const clientId = getNativeModule().createClient({
+    ...config,
+    storageId: resolveStorageId(config.storage),
+    loggerId,
+  });
   return { id: clientId };
+}
+
+function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (!value.id) {
+    throw new Error(
+      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+    );
+  }
+  return value.id;
 }
 
 /**
@@ -31,6 +60,8 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
 
   const user: OidcUser = {
     token: () => getNativeModule().token(webClientId),
+    refresh: () => getNativeModule().refresh(webClientId),
+    userinfo: (cache?: boolean) => getNativeModule().userinfo(webClientId, cache ?? false),
     revoke: () => getNativeModule().revoke(webClientId),
     logout: () => getNativeModule().logout(webClientId),
   };
@@ -52,6 +83,8 @@ export type {
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
+  OidcError,
+  OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';

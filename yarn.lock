@@ -2525,6 +2525,7 @@ __metadata:
   resolution: "@ping-identity/rn-oidc@workspace:packages/oidc"
   dependencies:
     "@ping-identity/rn-types": "npm:^0.1.0"
+    "@react-native-pingidentity/logger": "npm:^0.1.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
@@ -2783,7 +2784,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@react-native-pingidentity/logger@workspace:*, @react-native-pingidentity/logger@workspace:packages/logger":
+"@react-native-pingidentity/logger@npm:^0.1.0, @react-native-pingidentity/logger@workspace:*, @react-native-pingidentity/logger@workspace:packages/logger":
   version: 0.0.0-use.local
   resolution: "@react-native-pingidentity/logger@workspace:packages/logger"
   dependencies:

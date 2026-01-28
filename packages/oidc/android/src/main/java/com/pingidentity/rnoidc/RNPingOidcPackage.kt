@@ -16,11 +16,17 @@ import java.util.HashMap
 
 /**
  * React Native package for the Ping OIDC module.
+ *
+ * @remarks
+ * This package chooses between the TurboModule and classic module
+ * implementations based on the new-architecture flag.
  */
 class RNPingOidcPackage : BaseReactPackage() {
 
   /**
    * Detect whether the new architecture is enabled at build time.
+   *
+   * @return True when the build enables the TurboModule architecture
    */
   private val isNewArchEnabled: Boolean
     get() {
@@ -30,6 +36,10 @@ class RNPingOidcPackage : BaseReactPackage() {
 
   /**
    * Provide the correct module implementation for the current architecture.
+   *
+   * @param name React Native module name
+   * @param reactContext React application context
+   * @return The appropriate module instance or null when not applicable
    */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return when (name) {
@@ -53,6 +63,8 @@ class RNPingOidcPackage : BaseReactPackage() {
 
   /**
    * Register module metadata for React Native.
+   *
+   * @return Provider for module metadata
    */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
