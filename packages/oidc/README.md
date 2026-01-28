@@ -82,6 +82,31 @@ const oidcClient = createOidcClient({
 });
 ```
 
+### Configure token storage (optional)
+
+If you want to customize native token storage, configure it with the Storage module and pass the
+handle into the OIDC client configuration.
+
+```ts
+import { configureOidcStorage } from '@react-native-pingidentity/storage';
+import { createOidcClient } from '@ping-identity/rn-oidc';
+
+const oidcStorage = configureOidcStorage({
+  fileName: 'ping-oidc',
+  keyAlias: 'ping-oidc',
+  strongBoxPreferred: true,
+  cacheStrategy: 'cache_on_failure',
+});
+
+const oidcClient = createOidcClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+  storage: oidcStorage,
+});
+```
+
 ### Create the web-capable client and authorize
 
 ```ts
