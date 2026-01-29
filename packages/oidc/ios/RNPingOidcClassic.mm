@@ -33,6 +33,57 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createWebClient:(NSString *)clientId)
   return [RNPingOidcCommon createWebClient:clientId];
 }
 
+#pragma mark - Client Tokens
+
+/// Resolve the current client's tokens.
+RCT_EXPORT_METHOD(clientToken:(NSString *)clientId
+              resolver:(RCTPromiseResolveBlock)resolve
+              rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon clientToken:clientId resolver:resolve rejecter:reject];
+}
+
+/// Force-refresh the current client's tokens.
+RCT_EXPORT_METHOD(clientRefresh:(NSString *)clientId
+              resolver:(RCTPromiseResolveBlock)resolve
+              rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon clientRefresh:clientId resolver:resolve rejecter:reject];
+}
+
+/// Fetch user profile data from the userinfo endpoint for the client.
+RCT_EXPORT_METHOD(clientUserinfo:(NSString *)clientId
+                 cache:(BOOL)cache
+              resolver:(RCTPromiseResolveBlock)resolve
+              rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon clientUserinfo:clientId cache:cache resolver:resolve rejecter:reject];
+}
+
+/// Revoke tokens for the current client.
+RCT_EXPORT_METHOD(clientRevoke:(NSString *)clientId
+               resolver:(RCTPromiseResolveBlock)resolve
+               rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon clientRevoke:clientId
+                 resolver:^(BOOL value) {
+                   resolve(@(value));
+                 }
+                 rejecter:reject];
+}
+
+/// End the current client session.
+RCT_EXPORT_METHOD(clientEndSession:(NSString *)clientId
+               resolver:(RCTPromiseResolveBlock)resolve
+               rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon clientEndSession:clientId
+                 resolver:^(BOOL value) {
+                   resolve(@(value));
+                 }
+                 rejecter:reject];
+}
+
 #pragma mark - Authorize
 
 /// Launch the authorization flow.

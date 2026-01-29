@@ -38,7 +38,7 @@ export default function App() {
         authTabs: {
           ephemeral: true,
           colorScheme: 'dark',
-          toolbarColor: '#0057B8',
+          toolbarColor: '#5333a5',
           navigationBarColor: '#001F3F',
         },
       },

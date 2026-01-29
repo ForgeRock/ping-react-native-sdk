@@ -126,12 +126,26 @@ export default function OidcScreen() {
         },
       });
     storageRef.current = storage;
+    /*
+     * OpenID configuration override example.
+     *
+     * Provide known OpenID endpoints to skip discovery:
+     *
+     * const openIdOverride = {
+     *   authorizationEndpoint: 'https://example.com/oauth2/authorize',
+     *   tokenEndpoint: 'https://example.com/oauth2/token',
+     *   userinfoEndpoint: 'https://example.com/oauth2/userinfo',
+     *   endSessionEndpoint: 'https://example.com/oauth2/signoff',
+     *   revocationEndpoint: 'https://example.com/oauth2/revoke',
+     * };
+     */
     const client = createOidcClient({
       clientId,
       discoveryEndpoint,
       redirectUri,
       scopes,
       storage: storage,
+      // openId: openIdOverride,
       signOutRedirectUri: `${redirectUri}/logout`,
       state: 'sample-state',
       nonce: 'sample-nonce',
@@ -333,23 +347,20 @@ export default function OidcScreen() {
         setCheckingSession(false);
         return;
       }
-      const success = await user.logout();
-      log.info('OIDC logout success:', success);
-      if (success) {
-        setHasUser(false);
-        setTokens('');
-        setUserinfo('');
-      }
+      await user.logout();
+      log.info('OIDC logout success');
+      setHasUser(false);
+      setTokens('');
+      setUserinfo('');
       log.info('OIDC logout UI updated');
       setActionResult('logout', {
         webClientId: webClient.id,
-        success,
         hasUserBefore: true,
       });
       setCheckingSession(false);
       setLoading(prev => ({ ...prev, logout: false }));
     } catch (err) {
-      log.error('OIDC logout failed:', err);
+      log.error('OIDC logout failed:', err as OidcError);
       setCheckingSession(false);
       setError(formatOidcError(err, 'OIDC_LOGOUT_ERROR', 'OIDC logout failed'));
       setLoading(prev => ({ ...prev, logout: false }));

@@ -82,28 +82,36 @@ const oidcClient = createOidcClient({
 });
 ```
 
-### Configure token storage (optional)
+### Use the base client directly (no browser)
 
-If you want to customize native token storage, configure it with the Storage module and pass the
-handle into the OIDC client configuration.
+The OIDC client can be used without launching a browser. This is useful for headless token
+operations such as refresh, revoke, or userinfo.
 
 ```ts
-import { configureOidcStorage } from '@react-native-pingidentity/storage';
-import { createOidcClient } from '@ping-identity/rn-oidc';
+const tokens = await oidcClient.token();
+const refreshed = await oidcClient.refresh();
+const profile = await oidcClient.userinfo(true);
+await oidcClient.revoke();
+const endSession = await oidcClient.endSession();
+```
 
-const oidcStorage = configureOidcStorage({
-  fileName: 'ping-oidc',
-  keyAlias: 'ping-oidc',
-  strongBoxPreferred: true,
-  cacheStrategy: 'cache_on_failure',
-});
+### Override OpenID configuration (optional)
 
+If you already know the OpenID endpoints, you can skip discovery by providing them directly.
+
+```ts
 const oidcClient = createOidcClient({
   clientId: 'client-id',
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
-  storage: oidcStorage,
+  openId: {
+    authorizationEndpoint: 'https://example.com/oauth2/authorize',
+    tokenEndpoint: 'https://example.com/oauth2/token',
+    userinfoEndpoint: 'https://example.com/oauth2/userinfo',
+    endSessionEndpoint: 'https://example.com/oauth2/signoff',
+    revocationEndpoint: 'https://example.com/oauth2/revoke',
+  },
 });
 ```
 
@@ -123,6 +131,30 @@ const result = await oidcWebClient.authorize({
 // result: { type: 'success' } | { type: 'cancel' }
 ```
 
+### Optional: Configure browser behavior (Android)
+
+If you want to customize Custom Tabs/Auth Tabs behavior, configure the Browser module once at
+app startup. The OIDC module will inherit these settings.
+
+```ts
+import { configureBrowser } from '@react-native-pingidentity/browser';
+
+configureBrowser({
+  android: {
+    customTabs: {
+      showTitle: true,
+      urlBarHidingEnabled: true,
+      colorScheme: 'system',
+    },
+    authTabs: {
+      ephemeral: true,
+      colorScheme: 'dark',
+      toolbarColor: '#0B3D91',
+    },
+  },
+});
+```
+
 ### Work with user state
 
 ```ts
@@ -132,7 +164,7 @@ if (await oidcWebClient.hasUser()) {
   const refreshed = await user?.refresh();
   const profile = await user?.userinfo(true);
   await user?.revoke();
-  const endSession = await user?.logout();
+  await user?.logout();
 }
 ```
 

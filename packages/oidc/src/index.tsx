@@ -26,6 +26,11 @@ import type {
  * configuration in `config.storage` to bind the native token storage.
  */
 export function createOidcClient(config: OidcClientConfig): OidcClient {
+  if (!config.discoveryEndpoint && !config.openId) {
+    throw new Error(
+      '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
+    );
+  }
   const loggerId =
     config.logger && 'id' in config.logger
       ? config.logger.id
@@ -37,7 +42,14 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
     storageId: resolveStorageId(config.storage),
     loggerId,
   });
-  return { id: clientId };
+  return {
+    id: clientId,
+    token: () => getNativeModule().clientToken(clientId),
+    refresh: () => getNativeModule().clientRefresh(clientId),
+    userinfo: (cache?: boolean) => getNativeModule().clientUserinfo(clientId, cache ?? false),
+    revoke: () => getNativeModule().clientRevoke(clientId),
+    endSession: () => getNativeModule().clientEndSession(clientId),
+  };
 }
 
 function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
@@ -83,6 +95,7 @@ export type {
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
+  OidcOpenIdConfiguration,
   OidcError,
   OidcErrorCode,
   OidcUser,

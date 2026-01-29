@@ -31,6 +31,52 @@ public class RNPingOidcImpl: NSObject {
     return RNPingOidcCommon.createWebClient(clientId)
   }
 
+  /// Resolve tokens for the current client.
+  public func clientToken(
+    _ clientId: String,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.clientToken(clientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Refresh tokens for the current client.
+  public func clientRefresh(
+    _ clientId: String,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.clientRefresh(clientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Fetch user profile data from the userinfo endpoint for the client.
+  public func clientUserinfo(
+    _ clientId: String,
+    cache: Bool,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.clientUserinfo(clientId, cache: cache, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Revoke tokens for the current client.
+  public func clientRevoke(
+    _ clientId: String,
+    resolver: @escaping (Bool) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.clientRevoke(clientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Logout the current client session.
+  public func clientEndSession(
+    _ clientId: String,
+    resolver: @escaping (Bool) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.clientEndSession(clientId, resolver: resolver, rejecter: rejecter)
+  }
+
   /// Launch the authorization flow.
   public func authorize(
     _ webClientId: String,

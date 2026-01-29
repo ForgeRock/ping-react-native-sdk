@@ -23,8 +23,19 @@ export type OidcClientConfig = {
 
   /**
    * Discovery endpoint for the OIDC provider.
+   *
+   * @remarks
+   * Required unless `openId` is provided.
    */
-  discoveryEndpoint: string;
+  discoveryEndpoint?: string;
+
+  /**
+   * Optional OpenID configuration override.
+   *
+   * @remarks
+   * When provided, the native layer skips discovery and uses these endpoints directly.
+   */
+  openId?: OidcOpenIdConfiguration;
 
   /**
    * Redirect URI for authorization responses.
@@ -106,6 +117,36 @@ export type OidcClientConfig = {
 };
 
 /**
+ * OpenID configuration override for native clients.
+ */
+export type OidcOpenIdConfiguration = {
+  /**
+   * Authorization endpoint URL.
+   */
+  authorizationEndpoint: string;
+  /**
+   * Token endpoint URL.
+   */
+  tokenEndpoint: string;
+  /**
+   * Userinfo endpoint URL.
+   */
+  userinfoEndpoint: string;
+  /**
+   * End-session endpoint URL.
+   */
+  endSessionEndpoint?: string;
+  /**
+   * Ping end-session endpoint URL (ID token only).
+   */
+  pingEndIdpSessionEndpoint?: string;
+  /**
+   * Token revocation endpoint URL.
+   */
+  revocationEndpoint?: string;
+};
+
+/**
  * Optional overrides when launching an authorization request.
  */
 export type OidcAuthorizeOptions = {
@@ -184,6 +225,35 @@ export type OidcClient = {
    * Internal native identifier for the client.
    */
   id: string;
+
+  /**
+   * Retrieve the current token bundle.
+   */
+  token(): Promise<Tokens>;
+
+  /**
+   * Force-refresh the token bundle.
+   */
+  refresh(): Promise<Tokens>;
+
+  /**
+   * Fetch user profile data from the userinfo endpoint.
+   *
+   * @param cache When true, reuse cached userinfo if available.
+   */
+  userinfo(cache?: boolean): Promise<Record<string, unknown>>;
+
+  /**
+   * Revoke the current token bundle.
+   */
+  revoke(): Promise<void>;
+
+  /**
+   * End the current user session.
+   *
+   * @returns Whether the end-session flow completed successfully.
+   */
+  endSession(): Promise<boolean>;
 };
 
 /**
@@ -215,9 +285,10 @@ export type OidcUser = {
   /**
    * Logout the current user session.
    *
-   * @returns Whether the end-session flow completed successfully.
+   * @remarks
+   * Mirrors native OidcUser.logout() which does not return a value.
    */
-  logout(): Promise<boolean>;
+  logout(): Promise<void>;
 };
 
 /**

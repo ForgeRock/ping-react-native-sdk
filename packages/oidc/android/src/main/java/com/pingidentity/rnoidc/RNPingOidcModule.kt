@@ -56,6 +56,57 @@ class RNPingOidcModule(reactContext: ReactApplicationContext) :
   }
 
   /**
+   * Resolve the current client's tokens.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Promise resolved with token payload or rejected with GenericError
+   */
+  override fun clientToken(clientId: String, promise: Promise) {
+    RNPingOidcCommon.clientToken(clientId, promise)
+  }
+
+  /**
+   * Force-refresh the current client's tokens.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Promise resolved with token payload or rejected with GenericError
+   */
+  override fun clientRefresh(clientId: String, promise: Promise) {
+    RNPingOidcCommon.clientRefresh(clientId, promise)
+  }
+
+  /**
+   * Fetch user profile data from the userinfo endpoint for the client.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param cache When true, return cached userinfo if available
+   * @param promise Promise resolved with userinfo payload or rejected with GenericError
+   */
+  override fun clientUserinfo(clientId: String, cache: Boolean, promise: Promise) {
+    RNPingOidcCommon.clientUserinfo(clientId, cache, promise)
+  }
+
+  /**
+   * Revoke tokens for the current client.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Promise resolved on success or rejected with GenericError
+   */
+  override fun clientRevoke(clientId: String, promise: Promise) {
+    RNPingOidcCommon.clientRevoke(clientId, promise)
+  }
+
+  /**
+   * Logout the current client session.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Promise resolved with end-session status or rejected with GenericError
+   */
+  override fun clientEndSession(clientId: String, promise: Promise) {
+    RNPingOidcCommon.clientEndSession(clientId, promise)
+  }
+
+  /**
    * Launch an authorization flow in the system browser.
    *
    * @param webClientId Identifier returned by [createWebClient]

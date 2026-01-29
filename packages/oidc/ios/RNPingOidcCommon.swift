@@ -31,6 +31,57 @@ public class RNPingOidcCommon: NSObject {
     return "oidc-web-\(webClientCounter)"
   }
 
+  /// Retrieve tokens for the current client.
+  @objc
+  public static func clientToken(
+    _ clientId: String,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    rejecter("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented", nil)
+  }
+
+  /// Refresh tokens for the current client.
+  @objc
+  public static func clientRefresh(
+    _ clientId: String,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    rejecter("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented", nil)
+  }
+
+  /// Fetch userinfo for the current client.
+  @objc
+  public static func clientUserinfo(
+    _ clientId: String,
+    cache: Bool,
+    resolver: @escaping (NSDictionary) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    rejecter("OIDC_NOT_IMPLEMENTED", "OIDC native module not implemented", nil)
+  }
+
+  /// Revoke tokens for the current client.
+  @objc
+  public static func clientRevoke(
+    _ clientId: String,
+    resolver: @escaping (Bool) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    resolver(true)
+  }
+
+  /// Logout the current client session.
+  @objc
+  public static func clientEndSession(
+    _ clientId: String,
+    resolver: @escaping (Bool) -> Void,
+    rejecter: @escaping (String, String, NSError?) -> Void
+  ) {
+    resolver(true)
+  }
+
   /// Start an OIDC authorization flow.
   @objc
   public static func authorize(

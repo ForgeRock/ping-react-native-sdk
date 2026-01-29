@@ -28,6 +28,55 @@ RCT_EXPORT_MODULE()
   return [[self swiftImpl] createWebClient:clientId];
 }
 
+// clientToken(clientId): Promise<Tokens>
+- (void)clientToken:(NSString *)clientId
+            resolve:(RCTPromiseResolveBlock)resolve
+             reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] clientToken:clientId resolver:resolve rejecter:reject];
+}
+
+// clientRefresh(clientId): Promise<Tokens>
+- (void)clientRefresh:(NSString *)clientId
+              resolve:(RCTPromiseResolveBlock)resolve
+               reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] clientRefresh:clientId resolver:resolve rejecter:reject];
+}
+
+// clientUserinfo(clientId, cache): Promise<Record<string, unknown>>
+- (void)clientUserinfo:(NSString *)clientId
+                 cache:(BOOL)cache
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] clientUserinfo:clientId cache:cache resolver:resolve rejecter:reject];
+}
+
+// clientRevoke(clientId): Promise<void>
+- (void)clientRevoke:(NSString *)clientId
+             resolve:(RCTPromiseResolveBlock)resolve
+              reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] clientRevoke:clientId
+                        resolver:^(BOOL value) {
+                          resolve(@(value));
+                        }
+                        rejecter:reject];
+}
+
+// clientEndSession(clientId): Promise<boolean>
+- (void)clientEndSession:(NSString *)clientId
+             resolve:(RCTPromiseResolveBlock)resolve
+              reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] clientEndSession:clientId
+                        resolver:^(BOOL value) {
+                          resolve(@(value));
+                        }
+                        rejecter:reject];
+}
+
 // authorize(webClientId, options): Promise<OidcAuthorizeResult>
 - (void)authorize:(NSString *)webClientId
           options:(JS::NativeRNPingOidc::NativeOidcAuthorizeOptions &)options

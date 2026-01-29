@@ -10,6 +10,7 @@ package com.pingidentity.rnoidc
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcClientConfig
 import com.pingidentity.oidc.OidcWeb
+import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.oidc.module.Oidc
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
@@ -47,6 +48,7 @@ internal class OidcClientFactory(
         if (config.additionalParameters.isNotEmpty()) {
           additionalParameters = config.additionalParameters
         }
+        applyOpenIdIfPresent(config.openId)
         applyStorageIfPresent(config.storageId)
       }
     }
@@ -74,6 +76,7 @@ internal class OidcClientFactory(
       if (config.additionalParameters.isNotEmpty()) {
         additionalParameters = config.additionalParameters
       }
+      applyOpenIdIfPresent(config.openId)
       applyStorageIfPresent(config.storageId)
     }
   }
@@ -89,6 +92,20 @@ internal class OidcClientFactory(
     storage {
       applyStorageConfig(storageConfig)
     }
+  }
+
+  private fun OidcClientConfig.applyOpenIdIfPresent(openId: OpenIdPayload?) {
+    if (openId == null) {
+      return
+    }
+    this.openId = OpenIdConfiguration(
+      authorizationEndpoint = openId.authorizationEndpoint,
+      tokenEndpoint = openId.tokenEndpoint,
+      userinfoEndpoint = openId.userinfoEndpoint,
+      endSessionEndpoint = openId.endSessionEndpoint ?: "",
+      pingEndIdpSessionEndpoint = openId.pingEndIdpSessionEndpoint ?: "",
+      revocationEndpoint = openId.revocationEndpoint ?: ""
+    )
   }
 
   private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfig) {

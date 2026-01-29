@@ -16,6 +16,7 @@ import com.pingidentity.android.ContextProvider
 import com.pingidentity.browser.BrowserCanceledException
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcWeb
+import com.pingidentity.oidc.OidcUser
 import com.reactnativepingidentity.core.CoreRuntime
 import com.reactnativepingidentity.core.error.ErrorType
 import com.reactnativepingidentity.core.error.GenericError
@@ -63,7 +64,8 @@ object RNPingOidcCommon {
    */
   private data class OidcClientHandle(
     val payload: OidcClientPayload,
-    val client: OidcClient
+    val client: OidcClient,
+    val user: OidcUser
   ) : NativeHandle
 
   /**
@@ -97,7 +99,8 @@ object RNPingOidcCommon {
   fun createClient(config: ReadableMap): String {
     val parsed = OidcConfigParser.parseClientConfig(config)
     val client = clientFactory.buildOidcClient(parsed)
-    return clientRegistry.register(OidcClientHandle(parsed, client))
+    val user = OidcUser(client)
+    return clientRegistry.register(OidcClientHandle(parsed, client, user))
   }
 
   /**
@@ -113,6 +116,165 @@ object RNPingOidcCommon {
       OidcWebHandle(clientId, clientFactory.buildWebClient(handle.payload))
     )
     return webClientId
+  }
+
+  /**
+   * Resolve the current client's tokens.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
+   */
+  fun clientToken(clientId: String, promise: Promise) {
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_TOKEN_ERROR,
+        message = "No OIDC client found for id $clientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        when (val result = handle.user.token()) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_TOKEN_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Force-refresh tokens for the current client.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
+   */
+  fun clientRefresh(clientId: String, promise: Promise) {
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_REFRESH_ERROR,
+        message = "No OIDC client found for id $clientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        when (val result = handle.user.refresh()) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REFRESH_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Fetch user profile data from the userinfo endpoint for the client.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param cache When true, return cached userinfo if available
+   * @param promise Bridge promise resolved with userinfo map or rejected with GenericError
+   */
+  fun clientUserinfo(clientId: String, cache: Boolean, promise: Promise) {
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_USERINFO_ERROR,
+        message = "No OIDC client found for id $clientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        when (val result = handle.user.userinfo(cache)) {
+          is com.pingidentity.utils.Result.Success ->
+            promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
+          is com.pingidentity.utils.Result.Failure -> {
+            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
+            promise.reject(error)
+          }
+        }
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_USERINFO_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Revoke tokens for the current client.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Bridge promise resolved on success or rejected with GenericError
+   */
+  fun clientRevoke(clientId: String, promise: Promise) {
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_REVOKE_ERROR,
+        message = "No OIDC client found for id $clientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        handle.user.revoke()
+        promise.resolve(null)
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REVOKE_ERROR), e)
+      }
+    }
+  }
+
+  /**
+   * Logout the current client session.
+   *
+   * @param clientId Identifier returned by [createClient]
+   * @param promise Bridge promise resolved with end-session status or rejected with GenericError
+   */
+  fun clientEndSession(clientId: String, promise: Promise) {
+    val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
+    if (handle == null) {
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
+        message = "No OIDC client found for id $clientId"
+      )
+      promise.reject(error)
+      return
+    }
+
+    scope.launch {
+      try {
+        val result = handle.client.endSession()
+        promise.resolve(result)
+      } catch (e: Exception) {
+        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_LOGOUT_ERROR), e)
+      }
+    }
   }
 
   /**
@@ -404,18 +566,8 @@ object RNPingOidcCommon {
           promise.reject(error)
           return@launch
         }
-        val clientHandle = clientRegistry.resolve(handle.clientId) as? OidcClientHandle
-        if (clientHandle == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
-            message = "No OIDC client found for id ${handle.clientId}"
-          )
-          promise.reject(error)
-          return@launch
-        }
-        val result = clientHandle.client.endSession()
-        promise.resolve(result)
+        user.logout()
+        promise.resolve(null)
       } catch (e: Exception) {
         promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_LOGOUT_ERROR), e)
       }

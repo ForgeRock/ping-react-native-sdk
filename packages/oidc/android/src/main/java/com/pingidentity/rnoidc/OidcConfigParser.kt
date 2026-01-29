@@ -18,6 +18,7 @@ import com.reactnativepingidentity.core.utils.requireStringArray
 internal data class OidcClientPayload(
   val clientId: String,
   val discoveryEndpoint: String,
+  val openId: OpenIdPayload?,
   val redirectUri: String,
   val scopes: List<String>,
   val storageId: String?,
@@ -35,6 +36,18 @@ internal data class OidcClientPayload(
 )
 
 /**
+ * Optional OpenID configuration override supplied by JS.
+ */
+internal data class OpenIdPayload(
+  val authorizationEndpoint: String,
+  val tokenEndpoint: String,
+  val userinfoEndpoint: String,
+  val endSessionEndpoint: String?,
+  val pingEndIdpSessionEndpoint: String?,
+  val revocationEndpoint: String?
+)
+
+/**
  * Parses JS configuration maps into strongly-typed Kotlin payloads.
  */
 internal object OidcConfigParser {
@@ -46,13 +59,19 @@ internal object OidcConfigParser {
    */
   fun parseClientConfig(config: ReadableMap): OidcClientPayload {
     val clientId = requireString(config, "clientId")
-    val discoveryEndpoint = requireString(config, "discoveryEndpoint")
+    val openId = parseOpenId(config)
+    val discoveryEndpoint = if (openId == null) {
+      requireString(config, "discoveryEndpoint")
+    } else {
+      config.getString("discoveryEndpoint") ?: ""
+    }
     val redirectUri = requireString(config, "redirectUri")
     val scopes = requireStringArray(config, "scopes")
 
     return OidcClientPayload(
       clientId = clientId,
       discoveryEndpoint = discoveryEndpoint,
+      openId = openId,
       redirectUri = redirectUri,
       scopes = scopes,
       storageId = if (config.hasKey("storageId")) config.getString("storageId") else null,
@@ -78,6 +97,33 @@ internal object OidcConfigParser {
         readStringMap(config.getMap("additionalParameters"))
       } else {
         emptyMap()
+      }
+    )
+  }
+
+  private fun parseOpenId(config: ReadableMap): OpenIdPayload? {
+    if (!config.hasKey("openId")) {
+      return null
+    }
+    val openIdMap = config.getMap("openId") ?: return null
+    return OpenIdPayload(
+      authorizationEndpoint = requireString(openIdMap, "authorizationEndpoint"),
+      tokenEndpoint = requireString(openIdMap, "tokenEndpoint"),
+      userinfoEndpoint = requireString(openIdMap, "userinfoEndpoint"),
+      endSessionEndpoint = if (openIdMap.hasKey("endSessionEndpoint")) {
+        openIdMap.getString("endSessionEndpoint")
+      } else {
+        null
+      },
+      pingEndIdpSessionEndpoint = if (openIdMap.hasKey("pingEndIdpSessionEndpoint")) {
+        openIdMap.getString("pingEndIdpSessionEndpoint")
+      } else {
+        null
+      },
+      revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
+        openIdMap.getString("revocationEndpoint")
+      } else {
+        null
       }
     )
   }

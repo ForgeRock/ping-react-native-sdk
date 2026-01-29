@@ -13,7 +13,15 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
  */
 export type NativeOidcClientConfig = {
   clientId: string;
-  discoveryEndpoint: string;
+  discoveryEndpoint?: string;
+  openId?: {
+    authorizationEndpoint: string;
+    tokenEndpoint: string;
+    userinfoEndpoint: string;
+    endSessionEndpoint?: string;
+    pingEndIdpSessionEndpoint?: string;
+    revocationEndpoint?: string;
+  };
   redirectUri: string;
   scopes: string[];
   /**
@@ -77,6 +85,11 @@ export type NativeOidcTokens = {
 export interface Spec extends TurboModule {
   createClient(config: NativeOidcClientConfig): string;
   createWebClient(clientId: string): string;
+  clientToken(clientId: string): Promise<NativeOidcTokens>;
+  clientRefresh(clientId: string): Promise<NativeOidcTokens>;
+  clientUserinfo(clientId: string, cache: boolean): Promise<Record<string, unknown>>;
+  clientRevoke(clientId: string): Promise<void>;
+  clientEndSession(clientId: string): Promise<boolean>;
   authorize(
     webClientId: string,
     options: NativeOidcAuthorizeOptions
@@ -86,7 +99,7 @@ export interface Spec extends TurboModule {
   refresh(webClientId: string): Promise<NativeOidcTokens>;
   userinfo(webClientId: string, cache: boolean): Promise<Record<string, unknown>>;
   revoke(webClientId: string): Promise<void>;
-  logout(webClientId: string): Promise<boolean>;
+  logout(webClientId: string): Promise<void>;
 }
 
 /**
