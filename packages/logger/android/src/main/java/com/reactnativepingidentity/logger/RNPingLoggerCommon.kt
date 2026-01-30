@@ -155,8 +155,8 @@ object RNPingLoggerCommon {
    */
   private fun applyNativeLevel(level: NativeLoggerLevel) {
     Logger.logger = when (level) {
-      NativeLoggerLevel.STANDARD -> RNPingSdkLogger.standard
-      NativeLoggerLevel.WARN -> RNPingSdkLogger.warn
+      NativeLoggerLevel.STANDARD -> Logger.STANDARD
+      NativeLoggerLevel.WARN -> Logger.WARN
       NativeLoggerLevel.NONE -> Logger.NONE
     }
   }

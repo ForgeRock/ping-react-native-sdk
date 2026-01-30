@@ -59,6 +59,7 @@ object RNPingOidcCommon {
   /** Cached React context for resolving activity when needed. */
   private var appContext: ReactApplicationContext? = null
 
+
   /**
    * Handle for a stored OIDC client configuration.
    */
@@ -95,6 +96,7 @@ object RNPingOidcCommon {
    *
    * @param config JS-provided config map
    * @return Stable identifier for the stored client config
+   * @throws IllegalArgumentException when required configuration is missing
    */
   fun createClient(config: ReadableMap): String {
     val parsed = OidcConfigParser.parseClientConfig(config)
@@ -108,6 +110,7 @@ object RNPingOidcCommon {
    *
    * @param clientId Identifier returned by [createClient]
    * @return Stable identifier for the created web client
+   * @throws IllegalArgumentException when the client id is unknown
    */
   fun createWebClient(clientId: String): String {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle

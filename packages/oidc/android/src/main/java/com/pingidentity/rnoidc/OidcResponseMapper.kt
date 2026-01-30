@@ -20,6 +20,9 @@ internal object OidcResponseMapper {
 
   /**
    * Convert native tokens into the JS-facing token payload.
+   *
+   * @param token Native token payload
+   * @return React Native bridge map of token values
    */
   fun encodeTokens(token: Token): ReadableMap {
     val expiresAt = (System.currentTimeMillis() / 1000) + token.expiresIn
@@ -33,6 +36,9 @@ internal object OidcResponseMapper {
 
   /**
    * Convert userinfo payload into a React Native map.
+   *
+   * @param userinfo Native userinfo payload
+   * @return React Native bridge map of userinfo values
    */
   fun encodeUserinfo(userinfo: JsonObject) = JsonBridgeMapper.encodeJsonObject(userinfo)
 }

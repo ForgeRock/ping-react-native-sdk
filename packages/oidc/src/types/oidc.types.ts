@@ -6,6 +6,8 @@
  */
 
 import type { GenericError, Tokens } from '@ping-identity/rn-types';
+import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
+import type { LoggerConfig } from '@react-native-pingidentity/logger';
 import type { StorageConfig } from '@react-native-pingidentity/storage';
 
 /**
@@ -57,6 +59,14 @@ export type OidcClientConfig = {
   storage?: StorageConfig;
 
   /**
+   * iOS-only browser configuration for OIDC web login.
+   *
+   * @remarks
+   * Mirrors Ping iOS SDK `OidcWebConfig` settings. Ignored on Android.
+   */
+  ios?: IOSBrowserOpenOptions;
+
+  /**
    * Optional authentication context class reference values.
    */
   acrValues?: string;
@@ -93,7 +103,7 @@ export type OidcClientConfig = {
    * Pass the same config you would use with `configureLogger`, or pass
    * `{ id }` from a manual `configureLogger()` call to reuse an existing logger.
    */
-  logger?: { id: string };
+  logger?: LoggerConfig | { id: string };
 
   /**
    * Optional login hint for the authorization request.

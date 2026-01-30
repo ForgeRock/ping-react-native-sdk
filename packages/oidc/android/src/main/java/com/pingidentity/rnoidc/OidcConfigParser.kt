@@ -60,11 +60,7 @@ internal object OidcConfigParser {
   fun parseClientConfig(config: ReadableMap): OidcClientPayload {
     val clientId = requireString(config, "clientId")
     val openId = parseOpenId(config)
-    val discoveryEndpoint = if (openId == null) {
-      requireString(config, "discoveryEndpoint")
-    } else {
-      config.getString("discoveryEndpoint") ?: ""
-    }
+    val discoveryEndpoint = requireString(config, "discoveryEndpoint")
     val redirectUri = requireString(config, "redirectUri")
     val scopes = requireStringArray(config, "scopes")
 
@@ -130,6 +126,9 @@ internal object OidcConfigParser {
 
   /**
    * Build authorization parameter overrides from JS options.
+   *
+   * @param options JS options map
+   * @return Normalized authorization parameters
    */
   fun buildAuthorizeParams(options: ReadableMap): MutableMap<String, String> {
     val params = mutableMapOf<String, String>()

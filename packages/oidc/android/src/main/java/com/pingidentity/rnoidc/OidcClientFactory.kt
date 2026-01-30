@@ -27,6 +27,9 @@ internal class OidcClientFactory(
 
   /**
    * Build a native OIDC web client from stored JS configuration.
+   *
+   * @param config Parsed JS client payload
+   * @return Configured native OIDC web client
    */
   fun buildWebClient(config: OidcClientPayload): OidcWeb {
     return OidcWeb {
@@ -56,6 +59,9 @@ internal class OidcClientFactory(
 
   /**
    * Build a native OIDC client instance.
+   *
+   * @param config Parsed JS client payload
+   * @return Configured native OIDC client
    */
   fun buildOidcClient(config: OidcClientPayload): OidcClient {
     return OidcClient {
@@ -83,6 +89,8 @@ internal class OidcClientFactory(
 
   /**
    * Apply storage configuration from Core registry if an id is provided.
+   *
+   * @param storageId Storage configuration identifier
    */
   private fun OidcClientConfig.applyStorageIfPresent(storageId: String?) {
     if (storageId.isNullOrBlank()) {

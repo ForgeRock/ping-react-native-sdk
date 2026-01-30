@@ -9,9 +9,7 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native OIDC
 
-The Ping Identity React Native OIDC module exposes native-backed OIDC clients for PingOne and
-ForgeRock platforms. It delegates all protocol-sensitive operations to the native SDKs while
-presenting a clear JavaScript API.
+This module exposes native-backed OIDC clients for PingOne and ForgeRock platforms.
 
 ## Integrating the SDK into your project
 
@@ -40,11 +38,6 @@ const oidcClient = createOidcClient({
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
-  signOutRedirectUri: 'com.example.app://logout',
-  state: 'my-state',
-  nonce: 'my-nonce',
-  uiLocales: 'en-US',
-  refreshThreshold: 60,
   logger: { id: loggerId },
 });
 ```
@@ -73,11 +66,6 @@ const oidcClient = createOidcClient({
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
   storage: oidcStorage,
-  signOutRedirectUri: 'com.example.app://logout',
-  state: 'my-state',
-  nonce: 'my-nonce',
-  uiLocales: 'en-US',
-  refreshThreshold: 60,
   logger: { id: loggerId },
 });
 ```
@@ -97,7 +85,8 @@ const endSession = await oidcClient.endSession();
 
 ### Override OpenID configuration (optional)
 
-If you already know the OpenID endpoints, you can skip discovery by providing them directly.
+You may provide OpenID endpoints directly. Discovery is still required by the native SDKs, so
+keep `discoveryEndpoint` even when using overrides.
 
 ```ts
 const oidcClient = createOidcClient({
@@ -121,12 +110,7 @@ const oidcClient = createOidcClient({
 import { createOidcWebClient } from '@ping-identity/rn-oidc';
 
 const oidcWebClient = createOidcWebClient(oidcClient);
-const result = await oidcWebClient.authorize({
-  acrValues: 'urn:acr:form',
-  state: 'my-state',
-  nonce: 'my-nonce',
-  uiLocales: 'en-US',
-});
+const result = await oidcWebClient.authorize();
 
 // result: { type: 'success' } | { type: 'cancel' }
 ```
@@ -151,6 +135,26 @@ configureBrowser({
       colorScheme: 'dark',
       toolbarColor: '#0B3D91',
     },
+  },
+});
+```
+
+### Optional: Configure browser behavior (iOS)
+
+The iOS OIDC SDK supports per-client browser configuration. Provide `ios` options when creating
+the OIDC client.
+
+```ts
+import { createOidcClient } from '@ping-identity/rn-oidc';
+
+const oidcClient = createOidcClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+  ios: {
+    browserType: 'authSession',
+    browserMode: 'login',
   },
 });
 ```

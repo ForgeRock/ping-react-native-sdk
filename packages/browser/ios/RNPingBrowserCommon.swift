@@ -98,9 +98,14 @@ public class RNPingBrowserCommon: NSObject {
     let browserModeRaw = iosOptions?["browserMode"] as? String
 
     let browserType: BrowserType
-    if browserTypeRaw == "ephemeralAuthSession" {
+    switch browserTypeRaw {
+    case "ephemeralAuthSession":
       browserType = .ephemeralAuthSession
-    } else {
+    case "nativeBrowserApp":
+      browserType = .nativeBrowserApp
+    case "sfViewController":
+      browserType = .sfViewController
+    default:
       browserType = .authSession
     }
     let browserMode: BrowserMode

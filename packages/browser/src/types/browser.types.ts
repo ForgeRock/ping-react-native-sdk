@@ -69,20 +69,22 @@ export type BrowserOpenOptions = {
   /**
    * iOS-only options.
    */
-  ios?: {
-    /**
-     * Browser type for iOS.
-     *
-     * @remarks
-     * Only `authSession` and `ephemeralAuthSession` are implemented.
-     */
-    browserType?: 'authSession' | 'ephemeralAuthSession';
+  ios?: IOSBrowserOpenOptions;
+};
 
-    /**
-     * Browser mode (reserved; currently informational).
-     */
-    browserMode?: 'login' | 'logout' | 'custom';
-  };
+/**
+ * iOS-only options for launching a browser session.
+ */
+export type IOSBrowserOpenOptions = {
+  /**
+   * Browser type for iOS.
+   */
+  browserType?: 'authSession' | 'ephemeralAuthSession' | 'nativeBrowserApp' | 'sfViewController';
+
+  /**
+   * Browser mode (reserved; currently informational).
+   */
+  browserMode?: 'login' | 'logout' | 'custom';
 };
 
 /**

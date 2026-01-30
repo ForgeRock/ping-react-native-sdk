@@ -21,6 +21,9 @@ internal object OidcErrorMapper {
 
   /**
    * Map authorization failures into the shared error contract.
+   *
+   * @param error Throwable raised by the OIDC SDK
+   * @return Normalized GenericError payload
    */
   fun mapAuthorizeThrowable(error: Throwable?): GenericError {
     return when (error) {
@@ -41,6 +44,10 @@ internal object OidcErrorMapper {
 
   /**
    * Map OIDC SDK error results into the shared error contract.
+   *
+   * @param error OIDC SDK error value
+   * @param code Stable error code to include in the payload
+   * @return Normalized GenericError payload
    */
   fun mapOidcError(error: OidcError, code: String): GenericError {
     return when (error) {

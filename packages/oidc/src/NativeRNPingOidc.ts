@@ -104,6 +104,9 @@ export interface Spec extends TurboModule {
 
 /**
  * Resolve the native module for the OIDC API.
+ *
+ * @returns Native module implementation for the current architecture.
+ * @throws Error when the classic module is missing at runtime.
  */
 export function getNativeModule(): Spec {
   const isNewArchEnabled =

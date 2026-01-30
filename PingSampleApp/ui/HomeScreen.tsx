@@ -28,26 +28,49 @@ export default function HomeScreen({ navigation }: Props) {
     },
     {
       title: '🔐 Launch OIDC',
+      subtitle: 'OpenID Connect Flow',
+      icon: '🔒',
       screen: 'Oidc',
     },
   ];
 
   return (
     <View style={commonStyles.homeContainer}>
-      <Image
-        source={require('../assets/ping-logo.jpg')}
-        style={commonStyles.homeLogo}
-      />
+      <View style={commonStyles.homeHeader}>
+        <Image
+          source={require('../assets/ping-logo.jpg')}
+          style={commonStyles.homeHeaderLogo}
+        />
+        <Text style={commonStyles.homeHeaderTitle}>React Native Sample App</Text>
+        <Text style={commonStyles.homeHeaderSubtitle}>Version 1.0</Text>
+      </View>
 
-      {menuItems.map((item, index) => (
-        <TouchableOpacity
-          key={index}
-          style={commonStyles.homeRow}
-          onPress={() => navigation.navigate(item.screen as any, item.params)}
-        >
-          <Text style={commonStyles.homeRowText}>{item.title}</Text>
-        </TouchableOpacity>
-      ))}
+      <View style={commonStyles.homeList}>
+        {menuItems.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            style={commonStyles.homeRow}
+            onPress={() => navigation.navigate(item.screen as any, item.params)}
+          >
+            <View style={commonStyles.homeRowContent}>
+              {item.subtitle ? (
+                <View style={commonStyles.homeRowCompact}>
+                  <Text style={commonStyles.homeRowIcon}>{item.icon}</Text>
+                  <View style={commonStyles.homeRowTextStack}>
+                    <Text style={commonStyles.homeRowTitle}>OIDC Login</Text>
+                    <Text style={commonStyles.homeRowSubtitle}>
+                      {item.subtitle}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={commonStyles.homeRowText}>{item.title}</Text>
+              )}
+            </View>
+            <Text style={commonStyles.homeRowChevron}>›</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={commonStyles.homeFooter}>
         <Text style={commonStyles.homeFooterText}>

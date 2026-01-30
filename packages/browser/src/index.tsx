@@ -62,6 +62,7 @@ export type {
   BrowserConfig,
   BrowserError,
   BrowserErrorCode,
+  IOSBrowserOpenOptions,
   BrowserOpenOptions,
   BrowserResult,
 } from './types';

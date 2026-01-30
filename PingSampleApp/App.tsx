@@ -10,6 +10,7 @@ import OidcScreen from './ui/OidcScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
 import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureLogger } from '@react-native-pingidentity/logger';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -25,8 +26,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   useEffect(() => {
     // Init login clients
-    loginClient.init()
+    loginClient.init();
     loginClient2.init();
+
+    configureLogger({ level: 'info' });
 
     configureBrowser({
       android: {
