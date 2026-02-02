@@ -25,6 +25,7 @@ internal object OidcResponseMapper {
    * @return React Native bridge map of token values
    */
   fun encodeTokens(token: Token): ReadableMap {
+    // TODO: Prefer native Token.expiresAt once Android SDK exposes it (matches iOS behavior).
     val expiresAt = (System.currentTimeMillis() / 1000) + token.expiresIn
     return buildTokenMap(
       accessToken = token.accessToken,
@@ -41,4 +42,5 @@ internal object OidcResponseMapper {
    * @return React Native bridge map of userinfo values
    */
   fun encodeUserinfo(userinfo: JsonObject) = JsonBridgeMapper.encodeJsonObject(userinfo)
+
 }
