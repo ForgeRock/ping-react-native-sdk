@@ -29,16 +29,16 @@ React Native Browser package unless you plan to use it directly elsewhere in you
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
+import { logger } from '@react-native-pingidentity/logger';
 
-
-const loggerId = configureLogger({ level: 'debug' });
+const debugLogger = logger({ level: 'debug' });
 
 const oidcClient = createOidcClient({
   clientId: 'client-id',
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
-  logger: { id: loggerId },
+  logger: debugLogger,
 });
 ```
 
@@ -50,6 +50,7 @@ handle into the OIDC client configuration.
 ```ts
 import { configureOidcStorage } from '@react-native-pingidentity/storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
+import { logger } from '@react-native-pingidentity/logger';
 
 const oidcStorage = configureOidcStorage({
   fileName: 'ping-oidc',
@@ -58,7 +59,7 @@ const oidcStorage = configureOidcStorage({
   cacheStrategy: 'cache_on_failure',
 });
 
-const loggerId = configureLogger({ level: 'debug' });
+const debugLogger = logger({ level: 'debug' });
 
 const oidcClient = createOidcClient({
   clientId: 'client-id',
@@ -66,7 +67,7 @@ const oidcClient = createOidcClient({
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
   storage: oidcStorage,
-  logger: { id: loggerId },
+  logger: debugLogger,
 });
 ```
 

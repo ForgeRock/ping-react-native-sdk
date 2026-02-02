@@ -27,8 +27,8 @@ log.changeLevel('debug');
 // Defaults to level "none" when omitted
 const silentLog = logger();
 
-// Get native logger id for other modules (e.g. journey config)
-const logId = configureLogger({ level: 'info' });
+// Get native logger handle for other modules (e.g. journey config)
+const logHandle = configureLogger({ level: 'info' });
 ```
 
 

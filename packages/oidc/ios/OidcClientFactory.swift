@@ -14,6 +14,7 @@ import PingOidc
 import PingStorage
 import RNPingStorage
 import PingBrowser
+import RNPingLogger
 
 /// Builder helpers for OIDC native clients.
 enum OidcClientFactory {
@@ -25,6 +26,7 @@ enum OidcClientFactory {
   /// Naming matches the Android factory for parity.
   static func buildOidcClient(_ payload: OidcClientPayload) -> OidcClientConfig {
     let config = OidcClientConfig()
+    _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
     config.clientId = payload.clientId
     config.discoveryEndpoint = payload.discoveryEndpoint ?? ""
     config.redirectUri = payload.redirectUri
@@ -61,6 +63,7 @@ enum OidcClientFactory {
   /// - Returns: Native OIDC web client.
   static func buildWebClient(_ payload: OidcClientPayload) -> OidcWeb {
     return OidcWeb.createOidcWeb { config in
+      _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
       config.logger = LogManager.logger
       if let browserType = mapBrowserType(payload.browserType) {
         config.browserType = browserType

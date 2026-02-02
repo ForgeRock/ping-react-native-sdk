@@ -13,7 +13,7 @@ import {
   configureOidcStorage,
   OidcStorage,
 } from '@react-native-pingidentity/storage';
-import { configureLogger, logger } from '@react-native-pingidentity/logger';
+import { logger } from '@react-native-pingidentity/logger';
 import {
   createOidcClient,
   createOidcWebClient,
@@ -25,8 +25,7 @@ import {
 export default function OidcScreen() {
   const webClientDefaultRef = useRef<OidcWebClient | null>(null);
   const storageRef = useRef<OidcStorage | null>(null);
-  const loggerIdRef = useRef<string | null>(null);
-  const log = useMemo(() => logger({ level: 'debug' }), []);
+  const loggerInstance = useMemo(() => logger({ level: 'none' }), []);
   const [result, setResult] = useState<string>('');
   const [tokens, setTokens] = useState<string>('');
   const [userinfo, setUserinfo] = useState<string>('');
@@ -141,7 +140,7 @@ export default function OidcScreen() {
     clientId: pingAdvancedIdentityCloudConfig.clientId,
     discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
     redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
-    scopes: pingAdvancedIdentityCloudConfig.scopes,
+    scopes: [...pingAdvancedIdentityCloudConfig.scopes],
     signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
   };
 
@@ -150,8 +149,6 @@ export default function OidcScreen() {
     if (ref.current) {
       return ref.current;
     }
-    const loggerId = loggerIdRef.current ?? configureLogger({ level: 'debug' });
-    loggerIdRef.current = loggerId;
     const storage =
       storageRef.current ??
       configureOidcStorage({
@@ -185,7 +182,7 @@ export default function OidcScreen() {
     const client = createOidcClient({
       ...baseConfig,
       storage: storage,
-      logger: { id: loggerId },
+      logger: loggerInstance,
     });
     const webClient = createOidcWebClient(client);
     ref.current = webClient;
@@ -299,24 +296,20 @@ export default function OidcScreen() {
     setLoading(prev => ({ ...prev, logout: true }));
 
     try {
-      log.info('OIDC logout requested');
       const webClient = getWebClient();
       const user = await webClient.user();
       if (!user) {
-        log.warn('OIDC logout skipped: no active user');
         setHasUser(false);
         setCheckingSession(false);
         return;
       }
       await user.logout();
-      log.info('OIDC logout success:');
       setHasUser(false);
       setTokens('');
       setUserinfo('');
       setUserinfoDetails(null);
       setShowRawUserinfo(false);
 
-      log.info('OIDC logout UI updated');
       setActionResult('logout', {
         webClientId: webClient.id,
         success: true,
@@ -325,7 +318,6 @@ export default function OidcScreen() {
       setCheckingSession(false);
       setLoading(prev => ({ ...prev, logout: false }));
     } catch (err) {
-      log.error('OIDC logout failed:', err as OidcError);
       setCheckingSession(false);
       setError(formatOidcError(err, 'OIDC_LOGOUT_ERROR', 'OIDC logout failed'));
       setLoading(prev => ({ ...prev, logout: false }));

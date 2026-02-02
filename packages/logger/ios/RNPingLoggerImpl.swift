@@ -114,6 +114,32 @@ public class RNPingLoggerImpl: NSObject {
     }
   }
 
+  /// Applies a previously registered logger by id.
+  /// - Parameter id: The registry ID of the logger to apply.
+  /// - Returns: True when the logger was resolved and applied.
+  @objc
+  public func applyLogger(_ id: String?) -> Bool {
+    guard let id, !id.isEmpty else {
+      return false
+    }
+
+    var applied = false
+    let semaphore = DispatchSemaphore(value: 0)
+
+    Task {
+      if let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle {
+        Self.applyNativeLevel(handle.level)
+        applied = true
+      } else {
+        print("RNPingLogger: No logger registered for id \(id)")
+      }
+      semaphore.signal()
+    }
+
+    semaphore.wait()
+    return applied
+  }
+
   // MARK: - Helpers
 
   /// Parses a log level value from configuration.

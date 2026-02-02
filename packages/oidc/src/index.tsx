@@ -5,7 +5,6 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { configureLogger, logger as createLogger } from '@react-native-pingidentity/logger';
 import { getNativeModule } from './NativeRNPingOidc';
 import type {
   OidcAuthorizeOptions,
@@ -17,9 +16,12 @@ import type {
   OidcUser,
   OidcWebClient,
 } from './types';
-const jsLoggerRegistry = new Map<string, ReturnType<typeof createLogger>>();
-const noopLogger = {
-  changeLevel: () => {},
+import type { LoggerInstance, LogLevel } from '@react-native-pingidentity/logger';
+
+const loggerRegistry = new Map<string, LoggerInstance>();
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: (_level: LogLevel) => {},
   error: () => {},
   warn: () => {},
   info: () => {},
@@ -43,45 +45,86 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
     );
   }
-  const loggerConfig = config.logger && 'id' in config.logger ? null : config.logger;
-  const jsLogger = loggerConfig ? createLogger(loggerConfig) : noopLogger;
-  jsLogger.debug('OIDC createClient config', config);
+  const loggerInstance = config.logger ?? noopLogger;
+  loggerInstance.debug(
+    `OIDC createClient config ${JSON.stringify({
+      clientId: config.clientId,
+      discoveryEndpoint: config.discoveryEndpoint,
+      redirectUri: config.redirectUri,
+      scopes: config.scopes,
+      openIdOverride: Boolean(config.openId),
+      storage: Boolean(config.storage),
+      nativeLogger: Boolean(config.nativeLogger),
+      logger: Boolean(config.logger),
+      refreshThreshold: config.refreshThreshold,
+      signOutRedirectUri: config.signOutRedirectUri,
+      acrValues: config.acrValues,
+      uiLocales: config.uiLocales,
+      prompt: config.prompt,
+      display: config.display,
+      loginHint: config.loginHint,
+      hasAdditionalParameters: Boolean(config.additionalParameters?.length),
+    })}`
+  );
   const loggerId =
-    config.logger && 'id' in config.logger
-      ? config.logger.id
-      : loggerConfig
-      ? configureLogger(loggerConfig)
-      : undefined;
+    config.nativeLogger?.id ?? config.logger?.nativeHandle?.id ?? undefined;
   const clientId = getNativeModule().createClient({
     ...config,
     storageId: resolveStorageId(config.storage),
     loggerId,
   });
-  if (loggerConfig) {
-    jsLoggerRegistry.set(clientId, jsLogger);
-  }
-  jsLogger.info('OIDC createClient success', { clientId });
+  loggerRegistry.set(clientId, loggerInstance);
+  loggerInstance.info('OIDC createClient success');
   return {
     id: clientId,
-    token: () => {
-      jsLogger.info('OIDC client token', { clientId });
-      return getNativeModule().clientToken(clientId);
+    token: async () => {
+      loggerInstance.debug('OIDC client token requested');
+      try {
+        return await getNativeModule().clientToken(clientId);
+      } catch (error) {
+        loggerInstance.error('OIDC client token failed');
+        throw error;
+      }
     },
-    refresh: () => {
-      jsLogger.info('OIDC client refresh', { clientId });
-      return getNativeModule().clientRefresh(clientId);
+    refresh: async () => {
+      loggerInstance.debug('OIDC client refresh requested');
+      try {
+        return await getNativeModule().clientRefresh(clientId);
+      } catch (error) {
+        loggerInstance.error('OIDC client refresh failed');
+        throw error;
+      }
     },
-    userinfo: (cache?: boolean) => {
-      jsLogger.info('OIDC client userinfo', { clientId, cache: cache ?? false });
-      return getNativeModule().clientUserinfo(clientId, cache ?? false);
+    userinfo: async (cache?: boolean) => {
+      loggerInstance.debug(
+        `OIDC client userinfo requested ${JSON.stringify({
+          cache: cache ?? false,
+        })}`
+      );
+      try {
+        return await getNativeModule().clientUserinfo(clientId, cache ?? false);
+      } catch (error) {
+        loggerInstance.error('OIDC client userinfo failed');
+        throw error;
+      }
     },
-    revoke: () => {
-      jsLogger.info('OIDC client revoke', { clientId });
-      return getNativeModule().clientRevoke(clientId);
+    revoke: async () => {
+      loggerInstance.info('OIDC client revoke requested');
+      try {
+        return await getNativeModule().clientRevoke(clientId);
+      } catch (error) {
+        loggerInstance.error('OIDC client revoke failed');
+        throw error;
+      }
     },
-    endSession: () => {
-      jsLogger.info('OIDC client endSession', { clientId });
-      return getNativeModule().clientEndSession(clientId);
+    endSession: async () => {
+      loggerInstance.info('OIDC client endSession requested');
+      try {
+        return await getNativeModule().clientEndSession(clientId);
+      } catch (error) {
+        loggerInstance.error('OIDC client endSession failed');
+        throw error;
+      }
     },
   };
 }
@@ -105,48 +148,99 @@ function resolveStorageId(value?: OidcClientConfig['storage']): string | undefin
  * @returns Web client handle for browser-based authorization.
  */
 export function createOidcWebClient(client: OidcClient): OidcWebClient {
-  const jsLogger = jsLoggerRegistry.get(client.id) ?? noopLogger;
-  jsLogger.info('OIDC createWebClient', { clientId: client.id });
+  const loggerInstance = loggerRegistry.get(client.id) ?? noopLogger;
+  loggerInstance.debug('OIDC createWebClient requested');
   const webClientId = getNativeModule().createWebClient(client.id);
-  jsLogger.info('OIDC createWebClient success', { webClientId, clientId: client.id });
+  loggerInstance.info('OIDC createWebClient success');
 
   const user: OidcUser = {
-    token: () => {
-      jsLogger.info('OIDC user token', { webClientId });
-      return getNativeModule().token(webClientId);
+    token: async () => {
+      loggerInstance.debug('OIDC user token requested');
+      try {
+        return await getNativeModule().token(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC user token failed');
+        throw error;
+      }
     },
-    refresh: () => {
-      jsLogger.info('OIDC user refresh', { webClientId });
-      return getNativeModule().refresh(webClientId);
+    refresh: async () => {
+      loggerInstance.debug('OIDC user refresh requested');
+      try {
+        return await getNativeModule().refresh(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC user refresh failed');
+        throw error;
+      }
     },
-    userinfo: (cache?: boolean) => {
-      jsLogger.info('OIDC user userinfo', { webClientId, cache: cache ?? false });
-      return getNativeModule().userinfo(webClientId, cache ?? false);
+    userinfo: async (cache?: boolean) => {
+      loggerInstance.debug(
+        `OIDC user userinfo requested ${JSON.stringify({
+          cache: cache ?? false,
+        })}`
+      );
+      try {
+        return await getNativeModule().userinfo(webClientId, cache ?? false);
+      } catch (error) {
+        loggerInstance.error('OIDC user userinfo failed');
+        throw error;
+      }
     },
-    revoke: () => {
-      jsLogger.info('OIDC user revoke', { webClientId });
-      return getNativeModule().revoke(webClientId);
+    revoke: async () => {
+      loggerInstance.info('OIDC user revoke requested');
+      try {
+        return await getNativeModule().revoke(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC user revoke failed');
+        throw error;
+      }
     },
-    logout: () => {
-      jsLogger.info('OIDC user logout', { webClientId });
-      return getNativeModule().logout(webClientId);
+    logout: async () => {
+      loggerInstance.info('OIDC user logout requested');
+      try {
+        return await getNativeModule().logout(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC user logout failed');
+        throw error;
+      }
     },
   };
 
   return {
     id: webClientId,
-    authorize: (options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult> => {
-      jsLogger.info('OIDC authorize', { webClientId, options: options ?? {} });
-      return getNativeModule().authorize(webClientId, options ?? {});
+    authorize: async (options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult> => {
+      loggerInstance.info('OIDC authorize requested');
+      loggerInstance.debug(`OIDC authorize options ${JSON.stringify(options ?? {})}`);
+      try {
+        return await getNativeModule().authorize(webClientId, options ?? {});
+      } catch (error) {
+        loggerInstance.error('OIDC authorize failed');
+        throw error;
+      }
     },
-    hasUser: () => {
-      jsLogger.info('OIDC hasUser', { webClientId });
-      return getNativeModule().hasUser(webClientId);
+    hasUser: async () => {
+      loggerInstance.debug('OIDC hasUser requested');
+      try {
+        return await getNativeModule().hasUser(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC hasUser failed');
+        throw error;
+      }
     },
     user: async () => {
-      jsLogger.debug('OIDC user resolve', { webClientId });
-      const hasUser = await getNativeModule().hasUser(webClientId);
-      return hasUser ? user : null;
+      loggerInstance.debug('OIDC user resolve requested');
+      let hasUser: boolean;
+      try {
+        hasUser = await getNativeModule().hasUser(webClientId);
+      } catch (error) {
+        loggerInstance.error('OIDC hasUser failed');
+        throw error;
+      }
+      if (hasUser) {
+        loggerInstance.debug('OIDC hasUser true');
+        return user;
+      }
+      loggerInstance.debug('OIDC hasUser false');
+      return null;
     },
   };
 }

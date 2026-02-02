@@ -6,7 +6,13 @@
  */
 
 import { logger as sdkLogger } from '@forgerock/sdk-logger';
-import type { LogLevel, LoggerConfig, LoggerInstance, LogMessage } from './types/logger.types';
+import type {
+  LogLevel,
+  LoggerConfig,
+  LoggerInstance,
+  LogMessage,
+  NativeLoggerHandle,
+} from './types/logger.types';
 import NativeLogger, { type NativeLoggerLevel } from './NativeRNPingLogger';
 import pkg from '@react-native-pingidentity/logger/package.json';
 
@@ -64,14 +70,14 @@ function syncNativeLogger(id: string, level: LogLevel) {
 /**
  * Configures and registers a native logger instance.
  * @param config - Logger configuration options
- * @returns The unique identifier for the registered native logger
+ * @returns Handle to the registered native logger
  * @throws {Error} If the native logger registration fails
  * @public
  * @remarks
  * This function registers a logger with the native platform (iOS/Android)
  * and returns an identifier that can be used to sync logger settings.
  */
-export function configureLogger(config: LoggerConfig = {}): string {
+export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
   const level = config.level ?? 'none';
   const id = NativeLogger.registerLogger({
     level: nativeLevelMap[level],
@@ -83,7 +89,7 @@ export function configureLogger(config: LoggerConfig = {}): string {
     );
   }
 
-  return id;
+  return { id };
 }
 
 /**
@@ -127,13 +133,14 @@ export function logger(config: LoggerConfig = {}): LoggerInstance {
     level: logLevel,
     custom: createCustomLogger(config.custom, sdkTag),
   });
-  const id = configureLogger({ level: logLevel });
+  const handle = configureLogger({ level: logLevel });
 
   return {
+    nativeHandle: handle,
     changeLevel(level: LogLevel) {
       logLevel = level;
       jsLogger.changeLevel(level);
-      syncNativeLogger(id, logLevel);
+      syncNativeLogger(handle.id, logLevel);
     },
     error: (...args: LogMessage[]) => jsLogger.error(...args),
     warn: (...args: LogMessage[]) => jsLogger.warn(...args),

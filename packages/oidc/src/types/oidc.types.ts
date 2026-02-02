@@ -7,7 +7,10 @@
 
 import type { GenericError, Tokens } from '@ping-identity/rn-types';
 import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
-import type { LoggerConfig } from '@react-native-pingidentity/logger';
+import type {
+  LoggerInstance,
+  NativeLoggerHandle,
+} from '@react-native-pingidentity/logger';
 import type { StorageConfig } from '@react-native-pingidentity/storage';
 
 /**
@@ -97,13 +100,20 @@ export type OidcClientConfig = {
   refreshThreshold?: number;
 
   /**
-   * Optional logger configuration or a previously registered logger handle.
+   * Optional JavaScript logger instance.
    *
    * @remarks
-   * Pass the same config you would use with `configureLogger`, or pass
-   * `{ id }` from a manual `configureLogger()` call to reuse an existing logger.
+   * Provide a logger created with `logger()` to control JS log output.
    */
-  logger?: LoggerConfig | { id: string };
+  logger?: LoggerInstance;
+
+  /**
+   * Optional native logger handle.
+   *
+   * @remarks
+   * Pass the handle returned by `configureLogger()` to reuse a native logger.
+   */
+  nativeLogger?: NativeLoggerHandle;
 
   /**
    * Optional login hint for the authorization request.
