@@ -1,6 +1,12 @@
-import { TurboModuleRegistry, type TurboModule } from 'react-native';
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
 
- type Node = {
+type Node = {
   id: string;
   type: 'ContinueNode' | 'ErrorNode' | 'FailureNode' | 'SuccessNode';
   message?: string;
@@ -59,5 +65,44 @@ export interface Spec extends TurboModule {
   listRegisteredStoragesFromCore(): Promise<string[]>;
 }
 
+const turboModuleProxy = (global as typeof globalThis & {
+  __turboModuleProxy?: unknown;
+}).__turboModuleProxy;
 
-export default TurboModuleRegistry.getEnforcing<Spec>('RNPingJourney');
+const isNewArchEnabled =
+  typeof turboModuleProxy !== 'undefined' && turboModuleProxy != null;
+
+/**
+ * Resolves the native `<Spec>` implementation, preferring TurboModules when available.
+ *
+ * Falls back to the legacy `NativeModules` entry if the TurboModule is not registered or
+ * New Architecture has been disabled.
+ *
+ * @throws When no matching native module can be found.
+ */
+export function getNativeModule(): Spec {
+  if (isNewArchEnabled) {
+    try {
+      return TurboModuleRegistry.getEnforcing<Spec>('RNPingJourney');
+    } catch (error) {
+      console.warn(
+        'Journey TurboModule not registered; falling back to classic implementation.',
+        String(error)
+      );
+    }
+  }
+
+  const classic = NativeModules.RNPingJourney;
+  if (!classic) {
+    const available = Object.keys(NativeModules).slice(0, 10);
+    const message =
+      'Native RNPingJourney module not found at runtime.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(available);
+    throw new Error(message);
+  }
+
+  return classic as Spec;
+}
+
+export default getNativeModule();

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 package com.reactnativepingidentity.journey
 
 import com.facebook.react.bridge.ReactApplicationContext
@@ -52,8 +58,22 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
     // Local registry of Journey instances keyed by generated id
     private val journeyMap = mutableMapOf<String, Journey>()
-    // Store nodes *per Journey instance*, not global
-    private val nodeMap = mutableMapOf<String, Node?>()
+    // Store ContinueNode per Journey instance (only nodes that can advance).
+    private val nodeMap = mutableMapOf<String, ContinueNode?>()
+
+    init {
+        CoreRuntime.journeyCallbackResolver = { journeyId ->
+            nodeMap[journeyId]?.callbacks
+        }
+    }
+    /**
+     * Clear Journey handler and current node when the Journey has finished.
+     */
+    private fun clearIfFinished(journeyId: String, node: Node) {
+        if (node is SuccessNode || node is FailureNode || node is ErrorNode) {
+            nodeMap.remove(journeyId)
+        }
+    }
 
     override fun getName(): String = NAME
 
@@ -170,7 +190,6 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
             // Register instance locally
             val journeyId = UUID.randomUUID().toString()
             journeyMap[journeyId] = journey
-
             Log.d("RNPingJourney", "Journey instance created: $journeyId")
             promise.resolve(journeyId)
 
@@ -203,9 +222,10 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                     this.noSession = noSession
                 }
 
-                // store node for specific journeyId
-                nodeMap[journeyId] = node
+                val continueNode = node as? ContinueNode
+                nodeMap[journeyId] = continueNode
 
+                clearIfFinished(journeyId, node)
                 promise.resolve(serializeNode(node))
             } catch (e: Exception) {
                 promise.reject("START_ERROR", "Failed to start journey: ${e.message}", e)
@@ -227,7 +247,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
         }
 
         val currentNode = nodeMap[journeyId]
-        if (currentNode !is ContinueNode) {
+        if (currentNode == null) {
             promise.reject("NO_ACTIVE_JOURNEY", "No active journey. Call start() first.")
             return
         }
@@ -258,9 +278,10 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
             try {
                 val nextNode = currentNode.next()
 
-                // Store per instance
-                nodeMap[journeyId] = nextNode
+                val continueNode = nextNode as? ContinueNode
+                nodeMap[journeyId] = continueNode
 
+                clearIfFinished(journeyId, nextNode)
                 promise.resolve(serializeNode(nextNode))
             } catch (e: Exception) {
                 promise.reject("NEXT_ERROR", "Failed to proceed: ${e.message}", e)
@@ -284,8 +305,10 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
             try {
                 val resumedNode = journeyInstance.resume(android.net.Uri.parse(uri))
 
-                nodeMap[journeyId] = resumedNode
+                val continueNode = resumedNode as? ContinueNode
+                nodeMap[journeyId] = continueNode
 
+                clearIfFinished(journeyId, resumedNode)
                 promise.resolve(serializeNode(resumedNode))
             } catch (e: Exception) {
                 promise.reject("RESUME_ERROR", "Failed to resume: ${e.message}", e)
@@ -391,6 +414,8 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
             try {
                 val user = journeyInstance.user()
                 user?.logout()
+
+                nodeMap.remove(journeyId)
 
                 promise.resolve(true)
             } catch (e: Exception) {

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+ 
 import Foundation
 import PingJourney
 import PingLogger
@@ -14,12 +21,24 @@ public class RNPingJourneyImpl: NSObject {
   // Private initializer to enforce singleton
   @objc private override init() {
     super.init()
+    CoreRuntime.journeyCallbackResolver = { [weak self] journeyId in
+      guard let node = self?.nodeMap[journeyId] as? ContinueNode else {
+        return nil
+      }
+      return node.callbacks
+    }
   }
 
   // Local registry of Journey instances keyed by generated id
   private var journeyMap: [String: Journey] = [:]
   // Store nodes per journey instance
   private var nodeMap: [String: Node?] = [:]
+  /// Clear the current node when the Journey node flow completes.
+  private func clearIfFinished(_ journeyId: String, node: Node) async {
+    if node is SuccessNode || node is FailureNode || node is ErrorNode {
+      nodeMap.removeValue(forKey: journeyId)
+    }
+  }
 
   // MARK: - Node Serialization 
   private func serializeNode(_ node: Node) -> NSDictionary {
@@ -47,7 +66,7 @@ public class RNPingJourneyImpl: NSObject {
   @objc(configureJourney:resolver:rejecter:)
   public func configureJourney(
     _ config: NSDictionary,
-    resolver resolve: RCTPromiseResolveBlock,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     print("RNPingJourney: configureJourney called with \(config)")
@@ -94,8 +113,10 @@ public class RNPingJourneyImpl: NSObject {
     let journeyId = UUID().uuidString
     journeyMap[journeyId] = journey
 
-    print("RNPingJourney: Journey registered → \(journeyId)")
-    resolve(journeyId)
+    Task {
+      print("RNPingJourney: Journey registered → \(journeyId)")
+      resolve(journeyId)
+    }
   }
 
   // MARK: - Start Journey
@@ -118,6 +139,7 @@ public class RNPingJourneyImpl: NSObject {
     Task {
       let node = await journey.start(journeyName) { $0.forceAuth = forceAuth; $0.noSession = noSession }
       nodeMap[journeyId] = node
+      await clearIfFinished(journeyId, node: node)
       resolve(self.serializeNode(node))
     }
   }
@@ -157,6 +179,7 @@ public class RNPingJourneyImpl: NSObject {
       let nextNode = await current.next()
       // Store new node for this journey instance
       nodeMap[id] = nextNode
+      await clearIfFinished(id, node: nextNode)
       resolve(self.serializeNode(nextNode))
     }
   }
@@ -187,6 +210,7 @@ public class RNPingJourneyImpl: NSObject {
       // Save resumed node for this journey instance
       nodeMap[id] = node
 
+      await clearIfFinished(id, node: node)
       resolve(self.serializeNode(node))
     }
   }
@@ -232,6 +256,7 @@ public class RNPingJourneyImpl: NSObject {
     Task {
       let user = await journey.journeyUser()
       await user?.logout()
+      nodeMap.removeValue(forKey: journeyId)
       resolve(true)
     }
   }
