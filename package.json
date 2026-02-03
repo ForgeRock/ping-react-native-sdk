@@ -12,6 +12,8 @@
     "docs:oidc": "typedoc --options typedoc.oidc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @react-native-pingidentity/browser test",
+    "test:oidc": "yarn workspace @ping-identity/rn-oidc test",
+    "test:logger": "yarn workspace @react-native-pingidentity/logger test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
     "sample:clean-android": "rm -rf PingSampleApp/android/app/build PingSampleApp/android/build PingSampleApp/android/.gradle && (rm -f ~/.gradle/wrapper/dists/gradle-8.14.1-bin/*/gradle-8.14.1-bin.zip.lck || true) && (cd PingSampleApp/android && ./gradlew clean)",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",

@@ -32,6 +32,7 @@ struct OidcClientPayload {
   let browserType: String?
   let browserMode: String?
   let acrValues: String?
+  // TODO(iOS SDK 2.x): Wire signOutRedirectUri into native config once the new SDK supports it.
   let signOutRedirectUri: String?
   let state: String?
   let nonce: String?

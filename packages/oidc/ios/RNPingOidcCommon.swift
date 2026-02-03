@@ -53,6 +53,7 @@ public class RNPingOidcCommon: NSObject {
   ///
   /// - Parameter config: JS client configuration payload.
   /// - Returns: Registered client identifier.
+  /// - Note: Raises an Objective-C exception when configuration is invalid.
   @objc
   public static func createClient(_ config: NSDictionary) -> String {
     return createQueue.sync {
@@ -88,6 +89,7 @@ public class RNPingOidcCommon: NSObject {
   ///
   /// - Parameter clientId: Identifier returned by `createClient`.
   /// - Returns: Registered web client identifier.
+  /// - Note: Raises an Objective-C exception when the client id is unknown.
   @objc
   public static func createWebClient(_ clientId: String) -> String {
     return createQueue.sync {
@@ -129,6 +131,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - clientId: Identifier returned by `createClient`.
   ///   - resolver: Resolver called with token payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func clientToken(
     _ clientId: String,
@@ -162,6 +165,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - clientId: Identifier returned by `createClient`.
   ///   - resolver: Resolver called with token payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func clientRefresh(
     _ clientId: String,
@@ -196,6 +200,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - cache: Whether to use cached userinfo when available.
   ///   - resolver: Resolver called with userinfo payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func clientUserinfo(
     _ clientId: String,
@@ -230,6 +235,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - clientId: Identifier returned by `createClient`.
   ///   - resolver: Resolver called on success.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func clientRevoke(
     _ clientId: String,
@@ -257,6 +263,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - clientId: Identifier returned by `createClient`.
   ///   - resolver: Resolver called with end-session status.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func clientEndSession(
     _ clientId: String,
@@ -287,6 +294,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - options: Per-request authorization overrides.
   ///   - resolver: Resolver called with the authorize result payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func authorize(
     _ webClientId: String,
@@ -331,6 +339,7 @@ public class RNPingOidcCommon: NSObject {
               "browserMode": payload.browserMode ?? ""
             ],
             "acrValues": payload.acrValues ?? "",
+            // TODO(iOS SDK 2.x): honor signOutRedirectUri once supported by native SDK.
             "signOutRedirectUri": payload.signOutRedirectUri ?? "",
             "state": payload.state ?? "",
             "nonce": payload.nonce ?? "",
@@ -388,6 +397,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - webClientId: Identifier returned by `createWebClient`.
   ///   - resolver: Resolver called with a boolean result.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func hasUser(
     _ webClientId: String,
@@ -425,6 +435,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - webClientId: Identifier returned by `createWebClient`.
   ///   - resolver: Resolver called with token payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func token(
     _ webClientId: String,
@@ -468,6 +479,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - webClientId: Identifier returned by `createWebClient`.
   ///   - resolver: Resolver called with token payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func refresh(
     _ webClientId: String,
@@ -512,6 +524,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - cache: Whether to use cached userinfo when available.
   ///   - resolver: Resolver called with userinfo payload.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func userinfo(
     _ webClientId: String,
@@ -556,6 +569,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - webClientId: Identifier returned by `createWebClient`.
   ///   - resolver: Resolver called on success.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func revoke(
     _ webClientId: String,
@@ -594,6 +608,7 @@ public class RNPingOidcCommon: NSObject {
   ///   - webClientId: Identifier returned by `createWebClient`.
   ///   - resolver: Resolver called on success.
   ///   - rejecter: Rejecter called with a `GenericError`.
+  /// - Returns: Void.
   @objc
   public static func logout(
     _ webClientId: String,

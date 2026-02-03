@@ -22,17 +22,17 @@ export default function BrowserScreen() {
     'https://www.pingidentity.com',
   );
   const [callbackUrlScheme, setCallbackUrlScheme] = useState(
-    'com.pingidentity.sampleapp',
+    'org.forgerock.demo',
   );
   const [redirectUri, setRedirectUri] = useState(
-    'com.pingidentity.sampleapp://callback',
+    'org.forgerock.demo://oauth2redirect',
   );
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   const suggestedUrls = [
     'https://www.pingidentity.com',
-    'https://httpbin.org/redirect-to?url=com.pingidentity.sampleapp://callback?code=123',
+    'https://httpbin.org/redirect-to?url=org.forgerock.demo://oauth2redirect?code=123',
   ];
 
   const handleOpen = async (overrideUrl?: string) => {

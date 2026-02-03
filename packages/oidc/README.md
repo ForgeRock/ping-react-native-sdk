@@ -42,6 +42,9 @@ const oidcClient = createOidcClient({
 });
 ```
 
+> TODO(iOS SDK 2.x): `signOutRedirectUri` is currently ignored on iOS. We will enable it once the native iOS
+> SDK exposes support in a 2.x release.
+
 ### Configure token storage (optional)
 
 If you want to customize native token storage, configure it with the Storage module and pass the
@@ -173,6 +176,7 @@ if (await oidcWebClient.hasUser()) {
 }
 ```
 
+
 ## Android redirect configuration
 
 Configure the app redirect scheme for Custom Tabs/Auth Tabs. For a redirect URI of
@@ -184,6 +188,26 @@ android {
     manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
   }
 }
+```
+
+Add the redirect intent filter to the `CustomTabActivity`:
+
+```xml
+<activity
+    android:name="com.pingidentity.browser.CustomTabActivity"
+    android:exported="true"
+    android:launchMode="singleTop">
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <data
+            android:scheme="${appRedirectUriScheme}"
+            android:host="callback" />
+    </intent-filter>
+</activity>
 ```
 
 For HTTPS redirect URIs, add an App Links intent filter that matches your redirect URL and host.

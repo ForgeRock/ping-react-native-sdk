@@ -142,6 +142,10 @@ export default function OidcScreen() {
     redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
     scopes: [...pingAdvancedIdentityCloudConfig.scopes],
     signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
+    ios: {
+      browserType: 'ephemeralAuthSession' as const,
+      browserMode: 'login' as const,
+    },
   };
 
   const getWebClient = () => {
@@ -424,6 +428,16 @@ export default function OidcScreen() {
               result,
               false,
               loading.authorize,
+            )
+          : null}
+
+        {hasUser === true
+          ? renderSection(
+              'tokens',
+              'Tokens',
+              tokens || 'No tokens loaded yet.',
+              false,
+              loading.token || loading.refresh,
             )
           : null}
       </View>

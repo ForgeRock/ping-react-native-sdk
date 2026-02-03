@@ -19,6 +19,34 @@ import type { StorageConfig } from '@react-native-pingidentity/storage';
  * @remarks
  * Values are serialized across the React Native bridge and must remain
  * platform-agnostic.
+ *
+ * @example
+ * Basic configuration:
+ * ```ts
+ * const client = createOidcClient({
+ *   clientId: 'client-id',
+ *   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+ *   redirectUri: 'com.example.app://callback',
+ *   scopes: ['openid', 'email', 'profile'],
+ * });
+ * ```
+ *
+ * @example
+ * With OpenID override and logger:
+ * ```ts
+ * const log = logger({ level: 'debug' });
+ * const client = createOidcClient({
+ *   clientId: 'client-id',
+ *   redirectUri: 'com.example.app://callback',
+ *   scopes: ['openid'],
+ *   openId: {
+ *     authorizationEndpoint: 'https://issuer/authorize',
+ *     tokenEndpoint: 'https://issuer/token',
+ *     userinfoEndpoint: 'https://issuer/userinfo',
+ *   },
+ *   logger: log,
+ * });
+ * ```
  */
 export type OidcClientConfig = {
   /**
@@ -249,12 +277,12 @@ export type OidcClient = {
   /**
    * Retrieve the current token bundle.
    */
-  token(): Promise<Tokens>;
+  token(): Promise<Omit<Tokens, 'tokenExpiry'>>;
 
   /**
    * Force-refresh the token bundle.
    */
-  refresh(): Promise<Tokens>;
+  refresh(): Promise<Omit<Tokens, 'tokenExpiry'>>;
 
   /**
    * Fetch user profile data from the userinfo endpoint.
@@ -283,12 +311,12 @@ export type OidcUser = {
   /**
    * Retrieve the current token bundle.
    */
-  token(): Promise<Tokens>;
+  token(): Promise<Omit<Tokens, 'tokenExpiry'>>;
 
   /**
    * Force-refresh the token bundle.
    */
-  refresh(): Promise<Tokens>;
+  refresh(): Promise<Omit<Tokens, 'tokenExpiry'>>;
 
   /**
    * Fetch user profile data from the userinfo endpoint.
@@ -322,6 +350,18 @@ export type OidcWebClient = {
 
   /**
    * Launch the authorization flow.
+   *
+   * @example
+   * ```ts
+   * const web = createOidcWebClient(client);
+   * const result = await web.authorize({
+   *   prompt: 'login',
+   *   loginHint: 'user@example.com',
+   * });
+   * if (result.type === 'success') {
+   *   // authorized
+   * }
+   * ```
    */
   authorize(options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult>;
 

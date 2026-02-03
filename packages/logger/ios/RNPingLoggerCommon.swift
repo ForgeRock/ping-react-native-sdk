@@ -39,7 +39,9 @@ public class RNPingLoggerCommon: NSObject {
   private static var jsIdToRegistryId: [String: String] = [:]
 
   /// Synchronizes logger configuration from JavaScript to native.
-  /// - Parameter config: Dictionary containing logger configuration with "id" and "level".
+  ///
+  /// - Parameter config: Dictionary containing logger configuration with `id` and `level`.
+  /// - Note: When called from JavaScript, this updates the native logger registry.
   @objc
   public static func sync(_ config: NSDictionary) {
     guard

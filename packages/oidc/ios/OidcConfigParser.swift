@@ -40,6 +40,7 @@ enum OidcConfigParser {
       browserType: iosConfig?["browserType"] as? String,
       browserMode: iosConfig?["browserMode"] as? String,
       acrValues: config["acrValues"] as? String,
+      // TODO(iOS SDK 2.x): Apply signOutRedirectUri when native SDK exposes support.
       signOutRedirectUri: config["signOutRedirectUri"] as? String,
       state: config["state"] as? String,
       nonce: config["nonce"] as? String,

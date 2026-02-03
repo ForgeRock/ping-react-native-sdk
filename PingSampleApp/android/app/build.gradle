@@ -84,7 +84,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        manifestPlaceholders["appRedirectUriScheme"] = "com.pingidentity.sampleapp"
+        manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
     }
     signingConfigs {
         debug {

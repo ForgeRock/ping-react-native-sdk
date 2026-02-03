@@ -11,11 +11,10 @@ import type {
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
-  // OidcError,
-  // OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';
+import type { Tokens } from '@ping-identity/rn-types';
 import type { LoggerInstance, LogLevel } from '@react-native-pingidentity/logger';
 
 const loggerRegistry = new Map<string, LoggerInstance>();
@@ -27,6 +26,14 @@ const noopLogger: LoggerInstance = {
   info: () => {},
   debug: () => {},
 };
+
+const sanitizeTokens = (
+  tokens: { tokenExpiry?: number } & Omit<Tokens, never>
+): Omit<Tokens, 'tokenExpiry'> => {
+  const { tokenExpiry: _tokenExpiry, ...rest } = tokens;
+  return rest;
+};
+
 
 /**
  * Create a native-backed OIDC client.
@@ -47,24 +54,11 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
   }
   const loggerInstance = config.logger ?? noopLogger;
   loggerInstance.debug(
-    `OIDC createClient config ${JSON.stringify({
-      clientId: config.clientId,
-      discoveryEndpoint: config.discoveryEndpoint,
-      redirectUri: config.redirectUri,
-      scopes: config.scopes,
-      openIdOverride: Boolean(config.openId),
-      storage: Boolean(config.storage),
-      nativeLogger: Boolean(config.nativeLogger),
-      logger: Boolean(config.logger),
-      refreshThreshold: config.refreshThreshold,
-      signOutRedirectUri: config.signOutRedirectUri,
-      acrValues: config.acrValues,
-      uiLocales: config.uiLocales,
-      prompt: config.prompt,
-      display: config.display,
-      loginHint: config.loginHint,
-      hasAdditionalParameters: Boolean(config.additionalParameters?.length),
-    })}`
+    `OIDC createClient config ${JSON.stringify(
+      config,
+      (_key, value) => (typeof value === 'function' ? undefined : value),
+      2
+    )}`
   );
   const loggerId =
     config.nativeLogger?.id ?? config.logger?.nativeHandle?.id ?? undefined;
@@ -80,7 +74,8 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
     token: async () => {
       loggerInstance.debug('OIDC client token requested');
       try {
-        return await getNativeModule().clientToken(clientId);
+        const tokens = await getNativeModule().clientToken(clientId);
+        return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC client token failed');
         throw error;
@@ -89,7 +84,8 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
     refresh: async () => {
       loggerInstance.debug('OIDC client refresh requested');
       try {
-        return await getNativeModule().clientRefresh(clientId);
+        const tokens = await getNativeModule().clientRefresh(clientId);
+        return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC client refresh failed');
         throw error;
@@ -157,7 +153,8 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
     token: async () => {
       loggerInstance.debug('OIDC user token requested');
       try {
-        return await getNativeModule().token(webClientId);
+        const tokens = await getNativeModule().token(webClientId);
+        return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC user token failed');
         throw error;
@@ -166,7 +163,8 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
     refresh: async () => {
       loggerInstance.debug('OIDC user refresh requested');
       try {
-        return await getNativeModule().refresh(webClientId);
+        const tokens = await getNativeModule().refresh(webClientId);
+        return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC user refresh failed');
         throw error;

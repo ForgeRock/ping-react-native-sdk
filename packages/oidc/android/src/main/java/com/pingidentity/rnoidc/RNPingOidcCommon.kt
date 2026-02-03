@@ -84,6 +84,7 @@ object RNPingOidcCommon {
    * Ensure the native Ping SDK is initialized with the app context.
    *
    * @param reactContext React application context from the module instance
+   * @return Unit
    */
   @JvmStatic
   fun configure(reactContext: ReactApplicationContext) {
@@ -96,7 +97,7 @@ object RNPingOidcCommon {
    *
    * @param config JS-provided config map
    * @return Stable identifier for the stored client config
-   * @throws IllegalArgumentException when required configuration is missing
+   * @throws IllegalArgumentException when required configuration is missing or invalid
    */
   fun createClient(config: ReadableMap): String {
     val parsed = OidcConfigParser.parseClientConfig(config)
@@ -126,6 +127,7 @@ object RNPingOidcCommon {
    *
    * @param clientId Identifier returned by [createClient]
    * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
    */
   fun clientToken(clientId: String, promise: Promise) {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
@@ -160,6 +162,7 @@ object RNPingOidcCommon {
    *
    * @param clientId Identifier returned by [createClient]
    * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
    */
   fun clientRefresh(clientId: String, promise: Promise) {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
@@ -195,6 +198,7 @@ object RNPingOidcCommon {
    * @param clientId Identifier returned by [createClient]
    * @param cache When true, return cached userinfo if available
    * @param promise Bridge promise resolved with userinfo map or rejected with GenericError
+   * @return Unit
    */
   fun clientUserinfo(clientId: String, cache: Boolean, promise: Promise) {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
@@ -229,6 +233,7 @@ object RNPingOidcCommon {
    *
    * @param clientId Identifier returned by [createClient]
    * @param promise Bridge promise resolved on success or rejected with GenericError
+   * @return Unit
    */
   fun clientRevoke(clientId: String, promise: Promise) {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
@@ -257,6 +262,7 @@ object RNPingOidcCommon {
    *
    * @param clientId Identifier returned by [createClient]
    * @param promise Bridge promise resolved with end-session status or rejected with GenericError
+   * @return Unit
    */
   fun clientEndSession(clientId: String, promise: Promise) {
     val handle = clientRegistry.resolve(clientId) as? OidcClientHandle
@@ -286,6 +292,7 @@ object RNPingOidcCommon {
    * @param webClientId Identifier returned by [createWebClient]
    * @param options Optional per-request overrides
    * @param promise Bridge promise resolved with success/cancel or rejected with GenericError
+   * @return Unit
    */
   fun authorize(webClientId: String, options: ReadableMap, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -342,6 +349,7 @@ object RNPingOidcCommon {
    *
    * @param webClientId Identifier returned by [createWebClient]
    * @param promise Bridge promise resolved with a boolean or rejected with GenericError
+   * @return Unit
    */
   fun hasUser(webClientId: String, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -370,6 +378,7 @@ object RNPingOidcCommon {
    *
    * @param webClientId Identifier returned by [createWebClient]
    * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
    */
   fun token(webClientId: String, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -415,6 +424,7 @@ object RNPingOidcCommon {
    *
    * @param webClientId Identifier returned by [createWebClient]
    * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
    */
   fun refresh(webClientId: String, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -461,6 +471,7 @@ object RNPingOidcCommon {
    * @param webClientId Identifier returned by [createWebClient]
    * @param cache When true, return cached userinfo if available
    * @param promise Bridge promise resolved with userinfo map or rejected with GenericError
+   * @return Unit
    */
   fun userinfo(webClientId: String, cache: Boolean, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -506,6 +517,7 @@ object RNPingOidcCommon {
    *
    * @param webClientId Identifier returned by [createWebClient]
    * @param promise Bridge promise resolved on success or rejected with GenericError
+   * @return Unit
    */
   fun revoke(webClientId: String, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
@@ -544,6 +556,7 @@ object RNPingOidcCommon {
    *
    * @param webClientId Identifier returned by [createWebClient]
    * @param promise Bridge promise resolved on success or rejected with GenericError
+   * @return Unit
    */
   fun logout(webClientId: String, promise: Promise) {
     val handle = webRegistry.resolve(webClientId) as? OidcWebHandle
