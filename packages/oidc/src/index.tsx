@@ -15,7 +15,11 @@ import type {
   OidcWebClient,
 } from './types';
 import type { Tokens } from '@ping-identity/rn-types';
-import type { LoggerInstance, LogLevel } from '@react-native-pingidentity/logger';
+import type {
+  LoggerInstance,
+  LogLevel,
+} from '@react-native-pingidentity/logger';
+import { logger as createLogger } from '@react-native-pingidentity/logger';
 
 const loggerRegistry = new Map<string, LoggerInstance>();
 const noopLogger: LoggerInstance = {
@@ -25,6 +29,15 @@ const noopLogger: LoggerInstance = {
   warn: () => {},
   info: () => {},
   debug: () => {},
+};
+
+let defaultLoggerInstance: LoggerInstance | null = null;
+
+const getDefaultLogger = (): LoggerInstance => {
+  if (!defaultLoggerInstance) {
+    defaultLoggerInstance = createLogger({ level: 'none' });
+  }
+  return defaultLoggerInstance;
 };
 
 const sanitizeTokens = (
@@ -52,47 +65,49 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
     );
   }
-  const loggerInstance = config.logger ?? noopLogger;
-  loggerInstance.debug(
+  const jsLogger = config.logger ?? getDefaultLogger();
+  const loggerId =
+    config.nativeLogger?.id ??
+    jsLogger.nativeHandle?.id ??
+    getDefaultLogger().nativeHandle?.id;
+  jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
       config,
       (_key, value) => (typeof value === 'function' ? undefined : value),
       2
     )}`
   );
-  const loggerId =
-    config.nativeLogger?.id ?? config.logger?.nativeHandle?.id ?? undefined;
   const clientId = getNativeModule().createClient({
     ...config,
     storageId: resolveStorageId(config.storage),
     loggerId,
   });
-  loggerRegistry.set(clientId, loggerInstance);
-  loggerInstance.info('OIDC createClient success');
+  loggerRegistry.set(clientId, jsLogger);
+  jsLogger.info('OIDC createClient success');
   return {
     id: clientId,
     token: async () => {
-      loggerInstance.debug('OIDC client token requested');
+      jsLogger.debug('OIDC client token requested');
       try {
         const tokens = await getNativeModule().clientToken(clientId);
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
-        loggerInstance.error('OIDC client token failed');
+        jsLogger.error('OIDC client token failed');
         throw error;
       }
     },
     refresh: async () => {
-      loggerInstance.debug('OIDC client refresh requested');
+      jsLogger.debug('OIDC client refresh requested');
       try {
         const tokens = await getNativeModule().clientRefresh(clientId);
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
-        loggerInstance.error('OIDC client refresh failed');
+        jsLogger.error('OIDC client refresh failed');
         throw error;
       }
     },
     userinfo: async (cache?: boolean) => {
-      loggerInstance.debug(
+      jsLogger.debug(
         `OIDC client userinfo requested ${JSON.stringify({
           cache: cache ?? false,
         })}`
@@ -100,25 +115,25 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       try {
         return await getNativeModule().clientUserinfo(clientId, cache ?? false);
       } catch (error) {
-        loggerInstance.error('OIDC client userinfo failed');
+        jsLogger.error('OIDC client userinfo failed');
         throw error;
       }
     },
     revoke: async () => {
-      loggerInstance.info('OIDC client revoke requested');
+      jsLogger.info('OIDC client revoke requested');
       try {
         return await getNativeModule().clientRevoke(clientId);
       } catch (error) {
-        loggerInstance.error('OIDC client revoke failed');
+        jsLogger.error('OIDC client revoke failed');
         throw error;
       }
     },
     endSession: async () => {
-      loggerInstance.info('OIDC client endSession requested');
+      jsLogger.info('OIDC client endSession requested');
       try {
         return await getNativeModule().clientEndSession(clientId);
       } catch (error) {
-        loggerInstance.error('OIDC client endSession failed');
+        jsLogger.error('OIDC client endSession failed');
         throw error;
       }
     },

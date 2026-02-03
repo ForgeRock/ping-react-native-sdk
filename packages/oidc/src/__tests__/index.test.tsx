@@ -42,10 +42,29 @@ const createNativeMock = (overrides: Partial<NativeModuleMock> = {}): NativeModu
   };
 };
 
+const createJsLogger = () => ({
+  nativeHandle: { id: 'native-logger-id' },
+  changeLevel: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+});
+
 const loadModule = async (nativeModule: NativeModuleMock) => {
   jest.resetModules();
   jest.doMock('../NativeRNPingOidc', () => ({
     getNativeModule: () => nativeModule,
+  }));
+  jest.doMock('@react-native-pingidentity/logger', () => ({
+    logger: jest.fn(() => ({
+      nativeHandle: { id: 'native-none-id' },
+      changeLevel: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+    })),
   }));
   return require('../index');
 };
@@ -113,14 +132,7 @@ describe('OIDC JS API', () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);
 
-    const logger = {
-      nativeHandle: { id: 'native-logger-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    };
+    const logger = createJsLogger();
 
     createOidcClient({
       clientId: 'client',
@@ -143,14 +155,8 @@ describe('OIDC JS API', () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);
 
-    const logger = {
-      nativeHandle: { id: 'logger-native-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    };
+    const logger = createJsLogger();
+    logger.nativeHandle.id = 'logger-native-id';
 
     createOidcClient({
       clientId: 'client',
@@ -218,6 +224,46 @@ describe('OIDC JS API', () => {
     await webClient.authorize();
 
     expect(nativeModule.authorize).toHaveBeenCalledWith('web-id', {});
+  });
+
+  it('logs debug and info during client creation', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+    const logger = createJsLogger();
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+      logger,
+    });
+
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('OIDC createClient config'));
+    expect(logger.info).toHaveBeenCalledWith('OIDC createClient success');
+  });
+
+  it('logs errors when authorize fails', async () => {
+    const error = new Error('authorize failed');
+    const nativeModule = createNativeMock({
+      authorize: jest.fn(async () => {
+        throw error;
+      }),
+    });
+    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const logger = createJsLogger();
+
+    const client = createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+      logger,
+    });
+
+    const webClient = createOidcWebClient(client);
+    await expect(webClient.authorize()).rejects.toThrow('authorize failed');
+    expect(logger.error).toHaveBeenCalledWith('OIDC authorize failed');
   });
 
   it('propagates authorize errors from the native module', async () => {
