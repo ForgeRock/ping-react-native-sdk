@@ -6,6 +6,7 @@
  */
 
 import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
+import { logger } from './logging';
 import type {
   DeviceProfileCallbackInputValue,
   DeviceProfile,
@@ -25,8 +26,7 @@ export interface Spec extends TurboModule {
    */
   collectDeviceProfileForJourney(
     journeyId: string,
-    collectors: DeviceProfileCollector[],
-    callbackPayload?: Object
+    collectors: DeviceProfileCollector[]
   ): Promise<DeviceProfileCallbackInputValue>;
 }
 
@@ -44,8 +44,8 @@ export function getNativeModule(): Spec {
   if (isNewArchEnabled) {
     try {
       return TurboModuleRegistry.getEnforcing<Spec>('RNPingDeviceProfile');
-    } catch {
-      // Fall back to classic if TurboModule isn't registered at runtime.
+    } catch (error){
+      logger.error('TurboModule not registered; falling back to classic implementation.', String(error));
     }
   }
 
@@ -54,7 +54,7 @@ export function getNativeModule(): Spec {
   if (!classic) {
     const available = Object.keys(NativeModules).slice(0, 10);
     throw new Error(
-      '[@react-native-pingidentity/device-profile] Native RNPingDeviceProfile module not found.\n' +
+      '[@pingidentity/device-profile] Native RNPingDeviceProfile module not found.\n' +
         'Available NativeModules: ' +
         JSON.stringify(available)
     );

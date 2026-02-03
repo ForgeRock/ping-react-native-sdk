@@ -48,14 +48,7 @@ export type DeviceProfileCallbackInputValue = {
 };
 
 /**
- * Represents a raw callback payload for Device Profile collection in Journey flows.
- *
- * @remarks
- * This should match the native callback JSON structure expected by the SDK.
- */
-export type DeviceProfileCallbackPayload = Record<string, unknown>;
-
-/**
+ * TODO: Relocate types package as journey module matures.
  * Minimal Journey instance contract required by device profile collection.
  *
  * @remarks
