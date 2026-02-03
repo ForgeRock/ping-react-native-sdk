@@ -47,6 +47,20 @@ public class RNPingOidcCommon: NSObject {
     return q
   }()
 
+  // MARK: - Cleanup
+
+  /// Clear stored native OIDC clients and web clients.
+  ///
+  /// - Note: Invoked when the React Native bridge is invalidated to prevent
+  ///   leaking native instances across reloads.
+  @objc
+  public static func cleanup() {
+    Task {
+      await clientRegistry.removeAll()
+      await webRegistry.removeAll()
+    }
+  }
+
   // MARK: - Create
 
   /// Create an OIDC client from JavaScript configuration.

@@ -93,6 +93,19 @@ object RNPingOidcCommon {
   }
 
   /**
+   * Clear all stored native OIDC clients and web clients.
+   *
+   * @remarks
+   * Invoked when the React Native bridge is invalidated to prevent
+   * leaking native instances across reloads.
+   */
+  @JvmStatic
+  fun cleanup() {
+    clientRegistry.removeAll()
+    webRegistry.removeAll()
+  }
+
+  /**
    * Create a native-backed OIDC client and return its core identifier.
    *
    * @param config JS-provided config map

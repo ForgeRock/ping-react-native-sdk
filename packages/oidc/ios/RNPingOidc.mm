@@ -16,6 +16,12 @@ RCT_EXPORT_MODULE()
   return [RNPingOidcImpl shared];
 }
 
+// Clean up native resources when the bridge is invalidated.
+- (void)invalidate
+{
+  [[self swiftImpl] invalidate];
+}
+
 // createClient(config): string
 - (NSString *)createClient:(JS::NativeRNPingOidc::NativeOidcClientConfig &)config
 {

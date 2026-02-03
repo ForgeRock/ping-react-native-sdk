@@ -19,6 +19,12 @@
 
 RCT_EXPORT_MODULE(RNPingOidcClassic)
 
+// Clean up native resources when the bridge is invalidated.
+- (void)invalidate
+{
+  [RNPingOidcCommon cleanup];
+}
+
 #pragma mark - Create Client
 
 /// Create a native-backed OIDC client and return its core identifier.

@@ -38,6 +38,14 @@ class RNPingOidcClassicModule(
   override fun getName(): String = NAME
 
   /**
+   * Clean up native resources when the bridge is torn down.
+   */
+  override fun invalidate() {
+    RNPingOidcCommon.cleanup()
+    super.invalidate()
+  }
+
+  /**
    * Create a native-backed OIDC client and return its core identifier.
    *
    * @param config JS-provided client configuration

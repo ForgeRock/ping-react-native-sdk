@@ -22,6 +22,11 @@ public class RNPingOidcImpl: NSObject {
     super.init()
   }
 
+  /// Clean up native resources when the bridge is invalidated.
+  public func invalidate() {
+    RNPingOidcCommon.cleanup()
+  }
+
   /// Create a native-backed OIDC client.
   ///
   /// - Parameter config: JS client configuration payload.
