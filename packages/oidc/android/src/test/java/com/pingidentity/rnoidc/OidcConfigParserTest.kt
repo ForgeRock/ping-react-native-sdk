@@ -93,6 +93,7 @@ class OidcConfigParserTest {
 
     val payload = OidcConfigParser.parseClientConfig(config)
 
+    assertEquals("https://example.com/.well-known/openid-configuration", payload.discoveryEndpoint)
     assertNull(payload.storageId)
     assertNull(payload.loggerId)
     assertNull(payload.acrValues)
@@ -122,6 +123,30 @@ class OidcConfigParserTest {
     assertThrows(IllegalArgumentException::class.java) {
       OidcConfigParser.parseClientConfig(config)
     }
+  }
+
+  @Test
+  fun parseClientConfig_allowsOpenIdWithoutDiscoveryEndpoint() {
+    val scopes = JavaOnlyArray().apply {
+      pushString("openid")
+    }
+    val openId = JavaOnlyMap().apply {
+      putString("authorizationEndpoint", "https://example.com/oauth2/authorize")
+      putString("tokenEndpoint", "https://example.com/oauth2/token")
+      putString("userinfoEndpoint", "https://example.com/oauth2/userinfo")
+    }
+    val config = JavaOnlyMap().apply {
+      putString("clientId", "client-id")
+      putString("redirectUri", "com.example.app://callback")
+      putArray("scopes", scopes)
+      putMap("openId", openId)
+    }
+
+    val payload = OidcConfigParser.parseClientConfig(config)
+
+    assertNull(payload.discoveryEndpoint)
+    assertNotNull(payload.openId)
+    assertEquals("https://example.com/oauth2/authorize", payload.openId?.authorizationEndpoint)
   }
 
   @Test

@@ -14,8 +14,7 @@
 #import "RNPingLogger-Swift.h"
 
 /**
- * @class Logger
- * @brief React Native bridge module for PingLogger functionality
+ * React Native bridge module for PingLogger functionality.
  *
  * This class serves as the Objective-C bridge between React Native JavaScript
  * and the Swift implementation of the PingLogger module.

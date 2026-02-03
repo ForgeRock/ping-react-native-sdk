@@ -42,7 +42,6 @@ object JsonBridgeMapper {
       is JsonPrimitive -> encodeJsonPrimitive(element)
       is JsonObject -> encodeJsonObjectInternal(element)
       is JsonArray -> encodeJsonArray(element)
-      else -> null
     }
   }
 

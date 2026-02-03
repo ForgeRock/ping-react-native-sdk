@@ -25,15 +25,18 @@ public class RNPingBrowserCommon: NSObject {
   }
 
   /// Adapter used to launch and reset the native browser session.
+  @MainActor
   internal static var browserLauncher: BrowserLaunching = DefaultBrowserLauncherAdapter()
 
 #if DEBUG
   /// Replace the browser launcher for unit tests.
+  @MainActor
   public static func _setBrowserLauncherForTesting(_ launcher: BrowserLaunching) {
     browserLauncher = launcher
   }
 
   /// Reset the browser launcher after tests.
+  @MainActor
   public static func _resetBrowserLauncherForTesting() {
     browserLauncher = DefaultBrowserLauncherAdapter()
   }

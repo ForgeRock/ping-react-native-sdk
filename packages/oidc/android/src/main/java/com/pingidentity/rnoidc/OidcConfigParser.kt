@@ -17,7 +17,7 @@ import com.reactnativepingidentity.core.utils.requireStringArray
  */
 internal data class OidcClientPayload(
   val clientId: String,
-  val discoveryEndpoint: String,
+  val discoveryEndpoint: String?,
   val openId: OpenIdPayload?,
   val redirectUri: String,
   val scopes: List<String>,
@@ -60,7 +60,11 @@ internal object OidcConfigParser {
   fun parseClientConfig(config: ReadableMap): OidcClientPayload {
     val clientId = requireString(config, "clientId")
     val openId = parseOpenId(config)
-    val discoveryEndpoint = requireString(config, "discoveryEndpoint")
+    val discoveryEndpoint =
+      if (config.hasKey("discoveryEndpoint")) config.getString("discoveryEndpoint") else null
+    if ((discoveryEndpoint == null || discoveryEndpoint.isBlank()) && openId == null) {
+      throw IllegalArgumentException("Missing discoveryEndpoint or openId")
+    }
     val redirectUri = requireString(config, "redirectUri")
     val scopes = requireStringArray(config, "scopes")
 

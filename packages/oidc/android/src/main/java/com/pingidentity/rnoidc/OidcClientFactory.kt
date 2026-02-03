@@ -35,7 +35,7 @@ internal class OidcClientFactory(
     return OidcWeb {
       module(Oidc) {
         loggerApplier(config.loggerId)
-        discoveryEndpoint = config.discoveryEndpoint
+        config.discoveryEndpoint?.let { discoveryEndpoint = it }
         clientId = config.clientId
         redirectUri = config.redirectUri
         scopes = config.scopes.toMutableSet()
@@ -66,7 +66,7 @@ internal class OidcClientFactory(
   fun buildOidcClient(config: OidcClientPayload): OidcClient {
     return OidcClient {
       loggerApplier(config.loggerId)
-      discoveryEndpoint = config.discoveryEndpoint
+      config.discoveryEndpoint?.let { discoveryEndpoint = it }
       clientId = config.clientId
       redirectUri = config.redirectUri
       scopes = config.scopes.toMutableSet()

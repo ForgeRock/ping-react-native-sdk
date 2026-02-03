@@ -314,44 +314,6 @@ public class RNPingOidcCommon: NSObject {
       }
 
       do {
-        if let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
-          let payload = clientHandle.payload
-          var openId: [String: Any] = [:]
-          if let override = payload.openId {
-            openId = [
-              "authorizationEndpoint": override.authorizationEndpoint,
-              "tokenEndpoint": override.tokenEndpoint,
-              "userinfoEndpoint": override.userinfoEndpoint,
-              "endSessionEndpoint": override.endSessionEndpoint ?? "",
-              "revocationEndpoint": override.revocationEndpoint ?? "",
-              "pingEndIdpSessionEndpoint": override.pingEndIdpSessionEndpoint ?? ""
-            ]
-          }
-          let configPayload: [String: Any] = [
-            "clientId": payload.clientId,
-            "discoveryEndpoint": payload.discoveryEndpoint ?? "",
-            "redirectUri": payload.redirectUri,
-            "scopes": payload.scopes,
-            "storageId": payload.storageId ?? "",
-            "loggerId": payload.loggerId ?? "",
-            "ios": [
-              "browserType": payload.browserType ?? "",
-              "browserMode": payload.browserMode ?? ""
-            ],
-            "acrValues": payload.acrValues ?? "",
-            // TODO(iOS SDK 2.x): honor signOutRedirectUri once supported by native SDK.
-            "signOutRedirectUri": payload.signOutRedirectUri ?? "",
-            "state": payload.state ?? "",
-            "nonce": payload.nonce ?? "",
-            "uiLocales": payload.uiLocales ?? "",
-            "refreshThreshold": payload.refreshThreshold as Any,
-            "loginHint": payload.loginHint ?? "",
-            "display": payload.display ?? "",
-            "prompt": payload.prompt ?? "",
-            "additionalParameters": payload.additionalParameters,
-            "openId": openId
-          ]
-      }
         let params = OidcConfigParser.buildAuthorizeParams(from: options)
         let result = try await handle.web.authorize { config in
           config.additionalParameters = params
@@ -416,9 +378,6 @@ public class RNPingOidcCommon: NSObject {
       }
 
       let user = await handle.web.user()
-      if let user = user {
-      } else {
-      }
       let hasActiveSession: Bool
       if let sessionUser = user as? Session {
         hasActiveSession = !sessionUser.value.isEmpty
