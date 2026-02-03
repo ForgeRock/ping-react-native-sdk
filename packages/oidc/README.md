@@ -45,6 +45,8 @@ const oidcClient = createOidcClient({
 > TODO(iOS SDK 2.x): `signOutRedirectUri` is currently ignored on iOS. We will enable it once the native iOS
 > SDK exposes support in a 2.x release.
 
+> TODO(Android): `tokenExpiry` will be reintroduced once the native Android SDK exposes it.
+
 ### Configure token storage (optional)
 
 If you want to customize native token storage, configure it with the Storage module and pass the
@@ -107,6 +109,8 @@ const oidcClient = createOidcClient({
   },
 });
 ```
+
+> TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
 
 ### Create the web-capable client and authorize
 
