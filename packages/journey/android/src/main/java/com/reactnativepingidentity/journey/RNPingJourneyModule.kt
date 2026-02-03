@@ -58,20 +58,26 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
     // Local registry of Journey instances keyed by generated id
     private val journeyMap = mutableMapOf<String, Journey>()
+    // Store the latest node per Journey instance (used for resumed journeys).
+    private val nodeMap = mutableMapOf<String, Node?>()
     // Store ContinueNode per Journey instance (only nodes that can advance).
-    private val nodeMap = mutableMapOf<String, ContinueNode?>()
+    // TODO: Remove once journey module matures and types package is available.
+    private val continueNodeMap = mutableMapOf<String, ContinueNode?>()
 
+    // TODO: Remove once journey module matures and types package is available.
     init {
         CoreRuntime.journeyCallbackResolver = { journeyId ->
-            nodeMap[journeyId]?.callbacks
+            continueNodeMap[journeyId]?.callbacks
         }
     }
     /**
      * Clear Journey handler and current node when the Journey has finished.
+     * TODO: Remove once journey module matures and types package is available.
      */
     private fun clearIfFinished(journeyId: String, node: Node) {
         if (node is SuccessNode || node is FailureNode || node is ErrorNode) {
             nodeMap.remove(journeyId)
+            continueNodeMap.remove(journeyId)
         }
     }
 
@@ -222,8 +228,8 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                     this.noSession = noSession
                 }
 
-                val continueNode = node as? ContinueNode
-                nodeMap[journeyId] = continueNode
+                nodeMap[journeyId] = node
+                continueNodeMap[journeyId] = node as? ContinueNode
 
                 clearIfFinished(journeyId, node)
                 promise.resolve(serializeNode(node))
@@ -246,7 +252,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
             return
         }
 
-        val currentNode = nodeMap[journeyId]
+        val currentNode = continueNodeMap[journeyId]
         if (currentNode == null) {
             promise.reject("NO_ACTIVE_JOURNEY", "No active journey. Call start() first.")
             return
@@ -277,9 +283,8 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
         scope.launch {
             try {
                 val nextNode = currentNode.next()
-
-                val continueNode = nextNode as? ContinueNode
-                nodeMap[journeyId] = continueNode
+                nodeMap[journeyId] = nextNode
+                continueNodeMap[journeyId] = nextNode as? ContinueNode
 
                 clearIfFinished(journeyId, nextNode)
                 promise.resolve(serializeNode(nextNode))
@@ -304,9 +309,8 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
         scope.launch {
             try {
                 val resumedNode = journeyInstance.resume(android.net.Uri.parse(uri))
-
-                val continueNode = resumedNode as? ContinueNode
-                nodeMap[journeyId] = continueNode
+                nodeMap[journeyId] = resumedNode
+                continueNodeMap[journeyId] = resumedNode as? ContinueNode
 
                 clearIfFinished(journeyId, resumedNode)
                 promise.resolve(serializeNode(resumedNode))
@@ -416,6 +420,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
                 user?.logout()
 
                 nodeMap.remove(journeyId)
+                continueNodeMap.remove(journeyId)
 
                 promise.resolve(true)
             } catch (e: Exception) {
