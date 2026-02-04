@@ -16,6 +16,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
+ * TODO: revisit when utils are added to core module
  * Converts a JsonElement into a React Native bridge-compatible value.
  *
  * Recursively converts JSON structures into WritableMap, WritableArray, or primitive values

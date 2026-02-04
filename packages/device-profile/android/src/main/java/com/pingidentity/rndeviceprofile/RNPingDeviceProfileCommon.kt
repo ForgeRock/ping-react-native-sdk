@@ -58,6 +58,7 @@ object RNPingDeviceProfileCommon {
         "Device Profile",
         "location collection blocked: $LOCATION_ERROR_MESSAGE"
       )
+      // TODO: Update to use GenericError rejection contracts for promises 
       promise.reject("DEVICE_PROFILE_LOCATION_UNAVAILABLE", LOCATION_ERROR_MESSAGE)
       return false
     }

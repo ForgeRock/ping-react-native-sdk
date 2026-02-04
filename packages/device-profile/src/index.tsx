@@ -65,6 +65,24 @@ export async function collectDeviceProfile(
  * }
  * ```
  *
+ * @example
+ * Including device identifier in the profile:
+ * ```ts
+ * import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+ * import { getDeviceId } from '@ping-identity/rn-device-id';
+ * 
+ * const node = await journey.start();
+ * if (node.callbacks?.some(cb => cb.type === 'DeviceProfileCallback')) {
+ *   const profile = await collectDeviceProfileForJourney(
+ *     journey,
+ *     ['hardware', 'network', 'browser']
+ *   );
+ *   const deviceId = await getDeviceId();
+ *   const profileWithId = { ...profile, identifier: deviceId };
+ *   const updatedNode = await journey.next({ profile: profileWithId });
+ * }
+ * ```
+ *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
  * @param callbackPayload - Optional raw callback payload when available from Journey.
