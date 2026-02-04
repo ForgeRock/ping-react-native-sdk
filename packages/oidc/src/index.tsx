@@ -21,7 +21,14 @@ import type {
 } from '@react-native-pingidentity/logger';
 import { logger as createLogger } from '@react-native-pingidentity/logger';
 
+/**
+ * In-memory registry mapping native client ids to JS logger instances.
+ */
 const loggerRegistry = new Map<string, LoggerInstance>();
+
+/**
+ * Fallback logger used when no logger is registered for a client.
+ */
 const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
   changeLevel: (_level: LogLevel) => {},
@@ -31,8 +38,14 @@ const noopLogger: LoggerInstance = {
   debug: () => {},
 };
 
+/**
+ * Cached default logger used when callers do not provide one.
+ */
 let defaultLoggerInstance: LoggerInstance | null = null;
 
+/**
+ * Lazily initialize and return the default logger instance.
+ */
 const getDefaultLogger = (): LoggerInstance => {
   if (!defaultLoggerInstance) {
     defaultLoggerInstance = createLogger({ level: 'none' });
@@ -40,6 +53,9 @@ const getDefaultLogger = (): LoggerInstance => {
   return defaultLoggerInstance;
 };
 
+/**
+ * Strip internal token expiry fields before returning tokens to consumers.
+ */
 const sanitizeTokens = (
   tokens: { tokenExpiry?: number } & Omit<Tokens, never>
 ): Omit<Tokens, 'tokenExpiry'> => {
@@ -140,6 +156,11 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
   };
 }
 
+/**
+ * Resolve a storage id from a configured storage handle.
+ *
+ * @throws Error when a storage object is provided without an id.
+ */
 function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
   if (!value) {
     return undefined;

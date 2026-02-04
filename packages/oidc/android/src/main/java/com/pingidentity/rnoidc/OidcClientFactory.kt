@@ -102,6 +102,11 @@ internal class OidcClientFactory(
     }
   }
 
+  /**
+   * Apply OpenID configuration fields if an explicit payload is provided.
+   *
+   * @param openId Optional OpenID configuration payload
+   */
   private fun OidcClientConfig.applyOpenIdIfPresent(openId: OpenIdPayload?) {
     if (openId == null) {
       return
@@ -116,6 +121,11 @@ internal class OidcClientFactory(
     )
   }
 
+  /**
+   * Apply storage configuration overrides to the encrypted data store.
+   *
+   * @param config Parsed JS storage configuration
+   */
   private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfig) {
     config.fileName?.let { fileName = it }
     config.keyAlias?.let { keyAlias = it }
@@ -123,6 +133,12 @@ internal class OidcClientFactory(
     config.cacheStrategy?.let { cacheStrategy = parseCacheStrategy(it) }
   }
 
+  /**
+   * Parse cache strategy strings into native CacheStrategy values.
+   *
+   * @param rawValue Raw strategy name from JS
+   * @return Parsed cache strategy, defaulting to NO_CACHE on unknown values
+   */
   private fun parseCacheStrategy(rawValue: String): CacheStrategy {
     return when (rawValue.lowercase()) {
       "cache_on_failure" -> CacheStrategy.CACHE_ON_FAILURE

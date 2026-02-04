@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Shared Android implementation for the Ping OIDC React Native module.
@@ -45,7 +46,8 @@ object RNPingOidcCommon {
   private const val TAG = "RNPingOidcCommon"
 
   /** Scope for all async work dispatched by the bridge. */
-  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+  private var scopeJob = SupervisorJob()
+  private var scope = CoroutineScope(scopeJob + Dispatchers.Default)
   /** Core registry storing OIDC client configurations. */
   private val clientRegistry = CoreRuntime.oidcClientRegistry
   /** Core registry storing OIDC web clients. */
@@ -103,6 +105,9 @@ object RNPingOidcCommon {
   fun cleanup() {
     clientRegistry.removeAll()
     webRegistry.removeAll()
+    scopeJob.cancel()
+    scopeJob = SupervisorJob()
+    scope = CoroutineScope(scopeJob + Dispatchers.Default)
   }
 
   /**
@@ -154,7 +159,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.token()) {
           is com.pingidentity.utils.Result.Success ->
@@ -189,7 +194,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.refresh()) {
           is com.pingidentity.utils.Result.Success ->
@@ -225,7 +230,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.userinfo(cache)) {
           is com.pingidentity.utils.Result.Success ->
@@ -260,7 +265,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         handle.user.revoke()
         promise.resolve(null)
@@ -289,7 +294,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val result = handle.client.endSession()
         promise.resolve(result)
@@ -320,11 +325,12 @@ object RNPingOidcCommon {
     }
 
     val authorizeParams = OidcConfigParser.buildAuthorizeParams(options)
-    scope.launch {
-      updateCurrentActivity()
+    scope.launch(Dispatchers.IO) {
       val result = try {
-        handle.web.authorize {
-          authorizeParams.forEach { (key, value) -> this[key] = value }
+        withContext(Dispatchers.Main) {
+          handle.web.authorize {
+            authorizeParams.forEach { (key, value) -> this[key] = value }
+          }
         }
       } catch (e: Exception) {
         if (e is BrowserCanceledException || e is CancellationException) {
@@ -376,7 +382,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         promise.resolve(user != null)
@@ -405,7 +411,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         if (user == null) {
@@ -451,7 +457,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         if (user == null) {
@@ -498,7 +504,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         if (user == null) {
@@ -544,7 +550,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         if (user == null) {
@@ -583,7 +589,7 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch {
+    scope.launch(Dispatchers.IO) {
       try {
         val user = handle.web.user()
         if (user == null) {
@@ -603,14 +609,5 @@ object RNPingOidcCommon {
     }
   }
 
-  /**
-   * Update any native activity context if needed.
-   *
-   * @remarks
-   * The Ping SDK's ContextProvider exposes currentActivity internally, so we
-   * cannot set it here. This hook exists for future SDK visibility changes.
-   */
-  private fun updateCurrentActivity() {
-    // ContextProvider exposes currentActivity as internal; no-op for now.
-  }
+  // Intentionally no Activity sync here; Ping SDK manages its own context.
 }
