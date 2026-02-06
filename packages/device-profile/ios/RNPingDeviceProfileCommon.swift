@@ -60,7 +60,7 @@ public class RNPingDeviceProfileCommon: NSObject {
   public static func collectDeviceProfileForJourney(
     _ journeyId: String,
     collectors: [String],
-    resolver: @escaping (NSDictionary) -> Void,
+    resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     let locationRequested = collectors.contains("location")
@@ -69,10 +69,12 @@ public class RNPingDeviceProfileCommon: NSObject {
 
     Task {
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {
-        rejecter(
-          "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
-          "No active Device Profile callback found for journey \(journeyId).",
-          nil
+        resolver(
+          createJourneyResultPayload(
+            type: "error",
+            code: "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
+            message: "No active Device Profile callback found for journey \(journeyId)."
+          )
         )
         return
       }
@@ -84,13 +86,15 @@ public class RNPingDeviceProfileCommon: NSObject {
       }
 
       switch result {
-      case .success(let payload):
-        resolver(NSDictionary(dictionary: mapSendablePayload(payload)))
+      case .success:
+        resolver(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        rejecter(
-          "DEVICE_PROFILE_COLLECT_ERROR",
-          "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)",
-          error as NSError
+        resolver(
+          createJourneyResultPayload(
+            type: "error",
+            code: "DEVICE_PROFILE_COLLECT_ERROR",
+            message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)"
+          )
         )
       }
     }
@@ -173,12 +177,20 @@ public class RNPingDeviceProfileCommon: NSObject {
     return callbacks.first(where: { $0 is DeviceProfileCallback }) as? DeviceProfileCallback
   }
 
-  /// Converts sendable payload values to Foundation types for Obj-C bridging.
-  /// - Parameter payload: The payload dictionary with Sendable values.
-  /// - Returns: A dictionary with values converted to Any for Objective-C compatibility.
-  private static func mapSendablePayload(_ payload: [String: any Sendable]) -> [String: Any] {
-    payload.mapValues { value in
-      value as Any
+  private static func createJourneyResultPayload(
+    type: String,
+    code: String? = nil,
+    message: String? = nil
+  ) -> NSDictionary {
+    let payload = NSMutableDictionary()
+    payload["type"] = type
+    if let code = code {
+      payload["code"] = code
     }
+    if let message = message {
+      payload["message"] = message
+    }
+    return payload
   }
+
 }

@@ -8,9 +8,9 @@
 import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
 import { logger } from './logging';
 import type {
-  DeviceProfileCallbackInputValue,
   DeviceProfile,
   DeviceProfileCollector,
+  DeviceProfileJourneyResult,
 } from './types';
 
 export interface Spec extends TurboModule {
@@ -27,7 +27,7 @@ export interface Spec extends TurboModule {
   collectDeviceProfileForJourney(
     journeyId: string,
     collectors: DeviceProfileCollector[]
-  ): Promise<DeviceProfileCallbackInputValue>;
+  ): Promise<DeviceProfileJourneyResult>;
 }
 
 // Detect New Architecture (Turbo)

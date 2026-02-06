@@ -41,12 +41,12 @@ public class RNPingDeviceProfileImpl: NSObject {
   /// - Parameters:
   ///   - journeyId: Journey instance identifier.
   ///   - collectors: Ordered list of collector identifiers to execute.
-  ///   - resolver: Promise resolver for the collected profile payload.
+  ///   - resolver: Promise resolver invoked once the callback submission completes (no payload is returned).
   ///   - rejecter: Promise rejecter for collection errors.
   public func collectDeviceProfileForJourney(
     _ journeyId: String,
     collectors: [String],
-    resolver: @escaping (NSDictionary) -> Void,
+    resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(

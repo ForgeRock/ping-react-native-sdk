@@ -87,9 +87,11 @@ class RNPingDeviceProfileModuleTest {
     // Wait for async operation to complete
     assertTrue(promise.awaitCompletion())
     
-    // Verify promise was rejected (no callback registered for journey)
-    assertTrue(promise.wasRejected)
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
+    // Verify promise was resolved with an error payload (no callback registered for journey)
+    assertTrue(promise.wasResolved)
+    val payload = promise.resolvedValue as com.facebook.react.bridge.ReadableMap
+    assertEquals("error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
   }
 
   private class TestPromise : com.facebook.react.bridge.Promise {
@@ -98,10 +100,12 @@ class RNPingDeviceProfileModuleTest {
     var rejectCode: String? = null
     var rejectMessage: String? = null
     var rejectError: Throwable? = null
+    var resolvedValue: Any? = null
     private val completionLatch = CountDownLatch(1)
 
     override fun resolve(value: Any?) {
       wasResolved = true
+      resolvedValue = value
       signalCompletion()
     }
 

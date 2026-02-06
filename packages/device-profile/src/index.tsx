@@ -8,9 +8,9 @@
 import { getNativeModule } from './NativeRNPingDeviceProfile';
 import { logger } from './logging';
 import type {
-  DeviceProfileCallbackInputValue,
   DeviceProfile,
   DeviceProfileCollector,
+  DeviceProfileJourneyResult,
   JourneyInstance,
 } from './types';
 
@@ -57,41 +57,26 @@ export async function collectDeviceProfile(
  * ```ts
  * const node = await journey.start();
  * if (node.callbacks?.some(cb => cb.type === 'DeviceProfileCallback')) {
- *   const profile = await collectDeviceProfileForJourney(
+ *   const result = await collectDeviceProfileForJourney(
  *     journey,
  *     ['hardware', 'network', 'browser']
  *   );
- *   const updatedNode = await journey.next({ profile });
- * }
- * ```
- *
- * @example
- * Including device identifier in the profile:
- * ```ts
- * import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
- * import { getDeviceId } from '@ping-identity/rn-device-id';
- * 
- * const node = await journey.start();
- * if (node.callbacks?.some(cb => cb.type === 'DeviceProfileCallback')) {
- *   const profile = await collectDeviceProfileForJourney(
- *     journey,
- *     ['hardware', 'network', 'browser']
- *   );
- *   const deviceId = await getDeviceId();
- *   const profileWithId = { ...profile, identifier: deviceId };
- *   const updatedNode = await journey.next({ profile: profileWithId });
+ *   if (result.type === 'success') {
+ *     await journey.next();
+ *   } else {
+ *     console.error('Device profile submission failed', result.code, result.message);
+ *   }
  * }
  * ```
  *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
- * @param callbackPayload - Optional raw callback payload when available from Journey.
- * @returns A PingOne AIC-ready device profile payload.
+ * @returns Result object describing success or error.
  */
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[],
-): Promise<DeviceProfileCallbackInputValue> {
+): Promise<DeviceProfileJourneyResult> {
   let journeyId: string;
   try {
     journeyId = await journey.getId();
@@ -106,12 +91,12 @@ export async function collectDeviceProfileForJourney(
 
   try {
     const nativeModule = getNativeModule();
-    const payload = await nativeModule.collectDeviceProfileForJourney(
+    const result = await nativeModule.collectDeviceProfileForJourney(
       journeyId,
       collectors
     );
     logger.info('Device profile metadata collection for Journey succeeded');
-    return payload;
+    return result;
   } catch (error) {
     logger.error('Device profile metadata collection for Journey failed', String(error));
     throw error;

@@ -151,11 +151,19 @@ export default function JourneyScreen() {
           'network',
           'location',
         ]);
-        await next({ submission });
+        if (submission.type === 'success') {
+          await next({});
+        } else {
+          Alert.alert(
+            'Device profile failed',
+            submission.message ?? submission.code
+          );
+          processedNodesRef.current.delete(node.id);
+        }
       } catch (err) {
         console.error('Device profile collection failed:', err);
         Alert.alert(
-          '⚠️ Device profile failed',
+          'Device profile failed',
           String(err instanceof Error ? err.message : err)
         );
         processedNodesRef.current.delete(node.id);

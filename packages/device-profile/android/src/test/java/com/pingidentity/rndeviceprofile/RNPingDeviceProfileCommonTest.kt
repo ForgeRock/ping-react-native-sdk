@@ -7,7 +7,10 @@
 
 package com.pingidentity.rndeviceprofile
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyArray
+import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.device.profile.collector.BluetoothCollector
 import com.pingidentity.device.profile.collector.BrowserCollector
@@ -20,8 +23,13 @@ import com.pingidentity.device.profile.collector.TelephonyCollector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
@@ -33,6 +41,18 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 class RNPingDeviceProfileCommonTest {
+
+  @Before
+  fun setUp() {
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } answers { JavaOnlyMap() }
+    every { Arguments.createArray() } answers { JavaOnlyArray() }
+  }
+
+  @After
+  fun tearDown() {
+    unmockkStatic(Arguments::class)
+  }
 
   /**
    * Verifies collector instances are built for all requested types and location is included.
@@ -86,10 +106,10 @@ class RNPingDeviceProfileCommonTest {
   }
 
   /**
-   * Verifies location collection is rejected when play services are unavailable.
+   * Verifies location collection resolves an error payload when play services are unavailable.
    */
   @Test
-  fun collectDeviceProfileRejectsWhenLocationServicesMissing() {
+  fun collectDeviceProfileResolvesErrorWhenLocationServicesMissing() {
     val collectors = JavaOnlyArray().apply {
       pushString("location")
     }
@@ -97,15 +117,17 @@ class RNPingDeviceProfileCommonTest {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(collectors, promise)
 
-    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.contains("play-services-location") == true)
+    val payload = promise.resolvedValue as ReadableMap
+    assertEquals("error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("code"))
+    assertTrue(payload.getString("message")?.contains("play-services-location") == true)
   }
 
   /**
-   * Verifies journey collection rejects when location services are unavailable.
+   * Verifies journey collection resolves an error payload when location services are unavailable.
    */
   @Test
-  fun collectDeviceProfileForJourneyRejectsWhenLocationServicesMissing() {
+  fun collectDeviceProfileForJourneyResolvesErrorWhenLocationServicesMissing() {
     val collectors = JavaOnlyArray().apply {
       pushString("location")
     }
@@ -117,15 +139,17 @@ class RNPingDeviceProfileCommonTest {
       promise
     )
 
-    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.contains("play-services-location") == true)
+    val payload = promise.resolvedValue as ReadableMap
+    assertEquals("error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("code"))
+    assertTrue(payload.getString("message")?.contains("play-services-location") == true)
   }
 
   /**
-   * Verifies journey collection rejects when no callback is registered.
+   * Verifies journey collection resolves an error payload when no callback is registered.
    */
   @Test
-  fun collectDeviceProfileForJourneyRejectsWhenCallbackMissing() {
+  fun collectDeviceProfileForJourneyResolvesErrorWhenCallbackMissing() {
     val collectors = JavaOnlyArray()
     val promise = TestPromise()
 
@@ -137,8 +161,10 @@ class RNPingDeviceProfileCommonTest {
 
     assertTrue(promise.awaitCompletion())
 
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.contains("journey-456") == true)
+    val payload = promise.resolvedValue as ReadableMap
+    assertEquals("error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
+    assertTrue(payload.getString("message")?.contains("journey-456") == true)
   }
 
   /**
@@ -305,7 +331,7 @@ class RNPingDeviceProfileCommonTest {
   }
 
   /**
-   * Verifies journey collection rejects with empty journey ID.
+   * Verifies journey collection resolves an error payload with empty journey ID.
    */
   @Test
   fun collectDeviceProfileForJourneyWithEmptyJourneyId() {
@@ -322,8 +348,10 @@ class RNPingDeviceProfileCommonTest {
 
     assertTrue(promise.awaitCompletion())
 
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.isNotEmpty() == true)
+    val payload = promise.resolvedValue as ReadableMap
+    assertEquals("error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
+    assertTrue(payload.getString("message")?.isNotEmpty() == true)
   }
 
   private class TestPromise : com.facebook.react.bridge.Promise {

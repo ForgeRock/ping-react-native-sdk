@@ -79,7 +79,7 @@ describe('device-profile package', () => {
 
   it('collects a device profile for a Journey instance', async () => {
     const collectDeviceProfileForJourney = jest.fn(() =>
-      Promise.resolve({ identifier: 'device-1' })
+      Promise.resolve({ type: 'success' })
     );
     const { collectDeviceProfileForJourney: collectForJourney } =
       await loadModule({
@@ -99,7 +99,7 @@ describe('device-profile package', () => {
       'journey-123',
       collectors
     );
-    expect(result).toEqual({ identifier: 'device-1' });
+    expect(result).toEqual({ type: 'success' });
   });
 
   it('propagates native errors when collecting a device profile', async () => {

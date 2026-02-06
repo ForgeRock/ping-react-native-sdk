@@ -175,17 +175,24 @@ app's `Info.plist` so iOS can prompt the user for permission.
 ```ts
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 
-const profile = await collectDeviceProfileForJourney(
+const result = await collectDeviceProfileForJourney(
   journey,
   ['platform', 'hardware', 'network', 'location']
 );
+
+if (result.type === 'success') {
+  await journey.next();
+} else {
+  console.error('Device profile submission failed', result.code, result.message);
+  // Handle failure before advancing the Journey.
+}
 ```
 
 Note: `collectDeviceProfileForJourney` is only valid when a Device Profile callback
 is active in the current Journey node. The native implementation resolves the
-active Device Profile callback from the provided Journey, applies server-driven
-configuration, executes the requested collectors, and returns an AIC-ready
-profile payload.
+active callback, applies server-driven configuration, executes the requested
+collectors, submits the resulting metadata automatically, and resolves with a
+result object describing success or failure.
 
 ## API reference
 
@@ -193,7 +200,7 @@ profile payload.
 import type {
   DeviceProfile,
   DeviceProfileCollector,
-  DeviceProfileCallbackInputValue,
+  DeviceProfileJourneyResult,
   JourneyInstance,
 } from '@ping-identity/rn-device-profile';
 
@@ -204,13 +211,14 @@ function collectDeviceProfile(
 function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[]
-): Promise<DeviceProfileCallbackInputValue>;
+): Promise<DeviceProfileJourneyResult>;
 ```
 
 ## Errors 
 <!-- TODO: needs update after adding error shape -->
 
-Common error codes surfaced via rejected promises:
+Common error codes surfaced via the `error` result when `collectDeviceProfileForJourney`
+returns `{ type: 'error', code, message }`:
 
 - `DEVICE_PROFILE_LOCATION_UNAVAILABLE`: Google Play Services Location is missing.
 - `DEVICE_PROFILE_CALLBACK_NOT_FOUND`: No active Device Profile callback for the Journey.

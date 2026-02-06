@@ -8,9 +8,11 @@
 package com.pingidentity.rndeviceprofile
 
 import android.util.Log
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableType
+import com.facebook.react.bridge.WritableMap
 import com.pingidentity.device.profile.DeviceProfileCallback
 import com.pingidentity.device.profile.collector.BluetoothCollector
 import com.pingidentity.device.profile.collector.BrowserCollector
@@ -58,8 +60,13 @@ object RNPingDeviceProfileCommon {
         "Device Profile",
         "location collection blocked: $LOCATION_ERROR_MESSAGE"
       )
-      // TODO: Update to use GenericError rejection contracts for promises 
-      promise.reject("DEVICE_PROFILE_LOCATION_UNAVAILABLE", LOCATION_ERROR_MESSAGE)
+      promise.resolve(
+        createJourneyResultPayload(
+          type = "error",
+          code = "DEVICE_PROFILE_LOCATION_UNAVAILABLE",
+          message = LOCATION_ERROR_MESSAGE
+        )
+      )
       return false
     }
     return true
@@ -135,9 +142,12 @@ object RNPingDeviceProfileCommon {
         val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
         val callback = resolveDeviceProfileCallback(journeyId)
         if (callback == null) {
-          promise.reject(
-            "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
-            "No active Device Profile callback found for journey $journeyId."
+          promise.resolve(
+            createJourneyResultPayload(
+              type = "error",
+              code = "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
+              message = "No active Device Profile callback found for journey $journeyId."
+            )
           )
           return@launch
         }
@@ -149,12 +159,14 @@ object RNPingDeviceProfileCommon {
         }
 
         result.fold(
-          onSuccess = { profile ->
+          onSuccess = {
             Log.d(
               "Device Profile",
               "metadata collection for journey succeeded"
             )
-            promise.resolve(profile.toReactValue())
+            promise.resolve(
+              createJourneyResultPayload(type = "success")
+            )
           },
           onFailure = { error ->
             Log.e(
@@ -162,10 +174,12 @@ object RNPingDeviceProfileCommon {
               "metadata collection for journey failed during callback",
               error
             )
-            promise.reject(
-              "DEVICE_PROFILE_COLLECT_ERROR",
-              "Failed to collect device profile for journey: ${error.message}",
-              error
+            promise.resolve(
+              createJourneyResultPayload(
+                type = "error",
+                code = "DEVICE_PROFILE_COLLECT_ERROR",
+                message = "Failed to collect device profile for journey: ${error.message}"
+              )
             )
           }
         )
@@ -175,12 +189,26 @@ object RNPingDeviceProfileCommon {
           "metadata collection for journey failed during collection",
           error
         )
-        promise.reject(
-          "DEVICE_PROFILE_COLLECT_ERROR",
-          "Failed to collect device profile for journey: ${error.message}",
-          error
+        promise.resolve(
+          createJourneyResultPayload(
+            type = "error",
+            code = "DEVICE_PROFILE_COLLECT_ERROR",
+            message = "Failed to collect device profile for journey: ${error.message}"
+          )
         )
       }
+    }
+  }
+
+  private fun createJourneyResultPayload(
+    type: String,
+    code: String? = null,
+    message: String? = null
+  ): WritableMap {
+    return Arguments.createMap().apply {
+      putString("type", type)
+      code?.let { putString("code", it) }
+      message?.let { putString("message", it) }
     }
   }
 

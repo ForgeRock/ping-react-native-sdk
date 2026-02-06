@@ -48,6 +48,16 @@ export type DeviceProfileCallbackInputValue = {
 };
 
 /**
+ * Represents the result of collecting a device profile within a Journey.
+ *
+ * @remarks
+ * The native implementation resolves this payload once the callback has been submitted.
+ */
+export type DeviceProfileJourneyResult =
+  | { type: 'success' }
+  | { type: 'error'; code: string; message?: string };
+
+/**
  * TODO: Relocate types package as journey module matures.
  * Minimal Journey instance contract required by device profile collection.
  *
