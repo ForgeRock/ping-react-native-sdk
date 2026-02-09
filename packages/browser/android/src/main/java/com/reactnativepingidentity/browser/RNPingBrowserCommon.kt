@@ -19,7 +19,11 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
+import com.reactnativepingidentity.core.error.ErrorType
+import com.reactnativepingidentity.core.error.GenericError
+import com.reactnativepingidentity.core.error.reject
 import java.net.URL
+import java.net.MalformedURLException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -186,7 +190,20 @@ object RNPingBrowserCommon {
         return@launch
       }
 
-      promise.reject("OPEN_ERROR", error?.message, error)
+      // Map native errors to the shared JS contract from RNPingCore.
+      val mappedError = when (error) {
+        is MalformedURLException -> GenericError(
+          type = ErrorType.ARGUMENT_ERROR,
+          error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+          message = error.message
+        )
+        else -> GenericError(
+          type = ErrorType.INTERNAL_ERROR,
+          error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+          message = error?.message
+        )
+      }
+      promise.reject(mappedError, error)
     }
   }
 

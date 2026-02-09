@@ -7,7 +7,6 @@
 
 package com.reactnativepingidentity.core.registry
 
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotEquals
@@ -18,7 +17,7 @@ private class FakeHandle : NativeHandle
 class SimpleRegistryTest {
 
     @Test
-    fun registerAndResolveReturnsSameInstance() = runTest {
+    fun registerAndResolveReturnsSameInstance() {
         val registry: Registry = SimpleRegistry()
         val handle = FakeHandle()
 
@@ -29,7 +28,7 @@ class SimpleRegistryTest {
     }
 
     @Test
-    fun registerProducesDistinctIds() = runTest {
+    fun registerProducesDistinctIds() {
         val registry: Registry = SimpleRegistry()
         val id1 = registry.register(FakeHandle())
         val id2 = registry.register(FakeHandle())
@@ -38,7 +37,7 @@ class SimpleRegistryTest {
     }
 
     @Test
-    fun removeDropsHandle() = runTest {
+    fun removeDropsHandle() {
         val registry: Registry = SimpleRegistry()
         val id = registry.register(FakeHandle())
 
@@ -48,7 +47,7 @@ class SimpleRegistryTest {
     }
 
     @Test
-    fun removeAllClearsRegistry() = runTest {
+    fun removeAllClearsRegistry() {
         val registry: Registry = SimpleRegistry()
         val first = registry.register(FakeHandle())
         val second = registry.register(FakeHandle())

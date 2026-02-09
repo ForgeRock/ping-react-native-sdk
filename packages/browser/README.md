@@ -1,3 +1,10 @@
+<!--
+Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+
+This software may be modified and distributed under the terms
+of the MIT license. See the LICENSE file for details.
+-->
+
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native Browser
@@ -72,7 +79,26 @@ const result = await open('https://example.com', {
 Security note: The module does not validate or sanitize the `url` you pass to `open`. Only launch
 trusted URLs in your app (for example, enforce an `https` scheme and allow-listed hosts).
 
+### Error handling
+
+Native promise rejections map to the shared `GenericError` contract from
+`@ping-identity/rn-types`. Errors are rejected as exceptions; cancellations are resolved as
+`{ type: 'cancel' }` instead of being rejected.
+
+Error codes:
+- `BROWSER_OPEN_ERROR` for validation/launch failures
+
+```ts
+import type { BrowserError } from '@react-native-pingidentity/browser';
+
+try {
+  await open('https://example.com', { callbackUrlScheme: 'com.example.app' });
+} catch (e) {
+  const error = e as BrowserError;
+  // error.type, error.error, error.message, error.code, error.status
+}
+```
+
 ## TODO
 
-- Implement standardized error types and logger configuration once the related tickets are complete.
 - Add an iOS test runner target to execute module unit tests.
