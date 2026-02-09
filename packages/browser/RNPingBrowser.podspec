@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.license      = package["license"] 
 
   # Must be a HASH — cannot use package["author"] directly
-  s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
+  s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
 
   s.platforms    = { :ios => "16.0" }
 
