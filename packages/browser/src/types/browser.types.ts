@@ -5,12 +5,32 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { GenericError } from '@ping-identity/rn-types';
+
 /**
  * Result of a browser launch.
  */
 export type BrowserResult =
   | { type: 'success'; url: string }
   | { type: 'cancel' };
+
+/**
+ * Error payload returned when browser operations fail.
+ *
+ * Matches the shared native/JS error contract defined in @ping-identity/rn-types.
+ *
+ * @remarks
+ * Rejections use this shape; cancellations resolve as `{ type: 'cancel' }`.
+ */
+export type BrowserError = GenericError;
+
+/**
+ * Stable error codes emitted by the Browser module.
+ *
+ * @remarks
+ * Keep these in sync with the native error constants.
+ */
+export type BrowserErrorCode = 'BROWSER_OPEN_ERROR';
 
 /**
  * Configuration for launching the browser.

@@ -1,3 +1,8 @@
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+
 require "json"
 
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
@@ -23,8 +28,8 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
   s.requires_arc = true
 
-  # Native Ping SDK dependency
-  s.dependency "PingBrowser", "1.3.0-beta2"
+  s.dependency 'PingBrowser', '1.3.0-beta2'
+  s.dependency 'RNPingCore'
 
   # New Architecture helper
   install_modules_dependencies(s)

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import React, { useState } from 'react';
 import {
   View,
@@ -6,6 +13,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import type { BrowserError } from '@react-native-pingidentity/browser';
 import { open } from '@react-native-pingidentity/browser';
 import { commonStyles } from '../src/styles/common';
 
@@ -41,8 +49,11 @@ export default function BrowserScreen() {
         }
       });
       setResult(JSON.stringify(response, null, 2));
-    } catch (e: any) {
-      setError(e?.message ?? 'Browser open failed');
+    } catch (e: unknown) {
+      const errorPayload = e as BrowserError;
+      const errorMessage = errorPayload?.message ?? 'Browser open failed';
+      const errorCode = errorPayload?.error ?? 'BROWSER_OPEN_ERROR';
+      setError(`${errorCode}: ${errorMessage}`);
     }
   };
 

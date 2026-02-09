@@ -11,8 +11,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.reactnativepingidentity.core.CoreRuntime
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.
@@ -46,9 +44,7 @@ object RNPingStorageCommon {
     return try {
       val map = config.toHashMap()
       val storageConfig = buildStorageConfig(map)
-      runBlocking(Dispatchers.IO) {
-        sessionConfigRegistry.register(storageConfig)
-      }
+      sessionConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
       Log.e(TAG, "Error configuring session storage", e)
       throw e
@@ -70,9 +66,7 @@ object RNPingStorageCommon {
     return try {
       val map = config.toHashMap()
       val storageConfig = buildStorageConfig(map)
-      runBlocking(Dispatchers.IO) {
-        oidcConfigRegistry.register(storageConfig)
-      }
+      oidcConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
       Log.e(TAG, "Error configuring OIDC storage", e)
       throw e
@@ -106,9 +100,7 @@ object RNPingStorageCommon {
   @JvmStatic
   fun configureSessionStorage(id: String): WritableMap {
     return try {
-      val resolvedConfig = runBlocking(Dispatchers.IO) {
-        sessionConfigRegistry.resolve(id)
-      }
+      val resolvedConfig = sessionConfigRegistry.resolve(id)
       encodeConfig(resolvedConfig)
     } catch (e: Exception) {
       Log.e(TAG, "Error resolving session storage config", e)
@@ -119,9 +111,7 @@ object RNPingStorageCommon {
   @JvmStatic
   fun configureOidcStorage(id: String): WritableMap {
     return try {
-      val resolvedConfig = runBlocking(Dispatchers.IO) {
-        oidcConfigRegistry.resolve(id)
-      }
+      val resolvedConfig = oidcConfigRegistry.resolve(id)
       encodeConfig(resolvedConfig)
     } catch (e: Exception) {
       Log.e(TAG, "Error resolving OIDC storage config", e)

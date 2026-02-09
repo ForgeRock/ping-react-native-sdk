@@ -26,7 +26,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
       options: options,
       resolver: { _ in XCTFail("resolver should not be called") },
       rejecter: { code, message, _ in
-        XCTAssertEqual(code, "OPEN_ERROR")
+        XCTAssertEqual(code, "BROWSER_OPEN_ERROR")
         XCTAssertEqual(message, "callbackUrlScheme is required")
         expectation.fulfill()
       }
@@ -45,7 +45,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
       options: options,
       resolver: { _ in XCTFail("resolver should not be called") },
       rejecter: { code, message, _ in
-        XCTAssertEqual(code, "OPEN_ERROR")
+        XCTAssertEqual(code, "BROWSER_OPEN_ERROR")
         XCTAssertEqual(message, "Invalid URL")
         expectation.fulfill()
       }
@@ -127,7 +127,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
       options: options,
       resolver: { _ in XCTFail("resolver should not be called") },
       rejecter: { code, message, _ in
-        XCTAssertEqual(code, "OPEN_ERROR")
+        XCTAssertEqual(code, "BROWSER_OPEN_ERROR")
         XCTAssertEqual(message, "The operation couldn’t be completed. (test error 1.)")
         expectation.fulfill()
       }

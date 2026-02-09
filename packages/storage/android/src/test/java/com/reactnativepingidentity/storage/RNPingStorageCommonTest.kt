@@ -11,7 +11,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import io.mockk.*
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -60,10 +59,8 @@ class RNPingStorageCommonTest {
     fun tearDown() {
         unmockkStatic(Arguments::class)
         clearAllMocks()
-        runBlocking {
-            StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).clear()
-            StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.oidcStorageConfigRegistry).clear()
-        }
+        StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.oidcStorageConfigRegistry).clear()
     }
 
     @Test

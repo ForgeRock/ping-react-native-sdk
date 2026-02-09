@@ -2287,6 +2287,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - RNPingCore
     - SocketRocket
     - Yoga
   - RNPingCore (0.1.0):

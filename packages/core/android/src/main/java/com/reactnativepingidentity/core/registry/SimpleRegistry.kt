@@ -7,37 +7,34 @@
 
 package com.reactnativepingidentity.core.registry
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * In-memory, coroutine-safe [Registry] backed by a [LinkedHashMap].
+ * In-memory, thread-safe [Registry] backed by a [ConcurrentHashMap].
  *
- * Entries are keyed by generated UUID strings and guarded with a [Mutex]
- * to avoid concurrent mutations.
+ * Entries are keyed by generated UUID strings.
  */
 class SimpleRegistry : Registry {
-    private val mutex = Mutex()
-    private val map = LinkedHashMap<String, NativeHandle>()
+    private val map = ConcurrentHashMap<String, NativeHandle>()
 
     /** Store the handle and return a fresh UUID key. */
-    override suspend fun register(instance: NativeHandle): String = mutex.withLock {
+    override fun register(instance: NativeHandle): String {
         val id = UUID.randomUUID().toString()
         map[id] = instance
-        id
+        return id
     }
 
     /** Retrieve a handle by id, or null when missing. */
-    override suspend fun resolve(id: String): NativeHandle? = mutex.withLock { map[id] }
+    override fun resolve(id: String): NativeHandle? = map[id]
 
     /** Remove a handle by id; no-op when it does not exist. */
-    override suspend fun remove(id: String) {
-        mutex.withLock { map.remove(id) }
+    override fun remove(id: String) {
+        map.remove(id)
     }
 
     /** Clear all stored handles. */
-    override suspend fun removeAll() {
-        mutex.withLock { map.clear() }
+    override fun removeAll() {
+        map.clear()
     }
 }

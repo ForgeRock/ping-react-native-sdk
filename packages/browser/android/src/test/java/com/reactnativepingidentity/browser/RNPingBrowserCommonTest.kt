@@ -201,7 +201,7 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals("OPEN_ERROR", promise.rejectCode)
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
     assertEquals("boom", promise.rejectMessage)
   }
 
@@ -265,7 +265,7 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("not a url", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals("OPEN_ERROR", promise.rejectCode)
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
     assertTrue(promise.rejectMessage?.contains("no protocol") == true)
   }
 

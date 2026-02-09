@@ -18,20 +18,20 @@ interface Registry {
      * Register a native instance and return the generated id that can be used to
      * retrieve it later.
      */
-    suspend fun register(instance: NativeHandle): String
+    fun register(instance: NativeHandle): String
 
     /**
      * Look up a previously registered instance by id. Returns null if no match is found.
      */
-    suspend fun resolve(id: String): NativeHandle?
+    fun resolve(id: String): NativeHandle?
 
     /**
      * Remove a registered instance by id. Safe to call with unknown ids.
      */
-    suspend fun remove(id: String)
+    fun remove(id: String)
 
     /**
      * Remove all registered instances.
      */
-    suspend fun removeAll()
+    fun removeAll()
 }
