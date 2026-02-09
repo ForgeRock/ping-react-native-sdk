@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
   s.requires_arc  = true
-  s.swift_version = "5.0"
+  s.swift_version = ['5.0', '5.1', '6.0']
 
   # Native Ping SDK 
   s.dependency "PingDeviceId"
