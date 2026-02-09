@@ -2317,6 +2317,35 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNPingDeviceProfile (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNPingJourney (0.1.0):
     - boost
     - DoubleConversion
@@ -2556,6 +2585,7 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
   - RNPingCore (from `../../packages/core`)
+  - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
   - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
@@ -2730,6 +2760,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@react-native-pingidentity/browser"
   RNPingCore:
     :path: "../../packages/core"
+  RNPingDeviceProfile:
+    :path: "../../node_modules/@ping-identity/rn-device-profile"
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
   RNPingLogger:
@@ -2823,6 +2855,7 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingBrowser: 284612b8398596ccd7cf4e4f464bd2353a99d341
   RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
+  RNPingDeviceProfile: 4df2da48dfc3e8920712197ef7cc41a8a5c4f9d1
   RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
   RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
   RNPingStorage: 5d7da183c7fbb0a3fa0b1c936c155015c34c5479
