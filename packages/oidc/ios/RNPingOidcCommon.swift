@@ -16,7 +16,6 @@ import PingOrchestrate
 import RNPingCore
 
 /// Common iOS implementation for the Ping OIDC React Native module.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingOidcCommon: NSObject {
 

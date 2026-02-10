@@ -8,7 +8,6 @@
 import XCTest
 @testable import RNPingOidc
 
-@available(iOS 16.0, *)
 final class OidcConfigParserTests: XCTestCase {
 
   func testParseClientConfigMapsRequiredAndOptionalFields() throws {

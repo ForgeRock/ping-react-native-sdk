@@ -49,7 +49,7 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], shadows = [ShadowOidcCommonArguments::class])
+@Config(sdk = [24], shadows = [ShadowOidcCommonArguments::class])
 class RNPingOidcCommonTest {
 
   private val dispatcher = StandardTestDispatcher()

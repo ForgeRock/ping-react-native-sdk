@@ -9,7 +9,6 @@ import XCTest
 @testable import RNPingCore
 @testable import RNPingOidc
 
-@available(iOS 16.0, *)
 final class RNPingOidcCommonTests: XCTestCase {
 
   func testClientTokenRejectsWhenClientMissing() {

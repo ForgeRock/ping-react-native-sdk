@@ -10,7 +10,6 @@ import PingOidc
 @testable import RNPingCore
 @testable import RNPingOidc
 
-@available(iOS 16.0, *)
 final class OidcErrorMapperTests: XCTestCase {
 
   func testMapOidcErrorAuthorizeError() {

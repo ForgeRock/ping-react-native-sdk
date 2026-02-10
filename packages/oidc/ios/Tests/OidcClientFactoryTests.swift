@@ -9,7 +9,6 @@ import XCTest
 import PingOidc
 @testable import RNPingOidc
 
-@available(iOS 16.0, *)
 final class OidcClientFactoryTests: XCTestCase {
 
   func testBuildOidcClientDefaultsOptionalOpenIdEndpoints() {

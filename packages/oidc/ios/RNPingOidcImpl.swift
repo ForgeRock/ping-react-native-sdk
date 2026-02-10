@@ -11,7 +11,6 @@
 import Foundation
 
 /// Swift entry point used by the Obj-C++ bridges.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingOidcImpl: NSObject {
 
