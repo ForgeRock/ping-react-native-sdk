@@ -10,6 +10,7 @@
     "packages:info": "yarn workspaces info",
     "docs:browser": "typedoc --options typedoc.browser.json",
     "docs:oidc": "typedoc --options typedoc.oidc.json",
+    "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @react-native-pingidentity/browser test",
     "test:oidc": "yarn workspace @ping-identity/rn-oidc test",

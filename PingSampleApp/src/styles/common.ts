@@ -204,6 +204,11 @@ export const commonStyles = StyleSheet.create({
     color: colors.gray,
     textAlign: 'center',
   },
+  devideIdText:{
+    fontSize: 9,
+    color: colors.gray,
+    textAlign: 'center',
+  },
 
   // ===== Journey Screen Styles =====
   journeyContainer: {

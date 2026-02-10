@@ -2520,6 +2520,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ping-identity/rn-device-id@workspace:*, @ping-identity/rn-device-id@workspace:packages/device-id":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-device-id@workspace:packages/device-id"
+  dependencies:
+    "@react-native-pingidentity/core": "npm:^0.1.0"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-oidc@workspace:*, @ping-identity/rn-oidc@workspace:packages/oidc":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-oidc@workspace:packages/oidc"
@@ -3773,6 +3787,7 @@ __metadata:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-oidc": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"
