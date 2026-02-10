@@ -33,7 +33,7 @@ import org.robolectric.annotation.Config
  * Unit tests for JSON-to-React conversions exposed by `RNPingDeviceProfileCommon`.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [29])
 class RNPingDeviceProfileJsonBridgeTest {
 
   /**

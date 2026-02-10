@@ -11,7 +11,6 @@ import RNPingCore
 
 /// Shared device profile collection logic for React Native iOS bridges.
 /// TODO: Add logging once logger module is available and error shapes
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
 

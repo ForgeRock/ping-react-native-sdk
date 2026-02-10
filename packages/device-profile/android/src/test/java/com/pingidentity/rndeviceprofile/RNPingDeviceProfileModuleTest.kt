@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit
  * Unit tests for the React Native module surface.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [29])
 class RNPingDeviceProfileModuleTest {
 
   private val reactContext = mockk<ReactApplicationContext>(relaxed = true)

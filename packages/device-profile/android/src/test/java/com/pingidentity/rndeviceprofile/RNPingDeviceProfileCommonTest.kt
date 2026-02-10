@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit
  * Unit tests for shared helpers exposed by `RNPingDeviceProfileCommon`.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [29])
 class RNPingDeviceProfileCommonTest {
 
   @Before

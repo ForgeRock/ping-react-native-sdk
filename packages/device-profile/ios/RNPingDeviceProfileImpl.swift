@@ -9,7 +9,6 @@ import Foundation
 import PingDeviceProfile
 
 /// Swift entry point for the Device Profile native module.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingDeviceProfileImpl: NSObject {
 

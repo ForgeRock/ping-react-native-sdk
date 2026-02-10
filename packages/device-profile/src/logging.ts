@@ -8,6 +8,12 @@
 import { logger as createLogger } from '@react-native-pingidentity/logger';
 import type { LoggerInstance } from '@react-native-pingidentity/logger';
 
+/**
+ * Logger instance for device profile operations.
+ *
+ * Initializes a logger with 'info' level by default. If initialization fails,
+ * falls back to a console-based logger to ensure logging functionality remains available.
+ */
 export const logger: LoggerInstance  = ((): LoggerInstance => {
   try {
     return createLogger({ level: 'info' });

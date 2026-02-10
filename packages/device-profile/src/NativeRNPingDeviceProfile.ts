@@ -13,6 +13,12 @@ import type {
   DeviceProfileJourneyResult,
 } from './types';
 
+/**
+ * Native module interface for device profile collection.
+ *
+ * Provides methods to collect device profile data either standalone
+ * or as part of an active Journey authentication flow.
+ */
 export interface Spec extends TurboModule {
   /**
    * Collect a device profile outside of Journey flows.

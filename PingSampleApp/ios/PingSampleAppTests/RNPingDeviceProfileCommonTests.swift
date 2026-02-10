@@ -8,7 +8,6 @@ import RNPingCore
 import RNPingDeviceProfile
 
 /// XCTest coverage for the shared iOS device profile bridge logic.
-@available(iOS 16.0, *)
 final class RNPingDeviceProfileCommonTests: XCTestCase {
 
   func testCollectDeviceProfileResolvesEmptyWhenNoCollectorsProvided() {
