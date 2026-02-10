@@ -36,6 +36,10 @@ export default function HomeScreen({ navigation }: Props) {
       title: '🧪 Logger Demo',
       screen: 'Logger',
     },
+    {
+      title: '📲 Device Profile',
+      screen: 'DeviceProfile',
+    },
   ];
 
   useEffect(() => {

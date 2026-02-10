@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
  *
@@ -6,6 +7,9 @@
  */
 
 import React, { useEffect, useState } from 'react';
+=======
+import React, { useEffect, useRef, useState } from 'react';
+>>>>>>> 0284011 (chore(dvc-profile): wire dvc profile and splash screen)
 import {
   View,
   Text,
@@ -30,6 +34,7 @@ import type {
   Step,
   Tokens,
 } from '@ping-identity/rn-types';
+import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -63,6 +68,15 @@ export default function JourneyScreen() {
   const [suggestedJourneys, setSuggestedJourneys] = useState<string[]>([]);
   const [showJourneyInput, setShowJourneyInput] = useState(true);
   const [resumeUrl, setResumeUrl] = useState('');
+  const [autoSubmitting, setAutoSubmitting] = useState(false);
+  const processedNodesRef = useRef<Set<string>>(new Set());
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Load journey suggestions
   useEffect(() => {
@@ -106,6 +120,63 @@ export default function JourneyScreen() {
     if (node?.type === 'SuccessNode') getUserDetails();
   }, [node, user]);
 
+  // Auto-submit callbacks that don't require user input
+  useEffect(() => {
+    if (
+      !node ||
+      node.type !== 'ContinueNode' ||
+      !node.callbacks ||
+      autoSubmitting ||
+      processedNodesRef.current.has(node.id)
+    ) {
+      return;
+    }
+
+    const deviceProfileCallback = node.callbacks.find(
+      (cb: any) => cb.type === 'DeviceProfileCallback'
+    );
+
+    if (!deviceProfileCallback) {
+      return;
+    }
+
+    const handleAutoSubmit = async () => {
+      processedNodesRef.current.add(node.id);
+      setAutoSubmitting(true);
+
+      try {
+        const submission = await collectDeviceProfileForJourney(journeyClient, [
+          'platform',
+          'hardware',
+          'network',
+          'location',
+        ]);
+        if (submission.type === 'success') {
+          await next({});
+        } else {
+          Alert.alert(
+            'Device profile failed',
+            submission.message ?? submission.code
+          );
+          processedNodesRef.current.delete(node.id);
+        }
+      } catch (err) {
+        console.error('Device profile collection failed:', err);
+        Alert.alert(
+          'Device profile failed',
+          String(err instanceof Error ? err.message : err)
+        );
+        processedNodesRef.current.delete(node.id);
+      } finally {
+        if (isMountedRef.current) {
+          setAutoSubmitting(false);
+        }
+      }
+    };
+
+    handleAutoSubmit();
+  }, [node, next, journeyClient, autoSubmitting]);
+
   const onStart = async () => {
     if (!journeyName.trim()) {
       Alert.alert('Enter a journey name first');
@@ -121,11 +192,15 @@ export default function JourneyScreen() {
   };
 
   const onSubmit = async () => {
-    if (!node?.callbacks) return;
-    const callbacks = node.callbacks.map((cb: any) => ({
-      type: cb.type,
-      value: inputs[cb.type] || '',
-    }));
+    if (!node?.callbacks || autoSubmitting) return;
+
+    const callbacks = node.callbacks
+      .filter((cb: any) => cb.type !== 'DeviceProfileCallback')
+      .map((cb: any) => ({
+        type: cb.type,
+        value: inputs[cb.type] || '',
+      }));
+
     await next({ callbacks });
   };
 
@@ -147,8 +222,11 @@ export default function JourneyScreen() {
       await logoutUser();
       setSession(null);
       setInputs({});
+      setResumeUrl('');
       setJourneyName('');
       setShowJourneyInput(true);
+      setAutoSubmitting(false);
+      processedNodesRef.current.clear();
       Alert.alert('Logged out');
     } catch (err: any) {
       Alert.alert('⚠️ Logout failed', err.message);
@@ -201,6 +279,17 @@ export default function JourneyScreen() {
         );
       }
 
+      if (cb.type === 'DeviceProfileCallback') {
+        return (
+          <View key={key} style={commonStyles.inputGroup}>
+            <Text style={commonStyles.inputLabel}>Device profile</Text>
+            <Text style={commonStyles.helperNote}>
+              Collecting device profile information…
+            </Text>
+          </View>
+        );
+      }
+
       // Default callback handling
       const label =
         cb.prompt ||
@@ -232,7 +321,7 @@ export default function JourneyScreen() {
     return (
       <>
         {callbackViews}
-        {!hasSuspended && (
+        {!hasSuspended && !autoSubmitting && (
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
             onPress={onSubmit}
