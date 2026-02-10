@@ -42,6 +42,10 @@ export default function HomeScreen({ navigation }: Props) {
       icon: '🔒',
       screen: 'Oidc',
     },
+    {
+      title: '📲 Device Profile',
+      screen: 'DeviceProfile',
+    },
   ];
 
   useEffect(() => {

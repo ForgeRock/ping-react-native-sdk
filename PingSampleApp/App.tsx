@@ -7,6 +7,7 @@ import JourneyScreen from './ui/JourneyScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
+import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
 import { configureBrowser } from '@react-native-pingidentity/browser';
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
+  DeviceProfile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -79,6 +81,11 @@ export default function App() {
           name="Oidc"
           component={OidcScreen}
           options={{ title: 'OIDC Demo' }}
+        />
+        <Stack.Screen
+          name="DeviceProfile"
+          component={DeviceProfileScreen}
+          options={{ title: 'Device Profile' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
 
-  s.dependency 'PingOidc', '1.3.0-beta2'
+  s.dependency 'PingOidc', '1.3.1'
   s.dependency 'RNPingCore'
   s.dependency 'RNPingLogger'
   s.dependency 'RNPingStorage'

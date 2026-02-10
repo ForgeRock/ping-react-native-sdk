@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+ 
 import Foundation
 import PingJourney
 import PingLogger
@@ -14,12 +21,30 @@ public class RNPingJourneyImpl: NSObject {
   // Private initializer to enforce singleton
   @objc private override init() {
     super.init()
+    /// TODO: Remove once journey module matures and types package is available.
+    CoreRuntime.journeyCallbackResolver = { [weak self] journeyId in
+      guard let node = self?.continueNodeMap[journeyId] else {
+        return nil
+      }
+      return node.callbacks
+    }
   }
 
   // Local registry of Journey instances keyed by generated id
   private var journeyMap: [String: Journey] = [:]
   // Store nodes per journey instance
-  private var nodeMap: [String: Node?] = [:]
+  private var nodeMap: [String: Node] = [:]
+  // Store ContinueNode instances for handling callbacks and progression
+  /// TODO: Remove once journey module matures and types package is available.
+  private var continueNodeMap: [String: ContinueNode] = [:]
+  /// Clear the current node when the Journey node flow completes.
+  /// TODO: Remove once journey module matures and types package is available.
+  private func clearIfFinished(_ journeyId: String, node: Node) async {
+    if node is SuccessNode || node is FailureNode || node is ErrorNode {
+      nodeMap.removeValue(forKey: journeyId)
+      continueNodeMap.removeValue(forKey: journeyId)
+    }
+  }
 
   // MARK: - Node Serialization 
   private func serializeNode(_ node: Node) -> NSDictionary {
@@ -47,7 +72,7 @@ public class RNPingJourneyImpl: NSObject {
   @objc(configureJourney:resolver:rejecter:)
   public func configureJourney(
     _ config: NSDictionary,
-    resolver resolve: RCTPromiseResolveBlock,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
     print("RNPingJourney: configureJourney called with \(config)")
@@ -94,8 +119,10 @@ public class RNPingJourneyImpl: NSObject {
     let journeyId = UUID().uuidString
     journeyMap[journeyId] = journey
 
-    print("RNPingJourney: Journey registered → \(journeyId)")
-    resolve(journeyId)
+    Task {
+      print("RNPingJourney: Journey registered → \(journeyId)")
+      resolve(journeyId)
+    }
   }
 
   // MARK: - Start Journey
@@ -118,6 +145,12 @@ public class RNPingJourneyImpl: NSObject {
     Task {
       let node = await journey.start(journeyName) { $0.forceAuth = forceAuth; $0.noSession = noSession }
       nodeMap[journeyId] = node
+      if let continueNode = node as? ContinueNode {
+        continueNodeMap[journeyId] = continueNode
+      } else {
+        continueNodeMap.removeValue(forKey: journeyId)
+      }
+      await clearIfFinished(journeyId, node: node)
       resolve(self.serializeNode(node))
     }
   }
@@ -134,7 +167,7 @@ public class RNPingJourneyImpl: NSObject {
     let id = journeyId as String
 
     // Get the current node for this journey
-    guard let current = nodeMap[id] as? ContinueNode else {
+    guard let current = continueNodeMap[id] else {
       reject("NO_ACTIVE_JOURNEY", "No active ContinueNode for journeyId=\(id)", nil)
       return
     }
@@ -155,8 +188,13 @@ public class RNPingJourneyImpl: NSObject {
 
     Task {
       let nextNode = await current.next()
-      // Store new node for this journey instance
       nodeMap[id] = nextNode
+      if let continueNode = nextNode as? ContinueNode {
+        continueNodeMap[id] = continueNode
+      } else {
+        continueNodeMap.removeValue(forKey: id)
+      }
+      await clearIfFinished(id, node: nextNode)
       resolve(self.serializeNode(nextNode))
     }
   }
@@ -183,10 +221,14 @@ public class RNPingJourneyImpl: NSObject {
 
     Task {
       let node = await journey.resume(resumeUrl)
-
-      // Save resumed node for this journey instance
       nodeMap[id] = node
+      if let continueNode = node as? ContinueNode {
+        continueNodeMap[id] = continueNode
+      } else {
+        continueNodeMap.removeValue(forKey: id)
+      }
 
+      await clearIfFinished(id, node: node)
       resolve(self.serializeNode(node))
     }
   }
@@ -232,6 +274,8 @@ public class RNPingJourneyImpl: NSObject {
     Task {
       let user = await journey.journeyUser()
       await user?.logout()
+      nodeMap.removeValue(forKey: journeyId)
+      continueNodeMap.removeValue(forKey: journeyId)
       resolve(true)
     }
   }
