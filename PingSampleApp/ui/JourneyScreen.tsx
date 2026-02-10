@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*
  * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
  *
@@ -6,10 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useEffect, useState } from 'react';
-=======
 import React, { useEffect, useRef, useState } from 'react';
->>>>>>> 0284011 (chore(dvc-profile): wire dvc profile and splash screen)
 import {
   View,
   Text,
