@@ -8,7 +8,7 @@
     "packages:install": "yarn install",
     "packages:build": "yarn workspaces foreach -A -t --topological-dev run build",
     "packages:info": "yarn workspaces info",
-    "docs:browser": "typedoc --options typedoc.browser.json",
+    "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @react-native-pingidentity/browser test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
