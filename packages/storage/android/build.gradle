@@ -28,7 +28,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-    namespace "com.pingidentity.reactnative.storage"
+    namespace "com.pingidentity.reactnative.rnstorage"
 
     compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 

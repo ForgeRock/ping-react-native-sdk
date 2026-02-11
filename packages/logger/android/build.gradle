@@ -28,7 +28,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.pingidentity.reactnative.logger"
+  namespace "com.pingidentity.reactnative.rnlogger"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 

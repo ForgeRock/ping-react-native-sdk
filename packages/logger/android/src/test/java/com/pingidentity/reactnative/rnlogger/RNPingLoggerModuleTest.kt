@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingidentity.reactnative.logger
+package com.pingidentity.reactnative.rnlogger
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

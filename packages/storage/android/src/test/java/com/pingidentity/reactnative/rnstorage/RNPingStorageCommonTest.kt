@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingidentity.reactnative.storage
+package com.pingidentity.reactnative.rnstorage
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap

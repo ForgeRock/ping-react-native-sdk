@@ -40,7 +40,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.pingidentity.reactnative.logger"
+      "javaPackageName": "com.pingidentity.reactnative.rnlogger"
     }
   },
   "react-native-builder-bob": {
