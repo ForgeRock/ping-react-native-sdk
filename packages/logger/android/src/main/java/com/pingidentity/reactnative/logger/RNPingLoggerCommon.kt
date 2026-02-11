@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
  
-package com.reactnativepingidentity.logger
+package com.pingidentity.reactnative.logger
 
 import android.util.Log
 import com.facebook.react.bridge.ReadableMap
