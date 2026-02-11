@@ -4,7 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-package com.pingidentity.rndeviceid
+package com.pingidentity.reactnative.rndeviceid
 
 import com.facebook.react.bridge.Promise
 import com.pingidentity.android.ContextProvider

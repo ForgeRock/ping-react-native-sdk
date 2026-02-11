@@ -37,7 +37,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.pingidentity.rndeviceid"
+      "javaPackageName": "com.pingidentity.reactnative.rndeviceid"
     }
   },
   "workspaces": [
