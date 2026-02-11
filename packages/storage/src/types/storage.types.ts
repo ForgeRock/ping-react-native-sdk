@@ -26,7 +26,7 @@ import type { BaseStorageConfig } from "../NativeRNPingStorage";
  * @example
  * Basic usage:
  * ```typescript
- * import { configureSessionStorage } from '@react-native-pingidentity/storage';
+ * import { configureSessionStorage } from '@ping-identity/rn-storage';
  * 
  * const sessionStorage: SessionStorage = configureSessionStorage({
  *   android: {
@@ -61,7 +61,7 @@ export type SessionStorage = BaseStorageConfig;
  * @example
  * Basic usage:
  * ```typescript
- * import { configureOidcStorage } from '@react-native-pingidentity/storage';
+ * import { configureOidcStorage } from '@ping-identity/rn-storage';
  * 
  * const oidcStorage: OidcStorage = configureOidcStorage({
  *   android: {

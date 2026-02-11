@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/storage",
+  "name": "@ping-identity/rn-storage",
   "version": "0.1.0",
   "description": "Ping Identity Storage TurboModule",
   "main": "lib/module/index.js",
@@ -18,7 +18,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@react-native-pingidentity/core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

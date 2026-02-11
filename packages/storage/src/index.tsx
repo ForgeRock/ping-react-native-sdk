@@ -32,7 +32,7 @@ export {
 function validateStorageConfig(config: BaseStorageConfig) {
   if (!config) {
     throw new Error(
-      "[@react-native-pingidentity/storage] Missing configuration: " +
+      "[@ping-identity/rn-storage] Missing configuration: " +
         "You must provide a valid storage config."
     );
   }
@@ -76,7 +76,7 @@ function validateNormalizedResult(
 ) {
   if (nativeResult !== null && nativeResult !== undefined && typeof nativeResult !== "object") {
     throw new Error(
-      "[@react-native-pingidentity/storage] Failed to resolve storage configuration."
+      "[@ping-identity/rn-storage] Failed to resolve storage configuration."
     );
   }
 }

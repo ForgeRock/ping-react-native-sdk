@@ -10,7 +10,7 @@ storage solutions for the Ping SDKs, serving React Native applications.
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/storage
+yarn add @ping-identity/rn-storage
 cd ios && pod install
 ```
 
@@ -26,12 +26,12 @@ import {
   CacheStrategy,
   configureSessionStorage,
   configureOidcStorage,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 import type {
   SessionStorage,
   OidcStorage,
   StorageConfig,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 
 // Configure session storage for Journey SSO tokens (Android configuration)
 const sessionStorage: SessionStorage = configureSessionStorage({
@@ -73,7 +73,7 @@ that accept inline storage configuration. The configured outputs are branded
 as `SessionStorage` or `OidcStorage` for type safety.
 
 ```ts
-import type { OidcStorage, StorageConfig } from '@react-native-pingidentity/storage';
+import type { OidcStorage, StorageConfig } from '@ping-identity/rn-storage';
 
 const oidcCfg: StorageConfig = {
   android: {
@@ -95,7 +95,7 @@ Because the native storage fields differ between Android and iOS, pass the norma
 config fields explicitly so the same JS code works on both platforms:
 
 ```ts
-import type { OidcStorage } from '@react-native-pingidentity/storage';
+import type { OidcStorage } from '@ping-identity/rn-storage';
 
 const oidcConfig: OidcStorage = configureOidcStorage({
   // Android-only fields
