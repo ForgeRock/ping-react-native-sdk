@@ -18,7 +18,7 @@ returns the redirect URL to JavaScript.
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/browser
+yarn add @ping-identity/rn-browser
 cd ios && pod install
 ```
 
@@ -29,7 +29,7 @@ cd ios && pod install
 Apply global customization for Custom Tabs/Auth Tabs. iOS currently ignores these options.
 
 ```ts
-import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 configureBrowser({
   android: {
@@ -67,7 +67,7 @@ android {
 ### Open a browser session
 
 ```ts
-import { open } from '@react-native-pingidentity/browser';
+import { open } from '@ping-identity/rn-browser';
 
 const result = await open('https://example.com', {
   callbackUrlScheme: 'com.example.app',
@@ -94,7 +94,7 @@ Error codes:
 - `BROWSER_OPEN_ERROR` for validation/launch failures
 
 ```ts
-import type { BrowserError } from '@react-native-pingidentity/browser';
+import type { BrowserError } from '@ping-identity/rn-browser';
 
 try {
   await open('https://example.com', { callbackUrlScheme: 'com.example.app' });

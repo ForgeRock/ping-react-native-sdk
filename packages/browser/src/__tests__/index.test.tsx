@@ -132,7 +132,7 @@ describe('browser package', () => {
     });
 
     expect(() => resetBrowser()).toThrow(
-      '[@react-native-pingidentity/browser] Native RNPingBrowserClassic module not found.'
+      '[@ping-identity/rn-browser] Native RNPingBrowserClassic module not found.'
     );
   });
 
@@ -206,7 +206,7 @@ describe('browser package', () => {
     expect(() =>
       openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
     ).toThrow(
-      '[@react-native-pingidentity/browser] Native RNPingBrowserClassic module not found.'
+      '[@ping-identity/rn-browser] Native RNPingBrowserClassic module not found.'
     );
   });
 

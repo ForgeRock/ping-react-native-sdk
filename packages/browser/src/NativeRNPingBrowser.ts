@@ -77,7 +77,7 @@ export function getNativeModule(): Spec {
   if (!classic) {
     const available = Object.keys(NativeModules);
     throw new Error(
-      '[@react-native-pingidentity/browser] Native RNPingBrowserClassic module not found.\n' +
+      '[@ping-identity/rn-browser] Native RNPingBrowserClassic module not found.\n' +
         'Available NativeModules: ' +
         JSON.stringify(available)
     );

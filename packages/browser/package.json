@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/browser",
+  "name": "@ping-identity/rn-browser",
   "version": "0.1.0",
   "description": "Ping Identity Browser for React Native",
   "homepage": "https://www.pingidentity.com/",
@@ -29,8 +29,8 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@ping-identity/rn-types": "^0.1.0",
-    "@react-native-pingidentity/core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
   },
   "react-native-builder-bob": {
     "source": "src",

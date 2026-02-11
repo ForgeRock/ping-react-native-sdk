@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@react-native-pingidentity/browser": ["./src/index"]
+      "@ping-identity/rn-browser": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
