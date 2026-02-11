@@ -26,8 +26,8 @@
     "android"
   ],
   "dependencies": {
-    "@react-native-pingidentity/core": "^0.1.0",
-    "@react-native-pingidentity/logger": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-logger": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

@@ -35,7 +35,7 @@ import { getNativeModule } from './NativeRNPingDeviceId';
  * 
  * @example
  * ```typescript
- * import { getDeviceId } from '@react-native-pingidentity/device-id';
+ * import { getDeviceId } from '@ping-identity/rn-device-id';
  * 
  * // Get secure device identifier for authentication
  * const deviceId = await getDeviceId();

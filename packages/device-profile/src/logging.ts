@@ -5,8 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { logger as createLogger } from '@react-native-pingidentity/logger';
-import type { LoggerInstance } from '@react-native-pingidentity/logger';
+import { logger as createLogger } from '@ping-identity/rn-logger';
+import type { LoggerInstance } from '@ping-identity/rn-logger';
 
 /**
  * Logger instance for device profile operations.

@@ -48,7 +48,7 @@ const loadModule = async ({
     })
   );
 
-  jest.doMock('@react-native-pingidentity/logger', () => ({
+  jest.doMock('@ping-identity/rn-logger', () => ({
     logger: jest.fn(() => ({
       changeLevel: jest.fn(),
       error: jest.fn(),
