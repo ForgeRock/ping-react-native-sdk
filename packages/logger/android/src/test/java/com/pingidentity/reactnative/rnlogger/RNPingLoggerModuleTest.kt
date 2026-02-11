@@ -14,11 +14,11 @@ class RNPingLoggerModuleTest {
 
   @Test
   fun moduleNameIsCorrect() {
-    assertEquals("Logger", LoggerModule.NAME)
+    assertEquals("Logger", RNPingLoggerModule.NAME)
   }
 
   @Test
   fun constantNameMatchesModuleName() {
-    assertEquals("Logger", LoggerModule.NAME)
+    assertEquals("Logger", RNPingLoggerModule.NAME)
   }
 }
