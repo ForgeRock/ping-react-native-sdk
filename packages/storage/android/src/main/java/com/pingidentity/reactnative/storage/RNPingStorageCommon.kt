@@ -4,7 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-package com.reactnativepingidentity.storage
+package com.pingidentity.reactnative.storage
 
 import android.util.Log
 import com.facebook.react.bridge.Arguments

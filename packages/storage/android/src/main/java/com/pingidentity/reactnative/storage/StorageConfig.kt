@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.storage
+package com.pingidentity.reactnative.storage
 
 import com.reactnativepingidentity.core.registry.NativeHandle
 

@@ -37,7 +37,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.reactnativepingidentity.storage"
+      "javaPackageName": "com.pingidentity.reactnative.storage"
     }
   },
   "react-native-builder-bob": {

@@ -4,72 +4,68 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-package com.reactnativepingidentity.storage
+package com.pingidentity.reactnative.storage
 
-import com.facebook.react.bridge.*
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
-import com.reactnativepingidentity.storage.RNPingStorageCommon
 
 /**
- * React Native module for Ping Storage (Classic/Old Architecture).
+ * React Native module for Ping Storage (New Architecture/Turbo Module).
  *
- * This module provides storage configuration methods for the old React Native architecture.
+ * This module provides storage configuration methods for the new React Native architecture.
  * It delegates to [RNPingStorageCommon] for actual implementation.
  *
  * @param reactContext The React application context
  */
-@ReactModule(name = RNPingStorageClassicModule.NAME)
-class RNPingStorageClassicModule(
-    reactContext: ReactApplicationContext
-) : ReactContextBaseJavaModule(reactContext) {
+@ReactModule(name = RNPingStorageModule.NAME)
+class RNPingStorageModule(reactContext: ReactApplicationContext) :
+    NativeRNPingStorageSpec(reactContext) {
+
+    override fun getName(): String = NAME
 
     companion object {
         const val NAME = "RNPingStorage"
     }
 
-    override fun getName(): String = NAME
-
     /**
-     * Register session storage configuration (synchronous blocking method).
+     * Register session storage configuration.
      *
      * @param config Storage configuration containing fileName and keyAlias
      * @return Unique ID that can be used to reference this storage configuration
      */
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun registerSessionStorage(config: ReadableMap): String {
+    override fun registerSessionStorage(config: ReadableMap): String {
         return RNPingStorageCommon.registerSessionStorage(config)
     }
 
     /**
-     * Register OIDC storage configuration (synchronous blocking method).
+     * Register OIDC storage configuration.
      *
      * @param config Storage configuration containing fileName and keyAlias
      * @return Unique ID that can be used to reference this storage configuration
      */
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun registerOidcStorage(config: ReadableMap): String {
+    override fun registerOidcStorage(config: ReadableMap): String {
         return RNPingStorageCommon.registerOidcStorage(config)
     }
 
     /**
-     * Resolve session storage configuration by id (synchronous blocking method).
+     * Resolve session storage configuration by id.
      *
      * @param id Storage configuration id
      * @return Storage configuration map
      */
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureSessionStorage(id: String): WritableMap {
+    override fun configureSessionStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureSessionStorage(id)
     }
 
     /**
-     * Resolve OIDC storage configuration by id (synchronous blocking method).
+     * Resolve OIDC storage configuration by id.
      *
      * @param id Storage configuration id
      * @return Storage configuration map
      */
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun configureOidcStorage(id: String): WritableMap {
+    override fun configureOidcStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureOidcStorage(id)
     }
 }
