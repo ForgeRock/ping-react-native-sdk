@@ -18,7 +18,7 @@ promise rejections consistent across modules.
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/core
+yarn add @ping-identity/rn-core
 cd ios && pod install
 ```
 

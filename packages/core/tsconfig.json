@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "@react-native-pingidentity/core": ["./src/index"]
+      "@ping-identity/rn-core": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
