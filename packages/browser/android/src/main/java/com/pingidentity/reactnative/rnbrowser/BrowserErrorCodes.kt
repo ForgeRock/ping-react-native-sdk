@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.browser
+package com.pingidentity.reactnative.rnbrowser
 
 /**
  * Stable error codes emitted by the Browser module.

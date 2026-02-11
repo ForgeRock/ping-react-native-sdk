@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.browser
+package com.pingidentity.reactnative.rnbrowser
 
 import android.graphics.Color
 import androidx.browser.auth.AuthTabColorSchemeParams

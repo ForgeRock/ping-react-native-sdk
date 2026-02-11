@@ -38,7 +38,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.reactnativepingidentity.browser"
+  namespace "com.pingidentity.reactnative.rnbrowser"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 

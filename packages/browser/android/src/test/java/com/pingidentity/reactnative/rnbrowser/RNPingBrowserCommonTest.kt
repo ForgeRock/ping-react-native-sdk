@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.browser
+package com.pingidentity.reactnative.rnbrowser
 
 import android.app.Application
 import android.content.Intent
@@ -15,14 +15,17 @@ import android.net.Uri
 import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.test.core.app.ApplicationProvider
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.unmockkStatic
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,6 +59,8 @@ class RNPingBrowserCommonTest {
     fakeLauncher = FakeBrowserLauncher()
     RNPingBrowserCommon.browserLauncher = fakeLauncher
     RNPingBrowserCommon.mapFactory = { JavaOnlyMap() }
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } returns JavaOnlyMap()
     Dispatchers.setMain(mainDispatcher)
   }
 
@@ -64,6 +69,7 @@ class RNPingBrowserCommonTest {
     Dispatchers.resetMain()
     RNPingBrowserCommon.browserLauncher = DefaultBrowserLauncherAdapter
     RNPingBrowserCommon.mapFactory = { JavaOnlyMap() }
+    unmockkStatic(Arguments::class)
     unmockkAll()
   }
 
