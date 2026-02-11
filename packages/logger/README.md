@@ -8,7 +8,7 @@ The logger module provides a unified logging abstraction for the Ping Identity u
 
 
 ```sh
-npm install @react-native-pingidentity/logger
+npm install @ping-identity/rn-logger
 ```
 
 
@@ -16,7 +16,7 @@ npm install @react-native-pingidentity/logger
 
 
 ```js
-import { configureLogger, logger } from '@react-native-pingidentity/logger';
+import { configureLogger, logger } from '@ping-identity/rn-logger';
 
 const log = logger({ level: 'info' });
 log.info('Application started');

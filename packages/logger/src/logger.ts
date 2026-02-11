@@ -14,7 +14,7 @@ import type {
   NativeLoggerHandle,
 } from './types/logger.types';
 import NativeLogger, { type NativeLoggerLevel } from './NativeRNPingLogger';
-import pkg from '@react-native-pingidentity/logger/package.json';
+import pkg from '@ping-identity/rn-logger/package.json';
 
 const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
   debug: 'STANDARD',
@@ -85,7 +85,7 @@ export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
 
   if (!id) {
     throw new Error(
-      '[@react-native-pingidentity/logger] Failed to configure native logger'
+      '[@ping-identity/rn-logger] Failed to configure native logger'
     );
   }
 
@@ -104,7 +104,7 @@ export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
  * @example
  * Basic usage:
  * ```typescript
- * import { logger } from '@react-native-pingidentity/logger';
+ * import { logger } from '@ping-identity/rn-logger';
  * 
  * const log = logger({ level: 'debug' });
  * log.debug('Debug message');
