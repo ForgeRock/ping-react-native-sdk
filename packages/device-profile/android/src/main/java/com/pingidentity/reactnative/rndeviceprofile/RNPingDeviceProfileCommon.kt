@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingidentity.rndeviceprofile
+package com.pingidentity.reactnative.rndeviceprofile
 
 import android.util.Log
 import com.facebook.react.bridge.Arguments

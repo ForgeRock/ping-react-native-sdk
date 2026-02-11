@@ -40,7 +40,7 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 android {
-  namespace "com.pingidentity.rndeviceprofile"
+  namespace "com.pingidentity.reactnative.rndeviceprofile"
 
   compileSdkVersion getExtOrDefault("compileSdkVersion")
 

@@ -63,7 +63,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.pingidentity.rndeviceprofile"
+      "javaPackageName": "com.pingidentity.reactnative.rndeviceprofile"
     }
   }
 }
