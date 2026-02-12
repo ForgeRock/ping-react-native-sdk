@@ -109,4 +109,16 @@ RCT_EXPORT_MODULE()
   return [[self swiftImpl] configureOidcStorage:storageId];
 }
 
+/**
+ Returns the TurboModule instance.
+ 
+ - Parameter params: TurboModule initialization parameters.
+ - Returns: Shared pointer to the TurboModule instance.
+ */
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params
+{
+  return std::make_shared<facebook::react::NativeRNPingStorageSpecJSI>(params);
+}
+
 @end

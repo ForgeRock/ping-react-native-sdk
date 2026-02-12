@@ -1,0 +1,125 @@
+buildscript {
+  ext.RNPingOidc = [
+    kotlinVersion: "2.0.21",
+    minSdkVersion: 24,
+    compileSdkVersion: 36,
+    targetSdkVersion: 36
+  ]
+
+  ext.getExtOrDefault = { prop ->
+    if (rootProject.ext.has(prop)) {
+      return rootProject.ext.get(prop)
+    }
+
+    return RNPingOidc[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+  }
+}
+
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "com.facebook.react"
+
+def newArchEnabled = project.hasProperty("newArchEnabled") &&
+        project.newArchEnabled.toBoolean()
+
+println("[RNPingOidc] newArchEnabled = ${newArchEnabled}")
+
+android {
+  namespace "com.pingidentity.rnoidc"
+
+  compileSdkVersion getExtOrDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrDefault("minSdkVersion")
+    targetSdkVersion getExtOrDefault("targetSdkVersion")
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lint {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  sourceSets {
+    main {
+      if (newArchEnabled) {
+        java.srcDirs += ["generated/java", "generated/jni"]
+      } else {
+        println("[RNPingOidc] Skipping generated/java and jni (New Arch disabled)")
+        java.srcDirs -= ["generated/java", "generated/jni"]
+      }
+    }
+  }
+}
+
+repositories {
+  mavenCentral()
+  google()
+}
+
+def kotlin_version = getExtOrDefault("kotlinVersion")
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation("com.pingidentity.sdks:android:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:oidc:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:browser:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:orchestrate:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:storage:2.0.0-beta1")
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3"
+  implementation(project(":react-native-pingidentity-core"))
+  implementation(project(":react-native-pingidentity_logger"))
+  implementation(project(":react-native-pingidentity_storage"))
+  testImplementation "junit:junit:4.13.2"
+  testImplementation "androidx.test:core:1.6.1"
+  testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
+  testImplementation "io.mockk:mockk:1.13.12"
+  testImplementation "org.robolectric:robolectric:4.12.2"
+}
+
+//
+// Disable all Turbo/JSI/CMake/codegen tasks
+//
+if (!newArchEnabled) {
+    println("[RNPingOidc] Disabling TurboModule codegen + CMake tasks...")
+
+    tasks.configureEach { task ->
+        if (task.name.contains("Codegen") ||
+            task.name.contains("generateCodegen") ||
+            task.name.contains("generateSchema") ||
+            task.name.contains("configureCMake") ||
+            task.name.contains("externalNativeBuild") ||
+            task.name.contains("buildCMake")
+        ) {
+            task.enabled = false
+            println("[RNPingOidc] Disabled task: ${task.name}")
+        }
+    }
+}

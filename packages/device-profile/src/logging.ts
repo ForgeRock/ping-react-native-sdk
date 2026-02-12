@@ -20,6 +20,8 @@ export const logger: LoggerInstance  = ((): LoggerInstance => {
   } catch (error) {
     console.warn(`Device profile Failed to initialize JS logger`, error);
     return {
+      // Sentinel handle for fallback-only logger paths; not used for native sync.
+      nativeHandle: { id: 'device-profile-fallback' },
       changeLevel: () => {},
       error: (...args) => console.error(...args),
       warn: (...args) => console.warn(...args),

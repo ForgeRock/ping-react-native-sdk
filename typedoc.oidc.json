@@ -1,0 +1,7 @@
+{
+  "entryPoints": ["packages/oidc/src/index.tsx"],
+  "out": "docs/oidc",
+  "tsconfig": "packages/oidc/tsconfig.json",
+  "excludeInternal": true,
+  "excludePrivate": true
+}

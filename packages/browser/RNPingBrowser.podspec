@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
   s.requires_arc = true
 
-  s.dependency 'PingBrowser', '1.3.0-beta2'
+  s.dependency 'PingBrowser', '1.3.1'
   s.dependency 'RNPingCore'
 
   # New Architecture helper

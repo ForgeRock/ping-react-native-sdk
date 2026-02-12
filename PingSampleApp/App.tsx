@@ -6,10 +6,12 @@ import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
+import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
 import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureLogger } from '@react-native-pingidentity/logger';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -17,6 +19,7 @@ export type RootStackParamList = {
   Journey: { journeyClient: JourneyClient };
   Browser: undefined;
   Logger: undefined;
+  Oidc: undefined;
   DeviceProfile: undefined;
 };
 
@@ -25,8 +28,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function App() {
   useEffect(() => {
     // Init login clients
-    loginClient.init()
+    loginClient.init();
     loginClient2.init();
+
+    configureLogger({ level: 'info' });
 
     configureBrowser({
       android: {
@@ -38,7 +43,7 @@ export default function App() {
         authTabs: {
           ephemeral: true,
           colorScheme: 'dark',
-          toolbarColor: '#0057B8',
+          toolbarColor: '#5333a5',
           navigationBarColor: '#001F3F',
         },
       },
@@ -71,6 +76,11 @@ export default function App() {
           name="Logger"
           component={LoggerScreen}
           options={{ title: 'Logger Demo' }}
+        />
+        <Stack.Screen
+          name="Oidc"
+          component={OidcScreen}
+          options={{ title: 'OIDC Demo' }}
         />
         <Stack.Screen
           name="DeviceProfile"

@@ -8,14 +8,15 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && cd ios && bundle install && bundle exec pod install && cd ..",
+    "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && cd ios && bundle install && bundle exec pod install --repo-update && cd ..",
     "codegen": "npx react-native codegen",
     "reset-cache": "react-native start --reset-cache"
   },
   "dependencies": {
-    "@ping-identity/rn-device-profile": "workspace:*",
-    "@ping-identity/rn-types": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
+    "@ping-identity/rn-device-profile": "workspace:*",
+    "@ping-identity/rn-oidc": "workspace:*",
+    "@ping-identity/rn-types": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-pingidentity/browser": "workspace:*",
     "@react-native-pingidentity/journey": "workspace:*",

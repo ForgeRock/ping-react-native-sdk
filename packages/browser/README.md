@@ -45,6 +45,11 @@ configureBrowser({
 });
 ```
 
+### iOS per-call configuration
+
+iOS browser behavior is configured per call via the `ios` options on `open(...)`. These options
+do not have a global configuration equivalent on iOS.
+
 ### Android manifest placeholder
 
 Configure the manifest placeholder for your app's redirect URI scheme. This is used as a fallback

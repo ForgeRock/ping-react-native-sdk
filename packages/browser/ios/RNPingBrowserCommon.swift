@@ -25,15 +25,18 @@ public class RNPingBrowserCommon: NSObject {
   }
 
   /// Adapter used to launch and reset the native browser session.
+  @MainActor
   internal static var browserLauncher: BrowserLaunching = DefaultBrowserLauncherAdapter()
 
 #if DEBUG
   /// Replace the browser launcher for unit tests.
+  @MainActor
   public static func _setBrowserLauncherForTesting(_ launcher: BrowserLaunching) {
     browserLauncher = launcher
   }
 
   /// Reset the browser launcher after tests.
+  @MainActor
   public static func _resetBrowserLauncherForTesting() {
     browserLauncher = DefaultBrowserLauncherAdapter()
   }
@@ -98,9 +101,14 @@ public class RNPingBrowserCommon: NSObject {
     let browserModeRaw = iosOptions?["browserMode"] as? String
 
     let browserType: BrowserType
-    if browserTypeRaw == "ephemeralAuthSession" {
+    switch browserTypeRaw {
+    case "ephemeralAuthSession":
       browserType = .ephemeralAuthSession
-    } else {
+    case "nativeBrowserApp":
+      browserType = .nativeBrowserApp
+    case "sfViewController":
+      browserType = .sfViewController
+    default:
       browserType = .authSession
     }
     let browserMode: BrowserMode

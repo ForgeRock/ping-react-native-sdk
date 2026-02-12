@@ -110,6 +110,30 @@ object RNPingLoggerCommon {
   }
 
   /**
+   * Apply a previously registered logger by id.
+   *
+   * @param id Logger identifier returned by the JS logger module
+   * @return True when the logger was resolved and applied
+   */
+  @JvmStatic
+  fun applyLogger(id: String?): Boolean {
+    if (id.isNullOrBlank()) {
+      return false
+    }
+
+    val handle = runBlocking(Dispatchers.IO) {
+      CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
+    }
+    if (handle == null) {
+      Log.w(TAG, "No logger registered for id $id")
+      return false
+    }
+
+    applyNativeLevel(handle.level)
+    return true
+  }
+
+  /**
    * Parses a string representation of a log level into a NativeLoggerLevel enum.
    *
    * @param level The string representation of the log level ("STANDARD", "WARN", or "NONE")

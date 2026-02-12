@@ -26,6 +26,10 @@ object CoreRuntime {
 
     /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()
+    /** Registry for OIDC client configurations */
+    val oidcClientRegistry: Registry = SimpleRegistry()
+    /** Registry for OIDC web clients */
+    val oidcWebClientRegistry: Registry = SimpleRegistry()
 
     /** Resolver that exposes Journey callbacks to other packages. */
     @Volatile

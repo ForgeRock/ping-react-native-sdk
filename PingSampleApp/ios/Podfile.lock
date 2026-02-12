@@ -8,7 +8,6 @@ PODS:
   - hermes-engine (0.80.1):
     - hermes-engine/Pre-built (= 0.80.1)
   - hermes-engine/Pre-built (0.80.1)
-<<<<<<< HEAD
   - PingBrowser (1.3.1):
     - PingLogger (~> 1.3.1)
   - PingCommons (1.3.1):
@@ -38,26 +37,6 @@ PODS:
   - PingStorage (1.3.1)
   - PingTamperDetector (1.3.1):
     - PingCommons (~> 1.3.1)
-=======
-  - PingBrowser (1.3.0-beta2):
-    - PingLogger (~> 1.3.0-beta2)
-  - PingDeviceId (1.3.1):
-    - PingLogger (~> 1.3.1)
-    - PingStorage (~> 1.3.1)
-  - PingJourney (1.3.0-beta2):
-    - PingLogger (~> 1.3.0-beta2)
-    - PingOidc (~> 1.3.0-beta2)
-    - PingOrchestrate (~> 1.3.0-beta2)
-    - PingStorage (~> 1.3.0-beta2)
-  - PingLogger (1.3.1)
-  - PingOidc (1.3.0-beta2):
-    - PingBrowser (~> 1.3.0-beta2)
-    - PingOrchestrate (~> 1.3.0-beta2)
-  - PingOrchestrate (1.3.0-beta2):
-    - PingLogger (~> 1.3.0-beta2)
-    - PingStorage (~> 1.3.0-beta2)
-  - PingStorage (1.3.1)
->>>>>>> origin/main
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2319,6 +2298,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
+    - RNPingCore
     - SocketRocket
     - Yoga
   - RNPingCore (0.1.0):
@@ -2351,22 +2331,45 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-<<<<<<< HEAD
-  - RNPingDeviceProfile (0.1.0):
-=======
   - RNPingDeviceId (0.1.0):
->>>>>>> origin/main
     - boost
     - DoubleConversion
     - fast_float
     - fmt
     - glog
     - hermes-engine
-<<<<<<< HEAD
-    - PingDeviceProfile
-=======
     - PingDeviceId
->>>>>>> origin/main
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingDeviceProfile (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingDeviceProfile
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2450,6 +2453,39 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingOidc (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingOidc (= 1.3.1)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - RNPingLogger
+    - RNPingStorage
     - SocketRocket
     - Yoga
   - RNPingStorage (0.1.0):
@@ -2555,7 +2591,6 @@ DEPENDENCIES:
   - fmt (from `../../node_modules/react-native/third-party-podspecs/fmt.podspec`)
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
-<<<<<<< HEAD
   - PingBrowser (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingBrowser.podspec`)
   - PingCommons (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingCommons.podspec`)
   - PingDeviceId (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceId.podspec`)
@@ -2564,17 +2599,10 @@ DEPENDENCIES:
   - PingJourneyPlugin (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingJourneyPlugin.podspec`)
   - PingLogger (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingLogger.podspec`)
   - PingNetwork (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingNetwork.podspec`)
+  - PingOidc (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/tags/1.3.1/PingOidc.podspec`)
   - PingOrchestrate (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingOrchestrate.podspec`)
   - PingStorage (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingStorage.podspec`)
   - PingTamperDetector (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingTamperDetector.podspec`)
-=======
-  - PingDeviceId (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceId.podspec`)
-  - PingJourney (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4325-Journey-POC-RN/PingJourney.podspec`)
-  - PingLogger (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/heads/develop/PingLogger.podspec`)
-  - PingOidc (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOidc.podspec`)
-  - PingOrchestrate (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOrchestrate.podspec`)
-  - PingStorage (from `https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/tags/1.3.1/PingStorage.podspec`)
->>>>>>> origin/main
   - RCT-Folly (from `../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
@@ -2644,13 +2672,11 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
   - RNPingCore (from `../../packages/core`)
-<<<<<<< HEAD
-  - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
-=======
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
->>>>>>> origin/main
+  - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
   - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
+  - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2658,7 +2684,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - PingOidc
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2677,7 +2702,6 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2025-05-06-RNv0.80.0-4eb6132a5bf0450bf4c6c91987675381d7ac8bca
-<<<<<<< HEAD
   PingBrowser:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingBrowser.podspec
   PingCommons:
@@ -2686,34 +2710,22 @@ EXTERNAL SOURCES:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceId.podspec
   PingDeviceProfile:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceProfile.podspec
-=======
-  PingDeviceId:
-    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceId.podspec
->>>>>>> origin/main
   PingJourney:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingJourney.podspec
   PingJourneyPlugin:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingJourneyPlugin.podspec
   PingLogger:
-<<<<<<< HEAD
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingLogger.podspec
   PingNetwork:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingNetwork.podspec
-=======
-    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/heads/develop/PingLogger.podspec
   PingOidc:
-    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/1.3.0-beta2/PingOidc.podspec
->>>>>>> origin/main
+    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/tags/1.3.1/PingOidc.podspec
   PingOrchestrate:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingOrchestrate.podspec
   PingStorage:
-<<<<<<< HEAD
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingStorage.podspec
   PingTamperDetector:
     :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingTamperDetector.podspec
-=======
-    :podspec: https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/tags/1.3.1/PingStorage.podspec
->>>>>>> origin/main
   RCT-Folly:
     :podspec: "../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -2850,17 +2862,16 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@react-native-pingidentity/browser"
   RNPingCore:
     :path: "../../packages/core"
-<<<<<<< HEAD
-  RNPingDeviceProfile:
-    :path: "../../node_modules/@ping-identity/rn-device-profile"
-=======
   RNPingDeviceId:
     :path: "../../node_modules/@ping-identity/rn-device-id"
->>>>>>> origin/main
+  RNPingDeviceProfile:
+    :path: "../../node_modules/@ping-identity/rn-device-profile"
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
   RNPingLogger:
     :path: "../../node_modules/@react-native-pingidentity/logger"
+  RNPingOidc:
+    :path: "../../node_modules/@ping-identity/rn-oidc"
   RNPingStorage:
     :path: "../../node_modules/@react-native-pingidentity/storage"
   RNScreens:
@@ -2954,26 +2965,18 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-<<<<<<< HEAD
-  RNPingBrowser: 913a4961ea881da0d4551eba9a5eb728ca2429b7
+  RNPingBrowser: 76a3f07f5e57c95ce44801503700a4b830acad00
   RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
+  RNPingDeviceId: 2df34d506631a08a55f77d5110256ca08a9d364b
   RNPingDeviceProfile: 0c0ac8e0db6a99384232b849c6d2ba2df47ebb00
-=======
-  RNPingBrowser: 69d971ec60019958a93f105bd4145a3f92a40e1e
-  RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
-  RNPingDeviceId: c272def9e40a68805abac1ed73cc374d2925b05e
->>>>>>> origin/main
   RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
   RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
+  RNPingOidc: 3da2b51354bbcf34e3bd77463d3209b897f0dfa2
   RNPingStorage: 5d7da183c7fbb0a3fa0b1c936c155015c34c5479
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-<<<<<<< HEAD
-PODFILE CHECKSUM: 3bdeabb8994f894ec02f5c94abf1e01d266e2349
-=======
-PODFILE CHECKSUM: 85333cf9bf19810bd872ead63f4edc883e1be03e
->>>>>>> origin/main
+PODFILE CHECKSUM: 46b0aadec650d2bd55b71eaf02081f6011ab53cc
 
 COCOAPODS: 1.15.2

@@ -32,10 +32,28 @@ export type LoggerConfig = {
 };
 
 /**
+ * Handle for a registered native logger instance.
+ * @public
+ */
+export type NativeLoggerHandle = {
+  /**
+   * Native logger identifier.
+   */
+  id: string;
+};
+
+/**
  * Logger instance with methods for logging at different levels.
  * @public
  */
 export type LoggerInstance = {
+  /**
+   * Native logger handle associated with this logger instance.
+   *
+   * @remarks
+   * Use this when a native logger handle is required by other APIs.
+   */
+  nativeHandle: NativeLoggerHandle;
   /**
    * Changes the current logging level.
    * @param level - The new logging level to set

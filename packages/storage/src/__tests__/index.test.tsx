@@ -46,7 +46,7 @@ describe("Storage API", () => {
         keyAlias: "session-key",
       });
       expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith("session-id");
-      expect(instance).toEqual({});
+      expect(instance).toEqual({ id: "session-id" });
     });
 
     it("configureSessionStorage can be created with all config options", () => {
@@ -75,7 +75,10 @@ describe("Storage API", () => {
         cacheable: true,
       });
 
-      expect(configureSessionStorage(config)).toEqual(config);
+      expect(configureSessionStorage(config)).toEqual({
+        id: "session-id",
+        ...config,
+      });
     });
 
     it("configureSessionStorage validates config", () => {
@@ -96,7 +99,7 @@ describe("Storage API", () => {
         keyAlias: "oidc-key",
       });
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith("oidc-id");
-      expect(instance).toEqual({});
+      expect(instance).toEqual({ id: "oidc-id" });
     });
 
     it("configureOidcStorage can be created with all config options", () => {
@@ -125,7 +128,10 @@ describe("Storage API", () => {
         cacheable: false,
       });
 
-      expect(configureOidcStorage(config)).toEqual(config);
+      expect(configureOidcStorage(config)).toEqual({
+        id: "oidc-id",
+        ...config,
+      });
     });
 
     it("configureOidcStorage validates config", () => {

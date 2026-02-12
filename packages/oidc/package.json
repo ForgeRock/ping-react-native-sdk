@@ -1,0 +1,67 @@
+{
+  "name": "@ping-identity/rn-oidc",
+  "version": "0.1.0",
+  "description": "Ping Identity OIDC for React Native",
+  "homepage": "https://www.pingidentity.com/",
+  "license": "MIT",
+  "author": "Ping Identity",
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "*.podspec"
+  ],
+  "scripts": {
+    "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
+    "build": "bob build",
+    "test": "jest",
+    "clean": "rimraf lib"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "react-native-builder-bob": "^0.40.14",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@ping-identity/rn-types": "^0.1.0",
+    "@react-native-pingidentity/core": "^0.1.0",
+    "@react-native-pingidentity/logger": "^0.1.0"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  },
+  "codegenConfig": {
+    "name": "RNPingOidcSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pingidentity.rnoidc"
+    }
+  },
+  "create-react-native-library": {
+    "type": "turbo-module",
+    "languages": "kotlin-objc",
+    "tools": []
+  }
+}
