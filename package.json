@@ -12,7 +12,7 @@
     "docs:oidc": "typedoc --options typedoc.oidc.json",
     "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
-    "test:browser": "yarn workspace @react-native-pingidentity/browser test",
+    "test:browser": "yarn workspace @ping-identity/rn-browser test",
     "test:oidc": "yarn workspace @ping-identity/rn-oidc test",
     "test:logger": "yarn workspace @react-native-pingidentity/logger test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
@@ -20,7 +20,7 @@
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
     "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",
-    "storage:test": "yarn workspace @react-native-pingidentity/storage run test"
+    "storage:test": "yarn workspace @ping-identity/rn-storage run test"
   },
   "workspaces": {
     "packages": [

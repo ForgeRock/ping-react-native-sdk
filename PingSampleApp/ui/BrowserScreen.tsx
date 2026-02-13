@@ -13,8 +13,8 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import type { BrowserError } from '@react-native-pingidentity/browser';
-import { open } from '@react-native-pingidentity/browser';
+import type { BrowserError } from '@ping-identity/rn-browser';
+import { open } from '@ping-identity/rn-browser';
 import { commonStyles } from '../src/styles/common';
 
 export default function BrowserScreen() {

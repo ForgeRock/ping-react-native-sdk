@@ -10,8 +10,8 @@ import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
-import { configureBrowser } from '@react-native-pingidentity/browser';
-import { configureLogger } from '@react-native-pingidentity/logger';
+import { configureLogger } from '@ping-identity/rn-logger';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 export type RootStackParamList = {
   Home: undefined;

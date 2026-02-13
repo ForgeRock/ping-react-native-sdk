@@ -9,7 +9,7 @@ import {
   configureOidcStorage,
   configureSessionStorage,
   type StorageConfig,
-} from "@react-native-pingidentity/storage";
+} from "@ping-identity/rn-storage";
 
 /**
  * Information about a registered storage instance.

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 
 export default function LoggerScreen() {

@@ -2670,14 +2670,14 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
-  - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
+  - "RNPingBrowser (from `../../node_modules/@ping-identity/rn-browser`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
-  - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
-  - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
+  - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
+  - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
@@ -2859,7 +2859,7 @@ EXTERNAL SOURCES:
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
   RNPingBrowser:
-    :path: "../../node_modules/@react-native-pingidentity/browser"
+    :path: "../../node_modules/@ping-identity/rn-browser"
   RNPingCore:
     :path: "../../packages/core"
   RNPingDeviceId:
@@ -2869,11 +2869,12 @@ EXTERNAL SOURCES:
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
   RNPingLogger:
-    :path: "../../node_modules/@react-native-pingidentity/logger"
+    :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
+    :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingStorage:
-    :path: "../../node_modules/@react-native-pingidentity/storage"
+    :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   Yoga:
@@ -2895,7 +2896,7 @@ SPEC CHECKSUMS:
   PingJourneyPlugin: 1b4d6e1d693e88596d98e15ec13635697a9ab6a0
   PingLogger: 99e2ebe16c0dd1a7ef974565a7384f53a68b14c8
   PingNetwork: 87922a3fb2b153dd06f07c9faab175fb8ddf4c94
-  PingOidc: e3fa8cb66b4fc65c28ee34e292a3eeb6535ce965
+  PingOidc: a665ce59d98c46bc5f16f8b6be49627df690d908
   PingOrchestrate: 4b757130cef374293ccbd069613d2f06b06c4e0f
   PingStorage: cb93794662e389cd17e984f2cbe939f6744c3aad
   PingTamperDetector: 2b0934d8b798f07e99cb43abba0369365cdb504c
