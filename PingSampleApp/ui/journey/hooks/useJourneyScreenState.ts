@@ -20,7 +20,7 @@ import {
   readBoolean,
   readNumber,
   readString,
-} from './callbacks';
+} from '../utils/callbacks';
 
 /**
  * Input contract for Journey screen state management.

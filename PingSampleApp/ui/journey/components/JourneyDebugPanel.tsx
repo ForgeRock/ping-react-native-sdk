@@ -7,12 +7,12 @@
 
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../src/styles/colors';
-import { commonStyles } from '../../src/styles/common';
+import { colors } from '../../../src/styles/colors';
+import { commonStyles } from '../../../src/styles/common';
 import {
   type JourneyDebugEntry,
   debugPayloadToString,
-} from './debug';
+} from '../utils/debug';
 
 /**
  * Props for Journey debug panel.

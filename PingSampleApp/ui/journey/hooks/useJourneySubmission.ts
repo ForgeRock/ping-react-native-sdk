@@ -19,7 +19,7 @@ import {
   readBoolean,
   readNumber,
   readString,
-} from './callbacks';
+} from '../utils/callbacks';
 
 /**
  * Input contract for Journey callback submission hook.
@@ -73,6 +73,7 @@ export function useJourneySubmission(
     const mutations: JourneyCallbackInput[] = [];
 
     callbackEntries.forEach(({ callback, typeIndex }) => {
+      // These callback types are handled outside manual submit flow.
       if (callback.type === 'DeviceProfileCallback') {
         return;
       }
@@ -155,6 +156,8 @@ export function useJourneySubmission(
           });
           break;
         default:
+          // String fallback keeps sample behavior resilient for simple unknown
+          // input callbacks while native stays authoritative for validation.
           mutations.push({
             type: callback.type,
             index: typeIndex,
@@ -206,6 +209,7 @@ export function useJourneySubmission(
 
     try {
       const callbacks = buildMutations();
+      // Emit the exact payload to sample debug panel before progression.
       onSubmitPayload?.(callbacks, 'manual');
       await next({ callbacks });
     } catch (cause) {

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Text, View } from 'react-native';
-import { commonStyles } from '../../src/styles/common';
+import { commonStyles } from '../../../src/styles/common';
 
 /**
  * Props for journey session JSON card.

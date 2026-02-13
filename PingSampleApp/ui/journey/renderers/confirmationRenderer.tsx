@@ -8,8 +8,8 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { commonStyles } from '../../../src/styles/common';
-import type { CallbackEntry } from '../callbacks';
-import { readString, readStringArray } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { readString, readStringArray } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 import { rendererStyles } from './styles';
 

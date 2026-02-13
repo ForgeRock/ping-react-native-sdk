@@ -6,8 +6,8 @@
  */
 
 import React from 'react';
-import type { CallbackEntry } from '../callbacks';
-import { isIntegrationRequiredCallback } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { isIntegrationRequiredCallback } from '../utils/callbacks';
 import { renderBooleanAttributeInputCallback } from './booleanAttributeInputRenderer';
 import { renderChoiceCallback } from './choiceRenderer';
 import { renderConfirmationCallback } from './confirmationRenderer';

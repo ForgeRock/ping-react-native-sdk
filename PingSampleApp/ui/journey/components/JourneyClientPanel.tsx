@@ -12,22 +12,22 @@ import {
   type JourneyClient,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
-import { colors } from '../../src/styles/colors';
-import { commonStyles } from '../../src/styles/common';
+import { colors } from '../../../src/styles/colors';
+import { commonStyles } from '../../../src/styles/common';
 import JourneyCallbackForm from './JourneyCallbackForm';
 import JourneyDebugPanel from './JourneyDebugPanel';
 import JourneySessionCard from './JourneySessionCard';
 import JourneyStartPanel from './JourneyStartPanel';
 import JourneyStatusPanel from './JourneyStatusPanel';
-import { type CallbackEntry, type JourneyCallbackLike } from './callbacks';
+import { type CallbackEntry, type JourneyCallbackLike } from '../utils/callbacks';
 import {
   createJourneyDebugEntry,
   sanitizeDebugPayload,
   type JourneyDebugEntry,
-} from './debug';
-import { useJourneyAutoProgress } from './useJourneyAutoProgress';
-import { useJourneyScreenState } from './useJourneyScreenState';
-import { useJourneySubmission } from './useJourneySubmission';
+} from '../utils/debug';
+import { useJourneyAutoProgress } from '../hooks/useJourneyAutoProgress';
+import { useJourneyScreenState } from '../hooks/useJourneyScreenState';
+import { useJourneySubmission } from '../hooks/useJourneySubmission';
 
 const debugEventLimit = 80;
 
@@ -35,6 +35,13 @@ const debugEventLimit = 80;
  * Props for a self-contained Journey panel bound to a single Journey client.
  */
 export type JourneyClientPanelProps = {
+  /**
+   * Journey client passed to sample helper hooks that need direct client access
+   * (for example `getId()` and device profile collection).
+   *
+   * @remarks
+   * Journey node/actions come from `useJourney()` provider scope.
+   */
   journeyClient: JourneyClient;
   title?: string;
   startOptions?: JourneyStartOptions;
@@ -51,7 +58,7 @@ export default function JourneyClientPanel(
 ): React.ReactElement {
   const { journeyClient, title, startOptions } = props;
   const [node, { start, next, resume, user, logoutUser, loading, error }] =
-    useJourney(journeyClient);
+    useJourney();
   const [debugEntries, setDebugEntries] = useState<JourneyDebugEntry[]>([]);
   const lastNodeSignatureRef = useRef<string>('');
 
@@ -72,6 +79,8 @@ export default function JourneyClientPanel(
   }, [node]);
 
   const callbackEntries = useMemo<CallbackEntry[]>(() => {
+    // Native payload uses mixed callback arrays. We derive a per-type index so
+    // `next()` can target deterministic callback instances (`type + index`).
     const typeCounts: Record<string, number> = {};
     return continueCallbacks.map((callback, absoluteIndex) => {
       const typeIndex = typeCounts[callback.type] ?? 0;
@@ -140,6 +149,7 @@ export default function JourneyClientPanel(
     lastNodeSignatureRef.current = signature;
 
     if (node.type === 'ContinueNode') {
+      // Keep callback trace visible for sample verification scenarios.
       addDebugEntry('Received ContinueNode', {
         id: node.id,
         callbackCount: continueCallbacks.length,

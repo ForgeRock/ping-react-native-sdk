@@ -8,8 +8,8 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import type { JourneyError, JourneyNode } from '@ping-identity/rn-journey';
-import { commonStyles } from '../../src/styles/common';
-import { readString } from './callbacks';
+import { commonStyles } from '../../../src/styles/common';
+import { readString } from '../utils/callbacks';
 
 /**
  * Props for Journey status/terminal state panel.

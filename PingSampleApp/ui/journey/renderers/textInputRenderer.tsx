@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { CallbackEntry } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 import { renderTextFieldCallback } from './textFieldRendererBase';
 

@@ -30,7 +30,7 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 
 - Native SDK is authoritative for Journey execution, networking, callback evaluation, and session lifecycle.
 - JavaScript orchestrates flow progression (`start`, `next`, `resume`) and UI rendering for callbacks.
-- No required Provider pattern.
+- No required Provider pattern (optional `JourneyProvider` is available for multi-screen shared state).
 - Multi-client support is explicit (`journey(...)` creates isolated native runtime instances).
 - Shared contracts come from `@ping-identity/rn-types` (including `GenericError`, `Node`, and callback shapes).
 
@@ -60,7 +60,7 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 ## Public API
 
 ```ts
-import { journey, useJourney } from '@ping-identity/rn-journey';
+import { journey, JourneyProvider, useJourney } from '@ping-identity/rn-journey';
 import type {
   JourneyClient,
   JourneyConfig,
@@ -94,7 +94,7 @@ Creates an imperative Journey client.
 - `logoutUser(): Promise<boolean>`
 - `dispose(): Promise<void>`
 
-### `useJourney(client)`
+### `useJourney(client?)`
 
 Returns:
 
@@ -103,6 +103,21 @@ const [
   node,
   { start, next, resume, user, logoutUser, dispose, loading, error }
 ] = useJourney(client);
+```
+
+Or with provider-scoped state (for multi-screen flows):
+
+```tsx
+<JourneyProvider client={client}>
+  <AuthNavigator />
+</JourneyProvider>
+```
+
+```ts
+const [
+  node,
+  { start, next, resume, user, logoutUser, dispose, loading, error }
+] = useJourney();
 ```
 
 ## Usage Walkthrough

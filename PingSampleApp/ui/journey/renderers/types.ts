@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import type { CallbackEntry, InputValues } from '../callbacks';
+import type { CallbackEntry, InputValues } from '../utils/callbacks';
 
 type InputValue = InputValues[string] | undefined;
 type WritableInputValue = InputValues[string];

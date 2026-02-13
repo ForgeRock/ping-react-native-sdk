@@ -7,8 +7,8 @@
 
 import React from 'react';
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../src/styles/colors';
-import { commonStyles } from '../../src/styles/common';
+import { colors } from '../../../src/styles/colors';
+import { commonStyles } from '../../../src/styles/common';
 
 /**
  * Props for the Journey start panel.

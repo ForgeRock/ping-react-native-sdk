@@ -9,8 +9,8 @@ import React from 'react';
 import { Switch, Text, View } from 'react-native';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
-import type { CallbackEntry } from '../callbacks';
-import { readBoolean, readString } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { readBoolean, readString } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 import { rendererStyles } from './styles';
 

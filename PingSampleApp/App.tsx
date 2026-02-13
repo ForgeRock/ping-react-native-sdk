@@ -4,21 +4,21 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
-import JourneyDualScreen from './ui/JourneyDualScreen';
+import JourneySimpleScreen from './ui/JourneySimpleScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
-import { loginClient, loginClient2 } from './src/clients';
-import type { JourneyClient } from '@ping-identity/rn-journey';
+import { JourneyProvider } from '@ping-identity/rn-journey';
+import { loginClient } from './src/clients';
 import { configureBrowser } from '@react-native-pingidentity/browser';
 import { configureLogger } from '@react-native-pingidentity/logger';
 
 export type RootStackParamList = {
   Home: undefined;
   Storage: undefined;
-  Journey: { journeyClient: JourneyClient };
-  JourneyDual: undefined;
+  JourneySimple: undefined;
+  Journey: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -31,7 +31,6 @@ export default function App() {
   useEffect(() => {
     // Init login clients
     loginClient.init();
-    loginClient2.init();
 
     configureLogger({ level: 'info' });
 
@@ -52,49 +51,51 @@ export default function App() {
     });
   }, []);
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ title: 'PingIdentity Demo', headerShown: false }}
-        />
-        <Stack.Screen
-          name="Storage"
-          component={MultiStorageScreen}
-          options={{ title: 'Storage' }}
-        />
-        <Stack.Screen
-          name="Journey"
-          component={JourneyScreen}
-          options={{ title: 'Journey' }}
-        />
-        <Stack.Screen
-          name="JourneyDual"
-          component={JourneyDualScreen}
-          options={{ title: 'Journey (Dual)' }}
-        />
-        <Stack.Screen
-          name="Browser"
-          component={BrowserScreen}
-          options={{ title: 'Browser Demo' }}
-        />
-        <Stack.Screen
-          name="Logger"
-          component={LoggerScreen}
-          options={{ title: 'Logger Demo' }}
-        />
-        <Stack.Screen
-          name="Oidc"
-          component={OidcScreen}
-          options={{ title: 'OIDC Demo' }}
-        />
-        <Stack.Screen
-          name="DeviceProfile"
-          component={DeviceProfileScreen}
-          options={{ title: 'Device Profile' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <JourneyProvider client={loginClient}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Home">
+          <Stack.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{ title: 'PingIdentity Demo', headerShown: false }}
+          />
+          <Stack.Screen
+            name="Storage"
+            component={MultiStorageScreen}
+            options={{ title: 'Storage' }}
+          />
+          <Stack.Screen
+            name="JourneySimple"
+            component={JourneySimpleScreen}
+            options={{ title: 'Journey (Simple)' }}
+          />
+          <Stack.Screen
+            name="Journey"
+            component={JourneyScreen}
+            options={{ title: 'Journey (Advanced)' }}
+          />
+          <Stack.Screen
+            name="Browser"
+            component={BrowserScreen}
+            options={{ title: 'Browser Demo' }}
+          />
+          <Stack.Screen
+            name="Logger"
+            component={LoggerScreen}
+            options={{ title: 'Logger Demo' }}
+          />
+          <Stack.Screen
+            name="Oidc"
+            component={OidcScreen}
+            options={{ title: 'OIDC Demo' }}
+          />
+          <Stack.Screen
+            name="DeviceProfile"
+            component={DeviceProfileScreen}
+            options={{ title: 'Device Profile' }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </JourneyProvider>
   );
 }

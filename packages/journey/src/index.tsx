@@ -6,5 +6,10 @@
  */
 
 export { journey } from './journey';
-export { useJourney } from './useJourney';
+export { JourneyProvider, useJourney } from './useJourney';
+export type {
+  JourneyHookActions,
+  JourneyHookResult,
+  JourneyProviderProps,
+} from './useJourney';
 export type * from './types';

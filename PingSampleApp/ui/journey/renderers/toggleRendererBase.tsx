@@ -8,8 +8,8 @@
 import React from 'react';
 import { Switch, Text, View } from 'react-native';
 import { colors } from '../../../src/styles/colors';
-import type { CallbackEntry } from '../callbacks';
-import { readBoolean } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { readBoolean } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 import { rendererStyles } from './styles';
 

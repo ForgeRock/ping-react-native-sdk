@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import type { JourneyClient, JourneyNode } from '@ping-identity/rn-journey';
-import { nodeKey, readNumber, type JourneyCallbackLike } from './callbacks';
+import { nodeKey, readNumber, type JourneyCallbackLike } from '../utils/callbacks';
 
 /**
  * Input contract for Journey auto-progress hook.
@@ -77,6 +77,8 @@ export function useJourneyAutoProgress(
       return;
     }
 
+    // Dedupe by node signature + callback mode to avoid repeating automatic
+    // submissions when React re-renders the same node payload.
     const key = `${nodeKey(node.id, continueCallbacks)}:device-profile`;
     if (processedNodesRef.current.has(key)) {
       return;
@@ -87,6 +89,7 @@ export function useJourneyAutoProgress(
 
     (async (): Promise<void> => {
       try {
+        // Keep sample profile collection scope explicit and deterministic.
         const submission = await collectDeviceProfileForJourney(journeyClient, [
           'platform',
           'hardware',
@@ -133,6 +136,7 @@ export function useJourneyAutoProgress(
       return;
     }
 
+    // Polling callbacks should auto-advance only once per node snapshot.
     const key = `${nodeKey(node.id, continueCallbacks)}:polling`;
     if (processedNodesRef.current.has(key)) {
       return;

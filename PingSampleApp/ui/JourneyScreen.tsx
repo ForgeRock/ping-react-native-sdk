@@ -7,25 +7,19 @@
 
 import React from 'react';
 import { ScrollView } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import { RootStackParamList } from '../App';
 import { commonStyles } from '../src/styles/common';
-import JourneyClientPanel from './journey/JourneyClientPanel';
-
-type JourneyRouteProp = RouteProp<RootStackParamList, 'Journey'>;
+import { loginClient } from '../src/clients';
+import JourneyClientPanel from './journey/components/JourneyClientPanel';
 
 /**
- * Renders a single Journey panel bound to the route-selected Journey client.
+ * Renders the advanced Journey sample panel with callback renderer coverage.
  *
  * @returns Journey screen element.
  */
 export default function JourneyScreen(): React.ReactElement {
-  const route = useRoute<JourneyRouteProp>();
-  const { journeyClient } = route.params;
-
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <JourneyClientPanel journeyClient={journeyClient} />
+      <JourneyClientPanel journeyClient={loginClient} />
     </ScrollView>
   );
 }

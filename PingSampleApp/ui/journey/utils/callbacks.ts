@@ -54,6 +54,7 @@ const sdkIntegrationRequiredCallbackTypes = [
   callbackType.ReCaptchaEnterpriseCallback,
 ] as const;
 
+// Native callback names not yet exported by `@ping-identity/rn-types`.
 const nativeExtensionIntegrationRequiredCallbackTypes = [
   'IdPCallback',
   'Fido2RegistrationCallback',
@@ -94,6 +95,7 @@ const sdkManualInputCallbackTypes = [
   callbackType.ValidatedCreatePasswordCallback,
 ] as const;
 
+// Currently surfaced by Android Journey sample flows.
 const nativeExtensionManualInputCallbackTypes = [
   'ConsentMappingCallback',
 ] as const;

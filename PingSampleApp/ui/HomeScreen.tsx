@@ -9,7 +9,6 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
-import { loginClient, loginClient2 } from '../src/clients';
 import { getDeviceId } from '@ping-identity/rn-device-id';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -22,18 +21,12 @@ export default function HomeScreen({ navigation }: Props) {
   const menuItems = [
     { title: '📦 Launch Storage', screen: 'Storage' },
     {
-      title: '🌐 Launch Journey',
-      screen: 'Journey',
-      params: { journeyClient: loginClient },
+      title: '🌐 Launch Journey (Simple)',
+      screen: 'JourneySimple',
     },
     {
-      title: '🌐 Launch Journey 2',
+      title: '🧩 Launch Journey (Advanced)',
       screen: 'Journey',
-      params: { journeyClient: loginClient2 },
-    },
-    {
-      title: '🌐 Launch Dual Journeys',
-      screen: 'JourneyDual',
     },
     { title: '🧭 Launch Browser', screen: 'Browser' },
     {
@@ -89,7 +82,7 @@ export default function HomeScreen({ navigation }: Props) {
           <TouchableOpacity
             key={index}
             style={commonStyles.homeRow}
-            onPress={() => navigation.navigate(item.screen as any, item.params)}
+            onPress={() => navigation.navigate(item.screen as any)}
           >
             <View style={commonStyles.homeRowContent}>
               {item.subtitle ? (

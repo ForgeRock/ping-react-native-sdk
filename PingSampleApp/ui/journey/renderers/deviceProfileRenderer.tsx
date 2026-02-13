@@ -8,7 +8,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { commonStyles } from '../../../src/styles/common';
-import type { CallbackEntry } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
 import { rendererStyles } from './styles';
 
 /**

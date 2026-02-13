@@ -6,10 +6,10 @@
  */
 
 import React from 'react';
-import type { CallbackEntry, InputValues } from './callbacks';
-import { callbackKey } from './callbacks';
-import { renderCallbackEntry } from './renderers/registry';
-import type { CallbackFormContext, CallbackRenderContext } from './renderers/types';
+import type { CallbackEntry, InputValues } from '../utils/callbacks';
+import { callbackKey } from '../utils/callbacks';
+import { renderCallbackEntry } from '../renderers/registry';
+import type { CallbackFormContext, CallbackRenderContext } from '../renderers/types';
 
 /**
  * Props for the callback-driven Journey form renderer.

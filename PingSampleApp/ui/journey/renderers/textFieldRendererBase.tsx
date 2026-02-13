@@ -10,8 +10,8 @@ import type { KeyboardTypeOptions } from 'react-native';
 import { Text, TextInput, View } from 'react-native';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
-import type { CallbackEntry } from '../callbacks';
-import { readString } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { readString } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 
 type TextFieldRendererOptions = {

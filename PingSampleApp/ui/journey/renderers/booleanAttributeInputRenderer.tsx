@@ -6,8 +6,8 @@
  */
 
 import React from 'react';
-import type { CallbackEntry } from '../callbacks';
-import { readBoolean, readString } from '../callbacks';
+import type { CallbackEntry } from '../utils/callbacks';
+import { readBoolean, readString } from '../utils/callbacks';
 import type { CallbackRenderContext } from './types';
 import { renderToggleCallback } from './toggleRendererBase';
 
