@@ -55,7 +55,7 @@ do not have a global configuration equivalent on iOS.
 Configure the manifest placeholder for your app's redirect URI scheme. This is used as a fallback
 when Auth Tabs are not available and Custom Tabs must rely on the manifest scheme:
 
-```gradle
+```groovy
 android {
   defaultConfig {
     // For redirect URI "com.example.app://callback", configure:

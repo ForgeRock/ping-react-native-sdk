@@ -140,7 +140,7 @@ checks for this dependency at runtime and rejects location collection if it is
 missing. If your app includes location collection, add the dependency at the
 app level (not in the library):
 
-```gradle
+```groovy
 dependencies {
   implementation "com.google.android.gms:play-services-location:21.3.0"
 }
