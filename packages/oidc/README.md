@@ -29,7 +29,7 @@ React Native Browser package unless you plan to use it directly elsewhere in you
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const debugLogger = logger({ level: 'debug' });
 
@@ -53,9 +53,9 @@ If you want to customize native token storage, configure it with the Storage mod
 handle into the OIDC client configuration.
 
 ```ts
-import { configureOidcStorage } from '@react-native-pingidentity/storage';
+import { configureOidcStorage } from '@ping-identity/rn-storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const oidcStorage = configureOidcStorage({
   fileName: 'ping-oidc',
@@ -129,7 +129,7 @@ If you want to customize Custom Tabs/Auth Tabs behavior, configure the Browser m
 app startup. The OIDC module will inherit these settings.
 
 ```ts
-import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 configureBrowser({
   android: {

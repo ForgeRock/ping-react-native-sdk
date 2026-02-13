@@ -18,8 +18,8 @@ import type { Tokens } from '@ping-identity/rn-types';
 import type {
   LoggerInstance,
   LogLevel,
-} from '@react-native-pingidentity/logger';
-import { logger as createLogger } from '@react-native-pingidentity/logger';
+} from '@ping-identity/rn-logger';
+import { logger as createLogger } from '@ping-identity/rn-logger';
 
 /**
  * In-memory registry mapping native client ids to JS logger instances.

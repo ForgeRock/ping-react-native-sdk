@@ -2675,8 +2675,8 @@ DEPENDENCIES:
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
-  - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
+  - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
@@ -2872,7 +2872,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
-    :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingStorage:
     :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
@@ -2896,7 +2895,7 @@ SPEC CHECKSUMS:
   PingJourneyPlugin: 1b4d6e1d693e88596d98e15ec13635697a9ab6a0
   PingLogger: 99e2ebe16c0dd1a7ef974565a7384f53a68b14c8
   PingNetwork: 87922a3fb2b153dd06f07c9faab175fb8ddf4c94
-  PingOidc: a665ce59d98c46bc5f16f8b6be49627df690d908
+  PingOidc: e3fa8cb66b4fc65c28ee34e292a3eeb6535ce965
   PingOrchestrate: 4b757130cef374293ccbd069613d2f06b06c4e0f
   PingStorage: cb93794662e389cd17e984f2cbe939f6744c3aad
   PingTamperDetector: 2b0934d8b798f07e99cb43abba0369365cdb504c
@@ -2969,7 +2968,7 @@ SPEC CHECKSUMS:
   RNPingBrowser: 76a3f07f5e57c95ce44801503700a4b830acad00
   RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
   RNPingDeviceId: 2df34d506631a08a55f77d5110256ca08a9d364b
-  RNPingDeviceProfile: 0c0ac8e0db6a99384232b849c6d2ba2df47ebb00
+  RNPingDeviceProfile: 21651e43e5d827c8a2888044468b226a4d3f76a8
   RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
   RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
   RNPingOidc: 3da2b51354bbcf34e3bd77463d3209b897f0dfa2

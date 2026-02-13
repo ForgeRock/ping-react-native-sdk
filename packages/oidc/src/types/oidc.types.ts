@@ -6,12 +6,12 @@
  */
 
 import type { GenericError, Tokens } from '@ping-identity/rn-types';
-import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
+import type { IOSBrowserOpenOptions } from '@ping-identity/rn-browser';
 import type {
   LoggerInstance,
   NativeLoggerHandle,
-} from '@react-native-pingidentity/logger';
-import type { StorageConfig } from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-logger';
+import type { StorageConfig } from '@ping-identity/rn-storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.

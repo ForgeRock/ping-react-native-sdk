@@ -13,11 +13,11 @@
     "reset-cache": "react-native start --reset-cache"
   },
   "dependencies": {
-    "@ping-identity/rn-oidc": "workspace:*",
     "@ping-identity/rn-browser": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
     "@ping-identity/rn-device-profile": "workspace:*",
     "@ping-identity/rn-logger": "workspace:*",
+    "@ping-identity/rn-oidc": "workspace:*",
     "@ping-identity/rn-storage": "workspace:*",
     "@ping-identity/rn-types": "workspace:*",
     "@react-native-async-storage/async-storage": "^2.2.0",
