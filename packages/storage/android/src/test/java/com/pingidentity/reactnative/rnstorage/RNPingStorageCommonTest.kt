@@ -20,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [29])
 class RNPingStorageCommonTest {
 
     @Before
@@ -59,8 +59,8 @@ class RNPingStorageCommonTest {
     fun tearDown() {
         unmockkStatic(Arguments::class)
         clearAllMocks()
-        StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.sessionStorageConfigRegistry).clear()
-        StorageConfigRegistry(com.reactnativepingidentity.core.CoreRuntime.oidcStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.reactnative.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.reactnative.rncore.CoreRuntime.oidcStorageConfigRegistry).clear()
     }
 
     @Test

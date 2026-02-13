@@ -7,7 +7,7 @@
 
 package com.pingidentity.reactnative.rnstorage
 
-import com.reactnativepingidentity.core.registry.Registry
+import com.pingidentity.reactnative.rncore.registry.Registry
 
 /**
  * Registry for managing storage configurations.

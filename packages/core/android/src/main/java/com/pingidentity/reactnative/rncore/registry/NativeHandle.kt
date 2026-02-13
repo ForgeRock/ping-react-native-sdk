@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.core.registry
+package com.pingidentity.reactnative.rncore.registry
 
 /**
  * Marker interface for native objects that can be tracked in a [Registry].

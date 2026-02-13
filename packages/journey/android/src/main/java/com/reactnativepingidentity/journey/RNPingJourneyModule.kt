@@ -47,7 +47,7 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.io.File
 import okhttp3.OkHttpClient
-import com.reactnativepingidentity.core.CoreRuntime
+import com.pingidentity.reactnative.rncore.CoreRuntime
 import java.util.UUID
 
 @ReactModule(name = RNPingJourneyModule.NAME)

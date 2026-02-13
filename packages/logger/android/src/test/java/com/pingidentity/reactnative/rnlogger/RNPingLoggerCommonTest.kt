@@ -12,7 +12,7 @@ import com.pingidentity.logger.Logger
 import com.pingidentity.logger.NONE
 import com.pingidentity.logger.STANDARD
 import com.pingidentity.logger.WARN
-import com.reactnativepingidentity.core.CoreRuntime
+import com.pingidentity.reactnative.rncore.CoreRuntime
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.mockk
@@ -28,7 +28,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28])
+@Config(sdk = [29])
 class RNPingLoggerCommonTest {
 
   @Before

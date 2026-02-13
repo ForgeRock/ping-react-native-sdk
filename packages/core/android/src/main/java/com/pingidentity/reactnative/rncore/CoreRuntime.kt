@@ -5,10 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.core
+package com.pingidentity.reactnative.rncore
 
-import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.core.registry.SimpleRegistry
+import com.pingidentity.reactnative.rncore.registry.Registry
+import com.pingidentity.reactnative.rncore.registry.SimpleRegistry
 
 /**
  * Central place to hold process-wide registries and shared helpers used by the core module.

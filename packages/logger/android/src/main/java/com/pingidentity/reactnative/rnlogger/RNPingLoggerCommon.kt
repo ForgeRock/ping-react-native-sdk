@@ -13,8 +13,8 @@ import com.pingidentity.logger.Logger
 import com.pingidentity.logger.NONE
 import com.pingidentity.logger.STANDARD
 import com.pingidentity.logger.WARN
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.registry.NativeHandle
+import com.pingidentity.reactnative.rncore.CoreRuntime
+import com.pingidentity.reactnative.rncore.registry.NativeHandle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.core.error
+package com.pingidentity.reactnative.rncore.error
 
 import java.io.IOException
 

@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.core.registry
+package com.pingidentity.reactnative.rncore.registry
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

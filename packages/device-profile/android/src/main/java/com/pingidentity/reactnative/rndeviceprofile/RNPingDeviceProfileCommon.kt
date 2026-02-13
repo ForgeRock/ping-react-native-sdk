@@ -23,7 +23,7 @@ import com.pingidentity.device.profile.collector.NetworkCollector
 import com.pingidentity.device.profile.collector.PlatformCollector
 import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
-import com.reactnativepingidentity.core.CoreRuntime
+import com.pingidentity.reactnative.rncore.CoreRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

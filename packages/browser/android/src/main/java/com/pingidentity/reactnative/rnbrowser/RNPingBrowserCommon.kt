@@ -19,9 +19,9 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.error.GenericError
-import com.reactnativepingidentity.core.error.reject
+import com.pingidentity.reactnative.rncore.error.ErrorType
+import com.pingidentity.reactnative.rncore.error.GenericError
+import com.pingidentity.reactnative.rncore.error.reject
 import java.net.URL
 import java.net.MalformedURLException
 import kotlinx.coroutines.CancellationException
