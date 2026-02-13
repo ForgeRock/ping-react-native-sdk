@@ -1,65 +1,91 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import NativeRNPingJourney from './NativeRNPingJourney';
 import type {
   JourneyConfig,
-  JourneyOptions,
-  Node,
+  JourneyNextInput,
+  JourneyNode,
+  JourneyStartOptions,
   JourneyUserSession,
 } from './types';
 
-
-
 /**
- * Configure the Journey SDK.
- * Returns a unique journeyId that maps to an instance in native JourneyRegistry.
+ * Configure the native Journey instance.
+ *
+ * @param config - Journey configuration payload.
+ * @param sessionStorageId - Optional storage handle id for session composition.
+ * @param loggerId - Optional native logger handle id.
+ * @returns Native Journey instance identifier.
  */
 export async function configureJourney(
   config: JourneyConfig,
-  sessionStorageId?: string
+  sessionStorageId?: string,
+  loggerId?: string
 ): Promise<string> {
   return await NativeRNPingJourney.configureJourney({
     ...config,
-    sessionStorageId, // TBD: Storage ID to get instance from Registry
+    sessionStorageId,
+    loggerId,
   });
 }
 
 /**
  * Start a Journey by name.
- * Now requires journeyId to ensure calls map to the correct native instance.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @param journeyName - Journey/tree name configured on the server.
+ * @param options - Optional start flags.
+ * @returns First Journey node.
  */
 export async function startJourney(
   journeyId: string,
   journeyName: string,
-  options?: JourneyOptions
-): Promise<Node> {
-  return await NativeRNPingJourney.start(journeyId, journeyName, options);
+  options?: JourneyStartOptions
+): Promise<JourneyNode> {
+  const node = await NativeRNPingJourney.start(journeyId, journeyName, options);
+  return node as unknown as JourneyNode;
 }
 
 /**
- * Advance to the next node with user input.
- * Now requires journeyId to target the correct instance.
+ * Advance the currently active Journey node.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @param input - Callback input payload.
+ * @returns Next Journey node.
  */
 export async function nextNode(
   journeyId: string,
-  nodeId: string,
-  input: Record<string, any>
-): Promise<Node> {
-  return await NativeRNPingJourney.next(journeyId, nodeId, input);
+  input: JourneyNextInput = {}
+): Promise<JourneyNode> {
+  const node = await NativeRNPingJourney.next(journeyId, '', input);
+  return node as unknown as JourneyNode;
 }
 
 /**
- * Resume a suspended Journey (e.g., magic link or deep link).
- * Now requires journeyId so suspended flows resume into the correct instance.
+ * Resume a suspended Journey flow.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @param uri - Resume URI.
+ * @returns Resumed Journey node.
  */
 export async function resumeJourney(
   journeyId: string,
   uri: string
-): Promise<Node> {
-  return await NativeRNPingJourney.resume(journeyId, uri);
+): Promise<JourneyNode> {
+  const node = await NativeRNPingJourney.resume(journeyId, uri);
+  return node as unknown as JourneyNode;
 }
 
 /**
- * Retrieve an existing user session if available.
- * Session is now scoped per journey instance rather than global.
+ * Resolve current user/session details for a Journey instance.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns Session payload, or `null` when unavailable.
  */
 export async function getSession(
   journeyId: string
@@ -69,8 +95,10 @@ export async function getSession(
 }
 
 /**
- * Logout and clear the active session.
- * Now scoped per-instance to avoid invalidating other journeys.
+ * Logout active Journey session.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns `true` when logout succeeds.
  */
 export async function logout(
   journeyId: string
@@ -78,9 +106,13 @@ export async function logout(
   return await NativeRNPingJourney.logout(journeyId);
 }
 
-/*
-* POC only to show registered Storages from core
-*/
-export async function listRegisteredStoragesFromCore(): Promise<string[]> {
-  return await NativeRNPingJourney.listRegisteredStoragesFromCore()
+/**
+ * Dispose native Journey instance and release associated state.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ */
+export async function disposeJourney(
+  journeyId: string
+): Promise<void> {
+  await NativeRNPingJourney.dispose(journeyId);
 }

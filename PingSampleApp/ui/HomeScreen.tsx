@@ -31,6 +31,10 @@ export default function HomeScreen({ navigation }: Props) {
       screen: 'Journey',
       params: { journeyClient: loginClient2 },
     },
+    {
+      title: '🌐 Launch Dual Journeys',
+      screen: 'JourneyDual',
+    },
     { title: '🧭 Launch Browser', screen: 'Browser' },
     {
       title: '🧪 Logger Demo',

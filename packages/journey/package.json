@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/journey",
+  "name": "@ping-identity/rn-journey",
   "version": "0.1.0",
   "description": "Ping Identity Journey TurboModule for React Native",
   "main": "lib/module/index.js",
@@ -9,15 +9,19 @@
     "lib",
     "android",
     "ios",
+    "react-native.config.js",
     "*.podspec"
   ],
   "scripts": {
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
+    "test": "jest",
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@react-native-pingidentity/core": "^0.1.0"
+    "@ping-identity/rn-types": "^0.1.0",
+    "@react-native-pingidentity/core": "^0.1.0",
+    "@react-native-pingidentity/logger": "^0.1.0"
   },
   "peerDependencies": {
     "@react-native-pingidentity/storage": "*",
@@ -36,7 +40,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.reactnativepingidentity.journey"
+      "javaPackageName": "com.pingidentity.rnjourney"
     }
   },
   "react-native-builder-bob": {

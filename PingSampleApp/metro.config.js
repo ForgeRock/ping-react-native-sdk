@@ -23,7 +23,7 @@ const config = {
     ],
     extraNodeModules: {
       '@ping-identity/rn-oidc': oidcPackage,
-      '@react-native-pingidentity/journey': journeyPackage,
+      '@ping-identity/rn-journey': journeyPackage,
       '@react-native-pingidentity/storage': storagePackage,
       '@react-native-pingidentity/core': corePackage,
       '@react-native-pingidentity/logger': loggerPackage,

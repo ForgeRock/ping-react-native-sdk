@@ -280,6 +280,19 @@ public class RNPingJourneyImpl: NSObject {
     }
   }
 
+  // MARK: - Dispose
+  @objc(dispose:resolver:rejecter:)
+  public func dispose(
+    _ journeyId: String,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    nodeMap.removeValue(forKey: journeyId)
+    continueNodeMap.removeValue(forKey: journeyId)
+    journeyMap.removeValue(forKey: journeyId)
+    resolve(nil)
+  }
+
   // MARK: - List Registered Storages
   @objc
   public func listRegisteredStoragesFromCore(

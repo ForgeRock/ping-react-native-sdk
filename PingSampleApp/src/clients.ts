@@ -1,4 +1,5 @@
-import { journey } from "@react-native-pingidentity/journey";
+import { journey } from '@ping-identity/rn-journey';
+import { CacheStrategy, configureSessionStorage } from '@react-native-pingidentity/storage';
 
 export const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',
@@ -41,12 +42,46 @@ const journeyConfig2 = { // This config looks wrong. Revisit TBD
   scopes: ['openid', 'email', 'profile', 'address'],
 };
 
-journey(journeyConfig)
+const journeySessionStorageClient1 = configureSessionStorage({
+  android: {
+    fileName: 'journey_client_one_session_store',
+    keyAlias: 'journey.client.one.session',
+    cacheStrategy: CacheStrategy.NO_CACHE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.journey.client.one',
+    encryptor: true,
+    cacheable: false,
+  },
+});
+
+const journeySessionStorageClient2 = configureSessionStorage({
+  android: {
+    fileName: 'journey_client_two_session_store',
+    keyAlias: 'journey.client.two.session',
+    cacheStrategy: CacheStrategy.NO_CACHE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.journey.client.two',
+    encryptor: true,
+    cacheable: false,
+  },
+});
 
 export const loginClient = journey(
   journeyConfig,
+  {
+    session: {
+      storage: journeySessionStorageClient1,
+    },
+  }
 );
 
 export const loginClient2 = journey(
-  journeyConfig2, 
+  journeyConfig2,
+  {
+    session: {
+      storage: journeySessionStorageClient2,
+    },
+  }
 );

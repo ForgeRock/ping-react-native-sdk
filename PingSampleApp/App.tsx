@@ -4,12 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyScreen from './ui/JourneyScreen';
+import JourneyDualScreen from './ui/JourneyDualScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import { loginClient, loginClient2 } from './src/clients';
-import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
+import type { JourneyClient } from '@ping-identity/rn-journey';
 import { configureBrowser } from '@react-native-pingidentity/browser';
 import { configureLogger } from '@react-native-pingidentity/logger';
 
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Home: undefined;
   Storage: undefined;
   Journey: { journeyClient: JourneyClient };
+  JourneyDual: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -66,6 +68,11 @@ export default function App() {
           name="Journey"
           component={JourneyScreen}
           options={{ title: 'Journey' }}
+        />
+        <Stack.Screen
+          name="JourneyDual"
+          component={JourneyDualScreen}
+          options={{ title: 'Journey (Dual)' }}
         />
         <Stack.Screen
           name="Browser"

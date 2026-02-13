@@ -109,6 +109,16 @@ RCT_EXPORT_MODULE()
 }
 
 // ------------------------------------------
+// dispose(journeyId)
+// ------------------------------------------
+- (void)dispose:(NSString *)journeyId
+        resolve:(RCTPromiseResolveBlock)resolve
+         reject:(RCTPromiseRejectBlock)reject {
+  NSLog(@"RNPingJourney: dispose called for journeyId=%@", journeyId);
+  [[self swiftImpl] dispose:journeyId resolver:resolve rejecter:reject];
+}
+
+// ------------------------------------------
 // listRegisteredStoragesFromCore(): Promise<string[]>
 // ------------------------------------------
 - (void)listRegisteredStoragesFromCore:(RCTPromiseResolveBlock)resolve

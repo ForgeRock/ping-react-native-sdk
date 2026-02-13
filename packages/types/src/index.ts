@@ -62,3 +62,8 @@ export type Node = import('@forgerock/sdk-types').Step;
  * Alias for callback payloads used in RN flows.
  */
 export type NodeCallback = import('@forgerock/sdk-types').Callback;
+
+/**
+ * TODO: Add RN native-extension callback constants (for example, FIDO, Binding,
+ * IdP, and ConsentMapping variants) once they are standardized in shared types.
+ */

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "journey": ["./src/index"]
+      "@ping-identity/rn-journey": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

@@ -2674,7 +2674,7 @@ DEPENDENCIES:
   - RNPingCore (from `../../packages/core`)
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
-  - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
+  - "RNPingJourney (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
@@ -2867,7 +2867,7 @@ EXTERNAL SOURCES:
   RNPingDeviceProfile:
     :path: "../../node_modules/@ping-identity/rn-device-profile"
   RNPingJourney:
-    :path: "../../node_modules/@react-native-pingidentity/journey"
+    :path: "../../node_modules/@ping-identity/rn-journey"
   RNPingLogger:
     :path: "../../node_modules/@react-native-pingidentity/logger"
   RNPingOidc:
