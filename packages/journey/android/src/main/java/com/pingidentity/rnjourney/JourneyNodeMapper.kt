@@ -10,6 +10,7 @@ package com.pingidentity.rnjourney
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
+import com.pingidentity.journey.plugin.AbstractCallback
 import com.pingidentity.journey.callback.BooleanAttributeInputCallback
 import com.pingidentity.journey.callback.ChoiceCallback
 import com.pingidentity.journey.callback.ConfirmationCallback
@@ -69,21 +70,22 @@ internal object JourneyNodeMapper {
      * Build a pure Kotlin payload for a native node.
      */
     fun mapNodePayload(node: Node): Map<String, Any?> {
-        val payload = linkedMapOf<String, Any?>(
-            "id" to node.hashCode().toString()
-        )
+        val payload = linkedMapOf<String, Any?>()
 
         when (node) {
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
+                payload["input"] = jsonElementToAny(node.input)
                 payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it) }
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"
                 payload["message"] = node.message
+                payload["input"] = jsonElementToAny(node.input)
             }
             is SuccessNode -> {
                 payload["type"] = "SuccessNode"
+                payload["input"] = jsonElementToAny(node.input)
             }
             is FailureNode -> {
                 val message = node.cause.message ?: node.cause.toString()
@@ -108,9 +110,18 @@ internal object JourneyNodeMapper {
      * Build a pure Kotlin payload for a native callback.
      */
     fun mapCallbackPayload(callback: Any): Map<String, Any?> {
-        val payload = linkedMapOf<String, Any?>(
-            "type" to callbackType(callback)
-        )
+        val payload = linkedMapOf<String, Any?>("type" to callbackType(callback))
+        if (callback is AbstractCallback) {
+            try {
+                payload["raw"] = jsonElementToAny(callback.json)
+            } catch (_: Throwable) {
+                // Callback may be test-constructed without init(json), keep mapping resilient.
+            }
+        }
+
+        resolveRequired(callback)?.let {
+            payload["required"] = it
+        }
 
         when (callback) {
             is NameCallback -> {
@@ -197,14 +208,31 @@ internal object JourneyNodeMapper {
                 payload["value"] = callback.username
                 payload["validateOnly"] = callback.validateOnly
             }
-            else -> {
-                // Keep unknown callback payloads opaque and non-sensitive.
-                payload["opaque"] = true
-                payload["nativeClass"] = callback::class.java.name
-            }
+            else -> Unit
         }
 
         return payload
+    }
+
+    /**
+     * Tries to read callback required metadata from common getter names.
+     */
+    private fun resolveRequired(callback: Any): Boolean? {
+        val getter = callback::class.java.methods.firstOrNull { method ->
+            method.parameterCount == 0 &&
+                (method.name == "isRequired" || method.name == "getRequired")
+        } ?: return null
+
+        return try {
+            when (val value = getter.invoke(callback)) {
+                is Boolean -> value
+                is Number -> value.toInt() != 0
+                is String -> value.equals("true", ignoreCase = true) || value == "1"
+                else -> null
+            }
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     private fun jsonElementToAny(element: JsonElement): Any? {

@@ -7,6 +7,8 @@
 
 package com.pingidentity.rnjourney
 
+import com.pingidentity.orchestrate.Action
+import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.journey.callback.NameCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
@@ -16,15 +18,43 @@ import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.FlowContext
 import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.SuccessNode
+import com.pingidentity.orchestrate.Workflow
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Unit tests for Journey node and callback mapping.
  */
 class JourneyNodeMapperTest {
+
+    @Test
+    fun mapContinueNodeReturnsCompletePayload() {
+        val context = FlowContext(SharedContext(mutableMapOf("flowId" to "abc-123")))
+        val workflow = Workflow { }
+        val action = object : Action {
+            override fun toString(): String = "FakeAction"
+        }
+        val node = object : ContinueNode(
+            context = context,
+            workflow = workflow,
+            input = buildJsonObject {
+                put("stage", "login")
+            },
+            actions = listOf(action)
+        ) {
+            override fun asRequest() = throw UnsupportedOperationException("Not used in mapper tests")
+        }
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("ContinueNode", map["type"])
+        assertEquals("login", (map["input"] as Map<*, *>)["stage"])
+        assertTrue((map["callbacks"] as List<*>).isEmpty())
+    }
 
     @Test
     fun mapErrorNodeReturnsErrorPayload() {
@@ -38,7 +68,7 @@ class JourneyNodeMapperTest {
 
         assertEquals("ErrorNode", map["type"])
         assertEquals("Invalid credentials", map["message"])
-        assertNotNull(map["id"])
+        assertNotNull(map["input"])
     }
 
     @Test
@@ -59,6 +89,7 @@ class JourneyNodeMapperTest {
         val map = JourneyNodeMapper.mapNodePayload(node)
 
         assertEquals("SuccessNode", map["type"])
+        assertNotNull(map["input"])
     }
 
     @Test
@@ -83,13 +114,24 @@ class JourneyNodeMapperTest {
     }
 
     @Test
-    fun mapUnknownCallbackReturnsOpaqueMetadata() {
+    fun mapUnknownCallbackReturnsTypeOnly() {
         class UnknownCustomCallback
 
         val map = JourneyNodeMapper.mapCallbackPayload(UnknownCustomCallback())
 
         assertEquals("UnknownCustomCallback", map["type"])
-        assertEquals(true, map["opaque"])
-        assertNotNull(map["nativeClass"])
+        assertEquals(1, map.size)
+    }
+
+    @Test
+    fun mapCallbackReadsRequiredFromGetter() {
+        class RequiredCallback {
+            fun isRequired(): Boolean = true
+        }
+
+        val map = JourneyNodeMapper.mapCallbackPayload(RequiredCallback())
+
+        assertEquals("RequiredCallback", map["type"])
+        assertEquals(true, map["required"])
     }
 }

@@ -9,7 +9,23 @@ import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import type { JourneyError, JourneyNode } from '@ping-identity/rn-journey';
 import { commonStyles } from '../../../src/styles/common';
-import { readString } from '../utils/callbacks';
+
+/**
+ * Converts unknown values into display-safe strings.
+ *
+ * @param value - Arbitrary value.
+ * @param fallback - Fallback string.
+ * @returns Normalized string.
+ */
+function readString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return fallback;
+}
 
 /**
  * Props for Journey status/terminal state panel.
@@ -17,6 +33,7 @@ import { readString } from '../utils/callbacks';
 export type JourneyStatusPanelProps = {
   node: JourneyNode | null | undefined;
   error: JourneyError | null;
+  hasActiveSession: boolean;
   givenName?: string;
   onRefreshSession: () => Promise<void>;
   onLogout: () => Promise<void>;
@@ -31,11 +48,12 @@ export type JourneyStatusPanelProps = {
 export default function JourneyStatusPanel(
   props: JourneyStatusPanelProps
 ): React.ReactElement {
-  const { node, error, givenName, onRefreshSession, onLogout } = props;
+  const { node, error, hasActiveSession, givenName, onRefreshSession, onLogout } = props;
+  const showAuthenticatedState = hasActiveSession || node?.type === 'SuccessNode';
 
   return (
     <>
-      {node?.type === 'SuccessNode' ? (
+      {showAuthenticatedState ? (
         <>
           <Text style={commonStyles.textSuccess}>Welcome {givenName ?? 'User'}!</Text>
           <TouchableOpacity

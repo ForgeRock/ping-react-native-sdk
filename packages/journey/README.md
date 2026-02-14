@@ -60,13 +60,24 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 ## Public API
 
 ```ts
-import { journey, JourneyProvider, useJourney } from '@ping-identity/rn-journey';
+import {
+  buildNextInput,
+  journey,
+  JourneyProvider,
+  normalizeCallbacks,
+  useJourney,
+  useJourneyForm,
+} from '@ping-identity/rn-journey';
 import type {
+  JourneyBuildNextInputResult,
   JourneyClient,
   JourneyConfig,
+  JourneyFormResult,
+  JourneyFormValues,
   JourneyModules,
   JourneyNode,
   JourneyNextInput,
+  JourneyNormalizedField,
   JourneyError,
 } from '@ping-identity/rn-journey';
 ```
@@ -120,6 +131,36 @@ const [
 ] = useJourney();
 ```
 
+### `useJourneyForm(node, options?)`
+
+Headless form helper for callback-driven UI.
+
+- Derives `fields` from the active node.
+- Tracks `values` keyed by normalized field id.
+- Derives submit plan (`input`, `canSubmit`, `issues`) using `buildNextInput`.
+- Exposes helper actions (`setValue`, `setValues`, `clearValue`, `reset`, `buildInput`, `getField`).
+- Does not render UI and does not auto-run device profile or polling integrations.
+
+### `normalizeCallbacks(node)`
+
+Returns a normalized callback field list for generic UI rendering.
+
+- Stable `id` format: `<type>:<typeIndex>`
+- Preserves callback `prompt` and `message` values without forcing prompt fallback policy
+- Preserves option labels/defaults from callback payload without synthesizing UI fallbacks
+- Includes field `kind` (`text`, `password`, `number`, `boolean`, `choice`, `kba`, `output`)
+- Includes callback `capability` (`manual`, `output_only`, `integration_required`, `unsupported`)
+- Includes `defaultValue` and option metadata where available
+
+### `buildNextInput(node, values)`
+
+Builds a `next()` payload from normalized form values.
+
+- Returns `{ canSubmit, input, issues }`
+- Blocks submission for integration-required and unsupported callbacks
+- Enforces consent/terms only when callbacks are marked `required`
+- Preserves deterministic `type` + `index` callback mapping
+
 ## Usage Walkthrough
 
 ### 1. Create client
@@ -153,13 +194,18 @@ const node = await client.start('LoginJourney', {
 ### 3. Render and submit callbacks
 
 ```ts
-if (node.type === 'ContinueNode') {
-  await client.next({
-    callbacks: [
-      { type: 'NameCallback', value: 'demo-user' },
-      { type: 'PasswordCallback', value: 'demo-password' },
-    ],
+const [node, actions] = useJourney(client);
+const form: JourneyFormResult = useJourneyForm(node);
+
+if (node?.type === 'ContinueNode') {
+  form.setValues({
+    'NameCallback:0': 'demo-user',
+    'PasswordCallback:0': 'demo-password',
   });
+
+  if (form.canSubmit) {
+    await actions.next(form.input);
+  }
 }
 ```
 
@@ -201,7 +247,7 @@ await client.dispose();
 | `TextOutputCallback` | Core supported | Output-only |
 | `ValidatedCreatePasswordCallback` | Core supported | Yes |
 | `ValidatedCreateUsernameCallback` | Core supported | Yes |
-| `DeviceProfileCallback` | Supported with additional module | Integration required |
+| `DeviceProfileCallback` | Supported with additional module | Output-only (submit via device-profile integration) |
 | `PingOneProtect*` callbacks | Supported with additional module | Integration required |
 | `Fido*` / `Fido2*` callbacks | Supported with additional module | Integration required |
 | `SelectIdPCallback` and related IdP callbacks | Supported with additional module | Integration required |

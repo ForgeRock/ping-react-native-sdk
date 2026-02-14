@@ -22,12 +22,10 @@ type NativeJourneyCallback = {
  * Native Journey node payload returned by Journey bridge.
  */
 type NativeJourneyNode = {
-  id: string;
   type: 'ContinueNode' | 'ErrorNode' | 'FailureNode' | 'SuccessNode';
   message?: string;
   cause?: string;
-  // React Native codegen currently requires `Object` for bridge map payloads.
-  session?: Object;
+  input?: Object;
   callbacks?: NativeJourneyCallback[];
 };
 

@@ -48,7 +48,7 @@ public class RNPingJourneyImpl: NSObject {
 
   // MARK: - Node Serialization 
   private func serializeNode(_ node: Node) -> NSDictionary {
-    var dict: [String: Any] = ["id": UUID().uuidString]
+    var dict: [String: Any] = [:]
     switch node {
     case let c as ContinueNode:
       dict["type"] = "ContinueNode"
@@ -61,8 +61,8 @@ public class RNPingJourneyImpl: NSObject {
       dict["type"] = "ErrorNode"; dict["message"] = e.message
     case let f as FailureNode:
       dict["type"] = "FailureNode"; dict["cause"] = f.cause.localizedDescription
-    case let s as SuccessNode:
-      dict["type"] = "SuccessNode"; dict["session"] = s.session
+    case _ as SuccessNode:
+      dict["type"] = "SuccessNode"
     default: dict["type"] = "Unknown"
     }
     return dict as NSDictionary

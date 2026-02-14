@@ -21,11 +21,7 @@ export default function HomeScreen({ navigation }: Props) {
   const menuItems = [
     { title: '📦 Launch Storage', screen: 'Storage' },
     {
-      title: '🌐 Launch Journey (Simple)',
-      screen: 'JourneySimple',
-    },
-    {
-      title: '🧩 Launch Journey (Advanced)',
+      title: '🧠 Launch Journey Flow',
       screen: 'Journey',
     },
     { title: '🧭 Launch Browser', screen: 'Browser' },

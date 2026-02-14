@@ -12,14 +12,16 @@ import { loginClient } from '../src/clients';
 import JourneyClientPanel from './journey/components/JourneyClientPanel';
 
 /**
- * Renders the advanced Journey sample panel with callback renderer coverage.
+ * Renders the helper-driven Journey sample screen.
  *
- * @returns Journey screen element.
+ * @returns Journey full screen element.
  */
-export default function JourneyScreen(): React.ReactElement {
+export default function JourneyFullScreen(): React.ReactElement {
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <JourneyClientPanel journeyClient={loginClient} />
+      <JourneyClientPanel
+        journeyClient={loginClient}
+      />
     </ScrollView>
   );
 }

@@ -6,7 +6,9 @@
  */
 
 export { journey } from './journey';
+export { buildNextInput, normalizeCallbacks } from './callbackHelpers';
 export { JourneyProvider, useJourney } from './useJourney';
+export { useJourneyForm } from './useJourneyForm';
 export type {
   JourneyHookActions,
   JourneyHookResult,
