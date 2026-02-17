@@ -4,22 +4,67 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import type {
-  SessionStorage,
-  OidcStorage,
-} from "./types/storage.types";
 import { getNativeModule } from "./NativeRNPingStorage";
-import type { BaseStorageConfig, NativeStorageConfig } from "./NativeRNPingStorage";
-import { CacheStrategy } from "./NativeRNPingStorage";
+import type { NativeCacheStrategy, NativeStorageConfig } from "./NativeRNPingStorage";
+import { CacheStrategy } from "./types";
+import type {
+  OidcStorage,
+  SessionStorage,
+  StorageConfig,
+} from "./types";
 
 export type {
-  SessionStorage,
   OidcStorage,
-} from "./types/storage.types";
-export type { BaseStorageConfig as StorageConfig } from "./NativeRNPingStorage";
-export {
-  CacheStrategy,
-};
+  SessionStorage,
+  StorageConfig,
+} from "./types";
+export { CacheStrategy } from "./types";
+
+/**
+ * Converts the public CacheStrategy enum to the native string literal.
+ *
+ * @param strategy - Cache strategy enum value
+ * @returns Native cache strategy string for the bridge
+ *
+ * @internal
+ */
+function toNativeCacheStrategy(strategy: CacheStrategy): NativeCacheStrategy {
+  switch (strategy) {
+    case CacheStrategy.CACHE_ON_FAILURE:
+      return "cache_on_failure";
+    case CacheStrategy.NO_CACHE:
+      return "no_cache";
+    case CacheStrategy.CACHE:
+      return "cache";
+    default: {
+      const exhaustiveCheck: never = strategy;
+      return exhaustiveCheck;
+    }
+  }
+}
+
+/**
+ * Converts the native cache strategy string to the public CacheStrategy enum.
+ *
+ * @param strategy - Native cache strategy string
+ * @returns CacheStrategy enum value
+ *
+ * @internal
+ */
+function fromNativeCacheStrategy(strategy: NativeCacheStrategy): CacheStrategy {
+  switch (strategy) {
+    case "cache_on_failure":
+      return CacheStrategy.CACHE_ON_FAILURE;
+    case "no_cache":
+      return CacheStrategy.NO_CACHE;
+    case "cache":
+      return CacheStrategy.CACHE;
+    default: {
+      const exhaustiveCheck: never = strategy;
+      return exhaustiveCheck;
+    }
+  }
+}
 
 /**
  * Validates the storage configuration.
@@ -29,7 +74,7 @@ export {
  * 
  * @internal
  */
-function validateStorageConfig(config: BaseStorageConfig) {
+function validateStorageConfig(config: StorageConfig) {
   if (!config) {
     throw new Error(
       "[@ping-identity/rn-storage] Missing configuration: " +
@@ -48,14 +93,16 @@ function validateStorageConfig(config: BaseStorageConfig) {
  * 
  * @internal
  */
-function buildNativeConfig(config: BaseStorageConfig): NativeStorageConfig {
+function buildNativeConfig(config: StorageConfig): NativeStorageConfig {
   return {
     ...(config.android?.keyAlias ? { keyAlias: config.android.keyAlias } : {}),
     ...(config.android?.fileName ? { fileName: config.android.fileName } : {}),
     ...(config.android?.strongBoxPreferred !== undefined
       ? { strongBoxPreferred: config.android.strongBoxPreferred }
       : {}),
-    ...(config.android?.cacheStrategy ? { cacheStrategy: config.android.cacheStrategy } : {}),
+    ...(config.android?.cacheStrategy
+      ? { cacheStrategy: toNativeCacheStrategy(config.android.cacheStrategy) }
+      : {}),
     ...(config.ios?.account ? { account: config.ios.account } : {}),
     ...(config.ios?.encryptor !== undefined ? { encryptor: config.ios.encryptor } : {}),
     ...(config.ios?.cacheable !== undefined ? { cacheable: config.ios.cacheable } : {}),
@@ -133,24 +180,26 @@ function buildAndroidConfig(parsed: NativeStorageConfig) {
     ...(parsed.strongBoxPreferred !== undefined
       ? { strongBoxPreferred: parsed.strongBoxPreferred }
       : {}),
-    ...(parsed.cacheStrategy !== undefined ? { cacheStrategy: parsed.cacheStrategy } : {}),
+    ...(parsed.cacheStrategy !== undefined
+      ? { cacheStrategy: fromNativeCacheStrategy(parsed.cacheStrategy) }
+      : {}),
   };
 }
 
 /**
- * Normalizes a native storage configuration into a structured BaseStorageConfig.
+ * Normalizes a native storage configuration into a structured StorageConfig.
  * Takes a flattened native configuration object and restructures it into
  * platform-specific sections (android and ios).
  *
  * @param nativeResult - The native storage configuration to normalize
- * @returns Normalized BaseStorageConfig with platform-specific options properly nested
+ * @returns Normalized StorageConfig with platform-specific options properly nested
  * @throws {Error} If the native result is not a valid configuration object
  * 
  * @internal
  */
 function normalizeStorageConfig(
   nativeResult: NativeStorageConfig | null | undefined
-): BaseStorageConfig {
+): StorageConfig {
   validateNormalizedResult(nativeResult);
 
   const parsed = nativeResult ?? {};
@@ -187,7 +236,7 @@ function normalizeStorageConfig(
  * // initJourney({ sessionStorage, ... });
  * ```
  */
-export function configureSessionStorage(config: BaseStorageConfig): SessionStorage {
+export function configureSessionStorage(config: StorageConfig): SessionStorage {
   validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerSessionStorage(buildNativeConfig(config));
@@ -226,7 +275,7 @@ export function configureSessionStorage(config: BaseStorageConfig): SessionStora
  * // configureOidc({ storage: oidcStorage, ... });
  * ```
  */
-export function configureOidcStorage(config: BaseStorageConfig): OidcStorage {
+export function configureOidcStorage(config: StorageConfig): OidcStorage {
   validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerOidcStorage(buildNativeConfig(config));

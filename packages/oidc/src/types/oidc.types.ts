@@ -11,7 +11,7 @@ import type {
   LoggerInstance,
   NativeLoggerHandle,
 } from '@ping-identity/rn-logger';
-import type { StorageConfig } from '@ping-identity/rn-storage';
+import type { OidcStorage } from '@ping-identity/rn-storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -87,7 +87,7 @@ export type OidcClientConfig = {
    * Pass the object returned by `configureOidcStorage`. The native layer uses
    * the embedded `id` to resolve the registered storage configuration.
    */
-  storage?: StorageConfig;
+  storage?: OidcStorage;
 
   /**
    * iOS-only browser configuration for OIDC web login.

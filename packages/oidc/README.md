@@ -53,15 +53,17 @@ If you want to customize native token storage, configure it with the Storage mod
 handle into the OIDC client configuration.
 
 ```ts
-import { configureOidcStorage } from '@ping-identity/rn-storage';
+import { CacheStrategy, configureOidcStorage } from '@ping-identity/rn-storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
 import { logger } from '@ping-identity/rn-logger';
 
 const oidcStorage = configureOidcStorage({
-  fileName: 'ping-oidc',
-  keyAlias: 'ping-oidc',
-  strongBoxPreferred: true,
-  cacheStrategy: 'cache_on_failure',
+  android: {
+    fileName: 'ping-oidc',
+    keyAlias: 'ping-oidc',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+  },
 });
 
 const debugLogger = logger({ level: 'debug' });

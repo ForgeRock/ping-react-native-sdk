@@ -18,11 +18,6 @@ const mockNativeRNPingStorage = {
 };
 
 jest.mock("../NativeRNPingStorage", () => ({
-  CacheStrategy: {
-    CACHE_ON_FAILURE: "cache_on_failure",
-    NO_CACHE: "no_cache",
-    CACHE: "cache",
-  },
   getNativeModule: () => mockNativeRNPingStorage,
 }));
 
