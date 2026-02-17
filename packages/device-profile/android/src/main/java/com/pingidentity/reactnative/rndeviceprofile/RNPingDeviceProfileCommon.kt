@@ -24,6 +24,7 @@ import com.pingidentity.device.profile.collector.PlatformCollector
 import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
 import com.pingidentity.reactnative.rncore.CoreRuntime
+import com.pingidentity.reactnative.rncore.utils.JsonBridgeMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,7 +102,7 @@ object RNPingDeviceProfileCommon {
           deviceCollectors.collect()
         }
         Log.d("Device Profile", "metadata collection succeeded")
-        promise.resolve(jsonElement.toReactValue())
+        promise.resolve(JsonBridgeMapper.encodeJsonElement(jsonElement))
       } catch (e: Throwable) {
         Log.e("Device Profile", "metadata collection failed", e)
         promise.reject("DEVICE_PROFILE_COLLECT_ERROR", "Failed to collect device profile: ${e.message}", e)

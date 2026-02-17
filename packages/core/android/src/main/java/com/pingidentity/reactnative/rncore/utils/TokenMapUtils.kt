@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.reactnativepingidentity.core.utils
+package com.pingidentity.reactnative.rncore.utils
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
