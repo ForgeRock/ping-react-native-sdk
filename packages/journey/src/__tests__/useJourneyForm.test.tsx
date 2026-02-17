@@ -49,7 +49,7 @@ function JourneyFormHarness(props: JourneyFormHarnessProps): React.ReactElement 
 }
 
 describe('useJourneyForm', () => {
-  it('seeds smart defaults for normalized fields', () => {
+  it('seeds callback-provided defaults only', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
@@ -72,10 +72,7 @@ describe('useJourneyForm', () => {
     });
 
     const form = requireLatest(latest);
-    expect(form.values).toMatchObject({
-      'NameCallback:0': '',
-      'TermsAndConditionsCallback:0': false,
-    });
+    expect(form.values).toEqual({});
     expect(form.canSubmit).toBe(false);
   });
 
@@ -159,6 +156,6 @@ describe('useJourneyForm', () => {
       );
     });
 
-    expect(requireLatest(latest).values['NameCallback:0']).toBe('');
+    expect(requireLatest(latest).values['NameCallback:0']).toBeUndefined();
   });
 });

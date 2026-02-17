@@ -10,14 +10,21 @@ package com.pingidentity.rnjourney
 import com.pingidentity.journey.Journey
 import com.pingidentity.journey.module.Oidc
 import com.pingidentity.journey.module.Session
+import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
+import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.oidc.OidcClientConfigHandle
+import com.reactnativepingidentity.core.oidc.OidcOpenIdConfig
 import com.reactnativepingidentity.storage.StorageConfig
 import com.reactnativepingidentity.storage.StorageConfigRegistry
 
 /**
  * Builds native Journey workflow instances from parsed JS payloads.
+ *
+ * @param sessionStorageRegistry Registry used to resolve session storage handles from JS.
+ * @param loggerApplier Logger binder invoked during workflow construction.
  */
 internal class JourneyClientFactory(
     private val sessionStorageRegistry: StorageConfigRegistry,
@@ -25,10 +32,33 @@ internal class JourneyClientFactory(
 ) {
 
     /**
+     * OIDC settings resolved from either direct Journey config or shared OIDC client handles.
+     */
+    private data class ResolvedOidcConfig(
+        val clientId: String,
+        val discoveryEndpoint: String?,
+        val redirectUri: String,
+        val scopes: List<String>,
+        val openId: OidcOpenIdConfig?,
+        val acrValues: String?,
+        val signOutRedirectUri: String?,
+        val state: String?,
+        val nonce: String?,
+        val uiLocales: String?,
+        val refreshThreshold: Long?,
+        val loginHint: String?,
+        val display: String?,
+        val prompt: String?,
+        val additionalParameters: Map<String, String>
+    )
+
+    /**
      * Build a Journey workflow from parsed configuration.
      *
      * @param payload Parsed Journey payload.
      * @return Configured native workflow instance.
+     * @throws IllegalArgumentException if payload values are invalid for native SDK setup.
+     * @throws IllegalStateException if module configuration fails.
      */
     fun build(payload: JourneyClientPayload): Workflow {
         return Journey {
@@ -39,15 +69,37 @@ internal class JourneyClientFactory(
             payload.realm?.let { realm = it }
             payload.cookie?.let { cookie = it }
 
-            if (payload.clientId != null && payload.discoveryEndpoint != null && payload.redirectUri != null) {
+            resolveOidcConfig(payload)?.let { oidcConfig ->
                 module(Oidc) {
-                    clientId = payload.clientId
-                    discoveryEndpoint = payload.discoveryEndpoint
-                    redirectUri = payload.redirectUri
-                    scopes = if (payload.scopes.isEmpty()) {
+                    clientId = oidcConfig.clientId
+                    oidcConfig.discoveryEndpoint?.let { discoveryEndpoint = it }
+                    redirectUri = oidcConfig.redirectUri
+                    scopes = if (oidcConfig.scopes.isEmpty()) {
                         mutableSetOf("openid", "email", "address", "profile", "phone")
                     } else {
-                        payload.scopes.toMutableSet()
+                        oidcConfig.scopes.toMutableSet()
+                    }
+                    acrValues = oidcConfig.acrValues
+                    signOutRedirectUri = oidcConfig.signOutRedirectUri
+                    state = oidcConfig.state
+                    nonce = oidcConfig.nonce
+                    uiLocales = oidcConfig.uiLocales
+                    oidcConfig.refreshThreshold?.let { refreshThreshold = it }
+                    loginHint = oidcConfig.loginHint
+                    display = oidcConfig.display
+                    prompt = oidcConfig.prompt
+                    if (oidcConfig.additionalParameters.isNotEmpty()) {
+                        additionalParameters = oidcConfig.additionalParameters
+                    }
+                    oidcConfig.openId?.let { openIdConfig ->
+                        openId = OpenIdConfiguration(
+                            authorizationEndpoint = openIdConfig.authorizationEndpoint,
+                            tokenEndpoint = openIdConfig.tokenEndpoint,
+                            userinfoEndpoint = openIdConfig.userinfoEndpoint,
+                            endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
+                            pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
+                            revocationEndpoint = openIdConfig.revocationEndpoint ?: ""
+                        )
                     }
                 }
             }
@@ -56,6 +108,125 @@ internal class JourneyClientFactory(
         }
     }
 
+    /**
+     * Resolves OIDC settings from shared OIDC handles or direct Journey config fields.
+     *
+     * @param payload Parsed Journey payload.
+     * @return Resolved OIDC settings, or null when OIDC is not configured.
+     * @throws IllegalArgumentException when OIDC handle resolution fails or required values are missing.
+     */
+    private fun resolveOidcConfig(payload: JourneyClientPayload): ResolvedOidcConfig? {
+        val oidcClientId = payload.oidcClientId
+        if (!oidcClientId.isNullOrBlank()) {
+            return resolveOidcConfigFromHandle(oidcClientId)
+        }
+
+        if (!payload.clientId.isNullOrBlank() &&
+            !payload.discoveryEndpoint.isNullOrBlank() &&
+            !payload.redirectUri.isNullOrBlank()
+        ) {
+            return ResolvedOidcConfig(
+                clientId = payload.clientId,
+                discoveryEndpoint = payload.discoveryEndpoint.trim(),
+                redirectUri = payload.redirectUri,
+                scopes = payload.scopes,
+                openId = payload.openId?.toCoreOpenIdConfig(),
+                acrValues = payload.acrValues,
+                signOutRedirectUri = payload.signOutRedirectUri,
+                state = payload.state,
+                nonce = payload.nonce,
+                uiLocales = payload.uiLocales,
+                refreshThreshold = payload.refreshThreshold,
+                loginHint = payload.loginHint,
+                display = payload.display,
+                prompt = payload.prompt,
+                additionalParameters = payload.additionalParameters
+            )
+        }
+
+        if (!payload.clientId.isNullOrBlank() && payload.openId != null && !payload.redirectUri.isNullOrBlank()) {
+            return ResolvedOidcConfig(
+                clientId = payload.clientId,
+                discoveryEndpoint = payload.discoveryEndpoint,
+                redirectUri = payload.redirectUri,
+                scopes = payload.scopes,
+                openId = payload.openId.toCoreOpenIdConfig(),
+                acrValues = payload.acrValues,
+                signOutRedirectUri = payload.signOutRedirectUri,
+                state = payload.state,
+                nonce = payload.nonce,
+                uiLocales = payload.uiLocales,
+                refreshThreshold = payload.refreshThreshold,
+                loginHint = payload.loginHint,
+                display = payload.display,
+                prompt = payload.prompt,
+                additionalParameters = payload.additionalParameters
+            )
+        }
+
+        return null
+    }
+
+    /**
+     * Resolves OIDC settings from a registered OIDC client handle.
+     *
+     * @param oidcClientId OIDC client id returned by `@ping-identity/rn-oidc`.
+     * @return Resolved OIDC settings.
+     * @throws IllegalArgumentException when the handle cannot be resolved or is missing required fields.
+     */
+    private fun resolveOidcConfigFromHandle(oidcClientId: String): ResolvedOidcConfig {
+        val handle = CoreRuntime.oidcClientRegistry.resolve(oidcClientId) as? OidcClientConfigHandle
+            ?: throw IllegalArgumentException("OIDC client instance not found for id=$oidcClientId")
+
+        val discoveryEndpoint = handle.discoveryEndpoint?.trim()
+        if (discoveryEndpoint.isNullOrEmpty() && handle.openId == null) {
+            throw IllegalArgumentException(
+                "OIDC client id=$oidcClientId does not expose discoveryEndpoint or openId. " +
+                    "Configure OIDC with discoveryEndpoint or openId before composing Journey."
+            )
+        }
+
+        return ResolvedOidcConfig(
+            clientId = handle.clientId,
+            discoveryEndpoint = discoveryEndpoint,
+            redirectUri = handle.redirectUri,
+            scopes = handle.scopes,
+            openId = handle.openId,
+            acrValues = handle.acrValues,
+            signOutRedirectUri = handle.signOutRedirectUri,
+            state = handle.state,
+            nonce = handle.nonce,
+            uiLocales = handle.uiLocales,
+            refreshThreshold = handle.refreshThreshold,
+            loginHint = handle.loginHint,
+            display = handle.display,
+            prompt = handle.prompt,
+            additionalParameters = handle.additionalParameters
+        )
+    }
+
+    /**
+     * Maps parser OpenID payload into shared core OpenID config.
+     *
+     * @return Shared core OpenID config.
+     */
+    private fun JourneyOpenIdPayload.toCoreOpenIdConfig(): OidcOpenIdConfig {
+        return OidcOpenIdConfig(
+            authorizationEndpoint = authorizationEndpoint,
+            tokenEndpoint = tokenEndpoint,
+            userinfoEndpoint = userinfoEndpoint,
+            endSessionEndpoint = endSessionEndpoint,
+            pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint,
+            revocationEndpoint = revocationEndpoint
+        )
+    }
+
+    /**
+     * Applies session storage module configuration when a storage id is present.
+     *
+     * @param storageId Optional storage handle id resolved from JavaScript modules payload.
+     * @throws IllegalStateException if the storage id cannot be resolved.
+     */
     private fun com.pingidentity.journey.JourneyConfig.applySessionStorageIfPresent(storageId: String?) {
         if (storageId.isNullOrBlank()) {
             return
@@ -69,6 +240,11 @@ internal class JourneyClientFactory(
         }
     }
 
+    /**
+     * Applies storage configuration fields to native encrypted datastore storage settings.
+     *
+     * @param config Parsed storage configuration from the shared storage registry.
+     */
     private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfig) {
         config.fileName?.let { fileName = it }
         config.keyAlias?.let { keyAlias = it }
@@ -76,6 +252,12 @@ internal class JourneyClientFactory(
         config.cacheStrategy?.let { cacheStrategy = parseCacheStrategy(it) }
     }
 
+    /**
+     * Maps wire cache strategy strings to native enum values.
+     *
+     * @param rawValue Raw cache strategy value from JavaScript.
+     * @return Native cache strategy enum.
+     */
     private fun parseCacheStrategy(rawValue: String): CacheStrategy {
         return when (rawValue.lowercase()) {
             "cache_on_failure" -> CacheStrategy.CACHE_ON_FAILURE

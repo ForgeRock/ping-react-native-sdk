@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
-import JourneyFullScreen from './ui/JourneyFullScreen';
+import JourneyHelperScreen from './ui/JourneyHelperScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
@@ -16,7 +16,7 @@ import { configureLogger } from '@react-native-pingidentity/logger';
 export type RootStackParamList = {
   Home: undefined;
   Storage: undefined;
-  Journey: undefined;
+  JourneyHelper: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -63,9 +63,9 @@ export default function App() {
             options={{ title: 'Storage' }}
           />
           <Stack.Screen
-            name="Journey"
-            component={JourneyFullScreen}
-            options={{ title: 'Journey' }}
+            name="JourneyHelper"
+            component={JourneyHelperScreen}
+            options={{ title: 'Journey (helper-driven)' }}
           />
           <Stack.Screen
             name="Browser"

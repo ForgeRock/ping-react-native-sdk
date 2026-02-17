@@ -30,6 +30,7 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 
 - Native SDK is authoritative for Journey execution, networking, callback evaluation, and session lifecycle.
 - JavaScript orchestrates flow progression (`start`, `next`, `resume`) and UI rendering for callbacks.
+- Node payload exposed to JS is AM-focused (`type`, `message`, `cause`, `input`, `callbacks`) rather than native runtime internals.
 - No required Provider pattern (optional `JourneyProvider` is available for multi-screen shared state).
 - Multi-client support is explicit (`journey(...)` creates isolated native runtime instances).
 - Shared contracts come from `@ping-identity/rn-types` (including `GenericError`, `Node`, and callback shapes).
@@ -70,6 +71,7 @@ import {
 } from '@ping-identity/rn-journey';
 import type {
   JourneyBuildNextInputResult,
+  JourneyCallbackType,
   JourneyClient,
   JourneyConfig,
   JourneyFormResult,
@@ -79,7 +81,18 @@ import type {
   JourneyNextInput,
   JourneyNormalizedField,
   JourneyError,
+  JourneyOidcClientHandle,
 } from '@ping-identity/rn-journey';
+```
+
+For callback-type autocomplete, use shared callback constants:
+
+```ts
+import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
+import type { JourneyCallbackType } from '@ping-identity/rn-journey';
+
+const typeA: JourneyCallbackType = callbackType.NameCallback;
+const typeB: JourneyCallbackType = nativeExtensionCallbackType.ConsentMappingCallback;
 ```
 
 ### `journey(config, modules?)`
@@ -93,6 +106,16 @@ Creates an imperative Journey client.
   - `config.nativeLogger` (native logger handle).
 - Session storage integration supports:
   - `modules.session.storage` from `@react-native-pingidentity/storage`.
+- OIDC composition supports:
+  - shorthand `config.oidcClient` from `@ping-identity/rn-oidc` (`createOidcClient(...)` output),
+  - direct Journey OIDC fields on `config` (base fields plus advanced OIDC options), or
+  - `modules.oidc.client` from `@ping-identity/rn-oidc` (`createOidcClient(...)` output).
+
+OIDC source-of-truth precedence is:
+
+1. `modules.oidc.client`
+2. `config.oidcClient`
+3. direct OIDC fields on `config`
 
 ### `JourneyClient`
 
@@ -131,7 +154,7 @@ const [
 ] = useJourney();
 ```
 
-### `useJourneyForm(node, options?)`
+### `useJourneyForm(node)`
 
 Headless form helper for callback-driven UI.
 
@@ -141,11 +164,14 @@ Headless form helper for callback-driven UI.
 - Exposes helper actions (`setValue`, `setValues`, `clearValue`, `reset`, `buildInput`, `getField`).
 - Does not render UI and does not auto-run device profile or polling integrations.
 
+Detailed usage guide: [`USE_JOURNEY_FORM.md`](./USE_JOURNEY_FORM.md)
+
 ### `normalizeCallbacks(node)`
 
 Returns a normalized callback field list for generic UI rendering.
 
 - Stable `id` format: `<type>:<typeIndex>`
+- `field.ref.type` is `JourneyCallbackType` (sdk-types callback union plus RN native-extension callback union)
 - Preserves callback `prompt` and `message` values without forcing prompt fallback policy
 - Preserves option labels/defaults from callback payload without synthesizing UI fallbacks
 - Includes field `kind` (`text`, `password`, `number`, `boolean`, `choice`, `kba`, `output`)
@@ -194,22 +220,37 @@ const node = await client.start('LoginJourney', {
 ### 3. Render and submit callbacks
 
 ```ts
+import { callbackType } from '@ping-identity/rn-types';
+
 const [node, actions] = useJourney(client);
 const form: JourneyFormResult = useJourneyForm(node);
 
-if (node?.type === 'ContinueNode') {
-  form.setValues({
-    'NameCallback:0': 'demo-user',
-    'PasswordCallback:0': 'demo-password',
-  });
+const findFieldId = (type: string, typeIndex = 0): string | undefined =>
+  form.fields.find(
+    (field) => field.ref.type === type && field.ref.typeIndex === typeIndex
+  )?.id;
 
-  if (form.canSubmit) {
-    await actions.next(form.input);
+if (node?.type === 'ContinueNode') {
+  const nameFieldId = findFieldId(callbackType.NameCallback);
+  const passwordFieldId = findFieldId(callbackType.PasswordCallback);
+
+  if (nameFieldId) {
+    form.setValue(nameFieldId, 'demo-user');
+  }
+  if (passwordFieldId) {
+    form.setValue(passwordFieldId, 'demo-password');
+  }
+
+  const plan = form.buildInput();
+  if (plan.canSubmit) {
+    await actions.next(plan.input);
   }
 }
 ```
 
-Use `index` when a node has multiple callbacks of the same `type`.
+Do not hardcode callback ids like `'NameCallback:0'`. Use `field.id` from
+`form.fields`. For repeated callback types, use `field.ref.typeIndex` to target
+the correct instance.
 
 ### 4. Resume suspended flow
 
@@ -250,13 +291,14 @@ await client.dispose();
 | `DeviceProfileCallback` | Supported with additional module | Output-only (submit via device-profile integration) |
 | `PingOneProtect*` callbacks | Supported with additional module | Integration required |
 | `Fido*` / `Fido2*` callbacks | Supported with additional module | Integration required |
-| `SelectIdPCallback` and related IdP callbacks | Supported with additional module | Integration required |
+| `SelectIdPCallback`, `RedirectCallback`, and related IdP callbacks | Supported with additional module | Integration required |
 | `ReCaptcha*` callbacks | Supported with additional module | Integration required |
 | `Binding*` callbacks | Supported with additional module | Integration required |
 
 ### Unknown callbacks
 
-- Unknown callback types are still surfaced to JS with opaque metadata (`type`, `opaque`, `nativeClass`).
+- Unknown callback types are surfaced to JS with their `type` (and callback payload fields when available).
+- Helper submit planning (`buildNextInput`) marks unknown callback types as `unsupported`.
 - `next()` only fails when mutation is requested for unsupported/integration-dependent callback types.
 
 ## Integration-Required Callback Behavior
@@ -322,6 +364,43 @@ const client = journey(
 ```
 
 If no storage client is provided, native defaults are used.
+
+## OIDC Composition Contract
+
+Journey can reuse an existing OIDC client from `@ping-identity/rn-oidc`:
+
+```ts
+import { createOidcClient } from '@ping-identity/rn-oidc';
+import { journey } from '@ping-identity/rn-journey';
+
+const oidcClient = createOidcClient({
+  clientId: 'rn-client',
+  discoveryEndpoint: 'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://oauth2redirect',
+  scopes: ['openid', 'profile', 'email'],
+});
+
+// Shorthand config DX
+const client = journey({
+  serverUrl: 'https://example.com/am',
+  realm: 'alpha',
+  oidcClient,
+});
+
+// Equivalent explicit module composition
+const clientFromModules = journey(
+  { serverUrl: 'https://example.com/am', realm: 'alpha' },
+  { oidc: { client: oidcClient } }
+);
+```
+
+When Journey composes with an OIDC client handle, it reuses the full OIDC client
+configuration (for example: `openId`, `acrValues`, `signOutRedirectUri`,
+`state`, `nonce`, `uiLocales`, `refreshThreshold`, `loginHint`, `display`,
+`prompt`, and `additionalParameters`).
+
+If you do not compose via `modules.oidc.client` or `config.oidcClient`, provide
+direct OIDC fields on `JourneyConfig`.
 
 ## Security Notes
 

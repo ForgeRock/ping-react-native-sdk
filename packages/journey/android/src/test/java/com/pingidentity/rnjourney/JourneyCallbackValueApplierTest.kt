@@ -227,6 +227,53 @@ class JourneyCallbackValueApplierTest {
   }
 
   @Test
+  fun applyThrowsForRedirectIntegrationCallback() {
+    class RedirectCallback
+
+    try {
+      JourneyCallbackValueApplier.applyToCallbacks(
+        listOf(RedirectCallback()),
+        listOf(
+          JourneyCallbackValueApplier.CallbackMutation("RedirectCallback", "payload", null)
+        )
+      )
+    } catch (error: IllegalStateException) {
+      assertTrue(error.message?.contains("additional native integration") == true)
+      assertTrue(error.message?.contains("Redirect handling integration") == true)
+      return
+    }
+    throw AssertionError("Expected IllegalStateException for redirect integration callback")
+  }
+
+  @Test
+  fun applyThrowsForNativeExtensionIntegrationCallbacks() {
+    class IdPCallback
+    class DeviceBindingCallback
+    class DeviceSigningVerifierCallback
+
+    val callbacks = listOf(
+      Triple(IdPCallback(), "IdPCallback", "External IdP integration"),
+      Triple(DeviceBindingCallback(), "DeviceBindingCallback", "Binding integration"),
+      Triple(DeviceSigningVerifierCallback(), "DeviceSigningVerifierCallback", "Binding integration")
+    )
+
+    callbacks.forEach { (callback, type, expectedRequirement) ->
+      try {
+        JourneyCallbackValueApplier.applyToCallbacks(
+          listOf(callback),
+          listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+        )
+      } catch (error: IllegalStateException) {
+        assertTrue(error.message?.contains("additional native integration") == true)
+        assertTrue(error.message?.contains(expectedRequirement) == true)
+        return@forEach
+      }
+
+      throw AssertionError("Expected IllegalStateException for $type integration callback")
+    }
+  }
+
+  @Test
   fun applyThrowsForUnsupportedCallback() {
     class UnknownCustomCallback
 

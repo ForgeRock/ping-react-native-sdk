@@ -72,7 +72,7 @@ export function extractGivenName(session: unknown): string | undefined {
  * @returns Polling wait time in milliseconds when available.
  */
 export function resolvePollingWaitMs(fields: JourneyNormalizedField[]): number | null {
-  const pollingField = fields.find((field) => field.type === 'PollingWaitCallback');
+  const pollingField = fields.find((field) => field.ref.type === 'PollingWaitCallback');
   if (!pollingField) {
     return null;
   }

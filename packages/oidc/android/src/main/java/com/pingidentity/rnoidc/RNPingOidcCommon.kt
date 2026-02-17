@@ -18,6 +18,8 @@ import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.OidcUser
 import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.oidc.OidcClientConfigHandle
+import com.reactnativepingidentity.core.oidc.OidcOpenIdConfig
 import com.reactnativepingidentity.core.error.ErrorType
 import com.reactnativepingidentity.core.error.GenericError
 import com.reactnativepingidentity.core.error.mapThrowableToGenericError
@@ -69,7 +71,61 @@ object RNPingOidcCommon {
     val payload: OidcClientPayload,
     val client: OidcClient,
     val user: OidcUser
-  ) : NativeHandle
+  ) : NativeHandle, OidcClientConfigHandle {
+    override val clientId: String
+      get() = payload.clientId
+
+    override val discoveryEndpoint: String?
+      get() = payload.discoveryEndpoint
+
+    override val redirectUri: String
+      get() = payload.redirectUri
+
+    override val scopes: List<String>
+      get() = payload.scopes
+
+    override val openId: OidcOpenIdConfig?
+      get() = payload.openId?.let {
+        OidcOpenIdConfig(
+          authorizationEndpoint = it.authorizationEndpoint,
+          tokenEndpoint = it.tokenEndpoint,
+          userinfoEndpoint = it.userinfoEndpoint,
+          endSessionEndpoint = it.endSessionEndpoint,
+          pingEndIdpSessionEndpoint = it.pingEndIdpSessionEndpoint,
+          revocationEndpoint = it.revocationEndpoint
+        )
+      }
+
+    override val acrValues: String?
+      get() = payload.acrValues
+
+    override val signOutRedirectUri: String?
+      get() = payload.signOutRedirectUri
+
+    override val state: String?
+      get() = payload.state
+
+    override val nonce: String?
+      get() = payload.nonce
+
+    override val uiLocales: String?
+      get() = payload.uiLocales
+
+    override val refreshThreshold: Long?
+      get() = payload.refreshThreshold
+
+    override val loginHint: String?
+      get() = payload.loginHint
+
+    override val display: String?
+      get() = payload.display
+
+    override val prompt: String?
+      get() = payload.prompt
+
+    override val additionalParameters: Map<String, String>
+      get() = payload.additionalParameters
+  }
 
   /**
    * Handle for a configured web client.

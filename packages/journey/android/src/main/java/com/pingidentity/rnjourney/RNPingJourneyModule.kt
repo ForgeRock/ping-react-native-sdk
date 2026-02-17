@@ -40,6 +40,9 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Configure a new Journey client and return its internal identifier.
+   *
+   * @param config Journey configuration payload from JavaScript.
+   * @param promise Promise resolved with the created journey id.
    */
   override fun configureJourney(config: ReadableMap, promise: Promise) {
     RNPingJourneyCommon.configureJourney(config, promise)
@@ -47,6 +50,11 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Start a Journey by name.
+   *
+   * @param journeyId Native journey client id.
+   * @param journeyName Journey/tree name to execute.
+   * @param options Optional start flags.
+   * @param promise Promise resolved with the first node payload.
    */
   override fun start(journeyId: String, journeyName: String, options: ReadableMap?, promise: Promise) {
     RNPingJourneyCommon.start(journeyId, journeyName, options, promise)
@@ -54,6 +62,11 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Progress an active Journey node.
+   *
+   * @param journeyId Native journey client id.
+   * @param nodeId Legacy node id argument kept for bridge compatibility.
+   * @param input Callback mutation payload for `next()`.
+   * @param promise Promise resolved with the next node payload.
    */
   override fun next(journeyId: String, nodeId: String, input: ReadableMap, promise: Promise) {
     RNPingJourneyCommon.next(journeyId, input, promise)
@@ -61,6 +74,10 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Resume a suspended Journey flow.
+   *
+   * @param journeyId Native journey client id.
+   * @param uri Resume URI returned by external redirect/magic-link flow.
+   * @param promise Promise resolved with the resumed node payload.
    */
   override fun resume(journeyId: String, uri: String, promise: Promise) {
     RNPingJourneyCommon.resume(journeyId, uri, promise)
@@ -68,6 +85,9 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Resolve active user session details.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved with session payload or null.
    */
   override fun getSession(journeyId: String, promise: Promise) {
     RNPingJourneyCommon.getSession(journeyId, promise)
@@ -75,6 +95,9 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Logout the active Journey user.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved when logout completes.
    */
   override fun logout(journeyId: String, promise: Promise) {
     RNPingJourneyCommon.logout(journeyId, promise)
@@ -82,6 +105,9 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
 
   /**
    * Dispose a Journey instance and clear native state.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved when disposal completes.
    */
   override fun dispose(journeyId: String, promise: Promise) {
     RNPingJourneyCommon.dispose(journeyId, promise)

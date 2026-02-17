@@ -25,19 +25,20 @@ export default function JourneyBooleanField(
   props: JourneyFieldRendererProps
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
-  const promptText = resolvePromptText(field.prompt, field.message, field.type);
+  const promptText = resolvePromptText(field.prompt, field.message);
   const termsText =
-    field.type === 'TermsAndConditionsCallback'
+    field.ref.type === 'TermsAndConditionsCallback'
       ? resolveContentText((field.raw as Record<string, unknown>).terms)
       : '';
 
   return (
     <View style={fieldStyles.card}>
-      <Text style={fieldStyles.typeText}>{field.type}</Text>
-      <Text style={fieldStyles.promptText}>
-        {promptText}
-        {field.required ? ' *' : ''}
-      </Text>
+      {promptText.length > 0 ? (
+        <Text style={fieldStyles.promptText}>
+          {promptText}
+          {field.required ? ' *' : ''}
+        </Text>
+      ) : null}
       {termsText.length > 0 ? (
         <Text style={[fieldStyles.helperText, fieldStyles.contentText]}>{termsText}</Text>
       ) : null}

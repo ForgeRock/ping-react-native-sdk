@@ -5,10 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { callbackType } from '@ping-identity/rn-types';
+import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
 import type {
   JourneyBuildNextInputResult,
   JourneyCallback,
+  JourneyCallbackType,
   JourneyCallbackInput,
   JourneyFieldCapability,
   JourneyFieldKind,
@@ -21,23 +22,24 @@ import type {
   JourneySubmitIssue,
 } from './types';
 
-const integrationRequiredCallbackTypes = new Set<string>([
+const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.PingOneProtectInitializeCallback,
   callbackType.PingOneProtectEvaluationCallback,
+  callbackType.RedirectCallback,
   callbackType.SelectIdPCallback,
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
-  'IdPCallback',
-  'Fido2RegistrationCallback',
-  'Fido2AuthenticationCallback',
-  'FidoRegistrationCallback',
-  'FidoAuthenticationCallback',
-  'BindingCallback',
-  'DeviceBindingCallback',
-  'DeviceSigningVerifierCallback',
+  nativeExtensionCallbackType.IdPCallback,
+  nativeExtensionCallbackType.Fido2RegistrationCallback,
+  nativeExtensionCallbackType.Fido2AuthenticationCallback,
+  nativeExtensionCallbackType.FidoRegistrationCallback,
+  nativeExtensionCallbackType.FidoAuthenticationCallback,
+  nativeExtensionCallbackType.BindingCallback,
+  nativeExtensionCallbackType.DeviceBindingCallback,
+  nativeExtensionCallbackType.DeviceSigningVerifierCallback,
 ]);
 
-const outputOnlyCallbackTypes = new Set<string>([
+const outputOnlyCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.DeviceProfileCallback,
   callbackType.TextOutputCallback,
   callbackType.SuspendedTextOutputCallback,
@@ -45,7 +47,7 @@ const outputOnlyCallbackTypes = new Set<string>([
   callbackType.PollingWaitCallback,
 ]);
 
-const manualCallbackTypes = new Set<string>([
+const manualCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.NameCallback,
   callbackType.PasswordCallback,
   callbackType.TextInputCallback,
@@ -59,30 +61,30 @@ const manualCallbackTypes = new Set<string>([
   callbackType.TermsAndConditionsCallback,
   callbackType.ValidatedCreateUsernameCallback,
   callbackType.ValidatedCreatePasswordCallback,
-  'ConsentMappingCallback',
+  nativeExtensionCallbackType.ConsentMappingCallback,
 ]);
 
-const booleanCallbackTypes = new Set<string>([
+const booleanCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.BooleanAttributeInputCallback,
   callbackType.TermsAndConditionsCallback,
-  'ConsentMappingCallback',
+  nativeExtensionCallbackType.ConsentMappingCallback,
 ]);
 
-const numberCallbackTypes = new Set<string>([
+const numberCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.NumberAttributeInputCallback,
 ]);
 
-const choiceCallbackTypes = new Set<string>([
+const choiceCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.ChoiceCallback,
   callbackType.ConfirmationCallback,
 ]);
 
-const passwordCallbackTypes = new Set<string>([
+const passwordCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.PasswordCallback,
   callbackType.ValidatedCreatePasswordCallback,
 ]);
 
-const textCallbackTypes = new Set<string>([
+const textCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.NameCallback,
   callbackType.TextInputCallback,
   callbackType.StringAttributeInputCallback,
@@ -90,7 +92,7 @@ const textCallbackTypes = new Set<string>([
   callbackType.HiddenValueCallback,
 ]);
 
-const kbaCallbackTypes = new Set<string>([
+const kbaCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.KbaCreateCallback,
 ]);
 
@@ -101,7 +103,7 @@ const kbaCallbackTypes = new Set<string>([
  * @param index - Per-type callback index.
  * @returns Deterministic callback key.
  */
-function callbackKey(type: string, index: number): string {
+function callbackKey(type: JourneyCallbackType, index: number): string {
   return `${type}:${index}`;
 }
 
@@ -134,7 +136,11 @@ function readNumber(value: unknown, fallback: number): number {
     return value;
   }
   if (typeof value === 'string') {
-    const parsed = Number(value);
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      return fallback;
+    }
+    const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : fallback;
   }
   return fallback;
@@ -204,7 +210,7 @@ function resolveRequired(callback: JourneyCallback): boolean {
  * @param type - Callback type.
  * @returns Field kind.
  */
-function resolveFieldKind(type: string): JourneyFieldKind {
+function resolveFieldKind(type: JourneyCallbackType): JourneyFieldKind {
   if (outputOnlyCallbackTypes.has(type)) {
     return 'output';
   }
@@ -235,7 +241,7 @@ function resolveFieldKind(type: string): JourneyFieldKind {
  * @param type - Callback type.
  * @returns Callback capability.
  */
-function resolveFieldCapability(type: string): JourneyFieldCapability {
+function resolveFieldCapability(type: JourneyCallbackType): JourneyFieldCapability {
   if (integrationRequiredCallbackTypes.has(type)) {
     return 'integration_required';
   }
@@ -297,7 +303,7 @@ function resolveCallbackOptions(callback: JourneyCallback): JourneyFieldOption[]
  */
 function resolveDefaultValue(
   callback: JourneyCallback,
-  type: string
+  type: JourneyCallbackType
 ): JourneyFormValue | undefined {
   if (booleanCallbackTypes.has(type)) {
     if (hasCallbackKey(callback, 'accepted')) {
@@ -313,7 +319,10 @@ function resolveDefaultValue(
       return undefined;
     }
     const selectedIndex = readNumber(callback.selectedIndex, Number.NaN);
-    return Number.isFinite(selectedIndex) ? selectedIndex : undefined;
+    if (!Number.isFinite(selectedIndex) || selectedIndex < 0) {
+      return undefined;
+    }
+    return selectedIndex;
   }
   if (numberCallbackTypes.has(type)) {
     if (!hasCallbackKey(callback, 'value')) {
@@ -358,13 +367,16 @@ export function normalizeCallbacks(node: JourneyNode | null | undefined): Journe
     return [];
   }
 
-  const counts: Record<string, number> = {};
+  const counts = new Map<JourneyCallbackType, number>();
 
   return node.callbacks.map((rawCallback) => {
     const callback = rawCallback as JourneyCallback;
-    const type = readString(callback.type, 'UnknownCallback');
-    const typeIndex = counts[type] ?? 0;
-    counts[type] = typeIndex + 1;
+    const type: JourneyCallbackType =
+      typeof callback.type === 'string' && callback.type.length > 0
+        ? callback.type
+        : 'UnknownCallback';
+    const typeIndex = counts.get(type) ?? 0;
+    counts.set(type, typeIndex + 1);
 
     const kind = resolveFieldKind(type);
     const capability = resolveFieldCapability(type);
@@ -375,8 +387,10 @@ export function normalizeCallbacks(node: JourneyNode | null | undefined): Journe
 
     return {
       id: callbackKey(type, typeIndex),
-      type,
-      typeIndex,
+      ref: {
+        type,
+        typeIndex,
+      },
       prompt,
       message: message.length > 0 ? message : undefined,
       required,
@@ -418,6 +432,9 @@ export function buildNextInput(
   const issues: JourneySubmitIssue[] = [];
 
   fields.forEach((field) => {
+    const callbackType = field.ref.type;
+    const callbackIndex = field.ref.typeIndex;
+
     if (field.capability === 'output_only') {
       return;
     }
@@ -425,9 +442,9 @@ export function buildNextInput(
     if (field.capability === 'integration_required') {
       issues.push({
         code: 'INTEGRATION_REQUIRED',
-        message: `Callback "${field.type}" requires additional integration.`,
+        message: `Callback "${callbackType}" requires additional integration.`,
         fieldId: field.id,
-        callbackType: field.type,
+        callbackType,
       });
       return;
     }
@@ -435,9 +452,9 @@ export function buildNextInput(
     if (field.capability === 'unsupported') {
       issues.push({
         code: 'UNSUPPORTED_CALLBACK',
-        message: `Callback "${field.type}" is not supported by the helper submit builder.`,
+        message: `Callback "${callbackType}" is not supported by the helper submit builder.`,
         fieldId: field.id,
-        callbackType: field.type,
+        callbackType,
       });
       return;
     }
@@ -449,14 +466,14 @@ export function buildNextInput(
       if (field.required && !accepted) {
         issues.push({
           code: 'REQUIRED_CONSENT_MISSING',
-          message: `Required callback "${field.type}" must be accepted to continue.`,
+          message: `Required callback "${callbackType}" must be accepted to continue.`,
           fieldId: field.id,
-          callbackType: field.type,
+          callbackType,
         });
       }
       callbacks.push({
-        type: field.type,
-        index: field.typeIndex,
+        type: callbackType,
+        index: callbackIndex,
         value: accepted,
       });
       return;
@@ -467,15 +484,15 @@ export function buildNextInput(
       if (!Number.isFinite(numericValue)) {
         issues.push({
           code: 'INVALID_VALUE',
-          message: `Callback "${field.type}" requires a numeric value.`,
+          message: `Callback "${callbackType}" requires a numeric value.`,
           fieldId: field.id,
-          callbackType: field.type,
+          callbackType,
         });
         return;
       }
       callbacks.push({
-        type: field.type,
-        index: field.typeIndex,
+        type: callbackType,
+        index: callbackIndex,
         value: numericValue,
       });
       return;
@@ -483,19 +500,30 @@ export function buildNextInput(
 
     if (field.kind === 'choice') {
       const selected = readNumber(resolvedValue, Number.NaN);
-      if (!Number.isFinite(selected)) {
+      if (!Number.isFinite(selected) || !Number.isInteger(selected) || selected < 0) {
         issues.push({
           code: 'INVALID_VALUE',
-          message: `Callback "${field.type}" requires a selected option index.`,
+          message: `Callback "${callbackType}" requires a selected option index.`,
           fieldId: field.id,
-          callbackType: field.type,
+          callbackType,
         });
         return;
       }
+
+      if (field.options && selected >= field.options.length) {
+        issues.push({
+          code: 'INVALID_VALUE',
+          message: `Callback "${callbackType}" selected option index is out of range.`,
+          fieldId: field.id,
+          callbackType,
+        });
+        return;
+      }
+
       callbacks.push({
-        type: field.type,
-        index: field.typeIndex,
-        value: Math.max(0, Math.floor(selected)),
+        type: callbackType,
+        index: callbackIndex,
+        value: selected,
       });
       return;
     }
@@ -505,9 +533,9 @@ export function buildNextInput(
       if (!kba || typeof kba !== 'object') {
         issues.push({
           code: 'INVALID_VALUE',
-          message: `Callback "${field.type}" requires KBA question and answer values.`,
+          message: `Callback "${callbackType}" requires KBA question and answer values.`,
           fieldId: field.id,
-          callbackType: field.type,
+          callbackType,
         });
         return;
       }
@@ -524,10 +552,22 @@ export function buildNextInput(
         (kba as Record<string, unknown>).allowUserDefinedQuestions,
         false
       );
+      if (
+        field.required &&
+        (selectedQuestion.trim().length === 0 || selectedAnswer.trim().length === 0)
+      ) {
+        issues.push({
+          code: 'INVALID_VALUE',
+          message: `Callback "${callbackType}" requires non-empty KBA question and answer values.`,
+          fieldId: field.id,
+          callbackType,
+        });
+        return;
+      }
 
       callbacks.push({
-        type: field.type,
-        index: field.typeIndex,
+        type: callbackType,
+        index: callbackIndex,
         value: {
           selectedQuestion,
           selectedAnswer,
@@ -537,9 +577,28 @@ export function buildNextInput(
       return;
     }
 
+    if (field.kind === 'text' || field.kind === 'password') {
+      const textValue = readString(resolvedValue, '');
+      if (field.required && textValue.trim().length === 0) {
+        issues.push({
+          code: 'INVALID_VALUE',
+          message: `Callback "${callbackType}" requires a non-empty value.`,
+          fieldId: field.id,
+          callbackType,
+        });
+        return;
+      }
+      callbacks.push({
+        type: callbackType,
+        index: callbackIndex,
+        value: textValue,
+      });
+      return;
+    }
+
     callbacks.push({
-      type: field.type,
-      index: field.typeIndex,
+      type: callbackType,
+      index: callbackIndex,
       value: readString(resolvedValue, ''),
     });
   });

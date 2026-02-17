@@ -22,8 +22,12 @@ import type { JourneyFieldRendererProps } from './types';
  */
 function JourneyFieldRenderer(
   props: JourneyFieldRendererProps
-): React.ReactElement {
+): React.ReactElement | null {
   const { field } = props;
+
+  if (field.ref.type === 'HiddenValueCallback') {
+    return null;
+  }
 
   if (field.capability === 'output_only') {
     return <JourneyOutputField {...props} />;

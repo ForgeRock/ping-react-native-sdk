@@ -21,6 +21,8 @@ class RNPingJourneyPackage : BaseReactPackage() {
 
   /**
    * Detect whether New Architecture is enabled.
+   *
+   * @return `true` when TurboModule architecture is enabled.
    */
   private val isNewArchEnabled: Boolean
     get() {
@@ -30,6 +32,10 @@ class RNPingJourneyPackage : BaseReactPackage() {
 
   /**
    * Resolve the module implementation for the active architecture.
+   *
+   * @param name Module name requested by React Native.
+   * @param reactContext Active React application context.
+   * @return Matching native module or null when the name is unknown/not active.
    */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return when (name) {
@@ -53,6 +59,8 @@ class RNPingJourneyPackage : BaseReactPackage() {
 
   /**
    * Register React module metadata.
+   *
+   * @return Provider of module metadata for React Native module registry.
    */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {

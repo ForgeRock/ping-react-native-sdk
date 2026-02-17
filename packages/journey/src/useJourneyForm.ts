@@ -10,7 +10,6 @@ import { buildNextInput, normalizeCallbacks } from './callbackHelpers';
 import type {
   JourneyBuildNextInputResult,
   JourneyFormMeta,
-  JourneyFormOptions,
   JourneyFormResult,
   JourneyFormValue,
   JourneyFormValues,
@@ -24,57 +23,31 @@ import type {
  * Resolves a seeded value for one field.
  *
  * @param field - Normalized field.
- * @param strategy - Seeding policy.
  * @returns Seed value when one should be applied.
  */
 function resolveSeedValue(
-  field: JourneyNormalizedField,
-  strategy: NonNullable<JourneyFormOptions['seedStrategy']>
+  field: JourneyNormalizedField
 ): JourneyFormValue | undefined {
-  if (field.defaultValue !== undefined) {
-    return field.defaultValue;
-  }
-
-  if (strategy === 'defaultValueOnly') {
-    return undefined;
-  }
-
-  switch (field.kind) {
-    case 'boolean':
-      return false;
-    case 'number':
-    case 'choice':
-      return 0;
-    case 'kba':
-      return {
-        selectedQuestion: '',
-        selectedAnswer: '',
-        allowUserDefinedQuestions: false,
-      };
-    default:
-      return '';
-  }
+  return field.defaultValue;
 }
 
 /**
- * Applies field seeding policy over a base value map.
+ * Applies callback-default seeding over a base value map.
  *
  * @param fields - Normalized fields.
  * @param baseValues - Existing values.
- * @param strategy - Seeding policy.
  * @returns Hydrated value map.
  */
 function hydrateValues(
   fields: JourneyNormalizedField[],
-  baseValues: JourneyFormValues,
-  strategy: NonNullable<JourneyFormOptions['seedStrategy']>
+  baseValues: JourneyFormValues
 ): JourneyFormValues {
   const nextValues: JourneyFormValues = { ...baseValues };
   fields.forEach((field) => {
     if (nextValues[field.id] !== undefined) {
       return;
     }
-    const seed = resolveSeedValue(field, strategy);
+    const seed = resolveSeedValue(field);
     if (seed !== undefined) {
       nextValues[field.id] = seed;
     }
@@ -128,35 +101,26 @@ function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue
  * It only manages callback form state and submit planning.
  *
  * @param node - Current Journey node from `useJourney`.
- * @param options - Optional form behavior overrides.
  * @returns Normalized fields, managed values, and submit planning helpers.
  */
 export function useJourneyForm(
-  node: JourneyNode | null | undefined,
-  options: JourneyFormOptions = {}
+  node: JourneyNode | null | undefined
 ): JourneyFormResult {
-  const {
-    initialValues,
-    resetOnNodeChange = true,
-    seedStrategy = 'smart',
-  } = options;
-
   const fields = useMemo<JourneyNormalizedField[]>(
     () => normalizeCallbacks(node),
     [node]
   );
 
   const [values, setValuesState] = useState<JourneyFormValues>(() =>
-    hydrateValues(fields, initialValues ? { ...initialValues } : {}, seedStrategy)
+    hydrateValues(fields, {})
   );
 
   useEffect(() => {
     setValuesState((previous) => {
-      const baseValues = resetOnNodeChange ? {} : previous;
-      const hydrated = hydrateValues(fields, baseValues, seedStrategy);
+      const hydrated = hydrateValues(fields, {});
       return isSameValueMap(previous, hydrated) ? previous : hydrated;
     });
-  }, [fields, resetOnNodeChange, seedStrategy]);
+  }, [fields]);
 
   const submitPlan = useMemo<JourneyBuildNextInputResult>(
     () => buildNextInput(node, values),
@@ -200,8 +164,8 @@ export function useJourneyForm(
   }, []);
 
   const reset = useCallback((nextValues: JourneyFormValues = {}): void => {
-    setValuesState(hydrateValues(fields, { ...nextValues }, seedStrategy));
-  }, [fields, seedStrategy]);
+    setValuesState(hydrateValues(fields, { ...nextValues }));
+  }, [fields]);
 
   const buildInput = useCallback(
     (overrides: Partial<JourneyFormValues> = {}): JourneyBuildNextInputResult => {

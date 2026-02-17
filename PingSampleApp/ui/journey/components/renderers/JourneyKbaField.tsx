@@ -34,7 +34,7 @@ export default function JourneyKbaField(
   props: JourneyFieldRendererProps
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
-  const promptText = resolvePromptText(field.prompt, field.message, field.type);
+  const promptText = resolvePromptText(field.prompt, field.message);
 
   const kbaValue: JourneyKbaValue =
     (currentValue as JourneyKbaValue | undefined) ?? {
@@ -45,8 +45,9 @@ export default function JourneyKbaField(
 
   return (
     <View style={fieldStyles.card}>
-      <Text style={fieldStyles.typeText}>{field.type}</Text>
-      <Text style={fieldStyles.promptText}>{promptText}</Text>
+      {promptText.length > 0 ? (
+        <Text style={fieldStyles.promptText}>{promptText}</Text>
+      ) : null}
       {field.options && field.options.length > 0 ? (
         <View style={fieldStyles.optionWrap}>
           {field.options.map((option) => (

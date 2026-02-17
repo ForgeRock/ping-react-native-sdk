@@ -87,6 +87,137 @@ describe('Journey JS API', () => {
     );
   });
 
+  it('passes composed OIDC client id to configureJourney', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    const client = journey(
+      {
+        serverUrl: 'https://example.com',
+      },
+      {
+        oidc: {
+          client: {
+            id: 'oidc-client-id',
+          },
+        },
+      }
+    );
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        oidcClientId: 'oidc-client-id',
+      })
+    );
+  });
+
+  it('passes shorthand config oidcClient id to configureJourney', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    const client = journey({
+      serverUrl: 'https://example.com',
+      oidcClient: {
+        id: 'oidc-client-from-config',
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        oidcClientId: 'oidc-client-from-config',
+      })
+    );
+  });
+
+  it('passes advanced direct OIDC config to configureJourney', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    const client = journey({
+      serverUrl: 'https://example.com',
+      clientId: 'rn-client',
+      redirectUri: 'com.example.app://oauth2redirect',
+      openId: {
+        authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
+        tokenEndpoint: 'https://example.com/am/oauth2/token',
+        userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
+      },
+      scopes: ['openid', 'profile'],
+      acrValues: 'loa-2',
+      signOutRedirectUri: 'com.example.app://signed-out',
+      state: 'state-123',
+      nonce: 'nonce-123',
+      uiLocales: 'en fr',
+      refreshThreshold: 30,
+      loginHint: 'demo-user',
+      display: 'page',
+      prompt: 'login',
+      additionalParameters: {
+        audience: 'urn:example:api',
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientId: 'rn-client',
+        redirectUri: 'com.example.app://oauth2redirect',
+        openId: {
+          authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
+          tokenEndpoint: 'https://example.com/am/oauth2/token',
+          userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
+        },
+        scopes: ['openid', 'profile'],
+        acrValues: 'loa-2',
+        signOutRedirectUri: 'com.example.app://signed-out',
+        state: 'state-123',
+        nonce: 'nonce-123',
+        uiLocales: 'en fr',
+        refreshThreshold: 30,
+        loginHint: 'demo-user',
+        display: 'page',
+        prompt: 'login',
+        additionalParameters: {
+          audience: 'urn:example:api',
+        },
+      })
+    );
+  });
+
+  it('prefers modules OIDC client over shorthand config oidcClient', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    const client = journey(
+      {
+        serverUrl: 'https://example.com',
+        oidcClient: {
+          id: 'oidc-client-from-config',
+        },
+      },
+      {
+        oidc: {
+          client: {
+            id: 'oidc-client-from-modules',
+          },
+        },
+      }
+    );
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        oidcClientId: 'oidc-client-from-modules',
+      })
+    );
+  });
+
   it('configures only once and reuses native id', async () => {
     const native = createNativeMock();
     const { journey } = await loadModule(native);

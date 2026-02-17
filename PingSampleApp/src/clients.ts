@@ -1,4 +1,5 @@
 import { journey } from '@ping-identity/rn-journey';
+import { createOidcClient } from '@ping-identity/rn-oidc';
 import { CacheStrategy, configureSessionStorage } from '@react-native-pingidentity/storage';
 
 export const journeyConfig = {
@@ -44,9 +45,19 @@ const journeySessionStorageClient1 = configureSessionStorage({
   },
 });
 
+const journeyOidcClient = createOidcClient({
+  clientId: journeyConfig.clientId,
+  discoveryEndpoint: journeyConfig.discoveryEndpoint,
+  redirectUri: journeyConfig.redirectUri,
+  scopes: journeyConfig.scopes,
+});
+
 export const loginClient = journey(
   journeyConfig,
   {
+    oidc: {
+      client: journeyOidcClient,
+    },
     session: {
       storage: journeySessionStorageClient1,
     },

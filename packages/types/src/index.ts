@@ -64,6 +64,23 @@ export type Node = import('@forgerock/sdk-types').Step;
 export type NodeCallback = import('@forgerock/sdk-types').Callback;
 
 /**
- * TODO: Add RN native-extension callback constants (for example, FIDO, Binding,
- * IdP, and ConsentMapping variants) once they are standardized in shared types.
+ * React Native native-extension callback type constants not currently present in
+ * ForgeRock shared sdk-types.
  */
+export const nativeExtensionCallbackType = {
+  ConsentMappingCallback: 'ConsentMappingCallback',
+  IdPCallback: 'IdPCallback',
+  Fido2RegistrationCallback: 'Fido2RegistrationCallback',
+  Fido2AuthenticationCallback: 'Fido2AuthenticationCallback',
+  FidoRegistrationCallback: 'FidoRegistrationCallback',
+  FidoAuthenticationCallback: 'FidoAuthenticationCallback',
+  BindingCallback: 'BindingCallback',
+  DeviceBindingCallback: 'DeviceBindingCallback',
+  DeviceSigningVerifierCallback: 'DeviceSigningVerifierCallback',
+} as const;
+
+/**
+ * Union of native-extension callback types used by RN Journey integrations.
+ */
+export type NativeExtensionCallbackType =
+  (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];

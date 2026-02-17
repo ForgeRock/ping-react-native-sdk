@@ -6,12 +6,13 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Linking, Text, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import {
   useJourney,
   useJourneyForm,
+  type JourneyCallbackType,
   type JourneyClient,
   type JourneySubmitIssue,
   type JourneyStartOptions,
@@ -65,7 +66,6 @@ export default function JourneyClientPanel(
   const form = useJourneyForm(node);
 
   const [debugEntries, setDebugEntries] = useState<JourneyDebugEntry[]>([]);
-  const [journeyId, setJourneyId] = useState<string>('');
   const [journeyName, setJourneyName] = useState<string>('');
   const [suggestedJourneys, setSuggestedJourneys] = useState<string[]>([]);
   const [showJourneyInput, setShowJourneyInput] = useState<boolean>(true);
@@ -78,14 +78,16 @@ export default function JourneyClientPanel(
   const isMountedRef = useRef<boolean>(true);
   const lastNodeSignatureRef = useRef<string>('');
   const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoResumedUrlRef = useRef<string | null>(null);
 
   const fields = form.fields;
-  const callbackTypes = useMemo<Set<string>>(
-    () => new Set(fields.map((field) => field.type)),
+  const callbackTypes = useMemo<Set<JourneyCallbackType>>(
+    () => new Set(fields.map((field) => field.ref.type)),
     [fields]
   );
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
   const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
+  const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
   const hasActiveSession = sessionPayload !== null;
   const pollingWaitMs = useMemo<number | null>(() => resolvePollingWaitMs(fields), [fields]);
   const shouldAutoPoll =
@@ -116,19 +118,6 @@ export default function JourneyClientPanel(
   useEffect(() => {
     (async (): Promise<void> => {
       try {
-        const id = await journeyClient.getId();
-        if (isMountedRef.current) {
-          setJourneyId(id);
-        }
-      } catch {
-        // Ignore id load failures in sample.
-      }
-    })();
-  }, [journeyClient]);
-
-  useEffect(() => {
-    (async (): Promise<void> => {
-      try {
         const stored = await AsyncStorage.getItem(RECENT_JOURNEYS_STORAGE_KEY);
         if (stored && isMountedRef.current) {
           setSuggestedJourneys(JSON.parse(stored) as string[]);
@@ -154,12 +143,12 @@ export default function JourneyClientPanel(
       addDebugEntry('Received ContinueNode', {
         callbackCount: fields.length,
         callbackTypes: fields.map((field) => ({
-          type: field.type,
-          typeIndex: field.typeIndex,
+          type: field.ref.type,
+          typeIndex: field.ref.typeIndex,
         })),
         normalizedFields: fields.map((field) => ({
           id: field.id,
-          type: field.type,
+          type: field.ref.type,
           kind: field.kind,
           capability: field.capability,
           required: field.required,
@@ -213,7 +202,7 @@ export default function JourneyClientPanel(
 
   const saveSuggestion = useCallback(
     async (name: string): Promise<void> => {
-      const updated = [name, ...suggestedJourneys.filter((item) => item !== name)].slice(0, 5);
+      const updated = [name, ...suggestedJourneys.filter((item) => item !== name)];
       setSuggestedJourneys(updated);
       await AsyncStorage.setItem(RECENT_JOURNEYS_STORAGE_KEY, JSON.stringify(updated));
     },
@@ -310,6 +299,42 @@ export default function JourneyClientPanel(
     }
   }, [addDebugEntry, resume, resumeUrl]);
 
+  useEffect(() => {
+    if (!hasSuspendedCallback) {
+      return;
+    }
+
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      const trimmedResumeUrl = url.trim();
+      if (!trimmedResumeUrl || lastAutoResumedUrlRef.current === trimmedResumeUrl) {
+        return;
+      }
+
+      lastAutoResumedUrlRef.current = trimmedResumeUrl;
+
+      const runAutoResume = async (): Promise<void> => {
+        try {
+          setResumeUrl(trimmedResumeUrl);
+          addDebugEntry('resume() requested (deep-link)', {
+            resumeUrl: trimmedResumeUrl,
+          });
+          await resume(trimmedResumeUrl);
+          setResumeUrl('');
+          addDebugEntry('resume() completed (deep-link)');
+        } catch (cause) {
+          addDebugEntry('resume() failed (deep-link)', { error: String(cause) });
+          Alert.alert('Resume failed', String(cause));
+        }
+      };
+
+      runAutoResume().catch(() => undefined);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [addDebugEntry, hasSuspendedCallback, resume]);
+
   const onLogout = useCallback(async (): Promise<void> => {
     try {
       addDebugEntry('logoutUser() requested');
@@ -400,10 +425,6 @@ export default function JourneyClientPanel(
           <Text style={styles.panelTitle}>{title}</Text>
         </View>
       ) : null}
-
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.textSmall}>Journey ID: {journeyId || 'Resolving...'}</Text>
-      </View>
 
       <View style={commonStyles.card}>
         <JourneyStartPanel

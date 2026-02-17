@@ -20,11 +20,6 @@ export const fieldStyles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#FAFAFA',
   },
-  typeText: {
-    color: colors.textDark,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
   promptText: {
     color: colors.gray,
     marginBottom: 8,

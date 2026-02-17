@@ -36,6 +36,11 @@ import com.pingidentity.orchestrate.ContinueNode
  */
 internal object JourneyCallbackValueApplier {
 
+    /**
+     * Callback types that require external module integration before values can be applied.
+     *
+     * Map value describes the required integration for error messaging.
+     */
     private val integrationCallbackRequirements = mapOf(
         "DeviceProfileCallback" to "@react-native-pingidentity/device-profile",
         "PingOneProtectInitializeCallback" to "PingOne Protect integration",
@@ -45,11 +50,22 @@ internal object JourneyCallbackValueApplier {
         "FidoRegistrationCallback" to "FIDO/WebAuthn integration",
         "FidoAuthenticationCallback" to "FIDO/WebAuthn integration",
         "SelectIdPCallback" to "External IdP integration",
+        "IdPCallback" to "External IdP integration",
+        "RedirectCallback" to "Redirect handling integration",
         "ReCaptchaCallback" to "ReCaptcha integration",
         "ReCaptchaEnterpriseCallback" to "ReCaptcha Enterprise integration",
-        "BindingCallback" to "Binding integration"
+        "BindingCallback" to "Binding integration",
+        "DeviceBindingCallback" to "Binding integration",
+        "DeviceSigningVerifierCallback" to "Binding integration"
     )
 
+    /**
+     * Parsed callback mutation instruction received from JavaScript.
+     *
+     * @property type Callback type name to target.
+     * @property value Dynamic callback value to apply.
+     * @property index Optional per-type callback index.
+     */
     internal data class CallbackMutation(
         val type: String,
         val value: Any?,
@@ -169,6 +185,12 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Normalizes alias callback type names used by JS helper APIs.
+     *
+     * @param type Callback type from mutation payload.
+     * @return Native callback type name used in runtime callback lookup.
+     */
     private fun normalizedCallbackType(type: String): String {
         return when (type) {
             "ValidatedCreatePasswordCallback" -> "ValidatedPasswordCallback"
@@ -177,6 +199,15 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Resolves one target callback for a mutation, accounting for callback aliases and indexes.
+     *
+     * @param callbacksByType Active callbacks grouped by runtime type name.
+     * @param mutation Parsed callback mutation.
+     * @param consumedIndexByType Running index map used for sequential mutations.
+     * @return Matching callback instance.
+     * @throws IllegalArgumentException when no matching callback is found.
+     */
     private fun findCallback(
         callbacksByType: Map<String, List<Any>>,
         mutation: CallbackMutation,
@@ -197,6 +228,12 @@ internal object JourneyCallbackValueApplier {
             )
     }
 
+    /**
+     * Parses optional callback index from bridge payload.
+     *
+     * @param callbackMap One callback mutation map from JavaScript.
+     * @return Parsed callback index or null when absent/invalid.
+     */
     private fun parseOptionalIndex(callbackMap: ReadableMap): Int? {
         if (!callbackMap.hasKey("index") || callbackMap.isNull("index")) {
             return null
@@ -208,6 +245,13 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Reads one dynamic value from a bridge map using runtime type inspection.
+     *
+     * @param map Source readable map.
+     * @param key Field key.
+     * @return Parsed dynamic value.
+     */
     private fun readDynamicValue(map: ReadableMap, key: String): Any? {
         if (!map.hasKey(key) || map.isNull(key)) {
             return null
@@ -222,6 +266,12 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Converts bridge arrays to plain Kotlin lists.
+     *
+     * @param array Source readable array.
+     * @return Parsed list value.
+     */
     private fun readArrayValue(array: ReadableArray?): List<Any?> {
         if (array == null) {
             return emptyList()
@@ -241,6 +291,14 @@ internal object JourneyCallbackValueApplier {
         return values
     }
 
+    /**
+     * Coerces a dynamic value to string.
+     *
+     * @param value Dynamic value to coerce.
+     * @param fieldName Field path used for validation errors.
+     * @return String value.
+     * @throws IllegalArgumentException when value cannot be represented as a string.
+     */
     private fun asString(value: Any?, fieldName: String): String {
         return when (value) {
             is String -> value
@@ -250,6 +308,14 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Coerces a dynamic value to boolean.
+     *
+     * @param value Dynamic value to coerce.
+     * @param fieldName Field path used for validation errors.
+     * @return Boolean value.
+     * @throws IllegalArgumentException when value cannot be represented as a boolean.
+     */
     private fun asBoolean(value: Any?, fieldName: String): Boolean {
         return when (value) {
             is Boolean -> value
@@ -259,6 +325,14 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Coerces a dynamic value to double.
+     *
+     * @param value Dynamic value to coerce.
+     * @param fieldName Field path used for validation errors.
+     * @return Numeric double value.
+     * @throws IllegalArgumentException when value is not numeric.
+     */
     private fun asDouble(value: Any?, fieldName: String): Double {
         return when (value) {
             is Number -> value.toDouble()
@@ -268,6 +342,14 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Coerces a dynamic value to integer.
+     *
+     * @param value Dynamic value to coerce.
+     * @param fieldName Field path used for validation errors.
+     * @return Integer value.
+     * @throws IllegalArgumentException when value is not an integer.
+     */
     private fun asInt(value: Any?, fieldName: String): Int {
         return when (value) {
             is Number -> value.toInt()
@@ -277,6 +359,12 @@ internal object JourneyCallbackValueApplier {
         }
     }
 
+    /**
+     * Coerces a dynamic value to a string-keyed map.
+     *
+     * @param value Dynamic value to coerce.
+     * @return String-keyed map representation, or an empty map.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun asStringMap(value: Any?): Map<String, Any?> {
         val raw = value as? Map<*, *> ?: return emptyMap()

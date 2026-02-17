@@ -6,7 +6,15 @@
  */
 
 import React from 'react';
-import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
 
@@ -22,6 +30,24 @@ export type JourneyStartPanelProps = {
   canStart: boolean;
   onStart: () => void;
 };
+
+/**
+ * Distributes suggestion labels across fixed visual rows.
+ *
+ * @param suggestions - Suggested journey names.
+ * @param rowCount - Number of visual rows.
+ * @returns Suggestions grouped by row.
+ */
+function buildSuggestionRows(
+  suggestions: string[],
+  rowCount: number
+): string[][] {
+  const rows: string[][] = Array.from({ length: rowCount }, () => []);
+  suggestions.forEach((suggestion, index) => {
+    rows[index % rowCount].push(suggestion);
+  });
+  return rows.filter((row) => row.length > 0);
+}
 
 /**
  * Renders journey name input, suggestions, loading indicator, and start action.
@@ -41,6 +67,7 @@ export default function JourneyStartPanel(
     canStart,
     onStart,
   } = props;
+  const suggestionRows = buildSuggestionRows(suggestedJourneys, 3);
 
   return (
     <>
@@ -53,17 +80,31 @@ export default function JourneyStartPanel(
             value={journeyName}
             onChangeText={onJourneyNameChange}
           />
-          <View style={commonStyles.suggestionContainer}>
-            {suggestedJourneys.map((name) => (
-              <TouchableOpacity
-                key={name}
-                onPress={() => onJourneyNameChange(name)}
-                style={commonStyles.suggestionChip}
-              >
-                <Text style={commonStyles.suggestionText}>{name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {suggestedJourneys.length > 0 ? (
+            <ScrollView
+              horizontal
+              style={styles.suggestionScroll}
+              contentContainerStyle={styles.suggestionScrollContent}
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.suggestionRowsContainer}>
+                {suggestionRows.map((row, rowIndex) => (
+                  <View key={`suggestion-row-${rowIndex}`} style={styles.suggestionRow}>
+                    {row.map((name) => (
+                      <TouchableOpacity
+                        key={`${rowIndex}-${name}`}
+                        onPress={() => onJourneyNameChange(name)}
+                        style={commonStyles.suggestionChip}
+                      >
+                        <Text style={commonStyles.suggestionText}>{name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          ) : null}
         </>
       ) : null}
 
@@ -81,3 +122,21 @@ export default function JourneyStartPanel(
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  suggestionScroll: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  suggestionScrollContent: {
+    paddingRight: 4,
+  },
+  suggestionRowsContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+  },
+});

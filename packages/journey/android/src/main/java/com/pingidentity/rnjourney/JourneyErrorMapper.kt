@@ -41,6 +41,10 @@ internal object JourneyErrorMapper {
 
     /**
      * Build a deterministic state error payload.
+     *
+     * @param code Stable Journey error code.
+     * @param message Human-readable error message.
+     * @return Shared state error payload.
      */
     fun state(code: String, message: String): GenericError {
         return GenericError(
@@ -52,6 +56,10 @@ internal object JourneyErrorMapper {
 
     /**
      * Build a deterministic argument error payload.
+     *
+     * @param code Stable Journey error code.
+     * @param message Human-readable error message.
+     * @return Shared argument error payload.
      */
     fun argument(code: String, message: String): GenericError {
         return GenericError(

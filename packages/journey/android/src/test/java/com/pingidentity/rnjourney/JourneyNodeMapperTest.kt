@@ -9,7 +9,12 @@ package com.pingidentity.rnjourney
 
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.journey.callback.BooleanAttributeInputCallback
+import com.pingidentity.journey.callback.ConsentMappingCallback
+import com.pingidentity.journey.callback.ConfirmationCallback
 import com.pingidentity.journey.callback.NameCallback
+import com.pingidentity.journey.callback.TextInputCallback
+import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
 import com.pingidentity.orchestrate.EmptySession
@@ -111,6 +116,87 @@ class JourneyNodeMapperTest {
 
         assertEquals("ValidatedCreatePasswordCallback", passwordMap["type"])
         assertEquals("ValidatedCreateUsernameCallback", usernameMap["type"])
+    }
+
+    @Test
+    fun mapBooleanAttributeInputCallbackIncludesAmFields() {
+        val callback = BooleanAttributeInputCallback().apply {
+            value = true
+        }
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("BooleanAttributeInputCallback", map["type"])
+        assertEquals(true, map["value"])
+        assertTrue(map.containsKey("prompt"))
+        assertTrue(map.containsKey("name"))
+        assertTrue(map.containsKey("required"))
+        assertTrue(map.containsKey("validateOnly"))
+        assertTrue(map.containsKey("policies"))
+        assertTrue(map.containsKey("failedPolicies"))
+    }
+
+    @Test
+    fun mapTextInputCallbackIncludesDefaultTextField() {
+        val callback = TextInputCallback()
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("TextInputCallback", map["type"])
+        assertTrue(map.containsKey("defaultText"))
+        assertTrue(map.containsKey("prompt"))
+    }
+
+    @Test
+    fun mapConfirmationCallbackHandlesUninitializedMetadataSafely() {
+        val callback = ConfirmationCallback()
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("ConfirmationCallback", map["type"])
+        assertEquals(-1, map["selectedIndex"])
+    }
+
+    @Test
+    fun mapConsentMappingCallbackIncludesAmFields() {
+        val callback = ConsentMappingCallback().apply {
+            accepted = true
+        }
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("ConsentMappingCallback", map["type"])
+        assertEquals(true, map["accepted"])
+        assertTrue(map.containsKey("name"))
+        assertTrue(map.containsKey("displayName"))
+        assertTrue(map.containsKey("icon"))
+        assertTrue(map.containsKey("accessLevel"))
+        assertTrue(map.containsKey("required"))
+        assertTrue(map.containsKey("fields"))
+        assertTrue(map.containsKey("message"))
+    }
+
+    @Test
+    fun mapTextOutputCallbackIncludesMessageType() {
+        val callback = TextOutputCallback()
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("TextOutputCallback", map["type"])
+        assertTrue(map.containsKey("message"))
+    }
+
+    @Test
+    fun mapValidatedPasswordCallbackIncludesEchoOn() {
+        val callback = ValidatedPasswordCallback()
+
+        val map = JourneyNodeMapper.mapCallbackPayload(callback)
+
+        assertEquals("ValidatedCreatePasswordCallback", map["type"])
+        assertTrue(map.containsKey("echoOn"))
+        assertTrue(map.containsKey("validateOnly"))
+        assertTrue(map.containsKey("policies"))
+        assertTrue(map.containsKey("failedPolicies"))
     }
 
     @Test

@@ -25,15 +25,13 @@ describe('Journey callback helpers', () => {
     expect(fields).toHaveLength(3);
     expect(fields[0]).toMatchObject({
       id: 'NameCallback:0',
-      type: 'NameCallback',
-      typeIndex: 0,
+      ref: { type: 'NameCallback', typeIndex: 0 },
       kind: 'text',
       capability: 'manual',
     });
     expect(fields[1]).toMatchObject({
       id: 'NameCallback:1',
-      type: 'NameCallback',
-      typeIndex: 1,
+      ref: { type: 'NameCallback', typeIndex: 1 },
     });
     expect(fields[0]?.prompt).toBe('');
   });
@@ -110,6 +108,18 @@ describe('Journey callback helpers', () => {
     expect(fields[0]?.defaultValue).toBeUndefined();
   });
 
+  it('does not treat negative selectedIndex as a default value', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'ConfirmationCallback', selectedIndex: -1, output: [] }],
+    };
+
+    const fields = normalizeCallbacks(node);
+
+    expect(fields).toHaveLength(1);
+    expect(fields[0]?.defaultValue).toBeUndefined();
+  });
+
   it('resolves required when callback payload uses isRequired key', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
@@ -147,6 +157,27 @@ describe('Journey callback helpers', () => {
         { type: 'NumberAttributeInputCallback', index: 0, value: 42 },
       ],
     });
+  });
+
+  it('does not coerce empty string number input to zero', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NumberAttributeInputCallback', output: [] }],
+    };
+
+    const result = buildNextInput(node, {
+      'NumberAttributeInputCallback:0': '',
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INVALID_VALUE',
+        message: 'Callback "NumberAttributeInputCallback" requires a numeric value.',
+        fieldId: 'NumberAttributeInputCallback:0',
+        callbackType: 'NumberAttributeInputCallback',
+      },
+    ]);
   });
 
   it('treats device profile callback as output-only for helper submit planning', () => {
@@ -187,6 +218,78 @@ describe('Journey callback helpers', () => {
     ]);
   });
 
+  it('normalizes consent mapping callback as required boolean input', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ConsentMappingCallback',
+          message: 'Allow profile sharing',
+          required: true,
+          accepted: false,
+          output: [],
+        },
+      ],
+    };
+
+    const fields = normalizeCallbacks(node);
+
+    expect(fields).toHaveLength(1);
+    expect(fields[0]).toMatchObject({
+      id: 'ConsentMappingCallback:0',
+      ref: { type: 'ConsentMappingCallback', typeIndex: 0 },
+      kind: 'boolean',
+      capability: 'manual',
+      required: true,
+      message: 'Allow profile sharing',
+      defaultValue: false,
+    });
+  });
+
+  it('enforces required consent mapping acceptance and builds boolean payload', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ConsentMappingCallback',
+          required: true,
+          accepted: false,
+          output: [],
+        },
+      ],
+    };
+
+    const rejected = buildNextInput(node, {
+      'ConsentMappingCallback:0': false,
+    });
+
+    expect(rejected.canSubmit).toBe(false);
+    expect(rejected.issues).toEqual([
+      {
+        code: 'REQUIRED_CONSENT_MISSING',
+        message: 'Required callback "ConsentMappingCallback" must be accepted to continue.',
+        fieldId: 'ConsentMappingCallback:0',
+        callbackType: 'ConsentMappingCallback',
+      },
+    ]);
+
+    const accepted = buildNextInput(node, {
+      'ConsentMappingCallback:0': true,
+    });
+
+    expect(accepted.canSubmit).toBe(true);
+    expect(accepted.issues).toEqual([]);
+    expect(accepted.input).toEqual({
+      callbacks: [
+        {
+          type: 'ConsentMappingCallback',
+          index: 0,
+          value: true,
+        },
+      ],
+    });
+  });
+
   it('does not force terms callback as required when payload does not mark it required', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
@@ -208,5 +311,103 @@ describe('Journey callback helpers', () => {
         },
       ],
     });
+  });
+
+  it('enforces required text callback value', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback', required: true, output: [] }],
+    };
+
+    const result = buildNextInput(node, {
+      'NameCallback:0': '   ',
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INVALID_VALUE',
+        message: 'Callback "NameCallback" requires a non-empty value.',
+        fieldId: 'NameCallback:0',
+        callbackType: 'NameCallback',
+      },
+    ]);
+  });
+
+  it('enforces required KBA question and answer', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'KbaCreateCallback', required: true, output: [] }],
+    };
+
+    const result = buildNextInput(node, {
+      'KbaCreateCallback:0': {
+        selectedQuestion: '',
+        selectedAnswer: ' ',
+        allowUserDefinedQuestions: true,
+      },
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INVALID_VALUE',
+        message: 'Callback "KbaCreateCallback" requires non-empty KBA question and answer values.',
+        fieldId: 'KbaCreateCallback:0',
+        callbackType: 'KbaCreateCallback',
+      },
+    ]);
+  });
+
+  it('marks RedirectCallback as integration-required in helper submit planning', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'RedirectCallback', output: [] }],
+    };
+
+    const fields = normalizeCallbacks(node);
+    expect(fields).toHaveLength(1);
+    expect(fields[0]).toMatchObject({
+      id: 'RedirectCallback:0',
+      capability: 'integration_required',
+    });
+
+    const result = buildNextInput(node, {});
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INTEGRATION_REQUIRED',
+        message: 'Callback "RedirectCallback" requires additional integration.',
+        fieldId: 'RedirectCallback:0',
+        callbackType: 'RedirectCallback',
+      },
+    ]);
+  });
+
+  it('rejects out-of-range choice index', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ChoiceCallback',
+          choices: ['email', 'sms'],
+          output: [],
+        },
+      ],
+    };
+
+    const result = buildNextInput(node, {
+      'ChoiceCallback:0': 10,
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INVALID_VALUE',
+        message: 'Callback "ChoiceCallback" selected option index is out of range.',
+        fieldId: 'ChoiceCallback:0',
+        callbackType: 'ChoiceCallback',
+      },
+    ]);
   });
 });

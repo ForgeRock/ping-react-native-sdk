@@ -41,8 +41,16 @@ export function journey(
     );
   }
 
+  const {
+    oidcClient: configOidcClient,
+    ...nativeConfig
+  } = config;
+
   let journeyId: string | null = null;
   const sessionStorageId = modules?.session?.storage?.id;
+  const oidcClientId =
+    modules?.oidc?.client?.id ??
+    configOidcClient?.id;
   const loggerId =
     config.nativeLogger?.id ??
     config.logger?.nativeHandle?.id;
@@ -64,7 +72,12 @@ export function journey(
   const ensureConfigured = async (): Promise<string> => {
     if (!journeyId) {
       logDebug('Journey configure requested');
-      journeyId = await configureJourney(config, sessionStorageId, loggerId);
+      journeyId = await configureJourney(
+        nativeConfig,
+        sessionStorageId,
+        loggerId,
+        oidcClientId
+      );
       logDebug('Journey configure succeeded', { journeyId });
     }
     return journeyId;

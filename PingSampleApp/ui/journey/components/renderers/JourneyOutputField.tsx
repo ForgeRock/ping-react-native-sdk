@@ -22,12 +22,13 @@ export default function JourneyOutputField(
   props: JourneyFieldRendererProps
 ): React.ReactElement {
   const { field } = props;
-  const promptText = resolvePromptText(field.prompt, field.message, field.type);
+  const promptText = resolvePromptText(field.prompt, field.message);
 
   return (
     <View style={fieldStyles.card}>
-      <Text style={fieldStyles.typeText}>{field.type}</Text>
-      <Text style={fieldStyles.promptText}>{promptText}</Text>
+      {promptText.length > 0 ? (
+        <Text style={fieldStyles.promptText}>{promptText}</Text>
+      ) : null}
       {field.message ? <Text style={fieldStyles.helperText}>{field.message}</Text> : null}
       <Text style={commonStyles.codeText}>{toDisplayString(field.raw.value)}</Text>
     </View>

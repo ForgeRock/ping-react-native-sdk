@@ -27,12 +27,13 @@ export default function JourneyChoiceField(
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const selected = readNumber(currentValue, readNumber(field.defaultValue, -1));
-  const promptText = resolvePromptText(field.prompt, field.message, field.type);
+  const promptText = resolvePromptText(field.prompt, field.message);
 
   return (
     <View style={fieldStyles.card}>
-      <Text style={fieldStyles.typeText}>{field.type}</Text>
-      <Text style={fieldStyles.promptText}>{promptText}</Text>
+      {promptText.length > 0 ? (
+        <Text style={fieldStyles.promptText}>{promptText}</Text>
+      ) : null}
       {!field.options || field.options.length === 0 ? (
         <Text style={fieldStyles.helperText}>No options were provided by this callback.</Text>
       ) : null}

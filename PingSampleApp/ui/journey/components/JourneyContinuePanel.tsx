@@ -7,7 +7,7 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { Text, TextInput, TouchableOpacity } from 'react-native';
-import type { JourneyFormResult } from '@ping-identity/rn-journey';
+import type { JourneyCallbackType, JourneyFormResult } from '@ping-identity/rn-journey';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
 import JourneyFieldRenderer from './renderers/JourneyFieldRenderer';
@@ -49,8 +49,8 @@ export default function JourneyContinuePanel(
   } = props;
   const { fields, values, meta, setValue } = form;
 
-  const callbackTypes = useMemo<Set<string>>(
-    () => new Set(fields.map((field) => field.type)),
+  const callbackTypes = useMemo<Set<JourneyCallbackType>>(
+    () => new Set(fields.map((field) => field.ref.type)),
     [fields]
   );
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
@@ -60,6 +60,14 @@ export default function JourneyContinuePanel(
   const hasBlockingIntegration = meta.hasIntegrationRequired;
   const hasUnsupportedCallbacks = meta.hasUnsupported;
   const hasUnacceptedRequiredAgreements = meta.hasRequiredConsentMissing;
+  const canAutoAdvanceWithContinueButton =
+    !hasManualSubmit &&
+    !hasBlockingIntegration &&
+    !hasUnsupportedCallbacks &&
+    !hasDeviceProfileCallback &&
+    !hasSuspendedCallback &&
+    !hasPollingWaitCallback;
+  const shouldShowContinueButton = hasManualSubmit || canAutoAdvanceWithContinueButton;
   const submitDisabled =
     loading ||
     hasUnacceptedRequiredAgreements ||
@@ -138,7 +146,7 @@ export default function JourneyContinuePanel(
         </>
       ) : null}
 
-      {hasManualSubmit ? (
+      {shouldShowContinueButton ? (
         <TouchableOpacity
           style={[
             commonStyles.buttonPrimary,

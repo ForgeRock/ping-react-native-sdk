@@ -23,12 +23,13 @@ export default function JourneyTextField(
   props: JourneyFieldRendererProps
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
-  const promptText = resolvePromptText(field.prompt, field.message, field.type);
+  const promptText = resolvePromptText(field.prompt, field.message);
 
   return (
     <View style={fieldStyles.card}>
-      <Text style={fieldStyles.typeText}>{field.type}</Text>
-      <Text style={fieldStyles.promptText}>{promptText}</Text>
+      {promptText.length > 0 ? (
+        <Text style={fieldStyles.promptText}>{promptText}</Text>
+      ) : null}
       <TextInput
         style={commonStyles.input}
         value={toDisplayString(currentValue)}

@@ -76,13 +76,11 @@ export function toDisplayString(value: unknown): string {
  *
  * @param prompt - Native callback prompt value.
  * @param message - Native callback message value.
- * @param type - Callback type fallback label.
  * @returns Display-ready prompt text.
  */
 export function resolvePromptText(
   prompt: unknown,
-  message: unknown,
-  type: string
+  message: unknown
 ): string {
   const promptText = readString(prompt, '').trim();
   if (promptText.length > 0) {
@@ -94,7 +92,7 @@ export function resolvePromptText(
     return messageText;
   }
 
-  return type;
+  return '';
 }
 
 /**

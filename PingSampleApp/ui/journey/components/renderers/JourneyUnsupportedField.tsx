@@ -23,7 +23,7 @@ export default function JourneyUnsupportedField(
 
   return (
     <View style={fieldStyles.warningCard}>
-      <Text style={fieldStyles.warningTitle}>{field.type}</Text>
+      <Text style={fieldStyles.warningTitle}>Callback Notice</Text>
       <Text style={fieldStyles.warningText}>
         {field.capability === 'integration_required'
           ? 'Requires additional native integration.'

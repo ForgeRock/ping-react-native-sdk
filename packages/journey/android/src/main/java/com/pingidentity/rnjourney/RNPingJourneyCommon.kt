@@ -42,16 +42,27 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal object RNPingJourneyCommon {
 
+  /**
+   * Creates an IO-backed coroutine scope used for native bridge operations.
+   *
+   * @return Fresh coroutine scope with supervisor semantics.
+   */
   private fun createScope(): CoroutineScope {
     return CoroutineScope(SupervisorJob() + Dispatchers.IO)
   }
 
+  /** Indicates whether shared runtime wiring has been initialized. */
   private var configured = false
+  /** Factory used to create native Journey workflows from parsed payloads. */
   private lateinit var clientFactory: JourneyClientFactory
 
+  /** Coroutine scope used for all async bridge work. */
   private var scope: CoroutineScope = createScope()
+  /** Workflow registry keyed by generated journey id. */
   private val journeyMap = ConcurrentHashMap<String, Workflow>()
+  /** Last known node for each active journey id. */
   private val nodeMap = ConcurrentHashMap<String, Node>()
+  /** Active continue-node cache used for callback mutation resolution. */
   private val continueNodeMap = ConcurrentHashMap<String, ContinueNode>()
 
   /**
@@ -89,6 +100,12 @@ internal object RNPingJourneyCommon {
     configured = false
   }
 
+  /**
+   * Stores current node state for a Journey instance.
+   *
+   * @param journeyId Native journey instance id.
+   * @param node Latest node returned by the SDK.
+   */
   private fun setNodeState(journeyId: String, node: Node) {
     nodeMap[journeyId] = node
     if (node is ContinueNode) {
@@ -98,11 +115,19 @@ internal object RNPingJourneyCommon {
     }
   }
 
+  /**
+   * Clears tracked node state for a Journey instance.
+   *
+   * @param journeyId Native journey instance id.
+   */
   private fun clearNodeState(journeyId: String) {
     nodeMap.remove(journeyId)
     continueNodeMap.remove(journeyId)
   }
 
+  /**
+   * Disposes all tracked Journey clients and nodes.
+   */
   private fun disposeAll() {
     continueNodeMap.values.forEach { node ->
       runCatching { node.close() }
@@ -112,6 +137,11 @@ internal object RNPingJourneyCommon {
     journeyMap.clear()
   }
 
+  /**
+   * Removes one Journey runtime and associated state.
+   *
+   * @param journeyId Native journey instance id.
+   */
   private fun removeJourney(journeyId: String) {
     continueNodeMap.remove(journeyId)?.let { node ->
       runCatching { node.close() }
@@ -125,6 +155,8 @@ internal object RNPingJourneyCommon {
    *
    * @param config Bridge config payload.
    * @param promise Promise resolved with journey id.
+   * @throws IllegalArgumentException when configuration payload is invalid.
+   * @throws IllegalStateException when workflow creation fails.
    */
   fun configureJourney(config: ReadableMap, promise: Promise) {
     val payload = try {
@@ -146,6 +178,11 @@ internal object RNPingJourneyCommon {
 
   /**
    * Start a configured Journey by name.
+   *
+   * @param journeyId Native journey instance id.
+   * @param journeyName Journey/tree name to execute.
+   * @param options Optional start flags (`forceAuth`, `noSession`).
+   * @param promise Promise resolved with the first node payload.
    */
   fun start(journeyId: String, journeyName: String, options: ReadableMap?, promise: Promise) {
     val workflow = journeyMap[journeyId]
@@ -188,6 +225,10 @@ internal object RNPingJourneyCommon {
 
   /**
    * Apply callback input and progress to the next Journey node.
+   *
+   * @param journeyId Native journey instance id.
+   * @param input Callback mutation payload for the active `ContinueNode`.
+   * @param promise Promise resolved with the next node payload.
    */
   fun next(journeyId: String, input: ReadableMap, promise: Promise) {
     val currentNode = continueNodeMap[journeyId]
@@ -251,6 +292,10 @@ internal object RNPingJourneyCommon {
 
   /**
    * Resume a suspended Journey flow with a callback URI.
+   *
+   * @param journeyId Native journey instance id.
+   * @param uri Resume URI received from external redirect/magic-link flow.
+   * @param promise Promise resolved with the resumed node payload.
    */
   fun resume(journeyId: String, uri: String, promise: Promise) {
     val workflow = journeyMap[journeyId]
@@ -287,6 +332,9 @@ internal object RNPingJourneyCommon {
 
   /**
    * Resolve active session data for a Journey user.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved with session payload or null.
    */
   fun getSession(journeyId: String, promise: Promise) {
     val workflow = journeyMap[journeyId]
@@ -348,6 +396,9 @@ internal object RNPingJourneyCommon {
 
   /**
    * Logout the active Journey user and clear in-memory node state.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved when logout completes.
    */
   fun logout(journeyId: String, promise: Promise) {
     val workflow = journeyMap[journeyId]
@@ -375,6 +426,9 @@ internal object RNPingJourneyCommon {
 
   /**
    * Dispose a Journey workflow and clear native state for that client.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved when disposal completes.
    */
   fun dispose(journeyId: String, promise: Promise) {
     try {
