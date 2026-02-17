@@ -12,8 +12,8 @@ import {
   CacheStrategy,
   configureOidcStorage,
   OidcStorage,
-} from '@react-native-pingidentity/storage';
-import { logger } from '@react-native-pingidentity/logger';
+} from '@ping-identity/rn-storage';
+import { logger } from '@ping-identity/rn-logger';
 import {
   createOidcClient,
   createOidcWebClient,
