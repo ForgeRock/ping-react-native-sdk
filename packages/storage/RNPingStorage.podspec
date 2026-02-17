@@ -5,12 +5,12 @@ package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 Pod::Spec.new do |s|
   s.name         = "RNPingStorage"
   s.version      = package["version"]
-  s.summary      = package["description"] || "Ping Identity Storage TurboModule"
-  s.homepage     = package["homepage"] || "https://pingidentity.com"
-  s.license      = package["license"] || "MIT"
+  s.summary      = package["description"]
+  s.homepage     = package["homepage"]
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
 
   # CocoaPods requires this to be a hash
-  s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
+  s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
 
   # Minimum iOS version
   s.platforms    = { :ios => "16.0" }
@@ -27,19 +27,12 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
-  s.swift_version = "5.0"
+  s.swift_version = ['5.0', '5.1']
   s.requires_arc = true
 
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
-
-  s.test_spec "Tests" do |test_spec|
-    test_spec.source_files = "ios/Tests/**/*.{swift,m,mm}"
-    test_spec.dependency "PingStorage"
-    test_spec.dependency "RNPingCore"
-  end
-
 
   # Compiler flag toggle
   if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
@@ -52,4 +45,7 @@ Pod::Spec.new do |s|
   if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
     install_modules_dependencies(s)
   end
+
+  # Explicitly add ReactCodegen dependency for generated specs
+  s.dependency "ReactCodegen"
 end

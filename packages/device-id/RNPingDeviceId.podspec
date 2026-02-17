@@ -7,17 +7,21 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
-  s.license      = package["license"]
-
-  # Must be a HASH — cannot use package["author"] directly
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
+  
+  # CocoaPods requires this to be a hash
   s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
+  # Minimum iOS version
+  s.platforms        = { :ios => "16.0" }
 
-  min_ios_version_supported = "16.0"
+  # IMPORTANT: local monorepo source path (not git)
+  s.source           = { :path => "." }
 
-  s.platforms    = { :ios => "16.0" }
-
-  # Local monorepo source
-  s.source       = { :path => "." }
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+  else
+    s.source_files = "ios/RNPingDeviceIdClassic.mm"
+  end
 
   s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.exclude_files = "ios/Tests/**/*"
@@ -29,11 +33,18 @@ Pod::Spec.new do |s|
   s.dependency "PingDeviceId"
   s.dependency "RNPingCore"
 
-  s.test_spec "Tests" do |test_spec|
-    test_spec.source_files = "ios/Tests/**/*.{swift}"
-    test_spec.dependency "RNPingCore"
+  # Compiler flag toggle
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
+  else
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
   end
 
-  # New Architecture helper
-  install_modules_dependencies(s)
+  # Gating of codegen
+  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+    install_modules_dependencies(s)
+  end
+  
+  # Explicitly add ReactCodegen dependency for generated specs
+  s.dependency "ReactCodegen"
 end
