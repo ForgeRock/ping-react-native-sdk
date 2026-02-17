@@ -27,7 +27,8 @@
   ],
   "dependencies": {
     "@ping-identity/rn-core": "^0.1.0",
-    "@ping-identity/rn-logger": "^0.1.0"
+    "@ping-identity/rn-logger": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

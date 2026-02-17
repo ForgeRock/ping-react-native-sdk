@@ -5,13 +5,13 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { JourneyInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
 import { logger } from './logging';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
   DeviceProfileJourneyResult,
-  JourneyInstance,
 } from './types';
 
 /**
@@ -104,3 +104,4 @@ export async function collectDeviceProfileForJourney(
 }
 
 export type * from './types';
+export type { JourneyInstance } from '@ping-identity/rn-types';

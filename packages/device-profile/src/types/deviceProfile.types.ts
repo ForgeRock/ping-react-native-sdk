@@ -56,17 +56,3 @@ export type DeviceProfileCallbackInputValue = {
 export type DeviceProfileJourneyResult =
   | { type: 'success' }
   | { type: 'error'; code: string; message?: string };
-
-/**
- * TODO: Relocate types package as journey module matures.
- * Minimal Journey instance contract required by device profile collection.
- *
- * @remarks
- * The Journey module owns instance creation; this type enables cross-module coordination.
- */
-export type JourneyInstance = {
-  /**
-   * Returns the native Journey instance identifier.
-   */
-  getId: () => Promise<string>;
-};

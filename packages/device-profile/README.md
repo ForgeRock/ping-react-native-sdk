@@ -201,8 +201,8 @@ import type {
   DeviceProfile,
   DeviceProfileCollector,
   DeviceProfileJourneyResult,
-  JourneyInstance,
 } from '@ping-identity/rn-device-profile';
+import type { JourneyInstance } from '@ping-identity/rn-types';
 
 function collectDeviceProfile(
   collectors: DeviceProfileCollector[]
