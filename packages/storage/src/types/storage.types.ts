@@ -5,6 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { GenericError } from '@ping-identity/rn-types';
+
 /**
  * Cache strategies for Android storage operations.
  *
@@ -248,6 +250,14 @@ export type StorageConfig = {
    */
   ios?: IOSStorageConfig;
 };
+
+/**
+ * Error payload returned when storage operations fail.
+ *
+ * @remarks
+ * Errors thrown from native storage operations follow this shape.
+ */
+export type StorageError = GenericError;
 
 /**
  * Storage configuration type for Journey session data.

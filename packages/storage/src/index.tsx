@@ -11,12 +11,14 @@ import type {
   OidcStorage,
   SessionStorage,
   StorageConfig,
+  StorageError,
 } from "./types";
 
 export type {
   OidcStorage,
   SessionStorage,
   StorageConfig,
+  StorageError,
 } from "./types";
 export { CacheStrategy } from "./types";
 
@@ -70,16 +72,19 @@ function fromNativeCacheStrategy(strategy: NativeCacheStrategy): CacheStrategy {
  * Validates the storage configuration.
  * 
  * @param config - The storage configuration to validate
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  * 
  * @internal
  */
 function validateStorageConfig(config: StorageConfig) {
   if (!config) {
-    throw new Error(
-      "[@ping-identity/rn-storage] Missing configuration: " +
-        "You must provide a valid storage config."
-    );
+    const error: StorageError = {
+      type: 'argument_error',
+      error: 'STORAGE_INVALID_CONFIG',
+      message:
+        '[@ping-identity/rn-storage] Missing configuration: You must provide a valid storage config.',
+    };
+    throw error;
   }
 }
 
@@ -114,7 +119,7 @@ function buildNativeConfig(config: StorageConfig): NativeStorageConfig {
  * Ensures the result is a valid object type and throws an error if it's not.
  *
  * @param nativeResult - The native storage configuration to validate
- * @throws {Error} If the native result is not null, undefined, or an object
+ * @throws {StorageError} If the native result is not null, undefined, or an object
  * 
  * @internal
  */
@@ -122,9 +127,12 @@ function validateNormalizedResult(
   nativeResult: NativeStorageConfig | null | undefined
 ) {
   if (nativeResult !== null && nativeResult !== undefined && typeof nativeResult !== "object") {
-    throw new Error(
-      "[@ping-identity/rn-storage] Failed to resolve storage configuration."
-    );
+    const error: StorageError = {
+      type: 'parse_error',
+      error: 'STORAGE_INVALID_RESULT',
+      message: '[@ping-identity/rn-storage] Failed to resolve storage configuration.',
+    };
+    throw error;
   }
 }
 
@@ -193,7 +201,7 @@ function buildAndroidConfig(parsed: NativeStorageConfig) {
  *
  * @param nativeResult - The native storage configuration to normalize
  * @returns Normalized StorageConfig with platform-specific options properly nested
- * @throws {Error} If the native result is not a valid configuration object
+ * @throws {StorageError} If the native result is not a valid configuration object
  * 
  * @internal
  */
@@ -220,7 +228,7 @@ function normalizeStorageConfig(
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns A SessionStorage configuration object with a native storage id
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  * 
  * @example
  * ```typescript
@@ -255,7 +263,7 @@ export function configureSessionStorage(config: StorageConfig): SessionStorage {
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns An OidcStorage configuration object with a native storage id
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  * 
  * @example
  * ```typescript

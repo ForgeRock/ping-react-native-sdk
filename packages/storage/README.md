@@ -132,3 +132,24 @@ const journey = configureJourney({
   },
 });
 ```
+
+## Error handling
+
+Storage operations reject or throw using the shared `GenericError` contract from
+`@ping-identity/rn-types`.
+
+```ts
+import type { StorageError } from '@ping-identity/rn-storage';
+
+try {
+  const sessionStorage = configureSessionStorage({
+    android: {
+      keyAlias: 'ping.session',
+      fileName: 'ping_session_store',
+    },
+  });
+} catch (error) {
+  const storageError = error as StorageError;
+  console.log(storageError.type, storageError.error, storageError.message);
+}
+```
