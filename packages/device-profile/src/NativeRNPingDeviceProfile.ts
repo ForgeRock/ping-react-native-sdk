@@ -22,6 +22,9 @@ import type {
 export interface Spec extends TurboModule {
   /**
    * Collect a device profile outside of Journey flows.
+   *
+   * @remarks
+   * Rejects with a `DeviceProfileError` on failure.
    */
   collectDeviceProfile(
     collectors: DeviceProfileCollector[]
@@ -29,6 +32,9 @@ export interface Spec extends TurboModule {
 
   /**
    * Collect a device profile as part of an active Journey callback.
+   *
+   * @remarks
+   * Rejects with a `DeviceProfileError` on failure.
    */
   collectDeviceProfileForJourney(
     journeyId: string,

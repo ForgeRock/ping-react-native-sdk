@@ -10,23 +10,31 @@ import PingDeviceProfile
 import RNPingCore
 
 /// Shared device profile collection logic for React Native iOS bridges.
-/// TODO: Add logging once logger module is available and error shapes
+/// TODO: Add logging once logger module is available.
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
+
+  /// Stable error codes emitted by the Device Profile module.
+  ///
+  /// Keep these in sync with JS `DeviceProfileErrorCode` and Android `DeviceProfileErrorCodes`.
+  private enum DeviceProfileErrorCode: String {
+    case locationUnavailable = "DEVICE_PROFILE_LOCATION_UNAVAILABLE"
+    case callbackNotFound = "DEVICE_PROFILE_CALLBACK_NOT_FOUND"
+    case collectError = "DEVICE_PROFILE_COLLECT_ERROR"
+  }
 
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
   ///   - collectors: Ordered list of collector identifiers to execute.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
-  /// TODO: Add error shape once types module is available.
+  /// - Note: Rejects with a `GenericError` payload on failure.
   @objc
   public static func collectDeviceProfile(
     _ collectors: [String],
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    let locationRequested = collectors.contains("location")
     let nativeCollectors = buildCollectors(from: collectors, includeLocation: true)
 
     Task {
@@ -39,11 +47,12 @@ public class RNPingDeviceProfileCommon: NSObject {
         let payload = try await collectPayload(from: nativeCollectors)
         resolver(NSDictionary(dictionary: payload))
       } catch {
-        rejecter(
-          "DEVICE_PROFILE_COLLECT_ERROR",
-          "Failed to collect device profile: \(error.localizedDescription)",
-          error as NSError
+        let mapped = GenericError(
+          type: .internalError,
+          error: DeviceProfileErrorCode.collectError.rawValue,
+          message: "Failed to collect device profile: \(error.localizedDescription)"
         )
+        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }
@@ -54,7 +63,7 @@ public class RNPingDeviceProfileCommon: NSObject {
   ///   - collectors: Ordered list of collector identifiers to execute.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
-  /// TODO: Add error shape once types module is available.
+  /// - Note: Rejects with a `GenericError` payload on failure.
   @objc
   public static func collectDeviceProfileForJourney(
     _ journeyId: String,
@@ -68,13 +77,12 @@ public class RNPingDeviceProfileCommon: NSObject {
 
     Task {
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {
-        resolver(
-          createJourneyResultPayload(
-            type: "error",
-            code: "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
-            message: "No active Device Profile callback found for journey \(journeyId)."
-          )
+        let error = GenericError(
+          type: .stateError,
+          error: DeviceProfileErrorCode.callbackNotFound.rawValue,
+          message: "No active Device Profile callback found for journey \(journeyId)."
         )
+        reject(error, rejecter: rejecter)
         return
       }
 
@@ -88,13 +96,12 @@ public class RNPingDeviceProfileCommon: NSObject {
       case .success:
         resolver(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        resolver(
-          createJourneyResultPayload(
-            type: "error",
-            code: "DEVICE_PROFILE_COLLECT_ERROR",
-            message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)"
-          )
+        let mapped = GenericError(
+          type: .internalError,
+          error: DeviceProfileErrorCode.collectError.rawValue,
+          message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)"
         )
+        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }

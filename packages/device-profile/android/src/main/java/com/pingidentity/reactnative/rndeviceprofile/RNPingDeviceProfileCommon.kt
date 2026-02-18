@@ -24,6 +24,10 @@ import com.pingidentity.device.profile.collector.PlatformCollector
 import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
 import com.pingidentity.reactnative.rncore.CoreRuntime
+import com.pingidentity.reactnative.rncore.error.ErrorType
+import com.pingidentity.reactnative.rncore.error.GenericError
+import com.pingidentity.reactnative.rncore.error.mapThrowableToGenericError
+import com.pingidentity.reactnative.rncore.error.reject
 import com.pingidentity.reactnative.rncore.utils.JsonBridgeMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +36,7 @@ import kotlinx.serialization.json.JsonObject
 
 /**
  * Common device profile collection utilities shared across architectures.
- * TODO: Add logging once logger module is available and error shapes
+ * TODO: Add logging once logger module is available.
  */
 object RNPingDeviceProfileCommon {
   private const val LOCATION_SERVICES_CLASS =
@@ -61,13 +65,12 @@ object RNPingDeviceProfileCommon {
         "Device Profile",
         "location collection blocked: $LOCATION_ERROR_MESSAGE"
       )
-      promise.resolve(
-        createJourneyResultPayload(
-          type = "error",
-          code = "DEVICE_PROFILE_LOCATION_UNAVAILABLE",
-          message = LOCATION_ERROR_MESSAGE
-        )
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = DeviceProfileErrorCodes.DEVICE_PROFILE_LOCATION_UNAVAILABLE,
+        message = LOCATION_ERROR_MESSAGE
       )
+      promise.reject(error)
       return false
     }
     return true
@@ -105,7 +108,10 @@ object RNPingDeviceProfileCommon {
         promise.resolve(JsonBridgeMapper.encodeJsonElement(jsonElement))
       } catch (e: Throwable) {
         Log.e("Device Profile", "metadata collection failed", e)
-        promise.reject("DEVICE_PROFILE_COLLECT_ERROR", "Failed to collect device profile: ${e.message}", e)
+        promise.reject(
+          mapThrowableToGenericError(e, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR),
+          e
+        )
       }
     }
   }
@@ -143,13 +149,12 @@ object RNPingDeviceProfileCommon {
         val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
         val callback = resolveDeviceProfileCallback(journeyId)
         if (callback == null) {
-          promise.resolve(
-            createJourneyResultPayload(
-              type = "error",
-              code = "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
-              message = "No active Device Profile callback found for journey $journeyId."
-            )
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = DeviceProfileErrorCodes.DEVICE_PROFILE_CALLBACK_NOT_FOUND,
+            message = "No active Device Profile callback found for journey $journeyId."
           )
+          promise.reject(error)
           return@launch
         }
 
@@ -175,12 +180,12 @@ object RNPingDeviceProfileCommon {
               "metadata collection for journey failed during callback",
               error
             )
-            promise.resolve(
-              createJourneyResultPayload(
-                type = "error",
-                code = "DEVICE_PROFILE_COLLECT_ERROR",
-                message = "Failed to collect device profile for journey: ${error.message}"
-              )
+            promise.reject(
+              mapThrowableToGenericError(
+                error,
+                DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
+              ),
+              error
             )
           }
         )
@@ -190,12 +195,12 @@ object RNPingDeviceProfileCommon {
           "metadata collection for journey failed during collection",
           error
         )
-        promise.resolve(
-          createJourneyResultPayload(
-            type = "error",
-            code = "DEVICE_PROFILE_COLLECT_ERROR",
-            message = "Failed to collect device profile for journey: ${error.message}"
-          )
+        promise.reject(
+          mapThrowableToGenericError(
+            error,
+            DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
+          ),
+          error
         )
       }
     }

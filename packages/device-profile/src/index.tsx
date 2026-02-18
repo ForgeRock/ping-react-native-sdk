@@ -57,21 +57,21 @@ export async function collectDeviceProfile(
  * ```ts
  * const node = await journey.start();
  * if (node.callbacks?.some(cb => cb.type === 'DeviceProfileCallback')) {
- *   const result = await collectDeviceProfileForJourney(
- *     journey,
- *     ['hardware', 'network', 'browser']
- *   );
- *   if (result.type === 'success') {
+ *   try {
+ *     await collectDeviceProfileForJourney(
+ *       journey,
+ *       ['hardware', 'network', 'browser']
+ *     );
  *     await journey.next();
- *   } else {
- *     console.error('Device profile submission failed', result.code, result.message);
+ *   } catch (error) {
+ *     console.error('Device profile submission failed', error);
  *   }
  * }
  * ```
  *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
- * @returns Result object describing success or error.
+ * @returns Result object describing success.
  */
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,

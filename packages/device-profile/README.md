@@ -175,15 +175,14 @@ app's `Info.plist` so iOS can prompt the user for permission.
 ```ts
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 
-const result = await collectDeviceProfileForJourney(
-  journey,
-  ['platform', 'hardware', 'network', 'location']
-);
-
-if (result.type === 'success') {
+try {
+  await collectDeviceProfileForJourney(
+    journey,
+    ['platform', 'hardware', 'network', 'location']
+  );
   await journey.next();
-} else {
-  console.error('Device profile submission failed', result.code, result.message);
+} catch (error) {
+  console.error('Device profile submission failed', error);
   // Handle failure before advancing the Journey.
 }
 ```
@@ -192,7 +191,7 @@ Note: `collectDeviceProfileForJourney` is only valid when a Device Profile callb
 is active in the current Journey node. The native implementation resolves the
 active callback, applies server-driven configuration, executes the requested
 collectors, submits the resulting metadata automatically, and resolves with a
-result object describing success or failure.
+result object describing success. Failures reject with a shared `GenericError`.
 
 ## API reference
 
@@ -214,11 +213,26 @@ function collectDeviceProfileForJourney(
 ): Promise<DeviceProfileJourneyResult>;
 ```
 
-## Errors 
-<!-- TODO: needs update after adding error shape -->
+## Error handling
 
-Common error codes surfaced via the `error` result when `collectDeviceProfileForJourney`
-returns `{ type: 'error', code, message }`:
+All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+
+```ts
+import type { DeviceProfileError } from '@ping-identity/rn-device-profile';
+
+try {
+  await collectDeviceProfile(['platform']);
+} catch (error) {
+  const deviceProfileError = error as DeviceProfileError;
+  console.log(
+    deviceProfileError.type,
+    deviceProfileError.error,
+    deviceProfileError.message
+  );
+}
+```
+
+Common error codes surfaced via `error` in rejection payloads:
 
 - `DEVICE_PROFILE_LOCATION_UNAVAILABLE`: Google Play Services Location is missing.
 - `DEVICE_PROFILE_CALLBACK_NOT_FOUND`: No active Device Profile callback for the Journey.
