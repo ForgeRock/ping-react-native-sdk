@@ -2550,6 +2550,7 @@ __metadata:
   resolution: "@ping-identity/rn-device-id@workspace:packages/device-id"
   dependencies:
     "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-types": "npm:^0.1.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"

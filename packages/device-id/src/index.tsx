@@ -32,6 +32,9 @@ import { getNativeModule } from './NativeRNPingDeviceId';
  * - Uses platform-specific secure storage mechanisms
  * 
  * @returns A promise that resolves to the default device identifier string
+ *
+ * @remarks
+ * Promise rejections use {@link DeviceIdError}.
  * 
  * @example
  * ```typescript
@@ -46,3 +49,5 @@ import { getNativeModule } from './NativeRNPingDeviceId';
 export async function getDeviceId(): Promise<string> {
   return await getNativeModule().getDefaultDeviceId();
 }
+
+export type { DeviceIdError, DeviceIdErrorCode } from './types';

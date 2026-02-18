@@ -7,8 +7,9 @@
 package com.pingidentity.reactnative.rndeviceid
 
 import com.facebook.react.bridge.Promise
-import com.pingidentity.android.ContextProvider
 import com.pingidentity.device.id.DeviceIdentifier
+import com.pingidentity.reactnative.rncore.error.mapThrowableToGenericError
+import com.pingidentity.reactnative.rncore.error.reject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,7 +55,8 @@ object RNPingDeviceIdCommon {
         val id = resolver()
         promise.resolve(id)
       } catch (e: Exception) {
-        promise.reject("DEVICE_ID_ERROR", e.message, e)
+        val error = mapThrowableToGenericError(e, DeviceIdErrorCodes.DEVICE_ID_ERROR)
+        promise.reject(error, e)
       }
     }
   }

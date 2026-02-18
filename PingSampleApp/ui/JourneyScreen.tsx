@@ -29,7 +29,10 @@ import type {
   Step,
   Tokens,
 } from '@ping-identity/rn-types';
-import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+import {
+  collectDeviceProfileForJourney,
+  type DeviceProfileError,
+} from '@ping-identity/rn-device-profile';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -100,6 +103,19 @@ export default function JourneyScreen() {
     }
   };
 
+  const formatDeviceProfileError = (err: unknown): string => {
+    const errorPayload = err as DeviceProfileError;
+    const errorDetails = {
+      type: errorPayload?.type ?? 'unknown_error',
+      error: errorPayload?.error ?? 'DEVICE_PROFILE_COLLECT_ERROR',
+      message:
+        errorPayload?.message ?? 'Failed to collect device profile for journey.',
+      code: errorPayload?.code,
+      status: errorPayload?.status,
+    };
+    return JSON.stringify(errorDetails, null, 2);
+  };
+
   // Fetch user info after success
   useEffect(() => {
     const getUserDetails = async () => {
@@ -151,16 +167,13 @@ export default function JourneyScreen() {
         } else {
           Alert.alert(
             'Device profile failed',
-            submission.message ?? submission.code
+            JSON.stringify(submission, null, 2)
           );
           processedNodesRef.current.delete(node.id);
         }
       } catch (err) {
         console.error('Device profile collection failed:', err);
-        Alert.alert(
-          'Device profile failed',
-          String(err instanceof Error ? err.message : err)
-        );
+        Alert.alert('Device profile failed', formatDeviceProfileError(err));
         processedNodesRef.current.delete(node.id);
       } finally {
         if (isMountedRef.current) {

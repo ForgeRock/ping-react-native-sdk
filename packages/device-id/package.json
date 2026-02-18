@@ -20,7 +20,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

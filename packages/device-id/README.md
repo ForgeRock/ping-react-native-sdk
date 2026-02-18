@@ -46,6 +46,21 @@ async function initializeApp() {
 }
 ```
 
+## Error handling
+
+All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+
+```ts
+import type { DeviceIdError } from '@ping-identity/rn-device-id';
+
+try {
+  await getDeviceId();
+} catch (error) {
+  const deviceIdError = error as DeviceIdError;
+  console.log(deviceIdError.type, deviceIdError.error, deviceIdError.message);
+}
+```
+
 ## License
 
 MIT
