@@ -39,6 +39,8 @@ export type NativeCacheStrategy =
  * ```
  */
 export type NativeStorageConfig = {
+  /** Optional native logger handle id for Android SDK logging. */
+  loggerId?: string;
   /** Optional encryption key alias for Android encrypted storage. */
   keyAlias?: string;
   /** Optional file name for Android persistent storage. */

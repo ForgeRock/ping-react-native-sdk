@@ -10,6 +10,7 @@ package com.pingidentity.reactnative.rnstorage
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
+import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
 import io.mockk.*
 import org.junit.After
 import org.junit.Assert.*
@@ -26,6 +27,8 @@ class RNPingStorageCommonTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
+        mockkObject(RNPingLoggerCommon)
+        every { RNPingLoggerCommon.applyLogger(any()) } returns true
         
         // Mock Arguments.createMap() to return a proper WritableMap
         mockkStatic(Arguments::class)
@@ -57,6 +60,7 @@ class RNPingStorageCommonTest {
 
     @After
     fun tearDown() {
+        unmockkObject(RNPingLoggerCommon)
         unmockkStatic(Arguments::class)
         clearAllMocks()
         StorageConfigRegistry(com.pingidentity.reactnative.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
@@ -143,6 +147,15 @@ class RNPingStorageCommonTest {
         assertEquals("testKey", configMap.getString("keyAlias"))
         assertEquals(true, configMap.getBoolean("strongBoxPreferred"))
         assertEquals("cache_on_failure", configMap.getString("cacheStrategy"))
+    }
+
+    @Test
+    fun registerSessionStorageAppliesNativeLoggerWhenLoggerIdProvided() {
+        val config = createMockReadableMap(mapOf("loggerId" to "logger-1"))
+
+        RNPingStorageCommon.registerSessionStorage(config)
+
+        verify(exactly = 1) { RNPingLoggerCommon.applyLogger("logger-1") }
     }
 
     private fun createMockReadableMap(data: Map<String, Any?>): ReadableMap {

@@ -2519,6 +2519,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNScreens (4.18.0):
@@ -2974,7 +2975,7 @@ SPEC CHECKSUMS:
   RNPingJourney: 6294d6e97cc3cc7cc4edd3010d53378b2209f983
   RNPingLogger: fc2f660e6cf846df3e9d7b3fede9059026335d4b
   RNPingOidc: 448e7eb3ab8c30019a57d64f6c9e792f79b83880
-  RNPingStorage: 00849382e0340cd802f5a1bddf71264efd726c21
+  RNPingStorage: 5a8aac5421ad49ebcc475ed71a01b2174d46da82
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3

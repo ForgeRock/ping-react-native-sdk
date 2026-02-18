@@ -6,6 +6,10 @@
  */
 
 import type { GenericError } from '@ping-identity/rn-types';
+import type {
+  LoggerInstance,
+  NativeLoggerHandle,
+} from '@ping-identity/rn-logger';
 
 /**
  * Cache strategies for Android storage operations.
@@ -258,6 +262,26 @@ export type StorageConfig = {
  * Errors thrown from native storage operations follow this shape.
  */
 export type StorageError = GenericError;
+
+/**
+ * Optional logger configuration for storage native calls.
+ *
+ * @remarks
+ * Mirrors OIDC and device-profile logger behavior:
+ * - `nativeLogger` has highest precedence for native logger application.
+ * - `logger.nativeHandle` is used when `nativeLogger` is not provided.
+ */
+export type StorageLoggerOptions = {
+  /**
+   * Optional JavaScript logger instance.
+   */
+  logger?: LoggerInstance;
+
+  /**
+   * Optional native logger handle.
+   */
+  nativeLogger?: NativeLoggerHandle;
+};
 
 /**
  * Storage configuration type for Journey session data.

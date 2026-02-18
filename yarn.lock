@@ -2620,6 +2620,7 @@ __metadata:
   resolution: "@ping-identity/rn-storage@workspace:packages/storage"
   dependencies:
     "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-logger": "npm:^0.1.0"
     "@ping-identity/rn-types": "npm:^0.1.0"
     jest: "npm:^30.2.0"
     react: "npm:*"

@@ -10,6 +10,7 @@ import {
   configureSessionStorage,
   type StorageConfig,
 } from "@ping-identity/rn-storage";
+import { logger } from "@ping-identity/rn-logger";
 
 /**
  * Information about a registered storage instance.
@@ -22,6 +23,7 @@ export type StorageInfo = {
 
 let oidcStorage: StorageInfo | null = null;
 let sessionStorage: StorageInfo | null = null;
+const storageLogger = logger({ level: "debug" });
 
 /**
  * Configures and returns the OIDC storage instance.
@@ -43,7 +45,9 @@ export function configureOidcStorageInfo(): StorageInfo {
         cacheable: false,
       },
     };
-    const resolvedConfig = configureOidcStorage(baseConfig);
+    const resolvedConfig = configureOidcStorage(baseConfig, {
+      logger: storageLogger,
+    });
     oidcStorage = { config: resolvedConfig };
     console.log("🔑 Created OIDC Storage:", resolvedConfig);
   }
@@ -70,7 +74,9 @@ export function configureSessionStorageInfo(): StorageInfo {
         cacheable: false,
       },
     };
-    const resolvedConfig = configureSessionStorage(baseConfig);
+    const resolvedConfig = configureSessionStorage(baseConfig, {
+      logger: storageLogger,
+    });
     sessionStorage = { config: resolvedConfig };
     console.log("🎫 Created Session Storage:", resolvedConfig);
   }

@@ -33,6 +33,7 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
+  s.dependency "RNPingLogger"
 
   # Compiler flag toggle
   if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
