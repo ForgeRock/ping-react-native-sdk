@@ -25,6 +25,8 @@
     "react-native": "*"
   },
   "devDependencies": {
+    "react": "*",
+    "react-native": "*",
     "react-native-builder-bob": "^0.40.14",
     "typescript": "^5.9.2"
   },

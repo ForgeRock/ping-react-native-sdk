@@ -10,8 +10,10 @@
 
 import Foundation
 import PingBrowser
+import PingLogger
 import AuthenticationServices
 import RNPingCore
+import RNPingLogger
 
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
@@ -64,7 +66,7 @@ public class RNPingBrowserCommon: NSObject {
   ///
   /// - Parameters:
   ///   - url: The URL to launch in the system browser.
-  ///   - options: Launch options including callback scheme and iOS settings.
+  ///   - options: Launch options including callback scheme, iOS settings, and optional loggerId.
   ///   - resolver: Callback invoked with the result payload.
   ///   - rejecter: Callback invoked for validation or launch errors.
   @objc
@@ -74,6 +76,8 @@ public class RNPingBrowserCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    let loggerId = options["loggerId"] as? String
+
     // Validate required options before launching.
     guard let callbackScheme = options["callbackUrlScheme"] as? String,
           !callbackScheme.isEmpty else {
@@ -122,6 +126,17 @@ public class RNPingBrowserCommon: NSObject {
     }
 
     Task { @MainActor in
+      // TODO: When PingBrowser exposes `BrowserLauncher.logger` as public, switch to per-call logger wiring.
+      // Example future implementation:
+      // if let loggerId = options["loggerId"] as? String,
+      //    RNPingLoggerImpl.shared.applyLogger(loggerId) {
+      //   BrowserLauncher.logger = LogManager.logger
+      // } else {
+      //   BrowserLauncher.logger = LogManager.none
+      // }
+      // For now we only apply the logger to the SDK-wide LogManager.
+      _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
+
       do {
         let result = try await browserLauncher.launch(
           url: launchUrl,

@@ -18,10 +18,14 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
+import com.pingidentity.browser.BrowserLauncher
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.logger.Logger
+import com.pingidentity.logger.NONE
 import com.pingidentity.reactnative.rncore.error.ErrorType
 import com.pingidentity.reactnative.rncore.error.GenericError
 import com.pingidentity.reactnative.rncore.error.reject
+import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
 import java.net.URL
 import java.net.MalformedURLException
 import kotlinx.coroutines.CancellationException
@@ -152,6 +156,14 @@ object RNPingBrowserCommon {
    */
   @JvmStatic
   fun open(url: String, options: ReadableMap, promise: Promise) {
+    val loggerId = if (options.hasKey("loggerId")) {
+      options.getString("loggerId")
+    } else {
+      null
+    }
+    val isLoggerConfigured = RNPingLoggerCommon.applyLogger(loggerId)
+    BrowserLauncher.logger = if (isLoggerConfigured) Logger.logger else Logger.NONE
+
     val redirectUri = if (options.hasKey("redirectUri")) {
       options.getString("redirectUri")
     } else {

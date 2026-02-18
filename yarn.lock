@@ -2527,7 +2527,10 @@ __metadata:
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
   dependencies:
     "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-logger": "npm:^0.1.0"
     "@ping-identity/rn-types": "npm:^0.1.0"
+    react: "npm:*"
+    react-native: "npm:*"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
@@ -2602,6 +2605,8 @@ __metadata:
     "@ping-identity/rn-core": "npm:^0.1.0"
     "@ping-identity/rn-logger": "npm:^0.1.0"
     "@ping-identity/rn-types": "npm:^0.1.0"
+    react: "npm:*"
+    react-native: "npm:*"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:

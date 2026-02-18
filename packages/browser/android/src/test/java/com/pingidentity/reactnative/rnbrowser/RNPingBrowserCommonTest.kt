@@ -21,11 +21,14 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -288,6 +291,24 @@ class RNPingBrowserCommonTest {
     mainDispatcher.scheduler.advanceUntilIdle()
 
     assertEquals(1, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openAppliesNativeLoggerWhenLoggerIdProvided() = runTest {
+    mockkObject(RNPingLoggerCommon)
+    every { RNPingLoggerCommon.applyLogger("logger-1") } returns true
+    fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
+
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+      putString("loggerId", "logger-1")
+    }
+
+    RNPingBrowserCommon.open("https://example.com", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    verify(exactly = 1) { RNPingLoggerCommon.applyLogger("logger-1") }
   }
 
   private class FakeBrowserLauncher : BrowserLauncherAdapter {

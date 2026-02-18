@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,11 @@ import {
 } from 'react-native';
 import type { BrowserError } from '@ping-identity/rn-browser';
 import { open } from '@ping-identity/rn-browser';
+import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 
 export default function BrowserScreen() {
+  const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
   const [url, setUrl] = useState(
     'https://www.pingidentity.com',
   );
@@ -47,6 +49,8 @@ export default function BrowserScreen() {
           browserMode: 'login',
           browserType: 'ephemeralAuthSession'
         }
+      }, {
+        logger: browserLogger,
       });
       setResult(JSON.stringify(response, null, 2));
     } catch (e: unknown) {

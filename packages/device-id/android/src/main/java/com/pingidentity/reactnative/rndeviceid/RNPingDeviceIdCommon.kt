@@ -33,7 +33,18 @@ object RNPingDeviceIdCommon {
    * @param promise React Native promise to resolve with the device identifier or reject on error.
    */
   @JvmStatic
-  fun getDefaultDeviceId(promise: Promise) {
+  fun getDefaultDeviceId(
+    loggerId: String?,
+    promise: Promise
+  ) {
+    // TODO: When DeviceIdentifier exposes per-instance logger configuration publicly,
+    // apply the resolved logger directly to that instance instead of relying on
+    // the SDK-wide logger state.
+    // Example future implementation:
+    // val isLoggerConfigured = RNPingLoggerCommon.applyLogger(loggerId)
+    // val logger = if (isLoggerConfigured) Logger.logger else null
+    // val identifier = DefaultDeviceIdentifier(logger = logger)
+    RNPingLoggerCommon.applyLogger(loggerId)
     resolveDeviceId(promise) { DeviceIdentifier.identifier.id() }
   }
 

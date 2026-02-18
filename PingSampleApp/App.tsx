@@ -1,4 +1,10 @@
-import React, { useEffect } from 'react';
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+import React, { useEffect, useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
@@ -10,7 +16,7 @@ import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import { loginClient, loginClient2 } from './src/clients';
 import { JourneyClient } from '@react-native-pingidentity/journey/lib/typescript/src/types';
-import { configureLogger } from '@ping-identity/rn-logger';
+import { configureLogger, logger } from '@ping-identity/rn-logger';
 import { configureBrowser } from '@ping-identity/rn-browser';
 
 export type RootStackParamList = {
@@ -26,6 +32,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
+
   useEffect(() => {
     // Init login clients
     loginClient.init();
@@ -47,8 +55,10 @@ export default function App() {
           navigationBarColor: '#001F3F',
         },
       },
+    }, {
+      logger: browserLogger,
     });
-  }, []);
+  }, [browserLogger]);
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">

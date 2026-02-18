@@ -37,6 +37,7 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency
   s.dependency 'PingBrowser', '1.3.1'
   s.dependency 'RNPingCore'
+  s.dependency 'RNPingLogger'
 
   # Compiler flag toggle
   if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
