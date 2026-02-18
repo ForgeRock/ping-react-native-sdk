@@ -208,29 +208,73 @@ const isNewArchEnabled =
  * @throws Error when no matching native module can be found.
  */
 export function getNativeModule(): Spec {
+  const classic =
+    (NativeModules.RNPingJourneyClassic as Spec | undefined) ??
+    (NativeModules.RNPingJourney as Spec | undefined);
+
   if (isNewArchEnabled) {
     try {
       return TurboModuleRegistry.getEnforcing<Spec>('RNPingJourney');
     } catch (error) {
-      // Fall back to classic module resolution at runtime.
-      console.warn(
-        'Journey TurboModule not registered; falling back to classic implementation.',
-        String(error)
-      );
+      if (classic) {
+        console.warn(
+          'Journey TurboModule not registered; falling back to classic implementation.',
+          String(error)
+        );
+        return classic;
+      }
+
+      const available = Object.keys(NativeModules).slice(0, 10);
+      const message =
+        '[@ping-identity/rn-journey] Turbo module RNPingJourney not found while New Architecture is enabled.\n' +
+        'Original error: ' +
+        String(error) +
+        '\nAvailable NativeModules: ' +
+        JSON.stringify(available);
+      throw new Error(message);
     }
   }
 
-  const classic = NativeModules.RNPingJourneyClassic;
   if (!classic) {
     const available = Object.keys(NativeModules).slice(0, 10);
     const message =
-      '[@ping-identity/rn-journey] Native RNPingJourneyClassic module not found at runtime.\n' +
+      '[@ping-identity/rn-journey] Native legacy Journey module not found at runtime.\n' +
       'Available NativeModules: ' +
       JSON.stringify(available);
     throw new Error(message);
   }
 
-  return classic as Spec;
+  return classic;
 }
 
-export default getNativeModule();
+/**
+ * Lazy native module wrapper.
+ *
+ * Resolves the native module at call time to avoid import-time failures while
+ * the runtime is still bootstrapping native providers.
+ */
+const NativeRNPingJourney: Spec = {
+  configureJourney(config) {
+    return getNativeModule().configureJourney(config);
+  },
+  start(journeyId, journeyName, options) {
+    return getNativeModule().start(journeyId, journeyName, options);
+  },
+  next(journeyId, nodeId, input) {
+    return getNativeModule().next(journeyId, nodeId, input);
+  },
+  resume(journeyId, uri) {
+    return getNativeModule().resume(journeyId, uri);
+  },
+  getSession(journeyId) {
+    return getNativeModule().getSession(journeyId);
+  },
+  logout(journeyId) {
+    return getNativeModule().logout(journeyId);
+  },
+  dispose(journeyId) {
+    return getNativeModule().dispose(journeyId);
+  },
+};
+
+export default NativeRNPingJourney;

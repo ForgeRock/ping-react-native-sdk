@@ -22,6 +22,7 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
+  s.swift_version = ['5.0', '5.1', '6.0']
 
   s.dependency 'PingOidc', '1.3.1'
   s.dependency 'RNPingCore'

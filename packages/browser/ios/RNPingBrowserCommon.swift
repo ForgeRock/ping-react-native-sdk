@@ -16,6 +16,32 @@ import RNPingCore
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
+  /// Sendable wrapper around React Native resolver/rejecter closures.
+  ///
+  /// Swift 6 treats `Task` closures as `@Sendable`. Wrapping bridge callbacks keeps
+  /// the closure capture surface explicit while preserving the existing JS promise contract.
+  private final class PromiseHandlers: @unchecked Sendable {
+    private let resolver: (NSDictionary) -> Void
+    private let rejecter: (String, String, NSError?) -> Void
+
+    init(
+      resolver: @escaping (NSDictionary) -> Void,
+      rejecter: @escaping (String, String, NSError?) -> Void
+    ) {
+      self.resolver = resolver
+      self.rejecter = rejecter
+    }
+
+    @MainActor
+    func resolve(_ value: NSDictionary) {
+      resolver(value)
+    }
+
+    @MainActor
+    func reject(_ error: GenericError, underlying: NSError? = nil) {
+      RNPingCore.reject(error, rejecter: rejecter, underlyingError: underlying)
+    }
+  }
 
   /// Stable error codes emitted by the Browser module.
   ///
@@ -74,6 +100,8 @@ public class RNPingBrowserCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    let handlers = PromiseHandlers(resolver: resolver, rejecter: rejecter)
+
     // Validate required options before launching.
     guard let callbackScheme = options["callbackUrlScheme"] as? String,
           !callbackScheme.isEmpty else {
@@ -82,7 +110,9 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "callbackUrlScheme is required"
       )
-      reject(error, rejecter: rejecter)
+      Task { @MainActor in
+        handlers.reject(error)
+      }
       return
     }
 
@@ -92,7 +122,9 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "Invalid URL"
       )
-      reject(error, rejecter: rejecter)
+      Task { @MainActor in
+        handlers.reject(error)
+      }
       return
     }
 
@@ -131,13 +163,13 @@ public class RNPingBrowserCommon: NSObject {
           callbackURLScheme: callbackScheme
         )
 
-        resolver([
+        handlers.resolve([
           "type": "success",
           "url": result.absoluteString
         ])
       } catch let error as BrowserError {
         if case .externalUserAgentCancelled = error {
-          resolver(["type": "cancel"])
+          handlers.resolve(["type": "cancel"])
         } else {
           // Browser errors are mapped to the shared native error contract.
           let mapped = GenericError(
@@ -145,11 +177,11 @@ public class RNPingBrowserCommon: NSObject {
             error: BrowserErrorCode.openError.rawValue,
             message: error.localizedDescription
           )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+          handlers.reject(mapped, underlying: error as NSError)
         }
       } catch let error as ASWebAuthenticationSessionError {
         if error.code == .canceledLogin {
-          resolver(["type": "cancel"])
+          handlers.resolve(["type": "cancel"])
         } else {
           let mapped = GenericError(
             type: .internalError,
@@ -157,7 +189,7 @@ public class RNPingBrowserCommon: NSObject {
             message: error.localizedDescription,
             code: error.code.rawValue
           )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+          handlers.reject(mapped, underlying: error as NSError)
         }
       } catch {
         let mapped = GenericError(
@@ -165,7 +197,7 @@ public class RNPingBrowserCommon: NSObject {
           error: BrowserErrorCode.openError.rawValue,
           message: error.localizedDescription
         )
-        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+        handlers.reject(mapped, underlying: error as NSError)
       }
     }
   }

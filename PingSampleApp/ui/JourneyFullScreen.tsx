@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -26,6 +25,8 @@ import {
 } from '@ping-identity/rn-journey';
 import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
 import { commonStyles } from '../src/styles/common';
+import PingTextInput from './components/PingTextInput';
+import { colors } from '../src/styles/colors';
 
 /**
  * Callback metadata with deterministic per-type index.
@@ -467,8 +468,8 @@ export default function JourneyFullScreen(): React.ReactElement {
           <View key={key} style={styles.callbackCard}>
             <Text style={styles.callbackType}>{type}</Text>
             <Text style={styles.callbackLabel}>{label}</Text>
-            <TextInput
-              style={commonStyles.journeyInput}
+            <PingTextInput
+              label="Security question"
               placeholder="Security question"
               value={value.selectedQuestion}
               onChangeText={(text) =>
@@ -478,8 +479,8 @@ export default function JourneyFullScreen(): React.ReactElement {
                 })
               }
             />
-            <TextInput
-              style={commonStyles.journeyInput}
+            <PingTextInput
+              label="Security answer"
               placeholder="Security answer"
               value={value.selectedAnswer}
               onChangeText={(text) =>
@@ -520,13 +521,15 @@ export default function JourneyFullScreen(): React.ReactElement {
         <View key={key} style={styles.callbackCard}>
           <Text style={styles.callbackType}>{type}</Text>
           <Text style={styles.callbackLabel}>{label}</Text>
-          <TextInput
-            style={commonStyles.journeyInput}
+          <PingTextInput
+            label={label}
             value={textValue}
             secureTextEntry={secureTextEntry}
+            allowPasswordToggle={secureTextEntry}
             keyboardType={keyboardType}
             onChangeText={(text) => setField(key, text)}
             autoCapitalize="none"
+            placeholder={label}
           />
         </View>
       );
@@ -542,7 +545,15 @@ export default function JourneyFullScreen(): React.ReactElement {
         {sessionPayload ? (
           <View style={styles.section}>
             <Text style={commonStyles.journeySectionTitle}>Active session</Text>
-            <Text style={commonStyles.codeText}>{sessionPayload}</Text>
+            <View style={commonStyles.payloadScrollContainer}>
+              <ScrollView
+                style={commonStyles.payloadScroll}
+                contentContainerStyle={commonStyles.payloadScrollContent}
+                nestedScrollEnabled
+              >
+                <Text style={commonStyles.codeText}>{sessionPayload}</Text>
+              </ScrollView>
+            </View>
             <TouchableOpacity
               style={commonStyles.journeyButtonPrimary}
               onPress={onLogout}
@@ -554,8 +565,8 @@ export default function JourneyFullScreen(): React.ReactElement {
         ) : (
           <View style={styles.section}>
             <Text style={commonStyles.journeySectionTitle}>Start Journey</Text>
-            <TextInput
-              style={commonStyles.journeyInput}
+            <PingTextInput
+              label="Journey name"
               value={journeyName}
               onChangeText={setJourneyName}
               placeholder="Journey name"
@@ -592,8 +603,8 @@ export default function JourneyFullScreen(): React.ReactElement {
 
         <View style={styles.section}>
           <Text style={commonStyles.journeySectionTitle}>Resume</Text>
-          <TextInput
-            style={commonStyles.journeyInput}
+          <PingTextInput
+            label="Resume URL"
             value={resumeUrl}
             onChangeText={setResumeUrl}
             placeholder="Resume URL"
@@ -624,7 +635,7 @@ const styles = StyleSheet.create({
   },
   callbackCard: {
     borderWidth: 1,
-    borderColor: '#D5D5D5',
+    borderColor: colors.journeyCallbackCardBorder,
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
@@ -632,17 +643,17 @@ const styles = StyleSheet.create({
   callbackType: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#212121',
+    color: colors.journeyCallbackType,
     marginBottom: 4,
   },
   callbackLabel: {
     fontSize: 15,
-    color: '#666666',
+    color: colors.journeyCallbackLabel,
     marginBottom: 8,
   },
   integrationText: {
     fontSize: 14,
-    color: '#8C2D2D',
+    color: colors.journeyIntegrationText,
   },
   switchRow: {
     alignItems: 'center',
@@ -650,38 +661,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   switchLabel: {
-    color: '#212121',
+    color: colors.journeyCallbackType,
     fontSize: 15,
     flex: 1,
     paddingRight: 12,
   },
   optionButton: {
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: colors.journeyChoiceBorder,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 8,
   },
   optionButtonSelected: {
-    backgroundColor: '#CF003B',
-    borderColor: '#CF003B',
+    backgroundColor: colors.journeyChoiceSelected,
+    borderColor: colors.journeyChoiceSelected,
   },
   optionButtonText: {
-    color: '#1F1F1F',
+    color: colors.journeyChoiceText,
     fontSize: 15,
     fontWeight: '500',
   },
   optionButtonTextSelected: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   issueText: {
-    color: '#B00020',
+    color: colors.error,
     fontSize: 14,
     marginBottom: 6,
   },
   errorText: {
-    color: '#B00020',
+    color: colors.error,
     fontSize: 14,
   },
 });

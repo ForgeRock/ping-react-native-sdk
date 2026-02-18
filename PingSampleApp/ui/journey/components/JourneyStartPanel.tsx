@@ -11,12 +11,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
+import PingTextInput from '../../components/PingTextInput';
 
 /**
  * Props for the Journey start panel.
@@ -73,12 +73,12 @@ export default function JourneyStartPanel(
     <>
       {showJourneyInput ? (
         <>
-          <TextInput
-            style={commonStyles.input}
+          <PingTextInput
+            label="Journey name"
             placeholder="Enter journey name"
-            placeholderTextColor={colors.gray}
             value={journeyName}
             onChangeText={onJourneyNameChange}
+            autoCapitalize="none"
           />
           {suggestedJourneys.length > 0 ? (
             <ScrollView

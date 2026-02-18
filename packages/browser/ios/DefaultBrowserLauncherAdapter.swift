@@ -12,7 +12,7 @@ import Foundation
 import PingBrowser
 
 /// Default adapter that delegates to the Ping BrowserLauncher singleton.
-public struct DefaultBrowserLauncherAdapter: @MainActor BrowserLaunching {
+public struct DefaultBrowserLauncherAdapter: BrowserLaunching {
   public init() {}
 
   public func launch(
@@ -31,7 +31,7 @@ public struct DefaultBrowserLauncherAdapter: @MainActor BrowserLaunching {
     )
   }
 
-  @MainActor public func reset() {
+  public func reset() {
     BrowserLauncher.currentBrowser.reset()
   }
 }

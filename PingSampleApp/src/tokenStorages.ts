@@ -45,7 +45,7 @@ export function configureOidcStorageInfo(): StorageInfo {
     };
     const resolvedConfig = configureOidcStorage(baseConfig);
     oidcStorage = { config: resolvedConfig };
-    console.log("🔑 Created OIDC Storage:", resolvedConfig);
+    console.log("Created OIDC Storage:", resolvedConfig);
   }
   return oidcStorage;
 }
@@ -72,7 +72,7 @@ export function configureSessionStorageInfo(): StorageInfo {
     };
     const resolvedConfig = configureSessionStorage(baseConfig);
     sessionStorage = { config: resolvedConfig };
-    console.log("🎫 Created Session Storage:", resolvedConfig);
+    console.log("Created Session Storage:", resolvedConfig);
   }
   return sessionStorage;
 }

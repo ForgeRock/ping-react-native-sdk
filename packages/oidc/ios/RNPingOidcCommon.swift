@@ -32,10 +32,10 @@ public class RNPingOidcCommon: NSObject {
 
   // MARK: - Registries
 
-  /// Dedicated registry for OIDC clients.
-  private static let clientRegistry: Registry = SimpleRegistry()
-  /// Dedicated registry for OIDC web clients.
-  private static let webRegistry: Registry = SimpleRegistry()
+  /// Shared core registry for OIDC clients.
+  private static let clientRegistry: Registry = CoreRuntime.oidcClientRegistry
+  /// Shared core registry for OIDC web clients.
+  private static let webRegistry: Registry = CoreRuntime.oidcWebClientRegistry
 
   /// Specific key for identifying the create queue.
   private static let createQueueKey = DispatchSpecificKey<Void>()
@@ -148,8 +148,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func clientToken(
     _ clientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(clientId, registry: clientRegistry) as? OidcClientHandle else {
@@ -182,8 +182,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func clientRefresh(
     _ clientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(clientId, registry: clientRegistry) as? OidcClientHandle else {
@@ -218,8 +218,8 @@ public class RNPingOidcCommon: NSObject {
   public static func clientUserinfo(
     _ clientId: String,
     cache: Bool,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(clientId, registry: clientRegistry) as? OidcClientHandle else {
@@ -252,8 +252,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func clientRevoke(
     _ clientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(clientId, registry: clientRegistry) as? OidcClientHandle else {
@@ -280,8 +280,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func clientEndSession(
     _ clientId: String,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(clientId, registry: clientRegistry) as? OidcClientHandle else {
@@ -312,9 +312,10 @@ public class RNPingOidcCommon: NSObject {
   public static func authorize(
     _ webClientId: String,
     options: NSDictionary,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
+    let params = OidcConfigParser.buildAuthorizeParams(from: options)
     Task { @MainActor in
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
         let error = GenericError(
@@ -327,7 +328,6 @@ public class RNPingOidcCommon: NSObject {
       }
 
       do {
-        let params = OidcConfigParser.buildAuthorizeParams(from: options)
         let result = try await handle.web.authorize { config in
           config.additionalParameters = params
         }
@@ -376,8 +376,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func hasUser(
     _ webClientId: String,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
@@ -411,8 +411,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func token(
     _ webClientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
@@ -455,8 +455,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func refresh(
     _ webClientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
@@ -501,8 +501,8 @@ public class RNPingOidcCommon: NSObject {
   public static func userinfo(
     _ webClientId: String,
     cache: Bool,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
@@ -545,8 +545,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func revoke(
     _ webClientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {
@@ -584,8 +584,8 @@ public class RNPingOidcCommon: NSObject {
   @objc
   public static func logout(
     _ webClientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     Task {
       guard let handle = await RegistrySync.resolve(webClientId, registry: webRegistry) as? OidcWebHandle else {

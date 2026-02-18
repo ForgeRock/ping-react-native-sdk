@@ -135,9 +135,17 @@ export default function DeviceProfileScreen(): JSX.Element {
       {profile && (
         <View style={commonStyles.codeBox}>
           <Text style={commonStyles.codeTitle}>Collected Profile</Text>
-          <Text style={commonStyles.codeText}>
-            {JSON.stringify(profile, null, 2)}
-          </Text>
+          <View style={commonStyles.payloadScrollContainer}>
+            <ScrollView
+              style={commonStyles.payloadScroll}
+              contentContainerStyle={commonStyles.payloadScrollContent}
+              nestedScrollEnabled
+            >
+              <Text style={commonStyles.codeText}>
+                {JSON.stringify(profile, null, 2)}
+              </Text>
+            </ScrollView>
+          </View>
         </View>
       )}
     </ScrollView>

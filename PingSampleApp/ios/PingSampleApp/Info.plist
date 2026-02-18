@@ -33,6 +33,12 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>MaterialIcons.ttf</string>
+		<string>Montserrat-Regular.ttf</string>
+		<string>Montserrat-Medium.ttf</string>
+	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

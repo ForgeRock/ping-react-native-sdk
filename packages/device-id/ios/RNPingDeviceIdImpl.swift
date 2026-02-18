@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import Foundation
-import React
+@preconcurrency import React
 import PingDeviceId
 
 /// Implementation of the native device ID bridge for React Native.
@@ -14,6 +14,7 @@ import PingDeviceId
 public class RNPingDeviceIdImpl: NSObject {
 
   /// Shared singleton instance.
+  @MainActor
   @objc public static let shared = RNPingDeviceIdImpl()
 
   /// Resolves the most useful message from SDK errors, unwrapping nested errors when available.
@@ -59,11 +60,12 @@ public class RNPingDeviceIdImpl: NSObject {
   ///   - resolve: Promise resolver for the identifier string.
   ///   - reject: Promise rejecter for errors.
   @objc
+  @MainActor
   public func getDefaultDeviceId(
     _ resolve: @escaping RCTPromiseResolveBlock,
     rejecter reject: @escaping RCTPromiseRejectBlock
   ) {
-    Task {
+    Task { @MainActor in
       switch Self.defaultIdentifierResult {
       case .success(let identifier):
         do {

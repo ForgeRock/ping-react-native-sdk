@@ -7,7 +7,7 @@ of the MIT license. See the LICENSE file for details.
 
 # React Native Journey (`@ping-identity/rn-journey`)
 
-Native-backed Journey orchestration for React Native, with Android-first maturity and iOS follow-up parity.
+Native-backed Journey orchestration for React Native with Android and iOS parity for core Journey callbacks, shared error contracts, and OIDC composition.
 
 ## Install
 
@@ -35,7 +35,7 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 - Multi-client support is explicit (`journey(...)` creates isolated native runtime instances).
 - Shared contracts come from `@ping-identity/rn-types` (including `GenericError`, `Node`, and callback shapes).
 
-## Architecture (Android-first)
+## Architecture
 
 ### Runtime flow
 
@@ -47,16 +47,18 @@ import { journey, useJourney } from '@ping-identity/rn-journey';
 6. Native applies callback values, progresses the flow, and returns the next node.
 7. On success, JS can fetch user session via `user()` and end session via `logoutUser()`.
 
-### Android module layout
+### Native module layout
 
-- `RNPingJourneyModule.kt`: TurboModule entry point.
-- `RNPingJourneyClassicModule.kt`: legacy bridge entry point.
-- `RNPingJourneyCommon.kt`: shared orchestration/state for both bridges.
-- `JourneyConfigParser.kt`: config parsing and validation.
-- `JourneyClientFactory.kt`: native workflow creation + logger/storage composition.
-- `JourneyNodeMapper.kt`: node/callback payload mapping to JS.
-- `JourneyCallbackValueApplier.kt`: callback mutation rules and validation.
-- `JourneyErrorCodes.kt` + `JourneyErrorMapper.kt`: stable `GenericError`-aligned rejections.
+- Android:
+  - `RNPingJourneyModule.kt`: TurboModule entry point.
+  - `RNPingJourneyClassicModule.kt`: legacy bridge entry point.
+  - `RNPingJourneyCommon.kt`: shared orchestration/state for both bridges.
+  - `JourneyConfigParser.kt`, `JourneyClientFactory.kt`, `JourneyNodeMapper.kt`, `JourneyCallbackValueApplier.kt`, `JourneyErrorCodes.kt`, `JourneyErrorMapper.kt`
+- iOS:
+  - `RNPingJourney.mm`: TurboModule bridge entry point.
+  - `RNPingJourneyImpl.swift`: thin bridge wrapper.
+  - `RNPingJourneyCommon.swift`: shared orchestration/state.
+  - `JourneyConfigParser.swift`, `JourneyClientFactory.swift`, `JourneyNodeMapper.swift`, `JourneyCallbackValueApplier.swift`, `JourneyErrorCodes.swift`, `JourneyErrorMapper.swift`
 
 ## Public API
 
@@ -266,7 +268,7 @@ await client.logoutUser();
 await client.dispose();
 ```
 
-## Callback Matrix (Android)
+## Callback Matrix (Android + iOS core parity)
 
 | Callback | Status | Mutation Support |
 |---|---|---|
@@ -394,10 +396,13 @@ const clientFromModules = journey(
 );
 ```
 
-When Journey composes with an OIDC client handle, it reuses the full OIDC client
-configuration (for example: `openId`, `acrValues`, `signOutRedirectUri`,
-`state`, `nonce`, `uiLocales`, `refreshThreshold`, `loginHint`, `display`,
-`prompt`, and `additionalParameters`).
+When Journey composes with an OIDC client handle, it reuses OIDC client
+configuration (for example: `openId`, `acrValues`, `state`, `nonce`,
+`uiLocales`, `refreshThreshold`, `loginHint`, `display`, `prompt`, and
+`additionalParameters`).
+
+`signOutRedirectUri` is currently applied on Android. iOS native OIDC config
+does not yet expose this field; see `TODO(iOS SDK parity)` notes in native code.
 
 If you do not compose via `modules.oidc.client` or `config.oidcClient`, provide
 direct OIDC fields on `JourneyConfig`.
@@ -416,16 +421,22 @@ Current Journey package test strategy includes:
 
 - JS unit tests for client lifecycle (`init`, `start`, `next`, `resume`, `user`, `logoutUser`, `dispose`).
 - Android unit tests for parser, mapper, callback applier, and error mapping.
-- Callback mutation tests for all core Android callback families listed in the matrix.
+- iOS Swift tests for parser, mapper, callback applier, factory wiring, and common error behavior are present under `packages/journey/ios/Tests`.
+- Current CocoaPods/Xcode schemes are not configured with a Journey test action (`xcodebuild test` on `PingJourney`/`RNPingJourney` is unavailable), so iOS tests require explicit test-target wiring in the workspace to run automatically.
+- Callback mutation tests for core callback families listed in the matrix.
 
-Recommended release gate for Android-first milestone:
+Recommended release gate:
 
 1. `yarn workspace @ping-identity/rn-journey build`
-2. `yarn workspace @ping-identity/rn-journey test`
+2. `yarn jest --config packages/journey/jest.config.js --runInBand`
 3. `./gradlew :ping-identity_rn-journey:compileDebugKotlin`
 4. `./gradlew :ping-identity_rn-journey:testDebugUnitTest`
+5. `yarn sample:run:ios`
 
 ## Platform Status
 
-- Android: primary implementation target for this milestone.
-- iOS: existing bridge available; callback parity hardening and lifecycle parity remain follow-up work.
+- Android: core callbacks and composition contracts implemented.
+- iOS: core callbacks and composition contracts implemented.
+- Known iOS native SDK gaps (explicitly flagged in code with `TODO(iOS SDK parity)`):
+  - `sessionStorageId` composition is not currently supported because PingJourney iOS does not expose Session module configuration publicly.
+  - `signOutRedirectUri` is not currently exposed by iOS OIDC client config.

@@ -13,9 +13,33 @@ import RNPingCore
 @available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingLoggerCommon: NSObject {
+  /// Thread-safe mapping store for JavaScript logger ids to native registry ids.
+  private final class JsLoggerIdStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var map: [String: String] = [:]
+
+    func get(_ id: String) -> String? {
+      lock.lock()
+      let value = map[id]
+      lock.unlock()
+      return value
+    }
+
+    func set(_ id: String, registryId: String) {
+      lock.lock()
+      map[id] = registryId
+      lock.unlock()
+    }
+
+    func clear() {
+      lock.lock()
+      map.removeAll()
+      lock.unlock()
+    }
+  }
 
   /// Handle for storing logger configuration in the registry.
-  final class LoggerHandle: NativeHandle {
+  final class LoggerHandle: NativeHandle, @unchecked Sendable {
     /// The log level for this logger instance.
     var level: String
     /// Creates a new logger handle with the specified configuration.
@@ -36,7 +60,7 @@ public class RNPingLoggerCommon: NSObject {
   }()
 
   /// Maps JavaScript logger IDs to native registry IDs.
-  private static var jsIdToRegistryId: [String: String] = [:]
+  private static let jsIdToRegistryIdStore = JsLoggerIdStore()
 
   /// Synchronizes logger configuration from JavaScript to native.
   ///
@@ -66,27 +90,29 @@ public class RNPingLoggerCommon: NSObject {
       "RNPingLoggerCommon.syncInternal must be called on syncQueue"
     )
 
-    var registryId = jsIdToRegistryId[id]
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      if let registryId = registryId,
-         let handle = await CoreRuntime.loggerRegistry.resolve(registryId) as? LoggerHandle {
-        handle.level = level
-        semaphore.signal()
-        return
-      }
-
-      let handle = LoggerHandle(level: level)
-      let newId = await CoreRuntime.loggerRegistry.register(handle)
-      registryId = newId
-      semaphore.signal()
+    var registryId = jsIdToRegistryIdStore.get(id)
+    if let registryId,
+       let handle = RegistrySync.resolveSync(
+        registryId,
+        registry: CoreRuntime.loggerRegistry,
+        queueKey: syncQueueKey,
+        context: "RNPingLoggerCommon.syncInternal"
+       ) as? LoggerHandle {
+      handle.level = level
+      jsIdToRegistryIdStore.set(id, registryId: registryId)
+      return
     }
 
-    semaphore.wait()
+    let handle = LoggerHandle(level: level)
+    registryId = RegistrySync.registerSync(
+      handle,
+      registry: CoreRuntime.loggerRegistry,
+      queueKey: syncQueueKey,
+      context: "RNPingLoggerCommon.syncInternal"
+    )
 
     if let registryId = registryId {
-      jsIdToRegistryId[id] = registryId
+      jsIdToRegistryIdStore.set(id, registryId: registryId)
     }
   }
 
@@ -95,12 +121,12 @@ public class RNPingLoggerCommon: NSObject {
   /// - Parameter id: The JavaScript logger ID.
   /// - Returns: The corresponding registry ID, or nil if not found.
   static func _testRegistryId(for id: String) -> String? {
-    jsIdToRegistryId[id]
+    jsIdToRegistryIdStore.get(id)
   }
 
   /// Test helper to reset the ID mapping.
   static func _testReset() {
-    jsIdToRegistryId.removeAll()
+    jsIdToRegistryIdStore.clear()
   }
 #endif
 }

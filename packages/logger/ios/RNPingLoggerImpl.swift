@@ -7,14 +7,14 @@
  
 import Foundation
 import PingLogger
-import React
+@preconcurrency import React
 import RNPingCore
 
 /// Implementation of the native logger bridge for React Native.
 /// Manages logger creation, configuration, and synchronization with the PingLogger framework.
 @available(iOS 16.0.0, *)
 @objcMembers
-public class RNPingLoggerImpl: NSObject {
+public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
   @objc public static let shared = RNPingLoggerImpl()
@@ -35,7 +35,7 @@ public class RNPingLoggerImpl: NSObject {
   // MARK: - Registry Handle
 
   /// Handle for storing logger configuration in the registry.
-  final class LoggerHandle: NativeHandle {
+  final class LoggerHandle: NativeHandle, @unchecked Sendable {
     /// The native log level for this logger instance.
     var level: NativeLoggerLevel
     
@@ -76,17 +76,14 @@ public class RNPingLoggerImpl: NSObject {
     )
 
     let level = parseLevel(config["level"])
-    var id = ""
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      let handle = LoggerHandle(level: level)
-      id = await CoreRuntime.loggerRegistry.register(handle)
-      applyNativeLevel(level)
-      semaphore.signal()
-    }
-
-    semaphore.wait()
+    let handle = LoggerHandle(level: level)
+    let id = RegistrySync.registerSync(
+      handle,
+      registry: CoreRuntime.loggerRegistry,
+      queueKey: createQueueKey,
+      context: "RNPingLoggerImpl.create"
+    )
+    applyNativeLevel(level)
     return id
   }
 
@@ -103,8 +100,13 @@ public class RNPingLoggerImpl: NSObject {
       return
     }
 
-    Task {
-      guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle else {
+    Self.createQueue.async {
+      guard let handle = RegistrySync.resolveSync(
+        id,
+        registry: CoreRuntime.loggerRegistry,
+        queueKey: Self.createQueueKey,
+        context: "RNPingLoggerImpl.syncLogger"
+      ) as? LoggerHandle else {
         print("RNPingLogger: No logger registered for id \(id)")
         return
       }
@@ -123,21 +125,20 @@ public class RNPingLoggerImpl: NSObject {
       return false
     }
 
-    var applied = false
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      if let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle {
-        Self.applyNativeLevel(handle.level)
-        applied = true
-      } else {
+    return Self.createQueue.sync {
+      guard let handle = RegistrySync.resolveSync(
+        id,
+        registry: CoreRuntime.loggerRegistry,
+        queueKey: Self.createQueueKey,
+        context: "RNPingLoggerImpl.applyLogger"
+      ) as? LoggerHandle else {
         print("RNPingLogger: No logger registered for id \(id)")
+        return false
       }
-      semaphore.signal()
-    }
 
-    semaphore.wait()
-    return applied
+      Self.applyNativeLevel(handle.level)
+      return true
+    }
   }
 
   // MARK: - Helpers

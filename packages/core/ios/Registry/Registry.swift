@@ -11,7 +11,7 @@ import Foundation
 ///
 /// Implementations generate stable ids, store handles,
 /// and clean up when entries are removed.
-public protocol Registry {
+public protocol Registry: Sendable {
     /// Register a native instance and return the generated id that can be used to retrieve it later.
     func register(_ instance: NativeHandle) async -> String
 

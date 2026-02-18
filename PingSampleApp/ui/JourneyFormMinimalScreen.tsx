@@ -10,13 +10,13 @@ import {
   Alert,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { commonStyles } from '../src/styles/common';
 import JourneyFieldRenderer from './journey/components/renderers/JourneyFieldRenderer';
+import PingTextInput from './components/PingTextInput';
 
 /**
  * Minimal Journey sample using `useJourney` + `useJourneyForm`.
@@ -50,9 +50,8 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
       <View style={commonStyles.journeyCard}>
         <Text style={commonStyles.journeyTitle}>Journey (minimal useJourneyForm)</Text>
 
-        <Text style={commonStyles.journeyLabel}>Journey name</Text>
-        <TextInput
-          style={commonStyles.journeyInput}
+        <PingTextInput
+          label="Journey name"
           value={journeyName}
           onChangeText={setJourneyName}
           placeholder="Login"

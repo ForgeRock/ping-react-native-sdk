@@ -13,6 +13,40 @@ import RNPingCore
 /// TODO: Add logging once logger module is available and error shapes
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
+  /// Sendable wrapper for profile collection promise callbacks.
+  private final class ProfilePromiseHandlers: @unchecked Sendable {
+    private let resolver: (NSDictionary) -> Void
+    private let rejecter: (String, String, NSError?) -> Void
+
+    init(
+      resolver: @escaping (NSDictionary) -> Void,
+      rejecter: @escaping (String, String, NSError?) -> Void
+    ) {
+      self.resolver = resolver
+      self.rejecter = rejecter
+    }
+
+    func resolve(_ payload: NSDictionary) {
+      resolver(payload)
+    }
+
+    func reject(code: String, message: String, error: NSError?) {
+      rejecter(code, message, error)
+    }
+  }
+
+  /// Sendable wrapper for journey-scoped profile callback promise callbacks.
+  private final class JourneyPromiseHandlers: @unchecked Sendable {
+    private let resolver: (Any?) -> Void
+
+    init(resolver: @escaping (Any?) -> Void) {
+      self.resolver = resolver
+    }
+
+    func resolve(_ payload: Any?) {
+      resolver(payload)
+    }
+  }
 
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
@@ -26,23 +60,23 @@ public class RNPingDeviceProfileCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    let locationRequested = collectors.contains("location")
     let nativeCollectors = buildCollectors(from: collectors, includeLocation: true)
+    let handlers = ProfilePromiseHandlers(resolver: resolver, rejecter: rejecter)
 
     Task {
       do {
         if nativeCollectors.isEmpty {
-          resolver([:] as NSDictionary)
+          handlers.resolve([:] as NSDictionary)
           return
         }
 
         let payload = try await collectPayload(from: nativeCollectors)
-        resolver(NSDictionary(dictionary: payload))
+        handlers.resolve(NSDictionary(dictionary: payload))
       } catch {
-        rejecter(
-          "DEVICE_PROFILE_COLLECT_ERROR",
-          "Failed to collect device profile: \(error.localizedDescription)",
-          error as NSError
+        handlers.reject(
+          code: "DEVICE_PROFILE_COLLECT_ERROR",
+          message: "Failed to collect device profile: \(error.localizedDescription)",
+          error: error as NSError
         )
       }
     }
@@ -62,13 +96,14 @@ public class RNPingDeviceProfileCommon: NSObject {
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    _ = rejecter
     let locationRequested = collectors.contains("location")
-    let metadataCollectors = buildCollectors(from: collectors, includeLocation: false)
-    let metadataRequested = !metadataCollectors.isEmpty
+    let metadataRequested = !buildCollectors(from: collectors, includeLocation: false).isEmpty
+    let handlers = JourneyPromiseHandlers(resolver: resolver)
 
     Task {
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {
-        resolver(
+        handlers.resolve(
           createJourneyResultPayload(
             type: "error",
             code: "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
@@ -81,14 +116,14 @@ public class RNPingDeviceProfileCommon: NSObject {
       let result = await callback.collect { config in
         config.metadata = callback.metadata && metadataRequested
         config.location = callback.location && locationRequested
-        config.collectors { metadataCollectors }
+        config.collectors { buildCollectors(from: collectors, includeLocation: false) }
       }
 
       switch result {
       case .success:
-        resolver(createJourneyResultPayload(type: "success"))
+        handlers.resolve(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        resolver(
+        handlers.resolve(
           createJourneyResultPayload(
             type: "error",
             code: "DEVICE_PROFILE_COLLECT_ERROR",

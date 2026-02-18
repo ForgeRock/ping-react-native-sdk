@@ -44,19 +44,19 @@ export const styles = StyleSheet.create({
   },
   issueCard: {
     borderWidth: 1,
-    borderColor: '#F8D7DA',
+    borderColor: colors.warningBorder,
     borderRadius: 8,
     padding: 10,
     marginBottom: 8,
-    backgroundColor: '#FFF7F7',
+    backgroundColor: colors.warningBackgroundCard,
   },
   issueCode: {
-    color: '#8A1C23',
+    color: colors.warningText,
     fontWeight: '700',
     marginBottom: 4,
   },
   issueMessage: {
-    color: '#8A1C23',
+    color: colors.warningText,
     fontSize: 13,
   },
   disabledButton: {

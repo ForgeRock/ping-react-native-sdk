@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { commonStyles } from '../../../../src/styles/common';
 import { fieldStyles } from './fieldStyles';
 import { resolvePromptText, toDisplayString } from './valueReaders';
@@ -30,7 +30,9 @@ export default function JourneyOutputField(
         <Text style={fieldStyles.promptText}>{promptText}</Text>
       ) : null}
       {field.message ? <Text style={fieldStyles.helperText}>{field.message}</Text> : null}
-      <Text style={commonStyles.codeText}>{toDisplayString(field.raw.value)}</Text>
+      <ScrollView style={fieldStyles.payloadScroll} nestedScrollEnabled>
+        <Text style={commonStyles.codeText}>{toDisplayString(field.raw.value)}</Text>
+      </ScrollView>
     </View>
   );
 }

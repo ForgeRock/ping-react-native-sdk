@@ -6,12 +6,11 @@
  */
 
 import React from 'react';
-import { Text, TextInput, View } from 'react-native';
-import { colors } from '../../../../src/styles/colors';
-import { commonStyles } from '../../../../src/styles/common';
+import { View } from 'react-native';
 import { fieldStyles } from './fieldStyles';
 import { resolvePromptText, toDisplayString } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
+import PingTextInput from '../../../components/PingTextInput';
 
 /**
  * Renders text-like callback fields, including password and number input modes.
@@ -24,20 +23,20 @@ export default function JourneyTextField(
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
+  const isPasswordField = field.kind === 'password';
+  const secureTextEntry = isPasswordField;
 
   return (
     <View style={fieldStyles.card}>
-      {promptText.length > 0 ? (
-        <Text style={fieldStyles.promptText}>{promptText}</Text>
-      ) : null}
-      <TextInput
-        style={commonStyles.input}
+      <PingTextInput
+        label={promptText.length > 0 ? promptText : field.type}
         value={toDisplayString(currentValue)}
         onChangeText={(text) => setFieldValue(field.id, text)}
-        secureTextEntry={field.kind === 'password'}
+        secureTextEntry={secureTextEntry}
+        allowPasswordToggle={isPasswordField}
         keyboardType={field.kind === 'number' ? 'numeric' : 'default'}
-        placeholder="Enter value"
-        placeholderTextColor={colors.gray}
+        placeholder={promptText.length > 0 ? promptText : 'Enter value'}
+        autoCapitalize="none"
       />
     </View>
   );

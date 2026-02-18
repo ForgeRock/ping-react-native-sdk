@@ -6,13 +6,13 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { Text, TextInput, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import type { JourneyCallbackType, JourneyFormResult } from '@ping-identity/rn-journey';
-import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
 import JourneyFieldRenderer from './renderers/JourneyFieldRenderer';
 import { styles } from './journeyClientPanelStyles';
 import { DEFAULT_AUTO_POLLING_WAIT_MS } from '../utils/clientPanel';
+import PingTextInput from '../../components/PingTextInput';
 
 /**
  * Props for rendering the active `ContinueNode` callback area.
@@ -128,13 +128,13 @@ export default function JourneyContinuePanel(
 
       {hasSuspendedCallback ? (
         <>
-          <Text style={[commonStyles.inputLabel, styles.topGap]}>Resume URL</Text>
-          <TextInput
-            style={commonStyles.input}
+          <PingTextInput
+            containerStyle={styles.topGap}
+            label="Resume URL"
             value={resumeUrl}
             onChangeText={onResumeUrlChange}
             placeholder="myapp://oauth2redirect?..."
-            placeholderTextColor={colors.gray}
+            autoCapitalize="none"
           />
           <TouchableOpacity
             style={[commonStyles.buttonSecondary, loading ? styles.disabledButton : null]}

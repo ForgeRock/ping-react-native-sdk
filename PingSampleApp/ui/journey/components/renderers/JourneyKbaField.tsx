@@ -6,8 +6,7 @@
  */
 
 import React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../../src/styles/colors';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { commonStyles } from '../../../../src/styles/common';
 import { fieldStyles } from './fieldStyles';
 import {
@@ -17,6 +16,7 @@ import {
   resolvePromptText,
 } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
+import PingTextInput from '../../../components/PingTextInput';
 
 type JourneyKbaValue = {
   selectedQuestion?: string;
@@ -82,8 +82,8 @@ export default function JourneyKbaField(
           ))}
         </View>
       ) : null}
-      <TextInput
-        style={commonStyles.input}
+      <PingTextInput
+        label="Question"
         value={readString(kbaValue.selectedQuestion)}
         onChangeText={(text) =>
           setFieldValue(field.id, {
@@ -96,10 +96,11 @@ export default function JourneyKbaField(
           })
         }
         placeholder="Question"
-        placeholderTextColor={colors.gray}
+        autoCapitalize="none"
       />
-      <TextInput
-        style={[commonStyles.input, fieldStyles.topGap]}
+      <PingTextInput
+        containerStyle={fieldStyles.topGap}
+        label="Answer"
         value={readString(kbaValue.selectedAnswer)}
         onChangeText={(text) =>
           setFieldValue(field.id, {
@@ -112,7 +113,7 @@ export default function JourneyKbaField(
           })
         }
         placeholder="Answer"
-        placeholderTextColor={colors.gray}
+        autoCapitalize="none"
       />
     </View>
   );

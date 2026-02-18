@@ -30,7 +30,7 @@ export default function MultiStorageScreen() {
     <ScrollView contentContainerStyle={commonStyles.container}>
       {/* OIDC STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🔑 OIDC Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>OIDC Storage</Text>
 
         {!oidcStorage ? (
           <TouchableOpacity
@@ -43,19 +43,24 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <Text style={commonStyles.textSmall}>
-              Storage ID: {oidcStorage.id}
-            </Text>
-            <Text style={commonStyles.textSmall}>
-              Config: {JSON.stringify(oidcStorage.config, null, 2)}
-            </Text>
+            <View style={commonStyles.payloadScrollContainer}>
+              <ScrollView
+                style={commonStyles.payloadScroll}
+                contentContainerStyle={commonStyles.payloadScrollContent}
+                nestedScrollEnabled
+              >
+                <Text style={commonStyles.codeText}>
+                  Config: {JSON.stringify(oidcStorage.config, null, 2)}
+                </Text>
+              </ScrollView>
+            </View>
           </View>
         )}
       </View>
 
       {/* SESSION STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🎫 Session Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>Session Storage</Text>
 
         {!sessionStorage ? (
           <TouchableOpacity
@@ -68,12 +73,17 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <Text style={commonStyles.textSmall}>
-              Storage ID: {sessionStorage.id}
-            </Text>
-            <Text style={commonStyles.textSmall}>
-              Config: {JSON.stringify(sessionStorage.config, null, 2)}
-            </Text>
+            <View style={commonStyles.payloadScrollContainer}>
+              <ScrollView
+                style={commonStyles.payloadScroll}
+                contentContainerStyle={commonStyles.payloadScrollContent}
+                nestedScrollEnabled
+              >
+                <Text style={commonStyles.codeText}>
+                  Config: {JSON.stringify(sessionStorage.config, null, 2)}
+                </Text>
+              </ScrollView>
+            </View>
           </View>
         )}
       </View>

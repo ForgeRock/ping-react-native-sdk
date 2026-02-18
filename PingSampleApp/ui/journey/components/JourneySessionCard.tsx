@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { commonStyles } from '../../../src/styles/common';
 
 /**
@@ -34,7 +34,15 @@ export default function JourneySessionCard(
   return (
     <View style={commonStyles.codeBox}>
       <Text style={commonStyles.codeTitle}>User Session</Text>
-      <Text style={commonStyles.codeText}>{sessionPayload}</Text>
+      <View style={commonStyles.payloadScrollContainer}>
+        <ScrollView
+          style={commonStyles.payloadScroll}
+          contentContainerStyle={commonStyles.payloadScrollContent}
+          nestedScrollEnabled
+        >
+          <Text style={commonStyles.codeText}>{sessionPayload}</Text>
+        </ScrollView>
+      </View>
     </View>
   );
 }

@@ -12,6 +12,7 @@ import Foundation
 import PingBrowser
 
 /// Abstraction over the Ping Browser launcher for testability.
+@MainActor
 public protocol BrowserLaunching {
   func launch(
     url: URL,

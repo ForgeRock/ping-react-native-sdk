@@ -37,7 +37,14 @@ RCT_EXPORT_MODULE(RNPingDeviceIdClassic)
 RCT_EXPORT_METHOD(getDefaultDeviceId:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  [[RNPingDeviceIdImpl shared] getDefaultDeviceId:resolve rejecter:reject];
+  if ([NSThread isMainThread]) {
+    [[RNPingDeviceIdImpl shared] getDefaultDeviceId:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[RNPingDeviceIdImpl shared] getDefaultDeviceId:resolve rejecter:reject];
+  });
 }
 
 @end

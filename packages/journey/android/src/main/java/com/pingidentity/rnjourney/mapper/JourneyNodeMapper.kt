@@ -87,6 +87,8 @@ internal object JourneyNodeMapper {
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"
+                // TODO(iOS SDK parity): Android Orchestrate ErrorNode currently does not expose
+                // an HTTP status field; iOS ErrorNode can include status metadata.
                 payload["message"] = node.message
                 payload["input"] = jsonElementToAny(node.input)
             }

@@ -22,14 +22,130 @@ RCT_EXPORT_MODULE()
   return [RNPingJourneyImpl shared];
 }
 
+// Clean up native resources when the bridge is invalidated.
+- (void)invalidate
+{
+  [[self swiftImpl] invalidate];
+}
+
 // ------------------------------------------
 // configureJourney(config): Promise<string>
 // ------------------------------------------
-- (void)configureJourney:(NSDictionary *)config
+- (void)configureJourney:(JS::NativeRNPingJourney::NativeJourneyConfig &)config
                  resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject {
   NSLog(@"RNPingJourney: configureJourney called");
-  [[self swiftImpl] configureJourney:config resolver:resolve rejecter:reject];
+  NSMutableDictionary *dict = [NSMutableDictionary new];
+
+  dict[@"serverUrl"] = config.serverUrl();
+
+  NSString *realm = config.realm();
+  if (realm != nil) {
+    dict[@"realm"] = realm;
+  }
+  NSString *cookie = config.cookie();
+  if (cookie != nil) {
+    dict[@"cookie"] = cookie;
+  }
+  NSString *clientId = config.clientId();
+  if (clientId != nil) {
+    dict[@"clientId"] = clientId;
+  }
+  NSString *discoveryEndpoint = config.discoveryEndpoint();
+  if (discoveryEndpoint != nil) {
+    dict[@"discoveryEndpoint"] = discoveryEndpoint;
+  }
+  NSString *redirectUri = config.redirectUri();
+  if (redirectUri != nil) {
+    dict[@"redirectUri"] = redirectUri;
+  }
+
+  auto scopes = config.scopes();
+  if (scopes.has_value()) {
+    NSMutableArray<NSString *> *scopeArray = [NSMutableArray new];
+    for (auto scope : scopes.value()) {
+      [scopeArray addObject:scope];
+    }
+    dict[@"scopes"] = scopeArray;
+  }
+
+  auto openId = config.openId();
+  if (openId.has_value()) {
+    auto openIdValue = openId.value();
+    NSMutableDictionary *openIdDict = [NSMutableDictionary new];
+    openIdDict[@"authorizationEndpoint"] = openIdValue.authorizationEndpoint();
+    openIdDict[@"tokenEndpoint"] = openIdValue.tokenEndpoint();
+    openIdDict[@"userinfoEndpoint"] = openIdValue.userinfoEndpoint();
+    NSString *endSessionEndpoint = openIdValue.endSessionEndpoint();
+    if (endSessionEndpoint != nil) {
+      openIdDict[@"endSessionEndpoint"] = endSessionEndpoint;
+    }
+    NSString *pingEndIdpSessionEndpoint = openIdValue.pingEndIdpSessionEndpoint();
+    if (pingEndIdpSessionEndpoint != nil) {
+      openIdDict[@"pingEndIdpSessionEndpoint"] = pingEndIdpSessionEndpoint;
+    }
+    NSString *revocationEndpoint = openIdValue.revocationEndpoint();
+    if (revocationEndpoint != nil) {
+      openIdDict[@"revocationEndpoint"] = revocationEndpoint;
+    }
+    dict[@"openId"] = openIdDict;
+  }
+
+  NSString *acrValues = config.acrValues();
+  if (acrValues != nil) {
+    dict[@"acrValues"] = acrValues;
+  }
+  NSString *signOutRedirectUri = config.signOutRedirectUri();
+  if (signOutRedirectUri != nil) {
+    dict[@"signOutRedirectUri"] = signOutRedirectUri;
+  }
+  NSString *state = config.state();
+  if (state != nil) {
+    dict[@"state"] = state;
+  }
+  NSString *nonce = config.nonce();
+  if (nonce != nil) {
+    dict[@"nonce"] = nonce;
+  }
+  NSString *uiLocales = config.uiLocales();
+  if (uiLocales != nil) {
+    dict[@"uiLocales"] = uiLocales;
+  }
+  auto refreshThreshold = config.refreshThreshold();
+  if (refreshThreshold.has_value()) {
+    dict[@"refreshThreshold"] = @(refreshThreshold.value());
+  }
+  NSString *loginHint = config.loginHint();
+  if (loginHint != nil) {
+    dict[@"loginHint"] = loginHint;
+  }
+  NSString *display = config.display();
+  if (display != nil) {
+    dict[@"display"] = display;
+  }
+  NSString *prompt = config.prompt();
+  if (prompt != nil) {
+    dict[@"prompt"] = prompt;
+  }
+
+  id<NSObject> additionalParameters = config.additionalParameters();
+  if (additionalParameters != nil) {
+    dict[@"additionalParameters"] = additionalParameters;
+  }
+  NSString *sessionStorageId = config.sessionStorageId();
+  if (sessionStorageId != nil) {
+    dict[@"sessionStorageId"] = sessionStorageId;
+  }
+  NSString *loggerId = config.loggerId();
+  if (loggerId != nil) {
+    dict[@"loggerId"] = loggerId;
+  }
+  NSString *oidcClientId = config.oidcClientId();
+  if (oidcClientId != nil) {
+    dict[@"oidcClientId"] = oidcClientId;
+  }
+
+  [[self swiftImpl] configureJourney:dict resolver:resolve rejecter:reject];
 }
 
 // ------------------------------------------
@@ -63,15 +179,35 @@ RCT_EXPORT_MODULE()
 // ------------------------------------------
 - (void)next:(NSString *)journeyId
       nodeId:(NSString *)nodeId
-       input:(NSDictionary *)input
+       input:(JS::NativeRNPingJourney::NativeJourneyNextInput &)input
      resolve:(RCTPromiseResolveBlock)resolve
       reject:(RCTPromiseRejectBlock)reject {
   NSLog(@"RNPingJourney: next called for journeyId=%@ nodeId=%@", journeyId,
         nodeId);
 
+  NSMutableDictionary *inputDict = [NSMutableDictionary new];
+  auto callbacks = input.callbacks();
+  if (callbacks.has_value()) {
+    NSMutableArray<NSDictionary *> *callbackArray = [NSMutableArray new];
+    for (auto callback : callbacks.value()) {
+      NSMutableDictionary *callbackDict = [NSMutableDictionary new];
+      callbackDict[@"type"] = callback.type();
+      id<NSObject> value = callback.value();
+      if (value != nil) {
+        callbackDict[@"value"] = value;
+      }
+      auto index = callback.index();
+      if (index.has_value()) {
+        callbackDict[@"index"] = @(index.value());
+      }
+      [callbackArray addObject:callbackDict];
+    }
+    inputDict[@"callbacks"] = callbackArray;
+  }
+
   [[self swiftImpl] next:journeyId
                   nodeId:nodeId
-                   input:input
+                   input:inputDict
                 resolver:resolve
                 rejecter:reject];
 }

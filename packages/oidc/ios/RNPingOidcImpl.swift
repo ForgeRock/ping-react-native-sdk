@@ -15,6 +15,7 @@ import Foundation
 public class RNPingOidcImpl: NSObject {
 
   /// Shared singleton instance.
+  @MainActor
   public static let shared = RNPingOidcImpl()
 
   private override init() {
@@ -50,8 +51,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func clientToken(
     _ clientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.clientToken(clientId, resolver: resolver, rejecter: rejecter)
   }
@@ -64,8 +65,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func clientRefresh(
     _ clientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.clientRefresh(clientId, resolver: resolver, rejecter: rejecter)
   }
@@ -80,8 +81,8 @@ public class RNPingOidcImpl: NSObject {
   public func clientUserinfo(
     _ clientId: String,
     cache: Bool,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.clientUserinfo(clientId, cache: cache, resolver: resolver, rejecter: rejecter)
   }
@@ -94,8 +95,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func clientRevoke(
     _ clientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.clientRevoke(clientId, resolver: resolver, rejecter: rejecter)
   }
@@ -108,8 +109,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func clientEndSession(
     _ clientId: String,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.clientEndSession(clientId, resolver: resolver, rejecter: rejecter)
   }
@@ -124,8 +125,8 @@ public class RNPingOidcImpl: NSObject {
   public func authorize(
     _ webClientId: String,
     options: NSDictionary,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.authorize(webClientId, options: options, resolver: resolver, rejecter: rejecter)
   }
@@ -138,8 +139,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func hasUser(
     _ webClientId: String,
-    resolver: @escaping (Bool) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.hasUser(webClientId, resolver: resolver, rejecter: rejecter)
   }
@@ -152,8 +153,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func token(
     _ webClientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.token(webClientId, resolver: resolver, rejecter: rejecter)
   }
@@ -166,8 +167,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func refresh(
     _ webClientId: String,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.refresh(webClientId, resolver: resolver, rejecter: rejecter)
   }
@@ -182,8 +183,8 @@ public class RNPingOidcImpl: NSObject {
   public func userinfo(
     _ webClientId: String,
     cache: Bool,
-    resolver: @escaping (NSDictionary) -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.userinfo(webClientId, cache: cache, resolver: resolver, rejecter: rejecter)
   }
@@ -196,8 +197,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func revoke(
     _ webClientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.revoke(webClientId, resolver: resolver, rejecter: rejecter)
   }
@@ -210,8 +211,8 @@ public class RNPingOidcImpl: NSObject {
   ///   - rejecter: Rejecter called with a `GenericError`.
   public func logout(
     _ webClientId: String,
-    resolver: @escaping () -> Void,
-    rejecter: @escaping (String, String, NSError?) -> Void
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
   ) {
     RNPingOidcCommon.logout(webClientId, resolver: resolver, rejecter: rejecter)
   }

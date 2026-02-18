@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Text, TextInput } from 'react-native';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyHelperScreen from './ui/JourneyHelperScreen';
@@ -8,10 +9,15 @@ import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
+import UserProfileScreen from './ui/UserProfileScreen';
+import TokenScreen from './ui/TokenScreen';
+import LogoutScreen from './ui/LogoutScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { loginClient } from './src/clients';
 import { configureBrowser } from '@react-native-pingidentity/browser';
 import { configureLogger } from '@react-native-pingidentity/logger';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
+import { colors } from './src/styles/colors';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -21,12 +27,29 @@ export type RootStackParamList = {
   Logger: undefined;
   Oidc: undefined;
   DeviceProfile: undefined;
+  UserProfile: undefined;
+  Token: undefined;
+  Logout: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   useEffect(() => {
+    const textDefaults = Text.defaultProps ?? {};
+    Text.defaultProps = {
+      ...textDefaults,
+      style: [textDefaults.style, { fontFamily: 'Montserrat-Regular' }],
+    };
+
+    const textInputDefaults = TextInput.defaultProps ?? {};
+    TextInput.defaultProps = {
+      ...textInputDefaults,
+      style: [textInputDefaults.style, { fontFamily: 'Montserrat-Regular' }],
+    };
+
+    MaterialIcon.loadFont().catch(() => undefined);
+
     // Init login clients
     loginClient.init();
 
@@ -42,8 +65,8 @@ export default function App() {
         authTabs: {
           ephemeral: true,
           colorScheme: 'dark',
-          toolbarColor: '#5333a5',
-          navigationBarColor: '#001F3F',
+          toolbarColor: colors.browserToolbar,
+          navigationBarColor: colors.browserNavigationBar,
         },
       },
     });
@@ -51,7 +74,13 @@ export default function App() {
   return (
     <JourneyProvider client={loginClient}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Home">
+        <Stack.Navigator
+          initialRouteName="Home"
+          screenOptions={{
+            headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
+            headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
+          }}
+        >
           <Stack.Screen
             name="Home"
             component={HomeScreen}
@@ -65,7 +94,7 @@ export default function App() {
           <Stack.Screen
             name="JourneyHelper"
             component={JourneyHelperScreen}
-            options={{ title: 'Journey (helper-driven)' }}
+            options={{ title: 'Journey' }}
           />
           <Stack.Screen
             name="Browser"
@@ -86,6 +115,21 @@ export default function App() {
             name="DeviceProfile"
             component={DeviceProfileScreen}
             options={{ title: 'Device Profile' }}
+          />
+          <Stack.Screen
+            name="UserProfile"
+            component={UserProfileScreen}
+            options={{ title: 'User Profile' }}
+          />
+          <Stack.Screen
+            name="Token"
+            component={TokenScreen}
+            options={{ title: 'Token' }}
+          />
+          <Stack.Screen
+            name="Logout"
+            component={LogoutScreen}
+            options={{ title: 'Logout' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '../../../src/styles/colors';
 import { commonStyles } from '../../../src/styles/common';
 import {
@@ -55,9 +55,11 @@ export default function JourneyDebugPanel(
               [{entry.timestamp}] {entry.title}
             </Text>
             {entry.payload !== undefined ? (
-              <Text style={commonStyles.codeText}>
-                {debugPayloadToString(entry.payload)}
-              </Text>
+              <ScrollView style={styles.payloadScroll} nestedScrollEnabled>
+                <Text style={commonStyles.codeText}>
+                  {debugPayloadToString(entry.payload)}
+                </Text>
+              </ScrollView>
             ) : null}
           </View>
         ))
@@ -101,12 +103,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginTop: 8,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.journeyInputBackground,
   },
   eventTitle: {
     color: colors.textDark,
     fontWeight: '700',
     fontSize: 12,
     marginBottom: 6,
+  },
+  payloadScroll: {
+    maxHeight: 120,
   },
 });

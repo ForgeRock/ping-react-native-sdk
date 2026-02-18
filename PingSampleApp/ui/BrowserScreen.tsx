@@ -9,13 +9,13 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import type { BrowserError } from '@react-native-pingidentity/browser';
 import { open } from '@react-native-pingidentity/browser';
 import { commonStyles } from '../src/styles/common';
+import PingTextInput from './components/PingTextInput';
 
 export default function BrowserScreen() {
   const [url, setUrl] = useState(
@@ -61,11 +61,10 @@ export default function BrowserScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🧭 Browser</Text>
+        <Text style={commonStyles.journeySectionTitle}>Browser</Text>
 
-        <Text style={commonStyles.inputLabel}>URL</Text>
-        <TextInput
-          style={commonStyles.input}
+        <PingTextInput
+          label="URL"
           value={url}
           onChangeText={setUrl}
           placeholder="https://example.com"
@@ -79,14 +78,13 @@ export default function BrowserScreen() {
               onPress={() => setUrl(item)}
               style={commonStyles.suggestionChip}
             >
-              <Text style={commonStyles.suggestionText}>🔗 {item}</Text>
+              <Text style={commonStyles.suggestionText}>{item}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={commonStyles.inputLabel}>Callback URL Scheme</Text>
-        <TextInput
-          style={commonStyles.input}
+        <PingTextInput
+          label="Callback URL Scheme"
           value={callbackUrlScheme}
           onChangeText={setCallbackUrlScheme}
           placeholder="myapp"
@@ -94,9 +92,8 @@ export default function BrowserScreen() {
           autoCorrect={false}
         />
 
-        <Text style={commonStyles.inputLabel}>Redirect URI (optional)</Text>
-        <TextInput
-          style={commonStyles.input}
+        <PingTextInput
+          label="Redirect URI (optional)"
           value={redirectUri}
           onChangeText={setRedirectUri}
           placeholder="myapp://callback"
@@ -117,7 +114,15 @@ export default function BrowserScreen() {
       {result ? (
         <View style={commonStyles.codeBox}>
           <Text style={commonStyles.codeTitle}>Result</Text>
-          <Text style={commonStyles.codeText}>{result}</Text>
+          <View style={commonStyles.payloadScrollContainer}>
+            <ScrollView
+              style={commonStyles.payloadScroll}
+              contentContainerStyle={commonStyles.payloadScrollContent}
+              nestedScrollEnabled
+            >
+              <Text style={commonStyles.codeText}>{result}</Text>
+            </ScrollView>
+          </View>
         </View>
       ) : null}
     </ScrollView>

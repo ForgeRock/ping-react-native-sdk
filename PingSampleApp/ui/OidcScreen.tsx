@@ -70,7 +70,7 @@ export default function OidcScreen() {
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity onPress={() => toggleSection(key)}>
           <Text style={commonStyles.codeTitle}>
-            {expanded[key] ? '▼' : '▶'} {title}
+            {expanded[key] ? 'v' : '>'} {title}
           </Text>
         </TouchableOpacity>
         {!expanded[key] && isLoading ? (
@@ -78,9 +78,17 @@ export default function OidcScreen() {
         ) : null}
       </View>
       {expanded[key] ? (
-        <Text style={isError ? commonStyles.textError : commonStyles.codeText}>
-          {content}
-        </Text>
+        <View style={commonStyles.payloadScrollContainer}>
+          <ScrollView
+            style={commonStyles.payloadScroll}
+            contentContainerStyle={commonStyles.payloadScrollContent}
+            nestedScrollEnabled
+          >
+            <Text style={isError ? commonStyles.textError : commonStyles.codeText}>
+              {content}
+            </Text>
+          </ScrollView>
+        </View>
       ) : null}
     </View>
   );
@@ -406,7 +414,15 @@ export default function OidcScreen() {
               </Text>
             </TouchableOpacity>
             {showRawUserinfo && userinfo ? (
-              <Text style={commonStyles.codeText}>{userinfo}</Text>
+              <View style={commonStyles.payloadScrollContainer}>
+                <ScrollView
+                  style={commonStyles.payloadScroll}
+                  contentContainerStyle={commonStyles.payloadScrollContent}
+                  nestedScrollEnabled
+                >
+                  <Text style={commonStyles.codeText}>{userinfo}</Text>
+                </ScrollView>
+              </View>
             ) : null}
           </View>
         ) : null}

@@ -13,12 +13,9 @@ import { colors } from '../../../../src/styles/colors';
  */
 export const fieldStyles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 10,
+    padding: 0,
     marginBottom: 10,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: 'transparent',
   },
   promptText: {
     color: colors.gray,
@@ -39,25 +36,49 @@ export const fieldStyles = StyleSheet.create({
   optionWrap: {
     marginBottom: 8,
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inputFlex: {
+    flex: 1,
+  },
+  toggleButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+  },
+  toggleButtonText: {
+    color: colors.textDark,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   selectedOption: {
     borderColor: colors.primary,
-    backgroundColor: '#FCECEC',
+    backgroundColor: colors.selectedOptionBackground,
   },
   warningCard: {
     borderWidth: 1,
-    borderColor: '#F8D7DA',
+    borderColor: colors.warningBorder,
     borderRadius: 10,
-    backgroundColor: '#FFF5F5',
+    backgroundColor: colors.warningBackgroundSoft,
     padding: 10,
     marginBottom: 10,
   },
   warningTitle: {
-    color: '#8A1C23',
+    color: colors.warningText,
     fontWeight: '700',
     marginBottom: 4,
   },
   warningText: {
-    color: '#8A1C23',
+    color: colors.warningText,
     fontSize: 13,
+  },
+  payloadScroll: {
+    maxHeight: 160,
   },
 });
