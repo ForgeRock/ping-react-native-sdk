@@ -4,7 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ import {
   collectDeviceProfileForJourney,
   type DeviceProfileError,
 } from '@ping-identity/rn-device-profile';
+import { logger } from '@ping-identity/rn-logger';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -69,6 +70,7 @@ export default function JourneyScreen() {
   const [autoSubmitting, setAutoSubmitting] = useState(false);
   const processedNodesRef = useRef<Set<string>>(new Set());
   const isMountedRef = useRef(true);
+  const deviceProfileLogger = useMemo(() => logger({ level: 'debug' }), []);
 
   useEffect(() => {
     return () => {
@@ -161,7 +163,9 @@ export default function JourneyScreen() {
           'hardware',
           'network',
           'location',
-        ]);
+        ], {
+          logger: deviceProfileLogger,
+        });
         if (submission.type === 'success') {
           await next({});
         } else {
@@ -183,7 +187,7 @@ export default function JourneyScreen() {
     };
 
     handleAutoSubmit();
-  }, [node, next, journeyClient, autoSubmitting]);
+  }, [node, next, journeyClient, autoSubmitting, deviceProfileLogger]);
 
   const onStart = async () => {
     if (!journeyName.trim()) {

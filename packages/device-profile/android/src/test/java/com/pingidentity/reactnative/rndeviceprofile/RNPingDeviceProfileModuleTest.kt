@@ -82,7 +82,7 @@ class RNPingDeviceProfileModuleTest {
     val collectors = JavaOnlyArray()
     val promise = TestPromise()
 
-    module.collectDeviceProfileForJourney("journey-123", collectors, promise)
+    module.collectDeviceProfileForJourney("journey-123", collectors, null, promise)
 
     // Wait for async operation to complete
     assertTrue(promise.awaitCompletion())

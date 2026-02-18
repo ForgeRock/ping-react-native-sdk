@@ -138,6 +138,7 @@ class RNPingDeviceProfileCommonTest {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "journey-123",
       collectors,
+      null,
       promise
     )
 
@@ -161,6 +162,7 @@ class RNPingDeviceProfileCommonTest {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "journey-456",
       collectors,
+      null,
       promise
     )
 
@@ -349,6 +351,7 @@ class RNPingDeviceProfileCommonTest {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "",
       collectors,
+      null,
       promise
     )
 

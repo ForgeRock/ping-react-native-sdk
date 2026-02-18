@@ -25,7 +25,7 @@ import {
 export default function OidcScreen() {
   const webClientDefaultRef = useRef<OidcWebClient | null>(null);
   const storageRef = useRef<OidcStorage | null>(null);
-  const loggerInstance = useMemo(() => logger({ level: 'none' }), []);
+  const loggerInstance = useMemo(() => logger({ level: 'debug' }), []);
   const [result, setResult] = useState<string>('');
   const [tokens, setTokens] = useState<string>('');
   const [userinfo, setUserinfo] = useState<string>('');

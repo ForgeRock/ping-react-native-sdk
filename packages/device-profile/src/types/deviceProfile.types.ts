@@ -6,6 +6,7 @@
 */
 
 import type { GenericError } from '@ping-identity/rn-types';
+import type { LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-logger';
 /**
  * Supported device profile collectors.
  *
@@ -76,3 +77,23 @@ export type DeviceProfileCallbackInputValue = {
  */
 export type DeviceProfileJourneyResult =
   { type: 'success' };
+
+/**
+ * Optional logger configuration for device profile native calls.
+ *
+ * @remarks
+ * Mirrors OIDC logger behavior:
+ * - `nativeLogger` has highest precedence for native logger application.
+ * - `logger.nativeHandle` is used when `nativeLogger` is not provided.
+ */
+export type DeviceProfileLoggerOptions = {
+  /**
+   * Optional JavaScript logger instance.
+   */
+  logger?: LoggerInstance;
+
+  /**
+   * Optional native logger handle.
+   */
+  nativeLogger?: NativeLoggerHandle;
+};

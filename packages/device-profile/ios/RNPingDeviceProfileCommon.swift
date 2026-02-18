@@ -7,10 +7,11 @@
 
 import Foundation
 import PingDeviceProfile
+import PingLogger
 import RNPingCore
+import RNPingLogger
 
 /// Shared device profile collection logic for React Native iOS bridges.
-/// TODO: Add logging once logger module is available.
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
 
@@ -61,6 +62,7 @@ public class RNPingDeviceProfileCommon: NSObject {
   /// - Parameters:
   ///   - journeyId: Journey instance identifier.
   ///   - collectors: Ordered list of collector identifiers to execute.
+  ///   - loggerId: Optional logger configuration id resolved from the Logger module.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
   /// - Note: Rejects with a `GenericError` payload on failure.
@@ -68,9 +70,11 @@ public class RNPingDeviceProfileCommon: NSObject {
   public static func collectDeviceProfileForJourney(
     _ journeyId: String,
     collectors: [String],
+    loggerId: String?,
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    let isLoggerConfigured = RNPingLoggerImpl.shared.applyLogger(loggerId)
     let locationRequested = collectors.contains("location")
     let metadataCollectors = buildCollectors(from: collectors, includeLocation: false)
     let metadataRequested = !metadataCollectors.isEmpty
@@ -87,6 +91,9 @@ public class RNPingDeviceProfileCommon: NSObject {
       }
 
       let result = await callback.collect { config in
+        if isLoggerConfigured {
+          config.logger = LogManager.logger
+        }
         config.metadata = callback.metadata && metadataRequested
         config.location = callback.location && locationRequested
         config.collectors { metadataCollectors }
