@@ -12,24 +12,6 @@ import PingOrchestrate
 @preconcurrency import React
 import RNPingCore
 
-/// Sendable wrapper for React promise handlers captured inside async tasks.
-private final class JourneyPromiseBridge: @unchecked Sendable {
-  let resolver: RCTPromiseResolveBlock
-  let rejecter: RCTPromiseRejectBlock
-
-  init(
-    resolver: @escaping RCTPromiseResolveBlock,
-    rejecter: @escaping RCTPromiseRejectBlock
-  ) {
-    self.resolver = resolver
-    self.rejecter = rejecter
-  }
-
-  func resolve(_ value: Any?) {
-    resolver(value)
-  }
-}
-
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
@@ -63,14 +45,14 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     configure()
 
     let payload: JourneyClientPayload
     do {
       payload = try JourneyConfigParser.parse(config)
     } catch {
-      reject(JourneyErrorMapper.map(error, code: .configError), rejecter: promise.rejecter)
+      promise.reject(JourneyErrorMapper.map(error, code: .configError))
       return
     }
 
@@ -80,7 +62,7 @@ public final class RNPingJourneyCommon: NSObject {
         let journeyId = stateStore.registerJourney(journey)
         promise.resolve(journeyId)
       } catch {
-        reject(JourneyErrorMapper.map(error, code: .initError), rejecter: promise.rejecter)
+        promise.reject(JourneyErrorMapper.map(error, code: .initError))
       }
     }
   }
@@ -103,26 +85,24 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     if journeyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      reject(
+      promise.reject(
         JourneyErrorMapper.argument(
           code: .startError,
           message: "Journey name must not be empty"
-        ),
-        rejecter: promise.rejecter
+        )
       )
       return
     }
 
     Task { @MainActor in
       guard let journey = stateStore.journey(for: journeyId) else {
-        reject(
+        promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
             message: "Journey instance not found for id=\(journeyId)"
-          ),
-          rejecter: promise.rejecter
+          )
         )
         return
       }
@@ -150,23 +130,22 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     let mutations: [JourneyCallbackValueApplier.CallbackMutation]
     do {
       mutations = try JourneyCallbackValueApplier.parseInput(input)
     } catch {
-      reject(JourneyErrorMapper.map(error, code: .nextError), rejecter: promise.rejecter)
+      promise.reject(JourneyErrorMapper.map(error, code: .nextError))
       return
     }
 
     Task { @MainActor in
       guard let currentNode = stateStore.activeContinueNode(for: journeyId) else {
-        reject(
+        promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
             message: "No active ContinueNode found for journey id=\(journeyId)"
-          ),
-          rejecter: promise.rejecter
+          )
         )
         return
       }
@@ -176,7 +155,7 @@ public final class RNPingJourneyCommon: NSObject {
           try JourneyCallbackValueApplier.apply(currentNode, mutations: mutations)
         }
       } catch {
-        reject(JourneyErrorMapper.map(error, code: .nextError), rejecter: promise.rejecter)
+        promise.reject(JourneyErrorMapper.map(error, code: .nextError))
         return
       }
 
@@ -200,37 +179,34 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     if uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      reject(
+      promise.reject(
         JourneyErrorMapper.argument(
           code: .resumeError,
           message: "Resume URI must not be empty"
-        ),
-        rejecter: promise.rejecter
+        )
       )
       return
     }
 
     guard let resumeURL = URL(string: uri) else {
-      reject(
+      promise.reject(
         JourneyErrorMapper.argument(
           code: .resumeError,
           message: "Resume URI is invalid"
-        ),
-        rejecter: promise.rejecter
+        )
       )
       return
     }
 
     Task { @MainActor in
       guard let journey = stateStore.journey(for: journeyId) else {
-        reject(
+        promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
             message: "Journey instance not found for id=\(journeyId)"
-          ),
-          rejecter: promise.rejecter
+          )
         )
         return
       }
@@ -253,15 +229,14 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       guard let journey = stateStore.journey(for: journeyId) else {
-        reject(
+        promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
             message: "Journey instance not found for id=\(journeyId)"
-          ),
-          rejecter: promise.rejecter
+          )
         )
         return
       }
@@ -289,7 +264,7 @@ public final class RNPingJourneyCommon: NSObject {
         promise.resolve(payload as NSDictionary)
 
       case .failure(let error):
-        reject(JourneyErrorMapper.map(error, code: .userError), rejecter: promise.rejecter)
+        promise.reject(JourneyErrorMapper.map(error, code: .userError))
       }
     }
   }
@@ -306,15 +281,14 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       guard let journey = stateStore.journey(for: journeyId) else {
-        reject(
+        promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
             message: "Journey instance not found for id=\(journeyId)"
-          ),
-          rejecter: promise.rejecter
+          )
         )
         return
       }
@@ -338,7 +312,7 @@ public final class RNPingJourneyCommon: NSObject {
     resolver: @escaping @Sendable RCTPromiseResolveBlock,
     rejecter: @escaping @Sendable RCTPromiseRejectBlock
   ) {
-    let promise = JourneyPromiseBridge(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       stateStore.removeJourney(for: journeyId)
       promise.resolve(nil)
@@ -416,6 +390,9 @@ public final class RNPingJourneyCommon: NSObject {
 }
 
 /// Thread-safe Journey state store keyed by generated journey id.
+///
+/// - Note: `@unchecked Sendable` is used because this class owns mutable maps
+///   of native Journey state. All map reads/writes are synchronized with `NSLock`.
 private final class JourneyStateStore: @unchecked Sendable {
   private let lock = NSLock()
   private var journeyMap = [String: Journey]()

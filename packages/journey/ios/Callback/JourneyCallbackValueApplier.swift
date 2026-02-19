@@ -39,6 +39,10 @@ enum JourneyCallbackValueApplier {
   ]
 
   /// Parsed callback mutation instruction received from JavaScript.
+  ///
+  /// - Note: `@unchecked Sendable` is used because `value` is `Any?`, which
+  ///   is not statically sendable. Parsed mutations are immutable value types
+  ///   and consumed synchronously within native mutation flow.
   struct CallbackMutation: @unchecked Sendable {
     let type: String
     let value: Any?

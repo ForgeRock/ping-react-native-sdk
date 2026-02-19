@@ -14,6 +14,9 @@ import RNPingCore
 @objcMembers
 public class RNPingLoggerCommon: NSObject {
   /// Thread-safe mapping store for JavaScript logger ids to native registry ids.
+  ///
+  /// - Note: `@unchecked Sendable` is used because this class owns mutable
+  ///   dictionary state. `NSLock` guards all map access.
   private final class JsLoggerIdStore: @unchecked Sendable {
     private let lock = NSLock()
     private var map: [String: String] = [:]
@@ -39,6 +42,10 @@ public class RNPingLoggerCommon: NSObject {
   }
 
   /// Handle for storing logger configuration in the registry.
+  ///
+  /// - Note: `@unchecked Sendable` is required because this mutable reference
+  ///   type (`level`) crosses actor boundaries through `Registry`.
+  ///   Updates are serialized on `syncQueue`.
   final class LoggerHandle: NativeHandle, @unchecked Sendable {
     /// The log level for this logger instance.
     var level: String

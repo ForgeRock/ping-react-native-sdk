@@ -12,6 +12,10 @@ import RNPingCore
 
 /// Implementation of the native logger bridge for React Native.
 /// Manages logger creation, configuration, and synchronization with the PingLogger framework.
+///
+/// - Note: `@unchecked Sendable` is used because this Objective-C bridge class
+///   is shared across threads by React Native. Internal mutable operations are
+///   serialized through dedicated dispatch queues.
 @available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
@@ -35,6 +39,10 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
   // MARK: - Registry Handle
 
   /// Handle for storing logger configuration in the registry.
+  ///
+  /// - Note: `@unchecked Sendable` is required because this is a mutable
+  ///   reference type (`level`) passed through actor-based registries.
+  ///   Mutations are constrained to `createQueue`.
   final class LoggerHandle: NativeHandle, @unchecked Sendable {
     /// The native log level for this logger instance.
     var level: NativeLoggerLevel

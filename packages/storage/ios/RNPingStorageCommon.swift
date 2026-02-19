@@ -35,6 +35,10 @@ public class RNPingStorageCommon: NSObject {
   /**
    A wrapper class for storage configuration that conforms to `NativeHandle`.
    This allows storage configs to be registered in Core's NativeHandle registry.
+
+   - Note: `@unchecked Sendable` is used because this is a reference type
+   crossing actor boundaries through `Registry`. The wrapped `StorageConfig`
+   is immutable (`let`) and `Sendable`, so the handle is effectively immutable.
    */
   final class StorageConfigHandle: NativeHandle, @unchecked Sendable {
     /// The wrapped storage configuration

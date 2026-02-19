@@ -159,9 +159,34 @@ object RNPingBrowserCommon {
     }
 
     scope.launch {
+      val launchUrl = try {
+        URL(url)
+      } catch (e: MalformedURLException) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.ARGUMENT_ERROR,
+            error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+            message = e.message
+          ),
+          e
+        )
+        return@launch
+      }
+
+      if (!isSupportedHttpUrl(launchUrl)) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.ARGUMENT_ERROR,
+            error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+            message = "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported."
+          )
+        )
+        return@launch
+      }
+
       val result = try {
         val resolvedRedirectUri = redirectUri?.toUri() ?: browserLauncher.redirectUri
-        browserLauncher.launch(URL(url), resolvedRedirectUri)
+        browserLauncher.launch(launchUrl, resolvedRedirectUri)
       } catch (e: Exception) {
         Result.failure(e)
       }
@@ -226,6 +251,14 @@ object RNPingBrowserCommon {
     } catch (e: Exception) {
       false
     }
+  }
+
+  /**
+   * Validates that a URL uses an HTTP(S) scheme.
+   */
+  private fun isSupportedHttpUrl(url: URL): Boolean {
+    val scheme = url.protocol?.lowercase()
+    return scheme == "http" || scheme == "https"
   }
 
   /**

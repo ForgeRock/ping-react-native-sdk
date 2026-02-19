@@ -15,6 +15,7 @@ import android.net.Uri
 import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.test.core.app.ApplicationProvider
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReactApplicationContext
@@ -23,6 +24,8 @@ import com.pingidentity.browser.BrowserCanceledException
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,6 +56,8 @@ class RNPingBrowserCommonTest {
     val app = ApplicationProvider.getApplicationContext<Application>()
     reactContext = mockk(relaxed = true)
     every { reactContext.packageManager } returns app.packageManager
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } answers { JavaOnlyMap() }
     fakeLauncher = FakeBrowserLauncher()
     RNPingBrowserCommon.browserLauncher = fakeLauncher
     RNPingBrowserCommon.mapFactory = { JavaOnlyMap() }
@@ -64,6 +69,7 @@ class RNPingBrowserCommonTest {
     Dispatchers.resetMain()
     RNPingBrowserCommon.browserLauncher = DefaultBrowserLauncherAdapter
     RNPingBrowserCommon.mapFactory = { JavaOnlyMap() }
+    unmockkStatic(Arguments::class)
     unmockkAll()
   }
 
@@ -267,6 +273,24 @@ class RNPingBrowserCommonTest {
 
     assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
     assertTrue(promise.rejectMessage?.contains("no protocol") == true)
+  }
+
+  @Test
+  fun openRejectsWhenUrlSchemeUnsupported() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("ftp://example.com", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals(
+      "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.",
+      promise.rejectMessage
+    )
+    assertEquals(0, fakeLauncher.launchCount)
   }
 
   @Test

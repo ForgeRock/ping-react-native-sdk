@@ -13,6 +13,10 @@ import PingOidc
 import RNPingCore
 
 /// Handle for storing OIDC client instances.
+///
+/// - Note: `@unchecked Sendable` is used because upstream SDK reference types
+///   (`OidcClient`, `OidcUser`) are not declared `Sendable`. This handle is
+///   immutable (`let` properties only) after initialization.
 final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
   let payload: OidcClientPayload
   let client: OidcClient
@@ -54,6 +58,9 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
 }
 
 /// Handle for storing OIDC web client instances.
+///
+/// - Note: `@unchecked Sendable` is used because `OidcWeb` is an SDK
+///   reference type not declared `Sendable`. This wrapper remains immutable.
 final class OidcWebHandle: NativeHandle, @unchecked Sendable {
   let clientId: String
   let web: OidcWeb

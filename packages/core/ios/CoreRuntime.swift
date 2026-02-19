@@ -11,6 +11,10 @@ import Foundation
 public typealias JourneyCallbackResolver = @Sendable (String) async -> [Any]?
 
 /// Thread-safe storage for the optional Journey callback resolver.
+///
+/// - Note: `@unchecked Sendable` is used because this class stores a mutable
+///   closure reference that Swift cannot prove sendable. Access is serialized
+///   with `NSLock`, so cross-thread mutation/read is synchronized.
 private final class JourneyCallbackResolverStore: @unchecked Sendable {
     private let lock = NSLock()
     private var resolver: JourneyCallbackResolver?

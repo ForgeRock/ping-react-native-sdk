@@ -13,6 +13,10 @@ import Foundation
 /// the main thread while waiting for async registry operations.
 public enum RegistrySync {
   /// Sendable synchronization box used to bridge async work into blocking APIs.
+  ///
+  /// - Note: `@unchecked Sendable` is used because `value` is mutable.
+  ///   All reads/writes are guarded by `NSLock`, and synchronization uses
+  ///   `DispatchSemaphore`, so concurrent access remains serialized.
   private final class SyncResultBox<T>: @unchecked Sendable {
     private let lock = NSLock()
     private var value: T

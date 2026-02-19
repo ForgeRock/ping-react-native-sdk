@@ -13,41 +13,6 @@ import RNPingCore
 /// TODO: Add logging once logger module is available and error shapes
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
-  /// Sendable wrapper for profile collection promise callbacks.
-  private final class ProfilePromiseHandlers: @unchecked Sendable {
-    private let resolver: (NSDictionary) -> Void
-    private let rejecter: (String, String, NSError?) -> Void
-
-    init(
-      resolver: @escaping (NSDictionary) -> Void,
-      rejecter: @escaping (String, String, NSError?) -> Void
-    ) {
-      self.resolver = resolver
-      self.rejecter = rejecter
-    }
-
-    func resolve(_ payload: NSDictionary) {
-      resolver(payload)
-    }
-
-    func reject(code: String, message: String, error: NSError?) {
-      rejecter(code, message, error)
-    }
-  }
-
-  /// Sendable wrapper for journey-scoped profile callback promise callbacks.
-  private final class JourneyPromiseHandlers: @unchecked Sendable {
-    private let resolver: (Any?) -> Void
-
-    init(resolver: @escaping (Any?) -> Void) {
-      self.resolver = resolver
-    }
-
-    func resolve(_ payload: Any?) {
-      resolver(payload)
-    }
-  }
-
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
   ///   - collectors: Ordered list of collector identifiers to execute.
@@ -61,7 +26,7 @@ public class RNPingDeviceProfileCommon: NSObject {
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     let nativeCollectors = buildCollectors(from: collectors, includeLocation: true)
-    let handlers = ProfilePromiseHandlers(resolver: resolver, rejecter: rejecter)
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
 
     Task {
       do {
@@ -76,7 +41,7 @@ public class RNPingDeviceProfileCommon: NSObject {
         handlers.reject(
           code: "DEVICE_PROFILE_COLLECT_ERROR",
           message: "Failed to collect device profile: \(error.localizedDescription)",
-          error: error as NSError
+          underlying: error as NSError
         )
       }
     }
@@ -96,10 +61,9 @@ public class RNPingDeviceProfileCommon: NSObject {
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    _ = rejecter
     let locationRequested = collectors.contains("location")
     let metadataRequested = !buildCollectors(from: collectors, includeLocation: false).isEmpty
-    let handlers = JourneyPromiseHandlers(resolver: resolver)
+    let handlers = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
 
     Task {
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {

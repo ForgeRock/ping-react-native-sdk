@@ -16,33 +16,6 @@ import RNPingCore
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
-  /// Sendable wrapper around React Native resolver/rejecter closures.
-  ///
-  /// Swift 6 treats `Task` closures as `@Sendable`. Wrapping bridge callbacks keeps
-  /// the closure capture surface explicit while preserving the existing JS promise contract.
-  private final class PromiseHandlers: @unchecked Sendable {
-    private let resolver: (NSDictionary) -> Void
-    private let rejecter: (String, String, NSError?) -> Void
-
-    init(
-      resolver: @escaping (NSDictionary) -> Void,
-      rejecter: @escaping (String, String, NSError?) -> Void
-    ) {
-      self.resolver = resolver
-      self.rejecter = rejecter
-    }
-
-    @MainActor
-    func resolve(_ value: NSDictionary) {
-      resolver(value)
-    }
-
-    @MainActor
-    func reject(_ error: GenericError, underlying: NSError? = nil) {
-      RNPingCore.reject(error, rejecter: rejecter, underlyingError: underlying)
-    }
-  }
-
   /// Stable error codes emitted by the Browser module.
   ///
   /// Keep these in sync with JS `BrowserErrorCode` and Android `BrowserErrorCodes`.
@@ -100,7 +73,7 @@ public class RNPingBrowserCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    let handlers = PromiseHandlers(resolver: resolver, rejecter: rejecter)
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
 
     // Validate required options before launching.
     guard let callbackScheme = options["callbackUrlScheme"] as? String,
@@ -110,9 +83,7 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "callbackUrlScheme is required"
       )
-      Task { @MainActor in
-        handlers.reject(error)
-      }
+      handlers.reject(error)
       return
     }
 
@@ -122,9 +93,16 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "Invalid URL"
       )
-      Task { @MainActor in
-        handlers.reject(error)
-      }
+      handlers.reject(error)
+      return
+    }
+    guard isSupportedHttpUrl(launchUrl) else {
+      let error = GenericError(
+        type: .argumentError,
+        error: BrowserErrorCode.openError.rawValue,
+        message: "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported."
+      )
+      handlers.reject(error)
       return
     }
 
@@ -166,10 +144,10 @@ public class RNPingBrowserCommon: NSObject {
         handlers.resolve([
           "type": "success",
           "url": result.absoluteString
-        ])
+        ] as NSDictionary)
       } catch let error as BrowserError {
         if case .externalUserAgentCancelled = error {
-          handlers.resolve(["type": "cancel"])
+          handlers.resolve(["type": "cancel"] as NSDictionary)
         } else {
           // Browser errors are mapped to the shared native error contract.
           let mapped = GenericError(
@@ -181,7 +159,7 @@ public class RNPingBrowserCommon: NSObject {
         }
       } catch let error as ASWebAuthenticationSessionError {
         if error.code == .canceledLogin {
-          handlers.resolve(["type": "cancel"])
+          handlers.resolve(["type": "cancel"] as NSDictionary)
         } else {
           let mapped = GenericError(
             type: .internalError,
@@ -200,5 +178,16 @@ public class RNPingBrowserCommon: NSObject {
         handlers.reject(mapped, underlying: error as NSError)
       }
     }
+  }
+
+  /// Validates that a URL uses an HTTP(S) scheme.
+  ///
+  /// - Parameter url: URL provided from JavaScript.
+  /// - Returns: `true` when the URL scheme is `http` or `https`.
+  private static func isSupportedHttpUrl(_ url: URL) -> Bool {
+    guard let scheme = url.scheme?.lowercased() else {
+      return false
+    }
+    return scheme == "http" || scheme == "https"
   }
 }
