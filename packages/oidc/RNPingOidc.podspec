@@ -8,6 +8,8 @@ require "json"
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 Pod::Spec.new do |s|
+  new_arch_enabled = ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+
   s.name         = "RNPingOidc"
   s.version      = package["version"]
   s.summary      = package["description"]
@@ -22,13 +24,16 @@ Pod::Spec.new do |s|
   # IMPORTANT: local monorepo source path (not git)
   s.source           = { :path => "." }
 
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+  if new_arch_enabled
     s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
+    # Gating of codegen
+    install_modules_dependencies(s)
   else
     s.source_files = "ios/RNPingOidcClassic.mm"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
   end
 
-  s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
 
@@ -37,18 +42,6 @@ Pod::Spec.new do |s|
   s.dependency 'RNPingLogger'
   s.dependency 'RNPingStorage'
 
-  # Compiler flag toggle
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
-  else
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
-  end
-
-  # Gating of codegen
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
-    install_modules_dependencies(s)
-  end
-  
   # Explicitly add ReactCodegen dependency for generated specs
   s.dependency "ReactCodegen"
 end
