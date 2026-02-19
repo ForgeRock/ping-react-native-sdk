@@ -53,6 +53,9 @@ const _typeErgonomicsCheck: {
 } | null = null;
 _typeErgonomicsCheck
 
+/**
+ * Journey SDK demonstration screen with start, resume, and callback submission flows.
+ */
 export default function JourneyScreen() {
   const route = useRoute<JourneyRouteProp>();
   const { journeyClient } = route.params;

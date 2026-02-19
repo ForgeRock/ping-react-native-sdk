@@ -102,6 +102,9 @@ object RNPingStorageCommon {
     )
   }
 
+  /**
+   * Resolve and encode a registered session storage configuration by id.
+   */
   @JvmStatic
   fun configureSessionStorage(id: String): WritableMap {
     return try {
@@ -113,6 +116,9 @@ object RNPingStorageCommon {
     }
   }
 
+  /**
+   * Resolve and encode a registered OIDC storage configuration by id.
+   */
   @JvmStatic
   fun configureOidcStorage(id: String): WritableMap {
     return try {
@@ -124,6 +130,9 @@ object RNPingStorageCommon {
     }
   }
 
+  /**
+   * Encode a storage configuration object for React Native bridge consumption.
+   */
   private fun encodeConfig(config: StorageConfig): WritableMap {
     val map = Arguments.createMap()
     config.keyAlias?.let { map.putString("keyAlias", it) }

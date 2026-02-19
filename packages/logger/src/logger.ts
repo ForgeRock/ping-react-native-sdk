@@ -26,8 +26,11 @@ const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
 
 const sdkTag = `[RNPingSDK v${pkg.version}]`;
 
-// Provide a default custom logger that returns a truthy value so the SDK
-// logger does not fall back to console.error (LogBox warnings in dev).
+
+/**
+ * Provide a default custom logger that returns a truthy value so the SDK
+ * logger does not fall back to console.error (LogBox warnings in dev).
+ */
 function createCustomLogger(
   custom: LoggerConfig['custom'],
   tag: string
@@ -60,6 +63,9 @@ function createCustomLogger(
   };
 }
 
+/**
+ * Synchronize logger level to native logger state.
+ */
 function syncNativeLogger(id: string, level: LogLevel) {
   NativeLogger.syncLogger({
     id,

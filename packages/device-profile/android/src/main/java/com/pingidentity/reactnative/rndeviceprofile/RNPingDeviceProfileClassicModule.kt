@@ -26,6 +26,9 @@ class RNPingDeviceProfileClassicModule(
     const val NAME = "RNPingDeviceProfileClassic"
   }
 
+  /**
+   * Return the module name exposed to the React Native bridge.
+   */
   override fun getName(): String = NAME
 
   /**

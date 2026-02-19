@@ -31,6 +31,9 @@ class LoggerPackage : BaseReactPackage() {
       return flag.equals("true", ignoreCase = true)
     }
 
+  /**
+   * Return the architecture-specific logger module implementation.
+   */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
     return if (name == RNPingLoggerModule.NAME) {
       if (isNewArchEnabled) {
@@ -45,6 +48,9 @@ class LoggerPackage : BaseReactPackage() {
     }
   }
 
+  /**
+   * Provide React module metadata for the logger package.
+   */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()

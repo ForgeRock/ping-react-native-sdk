@@ -101,6 +101,9 @@ internal object OidcConfigParser {
     )
   }
 
+  /**
+   * Parse optional OpenID endpoint overrides from the JS config map.
+   */
   private fun parseOpenId(config: ReadableMap): OpenIdPayload? {
     if (!config.hasKey("openId")) {
       return null

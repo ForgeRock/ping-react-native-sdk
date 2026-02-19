@@ -31,6 +31,9 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/**
+ * Root sample app component that wires navigation and initializes demo clients.
+ */
 export default function App() {
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
 

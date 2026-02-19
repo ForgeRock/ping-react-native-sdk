@@ -15,6 +15,9 @@ import { getDeviceId, type DeviceIdError } from '@ping-identity/rn-device-id';
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type Props = { navigation: HomeScreenNavProp };
 
+/**
+ * Home screen with entry points for each SDK demo flow.
+ */
 export default function HomeScreen({ navigation }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);

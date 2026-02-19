@@ -21,14 +21,23 @@ import com.facebook.react.module.annotations.ReactModule
 class RNPingLoggerModule(reactContext: ReactApplicationContext) :
   NativeRNPingLoggerSpec(reactContext) {
 
+  /**
+   * Return the module name exposed to the React Native bridge.
+   */
   override fun getName(): String {
     return NAME
   }
 
+  /**
+   * Register a native logger and return its handle id.
+   */
   override fun registerLogger(config: ReadableMap): String {
     return RNPingLoggerCommon.configure(config)
   }
 
+  /**
+   * Synchronize a previously registered native logger configuration.
+   */
   override fun syncLogger(config: ReadableMap) {
     RNPingLoggerCommon.sync(config)
   }

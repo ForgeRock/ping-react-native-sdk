@@ -51,6 +51,9 @@ class RNPingDeviceProfilePackage : BaseReactPackage() {
     }
   }
 
+  /**
+   * Provide React module metadata for architecture-specific registration.
+   */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()

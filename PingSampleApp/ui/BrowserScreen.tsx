@@ -18,6 +18,9 @@ import { open } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 
+/**
+ * Browser SDK demonstration screen.
+ */
 export default function BrowserScreen() {
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
   const [url, setUrl] = useState(

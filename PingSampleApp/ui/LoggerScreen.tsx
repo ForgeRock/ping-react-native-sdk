@@ -10,6 +10,9 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 
+/**
+ * Logger SDK demonstration screen.
+ */
 export default function LoggerScreen() {
   const log = useMemo(() => logger({ level: 'info' }), []);
 

@@ -23,6 +23,9 @@ import com.facebook.react.module.annotations.ReactModule
 class RNPingStorageModule(reactContext: ReactApplicationContext) :
     NativeRNPingStorageSpec(reactContext) {
 
+    /**
+     * Return the module name exposed to the React Native bridge.
+     */
     override fun getName(): String = NAME
 
     companion object {

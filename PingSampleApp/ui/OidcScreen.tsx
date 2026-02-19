@@ -28,6 +28,9 @@ import {
   OidcWebClient,
 } from '@ping-identity/rn-oidc';
 
+/**
+ * OIDC SDK demonstration screen for authorize, token, refresh, and userinfo flows.
+ */
 export default function OidcScreen() {
   const webClientDefaultRef = useRef<OidcWebClient | null>(null);
   const storageRef = useRef<OidcStorage | null>(null);

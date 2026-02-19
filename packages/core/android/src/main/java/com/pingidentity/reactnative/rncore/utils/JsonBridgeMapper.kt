@@ -45,6 +45,9 @@ object JsonBridgeMapper {
     }
   }
 
+  /**
+   * Convert a JSON primitive into a bridge-friendly scalar type.
+   */
   private fun encodeJsonPrimitive(value: JsonPrimitive): Any? {
     if (value.isString) {
       return value.content
@@ -56,6 +59,9 @@ object JsonBridgeMapper {
     return raw
   }
 
+  /**
+   * Convert a JSON object into a writable map for nested bridge values.
+   */
   private fun encodeJsonObjectInternal(value: JsonObject): WritableMap {
     val map = Arguments.createMap()
     value.forEach { (key, element) ->
@@ -64,6 +70,9 @@ object JsonBridgeMapper {
     return map
   }
 
+  /**
+   * Convert a JSON array into a writable array for bridge transport.
+   */
   private fun encodeJsonArray(value: JsonArray): WritableArray {
     val array = Arguments.createArray()
     value.forEach { element ->
@@ -83,6 +92,9 @@ object JsonBridgeMapper {
     return array
   }
 
+  /**
+   * Write an encoded JSON value into the provided writable map.
+   */
   private fun putJsonValue(map: WritableMap, key: String, element: JsonElement) {
     when (val encoded = encodeJsonElement(element)) {
       null -> map.putNull(key)

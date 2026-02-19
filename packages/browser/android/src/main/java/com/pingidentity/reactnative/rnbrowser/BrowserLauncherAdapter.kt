@@ -23,5 +23,9 @@ internal interface BrowserLauncherAdapter {
   var authTabCustomizer: AuthTabIntent.Builder.() -> Unit
   var intentCustomizer: Intent.() -> Unit
   var redirectUri: Uri
+
+  /**
+   * Launch the browser flow and resolve with the redirect URI result.
+   */
   suspend fun launch(url: URL, redirectUri: Uri): Result<Uri>
 }

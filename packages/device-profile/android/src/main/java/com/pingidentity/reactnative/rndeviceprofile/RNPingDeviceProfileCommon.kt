@@ -216,6 +216,9 @@ object RNPingDeviceProfileCommon {
     }
   }
 
+  /**
+   * Build a normalized result payload for Journey device-profile callbacks.
+   */
   private fun createJourneyResultPayload(
     type: String,
     code: String? = null,
