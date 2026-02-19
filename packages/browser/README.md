@@ -13,6 +13,14 @@ The Ping Identity React Native Browser module provides a safe, system-browser fl
 logins. It launches Custom Tabs/Auth Tabs on Android and ASWebAuthenticationSession on iOS, then
 returns the redirect URL to JavaScript.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Error handling](#error-handling)
+- [TODO](#todo)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
@@ -107,3 +115,7 @@ try {
 ## TODO
 
 - Add an iOS test runner target to execute module unit tests.
+
+## License
+
+MIT

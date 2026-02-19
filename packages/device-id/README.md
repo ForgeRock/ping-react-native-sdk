@@ -8,14 +8,16 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native Device ID
 
-The Device ID Module provides utilities for generating and retrieving a secure, unique device identifier for device fingerprinting, fraud detection, and user authentication.
+This module provides a native-backed secure device identifier for device fingerprinting,
+risk signals, and authentication flows.
 
-## Features
+## Table of contents
 
-- **Secure Implementation**: Uses Android KeyStore and iOS Keychain/Secure Enclave-backed identifiers
-- **Thread-Safe**: All implementations are thread-safe with lazy initialization patterns
-- **Simple API**: Consistent and easy-to-use promise-based interface
-- **Cross-Platform**: Consistent behavior across Android and iOS
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Platform behavior](#platform-behavior)
+- [Error handling](#error-handling)
+- [License](#license)
 
 ## Integrating the SDK into your project
 
@@ -35,22 +37,52 @@ cd ios && pod install
 
 ## How to Use the SDK
 
-### Basic Example
+### Get the default device ID
 
-```tsx
+```ts
 import { getDeviceId } from '@ping-identity/rn-device-id';
 
-// Get the secure default device identifier
-async function initializeApp() {
-  try {
-    const deviceId = await getDeviceId();
-    console.log('Device ID:', deviceId);
-    // Use device ID for authentication, fraud detection, etc.
-  } catch (error) {
-    console.error('Failed to retrieve device ID:', error);
-  }
-}
+const deviceId = await getDeviceId();
+console.log('Device ID:', deviceId);
 ```
+
+### Optional: pass logger options
+
+The Device ID call accepts the same logger pattern used across the SDK modules.
+
+```ts
+import { getDeviceId } from '@ping-identity/rn-device-id';
+import { logger, configureLogger } from '@ping-identity/rn-logger';
+
+const log = logger({ level: 'debug' });
+const nativeLogger = configureLogger({ level: 'info' });
+
+const deviceId = await getDeviceId({
+  logger: log,
+  nativeLogger,
+});
+```
+
+### API reference
+
+```ts
+import { getDeviceId } from '@ping-identity/rn-device-id';
+import type {
+  DeviceIdError,
+  DeviceIdErrorCode,
+  DeviceIdLoggerOptions,
+} from '@ping-identity/rn-device-id';
+
+function getDeviceId(options?: DeviceIdLoggerOptions): Promise<string>;
+```
+
+## Platform behavior
+
+`getDeviceId` resolves a stable, secure identifier backed by native platform storage.
+
+- Android: backed by KeyStore-generated material and generally resets after uninstall.
+- iOS: backed by Keychain and typically persists across uninstall/reinstall.
+- Both platforms: identifier is app/device scoped and returned as a `string`.
 
 ## Error handling
 

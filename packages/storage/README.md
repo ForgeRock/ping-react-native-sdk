@@ -11,6 +11,13 @@ of the MIT license. See the LICENSE file for details.
 The PingStorage SDK provides a flexible storage interface and a set of common
 storage solutions for the Ping SDKs, serving React Native applications.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to use the SDK](#how-to-use-the-sdk)
+- [Error handling](#error-model)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
@@ -159,3 +166,7 @@ try {
   console.log(storageError.type, storageError.error, storageError.message);
 }
 ```
+
+## License
+
+MIT

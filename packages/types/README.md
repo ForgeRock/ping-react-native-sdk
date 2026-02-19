@@ -29,7 +29,7 @@ yarn add @ping-identity/rn-types
 - No native (Kotlin/Swift) constructs or platform-specific details.
 - Contracts describe expectations, not runtime behavior.
 
-### Error model
+### Error handling
 
 Errors rejected from native modules should conform to this shape (re-exported from
 `@forgerock/sdk-types`):

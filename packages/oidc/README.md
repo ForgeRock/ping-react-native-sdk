@@ -11,6 +11,13 @@ of the MIT license. See the LICENSE file for details.
 
 This module exposes native-backed OIDC clients for PingOne and ForgeRock platforms.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Android redirect configuration](#android-redirect-configuration)
+- [Error handling](#error-handling)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
@@ -233,3 +240,6 @@ try {
   console.log(oidcError.type, oidcError.error, oidcError.message);
 }
 ```
+## License
+
+MIT
