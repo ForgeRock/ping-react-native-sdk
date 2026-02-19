@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
+import JourneyRouteScreen from './ui/JourneyRouteScreen';
 import JourneyHelperScreen from './ui/JourneyHelperScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
@@ -19,10 +20,18 @@ import { configureLogger } from '@react-native-pingidentity/logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from './src/styles/colors';
 
+type ComponentWithDefaultStyle = {
+  defaultProps?: {
+    style?: unknown;
+    [key: string]: unknown;
+  };
+};
+
 export type RootStackParamList = {
   Home: undefined;
   Storage: undefined;
-  JourneyHelper: undefined;
+  JourneyRoute: undefined;
+  JourneyHelper: { journeyName?: string } | undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -36,14 +45,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   useEffect(() => {
-    const textDefaults = Text.defaultProps ?? {};
-    Text.defaultProps = {
+    const textComponent = Text as unknown as ComponentWithDefaultStyle;
+    const textDefaults = textComponent.defaultProps ?? {};
+    textComponent.defaultProps = {
       ...textDefaults,
       style: [textDefaults.style, { fontFamily: 'Montserrat-Regular' }],
     };
 
-    const textInputDefaults = TextInput.defaultProps ?? {};
-    TextInput.defaultProps = {
+    const textInputComponent = TextInput as unknown as ComponentWithDefaultStyle;
+    const textInputDefaults = textInputComponent.defaultProps ?? {};
+    textInputComponent.defaultProps = {
       ...textInputDefaults,
       style: [textInputDefaults.style, { fontFamily: 'Montserrat-Regular' }],
     };
@@ -79,6 +90,7 @@ export default function App() {
           screenOptions={{
             headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
             headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
+            headerBackButtonDisplayMode: 'minimal',
           }}
         >
           <Stack.Screen
@@ -92,9 +104,14 @@ export default function App() {
             options={{ title: 'Storage' }}
           />
           <Stack.Screen
+            name="JourneyRoute"
+            component={JourneyRouteScreen}
+            options={{ title: 'Journey Configuration' }}
+          />
+          <Stack.Screen
             name="JourneyHelper"
             component={JourneyHelperScreen}
-            options={{ title: 'Journey' }}
+            options={{ title: 'Journey Flow' }}
           />
           <Stack.Screen
             name="Browser"

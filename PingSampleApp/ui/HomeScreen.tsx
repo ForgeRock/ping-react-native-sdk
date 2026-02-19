@@ -38,7 +38,7 @@ export default function HomeScreen({ navigation }: Props) {
       title: 'Journey Flow',
       subtitle: 'Test Journey Authentication',
       icon: 'map',
-      screen: 'JourneyHelper',
+      screen: 'JourneyRoute',
     },
     {
       title: 'OIDC Login',

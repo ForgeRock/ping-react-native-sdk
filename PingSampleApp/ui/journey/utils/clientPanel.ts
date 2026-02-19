@@ -13,6 +13,11 @@ import type { JourneyNormalizedField } from '@ping-identity/rn-journey';
 export const RECENT_JOURNEYS_STORAGE_KEY = 'recentJourneys';
 
 /**
+ * Storage key used by the sample app to persist used AM test journey names.
+ */
+export const USED_TEST_JOURNEYS_STORAGE_KEY = 'usedTestJourneys';
+
+/**
  * Default polling delay used when `PollingWaitCallback` does not provide a wait time.
  */
 export const DEFAULT_AUTO_POLLING_WAIT_MS = 3000;
@@ -26,6 +31,104 @@ export const DEVICE_PROFILE_COLLECTORS = [
   'network',
   'location',
 ] as const;
+
+/**
+ * Canonical Journey names used by the sample app quick-pick row.
+ *
+ * @remarks
+ * Includes core callback-focused AM test journeys plus common baseline flows.
+ */
+export const TEST_JOURNEY_NAME_SUGGESTIONS = [
+  'NamePasswordCallbackTest',
+  'TextInputCallbackTest',
+  'StringAttributeInputCallbackTest',
+  'NumberAttributeInputCallbackTest',
+  'BooleanAttributeInputCallbackTest',
+  'ChoiceCallbackTest',
+  'ConfirmationCallbackTest',
+  'ConsentMappingCallbackTest',
+  'HiddenValueCallbackTest',
+  'KbaCreateCallbackTest',
+  'MetadataCallbackTest',
+  'PollingWaitCallbackTest',
+  'SuspendedTextCallbackTest',
+  'TextOutputCallbackTest',
+  'TermsAndConditionCallbackTest',
+  'ValidatedPasswordCallbackTest',
+  'ValidatedUsernameCallbackTest',
+  'DeviceProfileCallbackTest',
+  'TEST-e2e-recaptcha-enterprise',
+  'TEST_PING_ONE_PROTECT_INITIALIZE',
+  'TEST_PING_ONE_PROTECT_EVALUATE',
+  'device-bind',
+  'device-verifier',
+  'key-attestation',
+] as const;
+
+/**
+ * Enables AM test journey suggestions in development builds.
+ *
+ * @remarks
+ * Keep this `false` for normal sample usage and flip to `true` only when
+ * running callback/test-journey validation.
+ */
+export const ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV = false;
+
+/**
+ * Runtime flag used by Journey route UI to decide whether test journeys are shown.
+ */
+export const SHOW_AM_TEST_JOURNEY_SUGGESTIONS =
+  __DEV__ && ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV;
+
+/**
+ * Returns true when a journey name is one of the built-in AM test journeys.
+ *
+ * @param journeyName - Journey name to evaluate.
+ * @returns True when the journey belongs to the test quick-pick set.
+ */
+export function isTestJourneyName(journeyName: string): boolean {
+  const normalized = journeyName.trim();
+  return TEST_JOURNEY_NAME_SUGGESTIONS.some((name) => name === normalized);
+}
+
+/**
+ * Builds normalized recent-journey suggestions.
+ *
+ * @param recentJourneys - Recently used journey names loaded from storage.
+ * @returns Unique recent journey names excluding built-in test suggestions.
+ */
+export function buildRecentJourneySuggestions(recentJourneys: string[]): string[] {
+  const seen = new Set<string>();
+
+  return recentJourneys
+    .map((value) => value.trim())
+    .filter((value) => {
+      if (!value || seen.has(value) || isTestJourneyName(value)) {
+        return false;
+      }
+      seen.add(value);
+      return true;
+    });
+}
+
+/**
+ * Builds normalized used AM test journey names.
+ *
+ * @param usedJourneys - Raw used journey list loaded from storage.
+ * @returns Unique used test journey names.
+ */
+export function buildUsedTestJourneys(usedJourneys: string[]): string[] {
+  const seen = new Set<string>();
+  return usedJourneys
+    .map((value) => value.trim())
+    .filter((value) => {
+      if (!value || seen.has(value) || !isTestJourneyName(value)) {
+        return false;
+      }
+      seen.add(value);
+      return true;
+    });
+}
 
 /**
  * Converts unknown values into display-safe strings.

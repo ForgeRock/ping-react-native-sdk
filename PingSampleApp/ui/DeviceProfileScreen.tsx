@@ -35,7 +35,7 @@ const defaultCollectorSelections: Record<DeviceProfileCollector, boolean> = {
 /**
  * Displays a simple device profile collector demo.
  */
-export default function DeviceProfileScreen(): JSX.Element {
+export default function DeviceProfileScreen(): React.ReactElement {
   const [collectorSelections, setCollectorSelections] = useState<
     Record<DeviceProfileCollector, boolean>
   >(defaultCollectorSelections);

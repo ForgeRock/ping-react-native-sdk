@@ -29,7 +29,7 @@ export default function JourneyTextField(
   return (
     <View style={fieldStyles.card}>
       <PingTextInput
-        label={promptText.length > 0 ? promptText : field.type}
+        label={promptText.length > 0 ? promptText : field.ref.type}
         value={toDisplayString(currentValue)}
         onChangeText={(text) => setFieldValue(field.id, text)}
         secureTextEntry={secureTextEntry}

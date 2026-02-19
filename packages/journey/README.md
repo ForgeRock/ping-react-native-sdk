@@ -108,6 +108,9 @@ Creates an imperative Journey client.
   - `config.nativeLogger` (native logger handle).
 - Session storage integration supports:
   - `modules.session.storage` from `@react-native-pingidentity/storage`.
+  - Current platform behavior:
+    - Android: storage handle is applied to Journey Session module.
+    - iOS: accepted for API parity, but custom handle binding is not yet applied (`TODO(iOS SDK parity)`).
 - OIDC composition supports:
   - shorthand `config.oidcClient` from `@ping-identity/rn-oidc` (`createOidcClient(...)` output),
   - direct Journey OIDC fields on `config` (base fields plus advanced OIDC options), or
@@ -438,5 +441,5 @@ Recommended release gate:
 - Android: core callbacks and composition contracts implemented.
 - iOS: core callbacks and composition contracts implemented.
 - Known iOS native SDK gaps (explicitly flagged in code with `TODO(iOS SDK parity)`):
-  - `sessionStorageId` composition is not currently supported because PingJourney iOS does not expose Session module configuration publicly.
+  - `sessionStorageId` is accepted for cross-platform parity, but custom storage handle binding is not yet applied; iOS currently uses PingJourney SessionModule default storage.
   - `signOutRedirectUri` is not currently exposed by iOS OIDC client config.

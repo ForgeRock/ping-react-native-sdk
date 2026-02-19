@@ -231,7 +231,7 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
           </Text>
           <TouchableOpacity
             style={commonStyles.buttonPrimary}
-            onPress={() => navigation.navigate('JourneyHelper')}
+            onPress={() => navigation.navigate('JourneyRoute')}
           >
             <Text style={commonStyles.buttonText}>Start Journey</Text>
           </TouchableOpacity>

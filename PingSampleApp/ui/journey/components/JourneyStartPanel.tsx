@@ -25,7 +25,12 @@ export type JourneyStartPanelProps = {
   showJourneyInput: boolean;
   journeyName: string;
   onJourneyNameChange: (value: string) => void;
-  suggestedJourneys: string[];
+  recentJourneys: string[];
+  testJourneys: string[];
+  usedTestJourneys: ReadonlySet<string>;
+  onPressRecentJourney: (journeyName: string) => void;
+  onPressTestJourney: (journeyName: string) => void;
+  suggestionLayout?: 'horizontal_rows' | 'wrap';
   loading: boolean;
   canStart: boolean;
   onStart: () => void;
@@ -62,12 +67,19 @@ export default function JourneyStartPanel(
     showJourneyInput,
     journeyName,
     onJourneyNameChange,
-    suggestedJourneys,
+    recentJourneys,
+    testJourneys,
+    usedTestJourneys,
+    onPressRecentJourney,
+    onPressTestJourney,
+    suggestionLayout = 'horizontal_rows',
     loading,
     canStart,
     onStart,
   } = props;
-  const suggestionRows = buildSuggestionRows(suggestedJourneys, 3);
+  const useWrappedSuggestions = suggestionLayout === 'wrap';
+  const testJourneyRows = buildSuggestionRows(testJourneys, 3);
+  const recentJourneyRows = buildSuggestionRows(recentJourneys, 2);
 
   return (
     <>
@@ -80,30 +92,120 @@ export default function JourneyStartPanel(
             onChangeText={onJourneyNameChange}
             autoCapitalize="none"
           />
-          {suggestedJourneys.length > 0 ? (
-            <ScrollView
-              horizontal
-              style={styles.suggestionScroll}
-              contentContainerStyle={styles.suggestionScrollContent}
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              <View style={styles.suggestionRowsContainer}>
-                {suggestionRows.map((row, rowIndex) => (
-                  <View key={`suggestion-row-${rowIndex}`} style={styles.suggestionRow}>
-                    {row.map((name) => (
+          {testJourneys.length > 0 ? (
+            <View style={styles.suggestionPanel}>
+              <Text style={styles.suggestionPanelTitle}>AM Test Journeys</Text>
+              {useWrappedSuggestions ? (
+                <View style={[commonStyles.suggestionContainer, styles.wrappedSuggestionContainer]}>
+                  {testJourneys.map((name) => {
+                    const used = usedTestJourneys.has(name);
+                    return (
                       <TouchableOpacity
-                        key={`${rowIndex}-${name}`}
-                        onPress={() => onJourneyNameChange(name)}
-                        style={commonStyles.suggestionChip}
+                        key={`test-wrap-${name}`}
+                        onPress={() => onPressTestJourney(name)}
+                        style={[commonStyles.suggestionChip, used ? styles.usedSuggestionChip : null]}
                       >
-                        <Text style={commonStyles.suggestionText}>{name}</Text>
+                        <Text
+                          style={[
+                            commonStyles.suggestionText,
+                            used ? styles.usedSuggestionText : null,
+                          ]}
+                        >
+                          {name}
+                        </Text>
+                        {used ? (
+                          <Text style={styles.usedBadgeText}>Used</Text>
+                        ) : null}
                       </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <ScrollView
+                  horizontal
+                  style={styles.suggestionScroll}
+                  contentContainerStyle={styles.suggestionScrollContent}
+                  showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled
+                  directionalLockEnabled
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <View style={styles.suggestionRowsContainer}>
+                    {testJourneyRows.map((row, rowIndex) => (
+                      <View key={`test-journey-row-${rowIndex}`} style={styles.suggestionRow}>
+                        {row.map((name) => {
+                          const used = usedTestJourneys.has(name);
+                          return (
+                            <TouchableOpacity
+                              key={`test-${rowIndex}-${name}`}
+                              onPress={() => onPressTestJourney(name)}
+                              style={[commonStyles.suggestionChip, used ? styles.usedSuggestionChip : null]}
+                            >
+                              <Text
+                                style={[
+                                  commonStyles.suggestionText,
+                                  used ? styles.usedSuggestionText : null,
+                                ]}
+                              >
+                                {name}
+                              </Text>
+                              {used ? (
+                                <Text style={styles.usedBadgeText}>Used</Text>
+                              ) : null}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     ))}
                   </View>
-                ))}
-              </View>
-            </ScrollView>
+                </ScrollView>
+              )}
+            </View>
+          ) : null}
+
+          {recentJourneys.length > 0 ? (
+            <View style={styles.suggestionPanel}>
+              <Text style={styles.suggestionPanelTitle}>Recent Journeys</Text>
+              {useWrappedSuggestions ? (
+                <View style={[commonStyles.suggestionContainer, styles.wrappedSuggestionContainer]}>
+                  {recentJourneys.map((name) => (
+                    <TouchableOpacity
+                      key={`recent-wrap-${name}`}
+                      onPress={() => onPressRecentJourney(name)}
+                      style={commonStyles.suggestionChip}
+                    >
+                      <Text style={commonStyles.suggestionText}>{name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <ScrollView
+                  horizontal
+                  style={styles.suggestionScroll}
+                  contentContainerStyle={styles.suggestionScrollContent}
+                  showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled
+                  directionalLockEnabled
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <View style={styles.suggestionRowsContainer}>
+                    {recentJourneyRows.map((row, rowIndex) => (
+                      <View key={`recent-journey-row-${rowIndex}`} style={styles.suggestionRow}>
+                        {row.map((name) => (
+                          <TouchableOpacity
+                            key={`recent-${rowIndex}-${name}`}
+                            onPress={() => onPressRecentJourney(name)}
+                            style={commonStyles.suggestionChip}
+                          >
+                            <Text style={commonStyles.suggestionText}>{name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              )}
+            </View>
           ) : null}
         </>
       ) : null}
@@ -124,8 +226,16 @@ export default function JourneyStartPanel(
 }
 
 const styles = StyleSheet.create({
-  suggestionScroll: {
+  suggestionPanel: {
     marginTop: 8,
+  },
+  suggestionPanelTitle: {
+    color: colors.textDark,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  suggestionScroll: {
     marginBottom: 16,
   },
   suggestionScrollContent: {
@@ -138,5 +248,24 @@ const styles = StyleSheet.create({
   suggestionRow: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
+  },
+  usedSuggestionChip: {
+    borderColor: colors.success,
+    backgroundColor: colors.warningBackgroundSoft,
+  },
+  usedSuggestionText: {
+    color: colors.success,
+    fontWeight: '700',
+  },
+  usedBadgeText: {
+    marginTop: 2,
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.success,
+    textAlign: 'center',
+  },
+  wrappedSuggestionContainer: {
+    marginTop: 0,
+    marginBottom: 10,
   },
 });

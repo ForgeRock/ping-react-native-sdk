@@ -1,7 +1,6 @@
 import { journey } from '@ping-identity/rn-journey';
 import { createOidcClient } from '@ping-identity/rn-oidc';
 import { CacheStrategy, configureSessionStorage } from '@react-native-pingidentity/storage';
-import { Platform } from 'react-native';
 
 export const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',
@@ -59,12 +58,8 @@ export const loginClient = journey(
     oidc: {
       client: journeyOidcClient,
     },
-    ...(Platform.OS === 'android'
-      ? {
-          session: {
-            storage: journeySessionStorageClient1,
-          },
-        }
-      : {}),
+    session: {
+      storage: journeySessionStorageClient1,
+    },
   }
 );

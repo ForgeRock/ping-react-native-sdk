@@ -23,7 +23,6 @@ export type JourneyContinuePanelProps = {
   pollingWaitMs: number | null;
   resumeUrl: string;
   onResumeUrlChange: (value: string) => void;
-  onCollectDeviceProfile: () => Promise<void>;
   onResume: () => Promise<void>;
   onSubmit: () => Promise<void>;
 };
@@ -43,7 +42,6 @@ export default function JourneyContinuePanel(
     pollingWaitMs,
     resumeUrl,
     onResumeUrlChange,
-    onCollectDeviceProfile,
     onResume,
     onSubmit,
   } = props;
@@ -57,7 +55,11 @@ export default function JourneyContinuePanel(
   const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
   const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
   const hasManualSubmit = meta.hasManual;
-  const hasBlockingIntegration = meta.hasIntegrationRequired;
+  const hasBlockingIntegration = fields.some(
+    (field) =>
+      field.capability === 'integration_required' &&
+      field.ref.type !== 'DeviceProfileCallback'
+  );
   const hasUnsupportedCallbacks = meta.hasUnsupported;
   const hasUnacceptedRequiredAgreements = meta.hasRequiredConsentMissing;
   const canAutoAdvanceWithContinueButton =
@@ -77,10 +79,6 @@ export default function JourneyContinuePanel(
     1,
     Math.ceil((pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS) / 1000)
   );
-
-  const handleCollectDeviceProfilePress = useCallback((): void => {
-    onCollectDeviceProfile().catch(() => undefined);
-  }, [onCollectDeviceProfile]);
 
   const handleResumePress = useCallback((): void => {
     onResume().catch(() => undefined);
@@ -116,14 +114,10 @@ export default function JourneyContinuePanel(
         </Text>
       ) : null}
 
-      {hasDeviceProfileCallback ? (
-        <TouchableOpacity
-          style={[commonStyles.buttonSecondary, loading ? styles.disabledButton : null]}
-          onPress={handleCollectDeviceProfilePress}
-          disabled={loading}
-        >
-          <Text style={commonStyles.buttonTextSecondary}>Collect Device Profile</Text>
-        </TouchableOpacity>
+      {!hasManualSubmit && hasDeviceProfileCallback ? (
+        <Text style={styles.autoPollingNote}>
+          Device profile callback detected. Collecting automatically.
+        </Text>
       ) : null}
 
       {hasSuspendedCallback ? (

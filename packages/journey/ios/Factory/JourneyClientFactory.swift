@@ -47,11 +47,13 @@ final class JourneyClientFactory {
     }
 
     if payload.sessionStorageId != nil {
-      // TODO(iOS SDK parity): PingJourney iOS does not expose SessionModule
-      // configuration publicly, so Journey cannot yet apply RN session storage handles.
-      // Android supports `sessionStorageId` composition natively.
-      throw JourneyBridgeError.argument(
-        "sessionStorageId is not currently supported on iOS. Remove modules.session.storage for iOS until PingJourney exposes Session module configuration."
+      // TODO(iOS SDK parity): Bind `sessionStorageId` into PingJourney SessionModule
+      // once PingJourney exposes public session storage configuration hooks.
+      // PingJourney iOS currently owns SessionModule storage internally.
+      // We accept sessionStorageId for API parity and forward-compatibility,
+      // but custom storage handle binding is not yet applied on iOS.
+      NSLog(
+        "[RNPingJourney] sessionStorageId was provided. iOS will continue using PingJourney SessionModule default storage until public session storage binding is exposed."
       )
     }
 

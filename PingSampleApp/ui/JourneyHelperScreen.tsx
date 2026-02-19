@@ -5,22 +5,39 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../App';
 import { commonStyles } from '../src/styles/common';
 import { loginClient } from '../src/clients';
 import JourneyClientPanel from './journey/components/JourneyClientPanel';
 
+type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'>;
+
 /**
  * Renders the helper-driven Journey sample screen.
  *
+ * @param props - Native stack screen props.
  * @returns Journey helper screen element.
  */
-export default function JourneyHelperScreen(): React.ReactElement {
+export default function JourneyHelperScreen(props: Props): React.ReactElement {
+  const initialJourneyName = props.route.params?.journeyName?.trim() ?? '';
+  const onAuthenticated = useCallback((): void => {
+    props.navigation.reset({
+      index: 1,
+      routes: [{ name: 'Home' }, { name: 'UserProfile' }],
+    });
+  }, [props.navigation]);
+
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <JourneyClientPanel journeyClient={loginClient} />
+      <JourneyClientPanel
+        journeyClient={loginClient}
+        initialJourneyName={initialJourneyName}
+        autoStartOnMount={initialJourneyName.length > 0}
+        onAuthenticated={onAuthenticated}
+      />
     </ScrollView>
   );
 }
-

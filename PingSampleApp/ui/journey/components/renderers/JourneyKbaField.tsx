@@ -5,9 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { commonStyles } from '../../../../src/styles/common';
 import { fieldStyles } from './fieldStyles';
 import {
   readBoolean,
@@ -35,6 +34,7 @@ export default function JourneyKbaField(
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
+  const [isQuestionDropdownOpen, setQuestionDropdownOpen] = useState<boolean>(false);
 
   const kbaValue: JourneyKbaValue =
     (currentValue as JourneyKbaValue | undefined) ?? {
@@ -42,69 +42,79 @@ export default function JourneyKbaField(
       selectedAnswer: '',
       allowUserDefinedQuestions: false,
     };
+  const questionOptions = useMemo(
+    () =>
+      (field.options ?? []).map((option) =>
+        resolveOptionLabel(option.label, option.value, option.index)
+      ),
+    [field.options]
+  );
+  const selectedQuestion = readString(kbaValue.selectedQuestion);
+  const selectedQuestionLabel =
+    selectedQuestion.length > 0 ? selectedQuestion : 'Select a security question';
 
   return (
     <View style={fieldStyles.card}>
       {promptText.length > 0 ? (
         <Text style={fieldStyles.promptText}>{promptText}</Text>
       ) : null}
-      {field.options && field.options.length > 0 ? (
+      {questionOptions.length > 0 ? (
         <View style={fieldStyles.optionWrap}>
-          {field.options.map((option) => (
-            <TouchableOpacity
-              key={`${field.id}:question:${option.index}`}
-              style={[
-                commonStyles.buttonSecondary,
-                readString(kbaValue.selectedQuestion) ===
-                  resolveOptionLabel(option.label, option.value, option.index)
-                  ? fieldStyles.selectedOption
-                  : null,
-              ]}
-              onPress={() =>
-                setFieldValue(field.id, {
-                  selectedQuestion: resolveOptionLabel(
-                    option.label,
-                    option.value,
-                    option.index
-                  ),
-                  selectedAnswer: readString(kbaValue.selectedAnswer),
-                  allowUserDefinedQuestions: readBoolean(
-                    kbaValue.allowUserDefinedQuestions,
-                    false
-                  ),
-                })
-              }
-            >
-              <Text style={commonStyles.buttonTextSecondary}>
-                {resolveOptionLabel(option.label, option.value, option.index)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity
+            style={fieldStyles.dropdownTrigger}
+            onPress={() => setQuestionDropdownOpen((previousValue) => !previousValue)}
+          >
+            <Text style={fieldStyles.dropdownTriggerText}>{selectedQuestionLabel}</Text>
+            <Text style={fieldStyles.dropdownChevron}>
+              {isQuestionDropdownOpen ? '▲' : '▼'}
+            </Text>
+          </TouchableOpacity>
+          {isQuestionDropdownOpen ? (
+            <View style={fieldStyles.dropdownMenu}>
+              {questionOptions.map((question, index) => (
+                <TouchableOpacity
+                  key={`${field.id}:question:${index}`}
+                  style={[
+                    fieldStyles.dropdownMenuItem,
+                    selectedQuestion === question
+                      ? fieldStyles.dropdownMenuItemSelected
+                      : null,
+                  ]}
+                  onPress={() => {
+                    setFieldValue(field.id, {
+                      selectedQuestion: question,
+                      selectedAnswer: readString(kbaValue.selectedAnswer),
+                      allowUserDefinedQuestions: readBoolean(
+                        kbaValue.allowUserDefinedQuestions,
+                        false
+                      ),
+                    });
+                    setQuestionDropdownOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      fieldStyles.dropdownMenuItemText,
+                      selectedQuestion === question
+                        ? fieldStyles.dropdownMenuItemTextSelected
+                        : null,
+                    ]}
+                  >
+                    {question}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
         </View>
       ) : null}
       <PingTextInput
-        label="Question"
-        value={readString(kbaValue.selectedQuestion)}
-        onChangeText={(text) =>
-          setFieldValue(field.id, {
-            selectedQuestion: text,
-            selectedAnswer: readString(kbaValue.selectedAnswer),
-            allowUserDefinedQuestions: readBoolean(
-              kbaValue.allowUserDefinedQuestions,
-              false
-            ),
-          })
-        }
-        placeholder="Question"
-        autoCapitalize="none"
-      />
-      <PingTextInput
-        containerStyle={fieldStyles.topGap}
+        containerStyle={questionOptions.length > 0 ? fieldStyles.topGap : undefined}
         label="Answer"
         value={readString(kbaValue.selectedAnswer)}
         onChangeText={(text) =>
           setFieldValue(field.id, {
-            selectedQuestion: readString(kbaValue.selectedQuestion),
+            selectedQuestion,
             selectedAnswer: text,
             allowUserDefinedQuestions: readBoolean(
               kbaValue.allowUserDefinedQuestions,

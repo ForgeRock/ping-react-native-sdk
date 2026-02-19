@@ -156,10 +156,19 @@ export type JourneyOidcClientHandle = {
 export type JourneyModules = {
   /**
    * Session module configuration.
+   *
+   * @remarks
+   * `modules.session.storage` is currently Android-functional only.
+   * TODO(iOS SDK parity): bind custom session storage handles on iOS once
+   * native PingJourney exposes public Session module storage configuration.
    */
   session?: {
     /**
      * Session storage handle created by the storage module.
+     *
+     * @remarks
+     * Currently applied on Android. On iOS this handle is accepted for API
+     * parity but not bound to native Journey session storage yet.
      */
     storage?: SessionStorage;
   };

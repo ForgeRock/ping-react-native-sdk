@@ -6,39 +6,23 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Text, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import {
   useJourney,
   useJourneyForm,
   type JourneyCallbackType,
   type JourneyClient,
-  type JourneySubmitIssue,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
 import { commonStyles } from '../../../src/styles/common';
 import JourneyContinuePanel from './JourneyContinuePanel';
-import JourneyDebugPanel from './JourneyDebugPanel';
-import JourneySessionCard from './JourneySessionCard';
-import JourneyStartPanel from './JourneyStartPanel';
-import JourneyStatusPanel from './JourneyStatusPanel';
-import JourneySubmitIssuesCard from './JourneySubmitIssuesCard';
 import { styles } from './journeyClientPanelStyles';
-import {
-  createJourneyDebugEntry,
-  sanitizeDebugPayload,
-  type JourneyDebugEntry,
-} from '../utils/debug';
 import {
   DEFAULT_AUTO_POLLING_WAIT_MS,
   DEVICE_PROFILE_COLLECTORS,
-  RECENT_JOURNEYS_STORAGE_KEY,
-  extractGivenName,
   resolvePollingWaitMs,
 } from '../utils/clientPanel';
-
-const debugEventLimit = 80;
 
 /**
  * Props for a self-contained Journey panel bound to a single Journey client.
@@ -50,6 +34,12 @@ export type JourneyClientPanelProps = {
   journeyClient: JourneyClient;
   title?: string;
   startOptions?: JourneyStartOptions;
+  initialJourneyName?: string;
+  autoStartOnMount?: boolean;
+  /**
+   * Optional callback invoked once when an authenticated Journey session is detected.
+   */
+  onAuthenticated?: () => void;
 };
 
 /**
@@ -61,24 +51,27 @@ export type JourneyClientPanelProps = {
 export default function JourneyClientPanel(
   props: JourneyClientPanelProps
 ): React.ReactElement {
-  const { journeyClient, title, startOptions } = props;
+  const {
+    journeyClient,
+    startOptions,
+    initialJourneyName,
+    autoStartOnMount = false,
+    onAuthenticated,
+  } = props;
   const [node, { start, next, resume, user, logoutUser, loading, error }] = useJourney(journeyClient);
   const form = useJourneyForm(node);
 
-  const [debugEntries, setDebugEntries] = useState<JourneyDebugEntry[]>([]);
-  const [journeyName, setJourneyName] = useState<string>('');
-  const [suggestedJourneys, setSuggestedJourneys] = useState<string[]>([]);
-  const [showJourneyInput, setShowJourneyInput] = useState<boolean>(true);
+  const [journeyName, setJourneyName] = useState<string>(initialJourneyName?.trim() ?? '');
   const [resumeUrl, setResumeUrl] = useState<string>('');
-  const [submitIssues, setSubmitIssues] = useState<JourneySubmitIssue[]>([]);
-  const [givenName, setGivenName] = useState<string | undefined>();
-  const [sessionPayload, setSessionPayload] = useState<string | null>(null);
+  const [hasActiveSession, setHasActiveSession] = useState<boolean>(false);
   const [isSessionCheckRunning, setIsSessionCheckRunning] = useState<boolean>(true);
 
   const isMountedRef = useRef<boolean>(true);
-  const lastNodeSignatureRef = useRef<string>('');
+  const hasAutoStartedRef = useRef<boolean>(false);
   const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoResumedUrlRef = useRef<string | null>(null);
+  const hasNotifiedAuthenticatedRef = useRef<boolean>(false);
+  const lastAutoDeviceProfileRequestKeyRef = useRef<string | null>(null);
 
   const fields = form.fields;
   const callbackTypes = useMemo<Set<JourneyCallbackType>>(
@@ -88,22 +81,23 @@ export default function JourneyClientPanel(
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
   const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
   const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
-  const hasActiveSession = sessionPayload !== null;
+  const hasBlockingIntegrationCallback = fields.some(
+    (field) =>
+      field.capability === 'integration_required' &&
+      field.ref.type !== 'DeviceProfileCallback'
+  );
   const pollingWaitMs = useMemo<number | null>(() => resolvePollingWaitMs(fields), [fields]);
+  const deviceProfileRequestKey = useMemo<string>(() => {
+    return fields
+      .filter((field) => field.ref.type === 'DeviceProfileCallback')
+      .map((field) => `${field.ref.type}:${field.ref.typeIndex}`)
+      .join('|');
+  }, [fields]);
   const shouldAutoPoll =
     hasPollingWaitCallback &&
     !form.meta.hasManual &&
-    !form.meta.hasIntegrationRequired &&
+    !hasBlockingIntegrationCallback &&
     !form.meta.hasUnsupported;
-
-  const addDebugEntry = useCallback((titleValue: string, payload?: unknown): void => {
-    const entry = createJourneyDebugEntry(titleValue, sanitizeDebugPayload(payload));
-    setDebugEntries((previous) => [entry, ...previous].slice(0, debugEventLimit));
-  }, []);
-
-  const clearDebug = useCallback((): void => {
-    setDebugEntries([]);
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -116,53 +110,12 @@ export default function JourneyClientPanel(
   }, []);
 
   useEffect(() => {
-    (async (): Promise<void> => {
-      try {
-        const stored = await AsyncStorage.getItem(RECENT_JOURNEYS_STORAGE_KEY);
-        if (stored && isMountedRef.current) {
-          setSuggestedJourneys(JSON.parse(stored) as string[]);
-        }
-      } catch {
-        // Ignore suggestion load failures in sample.
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!node) {
+    if (!initialJourneyName) {
       return;
     }
-
-    const signature = `${node.type}:${JSON.stringify(node.input ?? null)}`;
-    if (lastNodeSignatureRef.current === signature) {
-      return;
-    }
-    lastNodeSignatureRef.current = signature;
-
-    if (node.type === 'ContinueNode') {
-      addDebugEntry('Received ContinueNode', {
-        callbackCount: fields.length,
-        callbackTypes: fields.map((field) => ({
-          type: field.ref.type,
-          typeIndex: field.ref.typeIndex,
-        })),
-        normalizedFields: fields.map((field) => ({
-          id: field.id,
-          type: field.ref.type,
-          kind: field.kind,
-          capability: field.capability,
-          required: field.required,
-        })),
-      });
-      return;
-    }
-
-    addDebugEntry(`Received ${node.type}`, node);
-  }, [addDebugEntry, fields, node]);
-
-  useEffect(() => {
-    setSubmitIssues([]);
-  }, [node]);
+    setJourneyName(initialJourneyName.trim());
+    hasAutoStartedRef.current = false;
+  }, [initialJourneyName]);
 
   useEffect(() => {
     if (node?.type !== 'ContinueNode' || !shouldAutoPoll || loading) {
@@ -178,7 +131,6 @@ export default function JourneyClientPanel(
     }
 
     const waitMs = Math.max(500, pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS);
-    addDebugEntry('Auto polling scheduled', { waitTimeMs: waitMs });
 
     pollingTimerRef.current = setTimeout(() => {
       pollingTimerRef.current = null;
@@ -188,40 +140,68 @@ export default function JourneyClientPanel(
 
       const runAutoPolling = async (): Promise<void> => {
         try {
-          addDebugEntry('next() payload (auto-polling)', { callbacks: [] });
           await next({});
         } catch (cause) {
-          addDebugEntry('auto polling failed', { error: String(cause) });
           Alert.alert('Polling continue failed', String(cause));
         }
       };
 
       runAutoPolling().catch(() => undefined);
     }, waitMs);
-  }, [addDebugEntry, loading, next, node?.input, node?.type, pollingWaitMs, shouldAutoPoll]);
+  }, [loading, next, node?.type, pollingWaitMs, shouldAutoPoll]);
 
-  const saveSuggestion = useCallback(
-    async (name: string): Promise<void> => {
-      const updated = [name, ...suggestedJourneys.filter((item) => item !== name)];
-      setSuggestedJourneys(updated);
-      await AsyncStorage.setItem(RECENT_JOURNEYS_STORAGE_KEY, JSON.stringify(updated));
-    },
-    [suggestedJourneys]
-  );
+  useEffect(() => {
+    if (node?.type !== 'ContinueNode' || !hasDeviceProfileCallback || loading) {
+      if (node?.type !== 'ContinueNode') {
+        lastAutoDeviceProfileRequestKeyRef.current = null;
+      }
+      return;
+    }
+
+    if (!deviceProfileRequestKey) {
+      return;
+    }
+
+    if (lastAutoDeviceProfileRequestKeyRef.current === deviceProfileRequestKey) {
+      return;
+    }
+
+    lastAutoDeviceProfileRequestKeyRef.current = deviceProfileRequestKey;
+
+    const runAutoDeviceProfile = async (): Promise<void> => {
+      try {
+        const result = await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
+        if (result.type === 'error') {
+          Alert.alert('Device profile failed', result.message ?? result.code);
+          return;
+        }
+
+        if (!form.meta.hasManual && !hasPollingWaitCallback) {
+          await next({});
+        }
+      } catch (cause) {
+        Alert.alert('Device profile failed', String(cause));
+      }
+    };
+
+    runAutoDeviceProfile().catch(() => undefined);
+  }, [
+    deviceProfileRequestKey,
+    form.meta.hasManual,
+    hasDeviceProfileCallback,
+    hasPollingWaitCallback,
+    journeyClient,
+    loading,
+    next,
+    node?.type,
+  ]);
 
   const refreshSession = useCallback(async (showError = true): Promise<void> => {
     try {
       const session = await user();
-      if (!session) {
-        setSessionPayload(null);
-        setGivenName(undefined);
-        return;
-      }
-
-      setSessionPayload(JSON.stringify(session, null, 2));
-      setGivenName(extractGivenName(session));
-      setShowJourneyInput(false);
+      setHasActiveSession(Boolean(session));
     } catch (cause) {
+      setHasActiveSession(false);
       if (showError) {
         Alert.alert('Session refresh failed', String(cause));
       }
@@ -233,12 +213,10 @@ export default function JourneyClientPanel(
 
     const loadSession = async (): Promise<void> => {
       setIsSessionCheckRunning(true);
-      addDebugEntry('user() session check requested');
       await refreshSession(false);
       if (!cancelled) {
         setIsSessionCheckRunning(false);
       }
-      addDebugEntry('user() session check completed');
     };
 
     loadSession().catch(() => {
@@ -250,13 +228,32 @@ export default function JourneyClientPanel(
     return () => {
       cancelled = true;
     };
-  }, [addDebugEntry, refreshSession]);
+  }, [refreshSession]);
 
   useEffect(() => {
     if (node?.type === 'SuccessNode') {
-      refreshSession(false).catch(() => undefined);
+      setHasActiveSession(true);
     }
-  }, [node?.type, refreshSession]);
+  }, [node?.type]);
+
+  useEffect(() => {
+    if (!onAuthenticated) {
+      return;
+    }
+
+    const isAuthenticated = node?.type === 'SuccessNode' || hasActiveSession;
+    if (!isAuthenticated) {
+      hasNotifiedAuthenticatedRef.current = false;
+      return;
+    }
+
+    if (hasNotifiedAuthenticatedRef.current) {
+      return;
+    }
+
+    hasNotifiedAuthenticatedRef.current = true;
+    onAuthenticated();
+  }, [hasActiveSession, node?.type, onAuthenticated]);
 
   const onStart = useCallback(async (): Promise<void> => {
     const trimmedJourneyName = journeyName.trim();
@@ -266,20 +263,41 @@ export default function JourneyClientPanel(
     }
 
     try {
-      addDebugEntry('start() requested', { journeyName: trimmedJourneyName });
-      await saveSuggestion(trimmedJourneyName);
       await start(trimmedJourneyName, startOptions);
-      setShowJourneyInput(false);
       form.reset();
       setResumeUrl('');
-      setSessionPayload(null);
-      setGivenName(undefined);
-      addDebugEntry('start() completed');
     } catch (cause) {
-      addDebugEntry('start() failed', { error: String(cause) });
       Alert.alert('Failed to start journey', String(cause));
     }
-  }, [addDebugEntry, form, journeyName, saveSuggestion, start, startOptions]);
+  }, [form, journeyName, start, startOptions]);
+
+  useEffect(() => {
+    if (!autoStartOnMount) {
+      return;
+    }
+    if (hasAutoStartedRef.current) {
+      return;
+    }
+    if (loading || isSessionCheckRunning || hasActiveSession || node) {
+      return;
+    }
+    if (!journeyName.trim()) {
+      return;
+    }
+
+    hasAutoStartedRef.current = true;
+    onStart().catch(() => {
+      hasAutoStartedRef.current = false;
+    });
+  }, [
+    autoStartOnMount,
+    hasActiveSession,
+    isSessionCheckRunning,
+    journeyName,
+    loading,
+    node,
+    onStart,
+  ]);
 
   const onResume = useCallback(async (): Promise<void> => {
     const trimmedResumeUrl = resumeUrl.trim();
@@ -289,15 +307,12 @@ export default function JourneyClientPanel(
     }
 
     try {
-      addDebugEntry('resume() requested', { resumeUrl: trimmedResumeUrl });
       await resume(trimmedResumeUrl);
       setResumeUrl('');
-      addDebugEntry('resume() completed');
     } catch (cause) {
-      addDebugEntry('resume() failed', { error: String(cause) });
       Alert.alert('Resume failed', String(cause));
     }
-  }, [addDebugEntry, resume, resumeUrl]);
+  }, [resume, resumeUrl]);
 
   useEffect(() => {
     if (!hasSuspendedCallback) {
@@ -315,14 +330,9 @@ export default function JourneyClientPanel(
       const runAutoResume = async (): Promise<void> => {
         try {
           setResumeUrl(trimmedResumeUrl);
-          addDebugEntry('resume() requested (deep-link)', {
-            resumeUrl: trimmedResumeUrl,
-          });
           await resume(trimmedResumeUrl);
           setResumeUrl('');
-          addDebugEntry('resume() completed (deep-link)');
         } catch (cause) {
-          addDebugEntry('resume() failed (deep-link)', { error: String(cause) });
           Alert.alert('Resume failed', String(cause));
         }
       };
@@ -333,66 +343,25 @@ export default function JourneyClientPanel(
     return () => {
       subscription.remove();
     };
-  }, [addDebugEntry, hasSuspendedCallback, resume]);
+  }, [hasSuspendedCallback, resume]);
 
   const onLogout = useCallback(async (): Promise<void> => {
     try {
-      addDebugEntry('logoutUser() requested');
       await logoutUser();
-      setShowJourneyInput(true);
-      setJourneyName('');
       form.reset();
       setResumeUrl('');
-      setSessionPayload(null);
-      setGivenName(undefined);
-      addDebugEntry('logoutUser() completed');
+      setHasActiveSession(false);
+      hasAutoStartedRef.current = false;
+      hasNotifiedAuthenticatedRef.current = false;
     } catch (cause) {
-      addDebugEntry('logoutUser() failed', { error: String(cause) });
       Alert.alert('Logout failed', String(cause));
     }
-  }, [addDebugEntry, form, logoutUser]);
-
-  const onCollectDeviceProfile = useCallback(async (): Promise<void> => {
-    if (loading || !hasDeviceProfileCallback) {
-      return;
-    }
-
-    try {
-      addDebugEntry('collectDeviceProfileForJourney() requested', {
-        collectors: DEVICE_PROFILE_COLLECTORS,
-      });
-      const result = await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
-      addDebugEntry('collectDeviceProfileForJourney() result', result);
-
-      if (result.type === 'error') {
-        Alert.alert('Device profile failed', result.message ?? result.code);
-        return;
-      }
-
-      if (!form.meta.hasManual && !hasPollingWaitCallback) {
-        addDebugEntry('next() payload (device-profile)', { callbacks: [] });
-        await next({});
-      }
-    } catch (cause) {
-      addDebugEntry('collectDeviceProfileForJourney() failed', { error: String(cause) });
-      Alert.alert('Device profile failed', String(cause));
-    }
-  }, [
-    addDebugEntry,
-    hasDeviceProfileCallback,
-    hasPollingWaitCallback,
-    journeyClient,
-    loading,
-    next,
-    form.meta.hasManual,
-  ]);
+  }, [form, logoutUser]);
 
   const onSubmit = useCallback(async (): Promise<void> => {
     if (loading) {
       return;
     }
-
-    setSubmitIssues(form.issues);
 
     if (!form.canSubmit) {
       const firstIssue = form.issues[0];
@@ -409,61 +378,67 @@ export default function JourneyClientPanel(
     }
 
     try {
-      addDebugEntry('next() payload (helper)', {
-        callbacks: form.input.callbacks ?? [],
-      });
       await next(form.input);
     } catch (cause) {
       Alert.alert('Submit failed', String(cause));
     }
-  }, [addDebugEntry, form.canSubmit, form.input, form.issues, loading, next]);
+  }, [form.canSubmit, form.input, form.issues, loading, next]);
+
+  const showCallbackScreen = node?.type === 'ContinueNode';
+  const showSuccessScreen = node?.type === 'SuccessNode' || hasActiveSession;
 
   return (
     <View style={styles.container}>
-      {title ? (
-        <View style={commonStyles.card}>
-          <Text style={styles.panelTitle}>{title}</Text>
-        </View>
-      ) : null}
-
       <View style={commonStyles.card}>
-        <JourneyStartPanel
-          showJourneyInput={showJourneyInput && !hasActiveSession && !isSessionCheckRunning}
-          journeyName={journeyName}
-          onJourneyNameChange={setJourneyName}
-          suggestedJourneys={suggestedJourneys}
-          loading={loading || isSessionCheckRunning}
-          canStart={!node && !hasActiveSession && !isSessionCheckRunning}
-          onStart={onStart}
-        />
-
-        {node?.type === 'ContinueNode' ? (
+        {showCallbackScreen ? (
           <JourneyContinuePanel
             form={form}
             loading={loading}
             pollingWaitMs={pollingWaitMs}
             resumeUrl={resumeUrl}
             onResumeUrlChange={setResumeUrl}
-            onCollectDeviceProfile={onCollectDeviceProfile}
             onResume={onResume}
             onSubmit={onSubmit}
           />
         ) : null}
 
-        <JourneyStatusPanel
-          node={node}
-          error={error}
-          hasActiveSession={hasActiveSession}
-          givenName={givenName}
-          onRefreshSession={() => refreshSession(true)}
-          onLogout={onLogout}
-        />
+        {showSuccessScreen ? (
+          <TouchableOpacity style={commonStyles.buttonPrimary} onPress={onLogout}>
+            <Text style={commonStyles.buttonText}>Logout</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {node?.type === 'ErrorNode' ? (
+          <Text style={commonStyles.textError}>
+            {typeof node.message === 'string'
+              ? node.message
+              : 'A server-side validation error occurred.'}
+          </Text>
+        ) : null}
+
+        {node?.type === 'FailureNode' ? (
+          <Text style={commonStyles.textError}>
+            {typeof node.cause === 'string'
+              ? node.cause
+              : typeof node.message === 'string'
+                ? node.message
+                : 'An unexpected failure occurred.'}
+          </Text>
+        ) : null}
+
+        {error ? (
+          <Text style={commonStyles.textError}>
+            {typeof error.message === 'string' ? error.message : String(error)}
+          </Text>
+        ) : null}
+
+        {!showCallbackScreen && !showSuccessScreen && !loading && !isSessionCheckRunning ? (
+          <Text style={styles.autoPollingNote}>
+            No active Journey flow. Start from Journey Configuration.
+          </Text>
+        ) : null}
+
       </View>
-
-      <JourneySubmitIssuesCard issues={submitIssues} />
-
-      <JourneySessionCard sessionPayload={sessionPayload} />
-      <JourneyDebugPanel entries={debugEntries} onClear={clearDebug} />
     </View>
   );
 }

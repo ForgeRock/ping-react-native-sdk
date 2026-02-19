@@ -93,7 +93,7 @@ final class JourneyClientFactoryTests: XCTestCase {
     }
   }
 
-  func testBuildRejectsSessionStorageUntilIosSdkSupportsIt() async {
+  func testBuildAcceptsSessionStorageIdForParity() async throws {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
       realm: nil,
@@ -118,17 +118,8 @@ final class JourneyClientFactoryTests: XCTestCase {
       oidcClientId: nil
     )
 
-    do {
-      _ = try await JourneyClientFactory().build(payload)
-      XCTFail("Expected session storage unsupported error")
-    } catch let error as JourneyBridgeError {
-      guard case .argument(let message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
-      }
-      XCTAssertTrue(message.contains("sessionStorageId"))
-    } catch {
-      XCTFail("Expected JourneyBridgeError, got \(error)")
-    }
+    let journey = try await JourneyClientFactory().build(payload)
+    XCTAssertNotNil(journey)
   }
 }
 
@@ -183,4 +174,3 @@ private final class OidcHandleStub: OidcClientConfigHandle {
     self.additionalParameters = additionalParameters
   }
 }
-

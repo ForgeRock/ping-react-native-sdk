@@ -22,6 +22,19 @@ export const fieldStyles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
   },
+  outputHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  outputIcon: {
+    marginRight: 8,
+  },
+  outputPromptText: {
+    color: colors.gray,
+    fontSize: 13,
+    flex: 1,
+  },
   helperText: {
     color: colors.gray,
     marginBottom: 6,
@@ -35,6 +48,54 @@ export const fieldStyles = StyleSheet.create({
   },
   optionWrap: {
     marginBottom: 8,
+  },
+  dropdownTrigger: {
+    minHeight: 44,
+    borderWidth: 1.5,
+    borderColor: colors.inputInactiveBorder,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownTriggerText: {
+    color: colors.inputInactiveText,
+    fontSize: 16,
+    flex: 1,
+    paddingRight: 10,
+  },
+  dropdownChevron: {
+    color: colors.inputInactiveText,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dropdownMenu: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    overflow: 'hidden',
+  },
+  dropdownMenuItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  dropdownMenuItemSelected: {
+    backgroundColor: colors.selectedOptionBackground,
+  },
+  dropdownMenuItemText: {
+    color: colors.inputInactiveText,
+    fontSize: 15,
+  },
+  dropdownMenuItemTextSelected: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   inputRow: {
     flexDirection: 'row',
