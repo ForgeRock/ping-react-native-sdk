@@ -9,7 +9,7 @@ import XCTest
 @testable import RNPingCore
 @testable import RNPingLogger
 
-@available(iOS 16.0, *)
+
 final class RNPingLoggerCommonTests: XCTestCase {
 
   override func setUp() async throws {

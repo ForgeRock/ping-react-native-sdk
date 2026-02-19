@@ -27,7 +27,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [24], shadows = [ShadowOidcResponseArguments::class])
+@Config(sdk = [29], shadows = [ShadowOidcResponseArguments::class])
 class OidcResponseMapperTest {
 
   @Test
