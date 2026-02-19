@@ -109,8 +109,8 @@ Each package is published independently and can be consumed as a standalone NPM 
 
 We welcome contributions to the React Native Ping SDK! Please read the guidelines on how to contribute, including development workflow and best practices:
 
-- [CONTRIBUTING.md](./CONTRIBUTING.md)
-- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+- [Development workflow and contribution guidelines](./CONTRIBUTING.md)
+- [Community guidelines and standards](./CODE_OF_CONDUCT.md)
 
 ---
 
