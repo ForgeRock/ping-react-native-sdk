@@ -9,7 +9,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
@@ -25,8 +24,9 @@ import {
 } from '@ping-identity/rn-journey';
 import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
 import { commonStyles } from '../src/styles/common';
-import PingTextInput from './components/PingTextInput';
-import { colors } from '../src/styles/colors';
+import { journeyFullScreenStyles as styles } from '../src/styles/journeyStyles';
+import PingTextInput from './components/atoms/PingTextInput';
+import PayloadViewer from './components/atoms/PayloadViewer';
 
 /**
  * Callback metadata with deterministic per-type index.
@@ -545,15 +545,7 @@ export default function JourneyFullScreen(): React.ReactElement {
         {sessionPayload ? (
           <View style={styles.section}>
             <Text style={commonStyles.journeySectionTitle}>Active session</Text>
-            <View style={commonStyles.payloadScrollContainer}>
-              <ScrollView
-                style={commonStyles.payloadScroll}
-                contentContainerStyle={commonStyles.payloadScrollContent}
-                nestedScrollEnabled
-              >
-                <Text style={commonStyles.codeText}>{sessionPayload}</Text>
-              </ScrollView>
-            </View>
+            <PayloadViewer payload={sessionPayload} />
             <TouchableOpacity
               style={commonStyles.journeyButtonPrimary}
               onPress={onLogout}
@@ -628,71 +620,3 @@ export default function JourneyFullScreen(): React.ReactElement {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 16,
-  },
-  callbackCard: {
-    borderWidth: 1,
-    borderColor: colors.journeyCallbackCardBorder,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-  },
-  callbackType: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.journeyCallbackType,
-    marginBottom: 4,
-  },
-  callbackLabel: {
-    fontSize: 15,
-    color: colors.journeyCallbackLabel,
-    marginBottom: 8,
-  },
-  integrationText: {
-    fontSize: 14,
-    color: colors.journeyIntegrationText,
-  },
-  switchRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  switchLabel: {
-    color: colors.journeyCallbackType,
-    fontSize: 15,
-    flex: 1,
-    paddingRight: 12,
-  },
-  optionButton: {
-    borderWidth: 1,
-    borderColor: colors.journeyChoiceBorder,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  optionButtonSelected: {
-    backgroundColor: colors.journeyChoiceSelected,
-    borderColor: colors.journeyChoiceSelected,
-  },
-  optionButtonText: {
-    color: colors.journeyChoiceText,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  optionButtonTextSelected: {
-    color: colors.white,
-  },
-  issueText: {
-    color: colors.error,
-    fontSize: 14,
-    marginBottom: 6,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: 14,
-  },
-});

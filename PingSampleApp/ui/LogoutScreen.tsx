@@ -6,15 +6,16 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { createOidcClient, createOidcWebClient, type OidcWebClient } from '@ping-identity/rn-oidc';
 import { CacheStrategy, configureOidcStorage, type OidcStorage } from '@react-native-pingidentity/storage';
 import { commonStyles } from '../src/styles/common';
 import { pingAdvancedIdentityCloudConfig } from '../src/clients';
-import MessageBlock from './components/MessageBlock';
-import { colors } from '../src/styles/colors';
+import AsyncActionButton from './components/molecules/AsyncActionButton';
+import CardSection from './components/molecules/CardSection';
+import EmptyStateCard from './components/molecules/EmptyStateCard';
 
 /**
  * Renders session logout controls for Journey and OIDC sessions.
@@ -170,84 +171,54 @@ export default function LogoutScreen(): React.ReactElement {
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.codeTitle}>Active Sessions</Text>
-        <Text style={commonStyles.codeText}>Select a session to logout</Text>
+      <CardSection title="Active Sessions" subtitle="Select a session to logout">
 
         {hasAnySession ? (
-          <TouchableOpacity
-            style={[
-              commonStyles.buttonPrimary,
-              disabled ? commonStyles.homeRowDisabled : null,
-            ]}
-            disabled={disabled}
+          <AsyncActionButton
+            label="Logout All Sessions"
             onPress={() => {
               handleLogoutAll().catch(() => undefined);
             }}
-          >
-            {busyAll ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <Text style={commonStyles.buttonText}>Logout All Sessions</Text>
-            )}
-          </TouchableOpacity>
+            loading={busyAll}
+            disabled={disabled}
+          />
         ) : (
-          <View style={[commonStyles.buttonSecondary, commonStyles.homeRowDisabled]}>
-            <Text style={commonStyles.buttonTextSecondary}>No Active Sessions</Text>
-          </View>
+          <AsyncActionButton label="No Active Sessions" onPress={() => undefined} variant="secondary" disabled />
         )}
-      </View>
+      </CardSection>
 
       {journeyActive ? (
-        <View style={commonStyles.card}>
-          <Text style={commonStyles.codeTitle}>Journey Session</Text>
+        <CardSection title="Journey Session">
           <Text style={commonStyles.codeText}>Logout from Journey authentication</Text>
           <Text style={commonStyles.codeText}>Status: Active</Text>
-          <TouchableOpacity
-            style={[
-              commonStyles.buttonPrimary,
-              disabled ? commonStyles.homeRowDisabled : null,
-            ]}
-            disabled={disabled}
+          <AsyncActionButton
+            label="Logout from Journey Session"
             onPress={() => {
               handleLogoutJourney().catch(() => undefined);
             }}
-          >
-            {busyJourney ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <Text style={commonStyles.buttonText}>Logout from Journey Session</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            loading={busyJourney}
+            disabled={disabled}
+          />
+        </CardSection>
       ) : null}
 
       {oidcActive ? (
-        <View style={commonStyles.card}>
-          <Text style={commonStyles.codeTitle}>OIDC Web Session</Text>
+        <CardSection title="OIDC Web Session">
           <Text style={commonStyles.codeText}>Logout from OIDC Web authentication</Text>
           <Text style={commonStyles.codeText}>Status: Active</Text>
-          <TouchableOpacity
-            style={[
-              commonStyles.buttonPrimary,
-              disabled ? commonStyles.homeRowDisabled : null,
-            ]}
-            disabled={disabled}
+          <AsyncActionButton
+            label="Logout from OIDC Web Session"
             onPress={() => {
               handleLogoutOidc().catch(() => undefined);
             }}
-          >
-            {busyOidc ? (
-              <ActivityIndicator size="small" color={colors.white} />
-            ) : (
-              <Text style={commonStyles.buttonText}>Logout from OIDC Web Session</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            loading={busyOidc}
+            disabled={disabled}
+          />
+        </CardSection>
       ) : null}
 
       {!hasAnySession ? (
-        <MessageBlock
+        <EmptyStateCard
           title="No Active Sessions"
           message="You are not logged in to any session"
         />

@@ -52,14 +52,20 @@ export const journeyOidcClient = createOidcClient({
   scopes: journeyConfig.scopes,
 });
 
-export const loginClient = journey(
-  journeyConfig,
-  {
+export const loginClient = journey({
+  timeout: 10000,
+  serverUrl: journeyConfig.serverUrl,
+  realm: journeyConfig.realm,
+  cookie: journeyConfig.cookie,
+  modules: {
     oidc: {
-      client: journeyOidcClient,
+      clientId: journeyConfig.clientId,
+      discoveryEndpoint: journeyConfig.discoveryEndpoint,
+      redirectUri: journeyConfig.redirectUri,
+      scopes: journeyConfig.scopes,
     },
     session: {
       storage: journeySessionStorageClient1,
     },
-  }
-);
+  },
+});

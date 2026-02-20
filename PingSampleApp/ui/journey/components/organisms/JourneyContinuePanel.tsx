@@ -8,11 +8,11 @@
 import React, { useCallback, useMemo } from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import type { JourneyCallbackType, JourneyFormResult } from '@ping-identity/rn-journey';
-import { commonStyles } from '../../../src/styles/common';
-import JourneyFieldRenderer from './renderers/JourneyFieldRenderer';
-import { styles } from './journeyClientPanelStyles';
-import { DEFAULT_AUTO_POLLING_WAIT_MS } from '../utils/clientPanel';
-import PingTextInput from '../../components/PingTextInput';
+import { commonStyles } from '../../../../src/styles/common';
+import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
+import JourneyFieldRenderer from '../molecules/renderers/JourneyFieldRenderer';
+import { DEFAULT_AUTO_POLLING_WAIT_MS } from '../../utils/clientPanel';
+import PingTextInput from '../../../components/atoms/PingTextInput';
 
 /**
  * Props for rendering the active `ContinueNode` callback area.

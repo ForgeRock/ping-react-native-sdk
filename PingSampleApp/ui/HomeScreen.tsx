@@ -5,29 +5,26 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
 import { getDeviceId } from '@ping-identity/rn-device-id';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../src/styles/colors';
+import HomeMenuRow, { type HomeMenuItem } from './components/molecules/HomeMenuRow';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type Props = { navigation: HomeScreenNavProp };
-type HomeMenuItem = {
-  title: string;
-  subtitle: string;
-  icon: string;
+type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
   screen?: keyof RootStackParamList;
-  comingSoon?: boolean;
 };
 
 export default function HomeScreen({ navigation }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
 
-  const authenticationItems: HomeMenuItem[] = [
+  const authenticationItems: HomeScreenMenuItem[] = [
     {
       title: 'DaVinci Flow',
       subtitle: 'Test Davinci Authentication',
@@ -48,7 +45,7 @@ export default function HomeScreen({ navigation }: Props) {
     },
   ];
 
-  const userManagementItems: HomeMenuItem[] = [
+  const userManagementItems: HomeScreenMenuItem[] = [
     {
       title: 'Access Token',
       subtitle: 'View current token',
@@ -75,7 +72,7 @@ export default function HomeScreen({ navigation }: Props) {
     },
   ];
 
-  const developerToolsItems: HomeMenuItem[] = [
+  const developerToolsItems: HomeScreenMenuItem[] = [
     {
       title: 'Browser',
       subtitle: 'Test browser flow',
@@ -102,44 +99,19 @@ export default function HomeScreen({ navigation }: Props) {
     },
   ];
 
-  const renderMenuItem = (item: HomeMenuItem): React.ReactElement => {
+  const renderMenuItem = (item: HomeScreenMenuItem): React.ReactElement => {
     const isDisabled = item.comingSoon || !item.screen;
 
     return (
-      <TouchableOpacity
+      <HomeMenuRow
         key={item.title}
-        style={[commonStyles.homeRow, isDisabled ? commonStyles.homeRowDisabled : null]}
-        onPress={isDisabled ? undefined : () => navigation.navigate(item.screen as keyof RootStackParamList)}
+        title={item.title}
+        subtitle={item.subtitle}
+        icon={item.icon}
+        comingSoon={item.comingSoon}
         disabled={isDisabled}
-      >
-        <View style={commonStyles.homeRowContent}>
-          <View style={commonStyles.homeRowIconWrap}>
-            <MaterialIcon
-              name={item.icon}
-              size={36}
-              color={isDisabled ? colors.homeRowDisabledIcon : colors.primary}
-            />
-          </View>
-          <View style={commonStyles.homeRowTextStack}>
-            <View style={commonStyles.homeRowTitleContainer}>
-              <Text style={[commonStyles.homeRowTitle, isDisabled ? commonStyles.homeRowTitleDisabled : null]}>
-                {item.title}
-              </Text>
-              {item.comingSoon ? (
-                <View style={commonStyles.homeComingSoonBadge}>
-                  <Text style={commonStyles.homeComingSoonText}>COMING SOON</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={[commonStyles.homeRowSubtitle, isDisabled ? commonStyles.homeRowSubtitleDisabled : null]}>
-              {item.subtitle}
-            </Text>
-          </View>
-        </View>
-        <Text style={[commonStyles.homeRowChevron, isDisabled ? commonStyles.homeRowChevronDisabled : null]}>
-          {'>'}
-        </Text>
-      </TouchableOpacity>
+        onPress={() => navigation.navigate(item.screen as keyof RootStackParamList)}
+      />
     );
   };
 

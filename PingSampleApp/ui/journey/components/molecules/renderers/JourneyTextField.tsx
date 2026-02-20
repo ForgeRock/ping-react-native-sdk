@@ -7,10 +7,10 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { fieldStyles } from './fieldStyles';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import { resolvePromptText, toDisplayString } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
-import PingTextInput from '../../../components/PingTextInput';
+import PingTextInput from '../../../../components/atoms/PingTextInput';
 
 /**
  * Renders text-like callback fields, including password and number input modes.

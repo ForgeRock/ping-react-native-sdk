@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Switch, Text, View } from 'react-native';
-import { fieldStyles } from './fieldStyles';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import {
   readBoolean,
   resolveContentText,

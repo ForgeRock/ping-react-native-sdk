@@ -6,13 +6,13 @@
  */
 
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../../src/styles/colors';
-import { commonStyles } from '../../../src/styles/common';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { commonStyles } from '../../../../src/styles/common';
+import { journeyDebugPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import {
   type JourneyDebugEntry,
   debugPayloadToString,
-} from '../utils/debug';
+} from '../../utils/debug';
 
 /**
  * Props for Journey debug panel.
@@ -67,51 +67,3 @@ export default function JourneyDebugPanel(
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    color: colors.textDark,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  clearButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: colors.surface,
-  },
-  clearButtonText: {
-    color: colors.textDark,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyText: {
-    color: colors.gray,
-    fontSize: 13,
-  },
-  eventCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 8,
-    backgroundColor: colors.journeyInputBackground,
-  },
-  eventTitle: {
-    color: colors.textDark,
-    fontWeight: '700',
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  payloadScroll: {
-    maxHeight: 120,
-  },
-});

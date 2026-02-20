@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { commonStyles } from '../src/styles/common';
-import JourneyFieldRenderer from './journey/components/renderers/JourneyFieldRenderer';
-import PingTextInput from './components/PingTextInput';
+import JourneyFieldRenderer from './journey/components/molecules/renderers/JourneyFieldRenderer';
+import PingTextInput from './components/atoms/PingTextInput';
 
 /**
  * Minimal Journey sample using `useJourney` + `useJourneyForm`.

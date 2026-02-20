@@ -11,7 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
 import { commonStyles } from '../src/styles/common';
 import { loginClient } from '../src/clients';
-import JourneyClientPanel from './journey/components/JourneyClientPanel';
+import JourneyClientPanel from './journey/components/organisms/JourneyClientPanel';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'>;
 

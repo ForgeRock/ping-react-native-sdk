@@ -6,12 +6,12 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
-import { colors } from '../src/styles/colors';
-import JourneyStartPanel from './journey/components/JourneyStartPanel';
+import { journeyRouteScreenStyles as styles } from '../src/styles/journeyStyles';
+import JourneyStartPanel from './journey/components/organisms/JourneyStartPanel';
 import {
   buildRecentJourneySuggestions,
   buildUsedTestJourneys,
@@ -139,14 +139,3 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-});

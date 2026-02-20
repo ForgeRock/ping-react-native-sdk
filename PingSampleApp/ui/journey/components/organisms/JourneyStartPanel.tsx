@@ -9,14 +9,14 @@ import React from 'react';
 import {
   ActivityIndicator,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors } from '../../../src/styles/colors';
-import { commonStyles } from '../../../src/styles/common';
-import PingTextInput from '../../components/PingTextInput';
+import { colors } from '../../../../src/styles/colors';
+import { commonStyles } from '../../../../src/styles/common';
+import { journeyStartPanelStyles as styles } from '../../../../src/styles/journeyStyles';
+import PingTextInput from '../../../components/atoms/PingTextInput';
 
 /**
  * Props for the Journey start panel.
@@ -224,48 +224,3 @@ export default function JourneyStartPanel(
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  suggestionPanel: {
-    marginTop: 8,
-  },
-  suggestionPanelTitle: {
-    color: colors.textDark,
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  suggestionScroll: {
-    marginBottom: 16,
-  },
-  suggestionScrollContent: {
-    paddingRight: 4,
-  },
-  suggestionRowsContainer: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-  },
-  suggestionRow: {
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-  },
-  usedSuggestionChip: {
-    borderColor: colors.success,
-    backgroundColor: colors.warningBackgroundSoft,
-  },
-  usedSuggestionText: {
-    color: colors.success,
-    fontWeight: '700',
-  },
-  usedBadgeText: {
-    marginTop: 2,
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.success,
-    textAlign: 'center',
-  },
-  wrappedSuggestionContainer: {
-    marginTop: 0,
-    marginBottom: 10,
-  },
-});

@@ -7,8 +7,8 @@
 
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { commonStyles } from '../../../../src/styles/common';
-import { fieldStyles } from './fieldStyles';
+import { commonStyles } from '../../../../../src/styles/common';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import {
   readNumber,
   resolveOptionLabel,

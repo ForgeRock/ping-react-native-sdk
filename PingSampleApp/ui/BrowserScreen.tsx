@@ -9,13 +9,14 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import type { BrowserError } from '@react-native-pingidentity/browser';
 import { open } from '@react-native-pingidentity/browser';
 import { commonStyles } from '../src/styles/common';
-import PingTextInput from './components/PingTextInput';
+import PingTextInput from './components/atoms/PingTextInput';
+import PayloadViewer from './components/atoms/PayloadViewer';
 
 export default function BrowserScreen() {
   const [url, setUrl] = useState(
@@ -114,15 +115,7 @@ export default function BrowserScreen() {
       {result ? (
         <View style={commonStyles.codeBox}>
           <Text style={commonStyles.codeTitle}>Result</Text>
-          <View style={commonStyles.payloadScrollContainer}>
-            <ScrollView
-              style={commonStyles.payloadScroll}
-              contentContainerStyle={commonStyles.payloadScrollContent}
-              nestedScrollEnabled
-            >
-              <Text style={commonStyles.codeText}>{result}</Text>
-            </ScrollView>
-          </View>
+          <PayloadViewer payload={result} />
         </View>
       ) : null}
     </ScrollView>

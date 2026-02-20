@@ -7,7 +7,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { fieldStyles } from './fieldStyles';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import {
   readBoolean,
   readString,
@@ -15,7 +15,7 @@ import {
   resolvePromptText,
 } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
-import PingTextInput from '../../../components/PingTextInput';
+import PingTextInput from '../../../../components/atoms/PingTextInput';
 
 type JourneyKbaValue = {
   selectedQuestion?: string;

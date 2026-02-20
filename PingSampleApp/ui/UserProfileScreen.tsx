@@ -6,24 +6,22 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useJourney, type JourneyUserSession } from '@ping-identity/rn-journey';
 import { createOidcClient, createOidcWebClient, type OidcWebClient } from '@ping-identity/rn-oidc';
 import { CacheStrategy, configureOidcStorage, type OidcStorage } from '@react-native-pingidentity/storage';
 import { commonStyles } from '../src/styles/common';
-import { pingAdvancedIdentityCloudConfig } from '../src/clients';
+import { journeyOidcClient, pingAdvancedIdentityCloudConfig } from '../src/clients';
 import { RootStackParamList } from '../App';
-import { colors } from '../src/styles/colors';
+import AuthSourceTabs from './components/molecules/AuthSourceTabs';
+import UserProfileDaVinciPanel from './userProfile/components/organisms/UserProfileDaVinciPanel';
+import UserProfileJourneyPanel from './userProfile/components/organisms/UserProfileJourneyPanel';
+import UserProfileOidcPanel from './userProfile/components/organisms/UserProfileOidcPanel';
 
 type UserProfileTab = 'Journey' | 'DaVinci' | 'OIDC';
+const USER_PROFILE_TABS = ['Journey', 'DaVinci', 'OIDC'] as const;
 
 type OidcSessionData = {
   tokens: Record<string, unknown> | null;
@@ -57,6 +55,7 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
 
   const oidcStorageRef = useRef<OidcStorage | null>(null);
   const oidcWebClientRef = useRef<OidcWebClient | null>(null);
+  const journeyOidcWebClientRef = useRef<OidcWebClient | null>(null);
 
   const [, journeyActions] = useJourney();
 
@@ -101,22 +100,56 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
     return webClient;
   }, []);
 
+  const getJourneyOidcWebClient = useCallback((): OidcWebClient => {
+    if (journeyOidcWebClientRef.current) {
+      return journeyOidcWebClientRef.current;
+    }
+    const webClient = createOidcWebClient(journeyOidcClient);
+    journeyOidcWebClientRef.current = webClient;
+    return webClient;
+  }, []);
+
   const refreshJourneySession = useCallback(async (): Promise<void> => {
     setJourneyLoading(true);
     setJourneyError(null);
     setShowRawJourneyUserInfo(false);
+    let journeySessionError: string | null = null;
     try {
-      const session = await journeyActions.user();
-      setJourneySession(session);
+      let session: JourneyUserSession | null = null;
+      try {
+        session = await journeyActions.user();
+      } catch (error) {
+        journeySessionError =
+          error instanceof Error ? error.message : 'Unable to resolve Journey session.';
+      }
+
+      if (session) {
+        setJourneySession(session);
+        return;
+      }
+
+      const journeyOidcUser = await getJourneyOidcWebClient().user();
+      if (!journeyOidcUser) {
+        setJourneySession(null);
+        return;
+      }
+
+      const token = await journeyOidcUser.token();
+      const userInfo = await journeyOidcUser.userinfo(true);
+      setJourneySession({
+        accessToken: token.accessToken,
+        ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
+        ...(userInfo ? { userInfo: userInfo as Record<string, unknown> } : {}),
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to resolve Journey session.';
-      setJourneyError(message);
+      setJourneyError(journeySessionError ?? message);
       setJourneySession(null);
     } finally {
       setJourneyLoading(false);
     }
-  }, [journeyActions]);
+  }, [getJourneyOidcWebClient, journeyActions]);
 
   const refreshOidcSession = useCallback(async (): Promise<void> => {
     setOidcLoading(true);
@@ -157,231 +190,58 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
     }, [activeTab, refreshJourneySession, refreshOidcSession])
   );
 
-  const renderJsonBlock = (title: string, payload: Record<string, unknown> | null) => {
-    if (!payload) {
-      return (
-        <View style={commonStyles.userProfileSection}>
-          <Text style={commonStyles.userProfileSectionTitle}>{title}</Text>
-          <Text style={commonStyles.userProfileSubText}>No data available.</Text>
-        </View>
-      );
+  /**
+   * Handles auth source tab change and clears source-specific raw toggles.
+   *
+   * @param tab Newly selected auth source tab.
+   * @returns Void.
+   */
+  const handleTabChange = useCallback((tab: UserProfileTab): void => {
+    setActiveTab(tab);
+    if (tab !== 'Journey') {
+      setShowRawJourneyUserInfo(false);
     }
-    return (
-      <View style={commonStyles.userProfileSection}>
-        <Text style={commonStyles.userProfileSectionTitle}>{title}</Text>
-        <View style={commonStyles.payloadScrollContainer}>
-          <ScrollView
-            style={commonStyles.payloadScroll}
-            contentContainerStyle={commonStyles.payloadScrollContent}
-            nestedScrollEnabled
-          >
-            <Text style={commonStyles.userProfileCode}>{JSON.stringify(payload, null, 2)}</Text>
-          </ScrollView>
-        </View>
-      </View>
-    );
-  };
-
-  const asDisplayValue = (value: unknown): string | null => {
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
+    if (tab !== 'OIDC') {
+      setShowRawOidcUserInfo(false);
     }
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      return String(value);
-    }
-    return null;
-  };
-
-  const readProfileField = (
-    payload: Record<string, unknown> | null,
-    keys: readonly string[]
-  ): string => {
-    if (!payload) {
-      return 'Not available';
-    }
-    for (const key of keys) {
-      const value = asDisplayValue(payload[key]);
-      if (value) {
-        return value;
-      }
-    }
-    return 'Not available';
-  };
-
-  const wrapProfileValue = (value: string): string => {
-    return value === 'Not available' ? value : `"${value}"`;
-  };
-
-  const renderJourneyTab = () => {
-    if (journeyLoading) {
-      return (
-        <View style={commonStyles.userProfileLoadingCard}>
-          <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={commonStyles.userProfileSubText}>Checking Journey session...</Text>
-        </View>
-      );
-    }
-
-    if (!journeySession) {
-      return (
-        <View style={commonStyles.userProfileEmptyCard}>
-          <Text style={commonStyles.userProfileEmptyTitle}>No Journey User</Text>
-          <Text style={commonStyles.userProfileSubText}>
-            Please authenticate using Journey to view user profile information.
-          </Text>
-          <TouchableOpacity
-            style={commonStyles.buttonPrimary}
-            onPress={() => navigation.navigate('JourneyRoute')}
-          >
-            <Text style={commonStyles.buttonText}>Start Journey</Text>
-          </TouchableOpacity>
-          {journeyError ? (
-            <Text style={commonStyles.userProfileErrorText}>{journeyError}</Text>
-          ) : null}
-        </View>
-      );
-    }
-
-    const userInfo = (journeySession.userInfo ?? null) as Record<string, unknown> | null;
-    const firstName = wrapProfileValue(
-      readProfileField(userInfo, ['given_name', 'firstName', 'first_name'])
-    );
-    const familyName = wrapProfileValue(
-      readProfileField(userInfo, ['family_name', 'lastName', 'last_name'])
-    );
-    const email = wrapProfileValue(readProfileField(userInfo, ['email']));
-
-    return (
-      <View style={commonStyles.userProfileCard}>
-        <Text style={commonStyles.userProfileSectionTitle}>Journey User Info</Text>
-        <Text style={commonStyles.userProfileInfoLine}>First name: {firstName}</Text>
-        <Text style={commonStyles.userProfileInfoLine}>Family name: {familyName}</Text>
-        <Text style={commonStyles.userProfileInfoLine}>Email: {email}</Text>
-
-        <TouchableOpacity
-          style={commonStyles.buttonPrimary}
-          onPress={() => setShowRawJourneyUserInfo((value) => !value)}
-        >
-          <Text style={commonStyles.buttonText}>
-            {showRawJourneyUserInfo ? 'Hide Raw User Info' : 'Show Raw User Info'}
-          </Text>
-        </TouchableOpacity>
-
-        {showRawJourneyUserInfo ? renderJsonBlock('Raw User Info', userInfo) : null}
-      </View>
-    );
-  };
-
-  const renderDaVinciTab = () => {
-    return (
-      <View style={commonStyles.userProfileEmptyCard}>
-        <Text style={commonStyles.userProfileEmptyTitle}>DaVinci Session</Text>
-        <Text style={commonStyles.userProfileSubText}>
-          DaVinci user profile integration is not available in this sample yet.
-        </Text>
-      </View>
-    );
-  };
-
-  const renderOidcTab = () => {
-    if (oidcLoading) {
-      return (
-        <View style={commonStyles.userProfileLoadingCard}>
-          <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={commonStyles.userProfileSubText}>Checking OIDC session...</Text>
-        </View>
-      );
-    }
-
-    if (!oidcSession) {
-      return (
-        <View style={commonStyles.userProfileEmptyCard}>
-          <Text style={commonStyles.userProfileEmptyTitle}>No OIDC User</Text>
-          <Text style={commonStyles.userProfileSubText}>
-            Please authenticate using OIDC to view user profile information.
-          </Text>
-          <TouchableOpacity
-            style={commonStyles.buttonPrimary}
-            onPress={() => navigation.navigate('Oidc')}
-          >
-            <Text style={commonStyles.buttonText}>Start OIDC</Text>
-          </TouchableOpacity>
-          {oidcError ? (
-            <Text style={commonStyles.userProfileErrorText}>{oidcError}</Text>
-          ) : null}
-        </View>
-      );
-    }
-
-    const userInfo = oidcSession.userInfo;
-    const firstName = wrapProfileValue(
-      readProfileField(userInfo, ['given_name', 'firstName', 'first_name'])
-    );
-    const familyName = wrapProfileValue(
-      readProfileField(userInfo, ['family_name', 'lastName', 'last_name'])
-    );
-    const email = wrapProfileValue(readProfileField(userInfo, ['email']));
-
-    return (
-      <View style={commonStyles.userProfileCard}>
-        <Text style={commonStyles.userProfileSectionTitle}>OIDC User Info</Text>
-        <Text style={commonStyles.userProfileInfoLine}>First name: {firstName}</Text>
-        <Text style={commonStyles.userProfileInfoLine}>Family name: {familyName}</Text>
-        <Text style={commonStyles.userProfileInfoLine}>Email: {email}</Text>
-
-        <TouchableOpacity
-          style={commonStyles.buttonPrimary}
-          onPress={() => setShowRawOidcUserInfo((value) => !value)}
-        >
-          <Text style={commonStyles.buttonText}>
-            {showRawOidcUserInfo ? 'Hide Raw User Info' : 'Show Raw User Info'}
-          </Text>
-        </TouchableOpacity>
-
-        {showRawOidcUserInfo ? renderJsonBlock('Raw User Info', oidcSession.userInfo) : null}
-      </View>
-    );
-  };
+  }, []);
 
   return (
     <View style={commonStyles.userProfileContainer}>
-      <View style={commonStyles.userProfileTabs}>
-        {(['Journey', 'DaVinci', 'OIDC'] as const).map(tab => {
-          const selected = tab === activeTab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[commonStyles.userProfileTab, selected ? commonStyles.userProfileTabActive : null]}
-              onPress={() => {
-                setActiveTab(tab);
-                if (tab !== 'Journey') {
-                  setShowRawJourneyUserInfo(false);
-                }
-                if (tab !== 'OIDC') {
-                  setShowRawOidcUserInfo(false);
-                }
-              }}
-            >
-              <Text
-                style={[
-                  commonStyles.userProfileTabText,
-                  selected ? commonStyles.userProfileTabTextActive : null,
-                ]}
-              >
-                {tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      <AuthSourceTabs
+        tabs={USER_PROFILE_TABS}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
 
       <ScrollView
         style={commonStyles.userProfileBody}
         contentContainerStyle={commonStyles.userProfileBodyContent}
       >
-        {activeTab === 'Journey' ? renderJourneyTab() : null}
-        {activeTab === 'DaVinci' ? renderDaVinciTab() : null}
-        {activeTab === 'OIDC' ? renderOidcTab() : null}
+        {activeTab === 'Journey' ? (
+          <UserProfileJourneyPanel
+            loading={journeyLoading}
+            session={journeySession}
+            error={journeyError}
+            showRawUserInfo={showRawJourneyUserInfo}
+            onToggleRawUserInfo={() => setShowRawJourneyUserInfo((value) => !value)}
+            onStartJourney={() => navigation.navigate('JourneyRoute')}
+          />
+        ) : null}
+
+        {activeTab === 'DaVinci' ? <UserProfileDaVinciPanel /> : null}
+
+        {activeTab === 'OIDC' ? (
+          <UserProfileOidcPanel
+            loading={oidcLoading}
+            userInfo={oidcSession?.userInfo ?? null}
+            hasSession={Boolean(oidcSession)}
+            error={oidcError}
+            showRawUserInfo={showRawOidcUserInfo}
+            onToggleRawUserInfo={() => setShowRawOidcUserInfo((value) => !value)}
+            onStartOidc={() => navigation.navigate('Oidc')}
+          />
+        ) : null}
       </ScrollView>
     </View>
   );

@@ -9,7 +9,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Easing,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   type StyleProp,
@@ -19,7 +18,8 @@ import {
   View,
 } from 'react-native';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
-import { colors } from '../../src/styles/colors';
+import { colors } from '../../../src/styles/colors';
+import { pingTextInputStyles as styles } from '../../../src/styles/componentStyles';
 
 type PingTextInputProps = TextInputProps & {
   label?: string;
@@ -216,41 +216,3 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    marginBottom: 12,
-  },
-  inputWrapper: {
-    minHeight: 56,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    paddingRight: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  label: {
-    position: 'absolute',
-    left: 14,
-    top: 17,
-    borderRadius: 4,
-    fontFamily: 'Montserrat-Medium',
-    fontWeight: '500',
-  },
-  input: {
-    flex: 1,
-    color: colors.inputText,
-    fontSize: 16,
-    paddingVertical: 0,
-    minHeight: 22,
-    textAlignVertical: 'center',
-  },
-  passwordToggle: {
-    marginLeft: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-  },
-});

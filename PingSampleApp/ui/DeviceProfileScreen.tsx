@@ -8,11 +8,10 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  ScrollView,
-  Switch,
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from 'react-native';
 import {
   collectDeviceProfile,
@@ -21,6 +20,9 @@ import {
 } from '@ping-identity/rn-device-profile';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
+import { deviceProfileScreenStyles as styles } from '../src/styles/componentStyles';
+import PayloadViewer from './components/atoms/PayloadViewer';
+import LabeledSwitchRow from './components/atoms/LabeledSwitchRow';
 
 const defaultCollectorSelections: Record<DeviceProfileCollector, boolean> = {
   platform: true,
@@ -90,28 +92,14 @@ export default function DeviceProfileScreen(): React.ReactElement {
           Choose collectors, then collect a device profile payload.
         </Text>
 
-        <View style={{ marginTop: 10 }}>
+        <View style={styles.collectorList}>
           {availableCollectors.map(collector => (
-            <View
+            <LabeledSwitchRow
               key={collector}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 6,
-              }}
-            >
-              <Text style={commonStyles.inputLabel}>{collector}</Text>
-              <Switch
-                value={collectorSelections[collector]}
-                onValueChange={() => toggleCollector(collector)}
-                trackColor={{
-                  false: colors.border,
-                  true: colors.primary,
-                }}
-                thumbColor={colors.surface}
-              />
-            </View>
+              label={collector}
+              value={collectorSelections[collector]}
+              onValueChange={() => toggleCollector(collector)}
+            />
           ))}
         </View>
 
@@ -135,17 +123,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
       {profile && (
         <View style={commonStyles.codeBox}>
           <Text style={commonStyles.codeTitle}>Collected Profile</Text>
-          <View style={commonStyles.payloadScrollContainer}>
-            <ScrollView
-              style={commonStyles.payloadScroll}
-              contentContainerStyle={commonStyles.payloadScrollContent}
-              nestedScrollEnabled
-            >
-              <Text style={commonStyles.codeText}>
-                {JSON.stringify(profile, null, 2)}
-              </Text>
-            </ScrollView>
-          </View>
+          <PayloadViewer payload={JSON.stringify(profile, null, 2)} />
         </View>
       )}
     </ScrollView>

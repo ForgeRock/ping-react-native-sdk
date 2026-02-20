@@ -15,14 +15,14 @@ import {
   type JourneyClient,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
-import { commonStyles } from '../../../src/styles/common';
+import { commonStyles } from '../../../../src/styles/common';
+import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import JourneyContinuePanel from './JourneyContinuePanel';
-import { styles } from './journeyClientPanelStyles';
 import {
   DEFAULT_AUTO_POLLING_WAIT_MS,
   DEVICE_PROFILE_COLLECTORS,
   resolvePollingWaitMs,
-} from '../utils/clientPanel';
+} from '../../utils/clientPanel';
 
 /**
  * Props for a self-contained Journey panel bound to a single Journey client.

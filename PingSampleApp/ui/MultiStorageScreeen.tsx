@@ -8,8 +8,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { commonStyles } from '../src/styles/common';
 import {
@@ -17,6 +17,7 @@ import {
   configureOidcStorageInfo,
   configureSessionStorageInfo,
 } from '../src/tokenStorages';
+import PayloadViewer from './components/atoms/PayloadViewer';
 
 export default function MultiStorageScreen() {
   const [oidcStorage, setOidcStorage] = useState(
@@ -43,17 +44,9 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <View style={commonStyles.payloadScrollContainer}>
-              <ScrollView
-                style={commonStyles.payloadScroll}
-                contentContainerStyle={commonStyles.payloadScrollContent}
-                nestedScrollEnabled
-              >
-                <Text style={commonStyles.codeText}>
-                  Config: {JSON.stringify(oidcStorage.config, null, 2)}
-                </Text>
-              </ScrollView>
-            </View>
+            <PayloadViewer
+              payload={`Config: ${JSON.stringify(oidcStorage.config, null, 2)}`}
+            />
           </View>
         )}
       </View>
@@ -73,17 +66,9 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <View style={commonStyles.payloadScrollContainer}>
-              <ScrollView
-                style={commonStyles.payloadScroll}
-                contentContainerStyle={commonStyles.payloadScrollContent}
-                nestedScrollEnabled
-              >
-                <Text style={commonStyles.codeText}>
-                  Config: {JSON.stringify(sessionStorage.config, null, 2)}
-                </Text>
-              </ScrollView>
-            </View>
+            <PayloadViewer
+              payload={`Config: ${JSON.stringify(sessionStorage.config, null, 2)}`}
+            />
           </View>
         )}
       </View>

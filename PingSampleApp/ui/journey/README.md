@@ -17,8 +17,8 @@ The sample is intentionally UI-owned:
 
 ## Folder Structure
 
-- `components/`: Journey UI composition.
-- `components/renderers/`: callback field renderer components and shared renderer utilities.
+- `components/organisms/`: Journey flow composition panels.
+- `components/molecules/renderers/`: callback field renderer components and shared renderer utilities.
 - `utils/`: debug payload sanitation and trace helpers.
 
 ## Runtime Flow
@@ -31,12 +31,12 @@ The sample is intentionally UI-owned:
 6. Screen handles explicit integrations:
    - `DeviceProfileCallback` -> `collectDeviceProfileForJourney(...)`
    - `PollingWaitCallback` -> automatic timed `next({})` using callback `waitTime`
-7. `JourneyStatusPanel` renders terminal states.
-8. `JourneySessionCard` and `JourneyDebugPanel` expose session/debug visibility.
+7. Terminal states and logout are rendered directly in `JourneyClientPanel`.
+8. `JourneyDebugPanel` remains available for callback/progression tracing.
 
 ## Components
 
-### `components/JourneyClientPanel.tsx`
+### `components/organisms/JourneyClientPanel.tsx`
 
 Top-level helper-driven Journey UI orchestrator.
 
@@ -46,7 +46,7 @@ Responsibilities:
 - Owns only screen-level behavior not provided by package helpers
   (journey suggestions, debug timeline, session card, polling strategy, and explicit integrations).
 
-### `components/JourneyContinuePanel.tsx`
+### `components/organisms/JourneyContinuePanel.tsx`
 
 Continue-node rendering section:
 - callback field rendering
@@ -56,33 +56,18 @@ Continue-node rendering section:
 - manual continue action
 - auto-polling informational state
 
-### `components/JourneySubmitIssuesCard.tsx`
-
-Renders helper submit issues returned by `buildNextInput(...)`.
-
-### `components/JourneyStartPanel.tsx`
+### `components/organisms/JourneyStartPanel.tsx`
 
 Journey bootstrap controls:
 - journey name input
 - recent journey chips
 - start button
 
-### `components/JourneyStatusPanel.tsx`
-
-Terminal state handling:
-- success view (`SuccessNode`) with refresh/logout
-- error/failure messages
-- hook-level error display
-
-### `components/JourneySessionCard.tsx`
-
-Displays serialized `user()` session payload.
-
-### `components/JourneyDebugPanel.tsx`
+### `components/organisms/JourneyDebugPanel.tsx`
 
 Displays sanitized callback and progression debug events.
 
-### `components/renderers/JourneyFieldRenderer.tsx`
+### `components/molecules/renderers/JourneyFieldRenderer.tsx`
 
 Routes each normalized callback field to a specialized renderer component:
 - `JourneyBooleanField`

@@ -1,6 +1,16 @@
 import { StyleSheet, Platform } from 'react-native';
 import { colors } from './colors';
 
+/**
+ * Shared control tokens used by interactive inputs.
+ */
+export const commonControlTokens = {
+  primarySwitchTrackColor: {
+    false: colors.border,
+    true: colors.primary,
+  },
+} as const;
+
 export const commonStyles = StyleSheet.create({
   // ===== Base Containers =====
   container: {

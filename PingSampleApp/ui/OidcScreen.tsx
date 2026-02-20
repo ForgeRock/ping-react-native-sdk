@@ -3,8 +3,6 @@ import {
   ScrollView,
   View,
   Text,
-  TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { commonStyles } from '../src/styles/common';
 import { journeyConfig, pingAdvancedIdentityCloudConfig } from '../src/clients';
@@ -21,6 +19,11 @@ import {
   OidcError,
   OidcWebClient,
 } from '@ping-identity/rn-oidc';
+import AsyncActionButton from './components/molecules/AsyncActionButton';
+import CardSection from './components/molecules/CardSection';
+import CollapsiblePayloadSection from './components/molecules/CollapsiblePayloadSection';
+import KeyValueList, { type KeyValueItem } from './components/atoms/KeyValueList';
+import PayloadViewer from './components/atoms/PayloadViewer';
 
 export default function OidcScreen() {
   const webClientDefaultRef = useRef<OidcWebClient | null>(null);
@@ -55,43 +58,9 @@ export default function OidcScreen() {
     error: false,
   });
 
-  const toggleSection = (key: keyof typeof expanded) => {
+  const toggleSection = (key: keyof typeof expanded): void => {
     setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
   };
-
-  const renderSection = (
-    key: keyof typeof expanded,
-    title: string,
-    content: string,
-    isError?: boolean,
-    isLoading?: boolean,
-  ) => (
-    <View style={commonStyles.codeBox}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => toggleSection(key)}>
-          <Text style={commonStyles.codeTitle}>
-            {expanded[key] ? 'v' : '>'} {title}
-          </Text>
-        </TouchableOpacity>
-        {!expanded[key] && isLoading ? (
-          <ActivityIndicator style={{ marginLeft: 8 }} size="small" />
-        ) : null}
-      </View>
-      {expanded[key] ? (
-        <View style={commonStyles.payloadScrollContainer}>
-          <ScrollView
-            style={commonStyles.payloadScroll}
-            contentContainerStyle={commonStyles.payloadScrollContent}
-            nestedScrollEnabled
-          >
-            <Text style={isError ? commonStyles.textError : commonStyles.codeText}>
-              {content}
-            </Text>
-          </ScrollView>
-        </View>
-      ) : null}
-    </View>
-  );
 
   const formatOidcError = (
     err: unknown,
@@ -342,24 +311,38 @@ export default function OidcScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const userinfoSummaryItems = useMemo<KeyValueItem[]>(() => {
+    if (!userinfoDetails) {
+      return [];
+    }
+
+    return [
+      { label: 'Name', value: String(userinfoDetails.name ?? '') },
+      { label: 'Given Name', value: String(userinfoDetails.given_name ?? '') },
+      { label: 'Family Name', value: String(userinfoDetails.family_name ?? '') },
+      { label: 'Email', value: String(userinfoDetails.email ?? '') },
+      {
+        label: 'Preferred Username',
+        value: String(userinfoDetails.preferred_username ?? ''),
+      },
+      { label: 'Sub', value: String(userinfoDetails.sub ?? '') },
+    ];
+  }, [userinfoDetails]);
+
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.codeTitle}>OIDC Actions</Text>
-        {hasUser !== true ? (
-          <Text style={commonStyles.codeText}>
-            Tap to launch the native authorization flow.
-          </Text>
-        ) : null}
+      <CardSection
+        title="OIDC Actions"
+        subtitle={hasUser !== true ? 'Tap to launch the native authorization flow.' : undefined}
+      >
 
         {!checkingSession && hasUser !== true ? (
           <View>
-            <TouchableOpacity
-              style={commonStyles.buttonPrimary}
+            <AsyncActionButton
+              label="Authorize"
               onPress={handleAuthorize}
-            >
-              <Text style={commonStyles.buttonText}>Authorize</Text>
-            </TouchableOpacity>
+              loading={loading.authorize}
+            />
           </View>
         ) : null}
 
@@ -369,112 +352,93 @@ export default function OidcScreen() {
 
         {hasUser ? (
           <View>
-            <TouchableOpacity
-              style={commonStyles.buttonSecondary}
+            <AsyncActionButton
+              label="Logout"
+              variant="secondary"
               onPress={handleLogout}
-            >
-              <Text style={commonStyles.buttonTextSecondary}>Logout</Text>
-            </TouchableOpacity>
+              loading={loading.logout}
+            />
           </View>
         ) : null}
-      </View>
+      </CardSection>
 
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.codeTitle}>Summary</Text>
+      <CardSection title="Summary">
 
         {userinfoDetails ? (
           <View style={commonStyles.codeBox}>
             <Text style={commonStyles.codeTitle}>Userinfo Summary</Text>
-            <Text style={commonStyles.codeText}>
-              {`Name: ${String(userinfoDetails.name ?? '')}`}
-            </Text>
-            <Text style={commonStyles.codeText}>
-              {`Given Name: ${String(userinfoDetails.given_name ?? '')}`}
-            </Text>
-            <Text style={commonStyles.codeText}>
-              {`Family Name: ${String(userinfoDetails.family_name ?? '')}`}
-            </Text>
-            <Text style={commonStyles.codeText}>
-              {`Email: ${String(userinfoDetails.email ?? '')}`}
-            </Text>
-            <Text style={commonStyles.codeText}>
-              {`Preferred Username: ${String(
-                userinfoDetails.preferred_username ?? '',
-              )}`}
-            </Text>
-            <Text style={commonStyles.codeText}>
-              {`Sub: ${String(userinfoDetails.sub ?? '')}`}
-            </Text>
-            <TouchableOpacity
-              style={commonStyles.buttonSecondary}
+            <KeyValueList items={userinfoSummaryItems} textStyle={commonStyles.codeText} />
+            <AsyncActionButton
+              label={showRawUserinfo ? 'Hide Info' : 'Show Raw User Info'}
+              variant="secondary"
               onPress={() => setShowRawUserinfo(prev => !prev)}
-            >
-              <Text style={commonStyles.buttonTextSecondary}>
-                {showRawUserinfo ? 'Hide Info' : 'Show Raw User Info'}
-              </Text>
-            </TouchableOpacity>
-            {showRawUserinfo && userinfo ? (
-              <View style={commonStyles.payloadScrollContainer}>
-                <ScrollView
-                  style={commonStyles.payloadScroll}
-                  contentContainerStyle={commonStyles.payloadScrollContent}
-                  nestedScrollEnabled
-                >
-                  <Text style={commonStyles.codeText}>{userinfo}</Text>
-                </ScrollView>
-              </View>
-            ) : null}
+            />
+            {showRawUserinfo && userinfo ? <PayloadViewer payload={userinfo} /> : null}
           </View>
         ) : null}
 
         {hasUser === true
-          ? renderSection(
-              'session',
-              'Session Status',
-              'Active session found',
-              false,
-              loading.session,
-            )
+          ? (
+            <CollapsiblePayloadSection
+              title="Session Status"
+              payload="Active session found"
+              expanded={expanded.session}
+              onToggle={() => toggleSection('session')}
+              loading={loading.session}
+            />
+          )
           : null}
 
         {result
-          ? renderSection(
-              'result',
-              'Authorize Result',
-              result,
-              false,
-              loading.authorize,
-            )
+          ? (
+            <CollapsiblePayloadSection
+              title="Authorize Result"
+              payload={result}
+              expanded={expanded.result}
+              onToggle={() => toggleSection('result')}
+              loading={loading.authorize}
+            />
+          )
           : null}
 
         {hasUser === true
-          ? renderSection(
-              'tokens',
-              'Tokens',
-              tokens || 'No tokens loaded yet.',
-              false,
-              loading.token || loading.refresh,
-            )
+          ? (
+            <CollapsiblePayloadSection
+              title="Tokens"
+              payload={tokens || 'No tokens loaded yet.'}
+              expanded={expanded.tokens}
+              onToggle={() => toggleSection('tokens')}
+              loading={loading.token || loading.refresh}
+            />
+          )
           : null}
-      </View>
+      </CardSection>
 
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.codeTitle}>Details</Text>
+      <CardSection title="Details">
 
-        {renderSection(
-          'config',
-          'Client Config',
-          JSON.stringify(
+        <CollapsiblePayloadSection
+          title="Client Config"
+          payload={JSON.stringify(
             {
               default: defaultOidcConfig,
             },
             null,
-            2,
-          ),
-        )}
+            2
+          )}
+          expanded={expanded.config}
+          onToggle={() => toggleSection('config')}
+        />
 
-        {error ? renderSection('error', 'Error', error, true) : null}
-      </View>
+        {error ? (
+          <CollapsiblePayloadSection
+            title="Error"
+            payload={error}
+            expanded={expanded.error}
+            onToggle={() => toggleSection('error')}
+            isError
+          />
+        ) : null}
+      </CardSection>
     </ScrollView>
   );
 }

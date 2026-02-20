@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { Text, View } from 'react-native';
-import { fieldStyles } from './fieldStyles';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import type { JourneyFieldRendererProps } from './types';
 
 /**

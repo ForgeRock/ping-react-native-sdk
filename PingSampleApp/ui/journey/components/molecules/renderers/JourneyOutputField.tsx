@@ -8,9 +8,9 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
-import { commonStyles } from '../../../../src/styles/common';
-import { colors } from '../../../../src/styles/colors';
-import { fieldStyles } from './fieldStyles';
+import { commonStyles } from '../../../../../src/styles/common';
+import { colors } from '../../../../../src/styles/colors';
+import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
 import { resolvePromptText, toDisplayString } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
 
