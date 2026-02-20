@@ -55,7 +55,14 @@ export default function JourneyDebugPanel(
               [{entry.timestamp}] {entry.title}
             </Text>
             {entry.payload !== undefined ? (
-              <ScrollView style={styles.payloadScroll} nestedScrollEnabled>
+              <ScrollView
+                style={styles.payloadScroll}
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator
+                onStartShouldSetResponderCapture={(): boolean => true}
+                onMoveShouldSetResponderCapture={(): boolean => true}
+              >
                 <Text style={commonStyles.codeText}>
                   {debugPayloadToString(entry.payload)}
                 </Text>

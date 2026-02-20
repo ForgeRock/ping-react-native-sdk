@@ -9,6 +9,7 @@ import React from 'react';
 import {
   ScrollView,
   Text,
+  View,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -47,12 +48,18 @@ export default function PayloadViewer(props: PayloadViewerProps): React.ReactEle
   const { payload, containerStyle, contentContainerStyle, textStyle } = props;
 
   return (
-    <ScrollView
-      style={[commonStyles.payloadScrollContainer, containerStyle]}
-      contentContainerStyle={[commonStyles.payloadScrollContent, contentContainerStyle]}
-      nestedScrollEnabled
-    >
-      <Text style={[commonStyles.codeText, textStyle]}>{payload}</Text>
-    </ScrollView>
+    <View style={[commonStyles.payloadScrollContainer, containerStyle]}>
+      <ScrollView
+        style={commonStyles.payloadScroll}
+        contentContainerStyle={[commonStyles.payloadScrollContent, contentContainerStyle]}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+        onStartShouldSetResponderCapture={(): boolean => true}
+        onMoveShouldSetResponderCapture={(): boolean => true}
+      >
+        <Text style={[commonStyles.codeText, textStyle]}>{payload}</Text>
+      </ScrollView>
+    </View>
   );
 }

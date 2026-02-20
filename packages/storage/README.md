@@ -98,7 +98,7 @@ import {
   configureSessionStorage,
   type OidcStorage,
 } from '@react-native-pingidentity/storage';
-import { journey } from '@ping-identity/rn-journey';
+import { createJourneyClient } from '@ping-identity/rn-journey';
 
 const sessionStorage = configureSessionStorage({
   android: {
@@ -120,7 +120,7 @@ const oidcStorage: OidcStorage = configureOidcStorage({
   },
 });
 
-const journeyClient = journey({
+const journeyClient = createJourneyClient({
   serverUrl: 'https://example.com/am',
   modules: {
     session: {

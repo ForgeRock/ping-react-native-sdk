@@ -28,7 +28,7 @@ export default function MultiStorageScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container}>
+    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
       {/* OIDC STORAGE CARD */}
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>OIDC Storage</Text>

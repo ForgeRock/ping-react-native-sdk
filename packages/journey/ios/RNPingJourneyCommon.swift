@@ -9,12 +9,26 @@ import Foundation
 import PingJourney
 import PingOidc
 import PingOrchestrate
-@preconcurrency import React
 import RNPingCore
 
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
+  /// Promise resolver for Journey identifiers.
+  public typealias JourneyIdResolver = @Sendable (String) -> Void
+  /// Promise resolver for Journey node payloads.
+  public typealias NodeResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for optional Journey session payloads.
+  public typealias SessionResolver = @Sendable (NSDictionary?) -> Void
+  /// Promise resolver for boolean results.
+  public typealias BoolResolver = @Sendable (Bool) -> Void
+  /// Promise resolver for void results.
+  public typealias VoidResolver = @Sendable () -> Void
+  /// Promise resolver for registered storage identifiers.
+  public typealias StorageIdsResolver = @Sendable ([String]) -> Void
+  /// Promise rejecter closure type used by the Journey Swift bridge.
+  public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
+
   /// Shared-context key used by PingJourney OIDC module for resolved OIDC config.
   ///
   /// - Note: This key is defined in PingJourney as an internal constant.
@@ -54,10 +68,10 @@ public final class RNPingJourneyCommon: NSObject {
   @objc
   public static func configureJourney(
     _ config: NSDictionary,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping JourneyIdResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<String>(resolver: resolver, rejecter: rejecter)
     configure()
 
     let payload: JourneyClientPayload
@@ -94,10 +108,10 @@ public final class RNPingJourneyCommon: NSObject {
     journeyName: String,
     forceAuth: Bool,
     noSession: Bool,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if journeyName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       promise.reject(
         JourneyErrorMapper.argument(
@@ -139,10 +153,10 @@ public final class RNPingJourneyCommon: NSObject {
   public static func next(
     _ journeyId: String,
     input: NSDictionary,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     let mutations: [JourneyCallbackValueApplier.CallbackMutation]
     do {
       mutations = try JourneyCallbackValueApplier.parseInput(input)
@@ -188,10 +202,10 @@ public final class RNPingJourneyCommon: NSObject {
   public static func resume(
     _ journeyId: String,
     uri: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if uri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       promise.reject(
         JourneyErrorMapper.argument(
@@ -238,10 +252,10 @@ public final class RNPingJourneyCommon: NSObject {
   @objc
   public static func getSession(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<NSDictionary?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
@@ -309,10 +323,10 @@ public final class RNPingJourneyCommon: NSObject {
   @objc
   public static func logout(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Bool>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
@@ -340,14 +354,14 @@ public final class RNPingJourneyCommon: NSObject {
   @objc
   public static func dispose(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping VoidResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
+    let promise = PromiseBridge<Void>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       stateStore.clearNodeState(for: journeyId)
       await journeyRegistry.remove(journeyId)
-      promise.resolve(nil)
+      promise.resolve(())
     }
   }
 
@@ -366,8 +380,8 @@ public final class RNPingJourneyCommon: NSObject {
   ///   - rejecter: Promise rejecter.
   @objc
   public static func listRegisteredStoragesFromCore(
-    _ resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter reject: @escaping @Sendable RCTPromiseRejectBlock
+    _ resolver: @escaping StorageIdsResolver,
+    rejecter reject: @escaping PromiseRejecter
   ) {
     // TODO(iOS SDK parity): expose storage handles from iOS Core runtime when needed.
     resolver([])

@@ -7,7 +7,6 @@
  
 import Foundation
 import PingLogger
-@preconcurrency import React
 import RNPingCore
 
 /// Implementation of the native logger bridge for React Native.

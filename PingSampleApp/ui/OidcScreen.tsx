@@ -330,7 +330,7 @@ export default function OidcScreen() {
   }, [userinfoDetails]);
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container}>
+    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
       <CardSection
         title="OIDC Actions"
         subtitle={hasUser !== true ? 'Tap to launch the native authorization flow.' : undefined}

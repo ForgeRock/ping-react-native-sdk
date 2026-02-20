@@ -1,4 +1,4 @@
-import { journey } from '@ping-identity/rn-journey';
+import { createJourneyClient } from '@ping-identity/rn-journey';
 import { createOidcClient } from '@ping-identity/rn-oidc';
 import { CacheStrategy, configureSessionStorage } from '@react-native-pingidentity/storage';
 
@@ -52,7 +52,7 @@ export const journeyOidcClient = createOidcClient({
   scopes: journeyConfig.scopes,
 });
 
-export const loginClient = journey({
+export const loginClient = createJourneyClient({
   timeout: 10000,
   serverUrl: journeyConfig.serverUrl,
   realm: journeyConfig.realm,

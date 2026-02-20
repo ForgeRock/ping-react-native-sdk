@@ -20,7 +20,7 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
   NativeRNPingJourneySpec(reactContext) {
 
   init {
-    RNPingJourneyCommon.configure(reactContext)
+    RNPingJourneyCommon.configure()
   }
 
   /**

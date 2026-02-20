@@ -23,7 +23,7 @@ class RNPingJourneyClassicModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
   init {
-    RNPingJourneyCommon.configure(reactContext)
+    RNPingJourneyCommon.configure()
   }
 
   /**

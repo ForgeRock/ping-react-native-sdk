@@ -60,7 +60,7 @@ export default function BrowserScreen() {
 
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container}>
+    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>Browser</Text>
 

@@ -284,7 +284,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
  * Provide a `client` directly for local screen state, or omit it when using
  * {@link JourneyProvider} to share one Journey state across multiple screens.
  *
- * @param client - Optional Journey client returned by `journey(...)`.
+ * @param client - Optional Journey client returned by `createJourneyClient(...)`.
  * @returns Tuple containing current node state and Journey actions.
  * @throws {JourneyError} When no client is available via argument or provider.
  */

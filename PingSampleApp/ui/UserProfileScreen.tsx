@@ -217,6 +217,7 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
       <ScrollView
         style={commonStyles.userProfileBody}
         contentContainerStyle={commonStyles.userProfileBodyContent}
+        nestedScrollEnabled
       >
         {activeTab === 'Journey' ? (
           <UserProfileJourneyPanel

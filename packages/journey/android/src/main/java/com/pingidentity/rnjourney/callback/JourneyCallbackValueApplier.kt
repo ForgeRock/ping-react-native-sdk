@@ -365,11 +365,11 @@ internal object JourneyCallbackValueApplier {
      * @param value Dynamic value to coerce.
      * @return String-keyed map representation, or an empty map.
      */
-    @Suppress("UNCHECKED_CAST")
     private fun asStringMap(value: Any?): Map<String, Any?> {
         val raw = value as? Map<*, *> ?: return emptyMap()
-        return raw.entries
-            .filter { it.key is String }
-            .associate { it.key as String to it.value }
+        return raw.entries.mapNotNull { entry ->
+            val key = entry.key as? String ?: return@mapNotNull null
+            key to entry.value
+        }.toMap()
     }
 }

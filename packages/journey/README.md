@@ -25,7 +25,7 @@ cd ios && pod install
 ### Create a Journey client
 
 ```ts
-import { journey } from '@ping-identity/rn-journey';
+import { createJourneyClient } from '@ping-identity/rn-journey';
 import { logger } from '@react-native-pingidentity/logger';
 import {
   CacheStrategy,
@@ -63,7 +63,7 @@ const oidcStorage = configureOidcStorage({
   },
 });
 
-const client = journey({
+const client = createJourneyClient({
   serverUrl: 'https://example.com/am',
   realm: 'alpha',
   cookie: 'iPlanetDirectoryPro',
@@ -84,7 +84,7 @@ const client = journey({
 });
 ```
 
-Pass module integrations through `config.modules`. The JS API is `journey(config)`.
+Pass module integrations through `config.modules`. The JS API is `createJourneyClient(config)`.
 Storage handles in `modules.session.storage` and `modules.oidc.storage` must come from
 `configureSessionStorage(...)` / `configureOidcStorage(...)`.
 

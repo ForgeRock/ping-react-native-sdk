@@ -71,7 +71,7 @@ function resolveStorageHandleId(
  * @returns A `JourneyClient` handle for imperative Journey flows.
  * @throws {Error} When required configuration is missing.
  */
-export function journey(
+export function createJourneyClient(
   config: JourneyConfig
 ): JourneyClient {
   if (!config.serverUrl?.trim()) {

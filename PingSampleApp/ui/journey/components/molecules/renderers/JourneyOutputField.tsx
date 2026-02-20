@@ -76,7 +76,14 @@ export default function JourneyOutputField(
       {shouldRenderHelperText ? (
         <Text style={fieldStyles.helperText}>{helperText}</Text>
       ) : null}
-      <ScrollView style={fieldStyles.payloadScroll} nestedScrollEnabled>
+      <ScrollView
+        style={fieldStyles.payloadScroll}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+        onStartShouldSetResponderCapture={(): boolean => true}
+        onMoveShouldSetResponderCapture={(): boolean => true}
+      >
         <Text style={commonStyles.codeText}>{toDisplayString(field.raw.value)}</Text>
       </ScrollView>
     </View>

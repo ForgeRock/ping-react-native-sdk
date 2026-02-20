@@ -85,7 +85,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
   };
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container}>
+    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>Device Profile</Text>
         <Text style={commonStyles.helperNote}>

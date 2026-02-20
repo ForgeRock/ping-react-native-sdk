@@ -78,6 +78,7 @@ export default function TokenScreen(): React.ReactElement {
       <ScrollView
         style={commonStyles.userProfileBody}
         contentContainerStyle={commonStyles.container}
+        nestedScrollEnabled
       >
         {activeTab === 'Journey' ? (
           <TokenJourneyPanel

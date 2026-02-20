@@ -8,7 +8,7 @@
 /**
  * Journey client factory for creating imperative native-backed clients.
  */
-export { journey } from './journey';
+export { createJourneyClient } from './journey';
 /**
  * Headless callback normalization and submit-planning helpers.
  */

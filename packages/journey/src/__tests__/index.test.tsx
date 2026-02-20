@@ -43,10 +43,10 @@ const loadModule = async (nativeModule: NativeJourneyModuleMock) => {
 describe('Journey JS API', () => {
   it('throws when serverUrl is missing', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
     expect(() =>
-      journey({
+      createJourneyClient({
         serverUrl: '',
       })
     ).toThrow('[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.');
@@ -54,9 +54,9 @@ describe('Journey JS API', () => {
 
   it('passes storage and logger ids to configureJourney', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
-    const client = journey({
+    const client = createJourneyClient({
       serverUrl: 'https://example.com',
       logger: {
         nativeHandle: { id: 'logger-id' },
@@ -88,9 +88,9 @@ describe('Journey JS API', () => {
 
   it('passes timeout to configureJourney when provided', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
-    const client = journey({
+    const client = createJourneyClient({
       serverUrl: 'https://example.com',
       timeout: 30000,
     });
@@ -106,9 +106,9 @@ describe('Journey JS API', () => {
 
   it('passes advanced nested OIDC config to configureJourney', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
-    const client = journey({
+    const client = createJourneyClient({
       serverUrl: 'https://example.com',
       modules: {
         oidc: {
@@ -166,9 +166,9 @@ describe('Journey JS API', () => {
 
   it('passes oidc storage id from nested OIDC config', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
-    const client = journey({
+    const client = createJourneyClient({
       serverUrl: 'https://example.com',
       modules: {
         oidc: {
@@ -196,10 +196,10 @@ describe('Journey JS API', () => {
 
   it('throws when modules.session.storage is not a valid session handle', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
     expect(() =>
-      journey({
+      createJourneyClient({
         serverUrl: 'https://example.com',
         modules: {
           session: {
@@ -217,10 +217,10 @@ describe('Journey JS API', () => {
 
   it('throws when modules.oidc.storage is not a valid oidc handle', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(native);
 
     expect(() =>
-      journey({
+      createJourneyClient({
         serverUrl: 'https://example.com',
         modules: {
           oidc: {
@@ -244,8 +244,8 @@ describe('Journey JS API', () => {
 
   it('configures only once and reuses native id', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     const idA = await client.init();
     const idB = await client.getId();
@@ -257,8 +257,8 @@ describe('Journey JS API', () => {
 
   it('passes start options and journey name to native start', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     await client.start('Login', { forceAuth: true, noSession: true });
 
@@ -271,8 +271,8 @@ describe('Journey JS API', () => {
 
   it('throws argument error when start journey name is empty', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     await expect(client.start('   ')).rejects.toMatchObject({
       type: 'argument_error',
@@ -282,8 +282,8 @@ describe('Journey JS API', () => {
 
   it('calls native next with placeholder node id and input payload', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     await client.start('Login');
     await client.next({
@@ -297,8 +297,8 @@ describe('Journey JS API', () => {
 
   it('throws argument error when resume uri is empty', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     await expect(client.resume('   ')).rejects.toMatchObject({
       type: 'argument_error',
@@ -308,8 +308,8 @@ describe('Journey JS API', () => {
 
   it('forwards user and logout calls to native', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     const session = await client.user();
     const didLogout = await client.logoutUser();
@@ -322,8 +322,8 @@ describe('Journey JS API', () => {
 
   it('disposes native journey instance and clears cached id', async () => {
     const native = createNativeMock();
-    const { journey } = await loadModule(native);
-    const client = journey({ serverUrl: 'https://example.com' });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     await client.init();
     await client.dispose();

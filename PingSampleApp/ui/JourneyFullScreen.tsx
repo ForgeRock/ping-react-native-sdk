@@ -538,7 +538,7 @@ export default function JourneyFullScreen(): React.ReactElement {
   );
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.journeyContainer}>
+    <ScrollView contentContainerStyle={commonStyles.journeyContainer} nestedScrollEnabled>
       <View style={commonStyles.journeyCard}>
         <Text style={commonStyles.journeyTitle}>Journey (useJourney only)</Text>
 

@@ -6,11 +6,25 @@
  */
 
 import Foundation
-@preconcurrency import React
 
 /// Swift entry point used by the Obj-C++ Journey bridge.
 @objcMembers
 public final class RNPingJourneyImpl: NSObject {
+  /// Promise resolver for Journey identifiers.
+  public typealias JourneyIdResolver = @Sendable (String) -> Void
+  /// Promise resolver for Journey node payloads.
+  public typealias NodeResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for optional Journey session payloads.
+  public typealias SessionResolver = @Sendable (NSDictionary?) -> Void
+  /// Promise resolver for boolean results.
+  public typealias BoolResolver = @Sendable (Bool) -> Void
+  /// Promise resolver for void results.
+  public typealias VoidResolver = @Sendable () -> Void
+  /// Promise resolver for registered storage identifiers.
+  public typealias StorageIdsResolver = @Sendable ([String]) -> Void
+  /// Promise rejecter closure type used by the Journey Swift bridge.
+  public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
+
   /// Shared singleton instance.
   @MainActor
   public static let shared = RNPingJourneyImpl()
@@ -34,8 +48,8 @@ public final class RNPingJourneyImpl: NSObject {
   @objc(configureJourney:resolver:rejecter:)
   public func configureJourney(
     _ config: NSDictionary,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping JourneyIdResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.configureJourney(config, resolver: resolver, rejecter: rejecter)
   }
@@ -53,8 +67,8 @@ public final class RNPingJourneyImpl: NSObject {
     _ journeyId: String,
     journeyName: String,
     options: NSDictionary?,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     let forceAuth = options?["forceAuth"] as? Bool ?? false
     let noSession = options?["noSession"] as? Bool ?? false
@@ -81,8 +95,8 @@ public final class RNPingJourneyImpl: NSObject {
     _ journeyId: String,
     nodeId: String,
     input: NSDictionary,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     _ = nodeId
     RNPingJourneyCommon.next(journeyId, input: input, resolver: resolver, rejecter: rejecter)
@@ -99,8 +113,8 @@ public final class RNPingJourneyImpl: NSObject {
   public func resume(
     _ journeyId: String,
     uri: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.resume(journeyId, uri: uri, resolver: resolver, rejecter: rejecter)
   }
@@ -114,8 +128,8 @@ public final class RNPingJourneyImpl: NSObject {
   @objc(getSession:resolver:rejecter:)
   public func getSession(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.getSession(journeyId, resolver: resolver, rejecter: rejecter)
   }
@@ -129,8 +143,8 @@ public final class RNPingJourneyImpl: NSObject {
   @objc(logout:resolver:rejecter:)
   public func logout(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.logout(journeyId, resolver: resolver, rejecter: rejecter)
   }
@@ -144,8 +158,8 @@ public final class RNPingJourneyImpl: NSObject {
   @objc(dispose:resolver:rejecter:)
   public func dispose(
     _ journeyId: String,
-    resolver: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter: @escaping @Sendable RCTPromiseRejectBlock
+    resolver: @escaping VoidResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.dispose(journeyId, resolver: resolver, rejecter: rejecter)
   }
@@ -157,8 +171,8 @@ public final class RNPingJourneyImpl: NSObject {
   ///   - rejecter: Promise rejecter.
   @objc
   public func listRegisteredStoragesFromCore(
-    _ resolve: @escaping @Sendable RCTPromiseResolveBlock,
-    rejecter reject: @escaping @Sendable RCTPromiseRejectBlock
+    _ resolve: @escaping StorageIdsResolver,
+    rejecter reject: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.listRegisteredStoragesFromCore(resolve, rejecter: reject)
   }

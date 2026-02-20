@@ -10,7 +10,6 @@ package com.pingidentity.rnjourney
 import android.net.Uri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
 import com.pingidentity.journey.plugin.callbacks
 import com.pingidentity.journey.resume
@@ -76,12 +75,9 @@ internal object RNPingJourneyCommon {
 
   /**
    * Initialize common runtime wiring for Journey bridge calls.
-   *
-   * @param reactContext React context used to bootstrap shared registries.
    */
-  @Suppress("UNUSED_PARAMETER")
   @Synchronized
-  fun configure(reactContext: ReactApplicationContext) {
+  fun configure() {
     if (configured) {
       return
     }

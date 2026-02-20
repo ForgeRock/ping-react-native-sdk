@@ -249,7 +249,11 @@ RCT_EXPORT_MODULE()
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject {
   NSLog(@"RNPingJourney: logout called for journeyId=%@", journeyId);
-  [[self swiftImpl] logout:journeyId resolver:resolve rejecter:reject];
+  [[self swiftImpl] logout:journeyId
+                  resolver:^(BOOL value) {
+                    resolve(@(value));
+                  }
+                  rejecter:reject];
 }
 
 // ------------------------------------------
@@ -259,7 +263,11 @@ RCT_EXPORT_MODULE()
         resolve:(RCTPromiseResolveBlock)resolve
          reject:(RCTPromiseRejectBlock)reject {
   NSLog(@"RNPingJourney: dispose called for journeyId=%@", journeyId);
-  [[self swiftImpl] dispose:journeyId resolver:resolve rejecter:reject];
+  [[self swiftImpl] dispose:journeyId
+                   resolver:^{
+                     resolve([NSNull null]);
+                   }
+                   rejecter:reject];
 }
 
 // ------------------------------------------

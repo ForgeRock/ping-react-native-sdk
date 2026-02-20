@@ -155,7 +155,11 @@ RCT_EXPORT_METHOD(logout:(NSString *)journeyId
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
-    [impl logout:journeyId resolver:resolve rejecter:reject];
+    [impl logout:journeyId
+        resolver:^(BOOL value) {
+          resolve(@(value));
+        }
+        rejecter:reject];
   }];
 }
 
@@ -172,7 +176,11 @@ RCT_EXPORT_METHOD(dispose:(NSString *)journeyId
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
-    [impl dispose:journeyId resolver:resolve rejecter:reject];
+    [impl dispose:journeyId
+         resolver:^{
+           resolve([NSNull null]);
+         }
+         rejecter:reject];
   }];
 }
 
