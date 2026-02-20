@@ -5,13 +5,18 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError, Tokens } from '@ping-identity/rn-types';
+import type {
+  GenericError,
+  OidcCoreConfig,
+  OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
+  Tokens,
+} from '@ping-identity/rn-types';
 import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
 import type {
   LoggerInstance,
   NativeLoggerHandle,
 } from '@react-native-pingidentity/logger';
-import type { StorageConfig } from '@react-native-pingidentity/storage';
+import type { OidcStorage } from '@react-native-pingidentity/storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -48,38 +53,7 @@ import type { StorageConfig } from '@react-native-pingidentity/storage';
  * });
  * ```
  */
-export type OidcClientConfig = {
-  /**
-   * Client identifier registered with the OIDC provider.
-   */
-  clientId: string;
-
-  /**
-   * Discovery endpoint for the OIDC provider.
-   *
-   * @remarks
-   * Required unless `openId` is provided.
-   */
-  discoveryEndpoint?: string;
-
-  /**
-   * Optional OpenID configuration override.
-   *
-   * @remarks
-   * When provided, the native layer skips discovery and uses these endpoints directly.
-   */
-  openId?: OidcOpenIdConfiguration;
-
-  /**
-   * Redirect URI for authorization responses.
-   */
-  redirectUri: string;
-
-  /**
-   * OIDC scopes to request (e.g. `openid`, `profile`).
-   */
-  scopes: string[];
-
+export type OidcClientConfig = OidcCoreConfig & {
   /**
    * Optional storage configuration created by the storage module.
    *
@@ -87,7 +61,7 @@ export type OidcClientConfig = {
    * Pass the object returned by `configureOidcStorage`. The native layer uses
    * the embedded `id` to resolve the registered storage configuration.
    */
-  storage?: StorageConfig;
+  storage?: OidcStorage;
 
   /**
    * iOS-only browser configuration for OIDC web login.
@@ -96,36 +70,6 @@ export type OidcClientConfig = {
    * Mirrors Ping iOS SDK `OidcWebConfig` settings. Ignored on Android.
    */
   ios?: IOSBrowserOpenOptions;
-
-  /**
-   * Optional authentication context class reference values.
-   */
-  acrValues?: string;
-
-  /**
-   * Optional sign-out redirect URI for end-session flows.
-   */
-  signOutRedirectUri?: string;
-
-  /**
-   * Optional state parameter for the authorization request.
-   */
-  state?: string;
-
-  /**
-   * Optional nonce parameter for the authorization request.
-   */
-  nonce?: string;
-
-  /**
-   * Optional UI locales parameter for the authorization request.
-   */
-  uiLocales?: string;
-
-  /**
-   * Optional token refresh threshold in seconds.
-   */
-  refreshThreshold?: number;
 
   /**
    * Optional JavaScript logger instance.
@@ -143,56 +87,12 @@ export type OidcClientConfig = {
    */
   nativeLogger?: NativeLoggerHandle;
 
-  /**
-   * Optional login hint for the authorization request.
-   */
-  loginHint?: string;
-
-  /**
-   * Optional display parameter for the authorization request.
-   */
-  display?: string;
-
-  /**
-   * Optional prompt parameter for the authorization request.
-   */
-  prompt?: string;
-
-  /**
-   * Additional provider-specific parameters.
-   */
-  additionalParameters?: Record<string, string>;
 };
 
 /**
  * OpenID configuration override for native clients.
  */
-export type OidcOpenIdConfiguration = {
-  /**
-   * Authorization endpoint URL.
-   */
-  authorizationEndpoint: string;
-  /**
-   * Token endpoint URL.
-   */
-  tokenEndpoint: string;
-  /**
-   * Userinfo endpoint URL.
-   */
-  userinfoEndpoint: string;
-  /**
-   * End-session endpoint URL.
-   */
-  endSessionEndpoint?: string;
-  /**
-   * Ping end-session endpoint URL (ID token only).
-   */
-  pingEndIdpSessionEndpoint?: string;
-  /**
-   * Token revocation endpoint URL.
-   */
-  revocationEndpoint?: string;
-};
+export type OidcOpenIdConfiguration = SharedOidcOpenIdConfiguration;
 
 /**
  * Optional overrides when launching an authorization request.

@@ -7,20 +7,35 @@
 import type { BaseStorageConfig } from "../NativeRNPingStorage";
 
 /**
+ * Compile-time brand key for Session storage handles.
+ *
+ * @internal
+ */
+declare const sessionStorageHandleBrand: unique symbol;
+
+/**
+ * Compile-time brand key for OIDC storage handles.
+ *
+ * @internal
+ */
+declare const oidcStorageHandleBrand: unique symbol;
+
+/**
  * Storage configuration type for Journey session data.
  * 
- * Used to configure secure storage for Journey authentication sessions.
- * This type is returned by {@link configureSessionStorage} after the module
- * registers a session storage configuration internally.
+ * Opaque handle returned by {@link configureSessionStorage}.
+ *
+ * Used by native-backed modules to resolve a previously registered
+ * session storage configuration.
  * 
  * Session storage typically stores temporary authentication state and session
  * data during Journey flows.
  *
  * @remarks
- * The returned object includes an `id` that can be passed into native-backed
- * modules requiring a storage handle.
- * 
- * @see {@link BaseStorageConfig} for configuration options
+ * Includes a `kind` discriminator and compile-time brand so callers cannot
+ * accidentally pass a plain config object where a registered handle is required.
+ *
+ * @see {@link BaseStorageConfig} for configuration input options
  * @see {@link configureSessionStorage} to register and resolve a configuration
  * 
  * @example
@@ -39,23 +54,40 @@ import type { BaseStorageConfig } from "../NativeRNPingStorage";
  * // initJourney({ sessionStorage, ... });
  * ```
  */
-export type SessionStorage = BaseStorageConfig;
+export type SessionStorage = BaseStorageConfig &
+  Readonly<{
+    /**
+     * Native identifier for a registered session storage configuration.
+     */
+    id: string;
+    /**
+     * Runtime discriminator for session storage handles.
+     */
+    kind: "session";
+    /**
+     * Compile-time brand to keep this handle opaque.
+     *
+     * @internal
+     */
+    [sessionStorageHandleBrand]: true;
+  }>;
 
 /**
  * Storage configuration type for OIDC tokens and authorization state.
  * 
- * Used to configure secure storage for OAuth/OIDC tokens, refresh tokens,
- * and authorization state. This type is returned by {@link configureOidcStorage}
- * after the module registers an OIDC storage configuration internally.
+ * Opaque handle returned by {@link configureOidcStorage}.
+ *
+ * Used by native-backed modules to resolve a previously registered OIDC
+ * storage configuration for token and authorization state persistence.
  * 
  * OIDC storage is critical for securely managing authentication tokens and
  * should use appropriate security settings for your application's requirements.
  *
  * @remarks
- * The returned object includes an `id` that can be passed into native-backed
- * modules requiring a storage handle.
- * 
- * @see {@link BaseStorageConfig} for configuration options
+ * Includes a `kind` discriminator and compile-time brand so callers cannot
+ * accidentally pass a plain config object where a registered handle is required.
+ *
+ * @see {@link BaseStorageConfig} for configuration input options
  * @see {@link configureOidcStorage} to register and resolve a configuration
  * 
  * @example
@@ -75,4 +107,20 @@ export type SessionStorage = BaseStorageConfig;
  * ```
  * 
  */
-export type OidcStorage = BaseStorageConfig;
+export type OidcStorage = BaseStorageConfig &
+  Readonly<{
+    /**
+     * Native identifier for a registered OIDC storage configuration.
+     */
+    id: string;
+    /**
+     * Runtime discriminator for OIDC storage handles.
+     */
+    kind: "oidc";
+    /**
+     * Compile-time brand to keep this handle opaque.
+     *
+     * @internal
+     */
+    [oidcStorageHandleBrand]: true;
+  }>;

@@ -58,10 +58,17 @@ import { createOidcClient } from '@ping-identity/rn-oidc';
 import { logger } from '@react-native-pingidentity/logger';
 
 const oidcStorage = configureOidcStorage({
-  fileName: 'ping-oidc',
-  keyAlias: 'ping-oidc',
-  strongBoxPreferred: true,
-  cacheStrategy: 'cache_on_failure',
+  android: {
+    fileName: 'ping-oidc',
+    keyAlias: 'ping-oidc',
+    strongBoxPreferred: true,
+    cacheStrategy: 'cache_on_failure',
+  },
+  ios: {
+    account: 'com.example.app.oidc',
+    encryptor: true,
+    cacheable: false,
+  },
 });
 
 const debugLogger = logger({ level: 'debug' });

@@ -55,6 +55,9 @@ public enum CoreRuntime {
     /// Registry for OIDC web clients.
     public static let oidcWebClientRegistry: Registry = SimpleRegistry()
 
+    /// Registry for Journey client instances.
+    public static let journeyRegistry: Registry = SimpleRegistry()
+
     /// Internal resolver store used to avoid shared mutable global state.
     private static let journeyCallbackResolverStore = JourneyCallbackResolverStore()
 

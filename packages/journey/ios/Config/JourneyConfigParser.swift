@@ -25,6 +25,7 @@ enum JourneyConfigParser {
 
     let realm = readOptionalString(config["realm"])
     let cookie = readOptionalString(config["cookie"])
+    let timeout = parseTimeout(config["timeout"])
     let clientId = readOptionalString(config["clientId"])
     let discoveryEndpoint = readOptionalString(config["discoveryEndpoint"])
     let redirectUri = readOptionalString(config["redirectUri"])
@@ -43,6 +44,7 @@ enum JourneyConfigParser {
       config["additionalParameters"] as? NSDictionary
     )
     let sessionStorageId = readOptionalString(config["sessionStorageId"])
+    let oidcStorageId = readOptionalString(config["oidcStorageId"])
     let loggerId = readOptionalString(config["loggerId"])
     let oidcClientId = readOptionalString(config["oidcClientId"])
 
@@ -61,7 +63,8 @@ enum JourneyConfigParser {
       !(loginHint?.isEmpty ?? true) ||
       !(display?.isEmpty ?? true) ||
       !(prompt?.isEmpty ?? true) ||
-      !additionalParameters.isEmpty
+      !additionalParameters.isEmpty ||
+      !(oidcStorageId?.isEmpty ?? true)
 
     if !hasOidcClientHandle &&
       hasAnyOidcField &&
@@ -77,6 +80,7 @@ enum JourneyConfigParser {
 
     return JourneyClientPayload(
       serverUrl: serverUrl,
+      timeout: timeout,
       realm: realm,
       cookie: cookie,
       clientId: clientId,
@@ -95,6 +99,7 @@ enum JourneyConfigParser {
       prompt: prompt,
       additionalParameters: additionalParameters,
       sessionStorageId: sessionStorageId,
+      oidcStorageId: oidcStorageId,
       loggerId: loggerId,
       oidcClientId: oidcClientId
     )
@@ -148,6 +153,20 @@ enum JourneyConfigParser {
     return nil
   }
 
+  /// Parses optional timeout in milliseconds from JS payload.
+  ///
+  /// - Parameter value: Raw timeout value.
+  /// - Returns: Normalized timeout in milliseconds, or `nil` when omitted.
+  private static func parseTimeout(_ value: Any?) -> Int64? {
+    if let number = value as? NSNumber {
+      return number.int64Value
+    }
+    if let string = value as? String, let parsed = Int64(string.trimmingCharacters(in: .whitespacesAndNewlines)) {
+      return parsed
+    }
+    return nil
+  }
+
   /// Reads an optional string and trims whitespace/newlines.
   ///
   /// - Parameter value: Raw map value.
@@ -160,4 +179,3 @@ enum JourneyConfigParser {
     return trimmed.isEmpty ? nil : trimmed
   }
 }
-

@@ -7,6 +7,7 @@
 
 import Foundation
 import PingJourney
+import PingJourneyPlugin
 import PingOrchestrate
 
 /// Applies callback input mutations from JS payloads to active Journey callbacks.

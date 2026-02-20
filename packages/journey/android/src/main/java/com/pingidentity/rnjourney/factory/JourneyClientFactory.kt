@@ -10,6 +10,7 @@ package com.pingidentity.rnjourney
 import com.pingidentity.journey.Journey
 import com.pingidentity.journey.module.Oidc
 import com.pingidentity.journey.module.Session
+import com.pingidentity.oidc.OidcClientConfig
 import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.storage.CacheStrategy
@@ -24,10 +25,12 @@ import com.reactnativepingidentity.storage.StorageConfigRegistry
  * Builds native Journey workflow instances from parsed JS payloads.
  *
  * @param sessionStorageRegistry Registry used to resolve session storage handles from JS.
+ * @param oidcStorageRegistry Registry used to resolve OIDC storage handles from JS.
  * @param loggerApplier Logger binder invoked during workflow construction.
  */
 internal class JourneyClientFactory(
     private val sessionStorageRegistry: StorageConfigRegistry,
+    private val oidcStorageRegistry: StorageConfigRegistry,
     private val loggerApplier: (String?) -> Unit
 ) {
 
@@ -64,7 +67,7 @@ internal class JourneyClientFactory(
         return Journey {
             loggerApplier(payload.loggerId)
             serverUrl = payload.serverUrl
-            timeout = 30000
+            payload.timeout?.let { timeout = it }
 
             payload.realm?.let { realm = it }
             payload.cookie?.let { cookie = it }
@@ -74,11 +77,7 @@ internal class JourneyClientFactory(
                     clientId = oidcConfig.clientId
                     oidcConfig.discoveryEndpoint?.let { discoveryEndpoint = it }
                     redirectUri = oidcConfig.redirectUri
-                    scopes = if (oidcConfig.scopes.isEmpty()) {
-                        mutableSetOf("openid", "email", "address", "profile", "phone")
-                    } else {
-                        oidcConfig.scopes.toMutableSet()
-                    }
+                    scopes = oidcConfig.scopes.toMutableSet()
                     acrValues = oidcConfig.acrValues
                     signOutRedirectUri = oidcConfig.signOutRedirectUri
                     state = oidcConfig.state
@@ -101,6 +100,7 @@ internal class JourneyClientFactory(
                             revocationEndpoint = openIdConfig.revocationEndpoint ?: ""
                         )
                     }
+                    applyOidcStorageIfPresent(payload.oidcStorageId)
                 }
             }
 
@@ -237,6 +237,22 @@ internal class JourneyClientFactory(
             storage {
                 applyStorageConfig(storageConfig)
             }
+        }
+    }
+
+    /**
+     * Applies OIDC storage module configuration when a storage id is present.
+     *
+     * @param storageId Optional OIDC storage handle id resolved from JavaScript modules payload.
+     * @throws IllegalStateException if the storage id cannot be resolved.
+     */
+    private fun OidcClientConfig.applyOidcStorageIfPresent(storageId: String?) {
+        if (storageId.isNullOrBlank()) {
+            return
+        }
+        val storageConfig = oidcStorageRegistry.resolve(storageId)
+        storage {
+            applyStorageConfig(storageConfig)
         }
     }
 

@@ -7,34 +7,23 @@
 
 import NativeRNPingJourney from './NativeRNPingJourney';
 import type {
-  JourneyConfig,
   JourneyNextInput,
   JourneyNode,
   JourneyStartOptions,
   JourneyUserSession,
 } from './types';
+import type { NativeJourneyConfig } from './NativeRNPingJourney';
 
 /**
  * Configure the native Journey instance.
  *
  * @param config - Journey configuration payload.
- * @param sessionStorageId - Optional storage handle id for session composition.
- * @param loggerId - Optional native logger handle id.
- * @param oidcClientId - Optional native OIDC client handle id for OIDC composition reuse.
  * @returns Native Journey instance identifier.
  */
 export async function configureJourney(
-  config: JourneyConfig,
-  sessionStorageId?: string,
-  loggerId?: string,
-  oidcClientId?: string
+  config: NativeJourneyConfig
 ): Promise<string> {
-  return await NativeRNPingJourney.configureJourney({
-    ...config,
-    sessionStorageId,
-    loggerId,
-    oidcClientId,
-  });
+  return await NativeRNPingJourney.configureJourney(config);
 }
 
 /**

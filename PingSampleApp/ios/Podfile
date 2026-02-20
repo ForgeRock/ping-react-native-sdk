@@ -8,6 +8,9 @@ require Pod::Executable.execute_command('node', ['-p',
 
 platform :ios, '16.0'
 prepare_react_native_project!
+# Development pods
+ping_ios_sdk_git = 'https://github.com/ForgeRock/ping-ios-sdk.git'
+ping_ios_sdk_branch = 'SDKS-4648-RN-Device'
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
@@ -25,29 +28,41 @@ target 'PingSampleApp' do
   )
   
   pod 'PingBrowser',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingBrowser.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingJourney',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingJourney.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingStorage',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingStorage.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingOrchestrate',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingOrchestrate.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingLogger',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingLogger.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingDeviceId',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceId.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingDeviceProfile',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingDeviceProfile.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingJourneyPlugin',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingJourneyPlugin.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingNetwork',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingNetwork.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingTamperDetector',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingTamperDetector.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingCommons',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/SDKS-4648-RN-Device/PingCommons.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingOidc',
-  :podspec => 'https://raw.githubusercontent.com/ForgeRock/ping-ios-sdk/refs/tags/1.3.1/PingOidc.podspec'
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'RNPingCore', :path => '../../packages/core'
   
   post_install do |installer|

@@ -15,8 +15,17 @@ import RNPingCore
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
+  /// Shared-context key used by PingJourney OIDC module for resolved OIDC config.
+  ///
+  /// - Note: This key is defined in PingJourney as an internal constant.
+  ///   We mirror the value here to recover OIDC user state when Journey session
+  ///   storage is unavailable or not yet restored.
+  private static let journeyOidcConfigContextKey = "com.pingidentity.journey.OidcClientConfig"
+
   /// Shared state store keyed by generated Journey id.
   private static let stateStore = JourneyStateStore()
+  /// Shared core registry for Journey instances.
+  private static let journeyRegistry: Registry = CoreRuntime.journeyRegistry
 
   /// Initializes common runtime wiring for Journey bridge operations.
   @objc
@@ -31,6 +40,9 @@ public final class RNPingJourneyCommon: NSObject {
   public static func cleanup() {
     CoreRuntime.setJourneyCallbackResolver(nil)
     stateStore.removeAll()
+    Task {
+      await journeyRegistry.removeAll()
+    }
   }
 
   /// Configures a native Journey workflow from JS configuration.
@@ -59,7 +71,7 @@ public final class RNPingJourneyCommon: NSObject {
     Task { @MainActor in
       do {
         let journey = try await JourneyClientFactory().build(payload)
-        let journeyId = stateStore.registerJourney(journey)
+        let journeyId = await journeyRegistry.register(JourneyHandle(journey: journey))
         promise.resolve(journeyId)
       } catch {
         promise.reject(JourneyErrorMapper.map(error, code: .initError))
@@ -97,7 +109,7 @@ public final class RNPingJourneyCommon: NSObject {
     }
 
     Task { @MainActor in
-      guard let journey = stateStore.journey(for: journeyId) else {
+      guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
@@ -201,7 +213,7 @@ public final class RNPingJourneyCommon: NSObject {
     }
 
     Task { @MainActor in
-      guard let journey = stateStore.journey(for: journeyId) else {
+      guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
@@ -231,7 +243,7 @@ public final class RNPingJourneyCommon: NSObject {
   ) {
     let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
-      guard let journey = stateStore.journey(for: journeyId) else {
+      guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
@@ -241,7 +253,7 @@ public final class RNPingJourneyCommon: NSObject {
         return
       }
 
-      let user = await journey.journeyUser()
+      let user = await resolveJourneyUser(journey)
       guard let user else {
         promise.resolve(nil)
         return
@@ -269,6 +281,25 @@ public final class RNPingJourneyCommon: NSObject {
     }
   }
 
+  /// Resolves the active Journey user, with an OIDC-config fallback on iOS.
+  ///
+  /// - Parameter journey: Native Journey instance.
+  /// - Returns: Resolved user handle, or `nil` when no user can be restored.
+  private static func resolveJourneyUser(_ journey: Journey) async -> User? {
+    if let user = await journey.journeyUser() {
+      return user
+    }
+
+    guard
+      let oidcConfig = journey.sharedContext.get(key: journeyOidcConfigContextKey) as? OidcClientConfig
+    else {
+      return nil
+    }
+
+    // Fallback to an OIDC-backed user when Journey session restoration is absent.
+    return OidcUser(config: oidcConfig)
+  }
+
   /// Logs out active Journey user and clears in-memory node state.
   ///
   /// - Parameters:
@@ -283,7 +314,7 @@ public final class RNPingJourneyCommon: NSObject {
   ) {
     let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
-      guard let journey = stateStore.journey(for: journeyId) else {
+      guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
           JourneyErrorMapper.state(
             code: .stateError,
@@ -314,9 +345,18 @@ public final class RNPingJourneyCommon: NSObject {
   ) {
     let promise = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
-      stateStore.removeJourney(for: journeyId)
+      stateStore.clearNodeState(for: journeyId)
+      await journeyRegistry.remove(journeyId)
       promise.resolve(nil)
     }
+  }
+
+  /// Resolves a Journey instance from the shared core registry.
+  ///
+  /// - Parameter journeyId: Native Journey instance id.
+  /// - Returns: Journey instance when available.
+  private static func resolveJourney(_ journeyId: String) async -> Journey? {
+    return (await journeyRegistry.resolve(journeyId) as? JourneyHandle)?.journey
   }
 
   /// Returns registered storage identifiers used by debug tooling.
@@ -389,37 +429,26 @@ public final class RNPingJourneyCommon: NSObject {
   }
 }
 
+/// Handle for storing Journey client instances.
+///
+/// - Note: `@unchecked Sendable` is used because upstream `Journey` is a
+///   reference type not declared `Sendable`. This wrapper is immutable.
+private final class JourneyHandle: NativeHandle, @unchecked Sendable {
+  let journey: Journey
+
+  init(journey: Journey) {
+    self.journey = journey
+  }
+}
+
 /// Thread-safe Journey state store keyed by generated journey id.
 ///
 /// - Note: `@unchecked Sendable` is used because this class owns mutable maps
 ///   of native Journey state. All map reads/writes are synchronized with `NSLock`.
 private final class JourneyStateStore: @unchecked Sendable {
   private let lock = NSLock()
-  private var journeyMap = [String: Journey]()
   private var nodeMap = [String: Node]()
   private var continueNodeMap = [String: ContinueNode]()
-
-  /// Registers a Journey instance and returns generated id.
-  ///
-  /// - Parameter journey: Native Journey instance.
-  /// - Returns: Generated Journey id.
-  func registerJourney(_ journey: Journey) -> String {
-    lock.lock()
-    defer { lock.unlock() }
-    let journeyId = UUID().uuidString
-    journeyMap[journeyId] = journey
-    return journeyId
-  }
-
-  /// Resolves Journey by id.
-  ///
-  /// - Parameter journeyId: Journey id.
-  /// - Returns: Journey instance when available.
-  func journey(for journeyId: String) -> Journey? {
-    lock.lock()
-    defer { lock.unlock() }
-    return journeyMap[journeyId]
-  }
 
   /// Stores node state for Journey id.
   ///
@@ -470,23 +499,12 @@ private final class JourneyStateStore: @unchecked Sendable {
     previousContinueNode?.close()
   }
 
-  /// Removes Journey instance and associated node state.
-  ///
-  /// - Parameter journeyId: Journey id.
-  func removeJourney(for journeyId: String) {
-    clearNodeState(for: journeyId)
-    lock.lock()
-    journeyMap.removeValue(forKey: journeyId)
-    lock.unlock()
-  }
-
-  /// Clears all Journey runtime state.
+  /// Clears all cached Journey node state.
   func removeAll() {
     lock.lock()
     let continueNodes = Array(continueNodeMap.values)
     continueNodeMap.removeAll()
     nodeMap.removeAll()
-    journeyMap.removeAll()
     lock.unlock()
     continueNodes.forEach { continueNode in
       continueNode.close()

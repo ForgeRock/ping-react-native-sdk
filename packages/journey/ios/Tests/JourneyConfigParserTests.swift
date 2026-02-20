@@ -13,6 +13,7 @@ final class JourneyConfigParserTests: XCTestCase {
   func testParseMapsRequiredAndOptionalFields() throws {
     let config: NSDictionary = [
       "serverUrl": "https://example.com/am",
+      "timeout": 120000,
       "realm": "alpha",
       "cookie": "iPlanetDirectoryPro",
       "clientId": "client-id",
@@ -32,6 +33,7 @@ final class JourneyConfigParserTests: XCTestCase {
         "foo": "bar"
       ],
       "sessionStorageId": "session-storage-1",
+      "oidcStorageId": "oidc-storage-1",
       "loggerId": "logger-1",
       "oidcClientId": "oidc-client-1",
       "openId": [
@@ -47,6 +49,7 @@ final class JourneyConfigParserTests: XCTestCase {
     let payload = try JourneyConfigParser.parse(config)
 
     XCTAssertEqual(payload.serverUrl, "https://example.com/am")
+    XCTAssertEqual(payload.timeout, 120000)
     XCTAssertEqual(payload.realm, "alpha")
     XCTAssertEqual(payload.cookie, "iPlanetDirectoryPro")
     XCTAssertEqual(payload.clientId, "client-id")
@@ -64,6 +67,7 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.prompt, "login")
     XCTAssertEqual(payload.additionalParameters, ["foo": "bar"])
     XCTAssertEqual(payload.sessionStorageId, "session-storage-1")
+    XCTAssertEqual(payload.oidcStorageId, "oidc-storage-1")
     XCTAssertEqual(payload.loggerId, "logger-1")
     XCTAssertEqual(payload.oidcClientId, "oidc-client-1")
     XCTAssertEqual(payload.openId?.authorizationEndpoint, "https://example.com/oauth2/authorize")
@@ -83,6 +87,7 @@ final class JourneyConfigParserTests: XCTestCase {
     let payload = try JourneyConfigParser.parse(config)
 
     XCTAssertEqual(payload.serverUrl, "https://example.com/am")
+    XCTAssertNil(payload.timeout)
     XCTAssertEqual(payload.oidcClientId, "oidc-client-1")
     XCTAssertNil(payload.clientId)
     XCTAssertNil(payload.discoveryEndpoint)
@@ -94,6 +99,15 @@ final class JourneyConfigParserTests: XCTestCase {
       "serverUrl": "https://example.com/am",
       "clientId": "client-id",
       "redirectUri": "com.example.app://oauth2redirect"
+    ]
+
+    XCTAssertThrowsError(try JourneyConfigParser.parse(config))
+  }
+
+  func testParseRejectsOidcStorageIdWithoutOidcConfig() {
+    let config: NSDictionary = [
+      "serverUrl": "https://example.com/am",
+      "oidcStorageId": "oidc-storage-1"
     ]
 
     XCTAssertThrowsError(try JourneyConfigParser.parse(config))
@@ -113,4 +127,3 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertThrowsError(try JourneyConfigParser.parse(config))
   }
 }
-

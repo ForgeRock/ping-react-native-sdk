@@ -110,14 +110,44 @@ enum OidcClientFactory {
     let config = RNPingStorageCommon.configureOidcStorage(storageId)
     let account = (config["account"] as? String) ?? "ACCESS_TOKEN_STORAGE"
     let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
-    let cacheable = (config["cacheable"] as? Bool) ?? false
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {
         return secured
       }
       return NoEncryptor()
     }()
-    return KeychainStorage<Token>(account: account, encryptor: encryptor, cacheable: cacheable)
+    return KeychainStorage<Token>(
+      account: account,
+      encryptor: encryptor,
+      cacheStrategy: parseCacheStrategy(from: config)
+    )
+  }
+
+  /// Maps storage config payload values to PingStorage cache strategy.
+  ///
+  /// Supports both the current `cacheable` boolean and future `cacheStrategy` string.
+  ///
+  /// - Parameter config: Registered storage configuration payload.
+  /// - Returns: Native cache strategy value.
+  private static func parseCacheStrategy(from config: NSDictionary) -> CacheStrategy {
+    if let rawStrategy = (config["cacheStrategy"] as? String)?.lowercased() {
+      switch rawStrategy {
+      case "cache":
+        return .CACHE
+      case "cache_on_failure":
+        return .CACHE_ON_FAILURE
+      case "no_cache":
+        return .NO_CACHE
+      default:
+        break
+      }
+    }
+
+    if let cacheable = config["cacheable"] as? Bool {
+      return cacheable ? .CACHE_ON_FAILURE : .NO_CACHE
+    }
+
+    return .NO_CACHE
   }
 
   /// Build OpenID configuration using the Codable initializer.

@@ -38,6 +38,10 @@ RCT_EXPORT_MODULE()
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
   dict[@"serverUrl"] = config.serverUrl();
+  auto timeout = config.timeout();
+  if (timeout.has_value()) {
+    dict[@"timeout"] = @(timeout.value());
+  }
 
   NSString *realm = config.realm();
   if (realm != nil) {
@@ -135,6 +139,10 @@ RCT_EXPORT_MODULE()
   NSString *sessionStorageId = config.sessionStorageId();
   if (sessionStorageId != nil) {
     dict[@"sessionStorageId"] = sessionStorageId;
+  }
+  NSString *oidcStorageId = config.oidcStorageId();
+  if (oidcStorageId != nil) {
+    dict[@"oidcStorageId"] = oidcStorageId;
   }
   NSString *loggerId = config.loggerId();
   if (loggerId != nil) {

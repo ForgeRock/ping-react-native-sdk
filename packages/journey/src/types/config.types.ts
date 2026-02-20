@@ -5,8 +5,18 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { LoggerInstance, NativeLoggerHandle } from '@react-native-pingidentity/logger';
-import type { SessionStorage } from '@react-native-pingidentity/storage';
+import type {
+  OidcCoreConfig,
+  OidcOpenIdConfiguration,
+} from '@ping-identity/rn-types';
+import type {
+  LoggerInstance,
+  NativeLoggerHandle,
+} from '@react-native-pingidentity/logger';
+import type {
+  OidcStorage,
+  SessionStorage,
+} from '@react-native-pingidentity/storage';
 import type { JourneyCallbackType } from './node.types';
 
 /**
@@ -16,35 +26,53 @@ import type { JourneyCallbackType } from './node.types';
 /**
  * Optional OpenID endpoint override for Journey OIDC composition.
  */
-export type JourneyOidcOpenIdConfiguration = {
+export type JourneyOidcOpenIdConfiguration = OidcOpenIdConfiguration;
+
+/**
+ * Journey OIDC module configuration.
+ *
+ * @remarks
+ * Extends the shared OIDC core shape with Journey-supported RN handles.
+ */
+export type JourneyOidcModuleConfig = OidcCoreConfig & {
   /**
-   * Authorization endpoint URL.
+   * Optional OIDC token storage handle created by the storage module.
    */
-  authorizationEndpoint: string;
+  storage?: OidcStorage;
   /**
-   * Token endpoint URL.
+   * Optional JavaScript logger instance.
    */
-  tokenEndpoint: string;
+  logger?: LoggerInstance;
   /**
-   * Userinfo endpoint URL.
+   * Optional native logger handle.
    */
-  userinfoEndpoint: string;
-  /**
-   * Optional end-session endpoint URL.
-   */
-  endSessionEndpoint?: string;
-  /**
-   * Optional Ping end-session endpoint URL.
-   */
-  pingEndIdpSessionEndpoint?: string;
-  /**
-   * Optional revocation endpoint URL.
-   */
-  revocationEndpoint?: string;
+  nativeLogger?: NativeLoggerHandle;
 };
 
 /**
- * Journey client base configuration.
+ * Optional Journey module integrations.
+ */
+export type JourneyModules = {
+  /**
+   * Session module configuration.
+   */
+  session?: {
+    /**
+     * Session storage handle created by the storage module.
+     *
+     * @remarks
+     * Applied natively on both Android and iOS.
+     */
+    storage?: SessionStorage;
+  };
+  /**
+   * OIDC module composition.
+   */
+  oidc?: JourneyOidcModuleConfig;
+};
+
+/**
+ * Journey client configuration.
  */
 export type JourneyConfig = {
   /**
@@ -60,127 +88,17 @@ export type JourneyConfig = {
    */
   cookie?: string;
   /**
-   * Optional OIDC client identifier for Journey+OIDC composition.
+   * Optional network timeout in milliseconds.
    */
-  clientId?: string;
+  timeout?: number;
   /**
-   * Optional OIDC discovery endpoint.
-   */
-  discoveryEndpoint?: string;
-  /**
-   * Optional OIDC redirect URI.
-   */
-  redirectUri?: string;
-  /**
-   * Optional OIDC scopes for post-auth token flows.
-   */
-  scopes?: string[];
-  /**
-   * Optional OpenID endpoint override.
-   */
-  openId?: JourneyOidcOpenIdConfiguration;
-  /**
-   * Optional ACR values.
-   */
-  acrValues?: string;
-  /**
-   * Optional sign-out redirect URI.
-   */
-  signOutRedirectUri?: string;
-  /**
-   * Optional state parameter.
-   */
-  state?: string;
-  /**
-   * Optional nonce parameter.
-   */
-  nonce?: string;
-  /**
-   * Optional UI locales parameter.
-   */
-  uiLocales?: string;
-  /**
-   * Optional token refresh threshold in seconds.
-   */
-  refreshThreshold?: number;
-  /**
-   * Optional login hint.
-   */
-  loginHint?: string;
-  /**
-   * Optional display parameter.
-   */
-  display?: string;
-  /**
-   * Optional prompt parameter.
-   */
-  prompt?: string;
-  /**
-   * Optional provider-specific parameters.
-   */
-  additionalParameters?: Record<string, string>;
-  /**
-   * Optional shorthand OIDC client handle.
-   *
-   * @remarks
-   * Equivalent to `modules.oidc.client` when calling `journey(config, modules?)`.
-   */
-  oidcClient?: JourneyOidcClientHandle;
-  /**
-   * Optional JavaScript logger instance.
+   * Optional Journey logger used by the native workflow.
    */
   logger?: LoggerInstance;
   /**
-   * Optional native logger handle.
+   * Optional Journey module integrations.
    */
-  nativeLogger?: NativeLoggerHandle;
-};
-
-/**
- * OIDC client handle accepted by Journey module composition.
- *
- * @remarks
- * Pass the object returned by `createOidcClient(...)` from
- * `@ping-identity/rn-oidc`.
- */
-export type JourneyOidcClientHandle = {
-  /**
-   * Native OIDC client identifier.
-   */
-  id: string;
-};
-
-/**
- * Optional Journey module integrations.
- */
-export type JourneyModules = {
-  /**
-   * Session module configuration.
-   *
-   * @remarks
-   * `modules.session.storage` is currently Android-functional only.
-   * TODO(iOS SDK parity): bind custom session storage handles on iOS once
-   * native PingJourney exposes public Session module storage configuration.
-   */
-  session?: {
-    /**
-     * Session storage handle created by the storage module.
-     *
-     * @remarks
-     * Currently applied on Android. On iOS this handle is accepted for API
-     * parity but not bound to native Journey session storage yet.
-     */
-    storage?: SessionStorage;
-  };
-  /**
-   * OIDC module composition.
-   */
-  oidc?: {
-    /**
-     * Native-backed OIDC client handle created by `@ping-identity/rn-oidc`.
-     */
-    client?: JourneyOidcClientHandle;
-  };
+  modules?: JourneyModules;
 };
 
 /**

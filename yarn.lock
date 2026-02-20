@@ -2562,7 +2562,6 @@ __metadata:
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
-    "@react-native-pingidentity/storage": "*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -2575,6 +2574,7 @@ __metadata:
     "@ping-identity/rn-types": "npm:^0.1.0"
     "@react-native-pingidentity/core": "npm:^0.1.0"
     "@react-native-pingidentity/logger": "npm:^0.1.0"
+    "@react-native-pingidentity/storage": "npm:^0.1.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:

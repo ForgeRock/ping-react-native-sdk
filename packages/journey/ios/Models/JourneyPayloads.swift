@@ -21,6 +21,8 @@ struct JourneyOpenIdPayload: Sendable {
 struct JourneyClientPayload: Sendable {
   /// Base AM/Ping server URL.
   let serverUrl: String
+  /// Optional network timeout in milliseconds.
+  let timeout: Int64?
   /// Optional AM realm path.
   let realm: String?
   /// Optional cookie/session namespace override.
@@ -57,9 +59,10 @@ struct JourneyClientPayload: Sendable {
   let additionalParameters: [String: String]
   /// Optional session storage handle id from the storage bridge module.
   let sessionStorageId: String?
+  /// Optional OIDC storage handle id from the storage bridge module.
+  let oidcStorageId: String?
   /// Optional logger handle id from the logger bridge module.
   let loggerId: String?
   /// Optional OIDC client handle id from the OIDC bridge module.
   let oidcClientId: String?
 }
-

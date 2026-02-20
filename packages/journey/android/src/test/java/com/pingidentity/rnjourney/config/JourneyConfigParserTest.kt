@@ -27,6 +27,7 @@ class JourneyConfigParserTest {
         val payload = JourneyConfigParser.parse(config)
 
         assertEquals("https://example.com/am", payload.serverUrl)
+        assertNull(payload.timeout)
         assertNull(payload.clientId)
         assertNull(payload.discoveryEndpoint)
         assertNull(payload.redirectUri)
@@ -36,6 +37,7 @@ class JourneyConfigParserTest {
     fun parseFullConfig() {
         val config = JavaOnlyMap().apply {
             putString("serverUrl", "https://example.com/am")
+            putDouble("timeout", 120000.0)
             putString("realm", "alpha")
             putString("cookie", "iPlanetDirectoryPro")
             putString("clientId", "rn-client")
@@ -43,12 +45,14 @@ class JourneyConfigParserTest {
             putString("redirectUri", "com.example.app://oauth2redirect")
             putArray("scopes", JavaOnlyArray.of("openid", "profile"))
             putString("sessionStorageId", "storage-1")
+            putString("oidcStorageId", "oidc-storage-1")
             putString("loggerId", "logger-1")
         }
 
         val payload = JourneyConfigParser.parse(config)
 
         assertEquals("https://example.com/am", payload.serverUrl)
+        assertEquals(120000L, payload.timeout)
         assertEquals("alpha", payload.realm)
         assertEquals("iPlanetDirectoryPro", payload.cookie)
         assertEquals("rn-client", payload.clientId)
@@ -66,6 +70,7 @@ class JourneyConfigParserTest {
         assertNull(payload.prompt)
         assertEquals(emptyMap<String, String>(), payload.additionalParameters)
         assertEquals("storage-1", payload.sessionStorageId)
+        assertEquals("oidc-storage-1", payload.oidcStorageId)
         assertEquals("logger-1", payload.loggerId)
         assertNull(payload.oidcClientId)
     }
@@ -80,6 +85,7 @@ class JourneyConfigParserTest {
         val payload = JourneyConfigParser.parse(config)
 
         assertEquals("https://example.com/am", payload.serverUrl)
+        assertNull(payload.timeout)
         assertEquals("oidc-client-1", payload.oidcClientId)
         assertNull(payload.clientId)
         assertNull(payload.discoveryEndpoint)
@@ -165,6 +171,16 @@ class JourneyConfigParserTest {
         val config = JavaOnlyMap().apply {
             putString("serverUrl", "https://example.com/am")
             putString("clientId", "rn-client")
+        }
+
+        JourneyConfigParser.parse(config)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun parseThrowsWhenOidcStorageIdIsProvidedWithoutOidcConfig() {
+        val config = JavaOnlyMap().apply {
+            putString("serverUrl", "https://example.com/am")
+            putString("oidcStorageId", "oidc-storage-1")
         }
 
         JourneyConfigParser.parse(config)

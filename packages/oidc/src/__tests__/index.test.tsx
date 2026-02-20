@@ -109,7 +109,7 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
     );
   });
 
@@ -139,7 +139,7 @@ describe('OIDC JS API', () => {
       discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
       redirectUri: 'app://redirect',
       scopes: ['openid'],
-      storage: { id: 'storage-id' } as any,
+      storage: { id: 'storage-id', kind: 'oidc' } as any,
       logger,
     });
 
@@ -185,7 +185,27 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+    );
+  });
+
+  it('throws when storage handle has a non-oidc kind', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    expect(() =>
+      createOidcClient({
+        clientId: 'client',
+        discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+        redirectUri: 'app://redirect',
+        scopes: ['openid'],
+        storage: {
+          id: 'storage-id',
+          kind: 'session',
+        } as any,
+      })
+    ).toThrow(
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
     );
   });
 

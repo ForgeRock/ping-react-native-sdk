@@ -56,26 +56,25 @@ describe('Journey JS API', () => {
     const native = createNativeMock();
     const { journey } = await loadModule(native);
 
-    const client = journey(
-      {
-        serverUrl: 'https://example.com',
-        logger: {
-          nativeHandle: { id: 'logger-id' },
-          changeLevel: jest.fn(),
-          debug: jest.fn(),
-          info: jest.fn(),
-          warn: jest.fn(),
-          error: jest.fn(),
-        },
+    const client = journey({
+      serverUrl: 'https://example.com',
+      logger: {
+        nativeHandle: { id: 'logger-id' },
+        changeLevel: jest.fn(),
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
       },
-      {
+      modules: {
         session: {
           storage: {
             id: 'session-storage-id',
-          },
+            kind: 'session',
+          } as any,
         },
-      }
-    );
+      },
+    });
 
     await client.init();
 
@@ -87,77 +86,53 @@ describe('Journey JS API', () => {
     );
   });
 
-  it('passes composed OIDC client id to configureJourney', async () => {
-    const native = createNativeMock();
-    const { journey } = await loadModule(native);
-
-    const client = journey(
-      {
-        serverUrl: 'https://example.com',
-      },
-      {
-        oidc: {
-          client: {
-            id: 'oidc-client-id',
-          },
-        },
-      }
-    );
-
-    await client.init();
-
-    expect(native.configureJourney).toHaveBeenCalledWith(
-      expect.objectContaining({
-        oidcClientId: 'oidc-client-id',
-      })
-    );
-  });
-
-  it('passes shorthand config oidcClient id to configureJourney', async () => {
+  it('passes timeout to configureJourney when provided', async () => {
     const native = createNativeMock();
     const { journey } = await loadModule(native);
 
     const client = journey({
       serverUrl: 'https://example.com',
-      oidcClient: {
-        id: 'oidc-client-from-config',
-      },
+      timeout: 30000,
     });
 
     await client.init();
 
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
-        oidcClientId: 'oidc-client-from-config',
+        timeout: 30000,
       })
     );
   });
 
-  it('passes advanced direct OIDC config to configureJourney', async () => {
+  it('passes advanced nested OIDC config to configureJourney', async () => {
     const native = createNativeMock();
     const { journey } = await loadModule(native);
 
     const client = journey({
       serverUrl: 'https://example.com',
-      clientId: 'rn-client',
-      redirectUri: 'com.example.app://oauth2redirect',
-      openId: {
-        authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
-        tokenEndpoint: 'https://example.com/am/oauth2/token',
-        userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
-      },
-      scopes: ['openid', 'profile'],
-      acrValues: 'loa-2',
-      signOutRedirectUri: 'com.example.app://signed-out',
-      state: 'state-123',
-      nonce: 'nonce-123',
-      uiLocales: 'en fr',
-      refreshThreshold: 30,
-      loginHint: 'demo-user',
-      display: 'page',
-      prompt: 'login',
-      additionalParameters: {
-        audience: 'urn:example:api',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          redirectUri: 'com.example.app://oauth2redirect',
+          openId: {
+            authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
+            tokenEndpoint: 'https://example.com/am/oauth2/token',
+            userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
+          },
+          scopes: ['openid', 'profile'],
+          acrValues: 'loa-2',
+          signOutRedirectUri: 'com.example.app://signed-out',
+          state: 'state-123',
+          nonce: 'nonce-123',
+          uiLocales: 'en fr',
+          refreshThreshold: 30,
+          loginHint: 'demo-user',
+          display: 'page',
+          prompt: 'login',
+          additionalParameters: {
+            audience: 'urn:example:api',
+          },
+        },
       },
     });
 
@@ -189,32 +164,81 @@ describe('Journey JS API', () => {
     );
   });
 
-  it('prefers modules OIDC client over shorthand config oidcClient', async () => {
+  it('passes oidc storage id from nested OIDC config', async () => {
     const native = createNativeMock();
     const { journey } = await loadModule(native);
 
-    const client = journey(
-      {
-        serverUrl: 'https://example.com',
-        oidcClient: {
-          id: 'oidc-client-from-config',
+    const client = journey({
+      serverUrl: 'https://example.com',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+          storage: {
+            id: 'oidc-storage-id',
+            kind: 'oidc',
+          } as any,
         },
       },
-      {
-        oidc: {
-          client: {
-            id: 'oidc-client-from-modules',
-          },
-        },
-      }
-    );
+    });
 
     await client.init();
 
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
-        oidcClientId: 'oidc-client-from-modules',
+        oidcStorageId: 'oidc-storage-id',
       })
+    );
+  });
+
+  it('throws when modules.session.storage is not a valid session handle', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    expect(() =>
+      journey({
+        serverUrl: 'https://example.com',
+        modules: {
+          session: {
+            storage: {
+              id: 'session-storage-id',
+            } as any,
+          },
+        },
+      })
+    ).toThrow(
+      '[@ping-identity/rn-journey] Invalid modules.session.storage handle. ' +
+        'Use configureSessionStorage(...) from @react-native-pingidentity/storage.'
+    );
+  });
+
+  it('throws when modules.oidc.storage is not a valid oidc handle', async () => {
+    const native = createNativeMock();
+    const { journey } = await loadModule(native);
+
+    expect(() =>
+      journey({
+        serverUrl: 'https://example.com',
+        modules: {
+          oidc: {
+            clientId: 'rn-client',
+            discoveryEndpoint:
+              'https://example.com/am/oauth2/.well-known/openid-configuration',
+            redirectUri: 'com.example.app://oauth2redirect',
+            scopes: ['openid'],
+            storage: {
+              id: 'oidc-storage-id',
+              kind: 'session',
+            } as any,
+          },
+        },
+      })
+    ).toThrow(
+      '[@ping-identity/rn-journey] Invalid modules.oidc.storage handle. ' +
+        'Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
     );
   });
 

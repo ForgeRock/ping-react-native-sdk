@@ -70,6 +70,8 @@ export type NativeJourneyNextInput = {
 export type NativeJourneyConfig = {
   /** Base AM/Ping server URL. */
   serverUrl: string;
+  /** Optional network timeout in milliseconds. */
+  timeout?: number;
   /** Optional AM realm path. */
   realm?: string;
   /** Optional cookie/session namespace override. */
@@ -119,6 +121,8 @@ export type NativeJourneyConfig = {
   additionalParameters?: Object;
   /** Optional storage handle id resolved by the native storage registry. */
   sessionStorageId?: string;
+  /** Optional OIDC storage handle id resolved by the native storage registry. */
+  oidcStorageId?: string;
   /** Optional logger handle id resolved by the native logger registry. */
   loggerId?: string;
   /** Optional OIDC client handle id resolved by the native OIDC client registry. */

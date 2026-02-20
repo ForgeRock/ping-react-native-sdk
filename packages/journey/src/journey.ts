@@ -18,22 +18,61 @@ import type {
   JourneyClient,
   JourneyConfig,
   JourneyError,
-  JourneyModules,
   JourneyNextInput,
   JourneyStartOptions,
 } from './types';
+import type { NativeJourneyConfig } from './NativeRNPingJourney';
+
+type StorageHandleKind = 'session' | 'oidc';
+
+/**
+ * Resolves and validates a storage handle id for Journey module config.
+ *
+ * @param value - Candidate storage handle value
+ * @param expectedKind - Required storage handle kind
+ * @param modulePath - Config path used in error messages
+ * @param configureMethod - Expected storage configure method name
+ * @returns Resolved handle id when present
+ * @throws {Error} When the handle shape is invalid
+ */
+function resolveStorageHandleId(
+  value: unknown,
+  expectedKind: StorageHandleKind,
+  modulePath: string,
+  configureMethod: 'configureSessionStorage' | 'configureOidcStorage'
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const handle = value as {
+    id?: unknown;
+    kind?: unknown;
+  };
+
+  if (
+    typeof handle.id !== 'string' ||
+    !handle.id.trim() ||
+    handle.kind !== expectedKind
+  ) {
+    throw new Error(
+      `[@ping-identity/rn-journey] Invalid ${modulePath} handle. ` +
+        `Use ${configureMethod}(...) from @react-native-pingidentity/storage.`
+    );
+  }
+
+  return handle.id;
+}
 
 /**
  * Creates a native-backed Journey client instance.
  *
  * @param config - Journey configuration payload.
- * @param modules - Optional module composition settings (for example session storage).
  * @returns A `JourneyClient` handle for imperative Journey flows.
  * @throws {Error} When required configuration is missing.
  */
 export function journey(
-  config: JourneyConfig,
-  modules?: JourneyModules
+  config: JourneyConfig
 ): JourneyClient {
   if (!config.serverUrl?.trim()) {
     throw new Error(
@@ -41,19 +80,49 @@ export function journey(
     );
   }
 
-  const {
-    oidcClient: configOidcClient,
-    ...nativeConfig
-  } = config;
-
   let journeyId: string | null = null;
-  const sessionStorageId = modules?.session?.storage?.id;
-  const oidcClientId =
-    modules?.oidc?.client?.id ??
-    configOidcClient?.id;
+  const sessionStorageId = resolveStorageHandleId(
+    config.modules?.session?.storage,
+    'session',
+    'modules.session.storage',
+    'configureSessionStorage'
+  );
+  const oidcStorageId = resolveStorageHandleId(
+    config.modules?.oidc?.storage,
+    'oidc',
+    'modules.oidc.storage',
+    'configureOidcStorage'
+  );
+  const oidcConfig = config.modules?.oidc;
   const loggerId =
-    config.nativeLogger?.id ??
-    config.logger?.nativeHandle?.id;
+    config.logger?.nativeHandle?.id ??
+    oidcConfig?.nativeLogger?.id ??
+    oidcConfig?.logger?.nativeHandle?.id;
+
+  const nativeConfig: NativeJourneyConfig = {
+    serverUrl: config.serverUrl,
+    timeout: config.timeout,
+    realm: config.realm,
+    cookie: config.cookie,
+    clientId: oidcConfig?.clientId,
+    discoveryEndpoint: oidcConfig?.discoveryEndpoint,
+    openId: oidcConfig?.openId,
+    redirectUri: oidcConfig?.redirectUri,
+    scopes: oidcConfig?.scopes,
+    acrValues: oidcConfig?.acrValues,
+    signOutRedirectUri: oidcConfig?.signOutRedirectUri,
+    state: oidcConfig?.state,
+    nonce: oidcConfig?.nonce,
+    uiLocales: oidcConfig?.uiLocales,
+    refreshThreshold: oidcConfig?.refreshThreshold,
+    loginHint: oidcConfig?.loginHint,
+    display: oidcConfig?.display,
+    prompt: oidcConfig?.prompt,
+    additionalParameters: oidcConfig?.additionalParameters,
+    sessionStorageId,
+    oidcStorageId,
+    loggerId,
+  };
 
   const logDebug = (message: string, payload?: Record<string, unknown>): void => {
     if (payload) {
@@ -72,12 +141,7 @@ export function journey(
   const ensureConfigured = async (): Promise<string> => {
     if (!journeyId) {
       logDebug('Journey configure requested');
-      journeyId = await configureJourney(
-        nativeConfig,
-        sessionStorageId,
-        loggerId,
-        oidcClientId
-      );
+      journeyId = await configureJourney(nativeConfig);
       logDebug('Journey configure succeeded', { journeyId });
     }
     return journeyId;

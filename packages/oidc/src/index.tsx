@@ -159,18 +159,28 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
 /**
  * Resolve a storage id from a configured storage handle.
  *
- * @throws Error when a storage object is provided without an id.
+ * @throws Error when a storage object is provided without a valid OIDC handle.
  */
 function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
   if (!value) {
     return undefined;
   }
-  if (!value.id) {
+  const handle = value as {
+    id?: unknown;
+    kind?: unknown;
+  };
+
+  if (
+    typeof handle.id !== 'string' ||
+    !handle.id.trim() ||
+    handle.kind !== 'oidc'
+  ) {
     throw new Error(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. ' +
+        'Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
     );
   }
-  return value.id;
+  return handle.id;
 }
 
 /**

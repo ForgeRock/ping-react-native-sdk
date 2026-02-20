@@ -7,6 +7,7 @@
 
 import Foundation
 import PingJourney
+import PingJourneyPlugin
 import PingOrchestrate
 
 /// Maps native Journey nodes/callbacks to React Native bridge payloads.
@@ -171,7 +172,7 @@ enum JourneyNodeMapper {
       payload["accepted"] = terms.accepted
 
     case let hidden as HiddenValueCallback:
-      payload["id"] = hidden.hiddenId
+      payload["id"] = hidden.valueId
       payload["value"] = hidden.value
 
     case let kba as KbaCreateCallback:
@@ -332,4 +333,3 @@ enum JourneyNodeMapper {
     }
   }
 }
-

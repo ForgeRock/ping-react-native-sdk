@@ -56,8 +56,8 @@ const oidcStorage: OidcStorage = configureOidcStorage({
 ```
 
 Notes:
-- `configureSessionStorage` / `configureOidcStorage` return a normalized config
-  with an `id` you can pass into native-backed modules that accept storage handles.
+- `configureSessionStorage` / `configureOidcStorage` return opaque storage handles.
+  Handle objects include `id` and `kind` and can be passed into native-backed modules.
 - Android uses encrypted storage by default; `android.keyAlias` and other
   `android` options (including `fileName`, `strongBoxPreferred`) are optional.
 - iOS uses Keychain storage and supports `ios.account` (Keychain account)
@@ -67,10 +67,9 @@ Notes:
 
 ### StorageConfig type
 
-You can import `StorageConfig` to type storage configuration objects that can be
-passed to `configureSessionStorage`/`configureOidcStorage` or reused by modules
-that accept inline storage configuration. The configured outputs are branded
-as `SessionStorage` or `OidcStorage` for type safety.
+You can import `StorageConfig` to type the input passed to
+`configureSessionStorage` / `configureOidcStorage`. The configured outputs are
+branded as `SessionStorage` or `OidcStorage` for type safety.
 
 ```ts
 import type { OidcStorage, StorageConfig } from '@react-native-pingidentity/storage';
@@ -90,14 +89,25 @@ const oidcStorage: OidcStorage = configureOidcStorage(oidcCfg);
 
 ### Journey module usage
 
-The Journey module will accept a storage configuration inline in a future release.
-Because the native storage fields differ between Android and iOS, pass the normalized
-config fields explicitly so the same JS code works on both platforms:
+Pass the storage handle returned by `configureSessionStorage` or
+`configureOidcStorage` directly into Journey config:
 
 ```ts
-import type { OidcStorage } from '@react-native-pingidentity/storage';
+import {
+  configureOidcStorage,
+  configureSessionStorage,
+  type OidcStorage,
+} from '@react-native-pingidentity/storage';
+import { journey } from '@ping-identity/rn-journey';
 
-const oidcConfig: OidcStorage = configureOidcStorage({
+const sessionStorage = configureSessionStorage({
+  android: {
+    keyAlias: 'ping.session',
+    fileName: 'ping_session_store',
+  },
+});
+
+const oidcStorage: OidcStorage = configureOidcStorage({
   // Android-only fields
   android: {
     keyAlias: 'ping.oidc',
@@ -110,24 +120,14 @@ const oidcConfig: OidcStorage = configureOidcStorage({
   },
 });
 
-const journey = configureJourney({
+const journeyClient = journey({
+  serverUrl: 'https://example.com/am',
   modules: {
+    session: {
+      storage: sessionStorage,
+    },
     oidc: {
-      storage: {
-        // Android fields (ignored on iOS)
-        android: {
-          keyAlias: oidcConfig.android?.keyAlias,
-          fileName: oidcConfig.android?.fileName,
-          strongBoxPreferred: oidcConfig.android?.strongBoxPreferred,
-          cacheStrategy: oidcConfig.android?.cacheStrategy,
-        },
-        // iOS fields (ignored on Android)
-        ios: {
-          account: oidcConfig.ios?.account,
-          encryptor: oidcConfig.ios?.encryptor,
-          cacheable: oidcConfig.ios?.cacheable,
-        },
-      },
+      storage: oidcStorage,
     },
   },
 });

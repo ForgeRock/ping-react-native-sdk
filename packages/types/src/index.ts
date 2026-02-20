@@ -84,3 +84,8 @@ export const nativeExtensionCallbackType = {
  */
 export type NativeExtensionCallbackType =
   (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];
+
+/**
+ * Shared OIDC base configuration contracts used across RN modules.
+ */
+export type * from './oidc.types';

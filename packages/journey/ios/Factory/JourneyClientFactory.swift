@@ -9,8 +9,10 @@ import Foundation
 import PingJourney
 import PingLogger
 import PingOidc
+import PingStorage
 import RNPingCore
 import RNPingLogger
+import RNPingStorage
 
 /// Builds native Journey instances from parsed JS payloads.
 final class JourneyClientFactory {
@@ -46,27 +48,23 @@ final class JourneyClientFactory {
       _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
     }
 
-    if payload.sessionStorageId != nil {
-      // TODO(iOS SDK parity): Bind `sessionStorageId` into PingJourney SessionModule
-      // once PingJourney exposes public session storage configuration hooks.
-      // PingJourney iOS currently owns SessionModule storage internally.
-      // We accept sessionStorageId for API parity and forward-compatibility,
-      // but custom storage handle binding is not yet applied on iOS.
-      NSLog(
-        "[RNPingJourney] sessionStorageId was provided. iOS will continue using PingJourney SessionModule default storage until public session storage binding is exposed."
-      )
-    }
-
     return Journey.createJourney { config in
       config.logger = LogManager.logger
       config.serverUrl = payload.serverUrl
-      config.timeout = 30
+      if let timeoutSeconds = Self.timeoutSeconds(from: payload.timeout) {
+        config.timeout = timeoutSeconds
+      }
 
       if let realm = payload.realm {
         config.realm = realm
       }
       if let cookie = payload.cookie {
         config.cookie = cookie
+      }
+      if let sessionStorage = Self.buildSessionStorageDelegate(payload.sessionStorageId) {
+        config.module(PingJourney.SessionModule.config) { module in
+          module.storage = sessionStorage
+        }
       }
 
       if let oidcConfig = resolvedOidc {
@@ -76,9 +74,7 @@ final class JourneyClientFactory {
             module.discoveryEndpoint = discoveryEndpoint
           }
           module.redirectUri = oidcConfig.redirectUri
-          module.scopes = Set(oidcConfig.scopes.isEmpty
-            ? ["openid", "email", "address", "profile", "phone"]
-            : oidcConfig.scopes)
+          module.scopes = Set(oidcConfig.scopes)
           module.acrValues = oidcConfig.acrValues
           module.state = oidcConfig.state
           module.nonce = oidcConfig.nonce
@@ -96,6 +92,9 @@ final class JourneyClientFactory {
             if let openIdConfiguration = Self.buildOpenIdConfiguration(openId) {
               module.openId = openIdConfiguration
             }
+          }
+          if let storage = Self.buildOidcStorageDelegate(payload.oidcStorageId) {
+            module.storage = storage
           }
 
           if oidcConfig.signOutRedirectUri != nil {
@@ -236,5 +235,94 @@ final class JourneyClientFactory {
       return nil
     }
     return try? JSONDecoder().decode(OpenIdConfiguration.self, from: data)
+  }
+
+  /// Builds an OIDC storage delegate from a registered storage id.
+  ///
+  /// - Parameter storageId: OIDC storage identifier from JS.
+  /// - Returns: Storage delegate, or `nil` when no storage id is provided.
+  private static func buildOidcStorageDelegate(_ storageId: String?) -> StorageDelegate<Token>? {
+    guard let storageId, !storageId.isEmpty else {
+      return nil
+    }
+    let config = RNPingStorageCommon.configureOidcStorage(storageId)
+    let account = (config["account"] as? String) ?? "ACCESS_TOKEN_STORAGE"
+    let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
+    let encryptor: Encryptor = {
+      if encryptorEnabled, let secured = SecuredKeyEncryptor() {
+        return secured
+      }
+      return NoEncryptor()
+    }()
+    return KeychainStorage<Token>(
+      account: account,
+      encryptor: encryptor,
+      cacheStrategy: parseCacheStrategy(from: config)
+    )
+  }
+
+  /// Builds a session storage delegate from a registered storage id.
+  ///
+  /// - Parameter storageId: Session storage identifier from JS.
+  /// - Returns: Session storage delegate, or `nil` when no storage id is provided.
+  private static func buildSessionStorageDelegate(_ storageId: String?) -> (any Storage<SSOTokenImpl>)? {
+    guard let storageId, !storageId.isEmpty else {
+      return nil
+    }
+    let config = RNPingStorageCommon.configureSessionStorage(storageId)
+    let account = (config["account"] as? String) ?? "com.pingidentity.rnsampleapp.keyalias"
+    let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
+    let encryptor: Encryptor = {
+      if encryptorEnabled, let secured = SecuredKeyEncryptor() {
+        return secured
+      }
+      return NoEncryptor()
+    }()
+    return KeychainStorage<SSOTokenImpl>(
+      account: account,
+      encryptor: encryptor,
+      cacheStrategy: parseCacheStrategy(from: config)
+    )
+  }
+
+  /// Maps storage config payload values to PingStorage cache strategy.
+  ///
+  /// Supports both the current `cacheable` boolean and future `cacheStrategy` string.
+  ///
+  /// - Parameter config: Registered storage configuration payload.
+  /// - Returns: Native cache strategy value.
+  private static func parseCacheStrategy(from config: NSDictionary) -> CacheStrategy {
+    if let rawStrategy = (config["cacheStrategy"] as? String)?.lowercased() {
+      switch rawStrategy {
+      case "cache":
+        return .CACHE
+      case "cache_on_failure":
+        return .CACHE_ON_FAILURE
+      case "no_cache":
+        return .NO_CACHE
+      default:
+        break
+      }
+    }
+
+    if let cacheable = config["cacheable"] as? Bool {
+      return cacheable ? .CACHE_ON_FAILURE : .NO_CACHE
+    }
+
+    return .NO_CACHE
+  }
+
+  /// Converts JS timeout milliseconds into Journey timeout seconds.
+  ///
+  /// - Parameter timeoutMs: Timeout in milliseconds.
+  /// - Returns: Timeout in seconds for PingJourney configuration.
+  private static func timeoutSeconds(from timeoutMs: Int64?) -> TimeInterval? {
+    guard let timeoutMs else {
+      return nil
+    }
+    if timeoutMs <= 0 {
+      return nil
+    }
+    return max(1, ceil(Double(timeoutMs) / 1000.0))
   }
 }

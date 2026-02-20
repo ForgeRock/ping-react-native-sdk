@@ -18,6 +18,8 @@ import com.reactnativepingidentity.core.utils.requireString
 internal data class JourneyClientPayload(
     /** Base AM/Ping server URL. */
     val serverUrl: String,
+    /** Optional network timeout in milliseconds. */
+    val timeout: Long?,
     /** Optional AM realm path. */
     val realm: String?,
     /** Optional cookie/session namespace override. */
@@ -54,6 +56,8 @@ internal data class JourneyClientPayload(
     val additionalParameters: Map<String, String>,
     /** Optional session storage handle id from the storage bridge module. */
     val sessionStorageId: String?,
+    /** Optional OIDC storage handle id from the storage bridge module. */
+    val oidcStorageId: String?,
     /** Optional logger handle id from the logger bridge module. */
     val loggerId: String?,
     /** Optional OIDC client handle id from the OIDC bridge module. */
@@ -86,6 +90,7 @@ internal object JourneyConfigParser {
      */
     fun parse(config: ReadableMap): JourneyClientPayload {
         val serverUrl = requireString(config, "serverUrl")
+        val timeout = if (config.hasKey("timeout")) config.getDouble("timeout").toLong() else null
         val realm = if (config.hasKey("realm")) config.getString("realm") else null
         val cookie = if (config.hasKey("cookie")) config.getString("cookie") else null
         val clientId = if (config.hasKey("clientId")) config.getString("clientId") else null
@@ -124,6 +129,11 @@ internal object JourneyConfigParser {
         } else {
             null
         }
+        val oidcStorageId = if (config.hasKey("oidcStorageId")) {
+            config.getString("oidcStorageId")
+        } else {
+            null
+        }
         val loggerId = if (config.hasKey("loggerId")) config.getString("loggerId") else null
         val oidcClientId = if (config.hasKey("oidcClientId")) config.getString("oidcClientId") else null
 
@@ -141,7 +151,8 @@ internal object JourneyConfigParser {
             !loginHint.isNullOrBlank() ||
             !display.isNullOrBlank() ||
             !prompt.isNullOrBlank() ||
-            additionalParameters.isNotEmpty()
+            additionalParameters.isNotEmpty() ||
+            !oidcStorageId.isNullOrBlank()
 
         if (!hasOidcClientHandle &&
             hasAnyOidcField &&
@@ -154,6 +165,7 @@ internal object JourneyConfigParser {
 
         return JourneyClientPayload(
             serverUrl = serverUrl,
+            timeout = timeout,
             realm = realm,
             cookie = cookie,
             clientId = clientId,
@@ -172,6 +184,7 @@ internal object JourneyConfigParser {
             prompt = prompt,
             additionalParameters = additionalParameters,
             sessionStorageId = sessionStorageId,
+            oidcStorageId = oidcStorageId,
             loggerId = loggerId,
             oidcClientId = oidcClientId
         )

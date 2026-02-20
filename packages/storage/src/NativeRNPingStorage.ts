@@ -127,14 +127,6 @@ export enum CacheStrategy {
  */
 export type BaseStorageConfig = {
   /**
-   * Native identifier returned by the storage module.
-   *
-   * @remarks
-   * This value is assigned by `configureSessionStorage`/`configureOidcStorage`
-   * and can be passed into other modules that accept storage handles.
-   */
-  id?: string;
-  /**
    * Android-specific configuration options.
    * 
    * This nested object contains all Android storage settings.

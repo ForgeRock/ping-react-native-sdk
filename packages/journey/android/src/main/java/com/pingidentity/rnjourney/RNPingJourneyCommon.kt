@@ -25,6 +25,7 @@ import com.reactnativepingidentity.core.CoreRuntime
 import com.reactnativepingidentity.core.error.ErrorType
 import com.reactnativepingidentity.core.error.GenericError
 import com.reactnativepingidentity.core.error.reject
+import com.reactnativepingidentity.core.registry.NativeHandle
 import com.reactnativepingidentity.core.utils.JsonBridgeMapper
 import com.reactnativepingidentity.logger.RNPingLoggerCommon
 import com.reactnativepingidentity.storage.StorageConfigRegistry
@@ -34,7 +35,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -58,12 +58,21 @@ internal object RNPingJourneyCommon {
 
   /** Coroutine scope used for all async bridge work. */
   private var scope: CoroutineScope = createScope()
-  /** Workflow registry keyed by generated journey id. */
-  private val journeyMap = ConcurrentHashMap<String, Workflow>()
+  /** Core registry storing Journey workflow handles. */
+  private val journeyRegistry = CoreRuntime.journeyRegistry
   /** Last known node for each active journey id. */
   private val nodeMap = ConcurrentHashMap<String, Node>()
   /** Active continue-node cache used for callback mutation resolution. */
   private val continueNodeMap = ConcurrentHashMap<String, ContinueNode>()
+
+  /**
+   * Handle for a stored Journey workflow.
+   *
+   * @property workflow Native workflow instance.
+   */
+  private data class JourneyHandle(
+    val workflow: Workflow
+  ) : NativeHandle
 
   /**
    * Initialize common runtime wiring for Journey bridge calls.
@@ -76,8 +85,9 @@ internal object RNPingJourneyCommon {
     if (configured) {
       return
     }
-    val storageRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
-    clientFactory = JourneyClientFactory(storageRegistry) { loggerId ->
+    val sessionStorageRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
+    val oidcStorageRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+    clientFactory = JourneyClientFactory(sessionStorageRegistry, oidcStorageRegistry) { loggerId ->
       RNPingLoggerCommon.applyLogger(loggerId)
     }
     CoreRuntime.journeyCallbackResolver = { journeyId ->
@@ -94,6 +104,7 @@ internal object RNPingJourneyCommon {
     if (!configured) {
       return
     }
+    CoreRuntime.journeyCallbackResolver = null
     scope.cancel()
     scope = createScope()
     disposeAll()
@@ -134,7 +145,7 @@ internal object RNPingJourneyCommon {
     }
     continueNodeMap.clear()
     nodeMap.clear()
-    journeyMap.clear()
+    journeyRegistry.removeAll()
   }
 
   /**
@@ -147,7 +158,17 @@ internal object RNPingJourneyCommon {
       runCatching { node.close() }
     }
     nodeMap.remove(journeyId)
-    journeyMap.remove(journeyId)
+    journeyRegistry.remove(journeyId)
+  }
+
+  /**
+   * Resolves a Journey workflow handle by id.
+   *
+   * @param journeyId Native journey instance id.
+   * @return Workflow when the id is registered, otherwise null.
+   */
+  private fun resolveWorkflow(journeyId: String): Workflow? {
+    return (journeyRegistry.resolve(journeyId) as? JourneyHandle)?.workflow
   }
 
   /**
@@ -168,8 +189,7 @@ internal object RNPingJourneyCommon {
 
     try {
       val workflow = clientFactory.build(payload)
-      val journeyId = UUID.randomUUID().toString()
-      journeyMap[journeyId] = workflow
+      val journeyId = journeyRegistry.register(JourneyHandle(workflow))
       promise.resolve(journeyId)
     } catch (error: Exception) {
       promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.INIT), error)
@@ -185,7 +205,7 @@ internal object RNPingJourneyCommon {
    * @param promise Promise resolved with the first node payload.
    */
   fun start(journeyId: String, journeyName: String, options: ReadableMap?, promise: Promise) {
-    val workflow = journeyMap[journeyId]
+    val workflow = resolveWorkflow(journeyId)
     if (workflow == null) {
       promise.reject(
         JourneyErrorMapper.state(
@@ -298,7 +318,7 @@ internal object RNPingJourneyCommon {
    * @param promise Promise resolved with the resumed node payload.
    */
   fun resume(journeyId: String, uri: String, promise: Promise) {
-    val workflow = journeyMap[journeyId]
+    val workflow = resolveWorkflow(journeyId)
     if (workflow == null) {
       promise.reject(
         JourneyErrorMapper.state(
@@ -337,7 +357,7 @@ internal object RNPingJourneyCommon {
    * @param promise Promise resolved with session payload or null.
    */
   fun getSession(journeyId: String, promise: Promise) {
-    val workflow = journeyMap[journeyId]
+    val workflow = resolveWorkflow(journeyId)
     if (workflow == null) {
       promise.reject(
         JourneyErrorMapper.state(
@@ -401,7 +421,7 @@ internal object RNPingJourneyCommon {
    * @param promise Promise resolved when logout completes.
    */
   fun logout(journeyId: String, promise: Promise) {
-    val workflow = journeyMap[journeyId]
+    val workflow = resolveWorkflow(journeyId)
     if (workflow == null) {
       promise.reject(
         JourneyErrorMapper.state(

@@ -164,13 +164,53 @@ function normalizeStorageConfig(
 }
 
 /**
- * Registers and resolves a session storage configuration.
+ * Creates an opaque session storage handle from a resolved config payload.
+ *
+ * @param id - Native storage identifier
+ * @param config - Normalized storage configuration
+ * @returns Branded session storage handle
+ *
+ * @internal
+ */
+function createSessionStorageHandle(
+  id: string,
+  config: BaseStorageConfig
+): SessionStorage {
+  return {
+    id,
+    kind: "session",
+    ...config,
+  } as SessionStorage;
+}
+
+/**
+ * Creates an opaque OIDC storage handle from a resolved config payload.
+ *
+ * @param id - Native storage identifier
+ * @param config - Normalized storage configuration
+ * @returns Branded OIDC storage handle
+ *
+ * @internal
+ */
+function createOidcStorageHandle(
+  id: string,
+  config: BaseStorageConfig
+): OidcStorage {
+  return {
+    id,
+    kind: "oidc",
+    ...config,
+  } as OidcStorage;
+}
+
+/**
+ * Registers and resolves a session storage handle.
  * 
  * This function handles registration internally and returns a normalized
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
- * @returns A SessionStorage configuration object with a native storage id
+ * @returns A branded SessionStorage handle with native storage id metadata
  * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
@@ -192,20 +232,17 @@ export function configureSessionStorage(config: BaseStorageConfig): SessionStora
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerSessionStorage(buildNativeConfig(config));
   const result = NativeRNPingStorage.configureSessionStorage(storageId);
-  return {
-    id: storageId,
-    ...normalizeStorageConfig(result),
-  };
+  return createSessionStorageHandle(storageId, normalizeStorageConfig(result));
 }
 
 /**
- * Registers and resolves an OIDC storage configuration.
+ * Registers and resolves an OIDC storage handle.
  * 
  * This function handles registration internally and returns a normalized
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
- * @returns An OidcStorage configuration object with a native storage id
+ * @returns A branded OidcStorage handle with native storage id metadata
  * @throws {Error} If the configuration is missing or invalid
  * 
  * @example
@@ -231,8 +268,5 @@ export function configureOidcStorage(config: BaseStorageConfig): OidcStorage {
   const NativeRNPingStorage = getNativeModule();
   const storageId = NativeRNPingStorage.registerOidcStorage(buildNativeConfig(config));
   const result = NativeRNPingStorage.configureOidcStorage(storageId);
-  return {
-    id: storageId,
-    ...normalizeStorageConfig(result),
-  };
+  return createOidcStorageHandle(storageId, normalizeStorageConfig(result));
 }

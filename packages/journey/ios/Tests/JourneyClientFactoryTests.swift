@@ -29,6 +29,7 @@ final class JourneyClientFactoryTests: XCTestCase {
     )
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
+      timeout: nil,
       realm: "alpha",
       cookie: "iPlanetDirectoryPro",
       clientId: nil,
@@ -47,6 +48,7 @@ final class JourneyClientFactoryTests: XCTestCase {
       prompt: nil,
       additionalParameters: [:],
       sessionStorageId: nil,
+      oidcStorageId: nil,
       loggerId: nil,
       oidcClientId: oidcClientId
     )
@@ -59,6 +61,7 @@ final class JourneyClientFactoryTests: XCTestCase {
   func testBuildRejectsMissingOidcHandle() async {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
+      timeout: nil,
       realm: nil,
       cookie: nil,
       clientId: nil,
@@ -77,6 +80,7 @@ final class JourneyClientFactoryTests: XCTestCase {
       prompt: nil,
       additionalParameters: [:],
       sessionStorageId: nil,
+      oidcStorageId: nil,
       loggerId: nil,
       oidcClientId: "missing-handle"
     )
@@ -93,9 +97,10 @@ final class JourneyClientFactoryTests: XCTestCase {
     }
   }
 
-  func testBuildAcceptsSessionStorageIdForParity() async throws {
+  func testBuildAcceptsSessionStorageId() async throws {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
+      timeout: nil,
       realm: nil,
       cookie: nil,
       clientId: nil,
@@ -114,6 +119,7 @@ final class JourneyClientFactoryTests: XCTestCase {
       prompt: nil,
       additionalParameters: [:],
       sessionStorageId: "session-storage-1",
+      oidcStorageId: nil,
       loggerId: nil,
       oidcClientId: nil
     )
