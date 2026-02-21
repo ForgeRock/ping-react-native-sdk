@@ -42,9 +42,10 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
   /// - Note: `@unchecked Sendable` is required because this is a mutable
   ///   reference type (`level`) passed through actor-based registries.
   ///   Mutations are constrained to `createQueue`.
-  final class LoggerHandle: NativeHandle, @unchecked Sendable {
+  final class LoggerHandle: LoggerHandleContract, @unchecked Sendable {
     /// The native log level for this logger instance.
     var level: NativeLoggerLevel
+    var loggerLevel: String { level.rawValue }
     
     /// Creates a new logger handle with the specified level.
     /// - Parameter level: The native log level to use.
@@ -90,7 +91,6 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
       queueKey: createQueueKey,
       context: "RNPingLoggerImpl.create"
     )
-    applyNativeLevel(level)
     return id
   }
 
@@ -119,17 +119,16 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
       }
 
       handle.level = parsedLevel
-      Self.applyNativeLevel(parsedLevel)
     }
   }
 
-  /// Applies a previously registered logger by id.
-  /// - Parameter id: The registry ID of the logger to apply.
-  /// - Returns: True when the logger was resolved and applied.
-  @objc
-  public func applyLogger(_ id: String?) -> Bool {
+  /// Resolves a native logger instance for a registered logger id.
+  /// - Parameter id: The registry ID of the logger to resolve.
+  /// - Returns: Native logger instance, or `nil` if not found.
+  @nonobjc
+  public func resolveLogger(_ id: String?) -> Logger? {
     guard let id, !id.isEmpty else {
-      return false
+      return nil
     }
 
     return Self.createQueue.sync {
@@ -137,14 +136,13 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
         id,
         registry: CoreRuntime.loggerRegistry,
         queueKey: Self.createQueueKey,
-        context: "RNPingLoggerImpl.applyLogger"
+        context: "RNPingLoggerImpl.resolveLogger"
       ) as? LoggerHandle else {
         print("RNPingLogger: No logger registered for id \(id)")
-        return false
+        return nil
       }
 
-      Self.applyNativeLevel(handle.level)
-      return true
+      return Self.nativeLogger(for: handle.loggerLevel)
     }
   }
 
@@ -161,16 +159,19 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
     return parsed
   }
 
-  /// Applies the specified log level to the native LogManager.
-  /// - Parameter level: The native logger level to apply.
-  private static func applyNativeLevel(_ level: NativeLoggerLevel) {
+  /// Maps internal logger levels to concrete native logger instances.
+  /// - Parameter level: The native logger level to map.
+  /// - Returns: Concrete native logger instance.
+  private static func nativeLogger(for level: String) -> Logger {
     switch level {
-    case .standard:
-      LogManager.logger = LogManager.standard
-    case .warn:
-      LogManager.logger = LogManager.warning
-    case .none:
-      LogManager.logger = LogManager.none
+    case NativeLoggerLevel.standard.rawValue:
+      return LogManager.standard
+    case NativeLoggerLevel.warn.rawValue:
+      return LogManager.warning
+    case NativeLoggerLevel.none.rawValue:
+      return LogManager.none
+    default:
+      return LogManager.none
     }
   }
 
@@ -178,7 +179,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
   /// Test helper to retrieve the current level for a logger.
   /// - Parameter id: The registry ID of the logger.
   /// - Returns: The current log level as a string, or nil if the logger is not found.
-  @objc
+  @nonobjc
   public func _testLevel(_ id: String) async -> String? {
     guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle else {
       return nil

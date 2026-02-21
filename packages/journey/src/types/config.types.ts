@@ -6,17 +6,13 @@
  */
 
 import type {
-  OidcCoreConfig,
-  OidcOpenIdConfiguration,
-} from '@ping-identity/rn-types';
-import type {
   LoggerInstance,
   NativeLoggerHandle,
-} from '@react-native-pingidentity/logger';
-import type {
-  OidcStorage,
-  SessionStorage,
-} from '@react-native-pingidentity/storage';
+  OidcStorageHandle,
+  OidcCoreConfig,
+  OidcOpenIdConfiguration,
+  SessionStorageHandle,
+} from '@ping-identity/rn-types';
 import type { JourneyCallbackType } from './node.types';
 
 /**
@@ -38,7 +34,7 @@ export type JourneyOidcModuleConfig = OidcCoreConfig & {
   /**
    * Optional OIDC token storage handle created by the storage module.
    */
-  storage?: OidcStorage;
+  storage?: OidcStorageHandle;
   /**
    * Optional JavaScript logger instance.
    */
@@ -63,7 +59,7 @@ export type JourneyModules = {
      * @remarks
      * Applied natively on both Android and iOS.
      */
-    storage?: SessionStorage;
+    storage?: SessionStorageHandle;
   };
   /**
    * OIDC module composition.

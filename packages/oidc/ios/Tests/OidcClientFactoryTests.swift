@@ -7,6 +7,7 @@
 
 import XCTest
 import PingOidc
+import RNPingCore
 @testable import RNPingOidc
 
 final class OidcClientFactoryTests: XCTestCase {
@@ -86,6 +87,38 @@ final class OidcClientFactoryTests: XCTestCase {
     XCTAssertEqual(updated.additionalParameters, ["foo": "bar"])
   }
 
+  func testBuildOidcClientResolvesStorageFromCoreRegistry() async {
+    let key = DispatchSpecificKey<Void>()
+    let queue = DispatchQueue(label: "com.ping.tests.oidc.storage")
+    queue.setSpecific(key: key, value: ())
+    let handle = TestStorageHandle(cacheable: false, account: "oidc-test-account", encryptor: true)
+    let storageId = await CoreRuntime.oidcStorageConfigRegistry.register(handle)
+    defer {
+      Task {
+        await CoreRuntime.oidcStorageConfigRegistry.remove(storageId)
+      }
+    }
+
+    let payload = basePayload().withStorageId(storageId)
+    let config = queue.sync {
+      OidcClientFactory.buildOidcClient(payload, logger: nil, queueKey: key)
+    }
+
+    XCTAssertNotNil(config.storage)
+  }
+
+  func testBuildOidcClientSkipsStorageWhenIdUnknown() {
+    let key = DispatchSpecificKey<Void>()
+    let queue = DispatchQueue(label: "com.ping.tests.oidc.storage.unknown")
+    queue.setSpecific(key: key, value: ())
+    let payload = basePayload().withStorageId("missing-storage")
+    let config = queue.sync {
+      OidcClientFactory.buildOidcClient(payload, logger: nil, queueKey: key)
+    }
+
+    XCTAssertNil(config.storage)
+  }
+
   private func basePayload(
     browserType: String? = nil,
     browserMode: String? = nil,
@@ -110,6 +143,44 @@ final class OidcClientFactoryTests: XCTestCase {
       loginHint: nil,
       display: nil,
       prompt: nil,
+      additionalParameters: additionalParameters
+    )
+  }
+
+  private final class TestStorageHandle: StorageConfigHandleContract, @unchecked Sendable {
+    let cacheable: Bool?
+    let account: String?
+    let encryptor: Bool?
+
+    init(cacheable: Bool?, account: String?, encryptor: Bool?) {
+      self.cacheable = cacheable
+      self.account = account
+      self.encryptor = encryptor
+    }
+  }
+}
+
+private extension OidcClientPayload {
+  func withStorageId(_ storageId: String?) -> OidcClientPayload {
+    return OidcClientPayload(
+      clientId: clientId,
+      discoveryEndpoint: discoveryEndpoint,
+      openId: openId,
+      redirectUri: redirectUri,
+      scopes: scopes,
+      storageId: storageId,
+      loggerId: loggerId,
+      browserType: browserType,
+      browserMode: browserMode,
+      acrValues: acrValues,
+      signOutRedirectUri: signOutRedirectUri,
+      state: state,
+      nonce: nonce,
+      uiLocales: uiLocales,
+      refreshThreshold: refreshThreshold,
+      loginHint: loginHint,
+      display: display,
+      prompt: prompt,
       additionalParameters: additionalParameters
     )
   }

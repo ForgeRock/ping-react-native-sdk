@@ -40,9 +40,12 @@ public class RNPingStorageCommon: NSObject {
    crossing actor boundaries through `Registry`. The wrapped `StorageConfig`
    is immutable (`let`) and `Sendable`, so the handle is effectively immutable.
    */
-  final class StorageConfigHandle: NativeHandle, @unchecked Sendable {
+  final class StorageConfigHandle: StorageConfigHandleContract, @unchecked Sendable {
     /// The wrapped storage configuration
     let config: StorageConfig
+    var cacheable: Bool? { config.cacheable }
+    var account: String? { config.account }
+    var encryptor: Bool? { config.encryptor }
     
     /// Creates a new storage config handle.
     /// - Parameter config: The storage configuration to wrap

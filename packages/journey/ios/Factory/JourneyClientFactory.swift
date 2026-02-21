@@ -11,8 +11,6 @@ import PingLogger
 import PingOidc
 import PingStorage
 import RNPingCore
-import RNPingLogger
-import RNPingStorage
 
 /// Builds native Journey instances from parsed JS payloads.
 final class JourneyClientFactory {
@@ -43,13 +41,14 @@ final class JourneyClientFactory {
   /// - Throws: `JourneyBridgeError.state` when shared registries cannot resolve handles.
   func build(_ payload: JourneyClientPayload) async throws -> Journey {
     let resolvedOidc = try await resolveOidcConfig(payload)
-
-    await MainActor.run {
-      _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
-    }
+    let resolvedLogger = await resolveLoggerFromCore(payload.loggerId)
+    let sessionStorage = await Self.buildSessionStorageDelegate(payload.sessionStorageId)
+    let oidcStorage = await Self.buildOidcStorageDelegate(payload.oidcStorageId)
 
     return Journey.createJourney { config in
-      config.logger = LogManager.logger
+      if let resolvedLogger {
+        config.logger = resolvedLogger
+      }
       config.serverUrl = payload.serverUrl
       if let timeoutSeconds = Self.timeoutSeconds(from: payload.timeout) {
         config.timeout = timeoutSeconds
@@ -61,7 +60,7 @@ final class JourneyClientFactory {
       if let cookie = payload.cookie {
         config.cookie = cookie
       }
-      if let sessionStorage = Self.buildSessionStorageDelegate(payload.sessionStorageId) {
+      if let sessionStorage {
         config.module(PingJourney.SessionModule.config) { module in
           module.storage = sessionStorage
         }
@@ -93,8 +92,8 @@ final class JourneyClientFactory {
               module.openId = openIdConfiguration
             }
           }
-          if let storage = Self.buildOidcStorageDelegate(payload.oidcStorageId) {
-            module.storage = storage
+          if let oidcStorage {
+            module.storage = oidcStorage
           }
 
           if oidcConfig.signOutRedirectUri != nil {
@@ -103,6 +102,29 @@ final class JourneyClientFactory {
           }
         }
       }
+    }
+  }
+
+  /// Resolve a native logger from the shared Core logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or `nil` when missing/invalid.
+  private func resolveLoggerFromCore(_ loggerId: String?) async -> Logger? {
+    guard let loggerId, !loggerId.isEmpty else {
+      return nil
+    }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    switch handle.loggerLevel.uppercased() {
+    case "STANDARD":
+      return LogManager.standard
+    case "WARN":
+      return LogManager.warning
+    case "NONE":
+      return LogManager.none
+    default:
+      return LogManager.none
     }
   }
 
@@ -241,13 +263,18 @@ final class JourneyClientFactory {
   ///
   /// - Parameter storageId: OIDC storage identifier from JS.
   /// - Returns: Storage delegate, or `nil` when no storage id is provided.
-  private static func buildOidcStorageDelegate(_ storageId: String?) -> StorageDelegate<Token>? {
+  private static func buildOidcStorageDelegate(_ storageId: String?) async -> StorageDelegate<Token>? {
     guard let storageId, !storageId.isEmpty else {
       return nil
     }
-    let config = RNPingStorageCommon.configureOidcStorage(storageId)
-    let account = (config["account"] as? String) ?? "ACCESS_TOKEN_STORAGE"
-    let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
+    guard let config = await resolveStorageConfigFromCore(
+      storageId: storageId,
+      registry: CoreRuntime.oidcStorageConfigRegistry
+    ) else {
+      return nil
+    }
+    let account = config.account ?? "ACCESS_TOKEN_STORAGE"
+    let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {
         return secured
@@ -257,7 +284,7 @@ final class JourneyClientFactory {
     return KeychainStorage<Token>(
       account: account,
       encryptor: encryptor,
-      cacheStrategy: parseCacheStrategy(from: config)
+      cacheStrategy: parseCacheStrategy(cacheable: config.cacheable, rawStrategy: nil)
     )
   }
 
@@ -265,13 +292,18 @@ final class JourneyClientFactory {
   ///
   /// - Parameter storageId: Session storage identifier from JS.
   /// - Returns: Session storage delegate, or `nil` when no storage id is provided.
-  private static func buildSessionStorageDelegate(_ storageId: String?) -> (any Storage<SSOTokenImpl>)? {
+  private static func buildSessionStorageDelegate(_ storageId: String?) async -> (any Storage<SSOTokenImpl>)? {
     guard let storageId, !storageId.isEmpty else {
       return nil
     }
-    let config = RNPingStorageCommon.configureSessionStorage(storageId)
-    let account = (config["account"] as? String) ?? "com.pingidentity.rnsampleapp.keyalias"
-    let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
+    guard let config = await resolveStorageConfigFromCore(
+      storageId: storageId,
+      registry: CoreRuntime.sessionStorageConfigRegistry
+    ) else {
+      return nil
+    }
+    let account = config.account ?? "com.pingidentity.rnsampleapp.keyalias"
+    let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {
         return secured
@@ -281,18 +313,33 @@ final class JourneyClientFactory {
     return KeychainStorage<SSOTokenImpl>(
       account: account,
       encryptor: encryptor,
-      cacheStrategy: parseCacheStrategy(from: config)
+      cacheStrategy: parseCacheStrategy(cacheable: config.cacheable, rawStrategy: nil)
     )
+  }
+
+  /// Resolves storage configuration from a Core registry by id.
+  ///
+  /// - Parameters:
+  ///   - storageId: Storage identifier from JS.
+  ///   - registry: Target Core storage registry.
+  /// - Returns: Storage handle contract payload, or `nil`.
+  private static func resolveStorageConfigFromCore(
+    storageId: String,
+    registry: Registry
+  ) async -> StorageConfigHandleContract? {
+    return await registry.resolve(storageId) as? StorageConfigHandleContract
   }
 
   /// Maps storage config payload values to PingStorage cache strategy.
   ///
   /// Supports both the current `cacheable` boolean and future `cacheStrategy` string.
   ///
-  /// - Parameter config: Registered storage configuration payload.
+  /// - Parameters:
+  ///   - cacheable: Storage cacheable flag.
+  ///   - rawStrategy: Optional explicit cache strategy string.
   /// - Returns: Native cache strategy value.
-  private static func parseCacheStrategy(from config: NSDictionary) -> CacheStrategy {
-    if let rawStrategy = (config["cacheStrategy"] as? String)?.lowercased() {
+  private static func parseCacheStrategy(cacheable: Bool?, rawStrategy: String?) -> CacheStrategy {
+    if let rawStrategy = rawStrategy?.lowercased() {
       switch rawStrategy {
       case "cache":
         return .CACHE
@@ -305,7 +352,7 @@ final class JourneyClientFactory {
       }
     }
 
-    if let cacheable = config["cacheable"] as? Bool {
+    if let cacheable {
       return cacheable ? .CACHE_ON_FAILURE : .NO_CACHE
     }
 

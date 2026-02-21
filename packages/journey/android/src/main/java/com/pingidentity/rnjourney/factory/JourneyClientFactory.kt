@@ -18,20 +18,20 @@ import com.pingidentity.storage.EncryptedDataStoreStorageConfig
 import com.reactnativepingidentity.core.CoreRuntime
 import com.reactnativepingidentity.core.oidc.OidcClientConfigHandle
 import com.reactnativepingidentity.core.oidc.OidcOpenIdConfig
-import com.reactnativepingidentity.storage.StorageConfig
-import com.reactnativepingidentity.storage.StorageConfigRegistry
+import com.reactnativepingidentity.core.registry.Registry
+import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
 
 /**
  * Builds native Journey workflow instances from parsed JS payloads.
  *
  * @param sessionStorageRegistry Registry used to resolve session storage handles from JS.
  * @param oidcStorageRegistry Registry used to resolve OIDC storage handles from JS.
- * @param loggerApplier Logger binder invoked during workflow construction.
+ * @param loggerResolver Resolver that maps logger ids to native logger instances.
  */
 internal class JourneyClientFactory(
-    private val sessionStorageRegistry: StorageConfigRegistry,
-    private val oidcStorageRegistry: StorageConfigRegistry,
-    private val loggerApplier: (String?) -> Unit
+    private val sessionStorageRegistry: Registry,
+    private val oidcStorageRegistry: Registry,
+    private val loggerResolver: (String?) -> com.pingidentity.logger.Logger?
 ) {
 
     /**
@@ -64,8 +64,9 @@ internal class JourneyClientFactory(
      * @throws IllegalStateException if module configuration fails.
      */
     fun build(payload: JourneyClientPayload): Workflow {
+        val resolvedLogger = loggerResolver(payload.loggerId)
         return Journey {
-            loggerApplier(payload.loggerId)
+            resolvedLogger?.let { logger = it }
             serverUrl = payload.serverUrl
             payload.timeout?.let { timeout = it }
 
@@ -231,7 +232,9 @@ internal class JourneyClientFactory(
         if (storageId.isNullOrBlank()) {
             return
         }
-        val storageConfig = sessionStorageRegistry.resolve(storageId)
+        val storageConfig =
+            sessionStorageRegistry.resolve(storageId) as? StorageConfigHandleContract
+                ?: throw IllegalArgumentException("No session storage config registered for id=$storageId")
 
         module(Session) {
             storage {
@@ -250,7 +253,9 @@ internal class JourneyClientFactory(
         if (storageId.isNullOrBlank()) {
             return
         }
-        val storageConfig = oidcStorageRegistry.resolve(storageId)
+        val storageConfig =
+            oidcStorageRegistry.resolve(storageId) as? StorageConfigHandleContract
+                ?: throw IllegalArgumentException("No OIDC storage config registered for id=$storageId")
         storage {
             applyStorageConfig(storageConfig)
         }
@@ -261,7 +266,7 @@ internal class JourneyClientFactory(
      *
      * @param config Parsed storage configuration from the shared storage registry.
      */
-    private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfig) {
+    private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfigHandleContract) {
         config.fileName?.let { fileName = it }
         config.keyAlias?.let { keyAlias = it }
         config.strongBoxPreferred?.let { strongBoxPreferred = it }

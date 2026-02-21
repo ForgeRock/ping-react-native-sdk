@@ -14,6 +14,7 @@ import com.pingidentity.logger.NONE
 import com.pingidentity.logger.STANDARD
 import com.pingidentity.logger.WARN
 import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.logger.LoggerHandleContract
 import com.reactnativepingidentity.core.registry.NativeHandle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,7 +51,12 @@ object RNPingLoggerCommon {
    *
    * @property level The log level for this logger instance
    */
-  private class LoggerHandle(var level: NativeLoggerLevel) : NativeHandle
+  private class LoggerHandle(
+    var level: NativeLoggerLevel
+  ) : NativeHandle, LoggerHandleContract {
+    override val loggerLevel: String
+      get() = level.name
+  }
 
   /**
    * Configures the logger synchronously with the provided configuration.
@@ -62,12 +68,9 @@ object RNPingLoggerCommon {
   fun configure(config: ReadableMap): String {
     val level = parseLevel(config.getString("level")) ?: NativeLoggerLevel.NONE
 
-    val id = runBlocking(Dispatchers.IO) {
+    return runBlocking(Dispatchers.IO) {
       CoreRuntime.loggerRegistry.register(LoggerHandle(level))
     }
-
-    applyNativeLevel(level)
-    return id
   }
 
   /**
@@ -105,20 +108,19 @@ object RNPingLoggerCommon {
       }
 
       handle.level = parsed
-      applyNativeLevel(parsed)
     }
   }
 
   /**
-   * Apply a previously registered logger by id.
+   * Resolve a native logger instance for a registered logger id.
    *
    * @param id Logger identifier returned by the JS logger module
-   * @return True when the logger was resolved and applied
+   * @return Native logger instance or null when id is missing/unknown
    */
   @JvmStatic
-  fun applyLogger(id: String?): Boolean {
+  fun resolveLogger(id: String?): com.pingidentity.logger.Logger? {
     if (id.isNullOrBlank()) {
-      return false
+      return null
     }
 
     val handle = runBlocking(Dispatchers.IO) {
@@ -126,11 +128,10 @@ object RNPingLoggerCommon {
     }
     if (handle == null) {
       Log.w(TAG, "No logger registered for id $id")
-      return false
+      return null
     }
 
-    applyNativeLevel(handle.level)
-    return true
+    return nativeLoggerForLevel(handle.level)
   }
 
   /**
@@ -149,12 +150,10 @@ object RNPingLoggerCommon {
   }
 
   /**
-   * Applies the native logger level to the PingIdentity Logger.
-   *
-   * @param level The NativeLoggerLevel to apply
+   * Map internal level values to concrete Ping logger implementations.
    */
-  private fun applyNativeLevel(level: NativeLoggerLevel) {
-    Logger.logger = when (level) {
+  private fun nativeLoggerForLevel(level: NativeLoggerLevel): com.pingidentity.logger.Logger {
+    return when (level) {
       NativeLoggerLevel.STANDARD -> Logger.STANDARD
       NativeLoggerLevel.WARN -> Logger.WARN
       NativeLoggerLevel.NONE -> Logger.NONE

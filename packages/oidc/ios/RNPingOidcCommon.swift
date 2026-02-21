@@ -13,6 +13,7 @@ import AuthenticationServices
 import PingBrowser
 import PingOidc
 import PingOrchestrate
+import PingLogger
 import RNPingCore
 
 /// Common iOS implementation for the Ping OIDC React Native module.
@@ -46,6 +47,36 @@ public class RNPingOidcCommon: NSObject {
     return q
   }()
 
+  /// Resolve a native logger from the shared Core logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or nil when missing/invalid.
+  private static func resolveLoggerFromCoreSync(_ loggerId: String?) -> Logger? {
+    guard let loggerId, !loggerId.isEmpty else {
+      return nil
+    }
+
+    guard let handle = RegistrySync.resolveSync(
+      loggerId,
+      registry: CoreRuntime.loggerRegistry,
+      queueKey: createQueueKey,
+      context: "RNPingOidcCommon.resolveLoggerFromCoreSync"
+    ) as? LoggerHandleContract else {
+      return nil
+    }
+
+    switch handle.loggerLevel.uppercased() {
+    case "STANDARD":
+      return LogManager.standard
+    case "WARN":
+      return LogManager.warning
+    case "NONE":
+      return LogManager.none
+    default:
+      return LogManager.none
+    }
+  }
+
   // MARK: - Cleanup
 
   /// Clear stored native OIDC clients and web clients.
@@ -76,7 +107,12 @@ public class RNPingOidcCommon: NSObject {
       )
       do {
         let payload = try OidcConfigParser.parseClientConfig(config)
-        let oidcConfig = OidcClientFactory.buildOidcClient(payload)
+        let logger = resolveLoggerFromCoreSync(payload.loggerId)
+        let oidcConfig = OidcClientFactory.buildOidcClient(
+          payload,
+          logger: logger,
+          queueKey: createQueueKey
+        )
         let client = OidcClient(config: oidcConfig)
         let user = OidcUser(config: oidcConfig)
         let handle = OidcClientHandle(payload: payload, client: client, user: user)
@@ -124,7 +160,12 @@ public class RNPingOidcCommon: NSObject {
         return ""
       }
 
-      let web = OidcClientFactory.buildWebClient(handle.payload)
+      let logger = resolveLoggerFromCoreSync(handle.payload.loggerId)
+      let web = OidcClientFactory.buildWebClient(
+        handle.payload,
+        logger: logger,
+        queueKey: createQueueKey
+      )
       let webHandle = OidcWebHandle(clientId: clientId, web: web)
       let id = RegistrySync.registerSync(
         webHandle,

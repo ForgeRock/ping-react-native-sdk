@@ -14,43 +14,20 @@ import type {
   OidcUser,
   OidcWebClient,
 } from './types';
-import type { Tokens } from '@ping-identity/rn-types';
-import type {
-  LoggerInstance,
-  LogLevel,
-} from '@react-native-pingidentity/logger';
-import { logger as createLogger } from '@react-native-pingidentity/logger';
+import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
 
 /**
  * In-memory registry mapping native client ids to JS logger instances.
  */
 const loggerRegistry = new Map<string, LoggerInstance>();
 
-/**
- * Fallback logger used when no logger is registered for a client.
- */
 const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
-  changeLevel: (_level: LogLevel) => {},
+  changeLevel: () => {},
   error: () => {},
   warn: () => {},
   info: () => {},
   debug: () => {},
-};
-
-/**
- * Cached default logger used when callers do not provide one.
- */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-/**
- * Lazily initialize and return the default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createLogger({ level: 'none' });
-  }
-  return defaultLoggerInstance;
 };
 
 /**
@@ -81,11 +58,10 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
     );
   }
-  const jsLogger = config.logger ?? getDefaultLogger();
+  const jsLogger = config.logger ?? noopLogger;
   const loggerId =
     config.nativeLogger?.id ??
-    jsLogger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
+    jsLogger.nativeHandle?.id;
   jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
       config,

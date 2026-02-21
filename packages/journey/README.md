@@ -20,20 +20,24 @@ yarn add @ping-identity/rn-journey
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @react-native-pingidentity/storage
+yarn add @react-native-pingidentity/logger
+```
+
 ## How to Use the SDK
 
 ### Create a Journey client
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
-import { logger } from '@react-native-pingidentity/logger';
 import {
   CacheStrategy,
   configureOidcStorage,
   configureSessionStorage,
 } from '@react-native-pingidentity/storage';
-
-const appLogger = logger({ level: 'debug' });
 
 const sessionStorage = configureSessionStorage({
   android: {
@@ -68,7 +72,6 @@ const client = createJourneyClient({
   realm: 'alpha',
   cookie: 'iPlanetDirectoryPro',
   timeout: 30000,
-  logger: appLogger,
   modules: {
     oidc: {
       clientId: 'rn-client',
@@ -87,6 +90,32 @@ const client = createJourneyClient({
 Pass module integrations through `config.modules`. The JS API is `createJourneyClient(config)`.
 Storage handles in `modules.session.storage` and `modules.oidc.storage` must come from
 `configureSessionStorage(...)` / `configureOidcStorage(...)`.
+
+### Configure logging (optional)
+
+If you install the logger package, pass either a JS logger instance or a native logger handle.
+
+```ts
+import { createJourneyClient } from '@ping-identity/rn-journey';
+import { logger, configureLogger } from '@react-native-pingidentity/logger';
+
+const jsLogger = logger({ level: 'debug' });
+const nativeLogger = configureLogger({ level: 'warn' });
+
+const client = createJourneyClient({
+  serverUrl: 'https://example.com/am',
+  logger: jsLogger,
+  modules: {
+    oidc: {
+      clientId: 'rn-client',
+      discoveryEndpoint: 'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
+      redirectUri: 'com.example.app://callback',
+      scopes: ['openid'],
+      nativeLogger,
+    },
+  },
+});
+```
 
 > TODO(iOS SDK parity): `modules.oidc.signOutRedirectUri` is currently ignored on iOS.
 

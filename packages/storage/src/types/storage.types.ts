@@ -5,20 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import type { BaseStorageConfig } from "../NativeRNPingStorage";
-
-/**
- * Compile-time brand key for Session storage handles.
- *
- * @internal
- */
-declare const sessionStorageHandleBrand: unique symbol;
-
-/**
- * Compile-time brand key for OIDC storage handles.
- *
- * @internal
- */
-declare const oidcStorageHandleBrand: unique symbol;
+import type {
+  OidcStorageHandle,
+  SessionStorageHandle,
+} from '@ping-identity/rn-types';
 
 /**
  * Storage configuration type for Journey session data.
@@ -54,23 +44,7 @@ declare const oidcStorageHandleBrand: unique symbol;
  * // initJourney({ sessionStorage, ... });
  * ```
  */
-export type SessionStorage = BaseStorageConfig &
-  Readonly<{
-    /**
-     * Native identifier for a registered session storage configuration.
-     */
-    id: string;
-    /**
-     * Runtime discriminator for session storage handles.
-     */
-    kind: "session";
-    /**
-     * Compile-time brand to keep this handle opaque.
-     *
-     * @internal
-     */
-    [sessionStorageHandleBrand]: true;
-  }>;
+export type SessionStorage = BaseStorageConfig & SessionStorageHandle;
 
 /**
  * Storage configuration type for OIDC tokens and authorization state.
@@ -107,20 +81,4 @@ export type SessionStorage = BaseStorageConfig &
  * ```
  * 
  */
-export type OidcStorage = BaseStorageConfig &
-  Readonly<{
-    /**
-     * Native identifier for a registered OIDC storage configuration.
-     */
-    id: string;
-    /**
-     * Runtime discriminator for OIDC storage handles.
-     */
-    kind: "oidc";
-    /**
-     * Compile-time brand to keep this handle opaque.
-     *
-     * @internal
-     */
-    [oidcStorageHandleBrand]: true;
-  }>;
+export type OidcStorage = BaseStorageConfig & OidcStorageHandle;

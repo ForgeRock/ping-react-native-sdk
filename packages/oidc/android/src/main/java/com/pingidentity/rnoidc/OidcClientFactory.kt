@@ -14,15 +14,16 @@ import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.oidc.module.Oidc
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
-import com.reactnativepingidentity.storage.StorageConfig
-import com.reactnativepingidentity.storage.StorageConfigRegistry
+import com.reactnativepingidentity.core.registry.Registry
+import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
 
 /**
  * Builds native OIDC client instances from JS payloads.
  */
 internal class OidcClientFactory(
-  private val storageRegistry: StorageConfigRegistry,
-  private val loggerApplier: (String?) -> Unit
+  private val storageRegistry: Registry,
+  /** Resolver that maps logger ids to native logger instances. */
+  private val loggerResolver: (String?) -> com.pingidentity.logger.Logger?
 ) {
 
   /**
@@ -32,9 +33,10 @@ internal class OidcClientFactory(
    * @return Configured native OIDC web client
    */
   fun buildWebClient(config: OidcClientPayload): OidcWeb {
+    val resolvedLogger = loggerResolver(config.loggerId)
     return OidcWeb {
       module(Oidc) {
-        loggerApplier(config.loggerId)
+        resolvedLogger?.let { logger = it }
         config.discoveryEndpoint?.let { discoveryEndpoint = it }
         clientId = config.clientId
         redirectUri = config.redirectUri
@@ -64,8 +66,9 @@ internal class OidcClientFactory(
    * @return Configured native OIDC client
    */
   fun buildOidcClient(config: OidcClientPayload): OidcClient {
+    val resolvedLogger = loggerResolver(config.loggerId)
     return OidcClient {
-      loggerApplier(config.loggerId)
+      resolvedLogger?.let { logger = it }
       config.discoveryEndpoint?.let { discoveryEndpoint = it }
       clientId = config.clientId
       redirectUri = config.redirectUri
@@ -96,7 +99,9 @@ internal class OidcClientFactory(
     if (storageId.isNullOrBlank()) {
       return
     }
-    val storageConfig = storageRegistry.resolve(storageId)
+    val storageConfig =
+      storageRegistry.resolve(storageId) as? StorageConfigHandleContract
+        ?: throw IllegalArgumentException("No storage config registered for id=$storageId")
     storage {
       applyStorageConfig(storageConfig)
     }
@@ -126,7 +131,7 @@ internal class OidcClientFactory(
    *
    * @param config Parsed JS storage configuration
    */
-  private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfig) {
+  private fun EncryptedDataStoreStorageConfig.applyStorageConfig(config: StorageConfigHandleContract) {
     config.fileName?.let { fileName = it }
     config.keyAlias?.let { keyAlias = it }
     config.strongBoxPreferred?.let { strongBoxPreferred = it }

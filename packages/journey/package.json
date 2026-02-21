@@ -20,9 +20,7 @@
   },
   "dependencies": {
     "@ping-identity/rn-types": "^0.1.0",
-    "@react-native-pingidentity/core": "^0.1.0",
-    "@react-native-pingidentity/logger": "^0.1.0",
-    "@react-native-pingidentity/storage": "^0.1.0"
+    "@react-native-pingidentity/core": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",

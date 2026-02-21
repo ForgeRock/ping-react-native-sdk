@@ -18,6 +18,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@ping-identity/rn-types": "^0.1.0",
     "@react-native-pingidentity/core": "^0.1.0"
   },
   "peerDependencies": {

@@ -7,6 +7,7 @@
 
 package com.reactnativepingidentity.storage
 
+import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
 import com.reactnativepingidentity.core.registry.NativeHandle
 
 /**
@@ -32,4 +33,16 @@ data class StorageConfig(
  *
  * @property config The storage configuration to be wrapped.
  */
-class StorageConfigHandle(val config: StorageConfig) : NativeHandle
+class StorageConfigHandle(val config: StorageConfig) : NativeHandle, StorageConfigHandleContract {
+  override val keyAlias: String?
+    get() = config.keyAlias
+
+  override val fileName: String?
+    get() = config.fileName
+
+  override val strongBoxPreferred: Boolean?
+    get() = config.strongBoxPreferred
+
+  override val cacheStrategy: String?
+    get() = config.cacheStrategy
+}

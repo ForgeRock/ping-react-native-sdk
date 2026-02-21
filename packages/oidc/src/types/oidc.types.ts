@@ -7,16 +7,14 @@
 
 import type {
   GenericError,
+  LoggerInstance,
+  NativeLoggerHandle,
+  OidcStorageHandle,
   OidcCoreConfig,
   OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
   Tokens,
 } from '@ping-identity/rn-types';
 import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
-import type {
-  LoggerInstance,
-  NativeLoggerHandle,
-} from '@react-native-pingidentity/logger';
-import type { OidcStorage } from '@react-native-pingidentity/storage';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -61,7 +59,7 @@ export type OidcClientConfig = OidcCoreConfig & {
    * Pass the object returned by `configureOidcStorage`. The native layer uses
    * the embedded `id` to resolve the registered storage configuration.
    */
-  storage?: OidcStorage;
+  storage?: OidcStorageHandle;
 
   /**
    * iOS-only browser configuration for OIDC web login.

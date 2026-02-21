@@ -89,3 +89,8 @@ export type NativeExtensionCallbackType =
  * Shared OIDC base configuration contracts used across RN modules.
  */
 export type * from './oidc.types';
+
+/**
+ * Shared native handle and logger contracts used across RN modules.
+ */
+export type * from './handles.types';

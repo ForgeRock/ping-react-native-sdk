@@ -15,6 +15,10 @@ import com.pingidentity.journey.plugin.callbacks
 import com.pingidentity.journey.resume
 import com.pingidentity.journey.start
 import com.pingidentity.journey.user
+import com.pingidentity.logger.Logger
+import com.pingidentity.logger.NONE
+import com.pingidentity.logger.STANDARD
+import com.pingidentity.logger.WARN
 import com.pingidentity.oidc.Token
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.Node
@@ -24,10 +28,9 @@ import com.reactnativepingidentity.core.CoreRuntime
 import com.reactnativepingidentity.core.error.ErrorType
 import com.reactnativepingidentity.core.error.GenericError
 import com.reactnativepingidentity.core.error.reject
+import com.reactnativepingidentity.core.logger.LoggerHandleContract
 import com.reactnativepingidentity.core.registry.NativeHandle
 import com.reactnativepingidentity.core.utils.JsonBridgeMapper
-import com.reactnativepingidentity.logger.RNPingLoggerCommon
-import com.reactnativepingidentity.storage.StorageConfigRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -81,10 +84,10 @@ internal object RNPingJourneyCommon {
     if (configured) {
       return
     }
-    val sessionStorageRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
-    val oidcStorageRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+    val sessionStorageRegistry = CoreRuntime.sessionStorageConfigRegistry
+    val oidcStorageRegistry = CoreRuntime.oidcStorageConfigRegistry
     clientFactory = JourneyClientFactory(sessionStorageRegistry, oidcStorageRegistry) { loggerId ->
-      RNPingLoggerCommon.applyLogger(loggerId)
+      resolveLoggerFromCore(loggerId)
     }
     CoreRuntime.journeyCallbackResolver = { journeyId ->
       continueNodeMap[journeyId]?.callbacks?.map { it as Any }
@@ -165,6 +168,26 @@ internal object RNPingJourneyCommon {
    */
   private fun resolveWorkflow(journeyId: String): Workflow? {
     return (journeyRegistry.resolve(journeyId) as? JourneyHandle)?.workflow
+  }
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) {
+      return null
+    }
+
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return when (handle.loggerLevel.uppercase()) {
+      "STANDARD" -> Logger.STANDARD
+      "WARN" -> Logger.WARN
+      "NONE" -> Logger.NONE
+      else -> Logger.NONE
+    }
   }
 
   /**

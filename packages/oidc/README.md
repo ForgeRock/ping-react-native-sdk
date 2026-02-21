@@ -20,6 +20,13 @@ yarn add @ping-identity/rn-oidc
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @react-native-pingidentity/storage
+yarn add @react-native-pingidentity/logger
+```
+
 The native OIDC SDK already bundles the required browser components, so you do not need the
 React Native Browser package unless you plan to use it directly elsewhere in your app.
 
@@ -29,16 +36,12 @@ React Native Browser package unless you plan to use it directly elsewhere in you
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
-
-const debugLogger = logger({ level: 'debug' });
 
 const oidcClient = createOidcClient({
   clientId: 'client-id',
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
-  logger: debugLogger,
 });
 ```
 
@@ -55,7 +58,6 @@ handle into the OIDC client configuration.
 ```ts
 import { configureOidcStorage } from '@react-native-pingidentity/storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
 
 const oidcStorage = configureOidcStorage({
   android: {
@@ -71,15 +73,33 @@ const oidcStorage = configureOidcStorage({
   },
 });
 
-const debugLogger = logger({ level: 'debug' });
-
 const oidcClient = createOidcClient({
   clientId: 'client-id',
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   redirectUri: 'com.example.app://callback',
   scopes: ['openid', 'profile'],
   storage: oidcStorage,
-  logger: debugLogger,
+});
+```
+
+### Configure logging (optional)
+
+If you install the logger package, pass either a JS logger instance or a native logger handle.
+
+```ts
+import { createOidcClient } from '@ping-identity/rn-oidc';
+import { logger, configureLogger } from '@react-native-pingidentity/logger';
+
+const jsLogger = logger({ level: 'debug' });
+const nativeLogger = configureLogger({ level: 'warn' });
+
+const oidcClient = createOidcClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+  logger: jsLogger,
+  nativeLogger,
 });
 ```
 

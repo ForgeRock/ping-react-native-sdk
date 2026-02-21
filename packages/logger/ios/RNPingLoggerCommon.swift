@@ -46,9 +46,10 @@ public class RNPingLoggerCommon: NSObject {
   /// - Note: `@unchecked Sendable` is required because this mutable reference
   ///   type (`level`) crosses actor boundaries through `Registry`.
   ///   Updates are serialized on `syncQueue`.
-  final class LoggerHandle: NativeHandle, @unchecked Sendable {
+  final class LoggerHandle: LoggerHandleContract, @unchecked Sendable {
     /// The log level for this logger instance.
     var level: String
+    var loggerLevel: String { level }
     /// Creates a new logger handle with the specified configuration.
     /// - Parameter level: The log level to use.
     init(level: String) {

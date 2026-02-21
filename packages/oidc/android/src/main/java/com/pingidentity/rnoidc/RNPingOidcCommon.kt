@@ -14,10 +14,15 @@ import com.facebook.react.bridge.ReactApplicationContext
 import android.util.Log
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.logger.Logger
+import com.pingidentity.logger.NONE
+import com.pingidentity.logger.STANDARD
+import com.pingidentity.logger.WARN
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.OidcUser
 import com.reactnativepingidentity.core.CoreRuntime
+import com.reactnativepingidentity.core.logger.LoggerHandleContract
 import com.reactnativepingidentity.core.oidc.OidcClientConfigHandle
 import com.reactnativepingidentity.core.oidc.OidcOpenIdConfig
 import com.reactnativepingidentity.core.error.ErrorType
@@ -25,8 +30,6 @@ import com.reactnativepingidentity.core.error.GenericError
 import com.reactnativepingidentity.core.error.mapThrowableToGenericError
 import com.reactnativepingidentity.core.error.reject
 import com.reactnativepingidentity.core.registry.NativeHandle
-import com.reactnativepingidentity.logger.RNPingLoggerCommon
-import com.reactnativepingidentity.storage.StorageConfigRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,13 +58,33 @@ object RNPingOidcCommon {
   /** Core registry storing OIDC web clients. */
   private val webRegistry = CoreRuntime.oidcWebClientRegistry
   /** Core registry storing OIDC storage configurations. */
-  private val oidcStorageRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+  private val oidcStorageRegistry = CoreRuntime.oidcStorageConfigRegistry
   /** Factory for building native OIDC clients/web clients. */
   private val clientFactory = OidcClientFactory(oidcStorageRegistry) { id ->
-    RNPingLoggerCommon.applyLogger(id)
+    resolveLoggerFromCore(id)
   }
   /** Cached React context for resolving activity when needed. */
   private var appContext: ReactApplicationContext? = null
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) {
+      return null
+    }
+
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return when (handle.loggerLevel.uppercase()) {
+      "STANDARD" -> Logger.STANDARD
+      "WARN" -> Logger.WARN
+      "NONE" -> Logger.NONE
+      else -> Logger.NONE
+    }
+  }
 
 
   /**

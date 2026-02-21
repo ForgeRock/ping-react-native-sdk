@@ -12,21 +12,24 @@ import Foundation
 import PingLogger
 import PingOidc
 import PingStorage
-import RNPingStorage
 import PingBrowser
-import RNPingLogger
+import RNPingCore
 
 /// Builder helpers for OIDC native clients.
 enum OidcClientFactory {
   /// Build a native OIDC client configuration from the payload.
   ///
   /// - Parameter payload: Parsed JS client configuration payload.
+  /// - Parameter logger: Optional native logger resolved from Core registry.
   /// - Returns: Native OIDC client configuration.
   ///
   /// Naming matches the Android factory for parity.
-  static func buildOidcClient(_ payload: OidcClientPayload) -> OidcClientConfig {
+  static func buildOidcClient(
+    _ payload: OidcClientPayload,
+    logger: Logger?,
+    queueKey: DispatchSpecificKey<Void>? = nil
+  ) -> OidcClientConfig {
     let config = OidcClientConfig()
-    _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
     config.clientId = payload.clientId
     config.discoveryEndpoint = payload.discoveryEndpoint ?? ""
     config.redirectUri = payload.redirectUri
@@ -44,13 +47,15 @@ enum OidcClientFactory {
     if !payload.additionalParameters.isEmpty {
       config.additionalParameters = payload.additionalParameters
     }
-    config.logger = LogManager.logger
+    if let logger {
+      config.logger = logger
+    }
 
     if let openId = payload.openId, let openIdConfig = buildOpenIdConfiguration(openId) {
       config.openId = openIdConfig
     }
 
-    if let storage = buildStorageDelegate(payload.storageId) {
+    if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
       config.storage = storage
     }
 
@@ -60,11 +65,17 @@ enum OidcClientFactory {
   /// Build a native OIDC web client from the payload.
   ///
   /// - Parameter payload: Parsed JS client configuration payload.
+  /// - Parameter logger: Optional native logger resolved from Core registry.
   /// - Returns: Native OIDC web client.
-  static func buildWebClient(_ payload: OidcClientPayload) -> OidcWeb {
+  static func buildWebClient(
+    _ payload: OidcClientPayload,
+    logger: Logger?,
+    queueKey: DispatchSpecificKey<Void>? = nil
+  ) -> OidcWeb {
     return OidcWeb.createOidcWeb { config in
-      _ = RNPingLoggerImpl.shared.applyLogger(payload.loggerId)
-      config.logger = LogManager.logger
+      if let logger {
+        config.logger = logger
+      }
       if let browserType = mapBrowserType(payload.browserType) {
         config.browserType = browserType
       }
@@ -92,7 +103,7 @@ enum OidcClientFactory {
         if let openId = payload.openId, let openIdConfig = buildOpenIdConfiguration(openId) {
           oidc.openId = openIdConfig
         }
-        if let storage = buildStorageDelegate(payload.storageId) {
+        if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
           oidc.storage = storage
         }
       }
@@ -103,13 +114,19 @@ enum OidcClientFactory {
   ///
   /// - Parameter storageId: Storage identifier from JS.
   /// - Returns: Storage delegate or nil when not configured.
-  private static func buildStorageDelegate(_ storageId: String?) -> StorageDelegate<Token>? {
+  private static func buildStorageDelegate(
+    _ storageId: String?,
+    queueKey: DispatchSpecificKey<Void>?
+  ) -> StorageDelegate<Token>? {
     guard let storageId, !storageId.isEmpty else {
       return nil
     }
-    let config = RNPingStorageCommon.configureOidcStorage(storageId)
-    let account = (config["account"] as? String) ?? "ACCESS_TOKEN_STORAGE"
-    let encryptorEnabled = (config["encryptor"] as? Bool) ?? true
+    guard let queueKey,
+          let config = resolveStorageConfigFromCoreSync(storageId, queueKey: queueKey) else {
+      return nil
+    }
+    let account = config.account ?? "ACCESS_TOKEN_STORAGE"
+    let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {
         return secured
@@ -119,8 +136,26 @@ enum OidcClientFactory {
     return KeychainStorage<Token>(
       account: account,
       encryptor: encryptor,
-      cacheStrategy: parseCacheStrategy(from: config)
+      cacheStrategy: parseCacheStrategy(cacheable: config.cacheable, rawStrategy: nil)
     )
+  }
+
+  /// Resolves storage configuration from Core OIDC registry by id.
+  ///
+  /// - Parameters:
+  ///   - storageId: Storage handle identifier from JS.
+  ///   - queueKey: Specific key for the queue that is allowed to block.
+  /// - Returns: Storage handle contract payload, or nil.
+  private static func resolveStorageConfigFromCoreSync(
+    _ storageId: String,
+    queueKey: DispatchSpecificKey<Void>
+  ) -> StorageConfigHandleContract? {
+    return RegistrySync.resolveSync(
+      storageId,
+      registry: CoreRuntime.oidcStorageConfigRegistry,
+      queueKey: queueKey,
+      context: "OidcClientFactory.resolveStorageConfigFromCoreSync"
+    ) as? StorageConfigHandleContract
   }
 
   /// Maps storage config payload values to PingStorage cache strategy.
@@ -129,8 +164,8 @@ enum OidcClientFactory {
   ///
   /// - Parameter config: Registered storage configuration payload.
   /// - Returns: Native cache strategy value.
-  private static func parseCacheStrategy(from config: NSDictionary) -> CacheStrategy {
-    if let rawStrategy = (config["cacheStrategy"] as? String)?.lowercased() {
+  private static func parseCacheStrategy(cacheable: Bool?, rawStrategy: String?) -> CacheStrategy {
+    if let rawStrategy = rawStrategy?.lowercased() {
       switch rawStrategy {
       case "cache":
         return .CACHE
@@ -143,7 +178,7 @@ enum OidcClientFactory {
       }
     }
 
-    if let cacheable = config["cacheable"] as? Bool {
+    if let cacheable {
       return cacheable ? .CACHE_ON_FAILURE : .NO_CACHE
     }
 

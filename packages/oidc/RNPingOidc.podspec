@@ -26,8 +26,6 @@ Pod::Spec.new do |s|
 
   s.dependency 'PingOidc', '1.3.1'
   s.dependency 'RNPingCore'
-  s.dependency 'RNPingLogger'
-  s.dependency 'RNPingStorage'
 
   install_modules_dependencies(s)
 end

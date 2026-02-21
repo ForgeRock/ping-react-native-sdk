@@ -22,8 +22,18 @@ import type {
   JourneyStartOptions,
 } from './types';
 import type { NativeJourneyConfig } from './NativeRNPingJourney';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 
 type StorageHandleKind = 'session' | 'oidc';
+
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+};
 
 /**
  * Resolves and validates a storage handle id for Journey module config.
@@ -94,10 +104,11 @@ export function createJourneyClient(
     'configureOidcStorage'
   );
   const oidcConfig = config.modules?.oidc;
+  const jsLogger = config.logger ?? oidcConfig?.logger ?? noopLogger;
   const loggerId =
     config.logger?.nativeHandle?.id ??
     oidcConfig?.nativeLogger?.id ??
-    oidcConfig?.logger?.nativeHandle?.id;
+    jsLogger.nativeHandle?.id;
 
   const nativeConfig: NativeJourneyConfig = {
     serverUrl: config.serverUrl,
@@ -126,10 +137,14 @@ export function createJourneyClient(
 
   const logDebug = (message: string, payload?: Record<string, unknown>): void => {
     if (payload) {
-      config.logger?.debug(message, payload);
+      jsLogger.debug(
+        `${message} ${JSON.stringify(payload, (_key, value) => (
+          typeof value === 'function' ? undefined : value
+        ))}`
+      );
       return;
     }
-    config.logger?.debug(message);
+    jsLogger.debug(message);
   };
 
   /**
