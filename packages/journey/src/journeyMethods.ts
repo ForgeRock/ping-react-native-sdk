@@ -7,8 +7,10 @@
 
 import NativeRNPingJourney from './NativeRNPingJourney';
 import type {
+  JourneySSOToken,
   JourneyNextInput,
   JourneyNode,
+  JourneyUserInfo,
   JourneyStartOptions,
   JourneyUserSession,
 } from './types';
@@ -84,6 +86,57 @@ export async function getSession(
 ): Promise<JourneyUserSession | null> {
   const session = await NativeRNPingJourney.getSession(journeyId);
   return session ? (session as JourneyUserSession) : null;
+}
+
+/**
+ * Refresh current user/session details for a Journey instance.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns Refreshed session payload, or `null` when unavailable.
+ */
+export async function refreshSession(
+  journeyId: string
+): Promise<JourneyUserSession | null> {
+  const session = await NativeRNPingJourney.refresh(journeyId);
+  return session ? (session as JourneyUserSession) : null;
+}
+
+/**
+ * Revoke current Journey user access/refresh tokens.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns `true` when revoke succeeds.
+ */
+export async function revokeSession(
+  journeyId: string
+): Promise<boolean> {
+  return await NativeRNPingJourney.revoke(journeyId);
+}
+
+/**
+ * Resolve current Journey userinfo payload.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns Userinfo payload, or `null` when unavailable.
+ */
+export async function getUserInfo(
+  journeyId: string
+): Promise<JourneyUserInfo | null> {
+  const userInfo = await NativeRNPingJourney.userinfo(journeyId);
+  return userInfo ? (userInfo as JourneyUserInfo) : null;
+}
+
+/**
+ * Resolve current Journey SSO token payload.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @returns SSO token payload, or `null` when unavailable.
+ */
+export async function getSSOToken(
+  journeyId: string
+): Promise<JourneySSOToken | null> {
+  const ssoToken = await NativeRNPingJourney.ssoToken(journeyId);
+  return ssoToken ? (ssoToken as JourneySSOToken) : null;
 }
 
 /**

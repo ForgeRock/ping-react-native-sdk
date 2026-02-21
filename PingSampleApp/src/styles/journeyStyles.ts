@@ -226,6 +226,9 @@ export const journeyClientPanelStyles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
+  successActionsContainer: {
+    marginTop: 10,
+  },
   issueCard: {
     borderWidth: 1,
     borderColor: colors.warningBorder,

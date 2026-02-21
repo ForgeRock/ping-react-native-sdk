@@ -17,7 +17,9 @@ import type {
   JourneyError,
   JourneyNextInput,
   JourneyNode,
+  JourneySSOToken,
   JourneyStartOptions,
+  JourneyUserInfo,
   JourneyUserSession,
 } from './types';
 
@@ -60,6 +62,38 @@ export type JourneyHookActions = {
    * @throws {JourneyError} When session retrieval fails.
    */
   user: () => Promise<JourneyUserSession | null>;
+
+  /**
+   * Refresh active Journey user access token.
+   *
+   * @returns Refreshed session payload or `null`.
+   * @throws {JourneyError} When refresh fails.
+   */
+  refresh: () => Promise<JourneyUserSession | null>;
+
+  /**
+   * Revoke active Journey user access/refresh tokens.
+   *
+   * @returns `true` when revoke succeeds.
+   * @throws {JourneyError} When revoke fails.
+   */
+  revoke: () => Promise<boolean>;
+
+  /**
+   * Resolve active Journey userinfo payload.
+   *
+   * @returns Userinfo payload or `null`.
+   * @throws {JourneyError} When userinfo retrieval fails.
+   */
+  userinfo: () => Promise<JourneyUserInfo | null>;
+
+  /**
+   * Resolve active Journey SSO token payload.
+   *
+   * @returns SSO token payload or `null`.
+   * @throws {JourneyError} When SSO token retrieval fails.
+   */
+  ssoToken: () => Promise<JourneySSOToken | null>;
 
   /**
    * Logout the active Journey user/session.
@@ -124,6 +158,18 @@ const missingJourneyClient: JourneyClient = {
     throw missingJourneyClientError;
   },
   async user(): Promise<JourneyUserSession | null> {
+    throw missingJourneyClientError;
+  },
+  async refresh(): Promise<JourneyUserSession | null> {
+    throw missingJourneyClientError;
+  },
+  async revoke(): Promise<boolean> {
+    throw missingJourneyClientError;
+  },
+  async userinfo(): Promise<JourneyUserInfo | null> {
+    throw missingJourneyClientError;
+  },
+  async ssoToken(): Promise<JourneySSOToken | null> {
     throw missingJourneyClientError;
   },
   async logoutUser(): Promise<boolean> {
@@ -250,6 +296,22 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
     return await client.user();
   }, [client]);
 
+  const refresh = useCallback(async (): Promise<JourneyUserSession | null> => {
+    return await client.refresh();
+  }, [client]);
+
+  const revoke = useCallback(async (): Promise<boolean> => {
+    return await client.revoke();
+  }, [client]);
+
+  const userinfo = useCallback(async (): Promise<JourneyUserInfo | null> => {
+    return await client.userinfo();
+  }, [client]);
+
+  const ssoToken = useCallback(async (): Promise<JourneySSOToken | null> => {
+    return await client.ssoToken();
+  }, [client]);
+
   const logoutUser = useCallback(async (): Promise<boolean> => {
     const result = await client.logoutUser();
     setNode(null);
@@ -269,6 +331,10 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
       next,
       resume,
       user,
+      refresh,
+      revoke,
+      userinfo,
+      ssoToken,
       logoutUser,
       dispose,
       loading,

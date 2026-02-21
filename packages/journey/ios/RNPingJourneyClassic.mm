@@ -143,6 +143,78 @@ RCT_EXPORT_METHOD(getSession:(NSString *)journeyId
 }
 
 /**
+ * Refreshes active Journey user token set.
+ *
+ * - Parameters:
+ *   - journeyId: Journey client identifier.
+ *   - resolve: Promise resolver.
+ *   - reject: Promise rejecter.
+ */
+RCT_EXPORT_METHOD(refresh:(NSString *)journeyId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
+    [impl refresh:journeyId resolver:resolve rejecter:reject];
+  }];
+}
+
+/**
+ * Revokes active Journey user token set.
+ *
+ * - Parameters:
+ *   - journeyId: Journey client identifier.
+ *   - resolve: Promise resolver.
+ *   - reject: Promise rejecter.
+ */
+RCT_EXPORT_METHOD(revoke:(NSString *)journeyId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
+    [impl revoke:journeyId
+        resolver:^(BOOL value) {
+          resolve(@(value));
+        }
+        rejecter:reject];
+  }];
+}
+
+/**
+ * Resolves active Journey userinfo payload.
+ *
+ * - Parameters:
+ *   - journeyId: Journey client identifier.
+ *   - resolve: Promise resolver.
+ *   - reject: Promise rejecter.
+ */
+RCT_EXPORT_METHOD(userinfo:(NSString *)journeyId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
+    [impl userinfo:journeyId resolver:resolve rejecter:reject];
+  }];
+}
+
+/**
+ * Resolves active Journey SSO token payload.
+ *
+ * - Parameters:
+ *   - journeyId: Journey client identifier.
+ *   - resolve: Promise resolver.
+ *   - reject: Promise rejecter.
+ */
+RCT_EXPORT_METHOD(ssoToken:(NSString *)journeyId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
+    [impl ssoToken:journeyId resolver:resolve rejecter:reject];
+  }];
+}
+
+/**
  * Logs out the current Journey user.
  *
  * - Parameters:

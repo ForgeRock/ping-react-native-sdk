@@ -40,6 +40,10 @@ export type JourneyClientPanelProps = {
    * Optional callback invoked once when an authenticated Journey session is detected.
    */
   onAuthenticated?: () => void;
+  /**
+   * When true, waits for explicit user action on the success screen before invoking `onAuthenticated`.
+   */
+  requireSuccessConfirmation?: boolean;
 };
 
 /**
@@ -57,6 +61,7 @@ export default function JourneyClientPanel(
     initialJourneyName,
     autoStartOnMount = false,
     onAuthenticated,
+    requireSuccessConfirmation = false,
   } = props;
   const [node, { start, next, resume, user, logoutUser, loading, error }] = useJourney(journeyClient);
   const form = useJourneyForm(node);
@@ -240,6 +245,10 @@ export default function JourneyClientPanel(
     if (!onAuthenticated) {
       return;
     }
+    if (requireSuccessConfirmation) {
+      hasNotifiedAuthenticatedRef.current = false;
+      return;
+    }
 
     const isAuthenticated = node?.type === 'SuccessNode' || hasActiveSession;
     if (!isAuthenticated) {
@@ -253,7 +262,15 @@ export default function JourneyClientPanel(
 
     hasNotifiedAuthenticatedRef.current = true;
     onAuthenticated();
-  }, [hasActiveSession, node?.type, onAuthenticated]);
+  }, [hasActiveSession, node?.type, onAuthenticated, requireSuccessConfirmation]);
+
+  const onContinueAfterSuccess = useCallback((): void => {
+    if (!onAuthenticated) {
+      return;
+    }
+    hasNotifiedAuthenticatedRef.current = true;
+    onAuthenticated();
+  }, [onAuthenticated]);
 
   const onStart = useCallback(async (): Promise<void> => {
     const trimmedJourneyName = journeyName.trim();
@@ -403,9 +420,19 @@ export default function JourneyClientPanel(
         ) : null}
 
         {showSuccessScreen ? (
-          <TouchableOpacity style={commonStyles.buttonPrimary} onPress={onLogout}>
-            <Text style={commonStyles.buttonText}>Logout</Text>
-          </TouchableOpacity>
+          <View style={styles.successActionsContainer}>
+            <TouchableOpacity style={commonStyles.buttonPrimary} onPress={onLogout}>
+              <Text style={commonStyles.buttonText}>Logout</Text>
+            </TouchableOpacity>
+            {requireSuccessConfirmation && onAuthenticated ? (
+              <TouchableOpacity
+                style={commonStyles.buttonSecondary}
+                onPress={onContinueAfterSuccess}
+              >
+                <Text style={commonStyles.buttonTextSecondary}>Continue</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         ) : null}
 
         {node?.type === 'ErrorNode' ? (

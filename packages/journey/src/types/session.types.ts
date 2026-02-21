@@ -14,6 +14,24 @@
 export type JourneyUserInfo = Record<string, unknown>;
 
 /**
+ * SSO token payload resolved from Journey session storage.
+ */
+export type JourneySSOToken = {
+  /**
+   * SSO token value.
+   */
+  value: string;
+  /**
+   * Success URL associated with the SSO token.
+   */
+  successUrl: string;
+  /**
+   * Realm associated with the SSO token.
+   */
+  realm: string;
+};
+
+/**
  * Session payload exposed by `user()`.
  */
 export type JourneyUserSession = {

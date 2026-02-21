@@ -11,30 +11,29 @@
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
-// Auto-generated Swift header
+// Auto-generated Swift header for the module's Swift implementation.
 #import "RNPingJourney-Swift.h"
 
 @implementation RNPingJourney
 RCT_EXPORT_MODULE()
 
-// Helper to get the Swift singleton
+// Returns the shared Swift implementation that performs all native work.
 - (RNPingJourneyImpl *)swiftImpl {
   return [RNPingJourneyImpl shared];
 }
 
-// Clean up native resources when the bridge is invalidated.
+// Called by React Native when the bridge is torn down.
+// Delegates lifecycle cleanup to Swift common runtime.
 - (void)invalidate
 {
   [[self swiftImpl] invalidate];
 }
 
-// ------------------------------------------
-// configureJourney(config): Promise<string>
-// ------------------------------------------
+// Bridges `configureJourney(config)` from the generated spec.
+// Maps the C++ typed config into an NSDictionary expected by Swift.
 - (void)configureJourney:(JS::NativeRNPingJourney::NativeJourneyConfig &)config
                  resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: configureJourney called");
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
   dict[@"serverUrl"] = config.serverUrl();
@@ -156,17 +155,13 @@ RCT_EXPORT_MODULE()
   [[self swiftImpl] configureJourney:dict resolver:resolve rejecter:reject];
 }
 
-// ------------------------------------------
-// start(journeyId, journeyName, options)
-// ------------------------------------------
+// Bridges `start(journeyId, journeyName, options)`.
+// Converts optional start flags into a dictionary payload for Swift.
 - (void)start:(NSString *)journeyId
     journeyName:(NSString *)journeyName
         options:(JS::NativeRNPingJourney::JourneyOptions &)options
         resolve:(RCTPromiseResolveBlock)resolve
          reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: start called with journeyId=%@, journeyName=%@",
-        journeyId, journeyName);
-
   NSMutableDictionary *opts = [NSMutableDictionary new];
   if (options.forceAuth().has_value()) {
     opts[@"forceAuth"] = @(options.forceAuth().value());
@@ -182,17 +177,13 @@ RCT_EXPORT_MODULE()
                  rejecter:reject];
 }
 
-// ------------------------------------------
-// next(journeyId, nodeId, input)
-// ------------------------------------------
+// Bridges `next(journeyId, nodeId, input)`.
+// Normalizes callback mutation payload into NSDictionary/NSArray for Swift.
 - (void)next:(NSString *)journeyId
       nodeId:(NSString *)nodeId
        input:(JS::NativeRNPingJourney::NativeJourneyNextInput &)input
      resolve:(RCTPromiseResolveBlock)resolve
       reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: next called for journeyId=%@ nodeId=%@", journeyId,
-        nodeId);
-
   NSMutableDictionary *inputDict = [NSMutableDictionary new];
   auto callbacks = input.callbacks();
   if (callbacks.has_value()) {
@@ -220,35 +211,59 @@ RCT_EXPORT_MODULE()
                 rejecter:reject];
 }
 
-// ------------------------------------------
-// resume(journeyId, uri)
-// ------------------------------------------
+// Bridges `resume(journeyId, uri)`.
 - (void)resume:(NSString *)journeyId
            uri:(NSString *)uri
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: resume called journeyId=%@ uri=%@", journeyId, uri);
-
   [[self swiftImpl] resume:journeyId uri:uri resolver:resolve rejecter:reject];
 }
 
-// ------------------------------------------
-// getSession(journeyId)
-// ------------------------------------------
+// Bridges `getSession(journeyId)`.
 - (void)getSession:(NSString *)journeyId
            resolve:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: getSession called for journeyId=%@", journeyId);
   [[self swiftImpl] getSession:journeyId resolver:resolve rejecter:reject];
 }
 
-// ------------------------------------------
-// logout(journeyId)
-// ------------------------------------------
+// Bridges `refresh(journeyId)`.
+- (void)refresh:(NSString *)journeyId
+        resolve:(RCTPromiseResolveBlock)resolve
+         reject:(RCTPromiseRejectBlock)reject {
+  [[self swiftImpl] refresh:journeyId resolver:resolve rejecter:reject];
+}
+
+// Bridges `revoke(journeyId)`.
+// Swift resolves a BOOL which is converted to NSNumber for JS promises.
+- (void)revoke:(NSString *)journeyId
+       resolve:(RCTPromiseResolveBlock)resolve
+        reject:(RCTPromiseRejectBlock)reject {
+  [[self swiftImpl] revoke:journeyId
+                  resolver:^(BOOL value) {
+                    resolve(@(value));
+                  }
+                  rejecter:reject];
+}
+
+// Bridges `userinfo(journeyId)`.
+- (void)userinfo:(NSString *)journeyId
+         resolve:(RCTPromiseResolveBlock)resolve
+          reject:(RCTPromiseRejectBlock)reject {
+  [[self swiftImpl] userinfo:journeyId resolver:resolve rejecter:reject];
+}
+
+// Bridges `ssoToken(journeyId)`.
+- (void)ssoToken:(NSString *)journeyId
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject {
+  [[self swiftImpl] ssoToken:journeyId resolver:resolve rejecter:reject];
+}
+
+// Bridges `logout(journeyId)`.
+// Swift resolves a BOOL which is converted to NSNumber for JS promises.
 - (void)logout:(NSString *)journeyId
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: logout called for journeyId=%@", journeyId);
   [[self swiftImpl] logout:journeyId
                   resolver:^(BOOL value) {
                     resolve(@(value));
@@ -256,13 +271,11 @@ RCT_EXPORT_MODULE()
                   rejecter:reject];
 }
 
-// ------------------------------------------
-// dispose(journeyId)
-// ------------------------------------------
+// Bridges `dispose(journeyId)`.
+// Swift resolves void; bridge resolves `null` for JS promise compatibility.
 - (void)dispose:(NSString *)journeyId
         resolve:(RCTPromiseResolveBlock)resolve
          reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: dispose called for journeyId=%@", journeyId);
   [[self swiftImpl] dispose:journeyId
                    resolver:^{
                      resolve([NSNull null]);
@@ -270,15 +283,7 @@ RCT_EXPORT_MODULE()
                    rejecter:reject];
 }
 
-// ------------------------------------------
-// listRegisteredStoragesFromCore(): Promise<string[]>
-// ------------------------------------------
-- (void)listRegisteredStoragesFromCore:(RCTPromiseResolveBlock)resolve
-                                reject:(RCTPromiseRejectBlock)reject {
-  NSLog(@"RNPingJourney: listRegisteredStoragesFromCore called");
-  [[self swiftImpl] listRegisteredStoragesFromCore:resolve rejecter:reject];
-}
-
+// Returns the TurboModule JSI binding generated from NativeRNPingJourneySpec.
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

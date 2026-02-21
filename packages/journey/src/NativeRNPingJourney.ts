@@ -179,6 +179,38 @@ export interface Spec extends TurboModule {
   getSession(journeyId: string): Promise<Object | null>;
 
   /**
+   * Refresh active Journey user token set.
+   *
+   * @param journeyId Native journey instance identifier.
+   * @returns Refreshed session payload or null.
+   */
+  refresh(journeyId: string): Promise<Object | null>;
+
+  /**
+   * Revoke active Journey user token set.
+   *
+   * @param journeyId Native journey instance identifier.
+   * @returns True when revoke succeeds.
+   */
+  revoke(journeyId: string): Promise<boolean>;
+
+  /**
+   * Resolve active Journey userinfo payload.
+   *
+   * @param journeyId Native journey instance identifier.
+   * @returns Userinfo payload or null.
+   */
+  userinfo(journeyId: string): Promise<Object | null>;
+
+  /**
+   * Resolve active Journey SSO token payload.
+   *
+   * @param journeyId Native journey instance identifier.
+   * @returns SSO token payload or null.
+   */
+  ssoToken(journeyId: string): Promise<Object | null>;
+
+  /**
    * Logout active Journey session.
    *
    * @param journeyId Native journey instance identifier.
@@ -272,6 +304,18 @@ const NativeRNPingJourney: Spec = {
   },
   getSession(journeyId) {
     return getNativeModule().getSession(journeyId);
+  },
+  refresh(journeyId) {
+    return getNativeModule().refresh(journeyId);
+  },
+  revoke(journeyId) {
+    return getNativeModule().revoke(journeyId);
+  },
+  userinfo(journeyId) {
+    return getNativeModule().userinfo(journeyId);
+  },
+  ssoToken(journeyId) {
+    return getNativeModule().ssoToken(journeyId);
   },
   logout(journeyId) {
     return getNativeModule().logout(journeyId);

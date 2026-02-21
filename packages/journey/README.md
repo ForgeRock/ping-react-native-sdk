@@ -131,9 +131,37 @@ const nextNode = await client.next({
 });
 const resumedNode = await client.resume('com.example.app://callback?code=123');
 const session = await client.user();
+const refreshedSession = await client.refresh();
+const userInfo = await client.userinfo();
+const ssoToken = await client.ssoToken();
+await client.revoke();
 await client.logoutUser();
 await client.dispose();
 ```
+
+### Post Authentication Operations
+
+After a Journey login succeeds, use the following operations to inspect and manage the active user session:
+
+```ts
+const userSession = await client.user();
+const ssoToken = await client.ssoToken();
+
+if (userSession) {
+  const refreshedSession = await client.refresh();
+  const userInfo = await client.userinfo();
+  await client.revoke();
+}
+
+await client.logoutUser();
+```
+
+- `user()` returns token/session payload (`accessToken`, optional `refreshToken`, `expiresIn`, optional `userInfo`).
+- `ssoToken()` returns Journey SSO session payload (`value`, `successUrl`, `realm`) when available.
+- `refresh()` refreshes token payload for the active user.
+- `userinfo()` fetches user claims for the active user.
+- `revoke()` revokes access/refresh tokens for the active user.
+- `logoutUser()` signs out and clears the active Journey user session.
 
 ### Use the React hook
 

@@ -11,6 +11,10 @@ type NativeJourneyModuleMock = {
   next: jest.Mock;
   resume: jest.Mock;
   getSession: jest.Mock;
+  refresh: jest.Mock;
+  revoke: jest.Mock;
+  userinfo: jest.Mock;
+  ssoToken: jest.Mock;
   logout: jest.Mock;
   dispose: jest.Mock;
 };
@@ -24,6 +28,10 @@ const createNativeMock = (
     next: jest.fn(async () => ({ id: 'n2', type: 'ContinueNode', callbacks: [] })),
     resume: jest.fn(async () => ({ id: 'n3', type: 'ContinueNode', callbacks: [] })),
     getSession: jest.fn(async () => ({ accessToken: 'token' })),
+    refresh: jest.fn(async () => ({ accessToken: 'refreshed-token' })),
+    revoke: jest.fn(async () => true),
+    userinfo: jest.fn(async () => ({ sub: 'user-1' })),
+    ssoToken: jest.fn(async () => ({ value: 'sso', successUrl: '/enduser', realm: '/alpha' })),
     logout: jest.fn(async () => true),
     dispose: jest.fn(async () => undefined),
     ...overrides,
@@ -306,17 +314,29 @@ describe('Journey JS API', () => {
     });
   });
 
-  it('forwards user and logout calls to native', async () => {
+  it('forwards user, refresh, revoke, userinfo, ssoToken, and logout calls to native', async () => {
     const native = createNativeMock();
     const { createJourneyClient } = await loadModule(native);
     const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
     const session = await client.user();
+    const refreshedSession = await client.refresh();
+    const didRevoke = await client.revoke();
+    const userInfo = await client.userinfo();
+    const ssoToken = await client.ssoToken();
     const didLogout = await client.logoutUser();
 
     expect(session).toEqual({ accessToken: 'token' });
+    expect(refreshedSession).toEqual({ accessToken: 'refreshed-token' });
+    expect(didRevoke).toBe(true);
+    expect(userInfo).toEqual({ sub: 'user-1' });
+    expect(ssoToken).toEqual({ value: 'sso', successUrl: '/enduser', realm: '/alpha' });
     expect(didLogout).toBe(true);
     expect(native.getSession).toHaveBeenCalledWith('journey-id-1');
+    expect(native.refresh).toHaveBeenCalledWith('journey-id-1');
+    expect(native.revoke).toHaveBeenCalledWith('journey-id-1');
+    expect(native.userinfo).toHaveBeenCalledWith('journey-id-1');
+    expect(native.ssoToken).toHaveBeenCalledWith('journey-id-1');
     expect(native.logout).toHaveBeenCalledWith('journey-id-1');
   });
 

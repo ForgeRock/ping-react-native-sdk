@@ -37,6 +37,7 @@ export default function JourneyHelperScreen(props: Props): React.ReactElement {
         initialJourneyName={initialJourneyName}
         autoStartOnMount={initialJourneyName.length > 0}
         onAuthenticated={onAuthenticated}
+        requireSuccessConfirmation
       />
     </ScrollView>
   );

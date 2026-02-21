@@ -20,8 +20,6 @@ public final class RNPingJourneyImpl: NSObject {
   public typealias BoolResolver = @Sendable (Bool) -> Void
   /// Promise resolver for void results.
   public typealias VoidResolver = @Sendable () -> Void
-  /// Promise resolver for registered storage identifiers.
-  public typealias StorageIdsResolver = @Sendable ([String]) -> Void
   /// Promise rejecter closure type used by the Journey Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -134,6 +132,66 @@ public final class RNPingJourneyImpl: NSObject {
     RNPingJourneyCommon.getSession(journeyId, resolver: resolver, rejecter: rejecter)
   }
 
+  /// Refreshes session details for an active Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with refreshed session payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(refresh:resolver:rejecter:)
+  public func refresh(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.refresh(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Revokes active Journey user token set.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with `true` when revoke succeeds.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(revoke:resolver:rejecter:)
+  public func revoke(
+    _ journeyId: String,
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.revoke(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolves userinfo for an active Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with userinfo payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(userinfo:resolver:rejecter:)
+  public func userinfo(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.userinfo(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolves SSO token payload for an active Journey session.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with SSO token payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(ssoToken:resolver:rejecter:)
+  public func ssoToken(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.ssoToken(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
   /// Logs out active Journey user and clears node state.
   ///
   /// - Parameters:
@@ -162,18 +220,5 @@ public final class RNPingJourneyImpl: NSObject {
     rejecter: @escaping PromiseRejecter
   ) {
     RNPingJourneyCommon.dispose(journeyId, resolver: resolver, rejecter: rejecter)
-  }
-
-  /// Returns registered storage identifiers for debug tooling.
-  ///
-  /// - Parameters:
-  ///   - resolve: Promise resolver called with storage id list.
-  ///   - rejecter: Promise rejecter.
-  @objc
-  public func listRegisteredStoragesFromCore(
-    _ resolve: @escaping StorageIdsResolver,
-    rejecter reject: @escaping PromiseRejecter
-  ) {
-    RNPingJourneyCommon.listRegisteredStoragesFromCore(resolve, rejecter: reject)
   }
 }

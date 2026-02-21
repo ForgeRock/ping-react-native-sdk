@@ -116,6 +116,58 @@ final class RNPingJourneyCommonTests: XCTestCase {
     }
   }
 
+  func testRefreshRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.refresh(
+        "missing",
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testRevokeRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.revoke(
+        "missing",
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testUserInfoRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.userinfo(
+        "missing",
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testSSOTokenRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.ssoToken(
+        "missing",
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
   private func assertReject(
     expectedCode: String,
     expectedType: ErrorType,
@@ -147,4 +199,3 @@ final class RNPingJourneyCommonTests: XCTestCase {
     XCTAssertEqual(capturedError?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
   }
 }
-

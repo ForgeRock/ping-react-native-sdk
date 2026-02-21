@@ -102,6 +102,50 @@ class RNPingJourneyClassicModule(
   }
 
   /**
+   * Refresh active Journey user token set.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved with refreshed session payload or null.
+   */
+  @ReactMethod
+  fun refresh(journeyId: String, promise: Promise) {
+    RNPingJourneyCommon.refresh(journeyId, promise)
+  }
+
+  /**
+   * Revoke active Journey user token set.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved with `true` when revoke succeeds.
+   */
+  @ReactMethod
+  fun revoke(journeyId: String, promise: Promise) {
+    RNPingJourneyCommon.revoke(journeyId, promise)
+  }
+
+  /**
+   * Resolve active Journey userinfo payload.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved with userinfo payload or null.
+   */
+  @ReactMethod
+  fun userinfo(journeyId: String, promise: Promise) {
+    RNPingJourneyCommon.userinfo(journeyId, promise)
+  }
+
+  /**
+   * Resolve active Journey SSO token payload.
+   *
+   * @param journeyId Native journey client id.
+   * @param promise Promise resolved with SSO token payload or null.
+   */
+  @ReactMethod
+  fun ssoToken(journeyId: String, promise: Promise) {
+    RNPingJourneyCommon.ssoToken(journeyId, promise)
+  }
+
+  /**
    * Logout the active Journey user.
    *
    * @param journeyId Native journey client id.

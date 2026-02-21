@@ -8,9 +8,13 @@
 import {
   configureJourney,
   disposeJourney,
+  getSSOToken,
   getSession,
+  getUserInfo,
   logout,
   nextNode,
+  refreshSession,
+  revokeSession,
   resumeJourney,
   startJourney,
 } from './journeyMethods';
@@ -211,6 +215,26 @@ export function createJourneyClient(
     async user() {
       const id = await ensureConfigured();
       return await getSession(id);
+    },
+
+    async refresh() {
+      const id = await ensureConfigured();
+      return await refreshSession(id);
+    },
+
+    async revoke() {
+      const id = await ensureConfigured();
+      return await revokeSession(id);
+    },
+
+    async userinfo() {
+      const id = await ensureConfigured();
+      return await getUserInfo(id);
+    },
+
+    async ssoToken() {
+      const id = await ensureConfigured();
+      return await getSSOToken(id);
     },
 
     async logoutUser() {

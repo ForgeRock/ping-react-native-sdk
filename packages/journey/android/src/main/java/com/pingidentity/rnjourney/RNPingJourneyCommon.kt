@@ -13,6 +13,7 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.pingidentity.journey.plugin.callbacks
 import com.pingidentity.journey.resume
+import com.pingidentity.journey.session
 import com.pingidentity.journey.start
 import com.pingidentity.journey.user
 import com.pingidentity.logger.Logger
@@ -370,6 +371,36 @@ internal object RNPingJourneyCommon {
   }
 
   /**
+   * Maps token and optional userinfo into a bridge-safe session payload.
+   *
+   * @param user Native user instance.
+   * @param token OIDC token payload.
+   * @return Bridge payload containing token/session fields.
+   */
+  private suspend fun mapSessionPayload(
+    user: com.pingidentity.oidc.User,
+    token: Token
+  ): ReadableMap {
+    val resultMap = Arguments.createMap()
+    resultMap.putString("accessToken", token.accessToken)
+    token.refreshToken?.let { resultMap.putString("refreshToken", it) }
+    resultMap.putDouble("expiresIn", token.expiresIn.toDouble())
+
+    when (val userInfoResult = user.userinfo(false)) {
+      is Result.Success<*> -> {
+        val userInfo = userInfoResult.value as? JsonObject
+          ?: throw IllegalStateException("Invalid userinfo payload type")
+        resultMap.putMap("userInfo", JsonBridgeMapper.encodeJsonObject(userInfo))
+      }
+      is Result.Failure<*> -> {
+        // userinfo is optional for session resolution
+      }
+    }
+
+    return resultMap
+  }
+
+  /**
    * Resolve active session data for a Journey user.
    *
    * @param journeyId Native journey instance id.
@@ -399,23 +430,7 @@ internal object RNPingJourneyCommon {
           is Result.Success<*> -> {
             val token = tokenResult.value as? Token
               ?: throw IllegalStateException("Invalid token payload type")
-            val resultMap = Arguments.createMap()
-            resultMap.putString("accessToken", token.accessToken)
-            token.refreshToken?.let { resultMap.putString("refreshToken", it) }
-            resultMap.putDouble("expiresIn", token.expiresIn.toDouble())
-
-            when (val userInfoResult = user.userinfo(false)) {
-              is Result.Success<*> -> {
-                val userInfo = userInfoResult.value as? JsonObject
-                  ?: throw IllegalStateException("Invalid userinfo payload type")
-                resultMap.putMap("userInfo", JsonBridgeMapper.encodeJsonObject(userInfo))
-              }
-              is Result.Failure<*> -> {
-                // userinfo is optional for session resolution
-              }
-            }
-
-            promise.resolve(resultMap)
+            promise.resolve(mapSessionPayload(user, token))
           }
           is Result.Failure<*> -> {
             promise.reject(
@@ -427,6 +442,169 @@ internal object RNPingJourneyCommon {
             )
           }
         }
+      } catch (error: Exception) {
+        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+      }
+    }
+  }
+
+  /**
+   * Refresh active session token data for a Journey user.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved with refreshed session payload or null.
+   */
+  fun refresh(journeyId: String, promise: Promise) {
+    val workflow = resolveWorkflow(journeyId)
+    if (workflow == null) {
+      promise.reject(
+        JourneyErrorMapper.state(
+          JourneyErrorCodes.STATE,
+          "Journey instance not found for id=$journeyId"
+        )
+      )
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = workflow.user()
+        if (user == null) {
+          promise.resolve(null)
+          return@launch
+        }
+
+        when (val tokenResult = user.refresh()) {
+          is Result.Success<*> -> {
+            val token = tokenResult.value as? Token
+              ?: throw IllegalStateException("Invalid token payload type")
+            promise.resolve(mapSessionPayload(user, token))
+          }
+          is Result.Failure<*> -> {
+            promise.reject(
+              GenericError(
+                type = ErrorType.AUTH_ERROR,
+                error = JourneyErrorCodes.USER,
+                message = tokenResult.value.toString()
+              )
+            )
+          }
+        }
+      } catch (error: Exception) {
+        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+      }
+    }
+  }
+
+  /**
+   * Revoke active Journey user token set.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved with `true` when revoke completes.
+   */
+  fun revoke(journeyId: String, promise: Promise) {
+    val workflow = resolveWorkflow(journeyId)
+    if (workflow == null) {
+      promise.reject(
+        JourneyErrorMapper.state(
+          JourneyErrorCodes.STATE,
+          "Journey instance not found for id=$journeyId"
+        )
+      )
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = workflow.user()
+        user?.revoke()
+        promise.resolve(true)
+      } catch (error: Exception) {
+        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+      }
+    }
+  }
+
+  /**
+   * Resolve active Journey userinfo payload.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved with userinfo payload or null.
+   */
+  fun userinfo(journeyId: String, promise: Promise) {
+    val workflow = resolveWorkflow(journeyId)
+    if (workflow == null) {
+      promise.reject(
+        JourneyErrorMapper.state(
+          JourneyErrorCodes.STATE,
+          "Journey instance not found for id=$journeyId"
+        )
+      )
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = workflow.user()
+        if (user == null) {
+          promise.resolve(null)
+          return@launch
+        }
+
+        when (val result = user.userinfo(false)) {
+          is Result.Success<*> -> {
+            val userInfo = result.value as? JsonObject
+              ?: throw IllegalStateException("Invalid userinfo payload type")
+            promise.resolve(JsonBridgeMapper.encodeJsonObject(userInfo))
+          }
+          is Result.Failure<*> -> {
+            promise.reject(
+              GenericError(
+                type = ErrorType.AUTH_ERROR,
+                error = JourneyErrorCodes.USER,
+                message = result.value.toString()
+              )
+            )
+          }
+        }
+      } catch (error: Exception) {
+        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+      }
+    }
+  }
+
+  /**
+   * Resolve active Journey SSO token payload.
+   *
+   * @param journeyId Native journey instance id.
+   * @param promise Promise resolved with SSO token payload or null.
+   */
+  fun ssoToken(journeyId: String, promise: Promise) {
+    val workflow = resolveWorkflow(journeyId)
+    if (workflow == null) {
+      promise.reject(
+        JourneyErrorMapper.state(
+          JourneyErrorCodes.STATE,
+          "Journey instance not found for id=$journeyId"
+        )
+      )
+      return
+    }
+
+    scope.launch {
+      try {
+        val user = workflow.user()
+        if (user == null) {
+          promise.resolve(null)
+          return@launch
+        }
+
+        val ssoToken = user.session()
+        val resultMap = Arguments.createMap()
+        resultMap.putString("value", ssoToken.value)
+        resultMap.putString("successUrl", ssoToken.successUrl)
+        resultMap.putString("realm", ssoToken.realm)
+        promise.resolve(resultMap)
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
       }

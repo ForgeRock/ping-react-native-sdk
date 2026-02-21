@@ -7,9 +7,9 @@
 
 import Foundation
 import PingJourney
-import PingOidc
 import PingOrchestrate
 import RNPingCore
+import PingOidc
 
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
@@ -20,21 +20,16 @@ public final class RNPingJourneyCommon: NSObject {
   public typealias NodeResolver = @Sendable (NSDictionary) -> Void
   /// Promise resolver for optional Journey session payloads.
   public typealias SessionResolver = @Sendable (NSDictionary?) -> Void
+  /// Promise resolver for optional userinfo payloads.
+  public typealias UserInfoResolver = @Sendable (NSDictionary?) -> Void
+  /// Promise resolver for optional SSO token payloads.
+  public typealias SSOTokenResolver = @Sendable (NSDictionary?) -> Void
   /// Promise resolver for boolean results.
   public typealias BoolResolver = @Sendable (Bool) -> Void
   /// Promise resolver for void results.
   public typealias VoidResolver = @Sendable () -> Void
-  /// Promise resolver for registered storage identifiers.
-  public typealias StorageIdsResolver = @Sendable ([String]) -> Void
   /// Promise rejecter closure type used by the Journey Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
-
-  /// Shared-context key used by PingJourney OIDC module for resolved OIDC config.
-  ///
-  /// - Note: This key is defined in PingJourney as an internal constant.
-  ///   We mirror the value here to recover OIDC user state when Journey session
-  ///   storage is unavailable or not yet restored.
-  private static let journeyOidcConfigContextKey = "com.pingidentity.journey.OidcClientConfig"
 
   /// Shared state store keyed by generated Journey id.
   private static let stateStore = JourneyStateStore()
@@ -276,42 +271,181 @@ public final class RNPingJourneyCommon: NSObject {
       let tokenResult = await user.token()
       switch tokenResult {
       case .success(let token):
-        var payload: [String: Any] = [
-          "accessToken": token.accessToken,
-          "expiresIn": NSNumber(value: token.expiresIn)
-        ]
-        if let refreshToken = token.refreshToken {
-          payload["refreshToken"] = refreshToken
-        }
-        let userInfoResult = await user.userinfo(cache: false)
-        if case let .success(userInfo) = userInfoResult {
-          payload["userInfo"] = bridgeUserInfo(userInfo)
-        }
-        promise.resolve(payload as NSDictionary)
+        promise.resolve(await bridgeSessionPayload(user: user, token: token))
 
       case .failure(let error):
+        if isMissingAuthStateError(error) {
+          promise.resolve(nil)
+          return
+        }
         promise.reject(JourneyErrorMapper.map(error, code: .userError))
       }
     }
   }
 
-  /// Resolves the active Journey user, with an OIDC-config fallback on iOS.
+  /// Refreshes active session data for a Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - resolver: Promise resolver called with refreshed session payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func refresh(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSDictionary?>(resolver: resolver, rejecter: rejecter)
+    Task { @MainActor in
+      guard let journey = await resolveJourney(journeyId) else {
+        promise.reject(
+          JourneyErrorMapper.state(
+            code: .stateError,
+            message: "Journey instance not found for id=\(journeyId)"
+          )
+        )
+        return
+      }
+
+      let user = await resolveJourneyUser(journey)
+      guard let user else {
+        promise.resolve(nil)
+        return
+      }
+
+      let tokenResult = await user.refresh()
+      switch tokenResult {
+      case .success(let token):
+        promise.resolve(await bridgeSessionPayload(user: user, token: token))
+
+      case .failure(let error):
+        if isMissingAuthStateError(error) {
+          promise.resolve(nil)
+          return
+        }
+        promise.reject(JourneyErrorMapper.map(error, code: .userError))
+      }
+    }
+  }
+
+  /// Revokes active Journey user tokens.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - resolver: Promise resolver called with `true` when revoke succeeds.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func revoke(
+    _ journeyId: String,
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<Bool>(resolver: resolver, rejecter: rejecter)
+    Task { @MainActor in
+      guard let journey = await resolveJourney(journeyId) else {
+        promise.reject(
+          JourneyErrorMapper.state(
+            code: .stateError,
+            message: "Journey instance not found for id=\(journeyId)"
+          )
+        )
+        return
+      }
+
+      let user = await resolveJourneyUser(journey)
+      await user?.revoke()
+      promise.resolve(true)
+    }
+  }
+
+  /// Resolves active Journey userinfo payload.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - resolver: Promise resolver called with userinfo payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func userinfo(
+    _ journeyId: String,
+    resolver: @escaping UserInfoResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSDictionary?>(resolver: resolver, rejecter: rejecter)
+    Task { @MainActor in
+      guard let journey = await resolveJourney(journeyId) else {
+        promise.reject(
+          JourneyErrorMapper.state(
+            code: .stateError,
+            message: "Journey instance not found for id=\(journeyId)"
+          )
+        )
+        return
+      }
+
+      let user = await resolveJourneyUser(journey)
+      guard let user else {
+        promise.resolve(nil)
+        return
+      }
+
+      let userInfoResult = await user.userinfo(cache: false)
+      switch userInfoResult {
+      case .success(let userInfo):
+        promise.resolve(bridgeUserInfo(userInfo))
+      case .failure(let error):
+        if isMissingAuthStateError(error) {
+          promise.resolve(nil)
+          return
+        }
+        promise.reject(JourneyErrorMapper.map(error, code: .userError))
+      }
+    }
+  }
+
+  /// Resolves active Journey SSO token payload.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - resolver: Promise resolver called with SSO token payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func ssoToken(
+    _ journeyId: String,
+    resolver: @escaping SSOTokenResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSDictionary?>(resolver: resolver, rejecter: rejecter)
+    Task { @MainActor in
+      guard let journey = await resolveJourney(journeyId) else {
+        promise.reject(
+          JourneyErrorMapper.state(
+            code: .stateError,
+            message: "Journey instance not found for id=\(journeyId)"
+          )
+        )
+        return
+      }
+
+      guard let token = await journey.session() else {
+        promise.resolve(nil)
+        return
+      }
+
+      let payload: [String: Any] = [
+        "value": token.value,
+        "successUrl": token.successUrl,
+        "realm": token.realm,
+      ]
+      promise.resolve(payload as NSDictionary)
+    }
+  }
+
+  /// Resolves the active Journey user from the native Journey instance.
   ///
   /// - Parameter journey: Native Journey instance.
-  /// - Returns: Resolved user handle, or `nil` when no user can be restored.
+  /// - Returns: Resolved user handle, or `nil` when no user is available.
   private static func resolveJourneyUser(_ journey: Journey) async -> User? {
-    if let user = await journey.journeyUser() {
-      return user
-    }
-
-    guard
-      let oidcConfig = journey.sharedContext.get(key: journeyOidcConfigContextKey) as? OidcClientConfig
-    else {
-      return nil
-    }
-
-    // Fallback to an OIDC-backed user when Journey session restoration is absent.
-    return OidcUser(config: oidcConfig)
+    return await journey.journeyUser()
   }
 
   /// Logs out active Journey user and clears in-memory node state.
@@ -373,20 +507,46 @@ public final class RNPingJourneyCommon: NSObject {
     return (await journeyRegistry.resolve(journeyId) as? JourneyHandle)?.journey
   }
 
-  /// Returns registered storage identifiers used by debug tooling.
+  /// Maps token and optional userinfo into a bridge-safe session payload.
   ///
   /// - Parameters:
-  ///   - resolver: Promise resolver called with storage id list.
-  ///   - rejecter: Promise rejecter.
-  @objc
-  public static func listRegisteredStoragesFromCore(
-    _ resolver: @escaping StorageIdsResolver,
-    rejecter reject: @escaping PromiseRejecter
-  ) {
-    // TODO(iOS SDK parity): expose storage handles from iOS Core runtime when needed.
-    resolver([])
+  ///   - user: Native Journey user.
+  ///   - token: OIDC token payload.
+  /// - Returns: Session payload dictionary.
+  private static func bridgeSessionPayload(user: User, token: Token) async -> NSDictionary {
+    var payload: [String: Any] = [
+      "accessToken": token.accessToken,
+      "expiresIn": NSNumber(value: token.expiresIn),
+    ]
+    if let refreshToken = token.refreshToken {
+      payload["refreshToken"] = refreshToken
+    }
+    let userInfoResult = await user.userinfo(cache: false)
+    if case let .success(userInfo) = userInfoResult {
+      payload["userInfo"] = bridgeUserInfo(userInfo)
+    }
+    return payload as NSDictionary
   }
 
+  /// Returns whether an OIDC error indicates missing auth/token state.
+  ///
+  /// - Parameter error: OIDC error emitted by token/userinfo APIs.
+  /// - Returns: `true` when no auth code/token state is available yet.
+  private static func isMissingAuthStateError(_ error: OidcError) -> Bool {
+    let description = String(describing: error).lowercased()
+    switch error {
+    case .authorizeError(_, let message):
+      let normalized = (message ?? "").lowercased()
+      return normalized.contains("no authcode is available") ||
+        normalized.contains("please start journey to authenticate") ||
+        normalized.contains("authorization code not found") ||
+        description.contains("no authcode is available") ||
+        description.contains("please start journey to authenticate") ||
+        description.contains("authorization code not found")
+    default:
+      return false
+    }
+  }
   /// Bridges OIDC userinfo dictionaries to React Native-safe values.
   ///
   /// - Parameter userInfo: OIDC userinfo payload.

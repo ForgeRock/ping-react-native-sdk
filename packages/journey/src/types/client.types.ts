@@ -7,7 +7,7 @@
 
 import type { JourneyNextInput, JourneyStartOptions } from './config.types';
 import type { JourneyNode } from './node.types';
-import type { JourneyUserSession } from './session.types';
+import type { JourneySSOToken, JourneyUserInfo, JourneyUserSession } from './session.types';
 
 /**
  * Journey imperative client API contracts.
@@ -71,6 +71,38 @@ export type JourneyClient = {
    * @throws {JourneyError} When session retrieval fails.
    */
   user: () => Promise<JourneyUserSession | null>;
+
+  /**
+   * Refresh active Journey user access token.
+   *
+   * @returns Refreshed session payload, or `null` when no active session exists.
+   * @throws {JourneyError} When refresh fails.
+   */
+  refresh: () => Promise<JourneyUserSession | null>;
+
+  /**
+   * Revoke active Journey user access/refresh tokens.
+   *
+   * @returns `true` when revoke completes.
+   * @throws {JourneyError} When revoke fails.
+   */
+  revoke: () => Promise<boolean>;
+
+  /**
+   * Resolve active Journey userinfo claims.
+   *
+   * @returns Userinfo payload, or `null` when no active session exists.
+   * @throws {JourneyError} When userinfo retrieval fails.
+   */
+  userinfo: () => Promise<JourneyUserInfo | null>;
+
+  /**
+   * Resolve active Journey SSO token payload.
+   *
+   * @returns SSO token payload, or `null` when no active session exists.
+   * @throws {JourneyError} When SSO token retrieval fails.
+   */
+  ssoToken: () => Promise<JourneySSOToken | null>;
 
   /**
    * Logout active Journey user/session.

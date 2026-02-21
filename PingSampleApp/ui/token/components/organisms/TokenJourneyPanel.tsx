@@ -26,6 +26,14 @@ type TokenJourneyPanelProps = {
    */
   onAccessToken: () => void;
   /**
+   * Trigger token refresh.
+   */
+  onRefresh: () => void;
+  /**
+   * Trigger token revoke.
+   */
+  onRevoke: () => void;
+  /**
    * Clear currently displayed output.
    */
   onClear: () => void;
@@ -38,12 +46,18 @@ type TokenJourneyPanelProps = {
  * @returns Journey token panel element.
  */
 export default function TokenJourneyPanel(props: TokenJourneyPanelProps): React.ReactElement {
-  const { tokenOutput, loading, onAccessToken, onClear } = props;
+  const { tokenOutput, loading, onAccessToken, onRefresh, onRevoke, onClear } = props;
 
   return (
     <>
       <TokenOutputCard tokenOutput={tokenOutput} showComingSoonBadge={false} />
-      <TokenActionsCard loading={loading} onAccessToken={onAccessToken} onClear={onClear} />
+      <TokenActionsCard
+        loading={loading}
+        onAccessToken={onAccessToken}
+        onRefresh={onRefresh}
+        onRevoke={onRevoke}
+        onClear={onClear}
+      />
     </>
   );
 }

@@ -24,6 +24,14 @@ type TokenActionsCardProps = {
    */
   onAccessToken: () => void;
   /**
+   * Trigger token refresh.
+   */
+  onRefresh: () => void;
+  /**
+   * Trigger token revoke.
+   */
+  onRevoke: () => void;
+  /**
    * Clear currently displayed output.
    */
   onClear: () => void;
@@ -36,7 +44,7 @@ type TokenActionsCardProps = {
  * @returns Token actions card element.
  */
 export default function TokenActionsCard(props: TokenActionsCardProps): React.ReactElement {
-  const { loading, onAccessToken, onClear } = props;
+  const { loading, onAccessToken, onRefresh, onRevoke, onClear } = props;
 
   return (
     <CardSection>
@@ -52,6 +60,19 @@ export default function TokenActionsCard(props: TokenActionsCardProps): React.Re
           variant="secondary"
           onPress={onClear}
           disabled={loading}
+          style={commonStyles.buttonGridItem}
+        />
+        <AsyncActionButton
+          label="Refresh"
+          onPress={onRefresh}
+          loading={loading}
+          style={commonStyles.buttonGridItem}
+        />
+        <AsyncActionButton
+          label="Revoke"
+          variant="secondary"
+          onPress={onRevoke}
+          loading={loading}
           style={commonStyles.buttonGridItem}
         />
       </View>
