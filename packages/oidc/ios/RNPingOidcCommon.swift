@@ -432,11 +432,17 @@ public class RNPingOidcCommon: NSObject {
       }
 
       let user = await handle.web.user()
-      let hasActiveSession: Bool
+      var hasActiveSession = false
       if let sessionUser = user as? Session {
         hasActiveSession = !sessionUser.value.isEmpty
-      } else {
-        hasActiveSession = false
+      }
+
+      if !hasActiveSession,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        let tokenResult = await clientHandle.user.token()
+        if case .success = tokenResult {
+          hasActiveSession = true
+        }
       }
       resolver(hasActiveSession)
     }
@@ -466,7 +472,13 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      guard let user = await handle.web.user() else {
+      var resolvedUser = await handle.web.user()
+      if resolvedUser == nil,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        resolvedUser = clientHandle.user
+      }
+
+      guard let user = resolvedUser else {
         let error = GenericError(
           type: .stateError,
           error: OidcErrorCodes.tokenError.rawValue,
@@ -510,7 +522,13 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      guard let user = await handle.web.user() else {
+      var resolvedUser = await handle.web.user()
+      if resolvedUser == nil,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        resolvedUser = clientHandle.user
+      }
+
+      guard let user = resolvedUser else {
         let error = GenericError(
           type: .stateError,
           error: OidcErrorCodes.refreshError.rawValue,
@@ -556,7 +574,13 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      guard let user = await handle.web.user() else {
+      var resolvedUser = await handle.web.user()
+      if resolvedUser == nil,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        resolvedUser = clientHandle.user
+      }
+
+      guard let user = resolvedUser else {
         let error = GenericError(
           type: .stateError,
           error: OidcErrorCodes.userinfoError.rawValue,
@@ -600,7 +624,13 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      guard let user = await handle.web.user() else {
+      var resolvedUser = await handle.web.user()
+      if resolvedUser == nil,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        resolvedUser = clientHandle.user
+      }
+
+      guard let user = resolvedUser else {
         let error = GenericError(
           type: .stateError,
           error: OidcErrorCodes.revokeError.rawValue,
@@ -639,7 +669,13 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      guard let user = await handle.web.user() else {
+      var resolvedUser = await handle.web.user()
+      if resolvedUser == nil,
+         let clientHandle = await RegistrySync.resolve(handle.clientId, registry: clientRegistry) as? OidcClientHandle {
+        resolvedUser = clientHandle.user
+      }
+
+      guard let user = resolvedUser else {
         let error = GenericError(
           type: .stateError,
           error: OidcErrorCodes.logoutError.rawValue,

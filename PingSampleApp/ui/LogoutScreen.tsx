@@ -5,14 +5,12 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
-import { createOidcClient, createOidcWebClient, type OidcWebClient } from '@ping-identity/rn-oidc';
-import { CacheStrategy, configureOidcStorage, type OidcStorage } from '@react-native-pingidentity/storage';
+import { useOidc } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../src/styles/common';
-import { pingAdvancedIdentityCloudConfig } from '../src/clients';
 import AsyncActionButton from './components/molecules/AsyncActionButton';
 import CardSection from './components/molecules/CardSection';
 import EmptyStateCard from './components/molecules/EmptyStateCard';
@@ -31,49 +29,8 @@ export default function LogoutScreen(): React.ReactElement {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const oidcStorageRef = useRef<OidcStorage | null>(null);
-  const oidcWebClientRef = useRef<OidcWebClient | null>(null);
   const [, journeyActions] = useJourney();
-
-  const getOidcWebClient = useCallback((): OidcWebClient => {
-    if (oidcWebClientRef.current) {
-      return oidcWebClientRef.current;
-    }
-
-    const storage =
-      oidcStorageRef.current ??
-      configureOidcStorage({
-        android: {
-          fileName: 'ping-oidc',
-          keyAlias: 'ping-oidc',
-          strongBoxPreferred: true,
-          cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
-        },
-        ios: {
-          account: 'com.pingidentity.rnsampleapp.oidc',
-          encryptor: true,
-          cacheable: true,
-        },
-      });
-    oidcStorageRef.current = storage;
-
-    const oidcClient = createOidcClient({
-      clientId: pingAdvancedIdentityCloudConfig.clientId,
-      discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
-      redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
-      scopes: [...pingAdvancedIdentityCloudConfig.scopes],
-      signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
-      storage,
-      ios: {
-        browserType: 'ephemeralAuthSession',
-        browserMode: 'login',
-      },
-    });
-
-    const webClient = createOidcWebClient(oidcClient);
-    oidcWebClientRef.current = webClient;
-    return webClient;
-  }, []);
+  const [oidcState, oidcActions] = useOidc();
 
   const refreshSessionState = useCallback(async (): Promise<void> => {
     try {
@@ -84,13 +41,12 @@ export default function LogoutScreen(): React.ReactElement {
     }
 
     try {
-      const webClient = getOidcWebClient();
-      const oidcUser = await webClient.user();
+      const oidcUser = await oidcActions.restore();
       setOidcActive(Boolean(oidcUser));
     } catch {
       setOidcActive(false);
     }
-  }, [getOidcWebClient, journeyActions]);
+  }, [journeyActions, oidcActions]);
 
   useFocusEffect(
     useCallback(() => {
@@ -112,11 +68,7 @@ export default function LogoutScreen(): React.ReactElement {
     }
 
     try {
-      const webClient = getOidcWebClient();
-      const user = await webClient.user();
-      if (user) {
-        await user.logout();
-      }
+      await oidcActions.logout();
     } catch (error) {
       errors.push(error instanceof Error ? error.message : 'OIDC logout failed');
     }
@@ -128,20 +80,18 @@ export default function LogoutScreen(): React.ReactElement {
       setErrorMessage(errors.join('\n'));
       return;
     }
-  }, [getOidcWebClient, journeyActions, refreshSessionState]);
+  }, [journeyActions, oidcActions, refreshSessionState]);
 
   const handleLogoutOidc = useCallback(async (): Promise<void> => {
     setBusyOidc(true);
     setErrorMessage(null);
     setStatusMessage(null);
     try {
-      const webClient = getOidcWebClient();
-      const user = await webClient.user();
-      if (!user) {
+      if (!oidcState.isAuthenticated) {
         setStatusMessage('No active OIDC Web session found.');
         return;
       }
-      await user.logout();
+      await oidcActions.logout();
       setStatusMessage('OIDC Web session logged out.');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'OIDC Web logout failed');
@@ -149,7 +99,7 @@ export default function LogoutScreen(): React.ReactElement {
       setBusyOidc(false);
       await refreshSessionState();
     }
-  }, [getOidcWebClient, refreshSessionState]);
+  }, [oidcActions, oidcState.isAuthenticated, refreshSessionState]);
 
   const handleLogoutJourney = useCallback(async (): Promise<void> => {
     setBusyJourney(true);

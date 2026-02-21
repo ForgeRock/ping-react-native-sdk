@@ -197,15 +197,37 @@ const oidcClient = createOidcClient({
 ### Work with user state
 
 ```ts
-if (await oidcWebClient.hasUser()) {
-  const user = await oidcWebClient.user();
-  const tokens = await user?.token();
-  const refreshed = await user?.refresh();
-  const profile = await user?.userinfo(true);
-  await user?.revoke();
-  await user?.logout();
+const user = await oidcWebClient.user();
+if (user) {
+  const tokens = await user.token();
+  const refreshed = await user.refresh();
+  const profile = await user.userinfo(true);
+  await user.revoke();
+  await user.logout();
 }
 ```
+
+### Use the React provider and hook (optional)
+
+```tsx
+import { OidcProvider, useOidc } from '@ping-identity/rn-oidc';
+
+function App(): React.ReactElement {
+  return (
+    <OidcProvider client={oidcWebClient}>
+      <OidcScreen />
+    </OidcProvider>
+  );
+}
+
+function OidcScreen(): React.ReactElement {
+  const [state, actions] = useOidc();
+
+  return <></>;
+}
+```
+
+`useOidc` can also accept an explicit client: `useOidc(oidcWebClient)`.
 
 
 ## Android redirect configuration

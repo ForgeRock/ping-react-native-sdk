@@ -14,7 +14,7 @@ import PingOrchestrate
 enum JourneyCallbackValueApplier {
   /// Callback types that require additional integration before values can be mutated.
   private static let integrationCallbackRequirements: [String: String] = [
-    "DeviceProfileCallback": "@react-native-pingidentity/device-profile",
+    "DeviceProfileCallback": "@ping-identity/rn-device-profile",
     "PingOneProtectInitializeCallback": "PingOne Protect integration",
     "PingOneProtectEvaluationCallback": "PingOne Protect integration",
     "Fido2RegistrationCallback": "FIDO/WebAuthn integration",

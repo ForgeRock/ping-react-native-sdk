@@ -8,12 +8,13 @@
 import React, { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useJourney } from '@ping-identity/rn-journey';
+import { useOidc } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../src/styles/common';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
-import TokenDaVinciPanel from './token/components/organisms/TokenDaVinciPanel';
 import TokenJourneyPanel from './token/components/organisms/TokenJourneyPanel';
+import TokenOidcPanel from './token/components/organisms/TokenOidcPanel';
 
-const TOKEN_TABS = ['Journey', 'DaVinci'] as const;
+const TOKEN_TABS = ['Journey', 'OIDC'] as const;
 
 type TokenTab = (typeof TOKEN_TABS)[number];
 
@@ -21,8 +22,8 @@ const getEmptyMessage = (tab: TokenTab): string => {
   switch (tab) {
     case 'Journey':
       return 'No Journey token information is available';
-    default:
-      return 'No DaVinci token information is available';
+    case 'OIDC':
+      return 'No OIDC token information is available';
   }
 };
 
@@ -36,10 +37,21 @@ const JOURNEY_AUTH_REQUIRED_MESSAGE =
  */
 export default function TokenScreen(): React.ReactElement {
   const [activeTab, setActiveTab] = useState<TokenTab>('Journey');
-  const [tokenOutput, setTokenOutput] = useState<string>(getEmptyMessage('Journey'));
+  const [tokenOutputByTab, setTokenOutputByTab] = useState<Record<TokenTab, string>>({
+    Journey: getEmptyMessage('Journey'),
+    OIDC: getEmptyMessage('OIDC'),
+  });
   const [loading, setLoading] = useState<boolean>(false);
 
   const [, journeyActions] = useJourney();
+  const [, oidcActions] = useOidc();
+
+  const setActiveTabOutput = useCallback(
+    (value: string): void => {
+      setTokenOutputByTab((previous) => ({ ...previous, [activeTab]: value }));
+    },
+    [activeTab]
+  );
 
   const handleAccessToken = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -47,32 +59,42 @@ export default function TokenScreen(): React.ReactElement {
       if (activeTab === 'Journey') {
         const session = await journeyActions.user();
         if (!session) {
-          setTokenOutput(getEmptyMessage('Journey'));
+          setActiveTabOutput(getEmptyMessage('Journey'));
           return;
         }
-        setTokenOutput(JSON.stringify(session, null, 2));
+        setActiveTabOutput(JSON.stringify(session, null, 2));
         return;
       }
 
-      setTokenOutput(getEmptyMessage('DaVinci'));
+      if (activeTab === 'OIDC') {
+        const tokens = await oidcActions.token();
+        if (!tokens) {
+          setActiveTabOutput(getEmptyMessage('OIDC'));
+          return;
+        }
+        setActiveTabOutput(JSON.stringify(tokens, null, 2));
+        return;
+      }
+
+      setActiveTabOutput(getEmptyMessage('OIDC'));
     } catch (error) {
       if (
         error instanceof Error &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
-        setTokenOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
+        setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setTokenOutput(error instanceof Error ? error.message : 'Token retrieval failed');
+        setActiveTabOutput(error instanceof Error ? error.message : 'Token retrieval failed');
       }
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions]);
+  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
 
   const handleClear = useCallback((): void => {
-    setTokenOutput(getEmptyMessage(activeTab));
-  }, [activeTab]);
+    setActiveTabOutput(getEmptyMessage(activeTab));
+  }, [activeTab, setActiveTabOutput]);
 
   const handleRefresh = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -80,41 +102,63 @@ export default function TokenScreen(): React.ReactElement {
       if (activeTab === 'Journey') {
         const session = await journeyActions.refresh();
         if (!session) {
-          setTokenOutput(getEmptyMessage('Journey'));
+          setActiveTabOutput(getEmptyMessage('Journey'));
           return;
         }
-        setTokenOutput(JSON.stringify(session, null, 2));
+        setActiveTabOutput(JSON.stringify(session, null, 2));
         return;
       }
 
-      setTokenOutput(getEmptyMessage('DaVinci'));
+      if (activeTab === 'OIDC') {
+        const tokens = await oidcActions.refresh();
+        if (!tokens) {
+          setActiveTabOutput(getEmptyMessage('OIDC'));
+          return;
+        }
+        setActiveTabOutput(JSON.stringify(tokens, null, 2));
+        return;
+      }
+
+      setActiveTabOutput(getEmptyMessage('OIDC'));
     } catch (error) {
       if (
         error instanceof Error &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
-        setTokenOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
+        setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setTokenOutput(error instanceof Error ? error.message : 'Token refresh failed');
+        setActiveTabOutput(error instanceof Error ? error.message : 'Token refresh failed');
       }
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions]);
+  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
 
   const handleRevoke = useCallback(async (): Promise<void> => {
-    if (activeTab !== 'Journey') {
-      setTokenOutput(getEmptyMessage(activeTab));
-      return;
-    }
-
     setLoading(true);
     try {
+      if (activeTab === 'OIDC') {
+        const revoked = await oidcActions.revoke();
+        setActiveTabOutput(
+          JSON.stringify(
+            {
+              revoked,
+              note: revoked
+                ? 'OIDC revoke completed. Re-authenticate to access tokens again.'
+                : 'No active OIDC user to revoke.',
+            },
+            null,
+            2
+          )
+        );
+        return;
+      }
+
       await journeyActions.revoke();
       const session = await journeyActions.user();
       if (session) {
-        setTokenOutput(
+        setActiveTabOutput(
           JSON.stringify(
             {
               note: 'Revoke completed, but Journey user session is still active.',
@@ -125,14 +169,14 @@ export default function TokenScreen(): React.ReactElement {
           )
         );
       } else {
-        setTokenOutput(getEmptyMessage('Journey'));
+        setActiveTabOutput(getEmptyMessage('Journey'));
       }
     } catch (error) {
-      setTokenOutput(error instanceof Error ? error.message : 'Token revoke failed');
+      setActiveTabOutput(error instanceof Error ? error.message : 'Token revoke failed');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions]);
+  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
 
   return (
     <View style={commonStyles.userProfileContainer}>
@@ -145,7 +189,7 @@ export default function TokenScreen(): React.ReactElement {
       >
         {activeTab === 'Journey' ? (
           <TokenJourneyPanel
-            tokenOutput={tokenOutput}
+            tokenOutput={tokenOutputByTab.Journey}
             loading={loading}
             onAccessToken={() => {
               handleAccessToken().catch(() => undefined);
@@ -158,9 +202,22 @@ export default function TokenScreen(): React.ReactElement {
             }}
             onClear={handleClear}
           />
-        ) : (
-          <TokenDaVinciPanel tokenOutput={tokenOutput} />
-        )}
+        ) : activeTab === 'OIDC' ? (
+          <TokenOidcPanel
+            tokenOutput={tokenOutputByTab.OIDC}
+            loading={loading}
+            onAccessToken={() => {
+              handleAccessToken().catch(() => undefined);
+            }}
+            onRefresh={() => {
+              handleRefresh().catch(() => undefined);
+            }}
+            onRevoke={() => {
+              handleRevoke().catch(() => undefined);
+            }}
+            onClear={handleClear}
+          />
+        ) : null}
       </ScrollView>
     </View>
   );

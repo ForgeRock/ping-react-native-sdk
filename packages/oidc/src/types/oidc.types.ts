@@ -264,11 +264,6 @@ export type OidcWebClient = {
   authorize(options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult>;
 
   /**
-   * Check if a user is available for the current web client.
-   */
-  hasUser(): Promise<boolean>;
-
-  /**
    * Resolve the current user handle, if present.
    */
   user(): Promise<OidcUser | null>;

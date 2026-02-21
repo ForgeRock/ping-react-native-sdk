@@ -15,6 +15,13 @@ import type {
   OidcWebClient,
 } from './types';
 import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
+export { OidcProvider, useOidc } from './useOidc';
+export type {
+  OidcHookActions,
+  OidcHookResult,
+  OidcHookState,
+  OidcProviderProps,
+} from './useOidc';
 
 /**
  * In-memory registry mapping native client ids to JS logger instances.
@@ -234,15 +241,6 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().authorize(webClientId, options ?? {});
       } catch (error) {
         loggerInstance.error('OIDC authorize failed');
-        throw error;
-      }
-    },
-    hasUser: async () => {
-      loggerInstance.debug('OIDC hasUser requested');
-      try {
-        return await getNativeModule().hasUser(webClientId);
-      } catch (error) {
-        loggerInstance.error('OIDC hasUser failed');
         throw error;
       }
     },

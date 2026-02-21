@@ -5,28 +5,20 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useJourney, type JourneyUserSession } from '@ping-identity/rn-journey';
-import { createOidcClient, createOidcWebClient, type OidcWebClient } from '@ping-identity/rn-oidc';
-import { CacheStrategy, configureOidcStorage, type OidcStorage } from '@react-native-pingidentity/storage';
+import { useOidc } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../src/styles/common';
-import { journeyOidcClient, pingAdvancedIdentityCloudConfig } from '../src/clients';
 import { RootStackParamList } from '../App';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
-import UserProfileDaVinciPanel from './userProfile/components/organisms/UserProfileDaVinciPanel';
 import UserProfileJourneyPanel from './userProfile/components/organisms/UserProfileJourneyPanel';
 import UserProfileOidcPanel from './userProfile/components/organisms/UserProfileOidcPanel';
 
-type UserProfileTab = 'Journey' | 'DaVinci' | 'OIDC';
-const USER_PROFILE_TABS = ['Journey', 'DaVinci', 'OIDC'] as const;
-
-type OidcSessionData = {
-  tokens: Record<string, unknown> | null;
-  userInfo: Record<string, unknown> | null;
-};
+type UserProfileTab = 'Journey' | 'OIDC';
+const USER_PROFILE_TABS = ['Journey', 'OIDC'] as const;
 
 type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList, 'UserProfile'>;
 
@@ -46,138 +38,41 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
   const [journeySession, setJourneySession] = useState<JourneyUserSession | null>(null);
   const [journeyLoading, setJourneyLoading] = useState<boolean>(false);
   const [journeyError, setJourneyError] = useState<string | null>(null);
-
-  const [oidcSession, setOidcSession] = useState<OidcSessionData | null>(null);
-  const [oidcLoading, setOidcLoading] = useState<boolean>(false);
-  const [oidcError, setOidcError] = useState<string | null>(null);
   const [showRawJourneyUserInfo, setShowRawJourneyUserInfo] = useState<boolean>(false);
   const [showRawOidcUserInfo, setShowRawOidcUserInfo] = useState<boolean>(false);
 
-  const oidcStorageRef = useRef<OidcStorage | null>(null);
-  const oidcWebClientRef = useRef<OidcWebClient | null>(null);
-  const journeyOidcWebClientRef = useRef<OidcWebClient | null>(null);
-
   const [, journeyActions] = useJourney();
-
-  const getOidcWebClient = useCallback((): OidcWebClient => {
-    if (oidcWebClientRef.current) {
-      return oidcWebClientRef.current;
-    }
-
-    const storage =
-      oidcStorageRef.current ??
-      configureOidcStorage({
-        android: {
-          fileName: 'ping-oidc',
-          keyAlias: 'ping-oidc',
-          strongBoxPreferred: true,
-          cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
-        },
-        ios: {
-          account: 'com.pingidentity.rnsampleapp.oidc',
-          encryptor: true,
-          cacheable: true,
-        },
-      });
-
-    oidcStorageRef.current = storage;
-
-    const oidcClient = createOidcClient({
-      clientId: pingAdvancedIdentityCloudConfig.clientId,
-      discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
-      redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
-      scopes: [...pingAdvancedIdentityCloudConfig.scopes],
-      signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
-      storage,
-      ios: {
-        browserType: 'ephemeralAuthSession',
-        browserMode: 'login',
-      },
-    });
-
-    const webClient = createOidcWebClient(oidcClient);
-    oidcWebClientRef.current = webClient;
-    return webClient;
-  }, []);
-
-  const getJourneyOidcWebClient = useCallback((): OidcWebClient => {
-    if (journeyOidcWebClientRef.current) {
-      return journeyOidcWebClientRef.current;
-    }
-    const webClient = createOidcWebClient(journeyOidcClient);
-    journeyOidcWebClientRef.current = webClient;
-    return webClient;
-  }, []);
+  const [oidcState, oidcActions] = useOidc();
 
   const refreshJourneySession = useCallback(async (): Promise<void> => {
     setJourneyLoading(true);
     setJourneyError(null);
     setShowRawJourneyUserInfo(false);
-    let journeySessionError: string | null = null;
     try {
-      let session: JourneyUserSession | null = null;
-      try {
-        session = await journeyActions.user();
-      } catch (error) {
-        journeySessionError =
-          error instanceof Error ? error.message : 'Unable to resolve Journey session.';
-      }
-
+      const session = await journeyActions.user();
       if (session) {
         setJourneySession(session);
-        return;
-      }
-
-      const journeyOidcUser = await getJourneyOidcWebClient().user();
-      if (!journeyOidcUser) {
+      } else {
         setJourneySession(null);
-        return;
       }
-
-      const token = await journeyOidcUser.token();
-      const userInfo = await journeyOidcUser.userinfo(true);
-      setJourneySession({
-        accessToken: token.accessToken,
-        ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
-        ...(userInfo ? { userInfo: userInfo as Record<string, unknown> } : {}),
-      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Unable to resolve Journey session.';
-      setJourneyError(journeySessionError ?? message);
+      setJourneyError(message);
       setJourneySession(null);
     } finally {
       setJourneyLoading(false);
     }
-  }, [getJourneyOidcWebClient, journeyActions]);
+  }, [journeyActions]);
 
   const refreshOidcSession = useCallback(async (): Promise<void> => {
-    setOidcLoading(true);
-    setOidcError(null);
     setShowRawOidcUserInfo(false);
-    try {
-      const webClient = getOidcWebClient();
-      const user = await webClient.user();
-      if (!user) {
-        setOidcSession(null);
-        return;
-      }
-
-      const tokens = await user.token();
-      const userInfo = await user.userinfo(true);
-      setOidcSession({
-        tokens: tokens as Record<string, unknown>,
-        userInfo: userInfo as Record<string, unknown>,
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unable to resolve OIDC session.';
-      setOidcError(message);
-      setOidcSession(null);
-    } finally {
-      setOidcLoading(false);
+    const user = await oidcActions.restore();
+    if (!user) {
+      return;
     }
-  }, [getOidcWebClient]);
+    await oidcActions.userinfo(true);
+  }, [oidcActions]);
 
   useFocusEffect(
     useCallback(() => {
@@ -230,17 +125,17 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
           />
         ) : null}
 
-        {activeTab === 'DaVinci' ? <UserProfileDaVinciPanel /> : null}
-
         {activeTab === 'OIDC' ? (
           <UserProfileOidcPanel
-            loading={oidcLoading}
-            userInfo={oidcSession?.userInfo ?? null}
-            hasSession={Boolean(oidcSession)}
-            error={oidcError}
+            loading={oidcState.isLoading}
+            userInfo={oidcState.userInfo ?? null}
+            hasSession={oidcState.isAuthenticated}
+            error={oidcState.error?.message ?? null}
             showRawUserInfo={showRawOidcUserInfo}
             onToggleRawUserInfo={() => setShowRawOidcUserInfo((value) => !value)}
-            onStartOidc={() => navigation.navigate('Oidc')}
+            onStartOidc={() => {
+              oidcActions.authorize().catch(() => undefined);
+            }}
           />
         ) : null}
       </ScrollView>

@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,6 +13,7 @@ import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';
 import JourneyHelperScreen from './ui/JourneyHelperScreen';
+import JourneyFullScreen from './ui/JourneyFullScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
@@ -14,7 +22,8 @@ import UserProfileScreen from './ui/UserProfileScreen';
 import TokenScreen from './ui/TokenScreen';
 import LogoutScreen from './ui/LogoutScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
-import { loginClient } from './src/clients';
+import { OidcProvider } from '@ping-identity/rn-oidc';
+import { loginClient, sampleOidcWebClient } from './src/clients';
 import { configureBrowser } from '@react-native-pingidentity/browser';
 import { configureLogger } from '@react-native-pingidentity/logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -32,6 +41,7 @@ export type RootStackParamList = {
   Storage: undefined;
   JourneyRoute: undefined;
   JourneyHelper: { journeyName?: string } | undefined;
+  JourneyFull: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -84,72 +94,79 @@ export default function App() {
   }, []);
   return (
     <JourneyProvider client={loginClient}>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
-            headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
-            headerBackButtonDisplayMode: 'minimal',
-          }}
-        >
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ title: 'PingIdentity Demo', headerShown: false }}
-          />
-          <Stack.Screen
-            name="Storage"
-            component={MultiStorageScreen}
-            options={{ title: 'Storage' }}
-          />
-          <Stack.Screen
-            name="JourneyRoute"
-            component={JourneyRouteScreen}
-            options={{ title: 'Journey Configuration' }}
-          />
-          <Stack.Screen
-            name="JourneyHelper"
-            component={JourneyHelperScreen}
-            options={{ title: 'Journey Flow' }}
-          />
-          <Stack.Screen
-            name="Browser"
-            component={BrowserScreen}
-            options={{ title: 'Browser Demo' }}
-          />
-          <Stack.Screen
-            name="Logger"
-            component={LoggerScreen}
-            options={{ title: 'Logger Demo' }}
-          />
-          <Stack.Screen
-            name="Oidc"
-            component={OidcScreen}
-            options={{ title: 'OIDC Demo' }}
-          />
-          <Stack.Screen
-            name="DeviceProfile"
-            component={DeviceProfileScreen}
-            options={{ title: 'Device Profile' }}
-          />
-          <Stack.Screen
-            name="UserProfile"
-            component={UserProfileScreen}
-            options={{ title: 'User Profile' }}
-          />
-          <Stack.Screen
-            name="Token"
-            component={TokenScreen}
-            options={{ title: 'Token' }}
-          />
-          <Stack.Screen
-            name="Logout"
-            component={LogoutScreen}
-            options={{ title: 'Logout' }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <OidcProvider client={sampleOidcWebClient}>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Home"
+            screenOptions={{
+              headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
+              headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
+              headerBackButtonDisplayMode: 'minimal',
+            }}
+          >
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ title: 'PingIdentity Demo', headerShown: false }}
+            />
+            <Stack.Screen
+              name="Storage"
+              component={MultiStorageScreen}
+              options={{ title: 'Storage' }}
+            />
+            <Stack.Screen
+              name="JourneyRoute"
+              component={JourneyRouteScreen}
+              options={{ title: 'Journey Configuration' }}
+            />
+            <Stack.Screen
+              name="JourneyHelper"
+              component={JourneyHelperScreen}
+              options={{ title: 'Journey Flow' }}
+            />
+            <Stack.Screen
+              name="JourneyFull"
+              component={JourneyFullScreen}
+              options={{ title: 'Journey Full (API)' }}
+            />
+            <Stack.Screen
+              name="Browser"
+              component={BrowserScreen}
+              options={{ title: 'Browser Demo' }}
+            />
+            <Stack.Screen
+              name="Logger"
+              component={LoggerScreen}
+              options={{ title: 'Logger Demo' }}
+            />
+            <Stack.Screen
+              name="Oidc"
+              component={OidcScreen}
+              options={{ title: 'OIDC Demo' }}
+            />
+            <Stack.Screen
+              name="DeviceProfile"
+              component={DeviceProfileScreen}
+              options={{ title: 'Device Profile' }}
+            />
+            <Stack.Screen
+              name="UserProfile"
+              component={UserProfileScreen}
+              options={{ title: 'User Profile' }}
+            />
+            <Stack.Screen
+              name="Token"
+              component={TokenScreen}
+              options={{ title: 'Token' }}
+            />
+            <Stack.Screen
+              name="Logout"
+              component={LogoutScreen}
+              options={{ title: 'Logout' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </OidcProvider>
     </JourneyProvider>
   );
 }

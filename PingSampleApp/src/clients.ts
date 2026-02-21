@@ -1,7 +1,23 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import { createJourneyClient } from '@ping-identity/rn-journey';
-import { createOidcClient } from '@ping-identity/rn-oidc';
+import {
+  createOidcClient,
+  createOidcWebClient,
+  type OidcClientConfig,
+  type OidcWebClient,
+} from '@ping-identity/rn-oidc';
 import { logger } from '@react-native-pingidentity/logger';
-import { CacheStrategy, configureSessionStorage } from '@react-native-pingidentity/storage';
+import {
+  CacheStrategy,
+  configureOidcStorage,
+  configureSessionStorage,
+} from '@react-native-pingidentity/storage';
 
 export const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',
@@ -54,6 +70,40 @@ export const journeyOidcClient = createOidcClient({
   redirectUri: journeyConfig.redirectUri,
   scopes: journeyConfig.scopes,
 });
+
+export const sampleOidcClientConfig: OidcClientConfig = {
+  clientId: pingAdvancedIdentityCloudConfig.clientId,
+  discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
+  redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
+  scopes: [...pingAdvancedIdentityCloudConfig.scopes],
+  signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
+  ios: {
+    browserType: 'authSession',
+    browserMode: 'login',
+  },
+};
+
+const sampleOidcStorage = configureOidcStorage({
+  android: {
+    fileName: 'ping-oidc',
+    keyAlias: 'ping-oidc',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.oidc',
+    encryptor: true,
+    cacheable: true,
+  },
+});
+
+const sampleOidcClient = createOidcClient({
+  ...sampleOidcClientConfig,
+  storage: sampleOidcStorage,
+  logger: appLogger,
+});
+
+export const sampleOidcWebClient: OidcWebClient = createOidcWebClient(sampleOidcClient);
 
 export const loginClient = createJourneyClient({
   timeout: 10000,
