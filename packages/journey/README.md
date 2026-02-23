@@ -210,8 +210,7 @@ const [node, actions] = useJourney(client);
 const form = useJourneyForm(node);
 
 const usernameField = form.getFieldByType(callbackType.NameCallback);
-const passwordFields = form.getFieldsByType(callbackType.PasswordCallback);
-const passwordField = passwordFields[0];
+const passwordField = form.getFieldByType(callbackType.PasswordCallback);
 
 form.setValueByType(callbackType.NameCallback, 'demo-user');
 form.setValueByType(callbackType.PasswordCallback, 'demo-password');
@@ -225,44 +224,30 @@ if (form.canSubmit) {
 
 > TODO(sample validation): verify end-to-end `SuspendedTextOutputCallback` resume flow (deep link/email callback) on Android and iOS sample apps.
 
-### Use low-level callback helpers directly (optional)
-
-```ts
-import { buildNextInput, normalizeCallbacks } from '@ping-identity/rn-journey';
-
-const fields = normalizeCallbacks(node);
-const values = {
-  [fields[0].id]: 'demo-user',
-};
-
-const plan = buildNextInput(node, values);
-if (plan.canSubmit) {
-  await actions.next(plan.input);
-}
-```
-
 ### Core callback support
 
 The following AM core callbacks are supported on Android and iOS:
 
-- `BooleanAttributeInputCallback`
-- `ChoiceCallback`
-- `ConfirmationCallback`
-- `ConsentMappingCallback`
-- `HiddenValueCallback`
-- `KbaCreateCallback`
-- `MetadataCallback` (output-only)
-- `NameCallback`
-- `NumberAttributeInputCallback`
-- `PasswordCallback`
-- `PollingWaitCallback` (output-only)
-- `StringAttributeInputCallback`
-- `SuspendedTextOutputCallback` (output-only)
-- `TermsAndConditionsCallback`
-- `TextInputCallback`
-- `TextOutputCallback` (output-only)
-- `ValidatedCreatePasswordCallback`
-- `ValidatedCreateUsernameCallback`
+| Callback Type | Input Handling |
+| --- | --- |
+| `BooleanAttributeInputCallback` | Manual input |
+| `ChoiceCallback` | Manual input |
+| `ConfirmationCallback` | Manual input |
+| `ConsentMappingCallback` | Manual input |
+| `HiddenValueCallback` | Manual input |
+| `KbaCreateCallback` | Manual input |
+| `MetadataCallback` | Output-only |
+| `NameCallback` | Manual input |
+| `NumberAttributeInputCallback` | Manual input |
+| `PasswordCallback` | Manual input |
+| `PollingWaitCallback` | Output-only |
+| `StringAttributeInputCallback` | Manual input |
+| `SuspendedTextOutputCallback` | Output-only |
+| `TermsAndConditionsCallback` | Manual input |
+| `TextInputCallback` | Manual input |
+| `TextOutputCallback` | Output-only |
+| `ValidatedCreatePasswordCallback` | Manual input |
+| `ValidatedCreateUsernameCallback` | Manual input |
 
 Integration-dependent families (for example, device profile, FIDO/FIDO2, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission.
 
