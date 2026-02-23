@@ -65,6 +65,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
     );
   }
+  // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
   const jsLogger = config.logger ?? noopLogger;
   const loggerId =
     config.nativeLogger?.id ??

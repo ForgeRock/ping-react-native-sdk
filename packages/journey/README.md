@@ -139,6 +139,8 @@ await client.logoutUser();
 await client.dispose();
 ```
 
+`useJourney` auto-advances `PollingWaitCallback` nodes when no manual or blocking integration callbacks are present.
+
 ### Post Authentication Operations
 
 After a Journey login succeeds, use the following operations to inspect and manage the active user session:
@@ -207,15 +209,12 @@ import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 const [node, actions] = useJourney(client);
 const form = useJourneyForm(node);
 
-const usernameField = form.fields.find((field) => field.ref.type === callbackType.NameCallback);
-const passwordField = form.fields.find((field) => field.ref.type === callbackType.PasswordCallback);
+const usernameField = form.getFieldByType(callbackType.NameCallback);
+const passwordFields = form.getFieldsByType(callbackType.PasswordCallback);
+const passwordField = passwordFields[0];
 
-if (usernameField) {
-  form.setValue(usernameField.id, 'demo-user');
-}
-if (passwordField) {
-  form.setValue(passwordField.id, 'demo-password');
-}
+form.setValueByType(callbackType.NameCallback, 'demo-user');
+form.setValueByType(callbackType.PasswordCallback, 'demo-password');
 
 if (form.canSubmit) {
   await actions.next(form.input);
@@ -223,6 +222,8 @@ if (form.canSubmit) {
 ```
 
 `useJourneyForm` is headless. It manages normalized fields and submit planning, but does not render UI and does not auto-run integration-required callbacks.
+
+> TODO(sample validation): verify end-to-end `SuspendedTextOutputCallback` resume flow (deep link/email callback) on Android and iOS sample apps.
 
 ### Use low-level callback helpers directly (optional)
 

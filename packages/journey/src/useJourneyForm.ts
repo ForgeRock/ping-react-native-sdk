@@ -14,10 +14,41 @@ import type {
   JourneyFormValue,
   JourneyFormValues,
   JourneyFormValuesUpdater,
+  JourneyCallbackType,
   JourneyNode,
   JourneyNormalizedField,
   JourneySubmitIssue,
 } from './types';
+
+/**
+ * Caches normalized callback fields by Journey node object identity.
+ *
+ * @remarks
+ * `WeakMap` keeps this cache GC-safe so stale node entries are released
+ * automatically when node objects are no longer referenced.
+ */
+const normalizedFieldCache = new WeakMap<JourneyNode, JourneyNormalizedField[]>();
+
+/**
+ * Resolves normalized callback fields with node-identity caching.
+ *
+ * @param node - Current Journey node.
+ * @returns Normalized callback fields.
+ */
+function getNormalizedFields(node: JourneyNode | null | undefined): JourneyNormalizedField[] {
+  if (!node) {
+    return normalizeCallbacks(node);
+  }
+
+  const cached = normalizedFieldCache.get(node);
+  if (cached) {
+    return cached;
+  }
+
+  const normalized = normalizeCallbacks(node);
+  normalizedFieldCache.set(node, normalized);
+  return normalized;
+}
 
 /**
  * Resolves a seeded value for one field.
@@ -107,9 +138,25 @@ export function useJourneyForm(
   node: JourneyNode | null | undefined
 ): JourneyFormResult {
   const fields = useMemo<JourneyNormalizedField[]>(
-    () => normalizeCallbacks(node),
+    () => getNormalizedFields(node),
     [node]
   );
+  const fieldsById = useMemo<Map<string, JourneyNormalizedField>>(
+    () => new Map(fields.map((field) => [field.id, field])),
+    [fields]
+  );
+  const fieldsByType = useMemo<Map<JourneyCallbackType, JourneyNormalizedField[]>>(() => {
+    const byType = new Map<JourneyCallbackType, JourneyNormalizedField[]>();
+    fields.forEach((field) => {
+      const existing = byType.get(field.ref.type);
+      if (existing) {
+        existing.push(field);
+        return;
+      }
+      byType.set(field.ref.type, [field]);
+    });
+    return byType;
+  }, [fields]);
 
   const [values, setValuesState] = useState<JourneyFormValues>(() =>
     hydrateValues(fields, {})
@@ -133,10 +180,15 @@ export function useJourneyForm(
   );
 
   const setValue = useCallback((fieldId: string, value: JourneyFormValue): void => {
-    setValuesState((previous) => ({
-      ...previous,
-      [fieldId]: value,
-    }));
+    setValuesState((previous) => {
+      if (previous[fieldId] === value) {
+        return previous;
+      }
+      return {
+        ...previous,
+        [fieldId]: value,
+      };
+    });
   }, []);
 
   const setValues = useCallback((updater: JourneyFormValuesUpdater): void => {
@@ -145,10 +197,11 @@ export function useJourneyForm(
         typeof updater === 'function'
           ? updater(previous)
           : updater;
-      return {
+      const nextValues = {
         ...previous,
         ...patch,
       };
+      return isSameValueMap(previous, nextValues) ? previous : nextValues;
     });
   }, []);
 
@@ -164,7 +217,10 @@ export function useJourneyForm(
   }, []);
 
   const reset = useCallback((nextValues: JourneyFormValues = {}): void => {
-    setValuesState(hydrateValues(fields, { ...nextValues }));
+    setValuesState((previous) => {
+      const hydrated = hydrateValues(fields, { ...nextValues });
+      return isSameValueMap(previous, hydrated) ? previous : hydrated;
+    });
   }, [fields]);
 
   const buildInput = useCallback(
@@ -178,8 +234,34 @@ export function useJourneyForm(
   );
 
   const getField = useCallback((fieldId: string): JourneyNormalizedField | undefined => {
-    return fields.find((field) => field.id === fieldId);
-  }, [fields]);
+    return fieldsById.get(fieldId);
+  }, [fieldsById]);
+
+  const getFieldsByType = useCallback((callbackType: JourneyCallbackType): JourneyNormalizedField[] => {
+    return fieldsByType.get(callbackType) ?? [];
+  }, [fieldsByType]);
+
+  const getFieldByType = useCallback(
+    (callbackType: JourneyCallbackType, typeIndex = 0): JourneyNormalizedField | undefined => {
+      if (typeIndex < 0) {
+        return undefined;
+      }
+      return fieldsByType.get(callbackType)?.[typeIndex];
+    },
+    [fieldsByType]
+  );
+
+  const setValueByType = useCallback(
+    (callbackType: JourneyCallbackType, value: JourneyFormValue, typeIndex = 0): boolean => {
+      const field = getFieldByType(callbackType, typeIndex);
+      if (!field) {
+        return false;
+      }
+      setValue(field.id, value);
+      return true;
+    },
+    [getFieldByType, setValue]
+  );
 
   return {
     fields,
@@ -194,5 +276,8 @@ export function useJourneyForm(
     reset,
     buildInput,
     getField,
+    getFieldsByType,
+    getFieldByType,
+    setValueByType,
   };
 }

@@ -5,6 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { Tokens } from '@ping-identity/rn-types';
+
 /**
  * User profile claims resolved from OIDC userinfo.
  *
@@ -34,15 +36,7 @@ export type JourneySSOToken = {
 /**
  * Session payload exposed by `user()`.
  */
-export type JourneyUserSession = {
-  /**
-   * Access token string.
-   */
-  accessToken: string;
-  /**
-   * Optional refresh token string.
-   */
-  refreshToken?: string;
+export type JourneyUserSession = Pick<Tokens, 'accessToken' | 'refreshToken'> & {
   /**
    * Optional token expiry in seconds.
    */

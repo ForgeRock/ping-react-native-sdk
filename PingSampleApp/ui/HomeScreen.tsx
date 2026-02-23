@@ -38,12 +38,6 @@ export default function HomeScreen({ navigation }: Props) {
       screen: 'JourneyRoute',
     },
     {
-      title: 'Journey Full (API)',
-      subtitle: 'Minimal useJourney debug flow',
-      icon: 'science',
-      screen: 'JourneyFull',
-    },
-    {
       title: 'OIDC Login',
       subtitle: 'OpenID Connect Flow',
       icon: 'lock',

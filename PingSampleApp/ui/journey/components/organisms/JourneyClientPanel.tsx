@@ -11,7 +11,6 @@ import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile
 import {
   useJourney,
   useJourneyForm,
-  type JourneyCallbackType,
   type JourneyClient,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
@@ -19,7 +18,6 @@ import { commonStyles } from '../../../../src/styles/common';
 import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import JourneyContinuePanel from './JourneyContinuePanel';
 import {
-  DEFAULT_AUTO_POLLING_WAIT_MS,
   DEVICE_PROFILE_COLLECTORS,
   resolvePollingWaitMs,
 } from '../../utils/clientPanel';
@@ -71,48 +69,22 @@ export default function JourneyClientPanel(
   const [hasActiveSession, setHasActiveSession] = useState<boolean>(false);
   const [isSessionCheckRunning, setIsSessionCheckRunning] = useState<boolean>(true);
 
-  const isMountedRef = useRef<boolean>(true);
   const hasAutoStartedRef = useRef<boolean>(false);
-  const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoResumedUrlRef = useRef<string | null>(null);
   const hasNotifiedAuthenticatedRef = useRef<boolean>(false);
   const lastAutoDeviceProfileRequestKeyRef = useRef<string | null>(null);
 
   const fields = form.fields;
-  const callbackTypes = useMemo<Set<JourneyCallbackType>>(
-    () => new Set(fields.map((field) => field.ref.type)),
-    [fields]
-  );
-  const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
-  const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
-  const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
-  const hasBlockingIntegrationCallback = fields.some(
-    (field) =>
-      field.capability === 'integration_required' &&
-      field.ref.type !== 'DeviceProfileCallback'
-  );
+  const deviceProfileFields = form.getFieldsByType('DeviceProfileCallback');
+  const hasDeviceProfileCallback = deviceProfileFields.length > 0;
+  const hasPollingWaitCallback = form.getFieldsByType('PollingWaitCallback').length > 0;
+  const hasSuspendedCallback = form.getFieldsByType('SuspendedTextOutputCallback').length > 0;
   const pollingWaitMs = useMemo<number | null>(() => resolvePollingWaitMs(fields), [fields]);
   const deviceProfileRequestKey = useMemo<string>(() => {
-    return fields
-      .filter((field) => field.ref.type === 'DeviceProfileCallback')
+    return deviceProfileFields
       .map((field) => `${field.ref.type}:${field.ref.typeIndex}`)
       .join('|');
-  }, [fields]);
-  const shouldAutoPoll =
-    hasPollingWaitCallback &&
-    !form.meta.hasManual &&
-    !hasBlockingIntegrationCallback &&
-    !form.meta.hasUnsupported;
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      if (pollingTimerRef.current) {
-        clearTimeout(pollingTimerRef.current);
-        pollingTimerRef.current = null;
-      }
-    };
-  }, []);
+  }, [deviceProfileFields]);
 
   useEffect(() => {
     if (!initialJourneyName) {
@@ -121,39 +93,6 @@ export default function JourneyClientPanel(
     setJourneyName(initialJourneyName.trim());
     hasAutoStartedRef.current = false;
   }, [initialJourneyName]);
-
-  useEffect(() => {
-    if (node?.type !== 'ContinueNode' || !shouldAutoPoll || loading) {
-      if (pollingTimerRef.current) {
-        clearTimeout(pollingTimerRef.current);
-        pollingTimerRef.current = null;
-      }
-      return;
-    }
-
-    if (pollingTimerRef.current) {
-      return;
-    }
-
-    const waitMs = Math.max(500, pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS);
-
-    pollingTimerRef.current = setTimeout(() => {
-      pollingTimerRef.current = null;
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      const runAutoPolling = async (): Promise<void> => {
-        try {
-          await next({});
-        } catch (cause) {
-          Alert.alert('Polling continue failed', String(cause));
-        }
-      };
-
-      runAutoPolling().catch(() => undefined);
-    }, waitMs);
-  }, [loading, next, node?.type, pollingWaitMs, shouldAutoPoll]);
 
   useEffect(() => {
     if (node?.type !== 'ContinueNode' || !hasDeviceProfileCallback || loading) {

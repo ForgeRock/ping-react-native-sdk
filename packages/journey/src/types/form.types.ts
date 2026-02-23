@@ -294,4 +294,35 @@ export type JourneyFormResult = {
    * @returns Matching field or undefined.
    */
   getField: (fieldId: string) => JourneyNormalizedField | undefined;
+  /**
+   * Returns normalized fields for a callback type.
+   *
+   * @param callbackType - Native callback type.
+   * @returns Matching fields for the callback type, or an empty list.
+   */
+  getFieldsByType: (callbackType: JourneyCallbackType) => JourneyNormalizedField[];
+  /**
+   * Returns one normalized field by callback type and per-type index.
+   *
+   * @param callbackType - Native callback type.
+   * @param typeIndex - Optional per-type index (defaults to 0).
+   * @returns Matching field or undefined.
+   */
+  getFieldByType: (
+    callbackType: JourneyCallbackType,
+    typeIndex?: number
+  ) => JourneyNormalizedField | undefined;
+  /**
+   * Sets one field value by callback type and per-type index.
+   *
+   * @param callbackType - Native callback type.
+   * @param value - New field value.
+   * @param typeIndex - Optional per-type index (defaults to 0).
+   * @returns True when a matching field was found and updated.
+   */
+  setValueByType: (
+    callbackType: JourneyCallbackType,
+    value: JourneyFormValue,
+    typeIndex?: number
+  ) => boolean;
 };

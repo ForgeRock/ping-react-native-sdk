@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { callbackType } from '@ping-identity/rn-types';
 import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { commonStyles } from '../src/styles/common';
 import JourneyFieldRenderer from './journey/components/molecules/renderers/JourneyFieldRenderer';
@@ -43,6 +44,22 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
       return;
     }
     await actions.next(form.input);
+  };
+
+  const applyDemoCredentials = (): void => {
+    const nameField = form.getFieldByType(callbackType.NameCallback);
+    const passwordFields = form.getFieldsByType(callbackType.PasswordCallback);
+    const passwordField = passwordFields[0];
+
+    const didSetName = form.setValueByType(callbackType.NameCallback, 'demo-user');
+    const didSetPassword = form.setValueByType(callbackType.PasswordCallback, 'demo-password');
+
+    if (!didSetName || !didSetPassword) {
+      Alert.alert(
+        'Demo credentials skipped',
+        `Name field: ${nameField ? 'found' : 'missing'}, Password field: ${passwordField ? 'found' : 'missing'}`
+      );
+    }
   };
 
   return (
@@ -83,13 +100,22 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
             ) : null}
 
             {form.meta.hasManual ? (
-              <TouchableOpacity
-                style={commonStyles.journeyButtonPrimary}
-                onPress={() => continueJourney().catch((cause) => Alert.alert('Continue failed', String(cause)))}
-                disabled={actions.loading}
-              >
-                <Text style={commonStyles.journeyButtonText}>Continue</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={commonStyles.buttonSecondary}
+                  onPress={applyDemoCredentials}
+                  disabled={actions.loading}
+                >
+                  <Text style={commonStyles.buttonText}>Apply Demo Credentials</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={commonStyles.journeyButtonPrimary}
+                  onPress={() => continueJourney().catch((cause) => Alert.alert('Continue failed', String(cause)))}
+                  disabled={actions.loading}
+                >
+                  <Text style={commonStyles.journeyButtonText}>Continue</Text>
+                </TouchableOpacity>
+              </>
             ) : (
               <Text style={commonStyles.helperNote}>
                 No manual callback input required for this node.

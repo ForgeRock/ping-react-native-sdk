@@ -158,4 +158,42 @@ describe('useJourneyForm', () => {
 
     expect(requireLatest(latest).values['NameCallback:0']).toBeUndefined();
   });
+
+  it('supports callback type based field lookup and updates', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'NameCallback', output: [] },
+        { type: 'NameCallback', output: [] },
+        { type: 'PasswordCallback', output: [] },
+      ],
+    };
+
+    let latest: JourneyFormResult | null = null;
+
+    act(() => {
+      TestRenderer.create(
+        <JourneyFormHarness
+          node={node}
+          onResult={(result) => {
+            latest = result;
+          }}
+        />
+      );
+    });
+
+    const form = requireLatest(latest);
+    expect(form.getFieldsByType('NameCallback')).toHaveLength(2);
+    expect(form.getFieldByType('NameCallback', 1)?.id).toBe('NameCallback:1');
+
+    act(() => {
+      const applied = requireLatest(latest).setValueByType('NameCallback', 'typed-user', 1);
+      expect(applied).toBe(true);
+    });
+
+    expect(requireLatest(latest).values['NameCallback:1']).toBe('typed-user');
+
+    const missing = requireLatest(latest).setValueByType('NameCallback', 'nope', 99);
+    expect(missing).toBe(false);
+  });
 });
