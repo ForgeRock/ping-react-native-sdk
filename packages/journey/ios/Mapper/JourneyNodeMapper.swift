@@ -9,6 +9,7 @@ import Foundation
 import PingJourney
 import PingJourneyPlugin
 import PingOrchestrate
+import RNPingCore
 
 /// Maps native Journey nodes/callbacks to React Native bridge payloads.
 enum JourneyNodeMapper {
@@ -17,7 +18,7 @@ enum JourneyNodeMapper {
   /// - Parameter node: Native Journey node.
   /// - Returns: Serialized node payload.
   static func mapNode(_ node: Node) -> NSDictionary {
-    return mapNodePayload(node) as NSDictionary
+    return JsonBridgeMapper.encodeJsonObject(mapNodePayload(node))
   }
 
   /// Converts a native callback to a bridge-friendly dictionary payload.
@@ -25,7 +26,7 @@ enum JourneyNodeMapper {
   /// - Parameter callback: Native callback instance.
   /// - Returns: Serialized callback payload.
   static func mapCallback(_ callback: Any) -> NSDictionary {
-    return mapCallbackPayload(callback) as NSDictionary
+    return JsonBridgeMapper.encodeJsonObject(mapCallbackPayload(callback))
   }
 
   /// Builds a plain dictionary payload for a native node.
@@ -38,7 +39,7 @@ enum JourneyNodeMapper {
     switch node {
     case let continueNode as ContinueNode:
       payload["type"] = "ContinueNode"
-      payload["input"] = bridgeValue(continueNode.input)
+      payload["input"] = JsonBridgeMapper.encodeJsonElement(continueNode.input) ?? NSNull()
       payload["callbacks"] = continueNode.callbacks.map { callback in
         mapCallbackPayload(callback)
       }
@@ -48,10 +49,10 @@ enum JourneyNodeMapper {
       if let status = errorNode.status {
         payload["status"] = status
       }
-      payload["input"] = bridgeValue(errorNode.input)
+      payload["input"] = JsonBridgeMapper.encodeJsonElement(errorNode.input) ?? NSNull()
     case let successNode as SuccessNode:
       payload["type"] = "SuccessNode"
-      payload["input"] = bridgeValue(successNode.input)
+      payload["input"] = JsonBridgeMapper.encodeJsonElement(successNode.input) ?? NSNull()
     case let failureNode as FailureNode:
       let message = failureNode.cause.localizedDescription
       payload["type"] = "FailureNode"
@@ -74,19 +75,19 @@ enum JourneyNodeMapper {
     var payload: [String: Any] = ["type": callbackType(callback)]
 
     if let abstractCallback = callback as? AbstractCallback {
-      payload["raw"] = bridgeValue(abstractCallback.json)
+      payload["raw"] = JsonBridgeMapper.encodeJsonElement(abstractCallback.json) ?? NSNull()
     }
 
     if let validatedCallback = callback as? AbstractValidatedCallback {
       payload["validateOnly"] = validatedCallback.validateOnly
       payload["prompt"] = validatedCallback.prompt
-      payload["policies"] = bridgeValue(validatedCallback.policies)
+      payload["policies"] = JsonBridgeMapper.encodeJsonElement(validatedCallback.policies) ?? NSNull()
       payload["failedPolicies"] = validatedCallback.failedPolicies.map { failedPolicy in
         var failedPayload: [String: Any] = [
           "policyRequirement": failedPolicy.policyRequirement
         ]
         if let params = failedPolicy.params {
-          failedPayload["params"] = bridgeValue(params)
+          failedPayload["params"] = JsonBridgeMapper.encodeJsonElement(params) ?? NSNull()
         }
         return failedPayload
       }
@@ -187,7 +188,7 @@ enum JourneyNodeMapper {
       payload["message"] = polling.message
 
     case let metadata as MetadataCallback:
-      payload["value"] = bridgeValue(metadata.value)
+      payload["value"] = JsonBridgeMapper.encodeJsonElement(metadata.value) ?? NSNull()
 
     case let validated as ValidatedPasswordCallback:
       payload["prompt"] = validated.prompt
@@ -273,63 +274,4 @@ enum JourneyNodeMapper {
     return nil
   }
 
-  /// Converts native values into React Native bridge-friendly values.
-  ///
-  /// - Parameter value: Native value.
-  /// - Returns: Bridge-safe value.
-  private static func bridgeValue(_ value: Any?) -> Any {
-    guard let value else {
-      return NSNull()
-    }
-
-    switch value {
-    case let string as String:
-      return string
-    case let number as NSNumber:
-      return number
-    case let bool as Bool:
-      return bool
-    case let int as Int:
-      return int
-    case let int64 as Int64:
-      return NSNumber(value: int64)
-    case let float as Float:
-      return NSNumber(value: float)
-    case let double as Double:
-      return NSNumber(value: double)
-    case let url as URL:
-      return url.absoluteString
-    case is NSNull:
-      return NSNull()
-    case let dictionary as [String: Any]:
-      var mapped = [String: Any]()
-      dictionary.forEach { key, item in
-        mapped[key] = bridgeValue(item)
-      }
-      return mapped
-    case let dictionary as [String: Sendable]:
-      var mapped = [String: Any]()
-      dictionary.forEach { key, item in
-        mapped[key] = bridgeValue(item)
-      }
-      return mapped
-    case let dictionary as NSDictionary:
-      var mapped = [String: Any]()
-      dictionary.forEach { key, item in
-        guard let key = key as? String else {
-          return
-        }
-        mapped[key] = bridgeValue(item)
-      }
-      return mapped
-    case let array as [Any]:
-      return array.map { bridgeValue($0) }
-    case let array as [Sendable]:
-      return array.map { bridgeValue($0) }
-    case let array as NSArray:
-      return array.map { bridgeValue($0) }
-    default:
-      return String(describing: value)
-    }
-  }
 }

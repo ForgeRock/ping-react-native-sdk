@@ -134,7 +134,12 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
             showRawUserInfo={showRawOidcUserInfo}
             onToggleRawUserInfo={() => setShowRawOidcUserInfo((value) => !value)}
             onStartOidc={() => {
-              oidcActions.authorize().catch(() => undefined);
+              oidcActions
+                .authorize()
+                .then(async () => {
+                  await oidcActions.userinfo(true);
+                })
+                .catch(() => undefined);
             }}
           />
         ) : null}

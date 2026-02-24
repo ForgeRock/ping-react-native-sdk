@@ -45,9 +45,6 @@ const oidcClient = createOidcClient({
 });
 ```
 
-> TODO(iOS SDK 2.x): `signOutRedirectUri` is currently ignored on iOS. We will enable it once the native iOS
-> SDK exposes support in a 2.x release.
-
 > TODO(Android): `tokenExpiry` will be reintroduced once the native Android SDK exposes it.
 
 ### Configure token storage (optional)
@@ -85,6 +82,8 @@ const oidcClient = createOidcClient({
 ### Configure logging (optional)
 
 If you install the logger package, pass either a JS logger instance or a native logger handle.
+Both `logger` and `nativeLogger` values must be created via `@react-native-pingidentity/logger`.
+If the logger package is not installed/configured, do not pass logger values in OIDC config.
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
@@ -209,6 +208,9 @@ if (user) {
 
 ### Use the React provider and hook (optional)
 
+Use `OidcProvider` when multiple screens should share one OIDC state source (auth status, user,
+loading, and errors). This avoids duplicating `useOidc(oidcWebClient)` in each screen.
+
 ```tsx
 import { OidcProvider, useOidc } from '@ping-identity/rn-oidc';
 
@@ -223,11 +225,31 @@ function App(): React.ReactElement {
 function OidcScreen(): React.ReactElement {
   const [state, actions] = useOidc();
 
+  const onLogin = async (): Promise<void> => {
+    await actions.authorize();
+  };
+
+  const onLogout = async (): Promise<void> => {
+    await actions.logout();
+  };
+
   return <></>;
 }
 ```
 
-`useOidc` can also accept an explicit client: `useOidc(oidcWebClient)`.
+Common hook state/actions:
+
+- `state.isAuthenticated` indicates whether a user session is currently available.
+- `state.user` is the resolved user session object (or `null`).
+- `state.loading` indicates an in-flight OIDC operation.
+- `state.error` is the latest operation error (if any).
+- `actions.authorize()`, `actions.logout()`, `actions.refresh()`, `actions.revoke()`, `actions.userinfo()`, `actions.clear()`.
+
+If you only need OIDC in one screen, you can skip the provider and pass the client directly:
+
+```ts
+const [state, actions] = useOidc(oidcWebClient);
+```
 
 
 ## Android redirect configuration

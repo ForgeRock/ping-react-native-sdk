@@ -13,6 +13,7 @@
     "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @react-native-pingidentity/browser test",
+    "test:journey": "yarn workspace @ping-identity/rn-journey test",
     "test:oidc": "yarn workspace @ping-identity/rn-oidc test",
     "test:logger": "yarn workspace @react-native-pingidentity/logger test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",

@@ -1,7 +1,9 @@
 {
   "name": "@ping-identity/rn-journey",
   "version": "0.1.0",
-  "description": "Ping Identity Journey TurboModule for React Native",
+  "description": "Ping Identity Journey for React Native",
+  "homepage": "https://www.pingidentity.com/",
+  "author": "Ping Identity",
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -9,7 +11,6 @@
     "lib",
     "android",
     "ios",
-    "react-native.config.js",
     "*.podspec"
   ],
   "scripts": {
@@ -27,7 +28,9 @@
     "react-native": "*"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
     "react-native-builder-bob": "^0.40.14",
+    "react-test-renderer": "19.1.0",
     "typescript": "^5.9.2"
   },
   "license": "MIT",

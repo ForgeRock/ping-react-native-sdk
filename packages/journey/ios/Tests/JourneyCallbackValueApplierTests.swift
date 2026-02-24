@@ -37,6 +37,40 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     XCTAssertEqual(mutations[1].value as? String, "demo-pass")
   }
 
+  func testParseInputRejectsMalformedCallbackPayload() {
+    let input: NSDictionary = [
+      "callbacks": ["invalid-callback-item"]
+    ]
+
+    XCTAssertThrowsError(
+      try JourneyCallbackValueApplier.parseInput(input)
+    ) { error in
+      guard case let JourneyBridgeError.argument(message) = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("Invalid callback payload"))
+    }
+  }
+
+  func testParseInputRejectsMissingCallbackType() {
+    let input: NSDictionary = [
+      "callbacks": [
+        [
+          "value": "demo-user"
+        ]
+      ]
+    ]
+
+    XCTAssertThrowsError(
+      try JourneyCallbackValueApplier.parseInput(input)
+    ) { error in
+      guard case let JourneyBridgeError.argument(message) = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("Callback type is required"))
+    }
+  }
+
   func testApplyUpdatesCoreManualCallbacks() throws {
     let name = NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
@@ -108,11 +142,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
   }
 
   func testApplyRejectsIntegrationRequiredCallbacks() {
-    let callback = IntegrationRequiredStubCallback().initialize(with: callbackPayload(
-      type: "Fido2RegistrationCallback",
-      output: [],
-      input: [["name": "token", "value": ""]]
-    ))
+    let callback = Fido2RegistrationCallback()
 
     let mutations = [
       JourneyCallbackValueApplier.CallbackMutation(type: "Fido2RegistrationCallback", value: "token", index: nil)
@@ -158,6 +188,81 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     XCTAssertEqual(callback.allowUserDefinedQuestions, false)
   }
 
+  func testApplyMutatesAttributeAndTermsCallbackValues() throws {
+    let textInput = TextInputCallback()
+    let stringAttribute = StringAttributeInputCallback()
+    let numberAttribute = NumberAttributeInputCallback()
+    let booleanAttribute = BooleanAttributeInputCallback()
+    let hiddenValue = HiddenValueCallback()
+    let terms = TermsAndConditionsCallback()
+    let consent = ConsentMappingCallback()
+
+    let mutations = [
+      JourneyCallbackValueApplier.CallbackMutation(type: "TextInputCallback", value: "hello", index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "StringAttributeInputCallback", value: "string", index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "NumberAttributeInputCallback", value: 42, index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "BooleanAttributeInputCallback", value: true, index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "HiddenValueCallback", value: "hidden", index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "TermsAndConditionsCallback", value: true, index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "ConsentMappingCallback", value: true, index: nil)
+    ]
+
+    try JourneyCallbackValueApplier.applyToCallbacks(
+      [textInput, stringAttribute, numberAttribute, booleanAttribute, hiddenValue, terms, consent],
+      mutations: mutations
+    )
+
+    XCTAssertEqual(textInput.text, "hello")
+    XCTAssertEqual(stringAttribute.value, "string")
+    XCTAssertEqual(numberAttribute.value, 42.0)
+    XCTAssertEqual(booleanAttribute.value, true)
+    XCTAssertEqual(hiddenValue.value, "hidden")
+    XCTAssertEqual(terms.accepted, true)
+    XCTAssertEqual(consent.accepted, true)
+  }
+
+  func testApplySupportsValidatedAliasTypes() throws {
+    let validatedPassword = ValidatedPasswordCallback()
+    let validatedUsername = ValidatedUsernameCallback()
+    let mutations = [
+      JourneyCallbackValueApplier.CallbackMutation(
+        type: "ValidatedCreatePasswordCallback",
+        value: "S3cr3t!",
+        index: nil
+      ),
+      JourneyCallbackValueApplier.CallbackMutation(
+        type: "ValidatedCreateUsernameCallback",
+        value: "demo-user",
+        index: nil
+      )
+    ]
+
+    try JourneyCallbackValueApplier.applyToCallbacks(
+      [validatedPassword, validatedUsername],
+      mutations: mutations
+    )
+
+    XCTAssertEqual(validatedPassword.password, "S3cr3t!")
+    XCTAssertEqual(validatedUsername.username, "demo-user")
+  }
+
+  func testApplyMutatesChoiceAndConfirmationCallbacks() throws {
+    let choice = ChoiceCallback()
+    let confirmation = ConfirmationCallback()
+    let mutations = [
+      JourneyCallbackValueApplier.CallbackMutation(type: "ChoiceCallback", value: 1, index: nil),
+      JourneyCallbackValueApplier.CallbackMutation(type: "ConfirmationCallback", value: "0", index: nil)
+    ]
+
+    try JourneyCallbackValueApplier.applyToCallbacks(
+      [choice, confirmation],
+      mutations: mutations
+    )
+
+    XCTAssertEqual(choice.selectedIndex, 1)
+    XCTAssertEqual(confirmation.selectedIndex, 0)
+  }
+
   private func callbackPayload(
     type: String,
     output: [[String: Any]],
@@ -171,9 +276,4 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
   }
 }
 
-private final class IntegrationRequiredStubCallback: AbstractCallback {
-  override func initValue(name: String, value: Any) {
-    // No-op: this stub only exists to expose callback `type` from raw JSON.
-  }
-}
-
+private final class Fido2RegistrationCallback {}

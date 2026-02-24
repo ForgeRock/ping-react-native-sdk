@@ -10,9 +10,19 @@ package com.pingidentity.rnjourney
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.journey.callback.BooleanAttributeInputCallback
+import com.pingidentity.journey.callback.ChoiceCallback
 import com.pingidentity.journey.callback.ConsentMappingCallback
 import com.pingidentity.journey.callback.ConfirmationCallback
+import com.pingidentity.journey.callback.HiddenValueCallback
+import com.pingidentity.journey.callback.KbaCreateCallback
+import com.pingidentity.journey.callback.MetadataCallback
 import com.pingidentity.journey.callback.NameCallback
+import com.pingidentity.journey.callback.NumberAttributeInputCallback
+import com.pingidentity.journey.callback.PasswordCallback
+import com.pingidentity.journey.callback.PollingWaitCallback
+import com.pingidentity.journey.callback.StringAttributeInputCallback
+import com.pingidentity.journey.callback.SuspendedTextOutputCallback
+import com.pingidentity.journey.callback.TermsAndConditionsCallback
 import com.pingidentity.journey.callback.TextInputCallback
 import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
@@ -219,5 +229,34 @@ class JourneyNodeMapperTest {
 
         assertEquals("RequiredCallback", map["type"])
         assertEquals(true, map["required"])
+    }
+
+    @Test
+    fun mapCoreCallbackFamiliesExposeExpectedTypeAliases() {
+        val callbacks = listOf(
+            Pair<Any, String>(NameCallback(), "NameCallback"),
+            Pair<Any, String>(PasswordCallback(), "PasswordCallback"),
+            Pair<Any, String>(TextInputCallback(), "TextInputCallback"),
+            Pair<Any, String>(StringAttributeInputCallback(), "StringAttributeInputCallback"),
+            Pair<Any, String>(NumberAttributeInputCallback(), "NumberAttributeInputCallback"),
+            Pair<Any, String>(BooleanAttributeInputCallback(), "BooleanAttributeInputCallback"),
+            Pair<Any, String>(ChoiceCallback(), "ChoiceCallback"),
+            Pair<Any, String>(ConfirmationCallback(), "ConfirmationCallback"),
+            Pair<Any, String>(ConsentMappingCallback(), "ConsentMappingCallback"),
+            Pair<Any, String>(HiddenValueCallback(), "HiddenValueCallback"),
+            Pair<Any, String>(KbaCreateCallback(), "KbaCreateCallback"),
+            Pair<Any, String>(MetadataCallback(), "MetadataCallback"),
+            Pair<Any, String>(PollingWaitCallback(), "PollingWaitCallback"),
+            Pair<Any, String>(SuspendedTextOutputCallback(), "SuspendedTextOutputCallback"),
+            Pair<Any, String>(TermsAndConditionsCallback(), "TermsAndConditionsCallback"),
+            Pair<Any, String>(TextOutputCallback(), "TextOutputCallback"),
+            Pair<Any, String>(ValidatedPasswordCallback(), "ValidatedCreatePasswordCallback"),
+            Pair<Any, String>(ValidatedUsernameCallback(), "ValidatedCreateUsernameCallback")
+        )
+
+        callbacks.forEach { callbackPair ->
+            val map = JourneyNodeMapper.mapCallbackPayload(callbackPair.first)
+            assertEquals(callbackPair.second, map["type"])
+        }
     }
 }

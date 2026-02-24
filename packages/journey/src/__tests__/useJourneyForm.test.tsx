@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect } from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
+import { render, act } from '@testing-library/react-native';
 import { useJourneyForm } from '../useJourneyForm';
 
 type JourneyFormResult = import('../types').JourneyFormResult;
@@ -60,16 +60,14 @@ describe('useJourneyForm', () => {
 
     let latest: JourneyFormResult | null = null;
 
-    act(() => {
-      TestRenderer.create(
-        <JourneyFormHarness
-          node={node}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyFormHarness
+        node={node}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     const form = requireLatest(latest);
     expect(form.values).toEqual({});
@@ -87,16 +85,14 @@ describe('useJourneyForm', () => {
 
     let latest: JourneyFormResult | null = null;
 
-    act(() => {
-      TestRenderer.create(
-        <JourneyFormHarness
-          node={node}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyFormHarness
+        node={node}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     act(() => {
       requireLatest(latest).setValue('NameCallback:0', 'demo-user');
@@ -127,17 +123,16 @@ describe('useJourneyForm', () => {
 
     let latest: JourneyFormResult | null = null;
 
-    let renderer: TestRenderer.ReactTestRenderer | null = null;
-    act(() => {
-      renderer = TestRenderer.create(
-        <JourneyFormHarness
-          node={firstNode}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    let rerender: ((ui: React.ReactElement) => void) | null = null;
+    const rendered = render(
+      <JourneyFormHarness
+        node={firstNode}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
+    rerender = rendered.rerender;
 
     act(() => {
       requireLatest(latest).setValue('NameCallback:0', 'custom-value');
@@ -146,7 +141,7 @@ describe('useJourneyForm', () => {
     expect(requireLatest(latest).values['NameCallback:0']).toBe('custom-value');
 
     act(() => {
-      renderer?.update(
+      rerender?.(
         <JourneyFormHarness
           node={secondNode}
           onResult={(result) => {
@@ -171,16 +166,14 @@ describe('useJourneyForm', () => {
 
     let latest: JourneyFormResult | null = null;
 
-    act(() => {
-      TestRenderer.create(
-        <JourneyFormHarness
-          node={node}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyFormHarness
+        node={node}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     const form = requireLatest(latest);
     expect(form.getFieldsByType('NameCallback')).toHaveLength(2);

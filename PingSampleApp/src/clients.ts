@@ -12,6 +12,7 @@ import {
   type OidcClientConfig,
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
+import { OidcCoreConfig } from '@ping-identity/rn-types'
 import { logger } from '@react-native-pingidentity/logger';
 import {
   CacheStrategy,
@@ -76,7 +77,6 @@ export const sampleOidcClientConfig: OidcClientConfig = {
   discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
   redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
   scopes: [...pingAdvancedIdentityCloudConfig.scopes],
-  signOutRedirectUri: `${pingAdvancedIdentityCloudConfig.redirectUri}/logout`,
   ios: {
     browserType: 'authSession',
     browserMode: 'login',

@@ -151,6 +151,25 @@ describe('OIDC JS API', () => {
     );
   });
 
+  it('does not pass signOutRedirectUri from JS config', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+      signOutRedirectUri: 'app://logout',
+    } as any);
+
+    expect(nativeModule.createClient).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        signOutRedirectUri: expect.anything(),
+      })
+    );
+  });
+
   it('prefers nativeLogger over logger.nativeHandle', async () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);
@@ -169,6 +188,24 @@ describe('OIDC JS API', () => {
 
     expect(nativeModule.createClient).toHaveBeenCalledWith(
       expect.objectContaining({ loggerId: 'explicit-native-id' })
+    );
+  });
+
+  it('does not pass loggerId when logger and nativeLogger are both omitted', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    expect(nativeModule.createClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: undefined,
+      })
     );
   });
 

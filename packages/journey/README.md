@@ -94,6 +94,8 @@ Storage handles in `modules.session.storage` and `modules.oidc.storage` must com
 ### Configure logging (optional)
 
 If you install the logger package, pass either a JS logger instance or a native logger handle.
+Both `logger` and `nativeLogger` values must be created via `@react-native-pingidentity/logger`.
+If the logger package is not installed/configured, do not pass logger values in Journey config.
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
@@ -222,7 +224,7 @@ if (form.canSubmit) {
 
 `useJourneyForm` is headless. It manages normalized fields and submit planning, but does not render UI and does not auto-run integration-required callbacks.
 
-> TODO(sample validation): verify end-to-end `SuspendedTextOutputCallback` resume flow (deep link/email callback) on Android and iOS sample apps.
+> TODO(test-runner app): add Journey integration and E2E tests (including `SuspendedTextOutputCallback` deep link/email resume flow) once the test-runner app is set up.
 
 ### Core callback support
 

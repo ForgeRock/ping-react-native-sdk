@@ -109,10 +109,11 @@ export function createJourneyClient(
   );
   const oidcConfig = config.modules?.oidc;
   const jsLogger = config.logger ?? oidcConfig?.logger ?? noopLogger;
-  const loggerId =
+  const rawLoggerId =
     config.logger?.nativeHandle?.id ??
     oidcConfig?.nativeLogger?.id ??
     jsLogger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
   const nativeConfig: NativeJourneyConfig = {
     serverUrl: config.serverUrl,

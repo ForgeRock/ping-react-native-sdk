@@ -56,31 +56,14 @@ object JsonBridgeMapper {
     return raw
   }
 
-  private fun encodeJsonObjectInternal(value: JsonObject): WritableMap {
-    val map = Arguments.createMap()
-    value.forEach { (key, element) ->
-      putJsonValue(map, key, element)
+  private fun encodeJsonObjectInternal(value: JsonObject): Map<String, Any?> {
+    return value.mapValues { (_, element) ->
+      encodeJsonElement(element)
     }
-    return map
   }
 
-  private fun encodeJsonArray(value: JsonArray): WritableArray {
-    val array = Arguments.createArray()
-    value.forEach { element ->
-      when (val encoded = encodeJsonElement(element)) {
-        null -> array.pushNull()
-        is Boolean -> array.pushBoolean(encoded)
-        is Double -> array.pushDouble(encoded)
-        is Float -> array.pushDouble(encoded.toDouble())
-        is Int -> array.pushInt(encoded)
-        is Long -> array.pushDouble(encoded.toDouble())
-        is String -> array.pushString(encoded)
-        is WritableMap -> array.pushMap(encoded)
-        is WritableArray -> array.pushArray(encoded)
-        else -> array.pushString(encoded.toString())
-      }
-    }
-    return array
+  private fun encodeJsonArray(value: JsonArray): List<Any?> {
+    return value.map { element -> encodeJsonElement(element) }
   }
 
   private fun putJsonValue(map: WritableMap, key: String, element: JsonElement) {
@@ -92,9 +75,62 @@ object JsonBridgeMapper {
       is Int -> map.putInt(key, encoded)
       is Long -> map.putDouble(key, encoded.toDouble())
       is String -> map.putString(key, encoded)
-      is WritableMap -> map.putMap(key, encoded)
-      is WritableArray -> map.putArray(key, encoded)
+      is Map<*, *> -> {
+        val mapped = encoded.entries
+          .filter { it.key is String }
+          .associate { (key, value) -> key as String to value }
+        map.putMap(key, toWritableMap(mapped))
+      }
+      is List<*> -> map.putArray(key, toWritableArray(encoded))
       else -> map.putString(key, encoded.toString())
     }
+  }
+
+  private fun toWritableMap(value: Map<String, Any?>): WritableMap {
+    val map = Arguments.createMap()
+    value.forEach { (key, item) ->
+      when (item) {
+        null -> map.putNull(key)
+        is Boolean -> map.putBoolean(key, item)
+        is Double -> map.putDouble(key, item)
+        is Float -> map.putDouble(key, item.toDouble())
+        is Int -> map.putInt(key, item)
+        is Long -> map.putDouble(key, item.toDouble())
+        is String -> map.putString(key, item)
+        is Map<*, *> -> {
+          val nested = item.entries
+            .filter { it.key is String }
+            .associate { (nestedKey, nestedValue) -> nestedKey as String to nestedValue }
+          map.putMap(key, toWritableMap(nested))
+        }
+        is List<*> -> map.putArray(key, toWritableArray(item))
+        else -> map.putString(key, item.toString())
+      }
+    }
+    return map
+  }
+
+  private fun toWritableArray(value: List<*>): WritableArray {
+    val array = Arguments.createArray()
+    value.forEach { item ->
+      when (item) {
+        null -> array.pushNull()
+        is Boolean -> array.pushBoolean(item)
+        is Double -> array.pushDouble(item)
+        is Float -> array.pushDouble(item.toDouble())
+        is Int -> array.pushInt(item)
+        is Long -> array.pushDouble(item.toDouble())
+        is String -> array.pushString(item)
+        is Map<*, *> -> {
+          val mapped = item.entries
+            .filter { it.key is String }
+            .associate { (key, value) -> key as String to value }
+          array.pushMap(toWritableMap(mapped))
+        }
+        is List<*> -> array.pushArray(toWritableArray(item))
+        else -> array.pushString(item.toString())
+      }
+    }
+    return array
   }
 }

@@ -27,5 +27,11 @@ Pod::Spec.new do |s|
   s.dependency 'PingOidc', '1.3.1'
   s.dependency 'RNPingCore'
 
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+    test_spec.dependency "PingOidc"
+    test_spec.dependency "RNPingCore"
+  end
+
   install_modules_dependencies(s)
 end

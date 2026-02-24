@@ -67,9 +67,10 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
   }
   // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
   const jsLogger = config.logger ?? noopLogger;
-  const loggerId =
+  const rawLoggerId =
     config.nativeLogger?.id ??
     jsLogger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
       config,
@@ -77,8 +78,13 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       2
     )}`
   );
+  // Ignore legacy signOutRedirectUri values if callers pass them via `any`.
+  const {
+    signOutRedirectUri: _ignoredSignOutRedirectUri,
+    ...nativeConfig
+  } = config as OidcClientConfig & { signOutRedirectUri?: string };
   const clientId = getNativeModule().createClient({
-    ...config,
+    ...nativeConfig,
     storageId: resolveStorageId(config.storage),
     loggerId,
   });

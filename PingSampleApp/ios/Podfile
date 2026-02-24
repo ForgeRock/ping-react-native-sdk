@@ -64,6 +64,12 @@ target 'PingSampleApp' do
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch
   pod 'RNPingCore', :path => '../../packages/core'
+  pod 'RNPingJourney',
+  :path => '../../node_modules/@ping-identity/rn-journey',
+  :testspecs => ['Tests']
+  pod 'RNPingOidc',
+  :path => '../../node_modules/@ping-identity/rn-oidc',
+  :testspecs => ['Tests']
   
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
@@ -97,7 +103,15 @@ target 'PingSampleApp' do
           /TamperDetectorVersionString\s*\z/,
           'FOUNDATION_EXPORT const unsigned char TamperDetectorVersionString[];'
         )
-        File.write(tamper_header, fixed)
+        begin
+          if File.writable?(tamper_header)
+            File.write(tamper_header, fixed)
+          else
+            Pod::UI.puts "warning: Skipping TamperDetector header patch (file not writable): #{tamper_header}".yellow
+          end
+        rescue StandardError => e
+          Pod::UI.puts "warning: Skipping TamperDetector header patch (#{e.class}: #{e.message})".yellow
+        end
       end
     end
   end

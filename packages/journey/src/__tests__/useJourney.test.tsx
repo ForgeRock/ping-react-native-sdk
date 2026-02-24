@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect } from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
+import { render, act } from '@testing-library/react-native';
 import { useJourney } from '../useJourney';
 
 type JourneyClient = import('../types').JourneyClient;
@@ -102,16 +102,14 @@ describe('useJourney auto polling', () => {
     });
 
     let latest: JourneyHookResult | null = null;
-    act(() => {
-      TestRenderer.create(
-        <JourneyHarness
-          client={client}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     await act(async () => {
       await requireLatest(latest)[1].start('Login');
@@ -144,16 +142,14 @@ describe('useJourney auto polling', () => {
     });
 
     let latest: JourneyHookResult | null = null;
-    act(() => {
-      TestRenderer.create(
-        <JourneyHarness
-          client={client}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     await act(async () => {
       await requireLatest(latest)[1].start('Login');
@@ -186,16 +182,14 @@ describe('useJourney auto polling', () => {
     });
 
     let latest: JourneyHookResult | null = null;
-    act(() => {
-      TestRenderer.create(
-        <JourneyHarness
-          client={client}
-          onResult={(result) => {
-            latest = result;
-          }}
-        />
-      );
-    });
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
 
     await act(async () => {
       await requireLatest(latest)[1].start('Login');
@@ -212,5 +206,83 @@ describe('useJourney auto polling', () => {
       await Promise.resolve();
     });
     expect(nextSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears pending polling timer when component unmounts', async () => {
+    const pollingNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
+    };
+    const nextSpy = jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode));
+    const client = createJourneyClientMock({
+      start: jest.fn(async () => pollingNode),
+      next: nextSpy,
+    });
+
+    let latest: JourneyHookResult | null = null;
+    let unmount: (() => void) | null = null;
+    const rendered = render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
+    unmount = rendered.unmount;
+
+    await act(async () => {
+      await requireLatest(latest)[1].start('Login');
+    });
+
+    act(() => {
+      unmount?.();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(nextSpy).not.toHaveBeenCalled();
+  });
+
+  it('clears pending polling timer when node changes to non-auto-poll state', async () => {
+    const pollingNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1500, output: [] }],
+    };
+    const manualNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback', output: [] }],
+    };
+    const nextSpy = jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode));
+    const client = createJourneyClientMock({
+      start: jest.fn(async () => pollingNode),
+      resume: jest.fn(async () => manualNode),
+      next: nextSpy,
+    });
+
+    let latest: JourneyHookResult | null = null;
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />
+    );
+
+    await act(async () => {
+      await requireLatest(latest)[1].start('Login');
+      await requireLatest(latest)[1].resume('com.example.app://resume');
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+      await Promise.resolve();
+    });
+
+    expect(nextSpy).not.toHaveBeenCalled();
   });
 });

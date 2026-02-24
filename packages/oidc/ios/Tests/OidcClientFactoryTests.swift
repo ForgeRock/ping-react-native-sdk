@@ -6,6 +6,7 @@
  */
 
 import XCTest
+import PingLogger
 import PingOidc
 import RNPingCore
 @testable import RNPingOidc
@@ -42,7 +43,7 @@ final class OidcClientFactoryTests: XCTestCase {
       additionalParameters: [:]
     )
 
-    let config = OidcClientFactory.buildOidcClient(payload)
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
     XCTAssertEqual(config.openId?.endSessionEndpoint, "")
     XCTAssertEqual(config.openId?.revocationEndpoint, "")
@@ -55,7 +56,7 @@ final class OidcClientFactoryTests: XCTestCase {
       browserMode: "logout"
     )
 
-    let web = OidcClientFactory.buildWebClient(payload)
+    let web = OidcClientFactory.buildWebClient(payload, logger: nil)
     let config = web.config as? OidcWebConfig
 
     XCTAssertEqual(config?.browserType, .ephemeralAuthSession)
@@ -68,7 +69,7 @@ final class OidcClientFactoryTests: XCTestCase {
       browserMode: "unsupported"
     )
 
-    let web = OidcClientFactory.buildWebClient(payload)
+    let web = OidcClientFactory.buildWebClient(payload, logger: nil)
     let config = web.config as? OidcWebConfig
 
     XCTAssertEqual(config?.browserType, .authSession)
@@ -77,14 +78,22 @@ final class OidcClientFactoryTests: XCTestCase {
 
   func testBuildOidcClientAdditionalParametersOnlyWhenProvided() {
     var payload = basePayload(additionalParameters: [:])
-    let config = OidcClientFactory.buildOidcClient(payload)
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
-    XCTAssertEqual(config.additionalParameters, [:])
+    XCTAssertTrue(config.additionalParameters.isEmpty)
 
     payload = basePayload(additionalParameters: ["foo": "bar"])
-    let updated = OidcClientFactory.buildOidcClient(payload)
+    let updated = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
-    XCTAssertEqual(updated.additionalParameters, ["foo": "bar"])
+    XCTAssertEqual(updated.additionalParameters["foo"] as? String, "bar")
+    XCTAssertEqual(updated.additionalParameters.count, 1)
+  }
+
+  func testBuildOidcClientAppliesLoggerWhenProvided() {
+    let payload = basePayload()
+    let config = OidcClientFactory.buildOidcClient(payload, logger: LogManager.standard)
+
+    XCTAssertNotNil(config.logger)
   }
 
   func testBuildOidcClientResolvesStorageFromCoreRegistry() async {
@@ -116,7 +125,7 @@ final class OidcClientFactoryTests: XCTestCase {
       OidcClientFactory.buildOidcClient(payload, logger: nil, queueKey: key)
     }
 
-    XCTAssertNil(config.storage)
+    XCTAssertNotNil(config.storage)
   }
 
   private func basePayload(

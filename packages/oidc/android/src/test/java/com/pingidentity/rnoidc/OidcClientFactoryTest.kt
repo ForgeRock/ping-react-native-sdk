@@ -27,7 +27,10 @@ class OidcClientFactoryTest {
   fun buildWebClient_appliesLoggerId() {
     val loggerIds = mutableListOf<String?>()
     val storageRegistry = RecordingRegistry()
-    val factory = OidcClientFactory(storageRegistry) { loggerIds.add(it) }
+    val factory = OidcClientFactory(storageRegistry) {
+      loggerIds.add(it)
+      null
+    }
 
     factory.buildWebClient(basePayload(loggerId = "logger-1"))
 
@@ -39,7 +42,7 @@ class OidcClientFactoryTest {
     val registry = RecordingRegistry().apply {
       addHandle("storage-1", TestStorageConfigHandle(fileName = "oidc-store"))
     }
-    val factory = OidcClientFactory(registry) {}
+    val factory = OidcClientFactory(registry) { null }
 
     factory.buildWebClient(basePayload(storageId = "storage-1"))
 
@@ -49,7 +52,7 @@ class OidcClientFactoryTest {
   @Test
   fun buildOidcClient_skipsStorageResolveWhenIdMissing() {
     val registry = RecordingRegistry()
-    val factory = OidcClientFactory(registry) {}
+    val factory = OidcClientFactory(registry) { null }
 
     factory.buildOidcClient(basePayload(storageId = null))
 
@@ -60,7 +63,10 @@ class OidcClientFactoryTest {
   fun buildOidcClient_appliesLoggerIdWhenNull() {
     val loggerIds = mutableListOf<String?>()
     val storageRegistry = RecordingRegistry()
-    val factory = OidcClientFactory(storageRegistry) { loggerIds.add(it) }
+    val factory = OidcClientFactory(storageRegistry) {
+      loggerIds.add(it)
+      null
+    }
 
     factory.buildOidcClient(basePayload(loggerId = null))
 
@@ -70,7 +76,7 @@ class OidcClientFactoryTest {
   @Test
   fun buildOidcClient_defaultsOptionalOpenIdEndpoints() {
     val storageRegistry = RecordingRegistry()
-    val factory = OidcClientFactory(storageRegistry) {}
+    val factory = OidcClientFactory(storageRegistry) { null }
     val payload = basePayload().copy(
       openId = OpenIdPayload(
         authorizationEndpoint = "https://example.com/oauth2/authorize",
@@ -92,7 +98,7 @@ class OidcClientFactoryTest {
 
   @Test
   fun parseCacheStrategy_fallsBackToNoCache() {
-    val factory = OidcClientFactory(RecordingRegistry()) {}
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
     val parsed = factory.invokeParseCacheStrategy("unknown_value")
 
     assertEquals(com.pingidentity.storage.CacheStrategy.NO_CACHE, parsed)
@@ -100,7 +106,7 @@ class OidcClientFactoryTest {
 
   @Test
   fun parseCacheStrategy_acceptsKnownValues() {
-    val factory = OidcClientFactory(RecordingRegistry()) {}
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
     val parsed = factory.invokeParseCacheStrategy("cache_on_failure")
 
     assertEquals(com.pingidentity.storage.CacheStrategy.CACHE_ON_FAILURE, parsed)

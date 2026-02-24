@@ -8,7 +8,6 @@
 package com.pingidentity.rnjourney
 
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.journey.plugin.AbstractCallback
 import com.pingidentity.journey.callback.AbstractValidatedCallback
@@ -36,14 +35,7 @@ import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.SuccessNode
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.longOrNull
+import com.reactnativepingidentity.core.utils.JsonBridgeMapper
 
 /**
  * Maps native Journey nodes/callbacks to JS bridge payloads.
@@ -57,7 +49,7 @@ internal object JourneyNodeMapper {
      * @return Serialized node payload.
      */
     fun mapNode(node: Node): WritableMap {
-        return toWritableMap(mapNodePayload(node))
+        return Arguments.makeNativeMap(mapNodePayload(node))
     }
 
     /**
@@ -67,7 +59,7 @@ internal object JourneyNodeMapper {
      * @return Serialized callback payload.
      */
     fun mapCallback(callback: Any): WritableMap {
-        return toWritableMap(mapCallbackPayload(callback))
+        return Arguments.makeNativeMap(mapCallbackPayload(callback))
     }
 
     /**
@@ -82,7 +74,7 @@ internal object JourneyNodeMapper {
         when (node) {
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
-                payload["input"] = jsonElementToAny(node.input)
+                payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
                 payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it) }
             }
             is ErrorNode -> {
@@ -90,11 +82,11 @@ internal object JourneyNodeMapper {
                 // TODO(iOS SDK parity): Android Orchestrate ErrorNode currently does not expose
                 // an HTTP status field; iOS ErrorNode can include status metadata.
                 payload["message"] = node.message
-                payload["input"] = jsonElementToAny(node.input)
+                payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
             }
             is SuccessNode -> {
                 payload["type"] = "SuccessNode"
-                payload["input"] = jsonElementToAny(node.input)
+                payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
             }
             is FailureNode -> {
                 val message = node.cause.message ?: node.cause.toString()
@@ -131,7 +123,7 @@ internal object JourneyNodeMapper {
         val payload = linkedMapOf<String, Any?>("type" to callbackType(callback))
         if (callback is AbstractCallback) {
             try {
-                payload["raw"] = jsonElementToAny(callback.json)
+                payload["raw"] = JsonBridgeMapper.encodeJsonElement(callback.json)
             } catch (_: Throwable) {
                 // Callback may be test-constructed without init(json), keep mapping resilient.
             }
@@ -139,10 +131,10 @@ internal object JourneyNodeMapper {
         if (callback is AbstractValidatedCallback) {
             payload["validateOnly"] = callback.validateOnly
             payload["prompt"] = callback.prompt
-            payload["policies"] = jsonElementToAny(callback.policies)
+            payload["policies"] = JsonBridgeMapper.encodeJsonElement(callback.policies)
             payload["failedPolicies"] = callback.failedPolicies.map { failedPolicy ->
                 mapOf(
-                    "params" to jsonElementToAny(failedPolicy.params),
+                    "params" to JsonBridgeMapper.encodeJsonElement(failedPolicy.params),
                     "policyRequirement" to failedPolicy.policyRequirement
                 )
             }
@@ -259,7 +251,7 @@ internal object JourneyNodeMapper {
                 payload["message"] = callback.message
             }
             is MetadataCallback -> {
-                payload["value"] = jsonElementToAny(callback.value)
+                payload["value"] = JsonBridgeMapper.encodeJsonElement(callback.value)
             }
             is ValidatedPasswordCallback -> {
                 payload["prompt"] = callback.prompt
@@ -302,95 +294,4 @@ internal object JourneyNodeMapper {
         }
     }
 
-    /**
-     * Converts Kotlin serialization JSON values to plain bridge-friendly objects.
-     *
-     * @param element JSON element to convert.
-     * @return Primitive/map/list value compatible with React Native bridge serialization.
-     */
-    private fun jsonElementToAny(element: JsonElement): Any? {
-        return when (element) {
-            JsonNull -> null
-            is JsonPrimitive -> {
-                if (element.isString) {
-                    element.content
-                } else {
-                    element.booleanOrNull ?: element.longOrNull ?: element.doubleOrNull ?: element.content
-                }
-            }
-            is JsonObject -> element.mapValues { (_, value) -> jsonElementToAny(value) }
-            is JsonArray -> element.map { jsonElementToAny(it) }
-        }
-    }
-
-    /**
-     * Converts a plain map payload to React Native `WritableMap`.
-     *
-     * @param value Source key-value map.
-     * @return Writable map payload.
-     */
-    private fun toWritableMap(value: Map<String, Any?>): WritableMap {
-        val map = Arguments.createMap()
-        value.forEach { (key, item) ->
-            putValue(map, key, item)
-        }
-        return map
-    }
-
-    /**
-     * Converts a plain list payload to React Native `WritableArray`.
-     *
-     * @param values Source list values.
-     * @return Writable array payload.
-     */
-    private fun toWritableArray(values: List<Any?>): WritableArray {
-        val array = Arguments.createArray()
-        values.forEach { value ->
-            when (value) {
-                null -> array.pushNull()
-                is Boolean -> array.pushBoolean(value)
-                is Int -> array.pushInt(value)
-                is Long -> array.pushDouble(value.toDouble())
-                is Float -> array.pushDouble(value.toDouble())
-                is Double -> array.pushDouble(value)
-                is String -> array.pushString(value)
-                is Map<*, *> -> {
-                    val mapValue = value.entries
-                        .filter { it.key is String }
-                        .associate { it.key as String to it.value }
-                    array.pushMap(toWritableMap(mapValue))
-                }
-                is List<*> -> array.pushArray(toWritableArray(value))
-                else -> array.pushString(value.toString())
-            }
-        }
-        return array
-    }
-
-    /**
-     * Writes one dynamic value into a `WritableMap`.
-     *
-     * @param map Target writable map.
-     * @param key Field key.
-     * @param value Field value.
-     */
-    private fun putValue(map: WritableMap, key: String, value: Any?) {
-        when (value) {
-            null -> map.putNull(key)
-            is Boolean -> map.putBoolean(key, value)
-            is Int -> map.putInt(key, value)
-            is Long -> map.putDouble(key, value.toDouble())
-            is Float -> map.putDouble(key, value.toDouble())
-            is Double -> map.putDouble(key, value)
-            is String -> map.putString(key, value)
-            is Map<*, *> -> {
-                val mapValue = value.entries
-                    .filter { it.key is String }
-                    .associate { it.key as String to it.value }
-                map.putMap(key, toWritableMap(mapValue))
-            }
-            is List<*> -> map.putArray(key, toWritableArray(value))
-            else -> map.putString(key, value.toString())
-        }
-    }
 }

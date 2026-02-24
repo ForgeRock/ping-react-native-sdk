@@ -51,7 +51,7 @@ import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
  * });
  * ```
  */
-export type OidcClientConfig = OidcCoreConfig & {
+export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
   /**
    * Optional storage configuration created by the storage module.
    *
@@ -73,7 +73,7 @@ export type OidcClientConfig = OidcCoreConfig & {
    * Optional JavaScript logger instance.
    *
    * @remarks
-   * Provide a logger created with `logger()` to control JS log output.
+   * Must be created by `@react-native-pingidentity/logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
 
@@ -81,7 +81,7 @@ export type OidcClientConfig = OidcCoreConfig & {
    * Optional native logger handle.
    *
    * @remarks
-   * Pass the handle returned by `configureLogger()` to reuse a native logger.
+   * Must be created by `@react-native-pingidentity/logger` (`configureLogger(...)`).
    */
   nativeLogger?: NativeLoggerHandle;
 

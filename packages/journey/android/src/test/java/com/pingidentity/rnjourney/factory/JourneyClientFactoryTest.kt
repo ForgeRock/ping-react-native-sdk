@@ -36,6 +36,19 @@ class JourneyClientFactoryTest {
     assertEquals("oidc-storage-1", oidcRegistry.lastResolvedId)
   }
 
+  @Test
+  fun build_appliesLoggerIdToResolver() {
+    val resolvedLoggerIds = mutableListOf<String?>()
+    val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) {
+      resolvedLoggerIds.add(it)
+      null
+    }
+
+    factory.build(basePayload(sessionStorageId = null, oidcStorageId = null, loggerId = "logger-1"))
+
+    assertEquals(listOf("logger-1"), resolvedLoggerIds)
+  }
+
   @Test(expected = IllegalArgumentException::class)
   fun build_throwsWhenSessionStorageIdIsUnknown() {
     val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
@@ -52,7 +65,8 @@ class JourneyClientFactoryTest {
 
   private fun basePayload(
     sessionStorageId: String?,
-    oidcStorageId: String?
+    oidcStorageId: String?,
+    loggerId: String? = null
   ): JourneyClientPayload {
     return JourneyClientPayload(
       serverUrl = "https://example.com/am",
@@ -76,7 +90,7 @@ class JourneyClientFactoryTest {
       additionalParameters = emptyMap(),
       sessionStorageId = sessionStorageId,
       oidcStorageId = oidcStorageId,
-      loggerId = null,
+      loggerId = loggerId,
       oidcClientId = null
     )
   }

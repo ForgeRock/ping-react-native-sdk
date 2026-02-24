@@ -94,6 +94,123 @@ describe('Journey JS API', () => {
     );
   });
 
+  it('uses modules.oidc.nativeLogger id when top-level logger is not provided', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+          nativeLogger: { id: 'oidc-native-logger-id' },
+        },
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: 'oidc-native-logger-id',
+      })
+    );
+  });
+
+  it('uses modules.oidc.logger native handle when no explicit native logger is provided', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const oidcLogger = {
+      nativeHandle: { id: 'oidc-js-logger-id' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+          logger: oidcLogger,
+        },
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: 'oidc-js-logger-id',
+      })
+    );
+  });
+
+  it('prefers top-level logger over module native logger', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const topLevelLogger = {
+      nativeHandle: { id: 'top-level-logger-id' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+      logger: topLevelLogger,
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+          nativeLogger: { id: 'oidc-native-logger-id' },
+        },
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: 'top-level-logger-id',
+      })
+    );
+  });
+
+  it('does not pass loggerId when logger is omitted', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: undefined,
+      })
+    );
+  });
+
   it('passes timeout to configureJourney when provided', async () => {
     const native = createNativeMock();
     const { createJourneyClient } = await loadModule(native);
@@ -351,5 +468,53 @@ describe('Journey JS API', () => {
 
     expect(native.dispose).toHaveBeenCalledWith('journey-id-1');
     expect(native.configureJourney).toHaveBeenCalledTimes(2);
+  });
+
+  it('skips native dispose when client was never initialized', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    await client.dispose();
+
+    expect(native.dispose).not.toHaveBeenCalled();
+    expect(native.configureJourney).not.toHaveBeenCalled();
+  });
+
+  it('propagates native rejections for session operations', async () => {
+    const expectedError = {
+      type: 'state_error',
+      error: 'JOURNEY_STATE_ERROR',
+      message: 'native failure',
+    };
+    const native = createNativeMock({
+      getSession: jest.fn(async () => {
+        throw expectedError;
+      }),
+      refresh: jest.fn(async () => {
+        throw expectedError;
+      }),
+      revoke: jest.fn(async () => {
+        throw expectedError;
+      }),
+      userinfo: jest.fn(async () => {
+        throw expectedError;
+      }),
+      ssoToken: jest.fn(async () => {
+        throw expectedError;
+      }),
+      logout: jest.fn(async () => {
+        throw expectedError;
+      }),
+    });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    await expect(client.user()).rejects.toEqual(expectedError);
+    await expect(client.refresh()).rejects.toEqual(expectedError);
+    await expect(client.revoke()).rejects.toEqual(expectedError);
+    await expect(client.userinfo()).rejects.toEqual(expectedError);
+    await expect(client.ssoToken()).rejects.toEqual(expectedError);
+    await expect(client.logoutUser()).rejects.toEqual(expectedError);
   });
 });

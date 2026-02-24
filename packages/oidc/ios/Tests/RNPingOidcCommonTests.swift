@@ -10,6 +10,30 @@ import XCTest
 @testable import RNPingOidc
 
 final class RNPingOidcCommonTests: XCTestCase {
+  private final class ErrorCaptureBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedCode: String?
+    private var storedError: NSError?
+
+    func set(code: String, error: NSError?) {
+      lock.lock()
+      storedCode = code
+      storedError = error
+      lock.unlock()
+    }
+
+    var code: String? {
+      lock.lock()
+      defer { lock.unlock() }
+      return storedCode
+    }
+
+    var error: NSError? {
+      lock.lock()
+      defer { lock.unlock() }
+      return storedError
+    }
+  }
 
   func testClientTokenRejectsWhenClientMissing() {
     assertClientRejects(
@@ -122,7 +146,10 @@ final class RNPingOidcCommonTests: XCTestCase {
   private func assertClientRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping (NSDictionary) -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable (NSDictionary) -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {
@@ -130,27 +157,32 @@ final class RNPingOidcCommonTests: XCTestCase {
     let resolveExpectation = expectation(description: "resolver not called")
     resolveExpectation.isInverted = true
 
-    var capturedError: NSError?
-    var capturedCode: String?
+    let capture = ErrorCaptureBox()
 
     call({ code, _, error in
-      capturedCode = code
-      capturedError = error
-      rejectExpectation.fulfill()
+      capture.set(code: code, error: error)
+      Task { @MainActor in
+        rejectExpectation.fulfill()
+      }
     }, { _ in
-      resolveExpectation.fulfill()
+      Task { @MainActor in
+        resolveExpectation.fulfill()
+      }
     })
 
     wait(for: [rejectExpectation, resolveExpectation], timeout: 1.0)
 
-    XCTAssertEqual(capturedCode, expectedCode, file: file, line: line)
-    XCTAssertEqual(capturedError?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+    XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
+    XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
   }
 
   private func assertClientVoidRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping () -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable () -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {
@@ -158,27 +190,32 @@ final class RNPingOidcCommonTests: XCTestCase {
     let resolveExpectation = expectation(description: "resolver not called")
     resolveExpectation.isInverted = true
 
-    var capturedError: NSError?
-    var capturedCode: String?
+    let capture = ErrorCaptureBox()
 
     call({ code, _, error in
-      capturedCode = code
-      capturedError = error
-      rejectExpectation.fulfill()
+      capture.set(code: code, error: error)
+      Task { @MainActor in
+        rejectExpectation.fulfill()
+      }
     }, {
-      resolveExpectation.fulfill()
+      Task { @MainActor in
+        resolveExpectation.fulfill()
+      }
     })
 
     wait(for: [rejectExpectation, resolveExpectation], timeout: 1.0)
 
-    XCTAssertEqual(capturedCode, expectedCode, file: file, line: line)
-    XCTAssertEqual(capturedError?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+    XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
+    XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
   }
 
   private func assertClientBoolRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping (Bool) -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable (Bool) -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {
@@ -186,27 +223,32 @@ final class RNPingOidcCommonTests: XCTestCase {
     let resolveExpectation = expectation(description: "resolver not called")
     resolveExpectation.isInverted = true
 
-    var capturedError: NSError?
-    var capturedCode: String?
+    let capture = ErrorCaptureBox()
 
     call({ code, _, error in
-      capturedCode = code
-      capturedError = error
-      rejectExpectation.fulfill()
+      capture.set(code: code, error: error)
+      Task { @MainActor in
+        rejectExpectation.fulfill()
+      }
     }, { _ in
-      resolveExpectation.fulfill()
+      Task { @MainActor in
+        resolveExpectation.fulfill()
+      }
     })
 
     wait(for: [rejectExpectation, resolveExpectation], timeout: 1.0)
 
-    XCTAssertEqual(capturedCode, expectedCode, file: file, line: line)
-    XCTAssertEqual(capturedError?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+    XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
+    XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
   }
 
   private func assertWebRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping (NSDictionary) -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable (NSDictionary) -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {
@@ -216,7 +258,10 @@ final class RNPingOidcCommonTests: XCTestCase {
   private func assertWebBoolRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping (Bool) -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable (Bool) -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {
@@ -226,7 +271,10 @@ final class RNPingOidcCommonTests: XCTestCase {
   private func assertWebVoidRejects(
     expectedCode: String,
     expectedType: ErrorType,
-    call: (_ rejecter: @escaping (String, String, NSError?) -> Void, _ resolver: @escaping () -> Void) -> Void,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable () -> Void
+    ) -> Void,
     file: StaticString = #filePath,
     line: UInt = #line
   ) {

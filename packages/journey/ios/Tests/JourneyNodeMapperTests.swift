@@ -77,6 +77,16 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["cause"] as? String, "network failure")
   }
 
+  func testMapNodeReturnsBridgeDictionary() {
+    let node = SuccessNode(input: ["tokenId": "abc"], session: EmptySession())
+
+    let payload = JourneyNodeMapper.mapNode(node)
+
+    XCTAssertEqual(payload["type"] as? String, "SuccessNode")
+    let input = payload["input"] as? [String: Any]
+    XCTAssertEqual(input?["tokenId"] as? String, "abc")
+  }
+
   func testMapCallbackPayloadIncludesValidatedAliasTypeAndFields() {
     let callback = ValidatedPasswordCallback().initialize(with: callbackPayload(
       type: "ValidatedCreatePasswordCallback",
@@ -123,6 +133,108 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["fields"] as? [String], ["mail"])
   }
 
+  func testMapCallbackReturnsBridgeDictionary() {
+    let callback = NameCallback().initialize(with: callbackPayload(
+      type: "NameCallback",
+      output: [["name": "prompt", "value": "User Name"]],
+      input: [["name": "IDToken1", "value": "demo-user"]]
+    ))
+
+    let payload = JourneyNodeMapper.mapCallback(callback)
+
+    XCTAssertEqual(payload["type"] as? String, "NameCallback")
+    XCTAssertEqual(payload["value"] as? String, "")
+    XCTAssertEqual(payload["prompt"] as? String, "User Name")
+  }
+
+  func testMapCallbackPayloadIncludesAttributeAndHiddenFields() {
+    let booleanAttribute = BooleanAttributeInputCallback()
+    let stringAttribute = StringAttributeInputCallback()
+    let numberAttribute = NumberAttributeInputCallback()
+    let hiddenValue = HiddenValueCallback()
+
+    let booleanPayload = JourneyNodeMapper.mapCallbackPayload(booleanAttribute)
+    let stringPayload = JourneyNodeMapper.mapCallbackPayload(stringAttribute)
+    let numberPayload = JourneyNodeMapper.mapCallbackPayload(numberAttribute)
+    let hiddenPayload = JourneyNodeMapper.mapCallbackPayload(hiddenValue)
+
+    XCTAssertEqual(booleanPayload["type"] as? String, "BooleanAttributeInputCallback")
+    XCTAssertTrue(booleanPayload.keys.contains("value"))
+    XCTAssertEqual(stringPayload["type"] as? String, "StringAttributeInputCallback")
+    XCTAssertTrue(stringPayload.keys.contains("value"))
+    XCTAssertEqual(numberPayload["type"] as? String, "NumberAttributeInputCallback")
+    XCTAssertTrue(numberPayload.keys.contains("value"))
+    XCTAssertEqual(hiddenPayload["type"] as? String, "HiddenValueCallback")
+    XCTAssertTrue(hiddenPayload.keys.contains("id"))
+  }
+
+  func testMapCallbackPayloadIncludesChoiceAndConfirmationFields() {
+    let choice = ChoiceCallback()
+    let confirmation = ConfirmationCallback()
+
+    let choicePayload = JourneyNodeMapper.mapCallbackPayload(choice)
+    let confirmationPayload = JourneyNodeMapper.mapCallbackPayload(confirmation)
+
+    XCTAssertEqual(choicePayload["type"] as? String, "ChoiceCallback")
+    XCTAssertTrue(choicePayload.keys.contains("selectedIndex"))
+    XCTAssertEqual(confirmationPayload["type"] as? String, "ConfirmationCallback")
+    XCTAssertTrue(confirmationPayload.keys.contains("selectedIndex"))
+  }
+
+  func testMapCallbackPayloadIncludesOutputOnlyFamilies() {
+    let polling = PollingWaitCallback()
+    let suspended = SuspendedTextOutputCallback()
+    let metadata = MetadataCallback()
+
+    let pollingPayload = JourneyNodeMapper.mapCallbackPayload(polling)
+    let suspendedPayload = JourneyNodeMapper.mapCallbackPayload(suspended)
+    let metadataPayload = JourneyNodeMapper.mapCallbackPayload(metadata)
+
+    XCTAssertEqual(pollingPayload["type"] as? String, "PollingWaitCallback")
+    XCTAssertTrue(pollingPayload.keys.contains("waitTime"))
+    XCTAssertEqual(suspendedPayload["type"] as? String, "SuspendedTextOutputCallback")
+    XCTAssertTrue(suspendedPayload.keys.contains("message"))
+    XCTAssertEqual(metadataPayload["type"] as? String, "MetadataCallback")
+    XCTAssertTrue(metadataPayload.keys.contains("value"))
+  }
+
+  func testMapCallbackPayloadIncludesTermsFields() {
+    let terms = TermsAndConditionsCallback()
+    let termsPayload = JourneyNodeMapper.mapCallbackPayload(terms)
+
+    XCTAssertEqual(termsPayload["type"] as? String, "TermsAndConditionsCallback")
+    XCTAssertTrue(termsPayload.keys.contains("accepted"))
+    XCTAssertTrue(termsPayload.keys.contains("version"))
+  }
+
+  func testMapCoreCallbackFamiliesExposeExpectedTypeAliases() {
+    let callbacks: [(Any, String)] = [
+      (NameCallback(), "NameCallback"),
+      (PasswordCallback(), "PasswordCallback"),
+      (TextInputCallback(), "TextInputCallback"),
+      (StringAttributeInputCallback(), "StringAttributeInputCallback"),
+      (NumberAttributeInputCallback(), "NumberAttributeInputCallback"),
+      (BooleanAttributeInputCallback(), "BooleanAttributeInputCallback"),
+      (ChoiceCallback(), "ChoiceCallback"),
+      (ConfirmationCallback(), "ConfirmationCallback"),
+      (ConsentMappingCallback(), "ConsentMappingCallback"),
+      (HiddenValueCallback(), "HiddenValueCallback"),
+      (KbaCreateCallback(), "KbaCreateCallback"),
+      (MetadataCallback(), "MetadataCallback"),
+      (PollingWaitCallback(), "PollingWaitCallback"),
+      (SuspendedTextOutputCallback(), "SuspendedTextOutputCallback"),
+      (TermsAndConditionsCallback(), "TermsAndConditionsCallback"),
+      (TextOutputCallback(), "TextOutputCallback"),
+      (ValidatedPasswordCallback(), "ValidatedCreatePasswordCallback"),
+      (ValidatedUsernameCallback(), "ValidatedCreateUsernameCallback")
+    ]
+
+    callbacks.forEach { callback, expectedType in
+      let payload = JourneyNodeMapper.mapCallbackPayload(callback)
+      XCTAssertEqual(payload["type"] as? String, expectedType)
+    }
+  }
+
   private func callbackPayload(
     type: String,
     output: [[String: Any]],
@@ -138,7 +250,6 @@ final class JourneyNodeMapperTests: XCTestCase {
 
 private final class TestContinueNode: ContinueNode {
   override func asRequest() -> Request {
-    return Request()
+    return workflow.config.httpClient.request()
   }
 }
-
