@@ -22,8 +22,9 @@ import com.pingidentity.browser.BrowserCanceledException
 import com.reactnativepingidentity.core.error.ErrorType
 import com.reactnativepingidentity.core.error.GenericError
 import com.reactnativepingidentity.core.error.reject
-import java.net.URL
 import java.net.MalformedURLException
+import java.net.URI
+import java.net.URL
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +161,7 @@ object RNPingBrowserCommon {
 
     scope.launch {
       val launchUrl = try {
-        URL(url)
+        parseLaunchUrl(url)
       } catch (e: MalformedURLException) {
         promise.reject(
           GenericError(
@@ -169,17 +170,6 @@ object RNPingBrowserCommon {
             message = e.message
           ),
           e
-        )
-        return@launch
-      }
-
-      if (!isSupportedHttpUrl(launchUrl)) {
-        promise.reject(
-          GenericError(
-            type = ErrorType.ARGUMENT_ERROR,
-            error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
-            message = "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported."
-          )
         )
         return@launch
       }
@@ -254,11 +244,38 @@ object RNPingBrowserCommon {
   }
 
   /**
-   * Validates that a URL uses an HTTP(S) scheme.
+   * Parse and validate launch URL from an untrusted input string.
+   *
+   * Enforces:
+   * - absolute URL with host
+   * - `http` or `https` scheme only
+   * - no embedded userinfo (credentials)
    */
-  private fun isSupportedHttpUrl(url: URL): Boolean {
-    val scheme = url.protocol?.lowercase()
-    return scheme == "http" || scheme == "https"
+  private fun parseLaunchUrl(rawUrl: String): URL {
+    val uri = try {
+      URI(rawUrl.trim())
+    } catch (e: Exception) {
+      throw MalformedURLException(e.message)
+    }
+
+    val scheme = uri.scheme?.lowercase()
+    if (scheme != "http" && scheme != "https") {
+      throw MalformedURLException("Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.")
+    }
+
+    if (!uri.isAbsolute || uri.host.isNullOrBlank()) {
+      throw MalformedURLException("Invalid URL. Provide an absolute HTTP(S) URL with a host.")
+    }
+
+    if (!uri.userInfo.isNullOrBlank()) {
+      throw MalformedURLException("Unsupported URL format. User info is not allowed.")
+    }
+
+    return try {
+      uri.toURL()
+    } catch (e: Exception) {
+      throw MalformedURLException(e.message)
+    }
   }
 
   /**

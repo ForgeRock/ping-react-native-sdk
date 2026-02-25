@@ -108,7 +108,7 @@ export function createJourneyClient(
     'configureOidcStorage'
   );
   const oidcConfig = config.modules?.oidc;
-  const jsLogger = config.logger ?? oidcConfig?.logger ?? noopLogger;
+  const jsLogger = config.logger ?? noopLogger;
   const rawLoggerId =
     config.logger?.nativeHandle?.id ??
     oidcConfig?.nativeLogger?.id ??
@@ -140,16 +140,38 @@ export function createJourneyClient(
     loggerId,
   };
 
+  const serialize = (payload: Record<string, unknown>): string => (
+    JSON.stringify(payload, (_key, value) => (
+      typeof value === 'function' ? undefined : value
+    ))
+  );
+
   const logDebug = (message: string, payload?: Record<string, unknown>): void => {
     if (payload) {
-      jsLogger.debug(
-        `${message} ${JSON.stringify(payload, (_key, value) => (
-          typeof value === 'function' ? undefined : value
-        ))}`
-      );
+      jsLogger.debug(`${message} ${serialize(payload)}`);
       return;
     }
     jsLogger.debug(message);
+  };
+
+  const logInfo = (message: string, payload?: Record<string, unknown>): void => {
+    if (payload) {
+      jsLogger.info(`${message} ${serialize(payload)}`);
+      return;
+    }
+    jsLogger.info(message);
+  };
+
+  const logError = (
+    message: string,
+    error: unknown,
+    payload?: Record<string, unknown>
+  ): void => {
+    const errorPayload: Record<string, unknown> = {
+      ...(payload ?? {}),
+      cause: error instanceof Error ? error.message : String(error),
+    };
+    jsLogger.error(`${message} ${serialize(errorPayload)}`);
   };
 
   /**
@@ -161,19 +183,29 @@ export function createJourneyClient(
   const ensureConfigured = async (): Promise<string> => {
     if (!journeyId) {
       logDebug('Journey configure requested');
-      journeyId = await configureJourney(nativeConfig);
-      logDebug('Journey configure succeeded', { journeyId });
+      try {
+        journeyId = await configureJourney(nativeConfig);
+        logInfo('Journey configure succeeded', { journeyId });
+      } catch (error) {
+        logError('Journey configure failed', error);
+        throw error;
+      }
     }
     return journeyId;
   };
 
   return {
     async init(): Promise<string> {
-      return await ensureConfigured();
+      logDebug('Journey init requested');
+      const id = await ensureConfigured();
+      logInfo('Journey init succeeded', { journeyId: id });
+      return id;
     },
 
     async getId(): Promise<string> {
-      return await ensureConfigured();
+      const id = await ensureConfigured();
+      logDebug('Journey getId resolved', { journeyId: id });
+      return id;
     },
 
     async start(
@@ -190,13 +222,27 @@ export function createJourneyClient(
 
       const id = await ensureConfigured();
       logDebug('Journey start requested', { journeyName });
-      return await startJourney(id, journeyName, options);
+      try {
+        const node = await startJourney(id, journeyName, options);
+        logInfo('Journey start succeeded', { journeyId: id, journeyName });
+        return node;
+      } catch (error) {
+        logError('Journey start failed', error, { journeyId: id, journeyName });
+        throw error;
+      }
     },
 
     async next(input: JourneyNextInput = {}) {
       const id = await ensureConfigured();
       logDebug('Journey next requested');
-      return await nextNode(id, input);
+      try {
+        const node = await nextNode(id, input);
+        logInfo('Journey next succeeded', { journeyId: id });
+        return node;
+      } catch (error) {
+        logError('Journey next failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async resume(uri: string) {
@@ -210,45 +256,109 @@ export function createJourneyClient(
 
       const id = await ensureConfigured();
       logDebug('Journey resume requested');
-      return await resumeJourney(id, uri);
+      try {
+        const node = await resumeJourney(id, uri);
+        logInfo('Journey resume succeeded', { journeyId: id });
+        return node;
+      } catch (error) {
+        logError('Journey resume failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async user() {
       const id = await ensureConfigured();
-      return await getSession(id);
+      logDebug('Journey user requested', { journeyId: id });
+      try {
+        const session = await getSession(id);
+        logInfo('Journey user resolved', { journeyId: id, hasSession: Boolean(session) });
+        return session;
+      } catch (error) {
+        logError('Journey user failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async refresh() {
       const id = await ensureConfigured();
-      return await refreshSession(id);
+      logDebug('Journey refresh requested', { journeyId: id });
+      try {
+        const session = await refreshSession(id);
+        logInfo('Journey refresh succeeded', { journeyId: id, hasSession: Boolean(session) });
+        return session;
+      } catch (error) {
+        logError('Journey refresh failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async revoke() {
       const id = await ensureConfigured();
-      return await revokeSession(id);
+      logDebug('Journey revoke requested', { journeyId: id });
+      try {
+        const revoked = await revokeSession(id);
+        logInfo('Journey revoke succeeded', { journeyId: id, revoked });
+        return revoked;
+      } catch (error) {
+        logError('Journey revoke failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async userinfo() {
       const id = await ensureConfigured();
-      return await getUserInfo(id);
+      logDebug('Journey userinfo requested', { journeyId: id });
+      try {
+        const info = await getUserInfo(id);
+        logInfo('Journey userinfo resolved', { journeyId: id, hasUserInfo: Boolean(info) });
+        return info;
+      } catch (error) {
+        logError('Journey userinfo failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async ssoToken() {
       const id = await ensureConfigured();
-      return await getSSOToken(id);
+      logDebug('Journey ssoToken requested', { journeyId: id });
+      try {
+        const token = await getSSOToken(id);
+        logInfo('Journey ssoToken resolved', { journeyId: id, hasSsoToken: Boolean(token) });
+        return token;
+      } catch (error) {
+        logError('Journey ssoToken failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async logoutUser() {
       const id = await ensureConfigured();
-      return await logout(id);
+      logDebug('Journey logout requested', { journeyId: id });
+      try {
+        const loggedOut = await logout(id);
+        logInfo('Journey logout succeeded', { journeyId: id, loggedOut });
+        return loggedOut;
+      } catch (error) {
+        logError('Journey logout failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
     async dispose() {
       if (!journeyId) {
+        logDebug('Journey dispose skipped (no active journey id)');
         return;
       }
-      await disposeJourney(journeyId);
-      journeyId = null;
+      const id = journeyId;
+      logDebug('Journey dispose requested', { journeyId: id });
+      try {
+        await disposeJourney(id);
+        logInfo('Journey dispose succeeded', { journeyId: id });
+        journeyId = null;
+      } catch (error) {
+        logError('Journey dispose failed', error, { journeyId: id });
+        throw error;
+      }
     },
   };
 }

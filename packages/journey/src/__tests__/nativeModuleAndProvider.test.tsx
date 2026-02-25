@@ -117,7 +117,7 @@ describe('useJourney provider and native module resolution', () => {
       }));
       const nativeModule = require('../NativeRNPingJourney');
       expect(() => nativeModule.getNativeModule()).toThrow(
-        'Native legacy Journey module not found at runtime.'
+        'Native RNPingJourneyClassic module not found.'
       );
     });
   });

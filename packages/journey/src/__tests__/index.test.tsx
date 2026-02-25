@@ -121,7 +121,7 @@ describe('Journey JS API', () => {
     );
   });
 
-  it('uses modules.oidc.logger native handle when no explicit native logger is provided', async () => {
+  it('does not use modules.oidc.logger for journey logger id resolution', async () => {
     const native = createNativeMock();
     const { createJourneyClient } = await loadModule(native);
 
@@ -152,7 +152,7 @@ describe('Journey JS API', () => {
 
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
-        loggerId: 'oidc-js-logger-id',
+        loggerId: undefined,
       })
     );
   });

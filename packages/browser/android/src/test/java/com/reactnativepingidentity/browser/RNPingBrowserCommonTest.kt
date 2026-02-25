@@ -272,7 +272,7 @@ class RNPingBrowserCommonTest {
     mainDispatcher.scheduler.advanceUntilIdle()
 
     assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.contains("no protocol") == true)
+    assertTrue(promise.rejectMessage?.contains("Illegal character") == true)
   }
 
   @Test

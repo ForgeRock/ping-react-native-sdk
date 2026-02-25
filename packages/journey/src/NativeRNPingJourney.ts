@@ -227,57 +227,38 @@ export interface Spec extends TurboModule {
   dispose(journeyId: string): Promise<void>;
 }
 
-const turboModuleProxy = (global as typeof globalThis & {
-  __turboModuleProxy?: unknown;
-}).__turboModuleProxy;
-
-const isNewArchEnabled =
-  typeof turboModuleProxy !== 'undefined' && turboModuleProxy != null;
-
 /**
  * Resolves the native `<Spec>` implementation, preferring TurboModules when available.
  *
- * Falls back to the legacy `NativeModules` entry if the TurboModule is not registered or
- * New Architecture has been disabled.
+ * Falls back to the legacy `NativeModules` entry when Turbo is unavailable.
  *
  * @returns Native module implementation for Journey APIs.
  * @throws Error when no matching native module can be found.
  */
 export function getNativeModule(): Spec {
-  const classic =
-    (NativeModules.RNPingJourneyClassic as Spec | undefined) ??
-    (NativeModules.RNPingJourney as Spec | undefined);
+  const isNewArchEnabled =
+    typeof global.__turboModuleProxy !== 'undefined' &&
+    global.__turboModuleProxy != null;
 
   if (isNewArchEnabled) {
     try {
       return TurboModuleRegistry.getEnforcing<Spec>('RNPingJourney');
-    } catch (error) {
-      if (classic) {
-        console.warn(
-          'Journey TurboModule not registered; falling back to classic implementation.',
-          String(error)
-        );
-        return classic;
-      }
-
-      const available = Object.keys(NativeModules).slice(0, 10);
-      const message =
-        '[@ping-identity/rn-journey] Turbo module RNPingJourney not found while New Architecture is enabled.\n' +
-        'Original error: ' +
-        String(error) +
-        '\nAvailable NativeModules: ' +
-        JSON.stringify(available);
-      throw new Error(message);
+    } catch {
+      // Fall back to classic if TurboModule isn't registered at runtime.
     }
   }
 
+  const classic =
+    (NativeModules.RNPingJourneyClassic as Spec | undefined) ??
+    (NativeModules.RNPingJourney as Spec | undefined);
+
   if (!classic) {
-    const available = Object.keys(NativeModules).slice(0, 10);
-    const message =
-      '[@ping-identity/rn-journey] Native legacy Journey module not found at runtime.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(available);
-    throw new Error(message);
+    const available = Object.keys(NativeModules);
+    throw new Error(
+      '[@ping-identity/rn-journey] Native RNPingJourneyClassic module not found.\n' +
+        'Available NativeModules: ' +
+        JSON.stringify(available)
+    );
   }
 
   return classic;
