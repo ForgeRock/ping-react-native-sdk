@@ -294,6 +294,70 @@ class RNPingBrowserCommonTest {
   }
 
   @Test
+  fun openRejectsWhenUrlRelative() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("/relative/path", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals(
+      "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.",
+      promise.rejectMessage
+    )
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openRejectsWhenUrlHostMissing() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("https:///missing-host", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("Invalid URL. Provide an absolute HTTP(S) URL with a host.", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openRejectsWhenUrlContainsUserInfo() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("https://user:pass@example.com/path", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("Unsupported URL format. User info is not allowed.", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openAllowsHttpUrl() = runTest {
+    fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
+
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("http://example.com/path?x=1", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("success", promise.resolved?.getString("type"))
+    assertEquals(1, fakeLauncher.launchCount)
+  }
+
+  @Test
   fun openDelegatesToBrowserLauncher() = runTest {
     fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
 
