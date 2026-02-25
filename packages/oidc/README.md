@@ -241,7 +241,7 @@ Common hook state/actions:
 
 - `state.isAuthenticated` indicates whether a user session is currently available.
 - `state.user` is the resolved user session object (or `null`).
-- `state.loading` indicates an in-flight OIDC operation.
+- `state.isLoading` indicates an in-flight OIDC operation.
 - `state.error` is the latest operation error (if any).
 - `actions.authorize()`, `actions.logout()`, `actions.refresh()`, `actions.revoke()`, `actions.userinfo()`, `actions.clear()`.
 
