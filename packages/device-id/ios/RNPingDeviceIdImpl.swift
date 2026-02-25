@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import Foundation
-@preconcurrency import React
+import React
 import PingDeviceId
 
 /// Implementation of the native device ID bridge for React Native.
