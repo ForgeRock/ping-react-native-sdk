@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Publish Docs
+on:
+    push:
+        branches:
+            - main
+    workflow_dispatch:
+
+# Prevent multiple deployments from running simultaneously.
+# Cancel any in-progress deployments when new commits are pushed.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+# Required permissions for GitHub Pages deployment.
+permissions:
+    contents: read      # Access repository contents
+    pages: write        # Deploy to GitHub Pages
+    id-token: write     # Required for OIDC authentication to Pages
+
+jobs:
+    publish-docs:
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+
+        steps:
+            # Checkout the repository with minimal history for faster cloning.
+            - name: Checkout
+              uses: actions/checkout@v6
+              with:
+                fetch-depth: 1
+
+            # Generate TypeDoc documentation for all packages using the composite action.
+            - name: Build docs
+              uses: ./.github/actions/docs-build
+
+            # Package the generated documentation for GitHub Pages deployment.
+            - name: Upload Pages artifact
+              uses: actions/upload-pages-artifact@v4
+              with:
+                path: docs
+
+            # Deploy the documentation to GitHub Pages.
+            # The deployment URL is captured in the output for reference.
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

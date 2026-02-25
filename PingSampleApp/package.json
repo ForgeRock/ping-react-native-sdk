@@ -5,12 +5,14 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
+    "lint": "eslint --no-config-lookup --config ../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\" \"ui/**/*.{js,jsx,ts,tsx}\" \"__tests__/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
     "start": "react-native start",
     "test": "jest",
     "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && cd ios && bundle install && bundle exec pod install --repo-update && cd ..",
     "codegen": "npx react-native codegen",
-    "reset-cache": "react-native start --reset-cache"
+    "reset-cache": "react-native start --reset-cache",
+    "prettier": "prettier --check App.tsx index.js babel.config.js jest.config.js metro.config.js package.json app.json tsconfig.json README.md \"__tests__/**/*.{js,jsx,ts,tsx}\" \"src/**/*.{js,jsx,ts,tsx,json}\" \"ui/**/*.{js,jsx,ts,tsx,json}\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@ping-identity/rn-browser": "workspace:*",

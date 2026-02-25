@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Setup 
+description: Setup node and install dependencies
+
+runs:
+  using: 'composite'
+  steps:
+    # Setup Node.js using the version specified in package.json.
+    # Enables Yarn caching to speed up dependency installation.
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: package.json
+        cache: yarn
+        cache-dependency-path: yarn.lock
+
+    # Install all dependencies using Yarn with immutable lockfile enforcement.
+    # Ensures consistent dependency versions across all environments.
+    - name: Install dependencies
+      run: yarn install --immutable
+      shell: bash 
+    

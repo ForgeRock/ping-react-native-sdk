@@ -18,7 +18,10 @@
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
     "clean": "rimraf lib",
-    "test": "jest"
+    "test": "jest --config jest.config.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
     "@ping-identity/rn-core": "^0.1.0",
