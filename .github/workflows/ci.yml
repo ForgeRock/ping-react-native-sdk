@@ -32,7 +32,7 @@ jobs:
         needs: lint-and-typecheck
         uses: ./.github/workflows/build-packages.yml
     
-    # Execute Jest unit tests across all packages.
+    # Execute Jest unit tests across affected packages.
     js-unit-tests:
         needs: build-packages-check
         uses: ./.github/workflows/js-unit-tests.yml

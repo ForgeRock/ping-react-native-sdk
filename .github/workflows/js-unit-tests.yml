@@ -26,6 +26,6 @@ jobs:
             - name: Setup
               uses: ./.github/actions/setup-proj
 
-            # Execute Jest unit tests across all packages in the monorepo.
+            # Execute Jest unit tests across affected packages in the monorepo.
             - name: Run unit tests
-              run: yarn test
+              run: yarn test --affected

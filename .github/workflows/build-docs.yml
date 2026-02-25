@@ -8,12 +8,6 @@ name: Generate Docs
 on:
     workflow_call:
 
-# Prevent multiple builds for the same PR/branch.
-# Cancel any in-progress runs when new commits are pushed.
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
-
 jobs:
     generate-docs:
         runs-on: ubuntu-latest
