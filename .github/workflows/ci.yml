@@ -27,14 +27,18 @@ jobs:
     lint-and-typecheck:
         uses: ./.github/workflows/lint-and-typecheck.yml
     
-    # Execute Jest unit tests across all packages.
-    js-unit-tests:
-        uses: ./.github/workflows/js-unit-tests.yml
-
     # Build affected packages to verify compilation succeeds.
     build-packages-check:
+        needs: lint-and-typecheck
         uses: ./.github/workflows/build-packages.yml
+    
+    # Execute Jest unit tests across all packages.
+    js-unit-tests:
+        needs: build-packages-check
+        uses: ./.github/workflows/js-unit-tests.yml
+
 
     # Build TypeDoc documentation for affected packages and upload as artifact.
     build-docs-check:
+        needs: js-unit-tests
         uses: ./.github/workflows/build-docs.yml
