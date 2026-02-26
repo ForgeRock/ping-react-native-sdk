@@ -14,8 +14,8 @@ import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.oidc.module.Oidc
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
-import com.pingidentity.reactnative.rnstorage.StorageConfig
-import com.pingidentity.reactnative.rnstorage.StorageConfigRegistry
+import com.pingidentity.rnstorage.StorageConfig
+import com.pingidentity.rnstorage.StorageConfigRegistry
 
 /**
  * Builds native OIDC client instances from JS payloads.

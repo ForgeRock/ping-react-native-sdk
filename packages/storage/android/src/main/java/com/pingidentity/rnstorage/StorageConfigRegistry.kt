@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingidentity.reactnative.rnstorage
+package com.pingidentity.rnstorage
 
 import com.pingidentity.reactnative.rncore.registry.Registry
 

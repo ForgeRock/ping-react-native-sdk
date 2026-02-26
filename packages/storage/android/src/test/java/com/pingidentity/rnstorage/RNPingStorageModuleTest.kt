@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingidentity.reactnative.rnstorage
+package com.pingidentity.rnstorage
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

@@ -24,7 +24,7 @@ import com.pingidentity.reactnative.rncore.error.mapThrowableToGenericError
 import com.pingidentity.reactnative.rncore.error.reject
 import com.pingidentity.reactnative.rncore.registry.NativeHandle
 import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
-import com.pingidentity.reactnative.rnstorage.StorageConfigRegistry
+import com.pingidentity.rnstorage.StorageConfigRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
