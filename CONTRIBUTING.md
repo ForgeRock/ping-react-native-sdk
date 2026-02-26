@@ -11,6 +11,8 @@ Thanks for contributing to the React Native Ping SDK monorepo.
 
 We appreciate feedback and contributions to this repository.
 
+For team standards and best practices, please refer to our [SDK Standards of Practice](https://github.com/ForgeRock/sdk-standards-of-practice/tree/main).
+
 ## Development Workflow
 
 This project is a monorepo managed using [Yarn workspaces](https://yarnpkg.com/features/workspaces). It contains:
