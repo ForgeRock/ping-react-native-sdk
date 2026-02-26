@@ -33,7 +33,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.pingidentity.reactnative.rncore"
+  namespace "com.pingidentity.rncore"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 

@@ -8,9 +8,9 @@
 package com.pingidentity.rnoidc
 
 import com.facebook.react.bridge.ReadableMap
-import com.pingidentity.reactnative.rncore.utils.readStringMap
-import com.pingidentity.reactnative.rncore.utils.requireString
-import com.pingidentity.reactnative.rncore.utils.requireStringArray
+import com.pingidentity.rncore.utils.readStringMap
+import com.pingidentity.rncore.utils.requireString
+import com.pingidentity.rncore.utils.requireStringArray
 
 /**
  * Parsed configuration payload supplied by the JS bridge.

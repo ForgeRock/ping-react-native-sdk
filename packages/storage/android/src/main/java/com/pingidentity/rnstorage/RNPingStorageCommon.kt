@@ -10,8 +10,8 @@ import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
-import com.pingidentity.reactnative.rncore.CoreRuntime
-import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rnlogger.RNPingLoggerCommon
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.

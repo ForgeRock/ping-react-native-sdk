@@ -7,7 +7,7 @@
 
 package com.pingidentity.rnstorage
 
-import com.pingidentity.reactnative.rncore.registry.NativeHandle
+import com.pingidentity.rncore.registry.NativeHandle
 
 /**
  * Configuration data class for storage settings.

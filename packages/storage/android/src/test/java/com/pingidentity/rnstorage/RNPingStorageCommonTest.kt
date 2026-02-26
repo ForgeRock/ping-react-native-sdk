@@ -10,7 +10,7 @@ package com.pingidentity.rnstorage
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
-import com.pingidentity.reactnative.rnlogger.RNPingLoggerCommon
+import com.pingidentity.rnlogger.RNPingLoggerCommon
 import io.mockk.*
 import org.junit.After
 import org.junit.Assert.*
@@ -63,8 +63,8 @@ class RNPingStorageCommonTest {
         unmockkObject(RNPingLoggerCommon)
         unmockkStatic(Arguments::class)
         clearAllMocks()
-        StorageConfigRegistry(com.pingidentity.reactnative.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
-        StorageConfigRegistry(com.pingidentity.reactnative.rncore.CoreRuntime.oidcStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.oidcStorageConfigRegistry).clear()
     }
 
     @Test

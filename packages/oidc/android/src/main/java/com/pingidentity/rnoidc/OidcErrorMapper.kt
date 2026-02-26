@@ -10,9 +10,9 @@ package com.pingidentity.rnoidc
 import com.pingidentity.exception.ApiException
 import com.pingidentity.oidc.OidcError
 import com.pingidentity.oidc.exception.AuthorizeException
-import com.pingidentity.reactnative.rncore.error.ErrorType
-import com.pingidentity.reactnative.rncore.error.GenericError
-import com.pingidentity.reactnative.rncore.error.mapThrowableToGenericError
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.error.GenericError
+import com.pingidentity.rncore.error.mapThrowableToGenericError
 
 /**
  * Maps native OIDC errors into the shared GenericError contract.

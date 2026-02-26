@@ -9,8 +9,8 @@ package com.pingidentity.rnoidc
 
 import com.pingidentity.oidc.Token
 import com.facebook.react.bridge.ReadableMap
-import com.pingidentity.reactnative.rncore.utils.buildTokenMap
-import com.pingidentity.reactnative.rncore.utils.JsonBridgeMapper
+import com.pingidentity.rncore.utils.buildTokenMap
+import com.pingidentity.rncore.utils.JsonBridgeMapper
 import kotlinx.serialization.json.JsonObject
 
 /**

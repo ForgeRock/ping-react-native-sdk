@@ -58,7 +58,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.pingidentity.reactnative.rnbrowser"
+      "javaPackageName": "com.pingidentity.rnbrowser"
     }
   },
   "create-react-native-library": {
