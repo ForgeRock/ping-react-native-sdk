@@ -29,7 +29,28 @@ yarn add @react-native-pingidentity/logger
 
 ## How to Use the SDK
 
-### Create a Journey client
+### Step 1: Create a minimal client
+
+Use this baseline configuration first.
+
+```ts
+import { createJourneyClient } from '@ping-identity/rn-journey';
+
+const client = createJourneyClient({
+  serverUrl: 'https://example.com/am',
+  realm: 'alpha',
+  cookie: 'iPlanetDirectoryPro',
+  timeout: 30000
+});
+```
+
+### Step 2: Add OIDC module (with optional storage)
+
+Add `modules.oidc` when your Journey flow needs OIDC token/session operations (for example
+`user()`, `refresh()`, `userinfo()`, and `revoke()`).
+
+Storage inside `modules.oidc.storage` and `modules.session.storage` is optional. Configure it only
+if you need native-backed persistence; otherwise omit storage values.
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
@@ -87,22 +108,21 @@ const client = createJourneyClient({
 });
 ```
 
-Pass module integrations through `config.modules`. The JS API is `createJourneyClient(config)`.
-Storage handles in `modules.session.storage` and `modules.oidc.storage` must come from
-`configureSessionStorage(...)` / `configureOidcStorage(...)`.
+Pass optional integrations through `config.modules`. The JS API is `createJourneyClient(config)`.
+When provided, storage handles in `modules.session.storage` and `modules.oidc.storage` must come
+from `configureSessionStorage(...)` / `configureOidcStorage(...)`.
 
-### Configure logging (optional)
+### Step 3: Add logging integration (optional)
 
-If you install the logger package, pass either a JS logger instance or a native logger handle.
-Both `logger` and `nativeLogger` values must be created via `@react-native-pingidentity/logger`.
+If you install the logger package, pass a JS logger instance created via
+`@react-native-pingidentity/logger`.
 If the logger package is not installed/configured, do not pass logger values in Journey config.
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
-import { logger, configureLogger } from '@react-native-pingidentity/logger';
+import { logger } from '@react-native-pingidentity/logger';
 
 const jsLogger = logger({ level: 'debug' });
-const nativeLogger = configureLogger({ level: 'warn' });
 
 const client = createJourneyClient({
   serverUrl: 'https://example.com/am',
@@ -113,13 +133,10 @@ const client = createJourneyClient({
       discoveryEndpoint: 'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid'],
-      nativeLogger,
     },
   },
 });
 ```
-
-> TODO(iOS SDK parity): `modules.oidc.signOutRedirectUri` is currently ignored on iOS.
 
 ### Drive the Journey imperatively
 
@@ -142,6 +159,38 @@ await client.dispose();
 ```
 
 `useJourney` auto-advances `PollingWaitCallback` nodes when no manual or blocking integration callbacks are present.
+
+Start options are supported when initiating a journey:
+
+```ts
+const node = await client.start('Login', {
+  forceAuth: true,
+  noSession: true,
+});
+```
+
+Handle node states explicitly in your UI flow:
+
+```ts
+const node = await client.start('Login');
+
+switch (node.type) {
+  case 'ContinueNode':
+    await client.next({
+      callbacks: [{ type: 'NameCallback', value: 'demo-user' }],
+    });
+    break;
+  case 'ErrorNode':
+    console.log(node.message);
+    break;
+  case 'FailureNode':
+    console.log(node.cause ?? node.message);
+    break;
+  case 'SuccessNode':
+    console.log('Authenticated');
+    break;
+}
+```
 
 ### Post Authentication Operations
 
@@ -230,61 +279,28 @@ if (form.canSubmit) {
 
 The following AM core callbacks are supported on Android and iOS:
 
-| Callback Type | Input Handling |
-| --- | --- |
-| `BooleanAttributeInputCallback` | Manual input |
-| `ChoiceCallback` | Manual input |
-| `ConfirmationCallback` | Manual input |
-| `ConsentMappingCallback` | Manual input |
-| `HiddenValueCallback` | Manual input |
-| `KbaCreateCallback` | Manual input |
-| `MetadataCallback` | Output-only |
-| `NameCallback` | Manual input |
-| `NumberAttributeInputCallback` | Manual input |
-| `PasswordCallback` | Manual input |
-| `PollingWaitCallback` | Output-only |
-| `StringAttributeInputCallback` | Manual input |
-| `SuspendedTextOutputCallback` | Output-only |
-| `TermsAndConditionsCallback` | Manual input |
-| `TextInputCallback` | Manual input |
-| `TextOutputCallback` | Output-only |
-| `ValidatedCreatePasswordCallback` | Manual input |
-| `ValidatedCreateUsernameCallback` | Manual input |
+| Callback Type | Description | Input Handling |
+| --- | --- | --- |
+| `BooleanAttributeInputCallback` | Collects true or false input. | Manual input |
+| `ChoiceCallback` | Collects a single selection from available choices. | Manual input |
+| `ConfirmationCallback` | Collects one selected option from a list. | Manual input |
+| `ConsentMappingCallback` | Prompts the user to consent to sharing profile data. | Manual input |
+| `HiddenValueCallback` | Carries non-visual form values. | Manual input |
+| `KbaCreateCallback` | Collects knowledge-based question and answer values. | Manual input |
+| `MetadataCallback` | Injects key-value metadata into the flow. | Output-only |
+| `NameCallback` | Collects a username. | Manual input |
+| `NumberAttributeInputCallback` | Collects a numeric value. | Manual input |
+| `PasswordCallback` | Collects a password or OTP value. | Manual input |
+| `PollingWaitCallback` | Instructs the client to wait and resubmit later. | Output-only |
+| `StringAttributeInputCallback` | Collects string attribute values. | Manual input |
+| `SuspendedTextOutputCallback` | Pauses flow and resumes through external callback/deep link. | Output-only |
+| `TermsAndConditionsCallback` | Collects acceptance of configured terms and conditions. | Manual input |
+| `TextInputCallback` | Collects arbitrary text input. | Manual input |
+| `TextOutputCallback` | Provides display-only message content. | Output-only |
+| `ValidatedCreatePasswordCallback` | Collects password input with policy validation. | Manual input |
+| `ValidatedCreateUsernameCallback` | Collects username input with policy validation. | Manual input |
 
 Integration-dependent families (for example, device profile, FIDO/FIDO2, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission.
-
-## Android redirect configuration
-
-If Journey uses OIDC redirects, configure the app redirect scheme. For a redirect URI of
-`com.example.app://callback`, add the manifest placeholder:
-
-```gradle
-android {
-  defaultConfig {
-    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
-  }
-}
-```
-
-Add the redirect intent filter to `CustomTabActivity`:
-
-```xml
-<activity
-    android:name="com.pingidentity.browser.CustomTabActivity"
-    android:exported="true"
-    android:launchMode="singleTop">
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-
-        <data
-            android:scheme="${appRedirectUriScheme}"
-            android:host="callback" />
-    </intent-filter>
-</activity>
-```
 
 ## Error handling
 
