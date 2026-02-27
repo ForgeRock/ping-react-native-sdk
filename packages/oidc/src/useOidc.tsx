@@ -17,6 +17,7 @@ import type {
   OidcAuthorizeOptions,
   OidcAuthorizeResult,
   OidcError,
+  OidcErrorCode,
   OidcUser,
   OidcWebClient,
 } from './types';
@@ -139,9 +140,11 @@ type OidcContextValue = {
 
 const OidcContext = createContext<OidcContextValue | null>(null);
 
+const OIDC_STATE_ERROR_CODE: OidcErrorCode = 'OIDC_STATE_ERROR';
+
 const missingOidcClientError: OidcError = {
   type: 'state_error',
-  error: 'OIDC_STATE_ERROR',
+  error: OIDC_STATE_ERROR_CODE,
   message: 'No OIDC client found. Use useOidc(client) or wrap with <OidcProvider client={...}>.',
 };
 

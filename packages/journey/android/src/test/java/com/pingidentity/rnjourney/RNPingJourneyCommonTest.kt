@@ -347,9 +347,9 @@ class RNPingJourneyCommonTest {
 
   private fun registerWorkflow(workflow: Workflow): String {
     val clazz = Class.forName("com.pingidentity.rnjourney.RNPingJourneyCommon\$JourneyHandle")
-    val ctor = clazz.getDeclaredConstructor(Workflow::class.java)
+    val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java)
     ctor.isAccessible = true
-    val handle = ctor.newInstance(workflow) as NativeHandle
+    val handle = ctor.newInstance(workflow, null) as NativeHandle
     return CoreRuntime.journeyRegistry.register(handle)
   }
 }

@@ -16,6 +16,7 @@ import Foundation
 enum OidcErrorCodes: String {
   case authorizeError = "OIDC_AUTHORIZE_ERROR"
   case hasUserError = "OIDC_HAS_USER_ERROR"
+  case stateError = "OIDC_STATE_ERROR"
   case tokenError = "OIDC_TOKEN_ERROR"
   case refreshError = "OIDC_REFRESH_ERROR"
   case userinfoError = "OIDC_USERINFO_ERROR"

@@ -157,6 +157,7 @@ export type OidcError = GenericError;
 export type OidcErrorCode =
   | 'OIDC_AUTHORIZE_ERROR'
   | 'OIDC_HAS_USER_ERROR'
+  | 'OIDC_STATE_ERROR'
   | 'OIDC_TOKEN_ERROR'
   | 'OIDC_REFRESH_ERROR'
   | 'OIDC_USERINFO_ERROR'

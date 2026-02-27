@@ -74,7 +74,8 @@ internal object RNPingJourneyCommon {
    * @property workflow Native workflow instance.
    */
   private data class JourneyHandle(
-    val workflow: Workflow
+    val workflow: Workflow,
+    val loggerId: String?
   ) : NativeHandle
 
   /**
@@ -172,6 +173,17 @@ internal object RNPingJourneyCommon {
   }
 
   /**
+   * Resolves the logger configured for a Journey instance.
+   *
+   * @param journeyId Native journey instance id.
+   * @return Native logger instance, or null when unset/unresolvable.
+   */
+  private fun resolveJourneyLogger(journeyId: String): Logger? {
+    val loggerId = (journeyRegistry.resolve(journeyId) as? JourneyHandle)?.loggerId
+    return resolveLoggerFromCore(loggerId)
+  }
+
+  /**
    * Resolve a native logger from the shared Core logger registry.
    *
    * @param id Logger handle identifier from JS.
@@ -209,7 +221,7 @@ internal object RNPingJourneyCommon {
 
     try {
       val workflow = clientFactory.build(payload)
-      val journeyId = journeyRegistry.register(JourneyHandle(workflow))
+      val journeyId = journeyRegistry.register(JourneyHandle(workflow, payload.loggerId))
       promise.resolve(journeyId)
     } catch (error: Exception) {
       promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.INIT), error)
@@ -256,7 +268,7 @@ internal object RNPingJourneyCommon {
           this.noSession = noSession
         }
         setNodeState(journeyId, node)
-        promise.resolve(JourneyNodeMapper.mapNode(node))
+        promise.resolve(JourneyNodeMapper.mapNode(node, resolveJourneyLogger(journeyId)))
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.START), error)
       }
@@ -323,7 +335,7 @@ internal object RNPingJourneyCommon {
       try {
         val nextNode = currentNode.next()
         setNodeState(journeyId, nextNode)
-        promise.resolve(JourneyNodeMapper.mapNode(nextNode))
+        promise.resolve(JourneyNodeMapper.mapNode(nextNode, resolveJourneyLogger(journeyId)))
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.NEXT), error)
       }
@@ -363,7 +375,7 @@ internal object RNPingJourneyCommon {
       try {
         val resumedNode = workflow.resume(Uri.parse(uri))
         setNodeState(journeyId, resumedNode)
-        promise.resolve(JourneyNodeMapper.mapNode(resumedNode))
+        promise.resolve(JourneyNodeMapper.mapNode(resumedNode, resolveJourneyLogger(journeyId)))
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.RESUME), error)
       }

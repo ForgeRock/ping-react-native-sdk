@@ -302,3 +302,16 @@ try {
   console.log(oidcError.type, oidcError.error, oidcError.message);
 }
 ```
+
+Stable OIDC error codes:
+
+- `OIDC_AUTHORIZE_ERROR`
+- `OIDC_HAS_USER_ERROR`
+- `OIDC_STATE_ERROR`
+- `OIDC_TOKEN_ERROR`
+- `OIDC_REFRESH_ERROR`
+- `OIDC_USERINFO_ERROR`
+- `OIDC_REVOKE_ERROR`
+- `OIDC_LOGOUT_ERROR`
+
+`OIDC_STATE_ERROR` is used by JS hook/provider guardrails (for example, missing OIDC client context).

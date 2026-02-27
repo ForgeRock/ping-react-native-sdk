@@ -129,7 +129,7 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
         usedTestJourneys={usedTestJourneySet}
         onPressRecentJourney={handlePressRecentJourney}
         onPressTestJourney={handlePressTestJourney}
-        suggestionLayout="wrap"
+        suggestionLayout="horizontal_rows"
         loading={false}
         canStart
         onStart={() => {

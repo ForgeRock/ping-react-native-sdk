@@ -30,6 +30,7 @@ import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
 import com.pingidentity.journey.plugin.callbacks
+import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.FailureNode
@@ -41,6 +42,16 @@ import com.reactnativepingidentity.core.utils.JsonBridgeMapper
  * Maps native Journey nodes/callbacks to JS bridge payloads.
  */
 internal object JourneyNodeMapper {
+    private const val TAG = "JourneyNodeMapper"
+
+    /**
+     * Best-effort warning log through the configured Ping logger.
+     */
+    private fun logWarning(logger: Logger?, message: String, error: Throwable) {
+        runCatching {
+            logger?.w("[$TAG] $message", error)
+        }
+    }
 
     /**
      * Convert a native node into bridge-friendly map payload.
@@ -48,8 +59,8 @@ internal object JourneyNodeMapper {
      * @param node Native Journey node.
      * @return Serialized node payload.
      */
-    fun mapNode(node: Node): WritableMap {
-        return Arguments.makeNativeMap(mapNodePayload(node))
+    fun mapNode(node: Node, logger: Logger? = null): WritableMap {
+        return Arguments.makeNativeMap(mapNodePayload(node, logger))
     }
 
     /**
@@ -58,8 +69,8 @@ internal object JourneyNodeMapper {
      * @param callback Native callback instance.
      * @return Serialized callback payload.
      */
-    fun mapCallback(callback: Any): WritableMap {
-        return Arguments.makeNativeMap(mapCallbackPayload(callback))
+    fun mapCallback(callback: Any, logger: Logger? = null): WritableMap {
+        return Arguments.makeNativeMap(mapCallbackPayload(callback, logger))
     }
 
     /**
@@ -68,14 +79,14 @@ internal object JourneyNodeMapper {
      * @param node Native Journey node.
      * @return Serializable node payload map.
      */
-    fun mapNodePayload(node: Node): Map<String, Any?> {
+    fun mapNodePayload(node: Node, logger: Logger? = null): Map<String, Any?> {
         val payload = linkedMapOf<String, Any?>()
 
         when (node) {
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
-                payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it) }
+                payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it, logger) }
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"
@@ -119,13 +130,17 @@ internal object JourneyNodeMapper {
      * @param callback Native callback instance.
      * @return Serializable callback payload map.
      */
-    fun mapCallbackPayload(callback: Any): Map<String, Any?> {
+    fun mapCallbackPayload(callback: Any, logger: Logger? = null): Map<String, Any?> {
         val payload = linkedMapOf<String, Any?>("type" to callbackType(callback))
         if (callback is AbstractCallback) {
             try {
                 payload["raw"] = JsonBridgeMapper.encodeJsonElement(callback.json)
-            } catch (_: Throwable) {
-                // Callback may be test-constructed without init(json), keep mapping resilient.
+            } catch (error: UninitializedPropertyAccessException) {
+                // Callback may be test-constructed without init(json); keep mapping resilient.
+                logWarning(logger, "Skipping callback.raw for ${callbackType(callback)}: json not initialized", error)
+            } catch (error: IllegalStateException) {
+                // Some SDK callback accessors may throw when internal state is incomplete.
+                logWarning(logger, "Skipping callback.raw for ${callbackType(callback)}: ${error.message}", error)
             }
         }
         if (callback is AbstractValidatedCallback) {

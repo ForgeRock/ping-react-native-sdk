@@ -153,6 +153,22 @@ object RNPingBrowserCommon {
    */
   @JvmStatic
   fun open(url: String, options: ReadableMap, promise: Promise) {
+    val callbackUrlScheme = if (options.hasKey("callbackUrlScheme")) {
+      options.getString("callbackUrlScheme")
+    } else {
+      null
+    }
+    if (callbackUrlScheme.isNullOrBlank()) {
+      promise.reject(
+        GenericError(
+          type = ErrorType.ARGUMENT_ERROR,
+          error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+          message = "callbackUrlScheme is required"
+        )
+      )
+      return
+    }
+
     val redirectUri = if (options.hasKey("redirectUri")) {
       options.getString("redirectUri")
     } else {

@@ -42,8 +42,8 @@ final class JourneyClientFactory {
   func build(_ payload: JourneyClientPayload) async throws -> Journey {
     let resolvedOidc = try await resolveOidcConfig(payload)
     let resolvedLogger = await resolveLoggerFromCore(payload.loggerId)
-    let sessionStorage = await Self.buildSessionStorageDelegate(payload.sessionStorageId)
-    let oidcStorage = await Self.buildOidcStorageDelegate(payload.oidcStorageId)
+    let sessionStorage = try await Self.buildSessionStorageDelegate(payload.sessionStorageId)
+    let oidcStorage = try await Self.buildOidcStorageDelegate(payload.oidcStorageId)
 
     return Journey.createJourney { config in
       if let resolvedLogger {
@@ -263,7 +263,8 @@ final class JourneyClientFactory {
   ///
   /// - Parameter storageId: OIDC storage identifier from JS.
   /// - Returns: Storage delegate, or `nil` when no storage id is provided.
-  private static func buildOidcStorageDelegate(_ storageId: String?) async -> StorageDelegate<Token>? {
+  /// - Throws: `JourneyBridgeError.argument` when a provided id cannot be resolved.
+  private static func buildOidcStorageDelegate(_ storageId: String?) async throws -> StorageDelegate<Token>? {
     guard let storageId, !storageId.isEmpty else {
       return nil
     }
@@ -271,7 +272,7 @@ final class JourneyClientFactory {
       storageId: storageId,
       registry: CoreRuntime.oidcStorageConfigRegistry
     ) else {
-      return nil
+      throw JourneyBridgeError.argument("No OIDC storage config registered for id=\(storageId)")
     }
     let account = config.account ?? "ACCESS_TOKEN_STORAGE"
     let encryptorEnabled = config.encryptor ?? true
@@ -292,7 +293,8 @@ final class JourneyClientFactory {
   ///
   /// - Parameter storageId: Session storage identifier from JS.
   /// - Returns: Session storage delegate, or `nil` when no storage id is provided.
-  private static func buildSessionStorageDelegate(_ storageId: String?) async -> (any Storage<SSOTokenImpl>)? {
+  /// - Throws: `JourneyBridgeError.argument` when a provided id cannot be resolved.
+  private static func buildSessionStorageDelegate(_ storageId: String?) async throws -> (any Storage<SSOTokenImpl>)? {
     guard let storageId, !storageId.isEmpty else {
       return nil
     }
@@ -300,7 +302,7 @@ final class JourneyClientFactory {
       storageId: storageId,
       registry: CoreRuntime.sessionStorageConfigRegistry
     ) else {
-      return nil
+      throw JourneyBridgeError.argument("No session storage config registered for id=\(storageId)")
     }
     let account = config.account ?? "com.pingidentity.rnsampleapp.keyalias"
     let encryptorEnabled = config.encryptor ?? true

@@ -170,6 +170,8 @@ app's `Info.plist` so iOS can prompt the user for permission.
 <string>This app uses your location to complete device profiling.</string>
 ```
 
+TODO: Re-check `@MainActor` usage in Device Profile iOS paths for potential UI-thread bottlenecks.
+
 ## Journey integration
 
 ```ts

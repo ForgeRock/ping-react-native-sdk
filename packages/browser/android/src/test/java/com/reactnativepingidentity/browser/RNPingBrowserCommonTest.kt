@@ -247,18 +247,16 @@ class RNPingBrowserCommonTest {
   }
 
   @Test
-  fun openSucceedsWhenCallbackSchemeMissing() = runTest {
-    val targetUri = Uri.parse("com.example.app://callback")
-    fakeLauncher.launchResult = Result.success(targetUri)
-
+  fun openRejectsWhenCallbackSchemeMissing() = runTest {
     val promise = TestPromise()
     val options = JavaOnlyMap()
 
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals("success", promise.resolved?.getString("type"))
-    assertEquals(targetUri.toString(), promise.resolved?.getString("url"))
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("callbackUrlScheme is required", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
   }
 
   @Test

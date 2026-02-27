@@ -16,6 +16,7 @@ package com.pingidentity.rnoidc
 object OidcErrorCodes {
   const val OIDC_AUTHORIZE_ERROR = "OIDC_AUTHORIZE_ERROR"
   const val OIDC_HAS_USER_ERROR = "OIDC_HAS_USER_ERROR"
+  const val OIDC_STATE_ERROR = "OIDC_STATE_ERROR"
   const val OIDC_TOKEN_ERROR = "OIDC_TOKEN_ERROR"
   const val OIDC_REFRESH_ERROR = "OIDC_REFRESH_ERROR"
   const val OIDC_USERINFO_ERROR = "OIDC_USERINFO_ERROR"

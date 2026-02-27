@@ -320,7 +320,14 @@ internal object JourneyCallbackValueApplier {
         return when (value) {
             is Boolean -> value
             is Number -> value.toInt() != 0
-            is String -> value.equals("true", ignoreCase = true) || value == "1"
+            is String -> {
+                val normalized = value.trim().lowercase()
+                when (normalized) {
+                    "true", "1" -> true
+                    "false", "0" -> false
+                    else -> throw IllegalArgumentException("$fieldName expects a boolean value")
+                }
+            }
             else -> throw IllegalArgumentException("$fieldName expects a boolean value")
         }
     }

@@ -290,4 +290,27 @@ class JourneyCallbackValueApplierTest {
     }
     throw AssertionError("Expected UnsupportedOperationException for unsupported callback")
   }
+
+  @Test
+  fun applyThrowsForInvalidBooleanString() {
+    val booleanAttr = BooleanAttributeInputCallback()
+
+    try {
+      JourneyCallbackValueApplier.applyToCallbacks(
+        listOf(booleanAttr),
+        listOf(
+          JourneyCallbackValueApplier.CallbackMutation(
+            "BooleanAttributeInputCallback",
+            "maybe",
+            null
+          )
+        )
+      )
+    } catch (error: IllegalArgumentException) {
+      assertTrue(error.message?.contains("expects a boolean value") == true)
+      return
+    }
+
+    throw AssertionError("Expected IllegalArgumentException for invalid boolean string")
+  }
 }

@@ -69,7 +69,6 @@ export default function JourneyStartPanel(
     onJourneyNameChange,
     recentJourneys,
     testJourneys,
-    usedTestJourneys,
     onPressRecentJourney,
     onPressTestJourney,
     suggestionLayout = 'horizontal_rows',
@@ -78,8 +77,8 @@ export default function JourneyStartPanel(
     onStart,
   } = props;
   const useWrappedSuggestions = suggestionLayout === 'wrap';
-  const testJourneyRows = buildSuggestionRows(testJourneys, 3);
-  const recentJourneyRows = buildSuggestionRows(recentJourneys, 2);
+  const testJourneyRows = buildSuggestionRows(testJourneys, 1);
+  const recentJourneyRows = buildSuggestionRows(recentJourneys, 1);
 
   return (
     <>
@@ -98,24 +97,13 @@ export default function JourneyStartPanel(
               {useWrappedSuggestions ? (
                 <View style={[commonStyles.suggestionContainer, styles.wrappedSuggestionContainer]}>
                   {testJourneys.map((name) => {
-                    const used = usedTestJourneys.has(name);
                     return (
                       <TouchableOpacity
                         key={`test-wrap-${name}`}
                         onPress={() => onPressTestJourney(name)}
-                        style={[commonStyles.suggestionChip, used ? styles.usedSuggestionChip : null]}
+                        style={commonStyles.suggestionChip}
                       >
-                        <Text
-                          style={[
-                            commonStyles.suggestionText,
-                            used ? styles.usedSuggestionText : null,
-                          ]}
-                        >
-                          {name}
-                        </Text>
-                        {used ? (
-                          <Text style={styles.usedBadgeText}>Used</Text>
-                        ) : null}
+                        <Text style={commonStyles.suggestionText}>{name}</Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -134,24 +122,13 @@ export default function JourneyStartPanel(
                     {testJourneyRows.map((row, rowIndex) => (
                       <View key={`test-journey-row-${rowIndex}`} style={styles.suggestionRow}>
                         {row.map((name) => {
-                          const used = usedTestJourneys.has(name);
                           return (
                             <TouchableOpacity
                               key={`test-${rowIndex}-${name}`}
                               onPress={() => onPressTestJourney(name)}
-                              style={[commonStyles.suggestionChip, used ? styles.usedSuggestionChip : null]}
+                              style={commonStyles.suggestionChip}
                             >
-                              <Text
-                                style={[
-                                  commonStyles.suggestionText,
-                                  used ? styles.usedSuggestionText : null,
-                                ]}
-                              >
-                                {name}
-                              </Text>
-                              {used ? (
-                                <Text style={styles.usedBadgeText}>Used</Text>
-                              ) : null}
+                              <Text style={commonStyles.suggestionText}>{name}</Text>
                             </TouchableOpacity>
                           );
                         })}

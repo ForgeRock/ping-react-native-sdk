@@ -16,6 +16,8 @@ final class JourneyClientFactoryTests: XCTestCase {
     Task {
       await CoreRuntime.oidcClientRegistry.removeAll()
       await CoreRuntime.loggerRegistry.removeAll()
+      await CoreRuntime.sessionStorageConfigRegistry.removeAll()
+      await CoreRuntime.oidcStorageConfigRegistry.removeAll()
     }
   }
 
@@ -99,6 +101,14 @@ final class JourneyClientFactoryTests: XCTestCase {
   }
 
   func testBuildAcceptsSessionStorageId() async throws {
+    let sessionStorageId = await CoreRuntime.sessionStorageConfigRegistry.register(
+      StorageHandleStub(
+        cacheable: true,
+        account: "com.example.session",
+        encryptor: true
+      )
+    )
+
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
       timeout: nil,
@@ -119,7 +129,7 @@ final class JourneyClientFactoryTests: XCTestCase {
       display: nil,
       prompt: nil,
       additionalParameters: [:],
-      sessionStorageId: "session-storage-1",
+      sessionStorageId: sessionStorageId,
       oidcStorageId: nil,
       loggerId: nil,
       oidcClientId: nil
@@ -129,7 +139,7 @@ final class JourneyClientFactoryTests: XCTestCase {
     XCTAssertNotNil(journey)
   }
 
-  func testBuildAcceptsUnknownSessionStorageId() async throws {
+  func testBuildRejectsUnknownSessionStorageId() async {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
       timeout: nil,
@@ -156,11 +166,19 @@ final class JourneyClientFactoryTests: XCTestCase {
       oidcClientId: nil
     )
 
-    let journey = try await JourneyClientFactory().build(payload)
-    XCTAssertNotNil(journey)
+    do {
+      _ = try await JourneyClientFactory().build(payload)
+      XCTFail("Expected missing session storage handle error")
+    } catch let error as JourneyBridgeError {
+      guard case .argument = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+    } catch {
+      XCTFail("Expected JourneyBridgeError, got \(error)")
+    }
   }
 
-  func testBuildAcceptsUnknownOidcStorageId() async throws {
+  func testBuildRejectsUnknownOidcStorageId() async {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",
       timeout: nil,
@@ -187,8 +205,16 @@ final class JourneyClientFactoryTests: XCTestCase {
       oidcClientId: nil
     )
 
-    let journey = try await JourneyClientFactory().build(payload)
-    XCTAssertNotNil(journey)
+    do {
+      _ = try await JourneyClientFactory().build(payload)
+      XCTFail("Expected missing OIDC storage handle error")
+    } catch let error as JourneyBridgeError {
+      guard case .argument = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+    } catch {
+      XCTFail("Expected JourneyBridgeError, got \(error)")
+    }
   }
 
   func testBuildAcceptsLoggerIdResolvedFromCoreRegistry() async throws {
@@ -309,6 +335,18 @@ private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable 
 
   init(loggerLevel: String) {
     self.loggerLevel = loggerLevel
+  }
+}
+
+private final class StorageHandleStub: StorageConfigHandleContract {
+  let cacheable: Bool?
+  let account: String?
+  let encryptor: Bool?
+
+  init(cacheable: Bool? = nil, account: String? = nil, encryptor: Bool? = nil) {
+    self.cacheable = cacheable
+    self.account = account
+    self.encryptor = encryptor
   }
 }
 
