@@ -1,16 +1,23 @@
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+
 require "json"
 
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 Pod::Spec.new do |s|
+  new_arch_enabled = ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+
   s.name         = "RNPingStorage"
   s.version      = package["version"]
-  s.summary      = package["description"] || "Ping Identity Storage TurboModule"
-  s.homepage     = package["homepage"] || "https://pingidentity.com"
-  s.license      = package["license"] || "MIT"
+  s.summary      = package["description"]
+  s.homepage     = package["homepage"]
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
 
   # CocoaPods requires this to be a hash
-  s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }
+  s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
 
   # Minimum iOS version
   s.platforms    = { :ios => "16.0" }
@@ -18,38 +25,26 @@ Pod::Spec.new do |s|
   # IMPORTANT: local monorepo source path (not git)
   s.source       = { :path => "." }
 
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+  if new_arch_enabled
     s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
+    # Gating of codegen
+    install_modules_dependencies(s)
   else
     s.source_files = "ios/RNPingStorageClassic.mm"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
   end
 
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
-  s.swift_version = "5.0"
+  s.swift_version = ['5.0', '5.1']
   s.requires_arc = true
 
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
+  s.dependency "RNPingLogger"
 
-  s.test_spec "Tests" do |test_spec|
-    test_spec.source_files = "ios/Tests/**/*.{swift,m,mm}"
-    test_spec.dependency "PingStorage"
-    test_spec.dependency "RNPingCore"
-  end
-
-
-  # Compiler flag toggle
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
-  else
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
-  end
-
-  # Gating of codegen
-  if ENV['RCT_NEW_ARCH_ENABLED'] == "1"
-    install_modules_dependencies(s)
-  end
+  # Explicitly add ReactCodegen dependency for generated specs
+  s.dependency "ReactCodegen"
 end

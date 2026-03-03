@@ -7,12 +7,45 @@
 
 import { Platform } from 'react-native';
 import { getNativeModule } from './NativeRNPingBrowser';
+import { logger as createLogger } from '@ping-identity/rn-logger';
+import type { LoggerInstance } from '@ping-identity/rn-logger';
 
 import type {
   BrowserConfig,
+  BrowserLoggerOptions,
   BrowserOpenOptions,
   BrowserResult,
 } from './types';
+
+/**
+ * Cached default logger used when callers do not provide one.
+ */
+let defaultLoggerInstance: LoggerInstance | null = null;
+
+/**
+ * Lazily initialize and return the default logger instance.
+ */
+const getDefaultLogger = (): LoggerInstance => {
+  if (!defaultLoggerInstance) {
+    defaultLoggerInstance = createLogger({ level: 'none' });
+  }
+  return defaultLoggerInstance;
+};
+
+/**
+ * Resolve JS logger instance and native logger identifier for bridge calls.
+ */
+const resolveLogger = (
+  options?: BrowserLoggerOptions
+): { logger: LoggerInstance; loggerId?: string } => {
+  const logger = options?.logger ?? getDefaultLogger();
+  const loggerId =
+    options?.nativeLogger?.id ??
+    logger.nativeHandle?.id ??
+    getDefaultLogger().nativeHandle?.id;
+
+  return { logger, loggerId };
+};
 
 /**
  * Configure global browser behavior.
@@ -20,13 +53,21 @@ import type {
  * Android applies Custom Tabs/Auth Tabs settings globally; iOS is a no-op.
  *
  * @param config Platform-specific browser configuration.
+ * @param options Optional logger overrides for this call.
  */
-export function configureBrowser(config: BrowserConfig): void {
+export function configureBrowser(
+  config: BrowserConfig,
+  options?: BrowserLoggerOptions
+): void {
+  const { logger, loggerId } = resolveLogger(options);
+  logger.debug(`Browser configure requested ${JSON.stringify({ loggerId })}`);
   if (Platform.OS !== 'android') {
+    logger.debug('Browser configure skipped on non-Android platform');
     return;
   }
 
   getNativeModule().configure(config.android ?? {});
+  logger.info('Browser configure success');
 }
 
 /**
@@ -34,12 +75,16 @@ export function configureBrowser(config: BrowserConfig): void {
  *
  * iOS cancels the current browser flow if active; Android is a no-op.
  */
-export function resetBrowser(): void {
+export function resetBrowser(options?: BrowserLoggerOptions): void {
+  const { logger } = resolveLogger(options);
+  logger.debug('Browser reset requested');
   if (Platform.OS !== 'ios') {
+    logger.debug('Browser reset skipped on non-iOS platform');
     return;
   }
 
   getNativeModule().reset();
+  logger.info('Browser reset requested in native module');
 }
 
 /**
@@ -49,19 +94,43 @@ export function resetBrowser(): void {
  *
  * @param url Target URL to open.
  * @param options Per-launch options and callback configuration.
+ * @param loggerOptions Optional logger overrides for this call.
  * @returns The browser result when the redirect is received or the user cancels.
  */
 export function open(
   url: string,
-  options: BrowserOpenOptions
+  options: BrowserOpenOptions,
+  loggerOptions?: BrowserLoggerOptions
 ): Promise<BrowserResult> {
-  return getNativeModule().open(url, options as unknown as Object);
+  const { logger, loggerId } = resolveLogger(loggerOptions);
+  logger.info('Browser open requested');
+  logger.debug(
+    `Browser open options ${JSON.stringify({
+      url,
+      callbackUrlScheme: options.callbackUrlScheme,
+      redirectUri: options.redirectUri,
+      loggerId,
+    })}`
+  );
+
+  const nativeOptions = { ...options, loggerId };
+  return getNativeModule()
+    .open(url, nativeOptions)
+    .then((result) => {
+      logger.info(`Browser open result ${JSON.stringify(result)}`);
+      return result;
+    })
+    .catch((error) => {
+      logger.error('Browser open failed');
+      throw error;
+    });
 }
 
 export type {
   BrowserConfig,
   BrowserError,
   BrowserErrorCode,
+  BrowserLoggerOptions,
   IOSBrowserOpenOptions,
   BrowserOpenOptions,
   BrowserResult,

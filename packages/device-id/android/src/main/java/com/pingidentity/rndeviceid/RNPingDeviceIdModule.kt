@@ -17,6 +17,9 @@ import com.facebook.react.module.annotations.ReactModule
 class RNPingDeviceIdModule(reactContext: ReactApplicationContext) :
   NativeRNPingDeviceIdSpec(reactContext) {
 
+  /**
+   * Return the module name exposed to the React Native bridge.
+   */
   override fun getName(): String = NAME
 
   /**

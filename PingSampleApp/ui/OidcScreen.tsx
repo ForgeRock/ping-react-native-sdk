@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
@@ -12,8 +18,8 @@ import {
   CacheStrategy,
   configureOidcStorage,
   OidcStorage,
-} from '@react-native-pingidentity/storage';
-import { logger } from '@react-native-pingidentity/logger';
+} from '@ping-identity/rn-storage';
+import { logger } from '@ping-identity/rn-logger';
 import {
   createOidcClient,
   createOidcWebClient,
@@ -22,10 +28,13 @@ import {
   OidcWebClient,
 } from '@ping-identity/rn-oidc';
 
+/**
+ * OIDC SDK demonstration screen for authorize, token, refresh, and userinfo flows.
+ */
 export default function OidcScreen() {
   const webClientDefaultRef = useRef<OidcWebClient | null>(null);
   const storageRef = useRef<OidcStorage | null>(null);
-  const loggerInstance = useMemo(() => logger({ level: 'none' }), []);
+  const loggerInstance = useMemo(() => logger({ level: 'debug' }), []);
   const [result, setResult] = useState<string>('');
   const [tokens, setTokens] = useState<string>('');
   const [userinfo, setUserinfo] = useState<string>('');
@@ -167,6 +176,8 @@ export default function OidcScreen() {
           encryptor: true,
           cacheable: true,
         },
+      }, {
+        logger: loggerInstance,
       });
     storageRef.current = storage;
     /*

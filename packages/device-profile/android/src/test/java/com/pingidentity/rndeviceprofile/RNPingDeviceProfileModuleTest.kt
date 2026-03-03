@@ -82,16 +82,17 @@ class RNPingDeviceProfileModuleTest {
     val collectors = JavaOnlyArray()
     val promise = TestPromise()
 
-    module.collectDeviceProfileForJourney("journey-123", collectors, promise)
+    module.collectDeviceProfileForJourney("journey-123", collectors, null, promise)
 
     // Wait for async operation to complete
     assertTrue(promise.awaitCompletion())
     
-    // Verify promise was resolved with an error payload (no callback registered for journey)
-    assertTrue(promise.wasResolved)
-    val payload = promise.resolvedValue as com.facebook.react.bridge.ReadableMap
-    assertEquals("error", payload.getString("type"))
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
+    // Verify promise was rejected with a shared error payload (no callback registered for journey)
+    assertTrue(promise.wasRejected)
+    val payload = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
+    assertEquals("state_error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("error"))
   }
 
   private class TestPromise : com.facebook.react.bridge.Promise {
@@ -100,6 +101,7 @@ class RNPingDeviceProfileModuleTest {
     var rejectCode: String? = null
     var rejectMessage: String? = null
     var rejectError: Throwable? = null
+    var rejectUserInfo: com.facebook.react.bridge.WritableMap? = null
     var resolvedValue: Any? = null
     private val completionLatch = CountDownLatch(1)
 
@@ -140,12 +142,14 @@ class RNPingDeviceProfileModuleTest {
     override fun reject(throwable: Throwable, userInfo: com.facebook.react.bridge.WritableMap) {
       wasRejected = true
       rejectError = throwable
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
     override fun reject(code: String, userInfo: com.facebook.react.bridge.WritableMap) {
       wasRejected = true
       rejectCode = code
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
@@ -153,6 +157,7 @@ class RNPingDeviceProfileModuleTest {
       wasRejected = true
       rejectCode = code
       rejectError = throwable
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
@@ -160,6 +165,7 @@ class RNPingDeviceProfileModuleTest {
       wasRejected = true
       rejectCode = code
       rejectMessage = message
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
@@ -173,6 +179,7 @@ class RNPingDeviceProfileModuleTest {
       rejectCode = code
       rejectMessage = message
       rejectError = throwable
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 

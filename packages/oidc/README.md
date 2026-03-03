@@ -11,6 +11,13 @@ of the MIT license. See the LICENSE file for details.
 
 This module exposes native-backed OIDC clients for PingOne and ForgeRock platforms.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Android redirect configuration](#android-redirect-configuration)
+- [Error handling](#error-handling)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
@@ -29,7 +36,7 @@ React Native Browser package unless you plan to use it directly elsewhere in you
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const debugLogger = logger({ level: 'debug' });
 
@@ -53,15 +60,17 @@ If you want to customize native token storage, configure it with the Storage mod
 handle into the OIDC client configuration.
 
 ```ts
-import { configureOidcStorage } from '@react-native-pingidentity/storage';
+import { CacheStrategy, configureOidcStorage } from '@ping-identity/rn-storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const oidcStorage = configureOidcStorage({
-  fileName: 'ping-oidc',
-  keyAlias: 'ping-oidc',
-  strongBoxPreferred: true,
-  cacheStrategy: 'cache_on_failure',
+  android: {
+    fileName: 'ping-oidc',
+    keyAlias: 'ping-oidc',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+  },
 });
 
 const debugLogger = logger({ level: 'debug' });
@@ -129,7 +138,7 @@ If you want to customize Custom Tabs/Auth Tabs behavior, configure the Browser m
 app startup. The OIDC module will inherit these settings.
 
 ```ts
-import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 configureBrowser({
   android: {
@@ -231,3 +240,6 @@ try {
   console.log(oidcError.type, oidcError.error, oidcError.message);
 }
 ```
+## License
+
+MIT

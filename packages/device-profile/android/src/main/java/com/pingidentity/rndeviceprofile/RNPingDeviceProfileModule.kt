@@ -32,7 +32,10 @@ class RNPingDeviceProfileModule(reactContext: ReactApplicationContext) :
    * @param collectorNames Array of collector names to use (e.g., "platform", "hardware", "network").
    * @param promise React Native promise that resolves with the collected device profile data or rejects with an error.
    */
-  override fun collectDeviceProfile(collectorNames: ReadableArray, promise: Promise) {
+  override fun collectDeviceProfile(
+    collectorNames: ReadableArray,
+    promise: Promise
+  ) {
     RNPingDeviceProfileCommon.collectDeviceProfile(collectorNames, promise)
   }
 
@@ -45,16 +48,19 @@ class RNPingDeviceProfileModule(reactContext: ReactApplicationContext) :
    *
    * @param journeyId The unique identifier for the Journey flow.
    * @param collectorNames Array of collector names to use for profile collection.
+   * @param loggerId Optional native logger handle id.
    * @param promise React Native promise that resolves with the collected device profile result or rejects with an error.
    */
   override fun collectDeviceProfileForJourney(
     journeyId: String,
     collectorNames: ReadableArray,
+    loggerId: String?,
     promise: Promise
   ) {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectorNames,
+      loggerId,
       promise
     )
   }

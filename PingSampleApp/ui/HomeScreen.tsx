@@ -10,11 +10,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
 import { loginClient, loginClient2 } from '../src/clients';
-import { getDeviceId } from '@ping-identity/rn-device-id';
+import { getDeviceId, type DeviceIdError } from '@ping-identity/rn-device-id';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type Props = { navigation: HomeScreenNavProp };
 
+/**
+ * Home screen with entry points for each SDK demo flow.
+ */
 export default function HomeScreen({ navigation }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
@@ -48,6 +51,18 @@ export default function HomeScreen({ navigation }: Props) {
     },
   ];
 
+  const formatDeviceIdError = (err: unknown): string => {
+    const errorPayload = err as DeviceIdError;
+    const errorDetails = {
+      type: errorPayload?.type ?? 'unknown_error',
+      error: errorPayload?.error ?? 'DEVICE_ID_ERROR',
+      message: errorPayload?.message ?? 'Failed to load device ID.',
+      code: errorPayload?.code,
+      status: errorPayload?.status,
+    };
+    return JSON.stringify(errorDetails, null, 2);
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -57,7 +72,7 @@ export default function HomeScreen({ navigation }: Props) {
         if (isMounted) setDeviceId(defaultId);
       } catch (err) {
         if (isMounted) {
-          setDeviceIdError(`Device ID failed: ${String(err)}`);
+          setDeviceIdError(formatDeviceIdError(err));
         }
       }
     };

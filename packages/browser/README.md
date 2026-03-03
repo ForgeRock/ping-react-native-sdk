@@ -13,12 +13,20 @@ The Ping Identity React Native Browser module provides a safe, system-browser fl
 logins. It launches Custom Tabs/Auth Tabs on Android and ASWebAuthenticationSession on iOS, then
 returns the redirect URL to JavaScript.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Error handling](#error-handling)
+- [TODO](#todo)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/browser
+yarn add @ping-identity/rn-browser
 cd ios && pod install
 ```
 
@@ -29,7 +37,7 @@ cd ios && pod install
 Apply global customization for Custom Tabs/Auth Tabs. iOS currently ignores these options.
 
 ```ts
-import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 configureBrowser({
   android: {
@@ -55,7 +63,7 @@ do not have a global configuration equivalent on iOS.
 Configure the manifest placeholder for your app's redirect URI scheme. This is used as a fallback
 when Auth Tabs are not available and Custom Tabs must rely on the manifest scheme:
 
-```gradle
+```groovy
 android {
   defaultConfig {
     // For redirect URI "com.example.app://callback", configure:
@@ -67,7 +75,7 @@ android {
 ### Open a browser session
 
 ```ts
-import { open } from '@react-native-pingidentity/browser';
+import { open } from '@ping-identity/rn-browser';
 
 const result = await open('https://example.com', {
   callbackUrlScheme: 'com.example.app',
@@ -94,7 +102,7 @@ Error codes:
 - `BROWSER_OPEN_ERROR` for validation/launch failures
 
 ```ts
-import type { BrowserError } from '@react-native-pingidentity/browser';
+import type { BrowserError } from '@ping-identity/rn-browser';
 
 try {
   await open('https://example.com', { callbackUrlScheme: 'com.example.app' });
@@ -107,3 +115,7 @@ try {
 ## TODO
 
 - Add an iOS test runner target to execute module unit tests.
+
+## License
+
+MIT

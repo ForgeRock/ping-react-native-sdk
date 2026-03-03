@@ -13,12 +13,18 @@ The Ping Identity React Native Core module hosts shared runtime utilities for Pi
 provides process-wide registries for native handles, plus native error contracts used to keep
 promise rejections consistent across modules.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/core
+yarn add @ping-identity/rn-core
 cd ios && pod install
 ```
 
@@ -98,3 +104,6 @@ let error = GenericError(
 )
 reject(error, rejecter: rejecter)
 ```
+## License
+
+MIT

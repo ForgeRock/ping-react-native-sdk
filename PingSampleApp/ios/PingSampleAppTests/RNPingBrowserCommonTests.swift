@@ -7,9 +7,16 @@ import XCTest
 import AuthenticationServices
 import PingBrowser
 import RNPingBrowser
+import RNPingLogger
 
 final class RNPingBrowserCommonTests: XCTestCase {
   private let testUrl = "https://example.com"
+  private var loggerId: String!
+
+  override func setUp() {
+    super.setUp()
+    loggerId = RNPingLoggerImpl.shared.registerLogger(["level": "STANDARD"])
+  }
 
   override func tearDown() {
     RNPingBrowserCommon._resetBrowserLauncherForTesting()
@@ -18,7 +25,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenRejectsWhenCallbackSchemeMissing() {
     let expectation = expectation(description: "reject called")
-    let options: NSDictionary = [:]
+    let options: NSDictionary = ["loggerId": loggerId ?? ""]
 
     RNPingBrowserCommon._setBrowserLauncherForTesting(FakeBrowserLauncher())
     RNPingBrowserCommon.open(
@@ -37,7 +44,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenRejectsWhenUrlInvalid() {
     let expectation = expectation(description: "reject called")
-    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
 
     RNPingBrowserCommon._setBrowserLauncherForTesting(FakeBrowserLauncher())
     RNPingBrowserCommon.open(
@@ -56,7 +66,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenResolvesSuccess() {
     let expectation = expectation(description: "resolver called")
-    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
     let launcher = FakeBrowserLauncher()
     launcher.result = .success(URL(string: "com.example.app://callback")!)
 
@@ -77,7 +90,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenResolvesCancelForBrowserError() {
     let expectation = expectation(description: "resolver called")
-    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
     let launcher = FakeBrowserLauncher()
     launcher.result = .failure(BrowserError.externalUserAgentCancelled)
 
@@ -97,7 +113,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenResolvesCancelForAuthSessionCancel() {
     let expectation = expectation(description: "resolver called")
-    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
     let launcher = FakeBrowserLauncher()
     launcher.result = .failure(ASWebAuthenticationSessionError(.canceledLogin))
 
@@ -117,7 +136,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
 
   func testOpenRejectsOnUnhandledError() {
     let expectation = expectation(description: "reject called")
-    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
     let launcher = FakeBrowserLauncher()
     launcher.result = .failure(NSError(domain: "test", code: 1))
 
@@ -140,6 +162,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
     let expectation = expectation(description: "resolver called")
     let options: NSDictionary = [
       "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? "",
       "ios": [
         "browserType": "ephemeralAuthSession",
         "browserMode": "logout"

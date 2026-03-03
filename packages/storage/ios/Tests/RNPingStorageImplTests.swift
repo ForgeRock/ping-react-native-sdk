@@ -10,7 +10,7 @@ import XCTest
 @testable import RNPingCore
 @testable import RNPingStorage
 
-@available(iOS 16.0, *)
+
 final class RNPingStorageImplTests: XCTestCase {
 
   var storageImpl: RNPingStorageImpl!

@@ -4,8 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -30,7 +29,11 @@ import type {
   Step,
   Tokens,
 } from '@ping-identity/rn-types';
-import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+import {
+  collectDeviceProfileForJourney,
+  type DeviceProfileError,
+} from '@ping-identity/rn-device-profile';
+import { logger } from '@ping-identity/rn-logger';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
 import { RouteProp, useRoute } from '@react-navigation/native';
@@ -50,6 +53,9 @@ const _typeErgonomicsCheck: {
 } | null = null;
 _typeErgonomicsCheck
 
+/**
+ * Journey SDK demonstration screen with start, resume, and callback submission flows.
+ */
 export default function JourneyScreen() {
   const route = useRoute<JourneyRouteProp>();
   const { journeyClient } = route.params;
@@ -67,6 +73,7 @@ export default function JourneyScreen() {
   const [autoSubmitting, setAutoSubmitting] = useState(false);
   const processedNodesRef = useRef<Set<string>>(new Set());
   const isMountedRef = useRef(true);
+  const deviceProfileLogger = useMemo(() => logger({ level: 'debug' }), []);
 
   useEffect(() => {
     return () => {
@@ -99,6 +106,19 @@ export default function JourneyScreen() {
     } catch (e) {
       console.warn('⚠️ Failed to save journey name', e);
     }
+  };
+
+  const formatDeviceProfileError = (err: unknown): string => {
+    const errorPayload = err as DeviceProfileError;
+    const errorDetails = {
+      type: errorPayload?.type ?? 'unknown_error',
+      error: errorPayload?.error ?? 'DEVICE_PROFILE_COLLECT_ERROR',
+      message:
+        errorPayload?.message ?? 'Failed to collect device profile for journey.',
+      code: errorPayload?.code,
+      status: errorPayload?.status,
+    };
+    return JSON.stringify(errorDetails, null, 2);
   };
 
   // Fetch user info after success
@@ -146,22 +166,21 @@ export default function JourneyScreen() {
           'hardware',
           'network',
           'location',
-        ]);
+        ], {
+          logger: deviceProfileLogger,
+        });
         if (submission.type === 'success') {
           await next({});
         } else {
           Alert.alert(
             'Device profile failed',
-            submission.message ?? submission.code
+            JSON.stringify(submission, null, 2)
           );
           processedNodesRef.current.delete(node.id);
         }
       } catch (err) {
         console.error('Device profile collection failed:', err);
-        Alert.alert(
-          'Device profile failed',
-          String(err instanceof Error ? err.message : err)
-        );
+        Alert.alert('Device profile failed', formatDeviceProfileError(err));
         processedNodesRef.current.delete(node.id);
       } finally {
         if (isMountedRef.current) {
@@ -171,7 +190,7 @@ export default function JourneyScreen() {
     };
 
     handleAutoSubmit();
-  }, [node, next, journeyClient, autoSubmitting]);
+  }, [node, next, journeyClient, autoSubmitting, deviceProfileLogger]);
 
   const onStart = async () => {
     if (!journeyName.trim()) {

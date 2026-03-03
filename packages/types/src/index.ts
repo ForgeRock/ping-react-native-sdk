@@ -62,3 +62,18 @@ export type Node = import('@forgerock/sdk-types').Step;
  * Alias for callback payloads used in RN flows.
  */
 export type NodeCallback = import('@forgerock/sdk-types').Callback;
+
+/**
+ * Minimal Journey instance contract for cross-module coordination.
+ *
+ * @remarks
+ * The Journey module owns instance creation; this type enables other modules
+ * to invoke Journey operations without introducing package coupling.
+ * TODO: Change this contract as needed to support additional Journey interactions.
+ */
+export type JourneyInstance = {
+  /**
+   * Returns the native Journey instance identifier.
+   */
+  getId: () => Promise<string>;
+};

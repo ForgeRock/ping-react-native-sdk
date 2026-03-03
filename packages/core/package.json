@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/core",
+  "name": "@ping-identity/rn-core",
   "version": "0.1.0",
   "description": "Core utilities for Ping Identity React Native modules.",
   "homepage": "https://www.pingidentity.com/",

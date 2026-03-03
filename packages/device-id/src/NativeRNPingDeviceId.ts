@@ -66,7 +66,7 @@ export function getNativeModule(): Spec {
   if (!classic) {
     const available = Object.keys(NativeModules).slice(0, 10);
     throw new Error(
-      '[@react-native-pingidentity/device-id] Classic RNPingDeviceIdClassic native module not found.\n' +
+      '[@ping-identity/rn-device-id] Classic RNPingDeviceIdClassic native module not found.\n' +
       'Available NativeModules: ' +
       JSON.stringify(available)
     );

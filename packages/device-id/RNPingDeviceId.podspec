@@ -1,39 +1,48 @@
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+
 require "json"
 
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 Pod::Spec.new do |s|
+  new_arch_enabled = ENV['RCT_NEW_ARCH_ENABLED'] == "1"
+
   s.name         = "RNPingDeviceId"
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
-  s.license      = package["license"]
-
-  # Must be a HASH — cannot use package["author"] directly
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
+  
+  # CocoaPods requires this to be a hash
   s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
+  # Minimum iOS version
+  s.platforms        = { :ios => "16.0" }
 
-  min_ios_version_supported = "16.0"
+  # IMPORTANT: local monorepo source path (not git)
+  s.source           = { :path => "." }
 
-  s.platforms    = { :ios => "16.0" }
+  if new_arch_enabled
+    s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
+    # Gating of codegen
+    install_modules_dependencies(s)
+  else
+    s.source_files = "ios/RNPingDeviceIdClassic.mm"
+    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
+  end
 
-  # Local monorepo source
-  s.source       = { :path => "." }
-
-  s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
   s.requires_arc  = true
-  s.swift_version = ['5.0', '5.1', '6.0']
+  s.swift_version = ['5.0', '5.1']
 
   # Native Ping SDK 
   s.dependency "PingDeviceId"
   s.dependency "RNPingCore"
 
-  s.test_spec "Tests" do |test_spec|
-    test_spec.source_files = "ios/Tests/**/*.{swift}"
-    test_spec.dependency "RNPingCore"
-  end
-
-  # New Architecture helper
-  install_modules_dependencies(s)
+  # Explicitly add ReactCodegen dependency for generated specs
+  s.dependency "ReactCodegen"
 end

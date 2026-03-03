@@ -6,13 +6,13 @@
  */
 import Foundation
 import RNPingCore
+import RNPingLogger
 
 /// A common utility class for managing storage configurations in React Native Ping SDK.
 ///
 /// This class provides methods to register and configure both session and OIDC storage,
 /// using a lazy initialization pattern where configs are registered first and actual
 /// storage instances are created later by the Core SDK when needed.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingStorageCommon: NSObject {
   
@@ -61,6 +61,14 @@ public class RNPingStorageCommon: NSObject {
     q.setSpecific(key: createQueueKey, value: ())
     return q
   }()
+
+  /// Applies a logger handle id to native SDK logging when provided.
+  ///
+  /// Kept as an assignable closure to simplify unit testing without mutating
+  /// global logger state across tests.
+  private static var applyLogger: (String?) -> Bool = { id in
+    RNPingLoggerImpl.shared.applyLogger(id)
+  }
   
   // MARK: - Public Methods - Configuration
   
@@ -71,7 +79,9 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      registerConfig(config, register: registerSessionStorage)
+      let loggerId = config["loggerId"] as? String
+      _ = applyLogger(loggerId)
+      return registerConfig(config, register: registerSessionStorage)
     }
   }
 
@@ -82,7 +92,9 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerOidcStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      registerConfig(config, register: registerOidcStorage)
+      let loggerId = config["loggerId"] as? String
+      _ = applyLogger(loggerId)
+      return registerConfig(config, register: registerOidcStorage)
     }
   }
 
@@ -265,4 +277,18 @@ public class RNPingStorageCommon: NSObject {
     let configHandle = handle as? StorageConfigHandle
     return configHandle?.config
   }
+
+#if DEBUG
+  /// Test helper to override logger application behavior.
+  static func _testSetApplyLogger(_ applier: @escaping (String?) -> Bool) {
+    applyLogger = applier
+  }
+
+  /// Test helper to reset logger application behavior.
+  static func _testResetApplyLogger() {
+    applyLogger = { id in
+      RNPingLoggerImpl.shared.applyLogger(id)
+    }
+  }
+#endif
 }

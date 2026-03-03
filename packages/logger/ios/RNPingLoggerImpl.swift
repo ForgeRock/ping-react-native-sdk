@@ -12,7 +12,6 @@ import RNPingCore
 
 /// Implementation of the native logger bridge for React Native.
 /// Manages logger creation, configuration, and synchronization with the PingLogger framework.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingLoggerImpl: NSObject {
 

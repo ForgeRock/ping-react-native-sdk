@@ -8,7 +8,7 @@
 import XCTest
 @testable import RNPingCore
 
-@available(iOS 16.0, *)
+
 final class SimpleRegistryTests: XCTestCase {
 
   private final class FakeHandle: NativeHandle {}

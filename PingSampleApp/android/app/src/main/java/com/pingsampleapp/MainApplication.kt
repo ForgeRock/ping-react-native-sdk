@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 package com.pingsampleapp
 
 import android.app.Application
@@ -10,8 +17,14 @@ import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 
+/**
+ * Application entry point for the React Native sample app.
+ */
 class MainApplication : Application(), ReactApplication {
 
+  /**
+   * React Native host configuration for package registration and runtime flags.
+   */
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
@@ -28,9 +41,15 @@ class MainApplication : Application(), ReactApplication {
         override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
       }
 
+  /**
+   * Expose the React host used by new architecture integrations.
+   */
   override val reactHost: ReactHost
     get() = getDefaultReactHost(applicationContext, reactNativeHost)
 
+  /**
+   * Initialize React Native when the application starts.
+   */
   override fun onCreate() {
     super.onCreate()
     loadReactNative(this)

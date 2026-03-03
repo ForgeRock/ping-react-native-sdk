@@ -36,6 +36,17 @@ const loadModule = async ({
   (global as { __turboModuleProxy?: unknown }).__turboModuleProxy =
     enableTurbo ? {} : undefined;
 
+  jest.doMock('@ping-identity/rn-logger', () => ({
+    logger: jest.fn(() => ({
+      nativeHandle: { id: 'native-none-id' },
+      changeLevel: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+    })),
+  }));
+
   const getEnforcing = jest.fn(() => {
     if (!turboModule) {
       throw new Error('missing');
@@ -132,7 +143,7 @@ describe('browser package', () => {
     });
 
     expect(() => resetBrowser()).toThrow(
-      '[@react-native-pingidentity/browser] Native RNPingBrowserClassic module not found.'
+      '[@ping-identity/rn-browser] Native RNPingBrowserClassic module not found.'
     );
   });
 
@@ -146,7 +157,10 @@ describe('browser package', () => {
     const options = { callbackUrlScheme: 'com.example.app' };
     const result = await openBrowser('https://example.com', options);
 
-    expect(open).toHaveBeenCalledWith('https://example.com', options);
+    expect(open).toHaveBeenCalledWith('https://example.com', {
+      ...options,
+      loggerId: 'native-none-id',
+    });
     expect(result).toEqual({ type: 'cancel' });
   });
 
@@ -164,7 +178,10 @@ describe('browser package', () => {
 
     await openBrowser('https://example.com', options);
 
-    expect(open).toHaveBeenCalledWith('https://example.com', options);
+    expect(open).toHaveBeenCalledWith('https://example.com', {
+      ...options,
+      loggerId: 'native-none-id',
+    });
   });
 
   it('preserves nested option objects', async () => {
@@ -181,7 +198,29 @@ describe('browser package', () => {
 
     await openBrowser('https://example.com', options);
 
-    expect(open).toHaveBeenCalledWith('https://example.com', options);
+    expect(open).toHaveBeenCalledWith('https://example.com', {
+      ...options,
+      loggerId: 'native-none-id',
+    });
+  });
+
+  it('prefers provided nativeLogger for Android open calls', async () => {
+    const open = jest.fn(() => Promise.resolve({ type: 'cancel' }));
+    const { open: openBrowser } = await loadModule({
+      platform: 'android',
+      nativeModule: { RNPingBrowserClassic: { open } },
+    });
+
+    await openBrowser(
+      'https://example.com',
+      { callbackUrlScheme: 'com.example.app' },
+      { nativeLogger: { id: 'explicit-native-id' } }
+    );
+
+    expect(open).toHaveBeenCalledWith('https://example.com', {
+      callbackUrlScheme: 'com.example.app',
+      loggerId: 'explicit-native-id',
+    });
   });
 
   it('uses TurboModule when New Architecture is enabled', async () => {
@@ -206,7 +245,7 @@ describe('browser package', () => {
     expect(() =>
       openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
     ).toThrow(
-      '[@react-native-pingidentity/browser] Native RNPingBrowserClassic module not found.'
+      '[@ping-identity/rn-browser] Native RNPingBrowserClassic module not found.'
     );
   });
 

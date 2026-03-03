@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 buildscript {
   ext.getExtOrDefault = {name ->
     return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['RNPingStorage_' + name]
@@ -28,7 +35,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-    namespace "com.reactnativepingidentity.storage"
+    namespace "com.pingidentity.rnstorage"
 
     compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
@@ -81,7 +88,8 @@ dependencies {
     implementation 'androidx.datastore:datastore-core:1.1.7'
     implementation("com.pingidentity.sdks:storage:2.0.0-beta1")
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
-    implementation(project(":react-native-pingidentity-core"))
+    implementation(project(":ping-identity_rn-core"))
+    implementation(project(":ping-identity_rn-logger"))
     
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"

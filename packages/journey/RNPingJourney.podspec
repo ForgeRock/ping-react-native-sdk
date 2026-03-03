@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"] || "Ping Identity Journey TurboModule"
   s.homepage     = package["homepage"] || "https://pingidentity.com"
-  s.license      = package["license"] || "MIT"
+  s.license      = { :type => 'MIT', :file => 'LICENSE' }
 
   # Must be a HASH — cannot use package["author"] directly
   s.authors      = { "Ping Identity" => "mobile@pingidentity.com" }

@@ -23,7 +23,14 @@ import com.pingidentity.device.profile.collector.NetworkCollector
 import com.pingidentity.device.profile.collector.PlatformCollector
 import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
-import com.reactnativepingidentity.core.CoreRuntime
+import com.pingidentity.logger.Logger
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.error.GenericError
+import com.pingidentity.rncore.error.mapThrowableToGenericError
+import com.pingidentity.rncore.error.reject
+import com.pingidentity.rncore.utils.JsonBridgeMapper
+import com.pingidentity.rnlogger.RNPingLoggerCommon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +38,6 @@ import kotlinx.serialization.json.JsonObject
 
 /**
  * Common device profile collection utilities shared across architectures.
- * TODO: Add logging once logger module is available and error shapes
  */
 object RNPingDeviceProfileCommon {
   private const val LOCATION_SERVICES_CLASS =
@@ -60,13 +66,12 @@ object RNPingDeviceProfileCommon {
         "Device Profile",
         "location collection blocked: $LOCATION_ERROR_MESSAGE"
       )
-      promise.resolve(
-        createJourneyResultPayload(
-          type = "error",
-          code = "DEVICE_PROFILE_LOCATION_UNAVAILABLE",
-          message = LOCATION_ERROR_MESSAGE
-        )
+      val error = GenericError(
+        type = ErrorType.STATE_ERROR,
+        error = DeviceProfileErrorCodes.DEVICE_PROFILE_LOCATION_UNAVAILABLE,
+        message = LOCATION_ERROR_MESSAGE
       )
+      promise.reject(error)
       return false
     }
     return true
@@ -83,7 +88,10 @@ object RNPingDeviceProfileCommon {
    * @param promise React Native promise that resolves with the collected device profile data or rejects with an error.
    */
   @JvmStatic
-  fun collectDeviceProfile(collectorNames: ReadableArray, promise: Promise) {
+  fun collectDeviceProfile(
+    collectorNames: ReadableArray,
+    promise: Promise
+  ) {
     val collectorTypes = readCollectors(collectorNames)
 
     if (!validateLocationAvailability(collectorTypes, promise)) {
@@ -101,10 +109,13 @@ object RNPingDeviceProfileCommon {
           deviceCollectors.collect()
         }
         Log.d("Device Profile", "metadata collection succeeded")
-        promise.resolve(jsonElement.toReactValue())
+        promise.resolve(JsonBridgeMapper.encodeJsonElement(jsonElement))
       } catch (e: Throwable) {
         Log.e("Device Profile", "metadata collection failed", e)
-        promise.reject("DEVICE_PROFILE_COLLECT_ERROR", "Failed to collect device profile: ${e.message}", e)
+        promise.reject(
+          mapThrowableToGenericError(e, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR),
+          e
+        )
       }
     }
   }
@@ -118,14 +129,17 @@ object RNPingDeviceProfileCommon {
    *
    * @param journeyId The unique identifier for the Journey flow.
    * @param collectorNames Array of collector names to use for profile collection.
+   * @param loggerId Optional native logger handle id, mapped to DeviceProfileConfig.logger.
    * @param promise React Native promise that resolves with the collected device profile result or rejects with an error.
    */
   @JvmStatic
   fun collectDeviceProfileForJourney(
     journeyId: String,
     collectorNames: ReadableArray,
+    loggerId: String?,
     promise: Promise
   ) {
+    val isLoggerConfigured = RNPingLoggerCommon.applyLogger(loggerId)
     val collectorTypes = readCollectors(collectorNames)
 
     if (!validateLocationAvailability(collectorTypes, promise)) {
@@ -142,17 +156,19 @@ object RNPingDeviceProfileCommon {
         val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
         val callback = resolveDeviceProfileCallback(journeyId)
         if (callback == null) {
-          promise.resolve(
-            createJourneyResultPayload(
-              type = "error",
-              code = "DEVICE_PROFILE_CALLBACK_NOT_FOUND",
-              message = "No active Device Profile callback found for journey $journeyId."
-            )
+          val error = GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = DeviceProfileErrorCodes.DEVICE_PROFILE_CALLBACK_NOT_FOUND,
+            message = "No active Device Profile callback found for journey $journeyId."
           )
+          promise.reject(error)
           return@launch
         }
 
         val result = callback.collect {
+          if (isLoggerConfigured) {
+            logger = Logger.logger
+          }
           collectors {
             addAll(metadataCollectors)
           }
@@ -174,12 +190,12 @@ object RNPingDeviceProfileCommon {
               "metadata collection for journey failed during callback",
               error
             )
-            promise.resolve(
-              createJourneyResultPayload(
-                type = "error",
-                code = "DEVICE_PROFILE_COLLECT_ERROR",
-                message = "Failed to collect device profile for journey: ${error.message}"
-              )
+            promise.reject(
+              mapThrowableToGenericError(
+                error,
+                DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
+              ),
+              error
             )
           }
         )
@@ -189,17 +205,20 @@ object RNPingDeviceProfileCommon {
           "metadata collection for journey failed during collection",
           error
         )
-        promise.resolve(
-          createJourneyResultPayload(
-            type = "error",
-            code = "DEVICE_PROFILE_COLLECT_ERROR",
-            message = "Failed to collect device profile for journey: ${error.message}"
-          )
+        promise.reject(
+          mapThrowableToGenericError(
+            error,
+            DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
+          ),
+          error
         )
       }
     }
   }
 
+  /**
+   * Build a normalized result payload for Journey device-profile callbacks.
+   */
   private fun createJourneyResultPayload(
     type: String,
     code: String? = null,

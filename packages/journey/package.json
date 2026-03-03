@@ -17,16 +17,16 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@react-native-pingidentity/core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0"
   },
   "peerDependencies": {
-    "@react-native-pingidentity/storage": "*",
+    "@ping-identity/rn-storage": "*",
     "react": "*",
     "react-native": "*"
   },
   "devDependencies": {
-    "@react-native-pingidentity/core": "^0.1.0",
-    "@react-native-pingidentity/storage": "^0.1.0",
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-storage": "^0.1.0",
     "react-native-builder-bob": "^0.40.14",
     "typescript": "^5.9.2"
   },

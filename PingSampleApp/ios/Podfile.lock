@@ -21,6 +21,7 @@ PODS:
     - PingJourneyPlugin (~> 1.3.1)
     - PingTamperDetector (~> 1.3.1)
   - PingJourney (1.3.1):
+    - PingCommons (~> 1.3.1)
     - PingJourneyPlugin (~> 1.3.1)
     - PingOidc (~> 1.3.1)
   - PingJourneyPlugin (1.3.1):
@@ -2299,6 +2300,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNPingCore (0.1.0):
@@ -2391,6 +2393,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNPingJourney (0.1.0):
@@ -2517,6 +2520,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNScreens (4.18.0):
@@ -2670,14 +2674,14 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
-  - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
+  - "RNPingBrowser (from `../../node_modules/@ping-identity/rn-browser`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@react-native-pingidentity/journey`)"
-  - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
+  - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
-  - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
+  - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - SocketRocket (~> 0.7.1)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
@@ -2859,7 +2863,7 @@ EXTERNAL SOURCES:
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
   RNPingBrowser:
-    :path: "../../node_modules/@react-native-pingidentity/browser"
+    :path: "../../node_modules/@ping-identity/rn-browser"
   RNPingCore:
     :path: "../../packages/core"
   RNPingDeviceId:
@@ -2869,11 +2873,11 @@ EXTERNAL SOURCES:
   RNPingJourney:
     :path: "../../node_modules/@react-native-pingidentity/journey"
   RNPingLogger:
-    :path: "../../node_modules/@react-native-pingidentity/logger"
+    :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
   RNPingStorage:
-    :path: "../../node_modules/@react-native-pingidentity/storage"
+    :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   Yoga:
@@ -2891,8 +2895,8 @@ SPEC CHECKSUMS:
   PingCommons: 8033a83e775e5e08c3be4c4f321047d1fa01f318
   PingDeviceId: 686b51d1db26579b64be523b68f826505a50fed4
   PingDeviceProfile: 5826058329ce80905b0fd5d5983a28709999532a
-  PingJourney: 07f5e5df87916ba22849d1b2d3cb311ff9eb3cb3
-  PingJourneyPlugin: 1b4d6e1d693e88596d98e15ec13635697a9ab6a0
+  PingJourney: 5563c1fe40ae285f0abc16b683712ac0cf8da331
+  PingJourneyPlugin: fca9c893e77ae72890616fec51c96ac1ec7943bf
   PingLogger: 99e2ebe16c0dd1a7ef974565a7384f53a68b14c8
   PingNetwork: 87922a3fb2b153dd06f07c9faab175fb8ddf4c94
   PingOidc: e3fa8cb66b4fc65c28ee34e292a3eeb6535ce965
@@ -2965,18 +2969,18 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBrowser: 76a3f07f5e57c95ce44801503700a4b830acad00
-  RNPingCore: 750f1af17d866714dadbb0927bea59b9f85d6799
-  RNPingDeviceId: 2df34d506631a08a55f77d5110256ca08a9d364b
-  RNPingDeviceProfile: 0c0ac8e0db6a99384232b849c6d2ba2df47ebb00
-  RNPingJourney: 88e6dfbc020cbbc67d9961c48a503ab1df76bbed
-  RNPingLogger: 95fcbfd547bcc5cb857afb092f45f9441e0c56a1
-  RNPingOidc: 3da2b51354bbcf34e3bd77463d3209b897f0dfa2
-  RNPingStorage: 5d7da183c7fbb0a3fa0b1c936c155015c34c5479
+  RNPingBrowser: 24f53af7d3cfdc8f1120270ea0b5696d05bdd803
+  RNPingCore: 51b9882f40746977d515dcafa444261a0eb598ab
+  RNPingDeviceId: 071276c39317d5e9db2767faf855211c66631468
+  RNPingDeviceProfile: dc0d6bff6a1f336bccf9bb776087349895ce4457
+  RNPingJourney: 6294d6e97cc3cc7cc4edd3010d53378b2209f983
+  RNPingLogger: a570e3b635217cb68eaa869e4f19b67d624cbd75
+  RNPingOidc: b202b822fa51c1c27ab59de71a3074bcfe794629
+  RNPingStorage: 62f5363d2f6dc0e87cdc226595029d9251a9a53f
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 46b0aadec650d2bd55b71eaf02081f6011ab53cc
+PODFILE CHECKSUM: f4c6c8072fdfe86697916de6df0a8b242418c5b2
 
 COCOAPODS: 1.15.2

@@ -7,6 +7,7 @@
 import Foundation
 import React
 import PingDeviceId
+import RNPingCore
 
 /// Implementation of the native device ID bridge for React Native.
 @available(iOS 16.0.0, *)
@@ -15,6 +16,13 @@ public class RNPingDeviceIdImpl: NSObject {
 
   /// Shared singleton instance.
   @objc public static let shared = RNPingDeviceIdImpl()
+
+  /// Stable error codes emitted by the Device ID module.
+  ///
+  /// Keep these in sync with JS `DeviceIdErrorCode` and Android `DeviceIdErrorCodes`.
+  private enum DeviceIdErrorCode: String {
+    case deviceIdError = "DEVICE_ID_ERROR"
+  }
 
   /// Resolves the most useful message from SDK errors, unwrapping nested errors when available.
   private static func errorMessage(from error: Error) -> String {
@@ -57,11 +65,11 @@ public class RNPingDeviceIdImpl: NSObject {
   /// Returns the default keychain-backed device identifier.
   /// - Parameters:
   ///   - resolve: Promise resolver for the identifier string.
-  ///   - reject: Promise rejecter for errors.
+  ///   - rejecter: Promise rejecter for errors.
   @objc
   public func getDefaultDeviceId(
     _ resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    rejecter rejecter: @escaping RCTPromiseRejectBlock
   ) {
     Task {
       switch Self.defaultIdentifierResult {
@@ -70,10 +78,20 @@ public class RNPingDeviceIdImpl: NSObject {
           let deviceId = try await identifier.id
           resolve(deviceId)
         } catch {
-          reject("DEVICE_ID_ERROR", Self.errorMessage(from: error), error as NSError)
+          let mapped = GenericError(
+            type: .internalError,
+            error: DeviceIdErrorCode.deviceIdError.rawValue,
+            message: Self.errorMessage(from: error)
+          )
+          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
         }
       case .failure(let error):
-        reject("DEVICE_ID_ERROR", Self.errorMessage(from: error), error as NSError)
+        let mapped = GenericError(
+          type: .internalError,
+          error: DeviceIdErrorCode.deviceIdError.rawValue,
+          message: Self.errorMessage(from: error)
+        )
+        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }

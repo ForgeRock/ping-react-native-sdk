@@ -5,14 +5,46 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { JourneyInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
-import { logger } from './logging';
+import { logger as createLogger } from '@ping-identity/rn-logger';
+import type { LoggerInstance } from '@ping-identity/rn-logger';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
+  DeviceProfileLoggerOptions,
   DeviceProfileJourneyResult,
-  JourneyInstance,
 } from './types';
+
+/**
+ * Cached default logger for device-profile operations.
+ */
+let defaultLoggerInstance: LoggerInstance | null = null;
+
+/**
+ * Lazily initializes a default logger instance.
+ */
+const getDefaultLogger = (): LoggerInstance => {
+  if (!defaultLoggerInstance) {
+    defaultLoggerInstance = createLogger({ level: 'none' });
+  }
+  return defaultLoggerInstance;
+};
+
+/**
+ * Resolves JS logger instance and native logger identifier for bridge calls.
+ */
+const resolveLogger = (
+  options?: DeviceProfileLoggerOptions
+): { logger: LoggerInstance; loggerId?: string } => {
+  const logger = options?.logger ?? getDefaultLogger();
+  const loggerId =
+    options?.nativeLogger?.id ??
+    logger.nativeHandle?.id ??
+    getDefaultLogger().nativeHandle?.id;
+
+  return { logger, loggerId };
+};
 
 /**
  * Collects a device profile outside of Journey flows.
@@ -36,15 +68,8 @@ import type {
 export async function collectDeviceProfile(
   collectors: DeviceProfileCollector[]
 ): Promise<DeviceProfile> {
-  try {
-    const nativeModule = getNativeModule();
-    const profile = await nativeModule.collectDeviceProfile(collectors);
-    logger.info('Device profile metadata collection succeeded');
-    return profile;
-  } catch (error) {
-    logger.error('Device profile metadata collection failed', String(error));
-    throw error;
-  }
+  const nativeModule = getNativeModule();
+  return nativeModule.collectDeviceProfile(collectors);
 }
 
 /**
@@ -57,50 +82,61 @@ export async function collectDeviceProfile(
  * ```ts
  * const node = await journey.start();
  * if (node.callbacks?.some(cb => cb.type === 'DeviceProfileCallback')) {
- *   const result = await collectDeviceProfileForJourney(
- *     journey,
- *     ['hardware', 'network', 'browser']
- *   );
- *   if (result.type === 'success') {
+ *   try {
+ *     await collectDeviceProfileForJourney(
+ *       journey,
+ *       ['hardware', 'network', 'browser']
+ *     );
  *     await journey.next();
- *   } else {
- *     console.error('Device profile submission failed', result.code, result.message);
+ *   } catch (error) {
+ *     console.error('Device profile submission failed', error);
  *   }
  * }
  * ```
  *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
- * @returns Result object describing success or error.
+ * @param options - Optional logger overrides for this call.
+ * @returns Result object describing success.
  */
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[],
+  options?: DeviceProfileLoggerOptions
 ): Promise<DeviceProfileJourneyResult> {
+  const { logger, loggerId } = resolveLogger(options);
+  logger.debug(
+    `Device profile journey requested ${JSON.stringify({ collectors, loggerId })}`
+  );
   let journeyId: string;
   try {
+    logger.debug('Device profile journey getId requested');
     journeyId = await journey.getId();
+    logger.debug('Device profile journey getId success');
   } catch (error) {
-    logger.error('Device profile failed while resolving Journey', String(error));
+    logger.error('Device profile failed while resolving Journey');
     throw error;
   }
 
-  logger.info(
-    `Device profile invoking native module to collect metadata for Journey`
+  const nativeModule = getNativeModule();
+  logger.debug(
+    `Device profile native module requested ${JSON.stringify({ collectors })}`
   );
-
   try {
-    const nativeModule = getNativeModule();
     const result = await nativeModule.collectDeviceProfileForJourney(
       journeyId,
-      collectors
+      collectors,
+      loggerId
     );
-    logger.info('Device profile metadata collection for Journey succeeded');
+    logger.debug(
+      `Device profile metadata collection successful ${JSON.stringify(result)}`
+    );
     return result;
   } catch (error) {
-    logger.error('Device profile metadata collection for Journey failed', String(error));
+    logger.error('Device profile metadata collection for Journey failed');
     throw error;
   }
 }
 
 export type * from './types';
+export type { JourneyInstance } from '@ping-identity/rn-types';

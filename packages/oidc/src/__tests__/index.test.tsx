@@ -56,7 +56,7 @@ const loadModule = async (nativeModule: NativeModuleMock) => {
   jest.doMock('../NativeRNPingOidc', () => ({
     getNativeModule: () => nativeModule,
   }));
-  jest.doMock('@react-native-pingidentity/logger', () => ({
+  jest.doMock('@ping-identity/rn-logger', () => ({
     logger: jest.fn(() => ({
       nativeHandle: { id: 'native-none-id' },
       changeLevel: jest.fn(),
