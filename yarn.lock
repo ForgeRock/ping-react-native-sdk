@@ -2615,7 +2615,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ping-identity/rn-browser@workspace:*, @ping-identity/rn-browser@workspace:packages/browser":
+"@ping-identity/rn-browser@npm:^0.1.0, @ping-identity/rn-browser@workspace:*, @ping-identity/rn-browser@workspace:packages/browser":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
   dependencies:
@@ -2696,8 +2696,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-oidc@workspace:packages/oidc"
   dependencies:
+    "@ping-identity/rn-browser": "npm:^0.1.0"
     "@ping-identity/rn-core": "npm:^0.1.0"
     "@ping-identity/rn-logger": "npm:^0.1.0"
+    "@ping-identity/rn-storage": "npm:^0.1.0"
     "@ping-identity/rn-types": "npm:^0.1.0"
     jest: "npm:^30.2.0"
     react: "npm:*"
