@@ -78,10 +78,6 @@ object RNPingDeviceProfileCommon {
     promise: Promise
   ): Boolean {
     if (collectorTypes.contains("location") && !isLocationServicesAvailable()) {
-      Log.w(
-        "Device Profile",
-        "location collection blocked: $LOCATION_ERROR_MESSAGE"
-      )
       val error = GenericError(
         type = ErrorType.STATE_ERROR,
         error = DeviceProfileErrorCodes.DEVICE_PROFILE_LOCATION_UNAVAILABLE,
@@ -114,8 +110,6 @@ object RNPingDeviceProfileCommon {
       return
     }
 
-    Log.d("Device Profile", "metadata collection starting")
-
     scope.launch {
       try {
         val deviceCollectors = buildCollectors(collectorTypes, includeLocation = true)
@@ -131,7 +125,6 @@ object RNPingDeviceProfileCommon {
         }
         promise.resolve(bridgePayload)
       } catch (e: Throwable) {
-        Log.e("Device Profile", "metadata collection failed", e)
         promise.reject(
           mapThrowableToGenericError(e, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR),
           e
@@ -166,11 +159,6 @@ object RNPingDeviceProfileCommon {
       return
     }
 
-    Log.d(
-      "Device Profile",
-      "metadata collection for journey starting"
-    )
-
     scope.launch {
       try {
         val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
@@ -194,20 +182,11 @@ object RNPingDeviceProfileCommon {
 
         result.fold(
           onSuccess = {
-            Log.d(
-              "Device Profile",
-              "metadata collection for journey succeeded"
-            )
             promise.resolve(
               createJourneyResultPayload(type = "success")
             )
           },
           onFailure = { error ->
-            Log.e(
-              "Device Profile",
-              "metadata collection for journey failed during callback",
-              error
-            )
             promise.reject(
               mapThrowableToGenericError(
                 error,
@@ -218,11 +197,6 @@ object RNPingDeviceProfileCommon {
           }
         )
       } catch (error: Throwable) {
-        Log.e(
-          "Device Profile",
-          "metadata collection for journey failed during collection",
-          error
-        )
         promise.reject(
           mapThrowableToGenericError(
             error,

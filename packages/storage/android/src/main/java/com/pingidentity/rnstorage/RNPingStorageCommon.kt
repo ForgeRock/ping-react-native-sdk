@@ -20,8 +20,6 @@ import com.pingidentity.rncore.CoreRuntime
  */
 object RNPingStorageCommon {
 
-  /** Tag for logging purposes */
-  private const val TAG = "RNPingStorageCommon"
 
   /** Registry for session storage configurations */
   private val sessionConfigRegistry = StorageConfigRegistry(CoreRuntime.sessionStorageConfigRegistry)
@@ -47,7 +45,6 @@ object RNPingStorageCommon {
       val storageConfig = buildStorageConfig(map)
       sessionConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
-      Log.e(TAG, "Error configuring session storage", e)
       throw e
     }
   }
@@ -70,7 +67,6 @@ object RNPingStorageCommon {
       val storageConfig = buildStorageConfig(map)
       oidcConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
-      Log.e(TAG, "Error configuring OIDC storage", e)
       throw e
     }
   }
@@ -108,7 +104,6 @@ object RNPingStorageCommon {
       val resolvedConfig = sessionConfigRegistry.resolve(id)
       encodeConfig(resolvedConfig)
     } catch (e: Exception) {
-      Log.e(TAG, "Error resolving session storage config", e)
       throw e
     }
   }
@@ -122,7 +117,6 @@ object RNPingStorageCommon {
       val resolvedConfig = oidcConfigRegistry.resolve(id)
       encodeConfig(resolvedConfig)
     } catch (e: Exception) {
-      Log.e(TAG, "Error resolving OIDC storage config", e)
       throw e
     }
   }
