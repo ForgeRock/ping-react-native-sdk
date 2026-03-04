@@ -17,14 +17,18 @@
   "scripts": {
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
-    "test": "jest",
-    "clean": "rimraf lib"
+    "test": "jest --config jest.config.js",
+    "clean": "rimraf lib",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
   },
   "devDependencies": {
+    "jest": "^30.2.0",
     "react": "*",
     "react-native": "*",
     "react-native-builder-bob": "^0.40.14",

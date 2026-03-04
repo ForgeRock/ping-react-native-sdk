@@ -6,7 +6,10 @@
   "license": "MIT",
   "scripts": {
     "packages:install": "yarn install",
-    "packages:build": "yarn workspaces foreach -A -t --topological-dev run build",
+    "packages:build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:affected:coverage": "turbo run test --affected -- --coverage",
     "packages:info": "yarn workspaces info",
     "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
@@ -20,7 +23,9 @@
     "sample:clean-android": "rm -rf PingSampleApp/android/app/build PingSampleApp/android/build PingSampleApp/android/.gradle && (rm -f ~/.gradle/wrapper/dists/gradle-8.14.1-bin/*/gradle-8.14.1-bin.zip.lck || true) && (cd PingSampleApp/android && ./gradlew clean)",
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
-    "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache"
+    "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",
+    "prettier": "turbo run prettier",
+    "typecheck": "turbo run typecheck"
   },
   "workspaces": {
     "packages": [
@@ -29,11 +34,21 @@
     ]
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@react-native/codegen": "^0.82.1",
     "@types/jest": "^29.5.14",
     "babel-jest": "^29.7.0",
+    "eslint": "^10.0.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.3.0",
     "jest": "^29.7.0",
-    "typedoc": "^0.28"
+    "prettier": "3.8.1",
+    "turbo": "^2.8.10",
+    "typedoc": "^0.28",
+    "typescript-eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=20 <21"
   },
   "packageManager": "yarn@4.11.0"
 }
