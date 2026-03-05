@@ -7,18 +7,6 @@
 name: Build and Test Android
 on: 
     workflow_call:
-        inputs:
-            turbo_scm_base:
-                required: true
-                type: string
-            turbo_scm_head:
-                required: true
-                type: string
-
-# Permissions needed for dorny/test-reporter to create check runs.
-permissions:
-    contents: read
-    checks: write
     
 jobs:
     build-and-test-android:
@@ -27,9 +15,6 @@ jobs:
 
         # TODO: remove continue-on-error after all build failures are fixed.
         continue-on-error: true
-        env:
-            TURBO_SCM_BASE: ${{ inputs.turbo_scm_base }}
-            TURBO_SCM_HEAD: ${{ inputs.turbo_scm_head }}
 
         steps:
             # Checkout with full history for git-based affected detection.
@@ -50,7 +35,7 @@ jobs:
                 java-version: '17'
                 cache: gradle
 
-            # Run Android unit tests using Gradle.
+            # Run Android unit tests from all packages using Gradle.
             - name: Run Android unit tests
               working-directory: PingSampleApp/android
               run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
