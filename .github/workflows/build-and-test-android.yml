@@ -6,24 +6,14 @@
 #
 name: Build and Test Android
 on: 
-    # workflow_call:
-    #     inputs:
-    #         turbo_scm_base:
-    #             required: true
-    #             type: string
-    #         turbo_scm_head:
-    #             required: true
-    #             type: string
-    workflow_dispatch:
+    workflow_call:
         inputs:
             turbo_scm_base:
-                description: 'Base commit for turbo'
                 required: true
-                default: 'HEAD^'
+                type: string
             turbo_scm_head:
-                description: 'Head commit for turbo'
                 required: true
-                default: 'HEAD'
+                type: string
 
 # Permissions needed for dorny/test-reporter to create check runs.
 permissions:

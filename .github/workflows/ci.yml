@@ -10,6 +10,7 @@ on:
         types: [opened, reopened, synchronize, edited]
         branches:
             - main
+    workflow_dispatch:
 
 # Prevent multiple CI runs for the same PR.
 # Cancel any in-progress runs when new commits are pushed.
@@ -45,7 +46,13 @@ jobs:
         with:
             turbo_scm_base: ${{ github.event.pull_request.base.sha }}
             turbo_scm_head: ${{ github.event.pull_request.head.sha }}
-
+    
+    android-unit-tests:
+        needs: js-unit-tests
+        uses: ./.github/workflows/build-and-test-android.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
 
     # Build TypeDoc documentation for affected packages and upload as artifact.
     build-docs-check:
