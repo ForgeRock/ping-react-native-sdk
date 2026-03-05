@@ -6,16 +6,8 @@
 #
 name: Publish Docs
 on:
-    push:
-        branches:
-            - main
-    workflow_dispatch:
-
-# Prevent multiple deployments from running simultaneously.
-# Cancel any in-progress deployments when new commits are pushed.
-concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+    #TODO: Before release switch to trigger on push to main with path filter for docs changes only.
+    workflow_call:
 
 # Required permissions for GitHub Pages deployment.
 permissions:
