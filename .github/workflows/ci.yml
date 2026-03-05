@@ -26,16 +26,25 @@ jobs:
     # Run ESLint, TypeScript type checking, and Prettier format validation.
     lint-and-typecheck:
         uses: ./.github/workflows/lint-and-typecheck.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
     
     # Build affected packages to verify compilation succeeds.
     build-packages-check:
         needs: lint-and-typecheck
         uses: ./.github/workflows/build-packages.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
     
     # Execute Jest unit tests across affected packages.
     js-unit-tests:
         needs: build-packages-check
         uses: ./.github/workflows/js-unit-tests.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
 
 
     # Build TypeDoc documentation for affected packages and upload as artifact.
