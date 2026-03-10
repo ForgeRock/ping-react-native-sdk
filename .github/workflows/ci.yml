@@ -50,6 +50,11 @@ jobs:
         needs: js-unit-tests
         uses: ./.github/workflows/build-and-test-android.yml
 
+    # Execute iOS unit tests across affected packages.
+    ios-unit-tests:
+        needs: js-unit-tests
+        uses: ./.github/workflows/build-and-test-ios.yml
+
 
     # Build TypeDoc documentation for affected packages and upload as artifact.
     build-docs-check:

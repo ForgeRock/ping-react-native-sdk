@@ -58,7 +58,7 @@ final class RNPingLoggerCommonTests: XCTestCase {
       ]
 
       RNPingLoggerCommon.sync(updatedConfig)
-      let handle = await waitForHandle(registryId)
+      let handle = await waitForHandle(registryId, expectedLevel: "WARN")
       XCTAssertEqual(handle?.level, "WARN", "sync should update the level on existing handle")
     }
   }
@@ -88,12 +88,19 @@ final class RNPingLoggerCommonTests: XCTestCase {
 
   private func waitForHandle(
     _ registryId: String,
+    expectedLevel: String? = nil,
     timeout: TimeInterval = 2.0
   ) async -> RNPingLoggerCommon.LoggerHandle? {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
       if let handle = await CoreRuntime.loggerRegistry.resolve(registryId) as? RNPingLoggerCommon.LoggerHandle {
-        return handle
+        if let expectedLevel {
+          if handle.level == expectedLevel {
+            return handle
+          }
+        } else {
+          return handle
+        }
       }
       try? await Task.sleep(nanoseconds: 50_000_000)
     }

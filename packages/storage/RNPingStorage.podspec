@@ -40,6 +40,10 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
   s.requires_arc = true
 
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+  end
+
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
