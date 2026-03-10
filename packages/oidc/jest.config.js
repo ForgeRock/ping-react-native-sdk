@@ -16,6 +16,8 @@ module.exports = {
     ['jest-junit', {
       outputDirectory: './build/test-results/js',
       outputName: 'junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
     }],
   ],
 };

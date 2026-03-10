@@ -16,11 +16,13 @@ module.exports = {
     'node_modules/(?!(?:@forgerock/sdk-types|react-native|@react-native|@react-native-community|@testing-library/react-native)/)',
   ],
   reporters: [
-  'default',
-  ['jest-junit', {
-    outputDirectory: './build/test-results/js',
-    outputName: 'junit.xml',
-  }],
+    'default',
+    ['jest-junit', {
+      outputDirectory: './build/test-results/js',
+      outputName: 'junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+    }],
   ],
 };
 
