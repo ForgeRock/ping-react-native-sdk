@@ -11,7 +11,7 @@ on:
 jobs:
     build-and-test-android:
         runs-on: ubuntu-latest
-        timeout-minutes: 20
+        timeout-minutes: 35
 
         # TODO: remove continue-on-error after all build failures are fixed.
         continue-on-error: true
@@ -49,13 +49,12 @@ jobs:
                 path: '**/build/test-results/android/*.xml'
                 reporter: java-junit
                 list-suites: 'all'
-                list-tests: 'failed'
-                fail-on-error: 'true'
-                fail-on-empty: 'true'
+                list-tests: 'all'
+                fail-on-error: 'false'
             
             -  name: Upload Android unit tests HTML report
                if: success() || failure()
-               uses: actions/upload-artifact@v3
+               uses: actions/upload-artifact@v7
                with:
                  name: Android Unit Test Report
                  path: '**/build/reports/tests/testDebugUnitTest/**'

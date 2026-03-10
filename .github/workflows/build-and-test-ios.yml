@@ -135,7 +135,7 @@ jobs:
               # Upload xcresult for debugging purposes
             - name: Upload xcresult (debug)
               if: always()
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                 name: TestResults.xcresult
                 path: TestResults.xcresult
@@ -148,11 +148,11 @@ jobs:
               # Publish the test results
             - name: Publish test results
               if: always()
-              uses: dorny/test-reporter@v1
+              uses: dorny/test-reporter@v2
               with:
                 name: Unit tests results
                 path: test-report.xml
+                reporter: java-junit
                 list-suites: 'all'
                 list-tests: 'all'
                 fail-on-error: 'false'
-                reporter: java-junit
