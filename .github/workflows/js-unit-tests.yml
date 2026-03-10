@@ -15,6 +15,11 @@ on:
                 required: true
                 type: string
 
+# Permissions needed for dorny/test-reporter to create check runs.
+permissions:
+    contents: read
+    checks: write
+
 jobs:
     js-unit-tests:
         runs-on: ubuntu-latest
@@ -39,3 +44,13 @@ jobs:
             # Execute Jest unit tests across affected packages in the monorepo.
             - name: Run unit tests
               run: yarn test --affected
+
+            # Publish test results as GitHub check runs.
+            - name: Publish test report
+              if: always()
+              uses: dorny/test-reporter@v2
+              with:
+                name: JavaScript Unit Test Results
+                path: '**/build/test-results/js/*.xml'
+                reporter: jest-junit
+                fail-on-error: false

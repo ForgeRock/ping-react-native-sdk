@@ -6,7 +6,16 @@
  */
 
 module.exports = {
-  preset: 'react-native',
-  modulePathIgnorePatterns: ['lib'],
-  transformIgnorePatterns: [],
+  testEnvironment: 'node',
+  testMatch: ['<rootDir>/src/__tests__/**/*.test.ts?(x)'],
+  transform: {
+    '^.+\\.[jt]sx?$': 'babel-jest',
+  },
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: './build/test-results/js',
+      outputName: 'junit.xml',
+    }],
+  ],
 };
