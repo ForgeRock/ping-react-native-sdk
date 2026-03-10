@@ -7,9 +7,9 @@
 
 package com.pingidentity.rnjourney
 
-import com.reactnativepingidentity.core.registry.NativeHandle
-import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.registry.Registry
+import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith

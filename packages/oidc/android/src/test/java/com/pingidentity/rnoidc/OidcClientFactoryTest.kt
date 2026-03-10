@@ -9,9 +9,9 @@ package com.pingidentity.rnoidc
 
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcClientConfig
-import com.reactnativepingidentity.core.registry.NativeHandle
-import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.registry.Registry
+import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

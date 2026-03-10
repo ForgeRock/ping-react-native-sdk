@@ -6,40 +6,9 @@
  */
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
-
 /**
- * Cache strategies for Android storage operations.
- * 
- * Defines how the SDK handles caching behavior when storing and retrieving data.
- * These strategies are Android-specific and control how data is cached in memory
- * versus persistent storage.
- * 
- * @example
- * ```typescript
- * // Use CACHE_ON_FAILURE for resilient storage
- * const config = {
- *   android: {
- *     keyAlias: 'myKey',
- *     cacheStrategy: CacheStrategy.CACHE_ON_FAILURE
- *   }
- * };
- * 
- * // Use NO_CACHE for sensitive data
- * const secureConfig = {
- *   android: {
- *     keyAlias: 'tokenKey',
- *     cacheStrategy: CacheStrategy.NO_CACHE
- *   }
- * };
- * 
- * // Use CACHE for frequently accessed data
- * const fastConfig = {
- *   android: {
- *     keyAlias: 'sessionKey',
- *     cacheStrategy: CacheStrategy.CACHE
- *   }
- * };
- * ```
+ * Native cache strategy values used by the TurboModule bridge.
+ * These must be string literals to satisfy React Native codegen.
  */
 export enum CacheStrategy {
   /**
@@ -62,6 +31,11 @@ export enum CacheStrategy {
    */
   CACHE = 'cache',
 }
+
+/**
+ * Native cache strategy literals used over the React Native bridge.
+ */
+export type NativeCacheStrategy = 'cache_on_failure' | 'no_cache' | 'cache';
 
 /**
  * Base configuration for storage instances across platforms.
@@ -240,7 +214,7 @@ export type BaseStorageConfig = {
 /**
  * Native storage configuration passed to the native module.
  * 
- * This is a flattened version of {@link BaseStorageConfig} where iOS-specific options
+ * This is a flattened version of {@link StorageConfig} where iOS-specific options
  * and Android-specific options are merged into the top level for easier consumption
  * by native code.
  * 
@@ -261,6 +235,8 @@ export type BaseStorageConfig = {
  * ```
  */
 export type NativeStorageConfig = {
+  /** Optional native logger handle id for Android SDK logging. */
+  loggerId?: string;
   /** Optional encryption key alias for Android encrypted storage. */
   keyAlias?: string;
   /** Optional file name for Android persistent storage. */
@@ -268,7 +244,7 @@ export type NativeStorageConfig = {
   /** Optional StrongBox preference for Android keystore. */
   strongBoxPreferred?: boolean;
   /** Optional cache strategy for storage operations. */
-  cacheStrategy?: CacheStrategy;
+  cacheStrategy?: NativeCacheStrategy;
   /** Optional Keychain account identifier (iOS only). */
   account?: string;
   /** Optional Encryptor flag for iOS Keychain (iOS only). */
@@ -392,7 +368,7 @@ export function getNativeModule(): Spec {
       .slice(0, 10); // avoid huge logs
 
     throw new Error(
-      '[@react-native-pingidentity/storage] Classic RNPingStorageClassic native module not found.\n' +
+      '[@ping-identity/rn-storage] Classic RNPingStorageClassic native module not found.\n' +
       'Available NativeModules: ' + JSON.stringify(available)
     );
   }

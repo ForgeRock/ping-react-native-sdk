@@ -5,6 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import type { BaseStorageConfig } from "../NativeRNPingStorage";
+import { CacheStrategy } from "../NativeRNPingStorage";
+import type { GenericError, LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-types';
 import type {
   OidcStorageHandle,
   SessionStorageHandle,
@@ -31,7 +33,7 @@ import type {
  * @example
  * Basic usage:
  * ```typescript
- * import { configureSessionStorage } from '@react-native-pingidentity/storage';
+ * import { configureSessionStorage } from '@ping-identity/rn-storage';
  * 
  * const sessionStorage: SessionStorage = configureSessionStorage({
  *   android: {
@@ -67,7 +69,7 @@ export type SessionStorage = BaseStorageConfig & SessionStorageHandle;
  * @example
  * Basic usage:
  * ```typescript
- * import { configureOidcStorage } from '@react-native-pingidentity/storage';
+ * import { configureOidcStorage } from '@ping-identity/rn-storage';
  * 
  * const oidcStorage: OidcStorage = configureOidcStorage({
  *   android: {
@@ -82,3 +84,30 @@ export type SessionStorage = BaseStorageConfig & SessionStorageHandle;
  * 
  */
 export type OidcStorage = BaseStorageConfig & OidcStorageHandle;
+
+/**
+ * Public storage configuration accepted by storage registration helpers.
+ */
+export type StorageConfig = BaseStorageConfig;
+
+/**
+ * Error payload returned when storage operations fail.
+ */
+export type StorageError = GenericError;
+
+/**
+ * Optional logger configuration for storage native calls.
+ */
+export type StorageLoggerOptions = {
+  /**
+   * Optional JavaScript logger instance.
+   */
+  logger?: LoggerInstance;
+
+  /**
+   * Optional native logger handle.
+   */
+  nativeLogger?: NativeLoggerHandle;
+};
+
+export { CacheStrategy };

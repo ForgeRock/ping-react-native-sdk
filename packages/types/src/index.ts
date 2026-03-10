@@ -94,3 +94,18 @@ export type * from './oidc.types';
  * Shared native handle and logger contracts used across RN modules.
  */
 export type * from './handles.types';
+
+/*
+ * Minimal Journey instance contract for cross-module coordination.
+ *
+ * @remarks
+ * The Journey module owns instance creation; this type enables other modules
+ * to invoke Journey operations without introducing package coupling.
+ * TODO: Change this contract as needed to support additional Journey interactions.
+ */
+export type JourneyInstance = {
+  /**
+   * Returns the native Journey instance identifier.
+   */
+  getId: () => Promise<string>;
+};

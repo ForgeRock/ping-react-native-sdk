@@ -1,3 +1,9 @@
+<!--
+Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+
+This software may be modified and distributed under the terms
+of the MIT license. See the LICENSE file for details.
+-->
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native Storage
@@ -5,12 +11,19 @@
 The PingStorage SDK provides a flexible storage interface and a set of common
 storage solutions for the Ping SDKs, serving React Native applications.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to use the SDK](#how-to-use-the-sdk)
+- [Error handling](#error-model)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/storage
+yarn add @ping-identity/rn-storage
 cd ios && pod install
 ```
 
@@ -26,12 +39,12 @@ import {
   CacheStrategy,
   configureSessionStorage,
   configureOidcStorage,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 import type {
   SessionStorage,
   OidcStorage,
   StorageConfig,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 
 // Configure session storage for Journey SSO tokens (Android configuration)
 const sessionStorage: SessionStorage = configureSessionStorage({
@@ -72,7 +85,7 @@ You can import `StorageConfig` to type the input passed to
 branded as `SessionStorage` or `OidcStorage` for type safety.
 
 ```ts
-import type { OidcStorage, StorageConfig } from '@react-native-pingidentity/storage';
+import type { OidcStorage, StorageConfig } from '@ping-identity/rn-storage';
 
 const oidcCfg: StorageConfig = {
   android: {
@@ -97,7 +110,7 @@ import {
   configureOidcStorage,
   configureSessionStorage,
   type OidcStorage,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 import { createJourneyClient } from '@ping-identity/rn-journey';
 
 const sessionStorage = configureSessionStorage({
@@ -132,3 +145,28 @@ const journeyClient = createJourneyClient({
   },
 });
 ```
+
+## Error handling
+
+Storage operations reject or throw using the shared `GenericError` contract from
+`@ping-identity/rn-types`.
+
+```ts
+import type { StorageError } from '@ping-identity/rn-storage';
+
+try {
+  const sessionStorage = configureSessionStorage({
+    android: {
+      keyAlias: 'ping.session',
+      fileName: 'ping_session_store',
+    },
+  });
+} catch (error) {
+  const storageError = error as StorageError;
+  console.log(storageError.type, storageError.error, storageError.message);
+}
+```
+
+## License
+
+MIT

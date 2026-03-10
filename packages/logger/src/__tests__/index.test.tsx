@@ -106,7 +106,7 @@ describe('logger package', () => {
     const module = require('../logger');
 
     expect(() => module.configureLogger({ level: 'info' })).toThrow(
-      '[@react-native-pingidentity/logger] Failed to configure native logger'
+      '[@ping-identity/rn-logger] Failed to configure native logger'
     );
   });
 
@@ -126,7 +126,7 @@ describe('logger package', () => {
 
   it('logger tags messages with the SDK prefix', async () => {
     const { module, sdkLogger } = await loadModule();
-    const pkg = require('@react-native-pingidentity/logger/package.json');
+    const pkg = require('@ping-identity/rn-logger/package.json');
 
     const custom = {
       error: jest.fn(() => true),

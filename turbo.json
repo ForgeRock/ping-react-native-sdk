@@ -1,0 +1,41 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "cacheDir": ".turbo/cache",
+  "remoteCache": {
+    "enabled": false
+  },
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx"],
+      "outputs": ["dist/**", "lib/**", "!.next/cache/**"],
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx"],
+      "outputs": [],
+      "dependsOn": ["^typecheck"]
+    },
+    "prettier": {
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+      "outputs": [],
+      "dependsOn": []
+    },
+    "test": {
+      "outputs": ["coverage/**"],
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+      "outputs": [],
+      "dependsOn": ["^lint"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

@@ -10,7 +10,6 @@ import RNPingCore
 
 /// Common logger functionality for managing logger instances across the bridge.
 /// Handles synchronization of logger configuration from JavaScript to native Swift.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingLoggerCommon: NSObject {
   /// Thread-safe mapping store for JavaScript logger ids to native registry ids.

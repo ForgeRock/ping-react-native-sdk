@@ -7,9 +7,9 @@
 
 package com.pingidentity.rnjourney
 
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.error.GenericError
-import com.reactnativepingidentity.core.error.mapThrowableToGenericError
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.error.GenericError
+import com.pingidentity.rncore.error.mapThrowableToGenericError
 
 /**
  * Maps Journey runtime failures into shared `GenericError` payloads.

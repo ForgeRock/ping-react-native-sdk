@@ -11,6 +11,13 @@ of the MIT license. See the LICENSE file for details.
 
 This module exposes native-backed OIDC clients for PingOne and ForgeRock platforms.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [Android redirect configuration](#android-redirect-configuration)
+- [Error handling](#error-handling)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
@@ -23,8 +30,8 @@ cd ios && pod install
 Optional integration packages:
 
 ```bash
-yarn add @react-native-pingidentity/storage
-yarn add @react-native-pingidentity/logger
+yarn add @ping-identity/rn-storage
+yarn add @ping-identity/rn-logger
 ```
 
 The native OIDC SDK already bundles the required browser components, so you do not need the
@@ -53,7 +60,7 @@ If you want to customize native token storage, configure it with the Storage mod
 handle into the OIDC client configuration.
 
 ```ts
-import { configureOidcStorage } from '@react-native-pingidentity/storage';
+import { CacheStrategy, configureOidcStorage } from '@ping-identity/rn-storage';
 import { createOidcClient } from '@ping-identity/rn-oidc';
 
 const oidcStorage = configureOidcStorage({
@@ -82,12 +89,12 @@ const oidcClient = createOidcClient({
 ### Configure logging (optional)
 
 If you install the logger package, pass either a JS logger instance or a native logger handle.
-Both `logger` and `nativeLogger` values must be created via `@react-native-pingidentity/logger`.
+Both `logger` and `nativeLogger` values must be created via `@ping-identity/rn-logger`.
 If the logger package is not installed/configured, do not pass logger values in OIDC config.
 
 ```ts
 import { createOidcClient } from '@ping-identity/rn-oidc';
-import { logger, configureLogger } from '@react-native-pingidentity/logger';
+import { logger, configureLogger } from '@ping-identity/rn-logger';
 
 const jsLogger = logger({ level: 'debug' });
 const nativeLogger = configureLogger({ level: 'warn' });
@@ -155,7 +162,7 @@ If you want to customize Custom Tabs/Auth Tabs behavior, configure the Browser m
 app startup. The OIDC module will inherit these settings.
 
 ```ts
-import { configureBrowser } from '@react-native-pingidentity/browser';
+import { configureBrowser } from '@ping-identity/rn-browser';
 
 configureBrowser({
   android: {

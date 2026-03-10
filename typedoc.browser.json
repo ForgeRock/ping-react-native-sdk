@@ -1,7 +1,0 @@
-{
-  "entryPoints": ["packages/browser/src/index.tsx"],
-  "out": "docs/browser",
-  "tsconfig": "packages/browser/tsconfig.json",
-  "excludeInternal": true,
-  "excludePrivate": true
-}

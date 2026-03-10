@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: CI
+on:
+    pull_request:
+        types: [opened, reopened, synchronize, edited]
+        branches:
+            - main
+
+# Prevent multiple CI runs for the same PR.
+# Cancel any in-progress runs when new commits are pushed.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+# Minimal permissions required for CI pipeline.
+permissions:
+    contents: read
+    pull-requests: read
+    
+jobs:
+    # Run ESLint, TypeScript type checking, and Prettier format validation.
+    lint-and-typecheck:
+        uses: ./.github/workflows/lint-and-typecheck.yml
+    
+    # Build affected packages to verify compilation succeeds.
+    build-packages-check:
+        needs: lint-and-typecheck
+        uses: ./.github/workflows/build-packages.yml
+    
+    # Execute Jest unit tests across affected packages.
+    js-unit-tests:
+        needs: build-packages-check
+        uses: ./.github/workflows/js-unit-tests.yml
+
+
+    # Build TypeDoc documentation for affected packages and upload as artifact.
+    build-docs-check:
+        needs: js-unit-tests
+        uses: ./.github/workflows/build-docs.yml

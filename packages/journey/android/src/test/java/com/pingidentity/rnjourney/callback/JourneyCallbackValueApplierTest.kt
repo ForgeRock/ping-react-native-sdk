@@ -220,7 +220,7 @@ class JourneyCallbackValueApplierTest {
       )
     } catch (error: IllegalStateException) {
       assertTrue(error.message?.contains("additional native integration") == true)
-      assertTrue(error.message?.contains("@react-native-pingidentity/device-profile") == true)
+      assertTrue(error.message?.contains("@ping-identity/rn-device-profile") == true)
       return
     }
     throw AssertionError("Expected IllegalStateException for integration callback")

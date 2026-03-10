@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Docs Build
+description: Setup the environment and generate docs
+
+runs:
+    using: composite
+    steps:
+        # Setup Node.js environment and install all dependencies.
+        - name: Setup
+          uses: ./.github/actions/setup-proj
+
+        # Generate TypeDoc documentation for all packages in the monorepo.
+        # Output is written to the docs/ directory.
+        - name: Generate docs
+          run: yarn docs:generate
+          shell: bash

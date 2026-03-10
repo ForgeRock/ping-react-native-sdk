@@ -39,14 +39,14 @@ export type JourneyOidcModuleConfig = OidcCoreConfig & {
    * Optional JavaScript logger instance.
    *
    * @remarks
-   * Must be created by `@react-native-pingidentity/logger` (`logger(...)`).
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
   /**
    * Optional native logger handle.
    *
    * @remarks
-   * Must be created by `@react-native-pingidentity/logger` (`configureLogger(...)`).
+   * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
    */
   nativeLogger?: NativeLoggerHandle;
 };
@@ -97,7 +97,7 @@ export type JourneyConfig = {
    * Optional Journey logger used by the native workflow.
    *
    * @remarks
-   * Must be created by `@react-native-pingidentity/logger` (`logger(...)`).
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
   /**

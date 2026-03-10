@@ -13,6 +13,7 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
+import com.pingidentity.rncore.utils.JsonBridgeMapper
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
@@ -59,17 +60,17 @@ class RNPingDeviceProfileJsonBridgeTest {
    */
   @Test
   fun jsonPrimitiveToReactValuePreservesTypes() {
-    val stringValue = RNPingDeviceProfileCommon.run { JsonPrimitive("ping").toReactValue() }
-    val booleanValue = RNPingDeviceProfileCommon.run { JsonPrimitive(true).toReactValue() }
-    val intValue = RNPingDeviceProfileCommon.run { JsonPrimitive(42).toReactValue() }
-    val doubleValue = RNPingDeviceProfileCommon.run { JsonPrimitive(3.14).toReactValue() }
-    val longValue = RNPingDeviceProfileCommon.run { JsonPrimitive(9_007_199_254_740_992L).toReactValue() }
+    val stringValue = JsonBridgeMapper.encodeJsonElement(JsonPrimitive("ping"))
+    val booleanValue = JsonBridgeMapper.encodeJsonElement(JsonPrimitive(true))
+    val intValue = JsonBridgeMapper.encodeJsonElement(JsonPrimitive(42))
+    val doubleValue = JsonBridgeMapper.encodeJsonElement(JsonPrimitive(3.14))
+    val longValue = JsonBridgeMapper.encodeJsonElement(JsonPrimitive(9_007_199_254_740_992L))
 
     assertEquals("ping", stringValue)
     assertEquals(true, booleanValue)
-    assertEquals(42, intValue)
+    assertEquals(42L, intValue)
     assertEquals(3.14, doubleValue as Double, 0.0)
-    assertTrue(longValue is Double)
+    assertTrue(longValue is Long)
   }
 
   /**
@@ -88,17 +89,17 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
     val nested = map.getMap("nested") as ReadableMap
     val items = map.getArray("items") as ReadableArray
 
     assertEquals("device", map.getString("name"))
     assertEquals(true, map.getBoolean("enabled"))
-    assertEquals(7, map.getInt("count"))
+    assertEquals(7.0, map.getDouble("count"), 0.0)
     assertEquals(1.5, map.getDouble("ratio"), 0.0)
     assertEquals("value", nested.getString("key"))
     assertEquals("a", items.getString(0))
-    assertEquals(2, items.getInt(1))
+    assertEquals(2.0, items.getDouble(1), 0.0)
   }
 
   /**
@@ -113,7 +114,7 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val array = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableArray
+    val array = JsonBridgeMapper.encodeJsonElement(json) as ReadableArray
 
     assertEquals("alpha", array.getString(0))
     assertEquals(ReadableType.Map, array.getType(1))
@@ -126,7 +127,7 @@ class RNPingDeviceProfileJsonBridgeTest {
    */
   @Test
   fun jsonNullToReactValueReturnsNull() {
-    val value = RNPingDeviceProfileCommon.run { JsonNull.toReactValue() }
+    val value = JsonBridgeMapper.encodeJsonElement(JsonNull)
     assertEquals(null, value)
   }
 
@@ -135,8 +136,8 @@ class RNPingDeviceProfileJsonBridgeTest {
    */
   @Test
   fun emptyJsonContainersConvertToEmptyReactValues() {
-    val map = RNPingDeviceProfileCommon.run { JsonObject(emptyMap()).toReactValue() } as ReadableMap
-    val array = RNPingDeviceProfileCommon.run { JsonArray(emptyList()).toReactValue() } as ReadableArray
+    val map = JsonBridgeMapper.encodeJsonElement(JsonObject(emptyMap())) as ReadableMap
+    val array = JsonBridgeMapper.encodeJsonElement(JsonArray(emptyList())) as ReadableArray
 
     assertEquals(0, map.toHashMap().size)
     assertEquals(0, array.size())
@@ -170,13 +171,13 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
     val level1 = map.getArray("level1") as ReadableArray
     val level2 = level1.getMap(0) as ReadableMap
     val level3 = (level2.getMap("level2") as ReadableMap).getArray("level3") as ReadableArray
     val nested = level3.getMap(1) as ReadableMap
 
-    assertEquals(1, level3.getInt(0))
+    assertEquals(1.0, level3.getDouble(0), 0.0)
     assertEquals("ok", nested.getString("value"))
   }
 
@@ -192,7 +193,7 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
     assertEquals(ReadableType.String, map.getType("boolString"))
     assertEquals(ReadableType.String, map.getType("numberString"))
     assertEquals("true", map.getString("boolString"))
@@ -204,8 +205,15 @@ class RNPingDeviceProfileJsonBridgeTest {
    */
   @Test
   fun largeNumbersConvertToDouble() {
-    val unsafe = RNPingDeviceProfileCommon.run { JsonPrimitive(9_007_199_254_740_992L).toReactValue() }
-    val maxLong = RNPingDeviceProfileCommon.run { JsonPrimitive(Long.MAX_VALUE).toReactValue() }
+    val json = JsonObject(
+      mapOf(
+        "unsafe" to JsonPrimitive(9_007_199_254_740_992L),
+        "maxLong" to JsonPrimitive(Long.MAX_VALUE)
+      )
+    )
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val unsafe = map.getDouble("unsafe")
+    val maxLong = map.getDouble("maxLong")
 
     assertTrue(unsafe is Double)
     assertTrue(maxLong is Double)
@@ -219,7 +227,7 @@ class RNPingDeviceProfileJsonBridgeTest {
     val value = "Ping π 你好"
     val json = JsonObject(mapOf("text" to JsonPrimitive(value)))
 
-    val map = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
     assertEquals(value, map.getString("text"))
   }
 
@@ -230,7 +238,7 @@ class RNPingDeviceProfileJsonBridgeTest {
   fun jsonNullInObjectMapsToNullType() {
     val json = JsonObject(mapOf("value" to JsonNull))
 
-    val map = RNPingDeviceProfileCommon.run { json.toReactValue() } as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
     assertEquals(ReadableType.Null, map.getType("value"))
   }
 }

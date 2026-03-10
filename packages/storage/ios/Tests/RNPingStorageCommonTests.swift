@@ -10,18 +10,20 @@ import XCTest
 @testable import RNPingCore
 @testable import RNPingStorage
 
-@available(iOS 16.0, *)
+
 final class RNPingStorageCommonTests: XCTestCase {
 
   override func setUp() async throws {
     try await super.setUp()
     await CoreRuntime.sessionStorageConfigRegistry.removeAll()
     await CoreRuntime.oidcStorageConfigRegistry.removeAll()
+    RNPingStorageCommon._testResetApplyLogger()
   }
 
   override func tearDown() async throws {
     await CoreRuntime.sessionStorageConfigRegistry.removeAll()
     await CoreRuntime.oidcStorageConfigRegistry.removeAll()
+    RNPingStorageCommon._testResetApplyLogger()
     try await super.tearDown()
   }
 
@@ -110,5 +112,24 @@ final class RNPingStorageCommonTests: XCTestCase {
     XCTAssertFalse(id1.isEmpty)
     XCTAssertFalse(id2.isEmpty)
     XCTAssertNotEqual(configDict1["account"] as? String, configDict2["account"] as? String)
+  }
+
+  func testRegisterSessionStorageAppliesLoggerIdWhenProvided() throws {
+    var capturedLoggerId: String?
+    RNPingStorageCommon._testSetApplyLogger { id in
+      capturedLoggerId = id
+      return true
+    }
+    let config: NSDictionary = [
+      "account": "test.session.config",
+      "loggerId": "logger-1"
+    ]
+
+    let id = RNPingStorageCommon.registerSessionStorage(config)
+    let configDict = RNPingStorageCommon.configureSessionStorage(id)
+
+    XCTAssertFalse(id.isEmpty)
+    XCTAssertEqual(capturedLoggerId, "logger-1")
+    XCTAssertNil(configDict["loggerId"], "loggerId is a bridge-only value and should not be persisted")
   }
 }

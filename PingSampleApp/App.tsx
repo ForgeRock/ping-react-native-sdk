@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
@@ -24,8 +24,8 @@ import LogoutScreen from './ui/LogoutScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
 import { loginClient, sampleOidcWebClient } from './src/clients';
-import { configureBrowser } from '@react-native-pingidentity/browser';
-import { configureLogger } from '@react-native-pingidentity/logger';
+import { configureBrowser } from '@ping-identity/rn-browser';
+import { configureLogger, logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from './src/styles/colors';
 
@@ -53,7 +53,12 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/**
+ * Root sample app component that wires navigation and initializes demo clients.
+ */
 export default function App() {
+  const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
+
   useEffect(() => {
     const textComponent = Text as unknown as ComponentWithDefaultStyle;
     const textDefaults = textComponent.defaultProps ?? {};
@@ -90,8 +95,10 @@ export default function App() {
           navigationBarColor: colors.browserNavigationBar,
         },
       },
+    }, {
+      logger: browserLogger,
     });
-  }, []);
+  }, [browserLogger]);
   return (
     <JourneyProvider client={loginClient}>
       <OidcProvider client={sampleOidcWebClient}>

@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/core",
+  "name": "@ping-identity/rn-core",
   "version": "0.1.0",
   "description": "Core utilities for Ping Identity React Native modules.",
   "homepage": "https://www.pingidentity.com/",
@@ -7,6 +7,11 @@
   "author": "Ping Identity",
   "main": "index.js",
   "react-native": "index.js",
+  "scripts": {
+    "build": "node -e \"process.exit(0)\"",
+    "typecheck": "node -e \"process.exit(0)\"",
+    "lint": "node -e \"process.exit(0)\""
+  },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"

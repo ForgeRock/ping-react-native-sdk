@@ -8,9 +8,9 @@
 package com.pingidentity.rnjourney
 
 import com.facebook.react.bridge.ReadableMap
-import com.reactnativepingidentity.core.utils.readStringMap
-import com.reactnativepingidentity.core.utils.readStringArray
-import com.reactnativepingidentity.core.utils.requireString
+import com.pingidentity.rncore.utils.readStringMap
+import com.pingidentity.rncore.utils.readStringArray
+import com.pingidentity.rncore.utils.requireString
 
 /**
  * Parsed Journey client payload supplied by JavaScript.

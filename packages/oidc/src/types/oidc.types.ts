@@ -14,7 +14,7 @@ import type {
   OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
   Tokens,
 } from '@ping-identity/rn-types';
-import type { IOSBrowserOpenOptions } from '@react-native-pingidentity/browser';
+import type { IOSBrowserOpenOptions } from '@ping-identity/rn-browser';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -73,7 +73,7 @@ export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
    * Optional JavaScript logger instance.
    *
    * @remarks
-   * Must be created by `@react-native-pingidentity/logger` (`logger(...)`).
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
 
@@ -81,7 +81,7 @@ export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
    * Optional native logger handle.
    *
    * @remarks
-   * Must be created by `@react-native-pingidentity/logger` (`configureLogger(...)`).
+   * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
    */
   nativeLogger?: NativeLoggerHandle;
 

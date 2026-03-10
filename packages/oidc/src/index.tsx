@@ -167,7 +167,7 @@ function resolveStorageId(value?: OidcClientConfig['storage']): string | undefin
   ) {
     throw new Error(
       '[@ping-identity/rn-oidc] Invalid storage handle. ' +
-        'Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+        'Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   }
   return handle.id;

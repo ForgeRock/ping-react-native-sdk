@@ -20,9 +20,9 @@ import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.Token
 import com.pingidentity.oidc.User
 import com.pingidentity.utils.Result
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.registry.NativeHandle
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.registry.NativeHandle
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

@@ -71,7 +71,7 @@ function resolveStorageHandleId(
   ) {
     throw new Error(
       `[@ping-identity/rn-journey] Invalid ${modulePath} handle. ` +
-        `Use ${configureMethod}(...) from @react-native-pingidentity/storage.`
+        `Use ${configureMethod}(...) from @ping-identity/rn-storage.`
     );
   }
 

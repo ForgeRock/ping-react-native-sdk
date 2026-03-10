@@ -42,7 +42,7 @@ internal object JourneyCallbackValueApplier {
      * Map value describes the required integration for error messaging.
      */
     private val integrationCallbackRequirements = mapOf(
-        "DeviceProfileCallback" to "@react-native-pingidentity/device-profile",
+        "DeviceProfileCallback" to "@ping-identity/rn-device-profile",
         "PingOneProtectInitializeCallback" to "PingOne Protect integration",
         "PingOneProtectEvaluationCallback" to "PingOne Protect integration",
         "Fido2RegistrationCallback" to "FIDO/WebAuthn integration",

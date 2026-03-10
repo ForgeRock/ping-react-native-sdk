@@ -20,6 +20,9 @@ type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
   screen?: keyof RootStackParamList;
 };
 
+/**
+ * Home screen with entry points for each SDK demo flow.
+ */
 export default function HomeScreen({ navigation }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
@@ -124,7 +127,7 @@ export default function HomeScreen({ navigation }: Props) {
         if (isMounted) setDeviceId(defaultId);
       } catch (err) {
         if (isMounted) {
-          setDeviceIdError(`Device ID failed: ${String(err)}`);
+          setDeviceIdError(formatDeviceIdError(err));
         }
       }
     };

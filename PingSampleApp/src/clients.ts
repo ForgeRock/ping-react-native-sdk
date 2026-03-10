@@ -13,12 +13,12 @@ import {
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
 
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 import {
   CacheStrategy,
   configureOidcStorage,
   configureSessionStorage,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 
 export const journeyConfig = {
   serverUrl: 'https://openam-sdks.forgeblocks.com/am',

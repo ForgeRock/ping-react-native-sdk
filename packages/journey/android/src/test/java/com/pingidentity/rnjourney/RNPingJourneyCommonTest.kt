@@ -24,9 +24,9 @@ import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
 import com.pingidentity.utils.Result
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.registry.NativeHandle
-import com.reactnativepingidentity.core.CoreRuntime
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.network.HttpRequest
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject

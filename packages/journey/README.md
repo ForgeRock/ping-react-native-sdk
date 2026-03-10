@@ -23,8 +23,8 @@ cd ios && pod install
 Optional integration packages:
 
 ```bash
-yarn add @react-native-pingidentity/storage
-yarn add @react-native-pingidentity/logger
+yarn add @ping-identity/rn-storage
+yarn add @ping-identity/rn-logger
 ```
 
 ## How to Use the SDK
@@ -58,7 +58,7 @@ import {
   CacheStrategy,
   configureOidcStorage,
   configureSessionStorage,
-} from '@react-native-pingidentity/storage';
+} from '@ping-identity/rn-storage';
 
 const sessionStorage = configureSessionStorage({
   android: {
@@ -115,12 +115,12 @@ from `configureSessionStorage(...)` / `configureOidcStorage(...)`.
 ### Step 3: Add logging integration (optional)
 
 If you install the logger package, pass a JS logger instance created via
-`@react-native-pingidentity/logger`.
+`@ping-identity/rn-logger`.
 If the logger package is not installed/configured, do not pass logger values in Journey config.
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
-import { logger } from '@react-native-pingidentity/logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const jsLogger = logger({ level: 'debug' });
 

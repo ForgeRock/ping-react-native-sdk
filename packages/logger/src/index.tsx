@@ -7,7 +7,7 @@
 
 /**
  * @packageDocumentation
- * @module @react-native-pingidentity/logger
+ * @module @ping-identity/rn-logger
  * 
  * A React Native logger module that provides unified logging across JavaScript and native platforms.
  * 
@@ -18,7 +18,7 @@
  * @example
  * Basic usage:
  * ```typescript
- * import { logger } from '@react-native-pingidentity/logger';
+ * import { logger } from '@ping-identity/rn-logger';
  * 
  * const log = logger({ level: 'debug' });
  * log.debug('This is a debug message');

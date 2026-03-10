@@ -336,7 +336,7 @@ describe('Journey JS API', () => {
       })
     ).toThrow(
       '[@ping-identity/rn-journey] Invalid modules.session.storage handle. ' +
-        'Use configureSessionStorage(...) from @react-native-pingidentity/storage.'
+        'Use configureSessionStorage(...) from @ping-identity/rn-storage.'
     );
   });
 
@@ -363,7 +363,7 @@ describe('Journey JS API', () => {
       })
     ).toThrow(
       '[@ping-identity/rn-journey] Invalid modules.oidc.storage handle. ' +
-        'Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+        'Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 

@@ -74,7 +74,7 @@ export function getNativeModule(): Spec {
       .slice(0, 10); // avoid huge logs
 
     throw new Error(
-      '[@react-native-pingidentity/logger] Classic Logger (or RNPingLogger) native module not found.\n' +
+      '[@ping-identity/rn-logger] Classic Logger (or RNPingLogger) native module not found.\n' +
       'Available NativeModules: ' + JSON.stringify(available)
     );
   }

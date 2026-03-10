@@ -42,16 +42,19 @@ RCT_EXPORT_MODULE()
  *
  * @param journeyId The ID of the journey to associate the collection with.
  * @param collectors Array of strings representing the data to collect.
+ * @param loggerId Optional native logger handle id.
  * @param resolve Promise resolve block.
  * @param reject Promise reject block.
  */
 - (void)collectDeviceProfileForJourney:(NSString *)journeyId
                             collectors:(NSArray<NSString *> *)collectors
+                              loggerId:(NSString *)loggerId
                                resolve:(RCTPromiseResolveBlock)resolve
                                 reject:(RCTPromiseRejectBlock)reject
 {
   [[self swiftImpl] collectDeviceProfileForJourney:journeyId
                                         collectors:collectors
+                                          loggerId:loggerId
                                            resolver:resolve
                                            rejecter:reject];
 }

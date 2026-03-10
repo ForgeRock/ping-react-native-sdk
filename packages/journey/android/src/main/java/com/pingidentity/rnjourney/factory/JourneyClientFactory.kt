@@ -15,11 +15,11 @@ import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.oidc.OidcClientConfigHandle
-import com.reactnativepingidentity.core.oidc.OidcOpenIdConfig
-import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.core.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.oidc.OidcClientConfigHandle
+import com.pingidentity.rncore.oidc.OidcOpenIdConfig
+import com.pingidentity.rncore.registry.Registry
+import com.pingidentity.rncore.storage.StorageConfigHandleContract
 
 /**
  * Builds native Journey workflow instances from parsed JS payloads.

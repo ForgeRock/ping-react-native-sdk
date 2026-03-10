@@ -36,7 +36,7 @@ import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.SuccessNode
-import com.reactnativepingidentity.core.utils.JsonBridgeMapper
+import com.pingidentity.rncore.utils.JsonBridgeMapper
 
 /**
  * Maps native Journey nodes/callbacks to JS bridge payloads.

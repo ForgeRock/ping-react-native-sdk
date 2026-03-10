@@ -6,7 +6,6 @@
  */
 
 import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
-import { logger } from './logging';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
@@ -22,6 +21,9 @@ import type {
 export interface Spec extends TurboModule {
   /**
    * Collect a device profile outside of Journey flows.
+   *
+   * @remarks
+   * Rejects with a `DeviceProfileError` on failure.
    */
   collectDeviceProfile(
     collectors: DeviceProfileCollector[]
@@ -29,10 +31,14 @@ export interface Spec extends TurboModule {
 
   /**
    * Collect a device profile as part of an active Journey callback.
+   *
+   * @remarks
+   * Rejects with a `DeviceProfileError` on failure.
    */
   collectDeviceProfileForJourney(
     journeyId: string,
-    collectors: DeviceProfileCollector[]
+    collectors: DeviceProfileCollector[],
+    loggerId?: string
   ): Promise<DeviceProfileJourneyResult>;
 }
 
@@ -50,8 +56,8 @@ export function getNativeModule(): Spec {
   if (isNewArchEnabled) {
     try {
       return TurboModuleRegistry.getEnforcing<Spec>('RNPingDeviceProfile');
-    } catch (error){
-      logger.error('TurboModule not registered; falling back to classic implementation.', String(error));
+    } catch {
+      // Fall back to classic if TurboModule isn't registered at runtime.
     }
   }
 

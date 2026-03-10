@@ -10,7 +10,7 @@ package com.pingidentity.rnoidc
 import com.pingidentity.exception.ApiException
 import com.pingidentity.oidc.OidcError
 import com.pingidentity.oidc.exception.AuthorizeException
-import com.reactnativepingidentity.core.error.ErrorType
+import com.pingidentity.rncore.error.ErrorType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException

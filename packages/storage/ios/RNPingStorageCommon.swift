@@ -6,13 +6,13 @@
  */
 import Foundation
 import RNPingCore
+import RNPingLogger
 
 /// A common utility class for managing storage configurations in React Native Ping SDK.
 ///
 /// This class provides methods to register and configure both session and OIDC storage,
 /// using a lazy initialization pattern where configs are registered first and actual
 /// storage instances are created later by the Core SDK when needed.
-@available(iOS 16.0.0, *)
 @objcMembers
 public class RNPingStorageCommon: NSObject {
   
@@ -68,6 +68,14 @@ public class RNPingStorageCommon: NSObject {
     q.setSpecific(key: createQueueKey, value: ())
     return q
   }()
+
+  /// Applies a logger handle id to native SDK logging when provided.
+  ///
+  /// Kept as an assignable closure to simplify unit testing without mutating
+  /// global logger state across tests.
+  private static var applyLogger: (String?) -> Bool = { id in
+    RNPingLoggerImpl.shared.applyLogger(id)
+  }
   
   // MARK: - Public Methods - Configuration
   
@@ -78,6 +86,8 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
+      let loggerId = config["loggerId"] as? String
+      _ = applyLogger(loggerId)
       registerConfig(config, registry: CoreRuntime.sessionStorageConfigRegistry)
     }
   }
@@ -89,6 +99,8 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerOidcStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
+      let loggerId = config["loggerId"] as? String
+      _ = applyLogger(loggerId)
       registerConfig(config, registry: CoreRuntime.oidcStorageConfigRegistry)
     }
   }
@@ -224,4 +236,57 @@ public class RNPingStorageCommon: NSObject {
     )
   }
 
+  /**
+   Registers a session storage config into CoreRuntime.
+
+   - Parameter handle: The storage config handle to register.
+   - Returns: A unique identifier for the registered storage config.
+   */
+  private static func registerSessionStorage(_ handle: StorageConfigHandle) async -> String {
+    return await CoreRuntime.sessionStorageConfigRegistry.register(handle)
+  }
+
+  /**
+   Registers an OIDC storage config into CoreRuntime.
+
+   - Parameter handle: The storage config handle to register.
+   - Returns: A unique identifier for the registered storage config.
+   */
+  private static func registerOidcStorage(_ handle: StorageConfigHandle) async -> String {
+    return await CoreRuntime.oidcStorageConfigRegistry.register(handle)
+  }
+
+  /// Resolves a session storage configuration from CoreRuntime by ID.
+  ///
+  /// - Parameter id: The unique identifier of the storage configuration
+  /// - Returns: The resolved storage configuration, or nil if not found
+  private static func resolveSessionStorage(_ id: String) async -> StorageConfig? {
+    let handle = await CoreRuntime.sessionStorageConfigRegistry.resolve(id)
+    let configHandle = handle as? StorageConfigHandle
+    return configHandle?.config
+  }
+
+  /// Resolves an OIDC storage configuration from CoreRuntime by ID.
+  ///
+  /// - Parameter id: The unique identifier of the storage configuration
+  /// - Returns: The resolved storage configuration, or nil if not found
+  private static func resolveOidcStorage(_ id: String) async -> StorageConfig? {
+    let handle = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
+    let configHandle = handle as? StorageConfigHandle
+    return configHandle?.config
+  }
+
+#if DEBUG
+  /// Test helper to override logger application behavior.
+  static func _testSetApplyLogger(_ applier: @escaping (String?) -> Bool) {
+    applyLogger = applier
+  }
+
+  /// Test helper to reset logger application behavior.
+  static func _testResetApplyLogger() {
+    applyLogger = { id in
+      RNPingLoggerImpl.shared.applyLogger(id)
+    }
+  }
+#endif
 }

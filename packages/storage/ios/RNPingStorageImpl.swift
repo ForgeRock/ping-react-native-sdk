@@ -13,7 +13,7 @@ import RNPingCore
  This class provides React Native bridge methods for storage operations,
  delegating to `RNPingStorageCommon` for the actual implementation.
  */
-@available(iOS 16.0.0, *)
+
 @objcMembers
 public class RNPingStorageImpl: NSObject {
 

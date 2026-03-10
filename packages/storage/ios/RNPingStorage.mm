@@ -41,6 +41,11 @@ RCT_EXPORT_MODULE()
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
 
+  NSString *loggerId = config.loggerId();
+  if (loggerId != nil) {
+    dict[@"loggerId"] = loggerId;
+  }
+
   NSString *account = config.account();
   if (account != nil) {
     dict[@"account"] = account;
@@ -68,6 +73,11 @@ RCT_EXPORT_MODULE()
 - (NSString *)registerOidcStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
 {
   NSMutableDictionary *dict = [NSMutableDictionary new];
+
+  NSString *loggerId = config.loggerId();
+  if (loggerId != nil) {
+    dict[@"loggerId"] = loggerId;
+  }
 
   NSString *account = config.account();
   if (account != nil) {

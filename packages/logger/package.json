@@ -1,5 +1,5 @@
 {
-  "name": "@react-native-pingidentity/logger",
+  "name": "@ping-identity/rn-logger",
   "version": "0.1.0",
   "description": "Ping Identity Logger TurboModule",
   "homepage": "https://www.pingidentity.com/",
@@ -17,12 +17,15 @@
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
     "clean": "rimraf lib",
-    "test": "jest --config jest.config.js"
+    "test": "jest --config jest.config.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
     "@forgerock/sdk-logger": "^1.3.0",
-    "@ping-identity/rn-types": "^0.1.0",
-    "@react-native-pingidentity/core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
   },
   "peerDependencies": {
     "react": "*",
@@ -30,8 +33,6 @@
   },
   "devDependencies": {
     "jest": "^30.2.0",
-    "react": "*",
-    "react-native": "*",
     "react-native-builder-bob": "^0.40.14",
     "typescript": "^5.9.2"
   },
@@ -41,7 +42,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.reactnativepingidentity.logger"
+      "javaPackageName": "com.pingidentity.rnlogger"
     }
   },
   "react-native-builder-bob": {

@@ -13,12 +13,18 @@ The Ping Identity React Native Core module hosts shared runtime utilities for Pi
 provides process-wide registries for native handles, plus native error contracts used to keep
 promise rejections consistent across modules.
 
+## Table of contents
+
+- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [How to Use the SDK](#how-to-use-the-sdk)
+- [License](#license)
+
 ## Integrating the SDK into your project
 
 Add the package and let autolinking wire the native code:
 
 ```bash
-yarn add @react-native-pingidentity/core
+yarn add @ping-identity/rn-core
 cd ios && pod install
 ```
 
@@ -29,8 +35,8 @@ cd ios && pod install
 Use the shared registry to keep native objects alive and retrievable by id:
 
 ```kotlin
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.registry.NativeHandle
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.registry.NativeHandle
 
 class MyHandle : NativeHandle
 
@@ -74,9 +80,9 @@ data. The shape mirrors `@ping-identity/rn-types` (type, error, message, code, s
 #### Android
 
 ```kotlin
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.error.GenericError
-import com.reactnativepingidentity.core.error.reject
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.error.GenericError
+import com.pingidentity.rncore.error.reject
 
 val error = GenericError(
   type = ErrorType.ARGUMENT_ERROR,
@@ -98,3 +104,6 @@ let error = GenericError(
 )
 reject(error, rejecter: rejecter)
 ```
+## License
+
+MIT

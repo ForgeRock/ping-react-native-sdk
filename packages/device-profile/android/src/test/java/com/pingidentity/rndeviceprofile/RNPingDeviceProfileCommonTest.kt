@@ -10,7 +10,6 @@ package com.pingidentity.rndeviceprofile
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
-import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.device.profile.collector.BluetoothCollector
 import com.pingidentity.device.profile.collector.BrowserCollector
@@ -106,10 +105,10 @@ class RNPingDeviceProfileCommonTest {
   }
 
   /**
-   * Verifies location collection resolves an error payload when play services are unavailable.
+   * Verifies location collection rejects with a shared error payload when play services are unavailable.
    */
   @Test
-  fun collectDeviceProfileResolvesErrorWhenLocationServicesMissing() {
+  fun collectDeviceProfileRejectsWhenLocationServicesMissing() {
     val collectors = JavaOnlyArray().apply {
       pushString("location")
     }
@@ -117,17 +116,20 @@ class RNPingDeviceProfileCommonTest {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(collectors, promise)
 
-    val payload = promise.resolvedValue as ReadableMap
-    assertEquals("error", payload.getString("type"))
-    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("code"))
+    assertTrue(promise.awaitCompletion())
+
+    val payload = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", promise.rejectCode)
+    assertEquals("state_error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("error"))
     assertTrue(payload.getString("message")?.contains("play-services-location") == true)
   }
 
   /**
-   * Verifies journey collection resolves an error payload when location services are unavailable.
+   * Verifies journey collection rejects with a shared error payload when location services are unavailable.
    */
   @Test
-  fun collectDeviceProfileForJourneyResolvesErrorWhenLocationServicesMissing() {
+  fun collectDeviceProfileForJourneyRejectsWhenLocationServicesMissing() {
     val collectors = JavaOnlyArray().apply {
       pushString("location")
     }
@@ -136,34 +138,40 @@ class RNPingDeviceProfileCommonTest {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "journey-123",
       collectors,
+      null,
       promise
     )
 
-    val payload = promise.resolvedValue as ReadableMap
-    assertEquals("error", payload.getString("type"))
-    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("code"))
+    assertTrue(promise.awaitCompletion())
+
+    val payload = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", promise.rejectCode)
+    assertEquals("state_error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_LOCATION_UNAVAILABLE", payload.getString("error"))
     assertTrue(payload.getString("message")?.contains("play-services-location") == true)
   }
 
   /**
-   * Verifies journey collection resolves an error payload when no callback is registered.
+   * Verifies journey collection rejects with a shared error payload when no callback is registered.
    */
   @Test
-  fun collectDeviceProfileForJourneyResolvesErrorWhenCallbackMissing() {
+  fun collectDeviceProfileForJourneyRejectsWhenCallbackMissing() {
     val collectors = JavaOnlyArray()
     val promise = TestPromise()
 
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "journey-456",
       collectors,
+      null,
       promise
     )
 
     assertTrue(promise.awaitCompletion())
 
-    val payload = promise.resolvedValue as ReadableMap
-    assertEquals("error", payload.getString("type"))
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
+    val payload = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
+    assertEquals("state_error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("error"))
     assertTrue(payload.getString("message")?.contains("journey-456") == true)
   }
 
@@ -331,10 +339,10 @@ class RNPingDeviceProfileCommonTest {
   }
 
   /**
-   * Verifies journey collection resolves an error payload with empty journey ID.
+   * Verifies journey collection rejects with a shared error payload with empty journey ID.
    */
   @Test
-  fun collectDeviceProfileForJourneyWithEmptyJourneyId() {
+  fun collectDeviceProfileForJourneyWithEmptyJourneyIdRejects() {
     val collectors = JavaOnlyArray().apply {
       pushString("platform")
     }
@@ -343,14 +351,16 @@ class RNPingDeviceProfileCommonTest {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "",
       collectors,
+      null,
       promise
     )
 
     assertTrue(promise.awaitCompletion())
 
-    val payload = promise.resolvedValue as ReadableMap
-    assertEquals("error", payload.getString("type"))
-    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("code"))
+    val payload = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", promise.rejectCode)
+    assertEquals("state_error", payload.getString("type"))
+    assertEquals("DEVICE_PROFILE_CALLBACK_NOT_FOUND", payload.getString("error"))
     assertTrue(payload.getString("message")?.isNotEmpty() == true)
   }
 
@@ -358,6 +368,7 @@ class RNPingDeviceProfileCommonTest {
     var rejectCode: String? = null
     var rejectMessage: String? = null
     var rejectError: Throwable? = null
+    var rejectUserInfo: WritableMap? = null
     var resolvedValue: Any? = null
     private val completionLatch = CountDownLatch(1)
 
@@ -392,23 +403,27 @@ class RNPingDeviceProfileCommonTest {
 
     override fun reject(throwable: Throwable, userInfo: WritableMap) {
       rejectError = throwable
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
     override fun reject(code: String, userInfo: WritableMap) {
       rejectCode = code
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
     override fun reject(code: String, throwable: Throwable?, userInfo: WritableMap) {
       rejectCode = code
       rejectError = throwable
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
     override fun reject(code: String, message: String?, userInfo: WritableMap) {
       rejectCode = code
       rejectMessage = message
+      rejectUserInfo = userInfo
       signalCompletion()
     }
 
@@ -421,6 +436,8 @@ class RNPingDeviceProfileCommonTest {
       rejectCode = code
       rejectMessage = message
       rejectError = throwable
+      rejectUserInfo = userInfo
+      signalCompletion()
     }
 
     @Suppress("DEPRECATION")

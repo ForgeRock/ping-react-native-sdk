@@ -25,3 +25,6 @@ ios/DerivedData/
 coverage/
 classes.jar
 AGENTS.md
+
+# Turborepo folder for persisting logs and outputs 
+.turbo

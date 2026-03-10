@@ -8,7 +8,7 @@
 import XCTest
 @testable import RNPingDeviceId
 
-@available(iOS 16.0, *)
+
 final class RNPingDeviceIdImplTests: XCTestCase {
 
   private var deviceIdImpl: RNPingDeviceIdImpl!

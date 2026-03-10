@@ -56,7 +56,7 @@ const loadModule = async (nativeModule: NativeModuleMock) => {
   jest.doMock('../NativeRNPingOidc', () => ({
     getNativeModule: () => nativeModule,
   }));
-  jest.doMock('@react-native-pingidentity/logger', () => ({
+  jest.doMock('@ping-identity/rn-logger', () => ({
     logger: jest.fn(() => ({
       nativeHandle: { id: 'native-none-id' },
       changeLevel: jest.fn(),
@@ -109,7 +109,7 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 
@@ -222,7 +222,7 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 
@@ -242,7 +242,7 @@ describe('OIDC JS API', () => {
         } as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @react-native-pingidentity/storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 

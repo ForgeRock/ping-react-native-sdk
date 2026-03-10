@@ -8,9 +8,9 @@
 package com.pingidentity.rnoidc
 
 import com.facebook.react.bridge.ReadableMap
-import com.reactnativepingidentity.core.utils.readStringMap
-import com.reactnativepingidentity.core.utils.requireString
-import com.reactnativepingidentity.core.utils.requireStringArray
+import com.pingidentity.rncore.utils.readStringMap
+import com.pingidentity.rncore.utils.requireString
+import com.pingidentity.rncore.utils.requireStringArray
 
 /**
  * Parsed configuration payload supplied by the JS bridge.
@@ -101,6 +101,9 @@ internal object OidcConfigParser {
     )
   }
 
+  /**
+   * Parse optional OpenID endpoint overrides from the JS config map.
+   */
   private fun parseOpenId(config: ReadableMap): OpenIdPayload? {
     if (!config.hasKey("openId")) {
       return null

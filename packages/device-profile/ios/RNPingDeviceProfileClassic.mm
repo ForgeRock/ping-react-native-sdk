@@ -27,11 +27,13 @@ RCT_EXPORT_METHOD(collectDeviceProfile:(NSArray<NSString *> *)collectors
 /// Collects device profile data using the active Journey callback context.
 RCT_EXPORT_METHOD(collectDeviceProfileForJourney:(NSString *)journeyId
                   collectors:(NSArray<NSString *> *)collectors
+                  loggerId:(NSString * _Nullable)loggerId
                   resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 {
   [RNPingDeviceProfileCommon collectDeviceProfileForJourney:journeyId
                                                collectors:collectors
+                                                 loggerId:loggerId
                                                   resolver:resolve
                                                   rejecter:reject];
 }

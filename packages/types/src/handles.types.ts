@@ -19,7 +19,7 @@ export type LogMessage = unknown;
  * Shared native logger handle contract.
  *
  * @remarks
- * Returned by `configureLogger(...)` from `@react-native-pingidentity/logger`.
+ * Returned by `configureLogger(...)` from `@ping-identity/rn-logger`.
  */
 export type NativeLoggerHandle = {
   /**
@@ -32,7 +32,7 @@ export type NativeLoggerHandle = {
  * Shared JavaScript logger instance contract.
  *
  * @remarks
- * Returned by `logger(...)` from `@react-native-pingidentity/logger`.
+ * Returned by `logger(...)` from `@ping-identity/rn-logger`.
  */
 export type LoggerInstance = {
   /**

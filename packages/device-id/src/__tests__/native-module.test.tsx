@@ -76,7 +76,7 @@ describe('device-id native module wiring', () => {
     const { getDeviceId } = await loadModule({});
 
     await expect(getDeviceId()).rejects.toThrow(
-      '[@react-native-pingidentity/device-id] Classic RNPingDeviceIdClassic native module not found.'
+      '[@ping-identity/rn-device-id] Classic RNPingDeviceIdClassic native module not found.'
     );
   });
 

@@ -1,13 +1,28 @@
 {
   "entryPoints": [
-      "packages/browser/src/index.tsx",
-      "packages/device-id/src/index.tsx",
-      "packages/journey/src/index.tsx",
-      "packages/logger/src/index.tsx",
-      "packages/storage/src/index.tsx"
+      "packages/*/src/index.tsx",
   ],
   "entryPointStrategy": "expand",
   "out": "docs",
+  "readme": "README.md",
+  "projectDocuments": [
+    "packages/*/README.md"
+  ],
+  "markdownItOptions": {
+    "html": true,
+    "linkify": true
+  },
+  "highlightLanguages": [
+    "xml",
+    "javascript", 
+    "typescript",
+    "bash",
+    "json",
+    "groovy",
+    "kotlin",
+    "swift",
+    "tsx"
+  ],
   "excludeInternal": true,
   "excludePrivate": true,
   "skipErrorChecking": true,

@@ -9,6 +9,20 @@ import {
   configureSessionStorage,
   configureOidcStorage,
 } from "../index";
+
+const mockLogger = {
+  nativeHandle: { id: "native-none-id" },
+  changeLevel: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
+
+jest.mock("@ping-identity/rn-logger", () => ({
+  logger: jest.fn(() => mockLogger),
+}));
+
 // Mock the Native Module
 const mockNativeRNPingStorage = {
   registerSessionStorage: jest.fn(),
@@ -18,17 +32,18 @@ const mockNativeRNPingStorage = {
 };
 
 jest.mock("../NativeRNPingStorage", () => ({
+  getNativeModule: () => mockNativeRNPingStorage,
   CacheStrategy: {
     CACHE_ON_FAILURE: "cache_on_failure",
     NO_CACHE: "no_cache",
     CACHE: "cache",
   },
-  getNativeModule: () => mockNativeRNPingStorage,
 }));
 
 describe("Storage API", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLogger.nativeHandle.id = "native-none-id";
   });
 
   describe("Factory functions", () => {
@@ -43,6 +58,7 @@ describe("Storage API", () => {
       });
 
       expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
+        loggerId: "native-none-id",
         keyAlias: "session-key",
       });
       expect(mockNativeRNPingStorage.configureSessionStorage).toHaveBeenCalledWith("session-id");
@@ -97,6 +113,7 @@ describe("Storage API", () => {
       });
 
       expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
+        loggerId: "native-none-id",
         keyAlias: "oidc-key",
       });
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith("oidc-id");
@@ -138,6 +155,136 @@ describe("Storage API", () => {
 
     it("configureOidcStorage validates config", () => {
       expect(() => configureOidcStorage(null as any)).toThrow(/Missing configuration/);
+    });
+
+    it("passes loggerId from logger options", () => {
+      const logger = {
+        nativeHandle: { id: "native-logger-id" },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({});
+
+      configureSessionStorage(
+        {
+          android: { keyAlias: "session-key" },
+        },
+        { logger }
+      );
+
+      expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
+        loggerId: "native-logger-id",
+        keyAlias: "session-key",
+      });
+    });
+
+    it("prefers nativeLogger over logger.nativeHandle", () => {
+      const logger = {
+        nativeHandle: { id: "logger-native-id" },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({});
+
+      configureOidcStorage(
+        {
+          android: { keyAlias: "oidc-key" },
+        },
+        {
+          logger,
+          nativeLogger: { id: "explicit-native-id" },
+        }
+      );
+
+      expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
+        loggerId: "explicit-native-id",
+        keyAlias: "oidc-key",
+      });
+    });
+
+    it("falls back to default logger id when options.logger has no native handle id", () => {
+      const logger = {
+        nativeHandle: {},
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({});
+
+      configureSessionStorage(
+        {
+          android: { keyAlias: "session-key" },
+        },
+        { logger: logger as any }
+      );
+
+      expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
+        loggerId: "native-none-id",
+        keyAlias: "session-key",
+      });
+    });
+
+    it("omits loggerId when explicit nativeLogger id is blank", () => {
+      const logger = {
+        nativeHandle: { id: "logger-native-id" },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerOidcStorage.mockReturnValue("oidc-id");
+      mockNativeRNPingStorage.configureOidcStorage.mockReturnValue({});
+
+      configureOidcStorage(
+        {
+          android: { keyAlias: "oidc-key" },
+        },
+        {
+          logger,
+          nativeLogger: { id: "" },
+        }
+      );
+
+      expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
+        keyAlias: "oidc-key",
+      });
+    });
+
+    it("logs debug and info during session storage configuration", () => {
+      const logger = {
+        nativeHandle: { id: "native-logger-id" },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerSessionStorage.mockReturnValue("session-id");
+      mockNativeRNPingStorage.configureSessionStorage.mockReturnValue({});
+
+      configureSessionStorage(
+        {
+          android: { keyAlias: "session-key" },
+        },
+        { logger }
+      );
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("Storage configureSessionStorage requested")
+      );
+      expect(logger.info).toHaveBeenCalledWith("Storage configureSessionStorage success");
     });
   });
 });

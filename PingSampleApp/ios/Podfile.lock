@@ -2301,6 +2301,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNPingCore (0.1.0):
@@ -2581,6 +2582,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
+    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNScreens (4.18.0):
@@ -2763,16 +2765,16 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
-  - "RNPingBrowser (from `../../node_modules/@react-native-pingidentity/browser`)"
+  - "RNPingBrowser (from `../../node_modules/@ping-identity/rn-browser`)"
   - RNPingCore (from `../../packages/core`)
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingJourney/Tests (from `../../node_modules/@ping-identity/rn-journey`)"
-  - "RNPingLogger (from `../../node_modules/@react-native-pingidentity/logger`)"
+  - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingOidc/Tests (from `../../node_modules/@ping-identity/rn-oidc`)"
-  - "RNPingStorage (from `../../node_modules/@react-native-pingidentity/storage`)"
+  - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
   - SocketRocket (~> 0.7.1)
@@ -2967,7 +2969,7 @@ EXTERNAL SOURCES:
   RNCAsyncStorage:
     :path: "../../node_modules/@react-native-async-storage/async-storage"
   RNPingBrowser:
-    :path: "../../node_modules/@react-native-pingidentity/browser"
+    :path: "../../node_modules/@ping-identity/rn-browser"
   RNPingCore:
     :path: "../../packages/core"
   RNPingDeviceId:
@@ -2977,11 +2979,11 @@ EXTERNAL SOURCES:
   RNPingJourney:
     :path: "../../node_modules/@ping-identity/rn-journey"
   RNPingLogger:
-    :path: "../../node_modules/@react-native-pingidentity/logger"
+    :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
   RNPingStorage:
-    :path: "../../node_modules/@react-native-pingidentity/storage"
+    :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   RNVectorIcons:
@@ -3113,19 +3115,19 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBrowser: 76a3f07f5e57c95ce44801503700a4b830acad00
-  RNPingCore: c6ad4dc4e345fc6d7e99a9bfaa8f58bfabdd2102
-  RNPingDeviceId: 2df34d506631a08a55f77d5110256ca08a9d364b
-  RNPingDeviceProfile: 0c0ac8e0db6a99384232b849c6d2ba2df47ebb00
+  RNPingBrowser: 24f53af7d3cfdc8f1120270ea0b5696d05bdd803
+  RNPingCore: ef609e3ddcb42211d859bf09f3d120fa571ae8a5
+  RNPingDeviceId: 071276c39317d5e9db2767faf855211c66631468
+  RNPingDeviceProfile: dcedb95b19e37c79b3e67d03620c29289d751417
   RNPingJourney: c6148c0621bd53bfa9e80498e8f88b2234ee3864
-  RNPingLogger: b7e902ddb6488825ab82375c983e48bd57031d76
-  RNPingOidc: d34bc43cf2ec918ad37a60a5a03679665bbf3e76
-  RNPingStorage: 7a51a0f99df4b6a5ba66efd9f7224799e4cf2ee4
+  RNPingLogger: 17fed268631bdae7af442155a5049ed074362388
+  RNPingOidc: 0847cb9c12ce4417d958a854d708f428076bd46c
+  RNPingStorage: e9256f7c4886be2a6327366cdb8631e0f71ba4c7
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 2f034bee110795950886cb954a2fe824af3d9f36
+PODFILE CHECKSUM: c54ec5d2510eecf0fdc60ed5377e1c4ee397ca49
 
 COCOAPODS: 1.15.2

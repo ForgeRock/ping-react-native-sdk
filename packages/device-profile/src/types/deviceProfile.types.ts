@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license. See the LICENSE file for details.
- */
+* Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+*
+* This software may be modified and distributed under the terms
+* of the MIT license. See the LICENSE file for details.
+*/
 
+import type { GenericError } from '@ping-identity/rn-types';
+import type { LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-types';
 /**
  * Supported device profile collectors.
  *
@@ -32,6 +34,25 @@ export type DeviceProfile = {
 };
 
 /**
+ * Error payload returned when device profile operations fail.
+ *
+ * @remarks
+ * Rejections use this shape; success resolves with data or `{ type: 'success' }`.
+ */
+export type DeviceProfileError = GenericError;
+
+/**
+ * Stable error codes emitted by the Device Profile module.
+ *
+ * @remarks
+ * Keep these in sync with native error constants.
+ */
+export type DeviceProfileErrorCode =
+  | 'DEVICE_PROFILE_LOCATION_UNAVAILABLE'
+  | 'DEVICE_PROFILE_CALLBACK_NOT_FOUND'
+  | 'DEVICE_PROFILE_COLLECT_ERROR';
+
+/**
  * Represents a device profile structured for PingOne AIC consumption.
  *
  * @remarks
@@ -52,21 +73,27 @@ export type DeviceProfileCallbackInputValue = {
  *
  * @remarks
  * The native implementation resolves this payload once the callback has been submitted.
+ * Errors reject with {@link DeviceProfileError}.
  */
 export type DeviceProfileJourneyResult =
-  | { type: 'success' }
-  | { type: 'error'; code: string; message?: string };
+  { type: 'success' };
 
 /**
- * TODO: Relocate types package as journey module matures.
- * Minimal Journey instance contract required by device profile collection.
+ * Optional logger configuration for device profile native calls.
  *
  * @remarks
- * The Journey module owns instance creation; this type enables cross-module coordination.
+ * Mirrors OIDC logger behavior:
+ * - `nativeLogger` has highest precedence for native logger application.
+ * - `logger.nativeHandle` is used when `nativeLogger` is not provided.
  */
-export type JourneyInstance = {
+export type DeviceProfileLoggerOptions = {
   /**
-   * Returns the native Journey instance identifier.
+   * Optional JavaScript logger instance.
    */
-  getId: () => Promise<string>;
+  logger?: LoggerInstance;
+
+  /**
+   * Optional native logger handle.
+   */
+  nativeLogger?: NativeLoggerHandle;
 };
