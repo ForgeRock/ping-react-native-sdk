@@ -51,7 +51,7 @@ jobs:
               uses: dorny/test-reporter@v2
               with:
                 name: JavaScript Unit Test Results
-                path: '**/build/test-results/js/*.xml'
+                path: 'packages/*/build/test-results/js/*.xml'
                 reporter: jest-junit
                 list-suites: 'all'
                 list-tests: 'all'

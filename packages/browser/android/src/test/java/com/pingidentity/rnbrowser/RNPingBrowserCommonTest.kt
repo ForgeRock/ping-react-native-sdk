@@ -26,7 +26,6 @@ import com.pingidentity.logger.WARN
 import com.pingidentity.rnlogger.RNPingLoggerCommon
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.mockkStatic
@@ -379,7 +378,7 @@ class RNPingBrowserCommonTest {
 
   @Test
   fun openAppliesNativeLoggerWhenLoggerIdProvided() = runTest {
-    mockkObject(RNPingLoggerCommon)
+    mockkStatic(RNPingLoggerCommon::class)
     every { RNPingLoggerCommon.resolveLogger("logger-1") } returns WARN
     fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
 
@@ -392,7 +391,8 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    verify(exactly = 1) { RNPingLoggerCommon.resolveLogger("logger-1") }
+    verify(exactly = 1) { RNPingLoggerCommon.applyLogger("logger-1") }
+    unmockkStatic(RNPingLoggerCommon::class)
   }
 
   private class FakeBrowserLauncher : BrowserLauncherAdapter {
