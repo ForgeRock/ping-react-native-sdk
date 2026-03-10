@@ -6,7 +6,6 @@
  */
 import Foundation
 import RNPingCore
-import RNPingLogger
 
 /// A common utility class for managing storage configurations in React Native Ping SDK.
 ///
@@ -69,14 +68,6 @@ public class RNPingStorageCommon: NSObject {
     return q
   }()
 
-  /// Applies a logger handle id to native SDK logging when provided.
-  ///
-  /// Kept as an assignable closure to simplify unit testing without mutating
-  /// global logger state across tests.
-  private static var applyLogger: (String?) -> Bool = { id in
-    RNPingLoggerImpl.shared.applyLogger(id)
-  }
-  
   // MARK: - Public Methods - Configuration
   
   /// Registers a session storage configuration.
@@ -86,8 +77,7 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      let loggerId = config["loggerId"] as? String
-      _ = applyLogger(loggerId)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       registerConfig(config, registry: CoreRuntime.sessionStorageConfigRegistry)
     }
   }
@@ -99,8 +89,7 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerOidcStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      let loggerId = config["loggerId"] as? String
-      _ = applyLogger(loggerId)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       registerConfig(config, registry: CoreRuntime.oidcStorageConfigRegistry)
     }
   }
@@ -276,17 +265,4 @@ public class RNPingStorageCommon: NSObject {
     return configHandle?.config
   }
 
-#if DEBUG
-  /// Test helper to override logger application behavior.
-  static func _testSetApplyLogger(_ applier: @escaping (String?) -> Bool) {
-    applyLogger = applier
-  }
-
-  /// Test helper to reset logger application behavior.
-  static func _testResetApplyLogger() {
-    applyLogger = { id in
-      RNPingLoggerImpl.shared.applyLogger(id)
-    }
-  }
-#endif
 }

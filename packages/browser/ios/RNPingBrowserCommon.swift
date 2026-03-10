@@ -143,8 +143,9 @@ public class RNPingBrowserCommon: NSObject {
       // } else {
       //   BrowserLauncher.logger = LogManager.none
       // }
-      // For now we only apply the logger to the SDK-wide LogManager.
-      _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
+      // TODO: Apply loggerId once Browser can support non-global logger wiring.
+      // Intentionally disabled for now to avoid SDK-wide logger side effects.
+      // _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
 
       do {
         let result = try await browserLauncher.launch(

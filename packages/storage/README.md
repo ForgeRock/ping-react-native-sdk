@@ -77,6 +77,8 @@ Notes:
   and `ios.encryptor` (true uses an Encryptor, false uses NoEncryptor).
 - `android.cacheStrategy` controls how the SDK caches data when native storage
   is unavailable.
+- `StorageLoggerOptions` / `loggerId` are currently bridge-only for storage registration.
+  Native storage logger application is planned and tracked as a TODO in both iOS and Android implementations.
 
 ### StorageConfig type
 

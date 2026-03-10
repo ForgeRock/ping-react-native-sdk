@@ -43,6 +43,7 @@ object RNPingStorageCommon {
   fun registerSessionStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       val storageConfig = buildStorageConfig(map)
       sessionConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
@@ -65,6 +66,7 @@ object RNPingStorageCommon {
   fun registerOidcStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       val storageConfig = buildStorageConfig(map)
       oidcConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
