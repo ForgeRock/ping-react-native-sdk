@@ -22,7 +22,7 @@ env:
 jobs:
     build-and-test-ios:
         runs-on: macos-15-large
-        timeout-minutes: 20
+        timeout-minutes: 35
 
         # TODO: remove continue-on-error after all build failures are fixed.
         continue-on-error: true
