@@ -27,6 +27,16 @@ yarn add @ping-identity/rn-storage
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
+```
+
+If you install the logger package, you can pass `StorageLoggerOptions` to storage APIs for
+JavaScript-side logging. Native storage logger application is not enabled yet; `loggerId` remains
+bridge-only for now.
+
 ## How to use the SDK
 
 ### Session and OIDC helpers

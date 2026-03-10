@@ -115,6 +115,7 @@ try {
 ## TODO
 
 - Add an iOS test runner target to execute module unit tests.
+- Make logger integration optional (align with OIDC/Storage optional package pattern).
 
 ## License
 

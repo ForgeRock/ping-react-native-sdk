@@ -43,7 +43,6 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
-  s.dependency "RNPingLogger"
 
   # Explicitly add ReactCodegen dependency for generated specs
   s.dependency "ReactCodegen"
