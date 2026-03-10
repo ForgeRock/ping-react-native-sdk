@@ -28,7 +28,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -434,6 +433,7 @@ object ShadowOidcCommonArguments {
 }
 
 private class TestPromise : com.facebook.react.bridge.Promise {
+
   private val latch = CountDownLatch(1)
   var resolvedValue: Any? = null
   var rejectCode: String? = null

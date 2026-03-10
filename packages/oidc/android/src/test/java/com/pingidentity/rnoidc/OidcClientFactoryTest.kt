@@ -12,6 +12,9 @@ import com.pingidentity.oidc.OidcClientConfig
 import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
+import com.pingidentity.rnstorage.StorageConfig
+import com.pingidentity.rnstorage.StorageConfigHandle
+import com.pingidentity.rnstorage.StorageConfigRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
