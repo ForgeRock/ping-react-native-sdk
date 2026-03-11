@@ -46,7 +46,7 @@ jobs:
               uses: dorny/test-reporter@v2
               with:
                 name: Android Unit Test Results
-                path: 'PingSampleApp/android/**/build/test-results/*.xml'
+                path: 'PingSampleApp/android/**/build/test-results/**/TEST-*.xml'
                 reporter: java-junit
                 list-suites: 'all'
                 list-tests: 'all'
