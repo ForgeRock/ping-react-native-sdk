@@ -70,8 +70,6 @@ export type NodeCallback = import('@forgerock/sdk-types').Callback;
 export const nativeExtensionCallbackType = {
   ConsentMappingCallback: 'ConsentMappingCallback',
   IdPCallback: 'IdPCallback',
-  Fido2RegistrationCallback: 'Fido2RegistrationCallback',
-  Fido2AuthenticationCallback: 'Fido2AuthenticationCallback',
   FidoRegistrationCallback: 'FidoRegistrationCallback',
   FidoAuthenticationCallback: 'FidoAuthenticationCallback',
   BindingCallback: 'BindingCallback',
@@ -84,6 +82,12 @@ export const nativeExtensionCallbackType = {
  */
 export type NativeExtensionCallbackType =
   (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];
+
+/**
+ * TODO(DX): Expose a single Journey callback constant source that merges
+ * ForgeRock `callbackType` and `nativeExtensionCallbackType` so consumers do
+ * not need to import from two separate constant maps.
+ */
 
 /**
  * Shared OIDC base configuration contracts used across RN modules.

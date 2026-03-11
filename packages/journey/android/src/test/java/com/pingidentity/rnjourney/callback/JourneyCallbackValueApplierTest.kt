@@ -227,25 +227,6 @@ class JourneyCallbackValueApplierTest {
   }
 
   @Test
-  fun applyThrowsForRedirectIntegrationCallback() {
-    class RedirectCallback
-
-    try {
-      JourneyCallbackValueApplier.applyToCallbacks(
-        listOf(RedirectCallback()),
-        listOf(
-          JourneyCallbackValueApplier.CallbackMutation("RedirectCallback", "payload", null)
-        )
-      )
-    } catch (error: IllegalStateException) {
-      assertTrue(error.message?.contains("additional native integration") == true)
-      assertTrue(error.message?.contains("Redirect handling integration") == true)
-      return
-    }
-    throw AssertionError("Expected IllegalStateException for redirect integration callback")
-  }
-
-  @Test
   fun applyThrowsForNativeExtensionIntegrationCallbacks() {
     class IdPCallback
     class DeviceBindingCallback

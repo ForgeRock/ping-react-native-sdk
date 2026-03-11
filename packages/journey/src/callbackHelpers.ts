@@ -25,13 +25,10 @@ import type {
 const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.PingOneProtectInitializeCallback,
   callbackType.PingOneProtectEvaluationCallback,
-  callbackType.RedirectCallback,
   callbackType.SelectIdPCallback,
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
   nativeExtensionCallbackType.IdPCallback,
-  nativeExtensionCallbackType.Fido2RegistrationCallback,
-  nativeExtensionCallbackType.Fido2AuthenticationCallback,
   nativeExtensionCallbackType.FidoRegistrationCallback,
   nativeExtensionCallbackType.FidoAuthenticationCallback,
   nativeExtensionCallbackType.BindingCallback,
@@ -371,10 +368,7 @@ export function normalizeCallbacks(node: JourneyNode | null | undefined): Journe
 
   return node.callbacks.map((rawCallback) => {
     const callback = rawCallback as JourneyCallback;
-    const type: JourneyCallbackType =
-      typeof callback.type === 'string' && callback.type.length > 0
-        ? callback.type
-        : 'UnknownCallback';
+    const type: JourneyCallbackType = callback.type;
     const typeIndex = counts.get(type) ?? 0;
     counts.set(type, typeIndex + 1);
 

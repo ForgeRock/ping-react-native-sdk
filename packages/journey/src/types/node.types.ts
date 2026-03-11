@@ -7,6 +7,7 @@
 
 import type {
   CallbackType,
+  NativeExtensionCallbackType,
   Node,
   NodeCallback,
 } from '@ping-identity/rn-types';
@@ -24,10 +25,12 @@ export type JourneyNodeType =
  * Callback type union used by Journey types.
  *
  * @remarks
- * Includes known SDK callback literals while allowing native-extension callback
- * strings that are not yet part of shared SDK types.
+ * Includes known SDK callback literals and declared native-extension callback
+ * literals used by React Native Journey integrations.
  */
-export type JourneyCallbackType = CallbackType | (string & {});
+export type JourneyCallbackType =
+  | Exclude<CallbackType, 'RedirectCallback'>
+  | NativeExtensionCallbackType;
 
 /**
  * Native callback payload surfaced to JavaScript.

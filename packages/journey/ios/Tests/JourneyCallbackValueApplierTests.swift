@@ -142,10 +142,10 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
   }
 
   func testApplyRejectsIntegrationRequiredCallbacks() {
-    let callback = Fido2RegistrationCallback()
+    let callback = FidoRegistrationCallback()
 
     let mutations = [
-      JourneyCallbackValueApplier.CallbackMutation(type: "Fido2RegistrationCallback", value: "token", index: nil)
+      JourneyCallbackValueApplier.CallbackMutation(type: "FidoRegistrationCallback", value: "token", index: nil)
     ]
 
     XCTAssertThrowsError(
@@ -276,4 +276,4 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
   }
 }
 
-private final class Fido2RegistrationCallback {}
+private final class FidoRegistrationCallback {}

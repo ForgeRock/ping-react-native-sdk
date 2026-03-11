@@ -62,8 +62,6 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
   nativeExtensionCallbackType.IdPCallback,
-  nativeExtensionCallbackType.Fido2RegistrationCallback,
-  nativeExtensionCallbackType.Fido2AuthenticationCallback,
   nativeExtensionCallbackType.FidoRegistrationCallback,
   nativeExtensionCallbackType.FidoAuthenticationCallback,
   nativeExtensionCallbackType.BindingCallback,

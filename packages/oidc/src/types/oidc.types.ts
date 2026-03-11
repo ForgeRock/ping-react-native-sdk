@@ -12,9 +12,9 @@ import type {
   OidcStorageHandle,
   OidcCoreConfig,
   OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
+  IOSBrowserOpenOptions,
   Tokens,
 } from '@ping-identity/rn-types';
-import type { IOSBrowserOpenOptions } from '@ping-identity/rn-browser';
 
 /**
  * Configuration for creating a native-backed OIDC client.

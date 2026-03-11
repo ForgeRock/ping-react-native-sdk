@@ -39,6 +39,24 @@ export type OidcOpenIdConfiguration = {
 };
 
 /**
+ * iOS-only browser options shared by Browser and OIDC modules.
+ *
+ * @remarks
+ * These values map to native iOS browser session configuration.
+ */
+export type IOSBrowserOpenOptions = {
+  /**
+   * Browser type for iOS.
+   */
+  browserType?: 'authSession' | 'ephemeralAuthSession' | 'nativeBrowserApp' | 'sfViewController';
+
+  /**
+   * Browser mode (reserved; currently informational).
+   */
+  browserMode?: 'login' | 'logout' | 'custom';
+};
+
+/**
  * Base OIDC client configuration shared across React Native modules.
  *
  * @remarks

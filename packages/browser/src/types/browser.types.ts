@@ -5,7 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import type {
+  GenericError,
+  IOSBrowserOpenOptions,
+} from '@ping-identity/rn-types';
 import type {
   LoggerInstance,
   NativeLoggerHandle,
@@ -74,21 +77,6 @@ export type BrowserOpenOptions = {
    * iOS-only options.
    */
   ios?: IOSBrowserOpenOptions;
-};
-
-/**
- * iOS-only options for launching a browser session.
- */
-export type IOSBrowserOpenOptions = {
-  /**
-   * Browser type for iOS.
-   */
-  browserType?: 'authSession' | 'ephemeralAuthSession' | 'nativeBrowserApp' | 'sfViewController';
-
-  /**
-   * Browser mode (reserved; currently informational).
-   */
-  browserMode?: 'login' | 'logout' | 'custom';
 };
 
 /**

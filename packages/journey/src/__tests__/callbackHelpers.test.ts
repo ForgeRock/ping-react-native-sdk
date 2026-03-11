@@ -359,31 +359,6 @@ describe('Journey callback helpers', () => {
     ]);
   });
 
-  it('marks RedirectCallback as integration-required in helper submit planning', () => {
-    const node: JourneyNode = {
-      type: 'ContinueNode',
-      callbacks: [{ type: 'RedirectCallback', output: [] }],
-    };
-
-    const fields = normalizeCallbacks(node);
-    expect(fields).toHaveLength(1);
-    expect(fields[0]).toMatchObject({
-      id: 'RedirectCallback:0',
-      capability: 'integration_required',
-    });
-
-    const result = buildNextInput(node, {});
-    expect(result.canSubmit).toBe(false);
-    expect(result.issues).toEqual([
-      {
-        code: 'INTEGRATION_REQUIRED',
-        message: 'Callback "RedirectCallback" requires additional integration.',
-        fieldId: 'RedirectCallback:0',
-        callbackType: 'RedirectCallback',
-      },
-    ]);
-  });
-
   it('rejects out-of-range choice index', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',

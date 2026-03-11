@@ -32,10 +32,16 @@ Optional integration packages:
 ```bash
 yarn add @ping-identity/rn-storage
 yarn add @ping-identity/rn-logger
+yarn add @ping-identity/rn-browser
 ```
 
-The native OIDC SDK already bundles the required browser components, so you do not need the
-React Native Browser package unless you plan to use it directly elsewhere in your app.
+- `@ping-identity/rn-storage`: optional token storage customization.
+- `@ping-identity/rn-logger`: optional JS/native logger integration.
+- `@ping-identity/rn-browser`: optional global browser configuration (for example, Android Custom Tabs/Auth Tabs) or direct Browser API usage.
+
+The native OIDC SDK already bundles the required browser components for authorize/logout flows.
+Install `@ping-identity/rn-browser` only when you want explicit Browser-module configuration or
+direct Browser API calls in your app.
 
 ## How to Use the SDK
 
