@@ -6,8 +6,9 @@
 #
 name: Publish Docs
 on:
-    #TODO: Before release switch to trigger on push to main with path filter for docs changes only.
-    workflow_call:
+    push:
+        branches:
+            - main
 
 # Required permissions for GitHub Pages deployment.
 permissions:

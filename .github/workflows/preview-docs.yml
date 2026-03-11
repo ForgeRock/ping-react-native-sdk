@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Preview Docs
+on:
+  workflow_call:
+
+# Required permissions for preview deployment and PR comments.
+permissions:
+    contents: write        # Required to push preview files to pages branch
+    pull-requests: write   # Required to comment preview URL on pull requests
+
+jobs:
+    preview-docs:
+        runs-on: ubuntu-latest
+
+        steps:
+            # Download generated TypeDoc documentation artifact from previous job.
+            - name: Download docs artifact
+              uses: actions/download-artifact@v8
+              with:
+                name: documentation
+                path: docs
+
+            # Publish a PR-scoped preview to GitHub Pages and comment URL in PR.
+            - name: Deploy preview pages
+              uses: rajyan/preview-pages@v1
+              with:
+                source-dir: docs
+                pr-per-commit: 'false'
+                pr-comment: sticky
+                branch-comment: none

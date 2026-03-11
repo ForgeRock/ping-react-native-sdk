@@ -61,11 +61,10 @@ jobs:
         needs: js-unit-tests
         uses: ./.github/workflows/build-docs.yml
 
-    # Publish generated documentation to GitHub Pages on every PR for review.
+    # Publish documentation preview to GitHub Pages on every PR for review.
     # Allows reviewers to preview documentation changes before merging.
-    # TODO: Before release, switch to trigger on push to main with path filter for docs changes only.
-    publish-docs-pr:
+    preview-docs-pr:
         needs: build-docs-check
-        uses: ./.github/workflows/publish-docs.yml
+        uses: ./.github/workflows/preview-docs.yml
 
     
