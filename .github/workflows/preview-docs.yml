@@ -6,7 +6,7 @@
 #
 name: Preview Docs
 on:
-  workflow_call:
+    workflow_call:
 
 # Required permissions for preview deployment and PR comments.
 permissions:
@@ -18,6 +18,12 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            # Checkout repository so deployment action has a valid git context.
+            - name: Checkout
+              uses: actions/checkout@v6
+              with:
+                fetch-depth: 1
+
             # Download generated TypeDoc documentation artifact from previous job.
             - name: Download docs artifact
               uses: actions/download-artifact@v8
