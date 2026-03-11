@@ -40,18 +40,13 @@ jobs:
               working-directory: PingSampleApp/android
               run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
 
-            # Debug: list generated JUnit XML files.
-            - name: List generated Android JUnit XML files
-              if: success() || failure()
-              run: find . -type f -path '*/build/test-results/*' -name 'TEST-*.xml' | sort
-
             # Publish test results as GitHub check runs.
             - name: Publish test report
               if: success() || failure()
               uses: dorny/test-reporter@v2
               with:
                 name: Android Unit Test Results
-                path: '**/build/test-results/**/TEST-*.xml'
+                path: 'packages/*/android/build/test-results/**/TEST-*.xml'
                 reporter: java-junit
                 list-suites: 'all'
                 list-tests: 'all'
