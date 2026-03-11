@@ -348,7 +348,7 @@ export const commonStyles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  devideIdText:{
+  deviceIdText:{
     marginTop: 3,
     fontSize: 11,
     color: colors.homeFooterText,

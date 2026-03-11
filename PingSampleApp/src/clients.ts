@@ -12,6 +12,7 @@ import {
   type OidcClientConfig,
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
+import Config from 'react-native-config';
 
 import { logger } from '@ping-identity/rn-logger';
 import {
@@ -20,36 +21,60 @@ import {
   configureSessionStorage,
 } from '@ping-identity/rn-storage';
 
+/**
+ * Normalized Journey OAuth scopes sourced from `JOURNEY_SCOPES`.
+ */
+const journeyScopes = (Config.JOURNEY_SCOPES ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+/**
+ * Normalized Advanced Identity Cloud OAuth scopes sourced from `AIC_SCOPES`.
+ */
+const aicScopes = (Config.AIC_SCOPES ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+/**
+ * Base Journey module configuration resolved directly from environment
+ * variables.
+ */
 export const journeyConfig = {
-  serverUrl: 'https://openam-sdks.forgeblocks.com/am',
-  realm: 'alpha',
-  cookie: '5421aeddf91aa20',
-  clientId: 'sdkPublicClient',
-  discoveryEndpoint:
-    'https://openam-sdks.forgeblocks.com/am/oauth2/alpha/.well-known/openid-configuration',
-  redirectUri: 'org.forgerock.demo://oauth2redirect',
-  scopes: ['openid', 'email', 'profile', 'address'],
+  serverUrl: Config.JOURNEY_SERVER_URL!,
+  realm: Config.JOURNEY_REALM!,
+  cookie: Config.JOURNEY_COOKIE!,
+  clientId: Config.JOURNEY_CLIENT_ID!,
+  discoveryEndpoint: Config.JOURNEY_DISCOVERY_ENDPOINT!,
+  redirectUri: Config.JOURNEY_REDIRECT_URI!,
+  scopes: journeyScopes,
 };
 
-// PingAdvancedIdentityCloud example config
+/**
+ * Base Advanced Identity Cloud configuration resolved from environment
+ * variables.
+ */
 export const pingAdvancedIdentityCloudConfig = {
   // Server
-  serverUrl: 'https://openam-sdks.forgeblocks.com/am',
-  realm: 'alpha',
-  cookie: '5421aeddf91aa20',
+  serverUrl: Config.AIC_SERVER_URL!,
+  realm: Config.AIC_REALM!,
+  cookie: Config.AIC_COOKIE!,
 
   // OAuth / OIDC
-  clientId: 'gaurav-oidc',
-  redirectUri: 'org.forgerock.demo://oauth2redirect',
-  scopes: ['openid', 'profile', 'email', 'address', 'phone'],
-  discoveryEndpoint:
-    'https://openam-sdks.forgeblocks.com/am/oauth2/alpha/.well-known/openid-configuration',
+  clientId: Config.AIC_CLIENT_ID!,
+  redirectUri: Config.AIC_REDIRECT_URI!,
+  scopes: aicScopes,
+  discoveryEndpoint: Config.AIC_DISCOVERY_ENDPOINT!,
 
   // Journey service names (used by Journey module)
-  authServiceName: 'Login',
-  registrationServiceName: 'Registration',
+  authServiceName: Config.AIC_AUTH_SERVICE_NAME!,
+  registrationServiceName: Config.AIC_REGISTRATION_SERVICE_NAME!,
 } as const;
 
+/**
+ * Session storage handle used by the Journey client module.
+ */
 const journeySessionStorageClient1 = configureSessionStorage({
   android: {
     fileName: 'journey_client_one_session_store',
@@ -63,8 +88,17 @@ const journeySessionStorageClient1 = configureSessionStorage({
   },
 });
 
+/**
+ * Shared logger instance used by sample clients.
+ */
 const appLogger = logger({ level: 'none' });
 
+/**
+ * OIDC client used by Journey module wiring.
+ *
+ * This client is created from Journey-specific env values and is intended for
+ * Journey module interoperability scenarios.
+ */
 export const journeyOidcClient = createOidcClient({
   clientId: journeyConfig.clientId,
   discoveryEndpoint: journeyConfig.discoveryEndpoint,
@@ -72,6 +106,9 @@ export const journeyOidcClient = createOidcClient({
   scopes: journeyConfig.scopes,
 });
 
+/**
+ * OIDC client configuration used to create the sample web-capable OIDC client.
+ */
 export const sampleOidcClientConfig: OidcClientConfig = {
   clientId: pingAdvancedIdentityCloudConfig.clientId,
   discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
@@ -83,6 +120,9 @@ export const sampleOidcClientConfig: OidcClientConfig = {
   },
 };
 
+/**
+ * OIDC storage handle used by the sample OIDC client.
+ */
 const sampleOidcStorage = configureOidcStorage({
   android: {
     fileName: 'ping-oidc',
@@ -97,14 +137,33 @@ const sampleOidcStorage = configureOidcStorage({
   },
 });
 
+/**
+ * Internal OIDC client instance used by `sampleOidcWebClient`.
+ *
+ * This composes config, secure storage, and logger dependencies into a single
+ * native-backed client that can be adapted for web-based auth APIs.
+ */
 const sampleOidcClient = createOidcClient({
   ...sampleOidcClientConfig,
   storage: sampleOidcStorage,
   logger: appLogger,
 });
 
+/**
+ * Web-capable OIDC client used by sample UI flows.
+ *
+ * This wrapper exposes browser-driven authorization methods while reusing the
+ * same underlying OIDC configuration and token storage behavior.
+ */
 export const sampleOidcWebClient: OidcWebClient = createOidcWebClient(sampleOidcClient);
 
+/**
+ * Primary Journey client used by the sample app login flows.
+ *
+ * The client is configured with OIDC and session modules so it can handle
+ * end-to-end Journey interactions, including token exchange and persisted
+ * session continuity across app restarts.
+ */
 export const loginClient = createJourneyClient({
   timeout: 10000,
   serverUrl: journeyConfig.serverUrl,

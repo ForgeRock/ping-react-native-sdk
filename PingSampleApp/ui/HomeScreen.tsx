@@ -184,7 +184,7 @@ export default function HomeScreen({ navigation }: Props) {
               )}
             </View>
             {deviceIdError ? (
-              <Text style={commonStyles.devideIdText}>
+              <Text style={commonStyles.deviceIdText}>
                 Device ID could not be resolved.
               </Text>
             ) : null}

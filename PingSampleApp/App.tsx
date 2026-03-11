@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
@@ -57,9 +57,12 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  * Root sample app component that wires navigation and initializes demo clients.
  */
 export default function App() {
+  // Dedicated browser logger keeps browser diagnostics separate from global SDK logging.
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
     const textComponent = Text as unknown as ComponentWithDefaultStyle;
     const textDefaults = textComponent.defaultProps ?? {};
     textComponent.defaultProps = {
@@ -76,11 +79,29 @@ export default function App() {
 
     MaterialIcon.loadFont().catch(() => undefined);
 
-    // Init login clients
-    loginClient.init();
+    // Initialize Journey client at app startup so journey screens can assume a ready client.
+    const initializeLoginClient = async (): Promise<void> => {
+      try {
+        await Promise.resolve(loginClient.init());
+        if (isMounted) {
+          setInitError(null);
+        }
+      } catch (error) {
+        console.error('Failed to initialize login client', error);
+        if (isMounted) {
+          const message =
+            error instanceof Error ? error.message : 'Failed to initialize login client.';
+          setInitError(message);
+        }
+      }
+    };
 
+    void initializeLoginClient();
+
+    // ( TODO: REVISIT )Global SDK logger baseline. Tune this when debugging integration issues.
     configureLogger({ level: 'info' });
 
+    // Browser defaults used by OIDC/browser flows in this sample app.
     configureBrowser({
       android: {
         customTabs: {
@@ -98,8 +119,19 @@ export default function App() {
     }, {
       logger: browserLogger,
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, [browserLogger]);
+
+  if (initError) {
+    // Fail fast with a clear startup error instead of crashing on first journey API call.
+    return <Text>{`Journey client init failed: ${initError}`}</Text>;
+  }
+
   return (
+    // Journey and OIDC hooks resolve clients from these contexts.
     <JourneyProvider client={loginClient}>
       <OidcProvider client={sampleOidcWebClient}>
         <NavigationContainer>
