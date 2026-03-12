@@ -11,6 +11,7 @@ import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -19,6 +20,24 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
 class JourneyClientFactoryTest {
+
+  @Test
+  fun build_allowsJourneyOnlyConfigurationWithoutOidc() {
+    val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
+
+    val payload = JourneyClientPayload(
+      serverUrl = "https://example.com/am",
+      timeout = null,
+      realm = "alpha",
+      cookie = "iPlanetDirectoryPro",
+      oidc = null,
+      sessionStorageId = null,
+      loggerId = null
+    )
+
+    val workflow = factory.build(payload)
+    assertNotNull(workflow)
+  }
 
   @Test
   fun build_resolvesSessionAndOidcStorageFromCoreRegistries() {
@@ -73,25 +92,27 @@ class JourneyClientFactoryTest {
       timeout = null,
       realm = "alpha",
       cookie = "iPlanetDirectoryPro",
-      clientId = "client-id",
-      discoveryEndpoint = "https://example.com/am/oauth2/alpha/.well-known/openid-configuration",
-      redirectUri = "com.example.app://callback",
-      scopes = listOf("openid"),
-      openId = null,
-      acrValues = null,
-      signOutRedirectUri = null,
-      state = null,
-      nonce = null,
-      uiLocales = null,
-      refreshThreshold = null,
-      loginHint = null,
-      display = null,
-      prompt = null,
-      additionalParameters = emptyMap(),
+      oidc = JourneyOidcPayload(
+        clientId = "client-id",
+        discoveryEndpoint = "https://example.com/am/oauth2/alpha/.well-known/openid-configuration",
+        redirectUri = "com.example.app://callback",
+        scopes = listOf("openid"),
+        openId = null,
+        acrValues = null,
+        signOutRedirectUri = null,
+        state = null,
+        nonce = null,
+        uiLocales = null,
+        refreshThreshold = null,
+        loginHint = null,
+        display = null,
+        prompt = null,
+        additionalParameters = emptyMap(),
+        storageId = oidcStorageId,
+        clientHandleId = null
+      ),
       sessionStorageId = sessionStorageId,
-      oidcStorageId = oidcStorageId,
-      loggerId = loggerId,
-      oidcClientId = null
+      loggerId = loggerId
     )
   }
 

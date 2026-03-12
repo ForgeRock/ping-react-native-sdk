@@ -12,6 +12,7 @@ import {
   type OidcClientConfig,
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
+import type { JourneyClient } from '@ping-identity/rn-journey';
 import Config from 'react-native-config';
 
 import { logger } from '@ping-identity/rn-logger';
@@ -107,6 +108,11 @@ export const journeyOidcClient = createOidcClient({
 });
 
 /**
+ * OIDC web client derived from Journey environment settings.
+ */
+export const journeyOidcWebClient: OidcWebClient = createOidcWebClient(journeyOidcClient);
+
+/**
  * OIDC client configuration used to create the sample web-capable OIDC client.
  */
 export const sampleOidcClientConfig: OidcClientConfig = {
@@ -158,6 +164,15 @@ const sampleOidcClient = createOidcClient({
 export const sampleOidcWebClient: OidcWebClient = createOidcWebClient(sampleOidcClient);
 
 /**
+ * Journey-only client for validating flows without OIDC module composition.
+ *
+ * This mirrors native Journey setup where only `serverUrl` is configured.
+ */
+export const journeyOnlyClient = createJourneyClient({
+  serverUrl: journeyConfig.serverUrl,
+});
+
+/**
  * Primary Journey client used by the sample app login flows.
  *
  * The client is configured with OIDC and session modules so it can handle
@@ -182,3 +197,100 @@ export const loginClient = createJourneyClient({
     },
   },
 });
+
+/**
+ * Supported sample app configuration groups.
+ */
+export type SampleConfigGroup = 'Journey' | 'OIDC (Web)';
+
+/**
+ * Runtime-selectable sample app client profile.
+ */
+export type SampleAppClientProfile = {
+  /**
+   * Stable profile key used by the configuration selector.
+   */
+  key: string;
+  /**
+   * UI group heading for this profile.
+   */
+  group: SampleConfigGroup;
+  /**
+   * Human readable profile name.
+   */
+  name: string;
+  /**
+   * Display-only host label shown in configuration UI.
+   */
+  host: string;
+  /**
+   * Display-only journey/service label shown in configuration UI.
+   */
+  environment: string;
+  /**
+   * Journey client bound to the profile.
+   */
+  journeyClient: JourneyClient;
+  /**
+   * OIDC web client bound to the profile.
+   */
+  oidcClient: OidcWebClient;
+};
+
+/**
+ * Extracts hostname text from URL-like values for concise UI labels.
+ *
+ * @param value URL string to parse.
+ * @returns Hostname when parsable, otherwise original value.
+ */
+function hostnameFrom(value: string): string {
+  const normalized = value.replace(/^https?:\/\//i, '');
+  return normalized.split('/')[0] ?? value;
+}
+
+/**
+ * Runtime-selectable sample app configurations shown in the Configuration screen.
+ */
+export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
+  {
+    key: 'journey-default',
+    group: 'Journey',
+    name: 'Journey Test Config',
+    host: hostnameFrom(journeyConfig.serverUrl),
+    environment: journeyConfig.realm,
+    journeyClient: loginClient,
+    oidcClient: sampleOidcWebClient,
+  },
+  {
+    key: 'journey-only',
+    group: 'Journey',
+    name: 'Journey Only',
+    host: hostnameFrom(journeyConfig.serverUrl),
+    environment: journeyConfig.realm,
+    journeyClient: journeyOnlyClient,
+    oidcClient: sampleOidcWebClient,
+  },
+  {
+    key: 'oidc-forgeblock',
+    group: 'OIDC (Web)',
+    name: 'OIDC Forgeblock',
+    host: hostnameFrom(journeyConfig.discoveryEndpoint),
+    environment: journeyConfig.realm,
+    journeyClient: loginClient,
+    oidcClient: journeyOidcWebClient,
+  },
+  {
+    key: 'oidc-pingone',
+    group: 'OIDC (Web)',
+    name: 'OIDC PingOne',
+    host: hostnameFrom(pingAdvancedIdentityCloudConfig.discoveryEndpoint),
+    environment: pingAdvancedIdentityCloudConfig.realm,
+    journeyClient: loginClient,
+    oidcClient: sampleOidcWebClient,
+  },
+] as const;
+
+/**
+ * Default selected profile key for sample app boot.
+ */
+export const DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY = sampleAppClientProfiles[0].key;

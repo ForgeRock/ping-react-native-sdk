@@ -43,7 +43,7 @@ final class JourneyClientFactory {
     let resolvedOidc = try await resolveOidcConfig(payload)
     let resolvedLogger = await resolveLoggerFromCore(payload.loggerId)
     let sessionStorage = try await Self.buildSessionStorageDelegate(payload.sessionStorageId)
-    let oidcStorage = try await Self.buildOidcStorageDelegate(payload.oidcStorageId)
+    let oidcStorage = try await Self.buildOidcStorageDelegate(payload.oidc?.storageId)
 
     return Journey.createJourney { config in
       if let resolvedLogger {
@@ -116,16 +116,7 @@ final class JourneyClientFactory {
     guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
       return nil
     }
-    switch handle.loggerLevel.uppercased() {
-    case "STANDARD":
-      return LogManager.standard
-    case "WARN":
-      return LogManager.warning
-    case "NONE":
-      return LogManager.none
-    default:
-      return LogManager.none
-    }
+    return handle.nativeLogger as? Logger
   }
 
   /// Resolves OIDC settings from shared OIDC handles or direct Journey fields.
@@ -135,55 +126,41 @@ final class JourneyClientFactory {
   /// - Throws: `JourneyBridgeError.argument` when required values are missing.
   /// - Throws: `JourneyBridgeError.state` when OIDC handle resolution fails.
   private func resolveOidcConfig(_ payload: JourneyClientPayload) async throws -> ResolvedOidcConfig? {
-    if let oidcClientId = payload.oidcClientId, !oidcClientId.isEmpty {
+    guard let oidcPayload = payload.oidc else {
+      return nil
+    }
+
+    if let oidcClientId = oidcPayload.clientHandleId, !oidcClientId.isEmpty {
       return try await resolveOidcConfigFromHandle(oidcClientId)
     }
 
-    if let clientId = payload.clientId, !clientId.isEmpty,
-       let redirectUri = payload.redirectUri, !redirectUri.isEmpty,
-       let discoveryEndpoint = payload.discoveryEndpoint, !discoveryEndpoint.isEmpty {
-      return ResolvedOidcConfig(
-        clientId: clientId,
-        discoveryEndpoint: discoveryEndpoint,
-        redirectUri: redirectUri,
-        scopes: payload.scopes,
-        openId: payload.openId.map(Self.toCoreOpenId),
-        acrValues: payload.acrValues,
-        signOutRedirectUri: payload.signOutRedirectUri,
-        state: payload.state,
-        nonce: payload.nonce,
-        uiLocales: payload.uiLocales,
-        refreshThreshold: payload.refreshThreshold,
-        loginHint: payload.loginHint,
-        display: payload.display,
-        prompt: payload.prompt,
-        additionalParameters: payload.additionalParameters
-      )
+    guard let clientId = oidcPayload.clientId, !clientId.isEmpty,
+          let redirectUri = oidcPayload.redirectUri, !redirectUri.isEmpty else {
+      return nil
+    }
+    let coreOpenId = oidcPayload.openId.map(Self.toCoreOpenId)
+    let hasDiscoveryEndpoint = !(oidcPayload.discoveryEndpoint?.isEmpty ?? true)
+    guard hasDiscoveryEndpoint || coreOpenId != nil else {
+      return nil
     }
 
-    if let clientId = payload.clientId, !clientId.isEmpty,
-       let redirectUri = payload.redirectUri, !redirectUri.isEmpty,
-       let openId = payload.openId {
-      return ResolvedOidcConfig(
-        clientId: clientId,
-        discoveryEndpoint: payload.discoveryEndpoint,
-        redirectUri: redirectUri,
-        scopes: payload.scopes,
-        openId: Self.toCoreOpenId(openId),
-        acrValues: payload.acrValues,
-        signOutRedirectUri: payload.signOutRedirectUri,
-        state: payload.state,
-        nonce: payload.nonce,
-        uiLocales: payload.uiLocales,
-        refreshThreshold: payload.refreshThreshold,
-        loginHint: payload.loginHint,
-        display: payload.display,
-        prompt: payload.prompt,
-        additionalParameters: payload.additionalParameters
-      )
-    }
-
-    return nil
+    return ResolvedOidcConfig(
+      clientId: clientId,
+      discoveryEndpoint: oidcPayload.discoveryEndpoint,
+      redirectUri: redirectUri,
+      scopes: oidcPayload.scopes,
+      openId: coreOpenId,
+      acrValues: oidcPayload.acrValues,
+      signOutRedirectUri: oidcPayload.signOutRedirectUri,
+      state: oidcPayload.state,
+      nonce: oidcPayload.nonce,
+      uiLocales: oidcPayload.uiLocales,
+      refreshThreshold: oidcPayload.refreshThreshold,
+      loginHint: oidcPayload.loginHint,
+      display: oidcPayload.display,
+      prompt: oidcPayload.prompt,
+      additionalParameters: oidcPayload.additionalParameters
+    )
   }
 
   /// Resolves OIDC settings from a registered OIDC client handle.

@@ -24,6 +24,18 @@ internal data class JourneyClientPayload(
     val realm: String?,
     /** Optional cookie/session namespace override. */
     val cookie: String?,
+    /** Optional OIDC module configuration. */
+    val oidc: JourneyOidcPayload?,
+    /** Optional session storage handle id from the storage bridge module. */
+    val sessionStorageId: String?,
+    /** Optional logger handle id from the logger bridge module. */
+    val loggerId: String?
+)
+
+/**
+ * Optional OIDC module configuration parsed from Journey config.
+ */
+internal data class JourneyOidcPayload(
     /** Optional OIDC client id used for Journey + OIDC composition. */
     val clientId: String?,
     /** Optional OIDC discovery endpoint URL. */
@@ -54,14 +66,10 @@ internal data class JourneyClientPayload(
     val prompt: String?,
     /** Optional provider-specific OIDC parameters. */
     val additionalParameters: Map<String, String>,
-    /** Optional session storage handle id from the storage bridge module. */
-    val sessionStorageId: String?,
     /** Optional OIDC storage handle id from the storage bridge module. */
-    val oidcStorageId: String?,
-    /** Optional logger handle id from the logger bridge module. */
-    val loggerId: String?,
+    val storageId: String?,
     /** Optional OIDC client handle id from the OIDC bridge module. */
-    val oidcClientId: String?
+    val clientHandleId: String?
 )
 
 /**
@@ -163,30 +171,38 @@ internal object JourneyConfigParser {
             )
         }
 
+        val oidcPayload = if (hasOidcClientHandle || hasAnyOidcField) {
+            JourneyOidcPayload(
+                clientId = clientId,
+                discoveryEndpoint = discoveryEndpoint,
+                redirectUri = redirectUri,
+                scopes = scopes,
+                openId = openId,
+                acrValues = acrValues,
+                signOutRedirectUri = signOutRedirectUri,
+                state = state,
+                nonce = nonce,
+                uiLocales = uiLocales,
+                refreshThreshold = refreshThreshold,
+                loginHint = loginHint,
+                display = display,
+                prompt = prompt,
+                additionalParameters = additionalParameters,
+                storageId = oidcStorageId,
+                clientHandleId = oidcClientId
+            )
+        } else {
+            null
+        }
+
         return JourneyClientPayload(
             serverUrl = serverUrl,
             timeout = timeout,
             realm = realm,
             cookie = cookie,
-            clientId = clientId,
-            discoveryEndpoint = discoveryEndpoint,
-            redirectUri = redirectUri,
-            scopes = scopes,
-            openId = openId,
-            acrValues = acrValues,
-            signOutRedirectUri = signOutRedirectUri,
-            state = state,
-            nonce = nonce,
-            uiLocales = uiLocales,
-            refreshThreshold = refreshThreshold,
-            loginHint = loginHint,
-            display = display,
-            prompt = prompt,
-            additionalParameters = additionalParameters,
+            oidc = oidcPayload,
             sessionStorageId = sessionStorageId,
-            oidcStorageId = oidcStorageId,
-            loggerId = loggerId,
-            oidcClientId = oidcClientId
+            loggerId = loggerId
         )
     }
 

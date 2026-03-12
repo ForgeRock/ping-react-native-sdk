@@ -64,17 +64,7 @@ public class RNPingOidcCommon: NSObject {
     ) as? LoggerHandleContract else {
       return nil
     }
-
-    switch handle.loggerLevel.uppercased() {
-    case "STANDARD":
-      return LogManager.standard
-    case "WARN":
-      return LogManager.warning
-    case "NONE":
-      return LogManager.none
-    default:
-      return LogManager.none
-    }
+    return handle.nativeLogger as? Logger
   }
 
   // MARK: - Cleanup

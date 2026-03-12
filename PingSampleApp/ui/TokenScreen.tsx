@@ -192,13 +192,13 @@ export default function TokenScreen(): React.ReactElement {
             tokenOutput={tokenOutputByTab.Journey}
             loading={loading}
             onAccessToken={() => {
-              handleAccessToken().catch(() => undefined);
+              void handleAccessToken();
             }}
             onRefresh={() => {
-              handleRefresh().catch(() => undefined);
+              void handleRefresh();
             }}
             onRevoke={() => {
-              handleRevoke().catch(() => undefined);
+              void handleRevoke();
             }}
             onClear={handleClear}
           />
@@ -207,13 +207,13 @@ export default function TokenScreen(): React.ReactElement {
             tokenOutput={tokenOutputByTab.OIDC}
             loading={loading}
             onAccessToken={() => {
-              handleAccessToken().catch(() => undefined);
+              void handleAccessToken();
             }}
             onRefresh={() => {
-              handleRefresh().catch(() => undefined);
+              void handleRefresh();
             }}
             onRevoke={() => {
-              handleRevoke().catch(() => undefined);
+              void handleRevoke();
             }}
             onClear={handleClear}
           />

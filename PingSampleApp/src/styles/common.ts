@@ -300,6 +300,59 @@ export const commonStyles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
+  configScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  configScreenContent: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 28,
+  },
+  configSelectedLabel: {
+    color: colors.textDark,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  configSelectedValue: {
+    color: colors.primary,
+    fontSize: 26,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  configSection: {
+    marginBottom: 14,
+  },
+  configSectionTitle: {
+    color: colors.primary,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  configOptionRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 14,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  configOptionTextBlock: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  configOptionName: {
+    color: colors.textDark,
+    fontSize: 21,
+    fontWeight: '500',
+  },
+  configOptionMeta: {
+    color: colors.textDark,
+    fontSize: 14,
+    marginTop: 2,
+  },
   deviceIdCard: {
     width: '100%',
     backgroundColor: colors.deviceIdCardBackground,

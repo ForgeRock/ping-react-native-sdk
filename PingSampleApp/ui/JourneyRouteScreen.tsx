@@ -108,7 +108,7 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
   const handlePressTestJourney = useCallback(
     (name: string): void => {
       setJourneyName(name);
-      markTestJourneyUsed(name).catch(() => undefined);
+      void markTestJourneyUsed(name);
     },
     [markTestJourneyUsed]
   );
@@ -133,7 +133,7 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
         loading={false}
         canStart
         onStart={() => {
-          handleStart().catch(() => undefined);
+          void handleStart();
         }}
       />
     </ScrollView>

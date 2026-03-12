@@ -50,7 +50,7 @@ export default function LogoutScreen(): React.ReactElement {
 
   useFocusEffect(
     useCallback(() => {
-      refreshSessionState().catch(() => undefined);
+      void refreshSessionState();
       return undefined;
     }, [refreshSessionState])
   );
@@ -127,13 +127,13 @@ export default function LogoutScreen(): React.ReactElement {
           <AsyncActionButton
             label="Logout All Sessions"
             onPress={() => {
-              handleLogoutAll().catch(() => undefined);
+              void handleLogoutAll();
             }}
             loading={busyAll}
             disabled={disabled}
           />
         ) : (
-          <AsyncActionButton label="No Active Sessions" onPress={() => undefined} variant="secondary" disabled />
+          <AsyncActionButton label="No Active Sessions" onPress={() => {}} variant="secondary" disabled />
         )}
       </CardSection>
 
@@ -144,7 +144,7 @@ export default function LogoutScreen(): React.ReactElement {
           <AsyncActionButton
             label="Logout from Journey Session"
             onPress={() => {
-              handleLogoutJourney().catch(() => undefined);
+              void handleLogoutJourney();
             }}
             loading={busyJourney}
             disabled={disabled}
@@ -159,7 +159,7 @@ export default function LogoutScreen(): React.ReactElement {
           <AsyncActionButton
             label="Logout from OIDC Web Session"
             onPress={() => {
-              handleLogoutOidc().catch(() => undefined);
+              void handleLogoutOidc();
             }}
             loading={busyOidc}
             disabled={disabled}

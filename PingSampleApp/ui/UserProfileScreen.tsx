@@ -6,7 +6,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useJourney, type JourneyUserSession } from '@ping-identity/rn-journey';
@@ -67,19 +67,23 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
 
   const refreshOidcSession = useCallback(async (): Promise<void> => {
     setShowRawOidcUserInfo(false);
-    const user = await oidcActions.restore();
-    if (!user) {
-      return;
+    try {
+      const user = await oidcActions.restore();
+      if (!user) {
+        return;
+      }
+      await oidcActions.userinfo(true);
+    } catch {
+      // OIDC hook state already captures typed errors for UI display.
     }
-    await oidcActions.userinfo(true);
   }, [oidcActions]);
 
   useFocusEffect(
     useCallback(() => {
       if (activeTab === 'Journey') {
-        refreshJourneySession().catch(() => undefined);
+        void refreshJourneySession();
       } else if (activeTab === 'OIDC') {
-        refreshOidcSession().catch(() => undefined);
+        void refreshOidcSession();
       }
       return undefined;
     }, [activeTab, refreshJourneySession, refreshOidcSession])
@@ -133,13 +137,13 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
             error={oidcState.error?.message ?? null}
             showRawUserInfo={showRawOidcUserInfo}
             onToggleRawUserInfo={() => setShowRawOidcUserInfo((value) => !value)}
-            onStartOidc={() => {
-              oidcActions
-                .authorize()
-                .then(async () => {
-                  await oidcActions.userinfo(true);
-                })
-                .catch(() => undefined);
+            onStartOidc={async () => {
+              try {
+                await oidcActions.authorize();
+                await oidcActions.userinfo(true);
+              } catch (cause) {
+                Alert.alert('OIDC start failed', String(cause));
+              }
             }}
           />
         ) : null}

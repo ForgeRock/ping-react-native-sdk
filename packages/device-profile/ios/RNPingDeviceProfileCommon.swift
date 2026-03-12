@@ -80,12 +80,10 @@ public class RNPingDeviceProfileCommon: NSObject {
     Task {
       let resolvedLogger = await resolveLoggerFromCore(loggerId)
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {
-        handlers.resolve(
-          createJourneyResultPayload(
-            type: "error",
-            code: DeviceProfileErrorCode.callbackNotFound.rawValue,
-            message: "No active Device Profile callback found for journey \(journeyId)."
-          )
+        handlers.reject(
+          code: DeviceProfileErrorCode.callbackNotFound.rawValue,
+          message: "No active Device Profile callback found for journey \(journeyId).",
+          underlying: nil
         )
         return
       }
@@ -101,12 +99,10 @@ public class RNPingDeviceProfileCommon: NSObject {
       case .success:
         handlers.resolve(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        handlers.resolve(
-          createJourneyResultPayload(
-            type: "error",
-            code: DeviceProfileErrorCode.collectError.rawValue,
-            message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)"
-          )
+        handlers.reject(
+          code: DeviceProfileErrorCode.collectError.rawValue,
+          message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)",
+          underlying: error as NSError
         )
       }
     }
@@ -123,16 +119,7 @@ public class RNPingDeviceProfileCommon: NSObject {
     guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract else {
       return nil
     }
-    switch handle.loggerLevel.uppercased() {
-    case "STANDARD":
-      return LogManager.standard
-    case "WARN":
-      return LogManager.warning
-    case "NONE":
-      return LogManager.none
-    default:
-      return LogManager.none
-    }
+    return handle.nativeLogger as? Logger
   }
 
   /// Builds native DeviceProfile collectors from JS identifiers.

@@ -17,4 +17,10 @@ public protocol LoggerHandleContract: NativeHandle {
   ///
   /// Expected values are `STANDARD`, `WARN`, and `NONE`.
   var loggerLevel: String { get }
+
+  /// Native logger instance backing this handle.
+  ///
+  /// Consumers should cast this value to `PingLogger.Logger` when available.
+  /// The contract uses `Any` to keep `RNPingCore` decoupled from `PingLogger`.
+  var nativeLogger: Any? { get }
 }

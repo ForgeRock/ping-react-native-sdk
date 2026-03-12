@@ -4,6 +4,9 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
+/* eslint-env jest */
+
+export {};
 
 type NativeLoggerMock = {
   registerLogger: jest.Mock;
@@ -16,6 +19,13 @@ type SdkLoggerMock = {
   warn: jest.Mock;
   info: jest.Mock;
   debug: jest.Mock;
+};
+
+type CustomLoggerMock = {
+  error: (...args: unknown[]) => unknown;
+  warn: (...args: unknown[]) => unknown;
+  info: (...args: unknown[]) => unknown;
+  debug: (...args: unknown[]) => unknown;
 };
 
 const createNativeLoggerMock = (): NativeLoggerMock => ({
@@ -32,12 +42,13 @@ const createSdkLoggerMock = () => {
     debug: jest.fn(),
   };
 
-  const factory = jest.fn((options: { level: string; custom?: any }) => {
-    if (options.custom) {
-      instance.error.mockImplementation((...args) => options.custom.error(...args));
-      instance.warn.mockImplementation((...args) => options.custom.warn(...args));
-      instance.info.mockImplementation((...args) => options.custom.info(...args));
-      instance.debug.mockImplementation((...args) => options.custom.debug(...args));
+  const factory = jest.fn((options: { level: string; custom?: CustomLoggerMock }) => {
+    const custom = options.custom;
+    if (custom) {
+      instance.error.mockImplementation((...args) => custom.error(...args));
+      instance.warn.mockImplementation((...args) => custom.warn(...args));
+      instance.info.mockImplementation((...args) => custom.info(...args));
+      instance.debug.mockImplementation((...args) => custom.debug(...args));
     }
     return instance;
   });

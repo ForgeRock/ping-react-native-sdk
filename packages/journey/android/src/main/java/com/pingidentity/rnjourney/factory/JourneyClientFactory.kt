@@ -101,7 +101,7 @@ internal class JourneyClientFactory(
                             revocationEndpoint = openIdConfig.revocationEndpoint ?: ""
                         )
                     }
-                    applyOidcStorageIfPresent(payload.oidcStorageId)
+                    applyOidcStorageIfPresent(payload.oidc?.storageId)
                 }
             }
 
@@ -117,55 +117,39 @@ internal class JourneyClientFactory(
      * @throws IllegalArgumentException when OIDC handle resolution fails or required values are missing.
      */
     private fun resolveOidcConfig(payload: JourneyClientPayload): ResolvedOidcConfig? {
-        val oidcClientId = payload.oidcClientId
+        val oidcPayload = payload.oidc ?: return null
+        val oidcClientId = oidcPayload.clientHandleId
         if (!oidcClientId.isNullOrBlank()) {
             return resolveOidcConfigFromHandle(oidcClientId)
         }
 
-        if (!payload.clientId.isNullOrBlank() &&
-            !payload.discoveryEndpoint.isNullOrBlank() &&
-            !payload.redirectUri.isNullOrBlank()
-        ) {
-            return ResolvedOidcConfig(
-                clientId = payload.clientId,
-                discoveryEndpoint = payload.discoveryEndpoint.trim(),
-                redirectUri = payload.redirectUri,
-                scopes = payload.scopes,
-                openId = payload.openId?.toCoreOpenIdConfig(),
-                acrValues = payload.acrValues,
-                signOutRedirectUri = payload.signOutRedirectUri,
-                state = payload.state,
-                nonce = payload.nonce,
-                uiLocales = payload.uiLocales,
-                refreshThreshold = payload.refreshThreshold,
-                loginHint = payload.loginHint,
-                display = payload.display,
-                prompt = payload.prompt,
-                additionalParameters = payload.additionalParameters
-            )
+        val hasDiscoveryConfig = !oidcPayload.clientId.isNullOrBlank() &&
+            !oidcPayload.discoveryEndpoint.isNullOrBlank() &&
+            !oidcPayload.redirectUri.isNullOrBlank()
+        val hasOpenIdConfig = !oidcPayload.clientId.isNullOrBlank() &&
+            oidcPayload.openId != null &&
+            !oidcPayload.redirectUri.isNullOrBlank()
+        if (!hasDiscoveryConfig && !hasOpenIdConfig) {
+            return null
         }
 
-        if (!payload.clientId.isNullOrBlank() && payload.openId != null && !payload.redirectUri.isNullOrBlank()) {
-            return ResolvedOidcConfig(
-                clientId = payload.clientId,
-                discoveryEndpoint = payload.discoveryEndpoint,
-                redirectUri = payload.redirectUri,
-                scopes = payload.scopes,
-                openId = payload.openId.toCoreOpenIdConfig(),
-                acrValues = payload.acrValues,
-                signOutRedirectUri = payload.signOutRedirectUri,
-                state = payload.state,
-                nonce = payload.nonce,
-                uiLocales = payload.uiLocales,
-                refreshThreshold = payload.refreshThreshold,
-                loginHint = payload.loginHint,
-                display = payload.display,
-                prompt = payload.prompt,
-                additionalParameters = payload.additionalParameters
-            )
-        }
-
-        return null
+        return ResolvedOidcConfig(
+            clientId = oidcPayload.clientId!!,
+            discoveryEndpoint = oidcPayload.discoveryEndpoint?.trim(),
+            redirectUri = oidcPayload.redirectUri!!,
+            scopes = oidcPayload.scopes,
+            openId = oidcPayload.openId?.toCoreOpenIdConfig(),
+            acrValues = oidcPayload.acrValues,
+            signOutRedirectUri = oidcPayload.signOutRedirectUri,
+            state = oidcPayload.state,
+            nonce = oidcPayload.nonce,
+            uiLocales = oidcPayload.uiLocales,
+            refreshThreshold = oidcPayload.refreshThreshold,
+            loginHint = oidcPayload.loginHint,
+            display = oidcPayload.display,
+            prompt = oidcPayload.prompt,
+            additionalParameters = oidcPayload.additionalParameters
+        )
     }
 
     /**

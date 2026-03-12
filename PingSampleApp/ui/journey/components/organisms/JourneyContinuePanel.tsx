@@ -51,10 +51,15 @@ export default function JourneyContinuePanel(
     () => new Set(fields.map((field) => field.ref.type)),
     [fields]
   );
+  // These flags drive integration UX:
+  // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
+  // - "manual submit" means at least one callback requires user-provided values.
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
   const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
   const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
   const hasManualSubmit = meta.hasManual;
+  // Integration-required callbacks are currently not auto-wired in this sample
+  // (for example FIDO/Protect/IdP/ReCaptcha/Binding), so we block auto-advance.
   const hasBlockingIntegration = fields.some(
     (field) =>
       field.capability === 'integration_required' &&
@@ -80,16 +85,17 @@ export default function JourneyContinuePanel(
     Math.ceil((pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS) / 1000)
   );
 
-  const handleResumePress = useCallback((): void => {
-    onResume().catch(() => undefined);
+  const handleResumePress = useCallback(async (): Promise<void> => {
+    await onResume();
   }, [onResume]);
 
-  const handleSubmitPress = useCallback((): void => {
-    onSubmit().catch(() => undefined);
+  const handleSubmitPress = useCallback(async (): Promise<void> => {
+    await onSubmit();
   }, [onSubmit]);
 
   return (
     <>
+      {/* `setFieldValue` writes into `useJourneyForm` state, consumed as `form.input` on submit. */}
       {fields.map((field) => (
         <JourneyFieldRenderer
           key={field.id}

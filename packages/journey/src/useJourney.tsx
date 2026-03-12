@@ -408,7 +408,11 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
     const waitMs = Math.max(500, autoPollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS);
     pollingTimerRef.current = setTimeout(() => {
       pollingTimerRef.current = null;
-      next({}).catch(() => undefined);
+      // `next` already updates hook error state; prevent unhandled rejections
+      // from timer-driven auto polling.
+      void next({}).catch(() => {
+        // Handled by `next` via hook error state.
+      });
     }, waitMs);
   }, [autoPollingWaitMs, canAutoPoll, loading, next, node?.type]);
 

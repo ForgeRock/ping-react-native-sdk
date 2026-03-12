@@ -7,7 +7,10 @@
 
 module.exports = {
   testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
   testMatch: ['<rootDir>/src/__tests__/**/*.test.ts?(x)'],
+  modulePathIgnorePatterns: ['<rootDir>/lib/'],
+  watchPathIgnorePatterns: ['<rootDir>/lib/'],
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },

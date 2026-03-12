@@ -52,10 +52,28 @@ object RNPingLoggerCommon {
    * @property level The log level for this logger instance
    */
   private class LoggerHandle(
-    var level: NativeLoggerLevel
+    @Volatile var level: NativeLoggerLevel
   ) : NativeHandle, LoggerHandleContract {
     override val loggerLevel: String
       get() = level.name
+
+    override val nativeLogger: Any = object : Logger {
+      override fun d(message: String) {
+        nativeLoggerForLevel(level).d(message)
+      }
+
+      override fun i(message: String) {
+        nativeLoggerForLevel(level).i(message)
+      }
+
+      override fun w(message: String, throwable: Throwable?) {
+        nativeLoggerForLevel(level).w(message, throwable)
+      }
+
+      override fun e(message: String, throwable: Throwable?) {
+        nativeLoggerForLevel(level).e(message, throwable)
+      }
+    }
   }
 
   /**
@@ -67,9 +85,11 @@ object RNPingLoggerCommon {
   @JvmStatic
   fun configure(config: ReadableMap): String {
     val level = parseLevel(config.getString("level")) ?: NativeLoggerLevel.NONE
+    val handle = LoggerHandle(level)
+    Logger.logger = handle.nativeLogger as Logger
 
     return runBlocking(Dispatchers.IO) {
-      CoreRuntime.loggerRegistry.register(LoggerHandle(level))
+      CoreRuntime.loggerRegistry.register(handle)
     }
   }
 
@@ -108,6 +128,7 @@ object RNPingLoggerCommon {
       }
 
       handle.level = parsed
+      Logger.logger = handle.nativeLogger as Logger
     }
   }
 
@@ -131,7 +152,7 @@ object RNPingLoggerCommon {
       return null
     }
 
-    return nativeLoggerForLevel(handle.level)
+    return handle.nativeLogger as? Logger
   }
 
   /**

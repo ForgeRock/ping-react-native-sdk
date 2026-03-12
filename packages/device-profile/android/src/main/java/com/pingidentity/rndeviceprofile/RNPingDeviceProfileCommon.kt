@@ -25,8 +25,6 @@ import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
 import com.pingidentity.logger.Logger
 import com.pingidentity.logger.NONE
-import com.pingidentity.logger.STANDARD
-import com.pingidentity.logger.WARN
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
@@ -65,12 +63,7 @@ object RNPingDeviceProfileCommon {
     }
 
     val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
-    return when (handle.loggerLevel.uppercase()) {
-      "STANDARD" -> Logger.STANDARD
-      "WARN" -> Logger.WARN
-      "NONE" -> Logger.NONE
-      else -> Logger.NONE
-    }
+    return handle.nativeLogger as? Logger
   }
 
   /**

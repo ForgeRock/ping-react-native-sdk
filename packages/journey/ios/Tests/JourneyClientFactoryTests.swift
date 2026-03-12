@@ -6,6 +6,7 @@
  */
 
 import XCTest
+import PingLogger
 @testable import RNPingCore
 @testable import RNPingJourney
 
@@ -58,6 +59,21 @@ final class JourneyClientFactoryTests: XCTestCase {
 
     let journey = try await JourneyClientFactory().build(payload)
 
+    XCTAssertNotNil(journey)
+  }
+
+  func testBuildAllowsJourneyOnlyConfigurationWithoutOidc() async throws {
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: "alpha",
+      cookie: "iPlanetDirectoryPro",
+      oidc: nil,
+      sessionStorageId: nil,
+      loggerId: nil
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
     XCTAssertNotNil(journey)
   }
 
@@ -332,9 +348,11 @@ final class JourneyClientFactoryTests: XCTestCase {
 
 private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable {
   let loggerLevel: String
+  let nativeLogger: Any?
 
   init(loggerLevel: String) {
     self.loggerLevel = loggerLevel
+    self.nativeLogger = LogManager.none
   }
 }
 

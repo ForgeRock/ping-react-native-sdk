@@ -15,9 +15,6 @@ import android.util.Log
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.browser.BrowserCanceledException
 import com.pingidentity.logger.Logger
-import com.pingidentity.logger.NONE
-import com.pingidentity.logger.STANDARD
-import com.pingidentity.logger.WARN
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.OidcUser
@@ -78,12 +75,7 @@ object RNPingOidcCommon {
     }
 
     val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
-    return when (handle.loggerLevel.uppercase()) {
-      "STANDARD" -> Logger.STANDARD
-      "WARN" -> Logger.WARN
-      "NONE" -> Logger.NONE
-      else -> Logger.NONE
-    }
+    return handle.nativeLogger as? Logger
   }
 
 

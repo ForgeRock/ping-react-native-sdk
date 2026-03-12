@@ -30,6 +30,48 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
     case none = "NONE"
   }
 
+  /// Mutable logger that delegates to the current native logger level.
+  ///
+  /// Existing SDK clients keep this logger instance, so changing `level`
+  /// updates log behavior without recreating those clients.
+  private final class DynamicLogger: Logger, @unchecked Sendable {
+    private let lock = NSLock()
+    private var level: NativeLoggerLevel
+
+    init(level: NativeLoggerLevel) {
+      self.level = level
+    }
+
+    func setLevel(_ level: NativeLoggerLevel) {
+      lock.lock()
+      self.level = level
+      lock.unlock()
+    }
+
+    private func currentLogger() -> Logger {
+      lock.lock()
+      let currentLevel = level
+      lock.unlock()
+      return RNPingLoggerImpl.nativeLogger(for: currentLevel)
+    }
+
+    func d(_ message: String) {
+      currentLogger().d(message)
+    }
+
+    func i(_ message: String) {
+      currentLogger().i(message)
+    }
+
+    func w(_ message: String, error: Error?) {
+      currentLogger().w(message, error: error)
+    }
+
+    func e(_ message: String, error: Error?) {
+      currentLogger().e(message, error: error)
+    }
+  }
+
   // MARK: - Registry Handle
 
   /// Handle for storing logger configuration in the registry.
@@ -41,10 +83,22 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
     /// The native log level for this logger instance.
     var level: NativeLoggerLevel
     var loggerLevel: String { level.rawValue }
+    private let dynamicLogger: DynamicLogger
+    var nativeLogger: Any? { dynamicLogger }
     
     /// Creates a new logger handle with the specified level.
     /// - Parameter level: The native log level to use.
-    init(level: NativeLoggerLevel) { self.level = level }
+    init(level: NativeLoggerLevel) {
+      self.level = level
+      self.dynamicLogger = DynamicLogger(level: level)
+    }
+
+    /// Updates the handle level and propagates it to the live logger.
+    /// - Parameter level: New logger level.
+    func setLevel(_ level: NativeLoggerLevel) {
+      self.level = level
+      dynamicLogger.setLevel(level)
+    }
   }
 
   // MARK: - Configure
@@ -113,7 +167,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
         return
       }
 
-      handle.level = parsedLevel
+      handle.setLevel(parsedLevel)
     }
   }
 
@@ -137,7 +191,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
         return nil
       }
 
-      return Self.nativeLogger(for: handle.loggerLevel)
+      return handle.nativeLogger as? Logger
     }
   }
 
@@ -157,15 +211,13 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
   /// Maps internal logger levels to concrete native logger instances.
   /// - Parameter level: The native logger level to map.
   /// - Returns: Concrete native logger instance.
-  private static func nativeLogger(for level: String) -> Logger {
+  private static func nativeLogger(for level: NativeLoggerLevel) -> Logger {
     switch level {
-    case NativeLoggerLevel.standard.rawValue:
+    case .standard:
       return LogManager.standard
-    case NativeLoggerLevel.warn.rawValue:
+    case .warn:
       return LogManager.warning
-    case NativeLoggerLevel.none.rawValue:
-      return LogManager.none
-    default:
+    case .none:
       return LogManager.none
     }
   }

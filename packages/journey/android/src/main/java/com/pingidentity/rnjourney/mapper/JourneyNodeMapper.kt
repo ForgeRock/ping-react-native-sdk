@@ -48,9 +48,7 @@ internal object JourneyNodeMapper {
      * Best-effort warning log through the configured Ping logger.
      */
     private fun logWarning(logger: Logger?, message: String, error: Throwable) {
-        runCatching {
-            logger?.w("[$TAG] $message", error)
-        }
+        logger?.w("[$TAG] $message", error)
     }
 
     /**
@@ -176,16 +174,12 @@ internal object JourneyNodeMapper {
             is TextOutputCallback -> {
                 payload["prompt"] = callback.message
                 payload["message"] = callback.message
-                runCatching { callback.messageType.name }
-                    .getOrNull()
-                    ?.let { payload["messageType"] = it }
+                payload["messageType"] = callback.messageType.name
             }
             is SuspendedTextOutputCallback -> {
                 payload["prompt"] = callback.message
                 payload["message"] = callback.message
-                runCatching { callback.messageType.name }
-                    .getOrNull()
-                    ?.let { payload["messageType"] = it }
+                payload["messageType"] = callback.messageType.name
             }
             is StringAttributeInputCallback -> {
                 payload["prompt"] = callback.prompt
@@ -215,24 +209,14 @@ internal object JourneyNodeMapper {
                 payload["prompt"] = callback.prompt
             }
             is ConfirmationCallback -> {
-                runCatching { callback.options }
-                    .getOrNull()
-                    ?.let { payload["options"] = it }
+                payload["options"] = callback.options
                 payload["selectedIndex"] = runCatching { callback.selectedIndex?.toInt() }
                     .getOrNull()
                     ?: -1
-                runCatching { callback.prompt }
-                    .getOrNull()
-                    ?.let { payload["prompt"] = it }
-                runCatching { callback.defaultOption.name }
-                    .getOrNull()
-                    ?.let { payload["defaultOption"] = it }
-                runCatching { callback.optionType.name }
-                    .getOrNull()
-                    ?.let { payload["optionType"] = it }
-                runCatching { callback.messageType.name }
-                    .getOrNull()
-                    ?.let { payload["messageType"] = it }
+                payload["prompt"] = callback.prompt
+                payload["defaultOption"] = callback.defaultOption.name
+                payload["optionType"] = callback.optionType.name
+                payload["messageType"] = callback.messageType.name
             }
             is ConsentMappingCallback -> {
                 payload["name"] = callback.name

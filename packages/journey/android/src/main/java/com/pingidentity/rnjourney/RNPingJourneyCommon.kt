@@ -17,9 +17,6 @@ import com.pingidentity.journey.session
 import com.pingidentity.journey.start
 import com.pingidentity.journey.user
 import com.pingidentity.logger.Logger
-import com.pingidentity.logger.NONE
-import com.pingidentity.logger.STANDARD
-import com.pingidentity.logger.WARN
 import com.pingidentity.oidc.Token
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.Node
@@ -195,12 +192,7 @@ internal object RNPingJourneyCommon {
     }
 
     val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
-    return when (handle.loggerLevel.uppercase()) {
-      "STANDARD" -> Logger.STANDARD
-      "WARN" -> Logger.WARN
-      "NONE" -> Logger.NONE
-      else -> Logger.NONE
-    }
+    return handle.nativeLogger as? Logger
   }
 
   /**

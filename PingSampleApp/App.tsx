@@ -11,6 +11,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
 import MultiStorageScreen from './ui/MultiStorageScreeen';
 import HomeScreen from './ui/HomeScreen';
+import ConfigurationScreen from './ui/ConfigurationScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';
 import JourneyHelperScreen from './ui/JourneyHelperScreen';
 import JourneyFullScreen from './ui/JourneyFullScreen';
@@ -23,7 +24,10 @@ import TokenScreen from './ui/TokenScreen';
 import LogoutScreen from './ui/LogoutScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
-import { loginClient, sampleOidcWebClient } from './src/clients';
+import {
+  DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY,
+  sampleAppClientProfiles,
+} from './src/clients';
 import { configureBrowser } from '@ping-identity/rn-browser';
 import { configureLogger, logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -38,6 +42,7 @@ type ComponentWithDefaultStyle = {
 
 export type RootStackParamList = {
   Home: undefined;
+  Configuration: undefined;
   Storage: undefined;
   JourneyRoute: undefined;
   JourneyHelper: { journeyName?: string } | undefined;
@@ -60,6 +65,16 @@ export default function App() {
   // Dedicated browser logger keeps browser diagnostics separate from global SDK logging.
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
   const [initError, setInitError] = useState<string | null>(null);
+  const [selectedProfileKey, setSelectedProfileKey] = useState<string>(
+    DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY
+  );
+
+  const selectedProfile = useMemo(
+    () =>
+      sampleAppClientProfiles.find((profile) => profile.key === selectedProfileKey) ??
+      sampleAppClientProfiles[0],
+    [selectedProfileKey]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -77,26 +92,28 @@ export default function App() {
       style: [textInputDefaults.style, { fontFamily: 'Montserrat-Regular' }],
     };
 
-    MaterialIcon.loadFont().catch(() => undefined);
+    MaterialIcon.loadFont().catch((error: unknown) => {
+      console.warn('Failed to load MaterialIcons font', error);
+    });
 
-    // Initialize Journey client at app startup so journey screens can assume a ready client.
-    const initializeLoginClient = async (): Promise<void> => {
+    // Initialize selected Journey client at app startup and after profile switches.
+    const initializeJourneyClient = async (): Promise<void> => {
       try {
-        await Promise.resolve(loginClient.init());
+        await Promise.resolve(selectedProfile.journeyClient.init());
         if (isMounted) {
           setInitError(null);
         }
       } catch (error) {
-        console.error('Failed to initialize login client', error);
+        console.error('Failed to initialize Journey client', error);
         if (isMounted) {
           const message =
-            error instanceof Error ? error.message : 'Failed to initialize login client.';
+            error instanceof Error ? error.message : 'Failed to initialize Journey client.';
           setInitError(message);
         }
       }
     };
 
-    void initializeLoginClient();
+    void initializeJourneyClient();
 
     // ( TODO: REVISIT )Global SDK logger baseline. Tune this when debugging integration issues.
     configureLogger({ level: 'info' });
@@ -123,7 +140,7 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, [browserLogger]);
+  }, [browserLogger, selectedProfile]);
 
   if (initError) {
     // Fail fast with a clear startup error instead of crashing on first journey API call.
@@ -132,8 +149,8 @@ export default function App() {
 
   return (
     // Journey and OIDC hooks resolve clients from these contexts.
-    <JourneyProvider client={loginClient}>
-      <OidcProvider client={sampleOidcWebClient}>
+    <JourneyProvider client={selectedProfile.journeyClient}>
+      <OidcProvider client={selectedProfile.oidcClient}>
         <NavigationContainer>
           <Stack.Navigator
             initialRouteName="Home"
@@ -145,9 +162,28 @@ export default function App() {
           >
             <Stack.Screen
               name="Home"
-              component={HomeScreen}
               options={{ title: 'PingIdentity Demo', headerShown: false }}
-            />
+            >
+              {(props) => (
+                <HomeScreen
+                  {...props}
+                  selectedConfigName={selectedProfile.name}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen
+              name="Configuration"
+              options={{ title: 'Configuration' }}
+            >
+              {(props) => (
+                <ConfigurationScreen
+                  {...props}
+                  profiles={sampleAppClientProfiles}
+                  selectedProfileKey={selectedProfile.key}
+                  onSelectProfile={setSelectedProfileKey}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="Storage"
               component={MultiStorageScreen}

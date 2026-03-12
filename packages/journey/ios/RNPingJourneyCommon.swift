@@ -11,6 +11,25 @@ import PingOrchestrate
 import RNPingCore
 import PingOidc
 
+/// Serializes lifecycle operations that mutate shared Journey runtime state.
+private actor JourneyLifecycleCoordinator {
+  /// Tail task representing the latest enqueued lifecycle work item.
+  private var tail: Task<Void, Never>?
+
+  /// Enqueues one lifecycle operation and waits for it to finish.
+  ///
+  /// - Parameter operation: Async lifecycle operation.
+  func enqueue(_ operation: @escaping @Sendable () async -> Void) async {
+    let previous = tail
+    let next = Task {
+      await previous?.value
+      await operation()
+    }
+    tail = next
+    await next.value
+  }
+}
+
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
@@ -35,22 +54,40 @@ public final class RNPingJourneyCommon: NSObject {
   private static let stateStore = JourneyStateStore()
   /// Shared core registry for Journey instances.
   private static let journeyRegistry: Registry = CoreRuntime.journeyRegistry
+  /// Lifecycle coordinator ensuring ordered configure/cleanup execution.
+  private static let lifecycleCoordinator = JourneyLifecycleCoordinator()
+
+  /// Applies Journey callback resolver registration in serialized lifecycle order.
+  private static func configureAsync() async {
+    await lifecycleCoordinator.enqueue {
+      CoreRuntime.setJourneyCallbackResolver { journeyId in
+        stateStore.callbacks(for: journeyId)
+      }
+    }
+  }
+
+  /// Clears Journey runtime state in serialized lifecycle order.
+  private static func cleanupAsync() async {
+    await lifecycleCoordinator.enqueue {
+      CoreRuntime.setJourneyCallbackResolver(nil)
+      stateStore.removeAll()
+      await journeyRegistry.removeAll()
+    }
+  }
 
   /// Initializes common runtime wiring for Journey bridge operations.
   @objc
   public static func configure() {
-    CoreRuntime.setJourneyCallbackResolver { journeyId in
-      stateStore.callbacks(for: journeyId)
+    Task {
+      await configureAsync()
     }
   }
 
   /// Releases shared runtime state.
   @objc
   public static func cleanup() {
-    CoreRuntime.setJourneyCallbackResolver(nil)
-    stateStore.removeAll()
     Task {
-      await journeyRegistry.removeAll()
+      await cleanupAsync()
     }
   }
 
@@ -67,7 +104,6 @@ public final class RNPingJourneyCommon: NSObject {
     rejecter: @escaping PromiseRejecter
   ) {
     let promise = PromiseBridge<String>(resolver: resolver, rejecter: rejecter)
-    configure()
 
     let payload: JourneyClientPayload
     do {
@@ -78,6 +114,7 @@ public final class RNPingJourneyCommon: NSObject {
     }
 
     Task { @MainActor in
+      await configureAsync()
       do {
         let journey = try await JourneyClientFactory().build(payload)
         let journeyId = await journeyRegistry.register(JourneyHandle(journey: journey))

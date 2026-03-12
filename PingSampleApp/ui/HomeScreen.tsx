@@ -15,15 +15,31 @@ import { colors } from '../src/styles/colors';
 import HomeMenuRow, { type HomeMenuItem } from './components/molecules/HomeMenuRow';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-type Props = { navigation: HomeScreenNavProp };
+type Props = {
+  navigation: HomeScreenNavProp;
+  selectedConfigName: string;
+};
 type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
   screen?: keyof RootStackParamList;
 };
 
 /**
+ * Converts device ID errors into user friendly text.
+ *
+ * @param error Unknown error value from native calls.
+ * @returns Safe display string for the screen.
+ */
+function formatDeviceIdError(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return 'Unable to fetch device ID.';
+}
+
+/**
  * Home screen with entry points for each SDK demo flow.
  */
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen({ navigation, selectedConfigName }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
 
@@ -164,6 +180,14 @@ export default function HomeScreen({ navigation }: Props) {
 
           <Text style={commonStyles.homeSectionTitle}>DEVELOPER TOOLS</Text>
           {developerToolsItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>SETUP</Text>
+          <HomeMenuRow
+            title="Configuration"
+            subtitle="Edit Configuration"
+            icon="settings"
+            onPress={() => navigation.navigate('Configuration')}
+          />
 
           <View style={commonStyles.homeFooter}>
             <View style={commonStyles.deviceIdCard}>

@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import type { OidcClientConfig } from '@ping-identity/rn-oidc';
 import { useOidc } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../../../../src/styles/common';
@@ -38,57 +38,71 @@ export default function OidcClientPanel(props: OidcClientPanelProps): React.Reac
 
   const [showRawUserInfo, setShowRawUserInfo] = useState<boolean>(false);
 
-  const handleAuthorize = (): void => {
-    actions
-      .authorize()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleAuthorize = async (): Promise<void> => {
+    try {
+      await actions.authorize();
+    } catch (cause) {
+      Alert.alert('Authorize failed', String(cause));
+    }
   };
 
-  const handleRestore = (): void => {
-    actions
-      .restore()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleRestore = async (): Promise<void> => {
+    try {
+      await actions.restore();
+    } catch (cause) {
+      Alert.alert('Restore failed', String(cause));
+    }
   };
 
-  const handleToken = (): void => {
-    actions
-      .token()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleToken = async (): Promise<void> => {
+    try {
+      await actions.token();
+    } catch (cause) {
+      Alert.alert('Token failed', String(cause));
+    }
   };
 
-  const handleRefresh = (): void => {
-    actions
-      .refresh()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleRefresh = async (): Promise<void> => {
+    try {
+      await actions.refresh();
+    } catch (cause) {
+      Alert.alert('Refresh failed', String(cause));
+    }
   };
 
-  const handleUserInfo = (): void => {
-    actions
-      .userinfo(true)
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleUserInfo = async (): Promise<void> => {
+    try {
+      await actions.userinfo(true);
+    } catch (cause) {
+      Alert.alert('User info failed', String(cause));
+    }
   };
 
-  const handleRevoke = (): void => {
-    actions
-      .revoke()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleRevoke = async (): Promise<void> => {
+    try {
+      await actions.revoke();
+    } catch (cause) {
+      Alert.alert('Revoke failed', String(cause));
+    }
   };
 
-  const handleLogout = (): void => {
-    actions
-      .logout()
-      .then(() => undefined)
-      .catch(() => undefined);
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await actions.logout();
+    } catch (cause) {
+      Alert.alert('Logout failed', String(cause));
+    }
   };
 
   useEffect(() => {
-    actions.restore().catch(() => undefined);
+    const restoreSession = async (): Promise<void> => {
+      try {
+        await actions.restore();
+      } catch {
+        // OIDC hook state already captures typed errors for UI display.
+      }
+    };
+    void restoreSession();
   }, [actions]);
 
   const userinfoSummaryItems = useMemo<KeyValueItem[]>(() => {

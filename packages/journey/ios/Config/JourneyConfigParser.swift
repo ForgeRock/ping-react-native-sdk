@@ -78,11 +78,7 @@ enum JourneyConfigParser {
       )
     }
 
-    return JourneyClientPayload(
-      serverUrl: serverUrl,
-      timeout: timeout,
-      realm: realm,
-      cookie: cookie,
+    let oidcPayload: JourneyOidcPayload? = (hasOidcClientHandle || hasAnyOidcField) ? JourneyOidcPayload(
       clientId: clientId,
       discoveryEndpoint: discoveryEndpoint,
       redirectUri: redirectUri,
@@ -98,10 +94,18 @@ enum JourneyConfigParser {
       display: display,
       prompt: prompt,
       additionalParameters: additionalParameters,
+      storageId: oidcStorageId,
+      clientHandleId: oidcClientId
+    ) : nil
+
+    return JourneyClientPayload(
+      serverUrl: serverUrl,
+      timeout: timeout,
+      realm: realm,
+      cookie: cookie,
+      oidc: oidcPayload,
       sessionStorageId: sessionStorageId,
-      oidcStorageId: oidcStorageId,
-      loggerId: loggerId,
-      oidcClientId: oidcClientId
+      loggerId: loggerId
     )
   }
 

@@ -24,4 +24,12 @@ interface LoggerHandleContract : NativeHandle {
      * Expected values are `STANDARD`, `WARN`, and `NONE`.
      */
     val loggerLevel: String
+
+    /**
+     * Native logger instance bound to this handle.
+     *
+     * The returned logger may be mutable (for example a delegating logger that
+     * reflects runtime level changes from `changeLevel`).
+     */
+    val nativeLogger: Any
 }

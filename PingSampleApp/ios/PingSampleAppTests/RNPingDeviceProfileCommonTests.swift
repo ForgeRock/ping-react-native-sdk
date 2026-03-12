@@ -79,33 +79,28 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
-  func testCollectDeviceProfileForJourneyResolvesErrorWhenNoCallbackFound() {
-    let expectation = expectation(description: "resolver called")
+  func testCollectDeviceProfileForJourneyRejectsWhenNoCallbackFound() {
+    let expectation = expectation(description: "rejecter called")
     let journeyId = "missing-journey-id"
 
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
-      resolver: { payload in
-        let result = payload as? [String: Any]
-        XCTAssertEqual(result?["type"] as? String, "error")
-        XCTAssertEqual(result?["code"] as? String, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
-        XCTAssertEqual(
-          result?["message"] as? String,
-          "No active Device Profile callback found for journey \(journeyId)."
-        )
-        expectation.fulfill()
+      resolver: { _ in
+        XCTFail("resolver should not be called")
       },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
+      rejecter: { code, message, _ in
+        XCTAssertEqual(code, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
+        XCTAssertEqual(message, "No active Device Profile callback found for journey \(journeyId).")
+        expectation.fulfill()
       }
     )
 
     wait(for: [expectation], timeout: 1)
   }
 
-  func testCollectDeviceProfileForJourneyResolvesErrorWhenCallbackListEmpty() {
-    let expectation = expectation(description: "resolver called")
+  func testCollectDeviceProfileForJourneyRejectsWhenCallbackListEmpty() {
+    let expectation = expectation(description: "rejecter called")
     let journeyId = "empty-callbacks-journey"
 
     // Save original resolver
@@ -122,18 +117,13 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
-      resolver: { payload in
-        let result = payload as? [String: Any]
-        XCTAssertEqual(result?["type"] as? String, "error")
-        XCTAssertEqual(result?["code"] as? String, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
-        XCTAssertEqual(
-          result?["message"] as? String,
-          "No active Device Profile callback found for journey \(journeyId)."
-        )
-        expectation.fulfill()
+      resolver: { _ in
+        XCTFail("resolver should not be called")
       },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
+      rejecter: { code, message, _ in
+        XCTAssertEqual(code, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
+        XCTAssertEqual(message, "No active Device Profile callback found for journey \(journeyId).")
+        expectation.fulfill()
       }
     )
 
@@ -255,24 +245,19 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
-  func testCollectDeviceProfileForJourneyWithEmptyJourneyId() {
-    let expectation = expectation(description: "resolver called")
+  func testCollectDeviceProfileForJourneyWithEmptyJourneyIdRejects() {
+    let expectation = expectation(description: "rejecter called")
 
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "",
       collectors: ["platform"],
-      resolver: { payload in
-        let result = payload as? [String: Any]
-        XCTAssertEqual(result?["type"] as? String, "error")
-        XCTAssertEqual(result?["code"] as? String, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
-        XCTAssertEqual(
-          result?["message"] as? String,
-          "No active Device Profile callback found for journey ."
-        )
-        expectation.fulfill()
+      resolver: { _ in
+        XCTFail("resolver should not be called")
       },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
+      rejecter: { code, message, _ in
+        XCTAssertEqual(code, "DEVICE_PROFILE_CALLBACK_NOT_FOUND")
+        XCTAssertEqual(message, "No active Device Profile callback found for journey .")
+        expectation.fulfill()
       }
     )
 

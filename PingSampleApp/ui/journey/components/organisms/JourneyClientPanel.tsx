@@ -87,6 +87,7 @@ export default function JourneyClientPanel(
   }, [deviceProfileFields]);
 
   useEffect(() => {
+    // Keep local editable state in sync when parent swaps configs.
     if (!initialJourneyName) {
       return;
     }
@@ -95,6 +96,11 @@ export default function JourneyClientPanel(
   }, [initialJourneyName]);
 
   useEffect(() => {
+    // Device profile integration behavior:
+    // 1. Run once per DeviceProfileCallback instance (keyed by type/typeIndex).
+    // 2. Collect using the shared default collector set.
+    // 3. If the node has no manual callbacks and no polling wait, auto-submit `next({})`
+    //    so the journey can continue without extra user interaction.
     if (node?.type !== 'ContinueNode' || !hasDeviceProfileCallback || loading) {
       if (node?.type !== 'ContinueNode') {
         lastAutoDeviceProfileRequestKeyRef.current = null;
@@ -114,11 +120,7 @@ export default function JourneyClientPanel(
 
     const runAutoDeviceProfile = async (): Promise<void> => {
       try {
-        const result = await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
-        if (result.type === 'error') {
-          Alert.alert('Device profile failed', result.message ?? result.code);
-          return;
-        }
+        await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
 
         if (!form.meta.hasManual && !hasPollingWaitCallback) {
           await next({});
@@ -128,7 +130,7 @@ export default function JourneyClientPanel(
       }
     };
 
-    runAutoDeviceProfile().catch(() => undefined);
+    void runAutoDeviceProfile();
   }, [
     deviceProfileRequestKey,
     form.meta.hasManual,
@@ -153,21 +155,23 @@ export default function JourneyClientPanel(
   }, [user]);
 
   useEffect(() => {
+    // Bootstrap current session state on mount/client change.
+    // This lets the panel show success actions immediately when a session
+    // already exists from a prior app launch or restored native state.
     let cancelled = false;
 
     const loadSession = async (): Promise<void> => {
       setIsSessionCheckRunning(true);
-      await refreshSession(false);
-      if (!cancelled) {
-        setIsSessionCheckRunning(false);
+      try {
+        await refreshSession(false);
+      } finally {
+        if (!cancelled) {
+          setIsSessionCheckRunning(false);
+        }
       }
     };
 
-    loadSession().catch(() => {
-      if (!cancelled) {
-        setIsSessionCheckRunning(false);
-      }
-    });
+    void loadSession();
 
     return () => {
       cancelled = true;
@@ -175,12 +179,15 @@ export default function JourneyClientPanel(
   }, [refreshSession]);
 
   useEffect(() => {
+    // `SuccessNode` implies active authentication. Keep UI session flag aligned.
     if (node?.type === 'SuccessNode') {
       setHasActiveSession(true);
     }
   }, [node?.type]);
 
   useEffect(() => {
+    // Notify parent exactly once per authenticated state transition.
+    // This drives screen-level navigation/flow handoff from the panel.
     if (!onAuthenticated) {
       return;
     }
@@ -204,6 +211,8 @@ export default function JourneyClientPanel(
   }, [hasActiveSession, node?.type, onAuthenticated, requireSuccessConfirmation]);
 
   const onContinueAfterSuccess = useCallback((): void => {
+    // Explicit continuation path for UX that requires user confirmation
+    // on the success screen before navigating away.
     if (!onAuthenticated) {
       return;
     }
@@ -211,23 +220,28 @@ export default function JourneyClientPanel(
     onAuthenticated();
   }, [onAuthenticated]);
 
-  const onStart = useCallback(async (): Promise<void> => {
+  const onStart = useCallback(async (): Promise<boolean> => {
     const trimmedJourneyName = journeyName.trim();
     if (!trimmedJourneyName) {
       Alert.alert('Enter a journey name first');
-      return;
+      return false;
     }
 
     try {
       await start(trimmedJourneyName, startOptions);
+      // Clear prior form/resume state when starting a new flow.
       form.reset();
       setResumeUrl('');
+      return true;
     } catch (cause) {
       Alert.alert('Failed to start journey', String(cause));
+      return false;
     }
   }, [form, journeyName, start, startOptions]);
 
   useEffect(() => {
+    // Optional hands-free start mode for sample/demo usage.
+    // Guarded to ensure only one auto-start attempt per eligible state.
     if (!autoStartOnMount) {
       return;
     }
@@ -242,9 +256,14 @@ export default function JourneyClientPanel(
     }
 
     hasAutoStartedRef.current = true;
-    onStart().catch(() => {
-      hasAutoStartedRef.current = false;
-    });
+    const runAutoStart = async (): Promise<void> => {
+      const didStart = await onStart();
+      if (!didStart) {
+        hasAutoStartedRef.current = false;
+      }
+    };
+
+    void runAutoStart();
   }, [
     autoStartOnMount,
     hasActiveSession,
@@ -271,6 +290,8 @@ export default function JourneyClientPanel(
   }, [resume, resumeUrl]);
 
   useEffect(() => {
+    // Deep-link resume listener for callbacks that suspend browser/auth flow.
+    // Duplicate URL guard prevents repeated resume calls on repeated events.
     if (!hasSuspendedCallback) {
       return;
     }
@@ -293,7 +314,7 @@ export default function JourneyClientPanel(
         }
       };
 
-      runAutoResume().catch(() => undefined);
+      void runAutoResume();
     });
 
     return () => {
@@ -304,6 +325,7 @@ export default function JourneyClientPanel(
   const onLogout = useCallback(async (): Promise<void> => {
     try {
       await logoutUser();
+      // Reset panel lifecycle flags so a fresh journey can be started cleanly.
       form.reset();
       setResumeUrl('');
       setHasActiveSession(false);
@@ -320,6 +342,7 @@ export default function JourneyClientPanel(
     }
 
     if (!form.canSubmit) {
+      // Show friendlier guidance for the most common validation failure.
       const firstIssue = form.issues[0];
       if (firstIssue?.code === 'REQUIRED_CONSENT_MISSING') {
         Alert.alert('Accept required terms/consent to continue');
@@ -334,6 +357,7 @@ export default function JourneyClientPanel(
     }
 
     try {
+      // Includes DeviceProfileCallback values populated by `useJourneyForm`.
       await next(form.input);
     } catch (cause) {
       Alert.alert('Submit failed', String(cause));

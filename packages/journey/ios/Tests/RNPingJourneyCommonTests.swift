@@ -6,6 +6,7 @@
  */
 
 import XCTest
+import PingLogger
 @testable import RNPingCore
 @testable import RNPingJourney
 
@@ -377,6 +378,55 @@ final class RNPingJourneyCommonTests: XCTestCase {
     }
   }
 
+  func testCleanupThenConfigureDoesNotDropNewJourneyHandle() {
+    let firstJourneyId = configureJourneyAndWait(
+      [
+        "serverUrl": "https://example.com/am"
+      ]
+    )
+
+    RNPingJourneyCommon.cleanup()
+
+    let secondJourneyId = configureJourneyAndWait(
+      [
+        "serverUrl": "https://example.com/am"
+      ]
+    )
+
+    assertSessionResolves(secondJourneyId)
+
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.getSession(
+        firstJourneyId,
+        resolver: { session in resolver(session) },
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testRapidCleanupConfigureCyclesKeepLatestJourneyHandleValid() {
+    var latestJourneyId: String?
+
+    for _ in 0..<5 {
+      RNPingJourneyCommon.cleanup()
+      latestJourneyId = configureJourneyAndWait(
+        [
+          "serverUrl": "https://example.com/am"
+        ]
+      )
+    }
+
+    guard let latestJourneyId else {
+      XCTFail("Expected latest journey id after configure cycles")
+      return
+    }
+
+    assertSessionResolves(latestJourneyId)
+  }
+
   private func assertReject(
     expectedCode: String,
     expectedType: ErrorType,
@@ -438,12 +488,38 @@ final class RNPingJourneyCommonTests: XCTestCase {
     }
     return result
   }
+
+  private func assertSessionResolves(
+    _ journeyId: String
+  ) {
+    let resolveExpectation = expectation(description: "getSession resolve")
+    let rejectExpectation = expectation(description: "getSession reject not called")
+    rejectExpectation.isInverted = true
+
+    RNPingJourneyCommon.getSession(
+      journeyId,
+      resolver: { _ in
+        Task { @MainActor in
+          resolveExpectation.fulfill()
+        }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in
+          rejectExpectation.fulfill()
+        }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 1.0)
+  }
 }
 
 private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable {
   let loggerLevel: String
+  let nativeLogger: Any?
 
   init(loggerLevel: String) {
     self.loggerLevel = loggerLevel
+    self.nativeLogger = LogManager.none
   }
 }
