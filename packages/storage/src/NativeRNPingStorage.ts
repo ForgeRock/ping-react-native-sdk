@@ -254,13 +254,6 @@ export type NativeStorageConfig = {
 };
 
 /**
- * Detects if the New Architecture (Turbo Modules) is enabled.
- */
-const isNewArchEnabled =
-  typeof global.__turboModuleProxy !== 'undefined' &&
-  global.__turboModuleProxy != null;
-
-/**
  * Native module specification for RNPingStorage.
  * 
  * Defines the interface contract for the native storage module.
@@ -347,33 +340,28 @@ export interface Spec extends TurboModule {
   configureOidcStorage(id: string): NativeStorageConfig;
 }
 
-/**
- * Gets the native storage module, supporting both New Architecture (Turbo Modules) and legacy architecture.
- * 
- * Automatically detects the React Native architecture by checking for the __turboModuleProxy global:
- * - If New Architecture is enabled, uses TurboModuleRegistry
- * - Otherwise, falls back to classic NativeModules
- * 
+/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+ *
  * @returns The native RNPingStorage module implementation
- * @throws {Error} If the classic native module is not found in legacy architecture
+ * @throws {Error} If no native module is registered
  */
 export function getNativeModule(): Spec {
-  if (isNewArchEnabled) {
-    return TurboModuleRegistry.getEnforcing<Spec>('RNPingStorage');
+  const turbo = TurboModuleRegistry.get<Spec>('RNPingStorage');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic = NativeModules.RNPingStorage;
-  if (!classic) {
-    const available = Object.keys(NativeModules)
-      .slice(0, 10); // avoid huge logs
-
-    throw new Error(
-      '[@ping-identity/rn-storage] Classic RNPingStorageClassic native module not found.\n' +
-      'Available NativeModules: ' + JSON.stringify(available)
-    );
+  const classic = NativeModules.RNPingStorageClassic as Spec | undefined;
+  if (classic) {
+    return classic;
   }
 
-  return classic as Spec;
+  throw new Error(
+    '[@ping-identity/rn-storage] Native module RNPingStorage not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }
 
 export default getNativeModule();

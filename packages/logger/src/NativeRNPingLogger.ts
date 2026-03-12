@@ -52,34 +52,28 @@ export interface Spec extends TurboModule {
   syncLogger(config: LoggerSyncOptions): void;
 }
 
-// Detect New Architecture (Turbo)
-const isNewArchEnabled =
-  typeof global.__turboModuleProxy !== 'undefined' &&
-  global.__turboModuleProxy != null;
-
-/**
- * Gets the native logger module, supporting both New Architecture (Turbo Modules) and legacy architecture.
+/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns The native Logger module implementation.
- * @throws Error if the classic native module is not found in legacy architecture.
+ * @throws Error if no native module is registered.
  */
 export function getNativeModule(): Spec {
-  if (isNewArchEnabled) {
-    return TurboModuleRegistry.getEnforcing<Spec>('Logger');
+  const turbo = TurboModuleRegistry.get<Spec>('Logger');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic = NativeModules.Logger ?? NativeModules.RNPingLogger;
-  if (!classic) {
-    const available = Object.keys(NativeModules)
-      .slice(0, 10); // avoid huge logs
-
-    throw new Error(
-      '[@ping-identity/rn-logger] Classic Logger (or RNPingLogger) native module not found.\n' +
-      'Available NativeModules: ' + JSON.stringify(available)
-    );
+  const classic = NativeModules.RNPingLoggerClassic as Spec | undefined;
+  if (classic) {
+    return classic;
   }
 
-  return classic as Spec;
+  throw new Error(
+    '[@ping-identity/rn-logger] Native module Logger not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }
 
 export default getNativeModule();

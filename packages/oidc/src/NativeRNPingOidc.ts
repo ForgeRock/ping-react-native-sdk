@@ -102,34 +102,26 @@ export interface Spec extends TurboModule {
   logout(webClientId: string): Promise<void>;
 }
 
-/**
- * Resolve the native module for the OIDC API.
+/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns Native module implementation for the current architecture.
- * @throws Error when the classic module is missing at runtime.
+ * @throws Error when no native module is registered.
  */
 export function getNativeModule(): Spec {
-  const isNewArchEnabled =
-    typeof global.__turboModuleProxy !== 'undefined' &&
-    global.__turboModuleProxy != null;
-
-  if (isNewArchEnabled) {
-    try {
-      return TurboModuleRegistry.getEnforcing<Spec>('RNPingOidc');
-    } catch {
-      // Fall back to classic if TurboModule isn't registered at runtime.
-    }
+  const turbo = TurboModuleRegistry.get<Spec>('RNPingOidc');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic = NativeModules.RNPingOidcClassic;
-  if (!classic) {
-    const available = Object.keys(NativeModules);
-    throw new Error(
-      '[@ping-identity/rn-oidc] Native RNPingOidcClassic module not found.\n' +
-        'Available NativeModules: ' +
-        JSON.stringify(available)
-    );
+  const classic = NativeModules.RNPingOidcClassic as Spec | undefined;
+  if (classic) {
+    return classic;
   }
 
-  return classic as Spec;
+  throw new Error(
+    '[@ping-identity/rn-oidc] Native module RNPingOidc not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }

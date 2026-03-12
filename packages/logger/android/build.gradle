@@ -30,6 +30,9 @@ apply plugin: "kotlin-android"
 
 apply plugin: "com.facebook.react"
 
+def newArchEnabled = project.hasProperty("newArchEnabled") &&
+    project.newArchEnabled.toBoolean()
+
 def getExtOrIntegerDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["Logger_" + name]).toInteger()
 }
@@ -44,6 +47,7 @@ android {
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
     def pkg = new JsonSlurper().parse(file("../package.json"))
     buildConfigField "String", "VERSION_NAME", "\"${pkg.version}\""
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled.toString()
   }
 
   buildFeatures {
@@ -67,10 +71,11 @@ android {
 
   sourceSets {
     main {
-      java.srcDirs += [
-        "generated/java",
-        "generated/jni"
-      ]
+      if (newArchEnabled) {
+        java.srcDirs += ["src/newarch/java", "generated/java"]
+      } else {
+        java.srcDirs += ["src/oldarch/java"]
+      }
     }
   }
 }

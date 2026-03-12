@@ -227,41 +227,28 @@ export interface Spec extends TurboModule {
   dispose(journeyId: string): Promise<void>;
 }
 
-/**
- * Resolves the native `<Spec>` implementation, preferring TurboModules when available.
- *
- * Falls back to the legacy `NativeModules` entry when Turbo is unavailable.
+/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns Native module implementation for Journey APIs.
  * @throws Error when no matching native module can be found.
  */
 export function getNativeModule(): Spec {
-  const isNewArchEnabled =
-    typeof global.__turboModuleProxy !== 'undefined' &&
-    global.__turboModuleProxy != null;
-
-  if (isNewArchEnabled) {
-    try {
-      return TurboModuleRegistry.getEnforcing<Spec>('RNPingJourney');
-    } catch {
-      // Fall back to classic if TurboModule isn't registered at runtime.
-    }
+  const turbo = TurboModuleRegistry.get<Spec>('RNPingJourney');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic =
-    (NativeModules.RNPingJourneyClassic as Spec | undefined) ??
-    (NativeModules.RNPingJourney as Spec | undefined);
-
-  if (!classic) {
-    const available = Object.keys(NativeModules);
-    throw new Error(
-      '[@ping-identity/rn-journey] Native RNPingJourneyClassic module not found.\n' +
-        'Available NativeModules: ' +
-        JSON.stringify(available)
-    );
+  const classic = NativeModules.RNPingJourneyClassic as Spec | undefined;
+  if (classic) {
+    return classic;
   }
 
-  return classic;
+  throw new Error(
+    '[@ping-identity/rn-journey] Native module RNPingJourney not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }
 
 /**

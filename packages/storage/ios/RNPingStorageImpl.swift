@@ -15,10 +15,9 @@ import RNPingCore
  */
 
 @objcMembers
-public class RNPingStorageImpl: NSObject {
+public class RNPingStorageImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
-  @MainActor
   @objc public static let shared = RNPingStorageImpl()
 
   @objc private override init() {

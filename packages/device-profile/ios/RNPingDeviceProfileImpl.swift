@@ -10,11 +10,10 @@ import PingDeviceProfile
 
 /// Swift entry point for the Device Profile native module.
 @objcMembers
-public class RNPingDeviceProfileImpl: NSObject {
+public class RNPingDeviceProfileImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
-  @MainActor
-  public static let shared = RNPingDeviceProfileImpl()
+  @objc public static let shared = RNPingDeviceProfileImpl()
 
   private override init() {
     super.init()

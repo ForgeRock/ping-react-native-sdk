@@ -12,10 +12,9 @@ import RNPingCore
 /// Implementation of the native device ID bridge for React Native.
 @available(iOS 16.0.0, *)
 @objcMembers
-public class RNPingDeviceIdImpl: NSObject {
+public class RNPingDeviceIdImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
-  @MainActor
   @objc public static let shared = RNPingDeviceIdImpl()
 
   /// Stable error codes emitted by the Device ID module.

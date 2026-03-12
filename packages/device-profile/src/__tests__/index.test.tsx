@@ -19,13 +19,13 @@ const createJsLogger = (nativeHandleId = 'custom-logger-id') => ({
 
 type ReactNativeMock = {
   NativeModules: Record<string, unknown>;
-  TurboModuleRegistry: { getEnforcing: jest.Mock };
+  TurboModuleRegistry: { get: jest.Mock };
 };
 
 const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
   const base: ReactNativeMock = {
     NativeModules: {},
-    TurboModuleRegistry: { getEnforcing: jest.fn(() => ({})) },
+    TurboModuleRegistry: { get: jest.fn(() => ({})) },
   };
 
   return { ...base, ...overrides };
@@ -34,27 +34,17 @@ const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
 const loadModule = async ({
   nativeModule,
   turboModule,
-  enableTurbo,
 }: {
   nativeModule?: Record<string, unknown>;
   turboModule?: Record<string, unknown>;
-  enableTurbo?: boolean;
 }) => {
   jest.resetModules();
-  (global as { __turboModuleProxy?: unknown }).__turboModuleProxy =
-    enableTurbo ? {} : undefined;
-
-  const getEnforcing = jest.fn(() => {
-    if (!turboModule) {
-      throw new Error('missing');
-    }
-    return turboModule;
-  });
+  const get = jest.fn(() => turboModule);
 
   jest.doMock('react-native', () =>
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
-      TurboModuleRegistry: { getEnforcing },
+      TurboModuleRegistry: { get },
     })
   );
 
@@ -191,7 +181,6 @@ describe('device-profile package', () => {
     );
     const { collectDeviceProfile: collect } = await loadModule({
       turboModule: { collectDeviceProfile },
-      enableTurbo: true,
     });
 
     await collect(['network']);
@@ -199,13 +188,12 @@ describe('device-profile package', () => {
     expect(collectDeviceProfile).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the classic module when TurboModule is missing', async () => {
+  it('falls back to classic module when TurboModule is missing', async () => {
     const collectDeviceProfile = jest.fn(() =>
       Promise.resolve({ platform: { os: 'ios' } })
     );
     const { collectDeviceProfile: collect } = await loadModule({
       nativeModule: { RNPingDeviceProfileClassic: { collectDeviceProfile } },
-      enableTurbo: true,
     });
 
     await collect(['platform']);
@@ -215,7 +203,7 @@ describe('device-profile package', () => {
 
   it('throws when called without a native module', async () => {
     await expect(loadModule({})).rejects.toThrow(
-      'Native RNPingDeviceProfile module not found.'
+      '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.'
     );
   });
 

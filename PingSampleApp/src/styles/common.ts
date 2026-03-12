@@ -300,6 +300,14 @@ export const commonStyles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
+  homeFooterLabelRow: {
+    width: '100%',
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
   configScreen: {
     flex: 1,
     backgroundColor: colors.background,

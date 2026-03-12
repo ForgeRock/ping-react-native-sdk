@@ -42,6 +42,12 @@ function formatDeviceIdError(error: unknown): string {
 export default function HomeScreen({ navigation, selectedConfigName }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
+  const runtime = global as {
+    RN$Bridgeless?: boolean;
+    nativeFabricUIManager?: unknown;
+  };
+  const isNewArchEnabled =
+    runtime.RN$Bridgeless === true || runtime.nativeFabricUIManager != null;
 
   const authenticationItems: HomeScreenMenuItem[] = [
     {
@@ -212,7 +218,12 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
                 Device ID could not be resolved.
               </Text>
             ) : null}
-            <Text style={commonStyles.homeFooterText}>React Native Unified SDK</Text>
+            <View style={commonStyles.homeFooterLabelRow}>
+              <Text style={commonStyles.homeFooterText}>React Native Unified SDK</Text>
+              <Text style={commonStyles.homeFooterText}>
+                {`New Arch: ${isNewArchEnabled ? 'Enabled' : 'Disabled'}`}
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>

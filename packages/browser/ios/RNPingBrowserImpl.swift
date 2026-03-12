@@ -11,12 +11,11 @@
 import Foundation
 
 /// Swift entry point used by the Obj-C++ bridges.
-@MainActor
 @objcMembers
-public class RNPingBrowserImpl: NSObject {
+public class RNPingBrowserImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
-  public static let shared = RNPingBrowserImpl()
+  @objc public static let shared = RNPingBrowserImpl()
 
   private override init() {
     super.init()

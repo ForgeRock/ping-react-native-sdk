@@ -113,12 +113,26 @@ describe('useJourney provider and native module resolution', () => {
     jest.isolateModules(() => {
       jest.doMock('react-native', () => ({
         NativeModules: {},
-        TurboModuleRegistry: { getEnforcing: jest.fn() },
+        TurboModuleRegistry: { get: jest.fn() },
       }));
       const nativeModule = require('../NativeRNPingJourney');
       expect(() => nativeModule.getNativeModule()).toThrow(
-        'Native RNPingJourneyClassic module not found.'
+        '[@ping-identity/rn-journey] Native module RNPingJourney not found.'
       );
+    });
+  });
+
+  it('falls back to classic module when TurboModule is missing', () => {
+    jest.isolateModules(() => {
+      const classic = {};
+      jest.doMock('react-native', () => ({
+        NativeModules: { RNPingJourneyClassic: classic },
+        TurboModuleRegistry: {
+          get: jest.fn(() => undefined),
+        },
+      }));
+      const nativeModule = require('../NativeRNPingJourney');
+      expect(nativeModule.getNativeModule()).toBe(classic);
     });
   });
 });

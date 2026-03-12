@@ -13,7 +13,7 @@
 
 @implementation RNPingStorageClassic
 
-RCT_EXPORT_MODULE(RNPingStorage)
+RCT_EXPORT_MODULE(RNPingStorageClassic)
 
 #pragma mark - Configure
 

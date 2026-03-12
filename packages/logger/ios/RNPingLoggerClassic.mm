@@ -25,7 +25,7 @@
  */
 @implementation RNPingLoggerClassic
 
-RCT_EXPORT_MODULE(RNPingLogger)
+RCT_EXPORT_MODULE(RNPingLoggerClassic)
 
 #pragma mark - Register
 
