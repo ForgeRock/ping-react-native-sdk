@@ -52,11 +52,17 @@ jobs:
     # Execute Android unit tests across affected packages.
     android-unit-tests:
         needs: js-unit-tests
+        permissions:
+            contents: read
+            checks: write
         uses: ./.github/workflows/build-and-test-android.yml
 
     # Execute iOS unit tests across affected packages.
     ios-unit-tests:
         needs: js-unit-tests
+        permissions:
+            contents: read
+            checks: write
         uses: ./.github/workflows/build-and-test-ios.yml
 
     # Publish documentation preview to GitHub Pages on every PR for review.

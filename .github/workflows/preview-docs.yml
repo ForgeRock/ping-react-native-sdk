@@ -78,4 +78,4 @@ jobs:
                 umbrella-dir: docs-preview
                 pages-base-path: docs
                 comment: true
-                wait-for-pages-deployment: true
+                wait-for-pages-deployment: false
