@@ -18,6 +18,7 @@ env:
       DERIVED_DATA_PATH: DerivedData
       XCODE_VERSION: '26.1.1'
       RUBY_VERSION: '2.6.10'
+      BUNDLE_GEMFILE: PingSampleApp/Gemfile
       IOS_DIRECTORY: PingSampleApp/ios
 jobs:
     build-and-test-ios:
@@ -68,23 +69,14 @@ jobs:
             - name: Cache DerivedData
               uses: actions/cache@v3
               with:
-                path: ~/Library/Developer/Xcode/DerivedData
-                key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/Podfile.lock') }}
+                path: ${{ env.DERIVED_DATA_PATH }}
+                key: ${{ runner.os }}-xcode-${{ env.XCODE_VERSION }}-deriveddata-${{ hashFiles('PingSampleApp/ios/Podfile.lock', 'PingSampleApp/ios/PingSampleApp.xcodeproj/project.pbxproj', 'PingSampleApp/ios/PingSampleApp.xcodeproj/xcshareddata/xcschemes/RNPackagesTests.xcscheme', 'packages/*/*.podspec', 'packages/*/ios/**/*.swift', 'packages/*/ios/**/*.{m,mm,h,cpp}') }}
                 restore-keys: |
-                  ${{ runner.os }}-deriveddata-
+                  ${{ runner.os }}-xcode-${{ env.XCODE_VERSION }}-deriveddata-
 
               # Setup Node.js environment and install dependencies.
             - name: Setup project dependencies
               uses: ./.github/actions/setup-proj
-            
-            # Build packages
-            - name: Build packages
-              run: yarn packages:build
-
-            # Install iOS gems for managing CocoaPods dependencies and other iOS-specific tasks. 
-            - name: Install iOS gems
-              working-directory: ${{ env.IOS_DIRECTORY }}
-              run: bundle install
 
             #Install CocoaPods
             - name: Install CocoaPods
@@ -104,17 +96,13 @@ jobs:
                 chmod +x product/xcresultparser
                 sudo mv product/xcresultparser /usr/local/bin/ 
 
-            # Reset simulators
-            - name: Reset simulators
-              run: xcrun simctl shutdown all && xcrun simctl erase all
-
-            # List available simulators 
-            - name: List simulators
-              run: xcrun simctl list devices
-
-            # Pre-boot simulators to avoid timeouts during xcodebuild test execution.
-            - name: Pre-boot simulators
-              run: xcrun simctl bootstatus "iPhone 16e" -b || true
+            # Reset only the target simulator to reduce state leakage without erasing all devices.
+            - name: Prepare target simulator
+              run: |
+                xcrun simctl shutdown all || true
+                xcrun simctl erase "iPhone 16e" || true
+                xcrun simctl boot "iPhone 16e" || true
+                xcrun simctl bootstatus "iPhone 16e" -b || true
 
             # Run iOS unit tests using xcodebuild.
             - name: Run iOS unit tests
@@ -126,9 +114,9 @@ jobs:
                   -destination "${{ env.DESTINATION }}" \
                   -derivedDataPath ${{ env.DERIVED_DATA_PATH }} \
                   -resultBundlePath TestResults.xcresult \
-                  -parallel-testing-enabled NO \
-                  -parallel-testing-worker-count 1 \
-                  clean test \
+                  -parallel-testing-enabled YES \
+                  -parallel-testing-worker-count 2 \
+                  test \
                   | xcbeautify \
                   | tee xcodebuild.log
 
