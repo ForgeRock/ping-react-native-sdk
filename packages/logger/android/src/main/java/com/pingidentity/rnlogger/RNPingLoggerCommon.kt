@@ -116,7 +116,7 @@ object RNPingLoggerCommon {
 
     val parsed = parseLevel(level)
     if (parsed == null) {
-      Log.w(TAG, "Invalid level '$level'")
+      Log.w(TAG, "Invalid level")
       return
     }
 
