@@ -148,8 +148,8 @@ object RNPingLoggerCommon {
       CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
     }
     if (handle == null) {
-      Log.w(TAG, "No logger registered for id $id")
-      return null
+      Log.w(TAG, "No logger registered for the provided identifier")
+      return false
     }
 
     return handle.nativeLogger as? Logger
