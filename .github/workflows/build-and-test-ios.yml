@@ -115,7 +115,7 @@ jobs:
                   -derivedDataPath ${{ env.DERIVED_DATA_PATH }} \
                   -resultBundlePath TestResults.xcresult \
                   -parallel-testing-enabled YES \
-                  -parallel-testing-worker-count 2 \
+                  -parallel-testing-worker-count 4 \
                   test \
                   | xcbeautify \
                   | tee xcodebuild.log
