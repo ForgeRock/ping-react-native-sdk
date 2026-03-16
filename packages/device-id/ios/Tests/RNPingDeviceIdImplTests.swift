@@ -9,6 +9,7 @@ import XCTest
 @testable import RNPingDeviceId
 
 
+@MainActor
 final class RNPingDeviceIdImplTests: XCTestCase {
 
   private var deviceIdImpl: RNPingDeviceIdImpl!
@@ -35,15 +36,30 @@ final class RNPingDeviceIdImplTests: XCTestCase {
   // MARK: - Device ID Tests
 
   func testGetDefaultDeviceIdReturnsNonEmptyString() async throws {
-    let deviceId = try await fetchDefaultDeviceId()
-
+    let deviceId: String
+    do {
+      deviceId = try await fetchDefaultDeviceId()
+    } catch {
+      if "\(error)".contains("encryptionInitializationFailed") {
+        throw XCTSkip("Device ID encryption not available in this environment")
+      }
+      throw error
+    }
     XCTAssertFalse(deviceId.isEmpty, "Device ID should not be empty")
   }
 
   func testGetDefaultDeviceIdIsStableWithinProcess() async throws {
-    let first = try await fetchDefaultDeviceId()
-    let second = try await fetchDefaultDeviceId()
-
+    let first: String
+    let second: String
+    do {
+      first = try await fetchDefaultDeviceId()
+      second = try await fetchDefaultDeviceId()
+    } catch {
+      if "\(error)".contains("encryptionInitializationFailed") {
+        throw XCTSkip("Device ID encryption not available in this environment")
+      }
+      throw error
+    }
     XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
   }
 

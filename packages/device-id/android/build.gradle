@@ -88,4 +88,5 @@ dependencies {
   implementation("com.pingidentity.sdks:android:1.3.0-beta2")
   implementation(project(":ping-identity_rn-core"))
   testImplementation "junit:junit:4.13.2"
+  testImplementation "io.mockk:mockk:1.13.12"
 }

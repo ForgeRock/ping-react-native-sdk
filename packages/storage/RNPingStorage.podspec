@@ -39,6 +39,12 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = ['5.0', '5.1', '6.0']
 
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+    test_spec.dependency "PingStorage"
+    test_spec.dependency "RNPingCore"
+  end
+
   # Native Ping SDK dependency
   s.dependency "PingStorage"
   s.dependency "RNPingCore"

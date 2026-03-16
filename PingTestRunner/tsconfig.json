@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "jsx": "react"
+  },
+  "extends": "@react-native/typescript-config",
+  "include": ["App.tsx", "index.js", "__tests__/**/*", "e2e/**/*"]
+}

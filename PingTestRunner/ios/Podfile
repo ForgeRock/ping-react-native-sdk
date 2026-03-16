@@ -1,0 +1,109 @@
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+
+ENV['RCT_NEW_ARCH_ENABLED'] = "1"
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, '16.0'
+prepare_react_native_project!
+
+# Ping iOS SDK git source — keep in sync with PingSampleApp/ios/Podfile
+ping_ios_sdk_git = 'https://github.com/ForgeRock/ping-ios-sdk.git'
+ping_ios_sdk_branch = 'SDKS-4648-RN-Device'
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'PingTestRunner' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  # Ping iOS SDK pods (mirrors PingSampleApp)
+  pod 'PingBrowser',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingJourney',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingStorage',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingOrchestrate',   :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingLogger',        :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingDeviceId',      :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingDeviceProfile', :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingJourneyPlugin', :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingNetwork',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingTamperDetector',:git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingCommons',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+  pod 'PingOidc',          :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
+
+  # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
+  pod 'RNPingCore',
+    :path => '../../packages/core',
+    :testspecs => ['Tests']
+  pod 'RNPingDeviceId',
+    :path => '../../node_modules/@ping-identity/rn-device-id',
+    :testspecs => ['Tests']
+  pod 'RNPingJourney',
+    :path => '../../node_modules/@ping-identity/rn-journey',
+    :testspecs => ['Tests']
+  pod 'RNPingLogger',
+    :path => '../../node_modules/@ping-identity/rn-logger',
+    :testspecs => ['Tests']
+  pod 'RNPingOidc',
+    :path => '../../node_modules/@ping-identity/rn-oidc',
+    :testspecs => ['Tests']
+  pod 'RNPingStorage',
+    :path => '../../node_modules/@ping-identity/rn-storage',
+    :testspecs => ['Tests']
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+    )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      end
+    end
+
+    # Workaround: fix missing FOUNDATION_EXPORT for TamperDetectorVersionString
+    tamper_header = File.join(
+      installer.sandbox.root.to_s,
+      'PingTamperDetector',
+      'TamperDetector',
+      'TamperDetector',
+      'TamperDetector.h'
+    )
+    if File.exist?(tamper_header)
+      contents = File.read(tamper_header)
+      if contents.include?('TamperDetectorVersionString') &&
+          !contents.include?('const unsigned char TamperDetectorVersionString')
+        fixed = contents.sub(
+          /TamperDetectorVersionString\s*\z/,
+          'FOUNDATION_EXPORT const unsigned char TamperDetectorVersionString[];'
+        )
+        begin
+          if File.writable?(tamper_header)
+            File.write(tamper_header, fixed)
+          else
+            Pod::UI.puts "warning: Skipping TamperDetector header patch (file not writable)".yellow
+          end
+        rescue StandardError => e
+          Pod::UI.puts "warning: Skipping TamperDetector header patch (#{e.class}: #{e.message})".yellow
+        end
+      end
+    end
+  end
+end

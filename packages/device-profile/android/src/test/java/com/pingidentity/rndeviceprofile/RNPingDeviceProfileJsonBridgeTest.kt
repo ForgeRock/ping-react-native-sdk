@@ -74,7 +74,7 @@ class RNPingDeviceProfileJsonBridgeTest {
   }
 
   /**
-   * Verifies nested JSON objects and arrays map correctly to RN types.
+   * Verifies nested JSON objects and arrays map correctly to RN types via encodeJsonObject.
    */
   @Test
   fun jsonObjectToReactValueBuildsNestedMaps() {
@@ -89,7 +89,7 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     val nested = map.getMap("nested") as ReadableMap
     val items = map.getArray("items") as ReadableArray
 
@@ -103,9 +103,10 @@ class RNPingDeviceProfileJsonBridgeTest {
   }
 
   /**
-   * Verifies arrays convert to RN arrays with nested maps.
+   * Verifies arrays convert to plain List with nested Map entries.
    */
   @Test
+  @Suppress("UNCHECKED_CAST")
   fun jsonArrayToReactValueBuildsNestedArrays() {
     val json = JsonArray(
       listOf(
@@ -114,12 +115,11 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val array = JsonBridgeMapper.encodeJsonElement(json) as ReadableArray
+    val list = JsonBridgeMapper.encodeJsonElement(json) as List<Any?>
 
-    assertEquals("alpha", array.getString(0))
-    assertEquals(ReadableType.Map, array.getType(1))
-    val nested = array.getMap(1) as ReadableMap
-    assertEquals(false, nested.getBoolean("flag"))
+    assertEquals("alpha", list[0])
+    val nested = list[1] as Map<String, Any?>
+    assertEquals(false, nested["flag"])
   }
 
   /**
@@ -132,19 +132,20 @@ class RNPingDeviceProfileJsonBridgeTest {
   }
 
   /**
-   * Verifies empty JsonObject and JsonArray convert to empty RN containers.
+   * Verifies empty JsonObject converts to an empty ReadableMap and empty JsonArray to empty List.
    */
   @Test
+  @Suppress("UNCHECKED_CAST")
   fun emptyJsonContainersConvertToEmptyReactValues() {
-    val map = JsonBridgeMapper.encodeJsonElement(JsonObject(emptyMap())) as ReadableMap
-    val array = JsonBridgeMapper.encodeJsonElement(JsonArray(emptyList())) as ReadableArray
+    val map = JsonBridgeMapper.encodeJsonObject(JsonObject(emptyMap()))
+    val list = JsonBridgeMapper.encodeJsonElement(JsonArray(emptyList())) as List<Any?>
 
     assertEquals(0, map.toHashMap().size)
-    assertEquals(0, array.size())
+    assertEquals(0, list.size)
   }
 
   /**
-   * Verifies deeply nested structures convert correctly to RN types.
+   * Verifies deeply nested structures convert correctly to RN types via encodeJsonObject.
    */
   @Test
   fun deeplyNestedJsonToReactValueBuildsStructure() {
@@ -171,7 +172,7 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     val level1 = map.getArray("level1") as ReadableArray
     val level2 = level1.getMap(0) as ReadableMap
     val level3 = (level2.getMap("level2") as ReadableMap).getArray("level3") as ReadableArray
@@ -193,7 +194,7 @@ class RNPingDeviceProfileJsonBridgeTest {
       )
     )
 
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     assertEquals(ReadableType.String, map.getType("boolString"))
     assertEquals(ReadableType.String, map.getType("numberString"))
     assertEquals("true", map.getString("boolString"))
@@ -211,7 +212,7 @@ class RNPingDeviceProfileJsonBridgeTest {
         "maxLong" to JsonPrimitive(Long.MAX_VALUE)
       )
     )
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     val unsafe = map.getDouble("unsafe")
     val maxLong = map.getDouble("maxLong")
 
@@ -227,7 +228,7 @@ class RNPingDeviceProfileJsonBridgeTest {
     val value = "Ping π 你好"
     val json = JsonObject(mapOf("text" to JsonPrimitive(value)))
 
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     assertEquals(value, map.getString("text"))
   }
 
@@ -238,7 +239,7 @@ class RNPingDeviceProfileJsonBridgeTest {
   fun jsonNullInObjectMapsToNullType() {
     val json = JsonObject(mapOf("value" to JsonNull))
 
-    val map = JsonBridgeMapper.encodeJsonElement(json) as ReadableMap
+    val map = JsonBridgeMapper.encodeJsonObject(json)
     assertEquals(ReadableType.Null, map.getType("value"))
   }
 }
