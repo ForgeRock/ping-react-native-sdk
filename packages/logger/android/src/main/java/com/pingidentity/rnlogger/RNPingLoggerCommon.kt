@@ -106,11 +106,11 @@ object RNPingLoggerCommon {
     val level = config.getString("level")
 
     if (id.isNullOrBlank()) {
-      Log.w(TAG, "syncLogger called without id")
+      Log.w(TAG, "syncLogger called without logger reference")
       return
     }
     if (level.isNullOrBlank()) {
-      Log.w(TAG, "syncLogger called without level for id $id")
+      Log.w(TAG, "syncLogger called without level for logger request")
       return
     }
 
@@ -123,7 +123,7 @@ object RNPingLoggerCommon {
     scope.launch {
       val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
       if (handle == null) {
-        Log.w(TAG, "No logger registered for id $id")
+        Log.w(TAG, "No logger registration found for logger request")
         return@launch
       }
 
@@ -148,7 +148,7 @@ object RNPingLoggerCommon {
       CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
     }
     if (handle == null) {
-      Log.w(TAG, "No logger registered for the provided identifier")
+      Log.w(TAG, "No logger registration found for requested logger")
       return false
     }
 
