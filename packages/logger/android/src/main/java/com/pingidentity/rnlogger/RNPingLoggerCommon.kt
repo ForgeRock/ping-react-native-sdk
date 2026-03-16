@@ -106,7 +106,7 @@ object RNPingLoggerCommon {
     val level = config.getString("level")
 
     if (id.isNullOrBlank()) {
-      Log.w(TAG, "syncLogger called without logger reference")
+      Log.w(TAG, "syncLogger called with missing required value")
       return
     }
     if (level.isNullOrBlank()) {
@@ -123,7 +123,7 @@ object RNPingLoggerCommon {
     scope.launch {
       val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
       if (handle == null) {
-        Log.w(TAG, "No logger registration found for logger request")
+        Log.w(TAG, "Logger is not available")
         return@launch
       }
 
@@ -148,7 +148,7 @@ object RNPingLoggerCommon {
       CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
     }
     if (handle == null) {
-      Log.w(TAG, "No logger registration found for requested logger")
+      Log.w(TAG, "Logger is not available")
       return false
     }
 
