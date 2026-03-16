@@ -41,6 +41,9 @@ jobs:
     # Execute Jest unit tests across affected packages.
     js-unit-tests:
         needs: build-packages-check
+        permissions:
+            contents: read
+            checks: write
         uses: ./.github/workflows/js-unit-tests.yml
         with:
             turbo_scm_base: ${{ github.event.pull_request.base.sha }}
