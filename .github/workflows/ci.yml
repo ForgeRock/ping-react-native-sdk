@@ -19,7 +19,8 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
-permissions: write-all
+permissions:
+    contents: read
     
 jobs:
     # Run ESLint, TypeScript type checking, and Prettier format validation.
@@ -55,16 +56,16 @@ jobs:
         needs: js-unit-tests
         uses: ./.github/workflows/build-and-test-ios.yml
 
-
-    # Build TypeDoc documentation for affected packages and upload as artifact.
-    build-docs-check:
-        needs: js-unit-tests
-        uses: ./.github/workflows/build-docs.yml
-
     # Publish documentation preview to GitHub Pages on every PR for review.
     # Allows reviewers to preview documentation changes before merging.
     preview-docs-pr:
-        needs: build-docs-check
+        needs: js-unit-tests
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        permissions:
+            contents: write
+            pull-requests: write
         uses: ./.github/workflows/preview-docs.yml
+        with:
+            pr_number: ${{ github.event.pull_request.number }}
 
     

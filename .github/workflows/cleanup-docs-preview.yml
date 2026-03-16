@@ -1,10 +1,16 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Clean Up Docs Preview
 on:
   pull_request:
     types:
       - closed
 
 permissions:
-  pull-requests: write
   contents: write
 
 concurrency:
@@ -16,16 +22,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          ref: gh-pages
 
-      - name: Clean up
-        run: |
-          rm -rf pr-${{ github.event.number }}
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add .
-          if ! git diff --cached --quiet; then
-            git commit -m "Clean preview for pr-${{ github.event.number }}"
-            git push
-          fi
+      - name: Remove preview pages
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
+        with:
+          action: remove
+          pr-number: ${{ github.event.number }}
+          preview-branch: gh-pages
+          umbrella-dir: docs-preview
+          pages-base-path: docs

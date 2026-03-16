@@ -12,16 +12,11 @@ on:
 
 # Required permissions for GitHub Pages deployment.
 permissions:
-    contents: read      # Access repository contents
-    pages: write        # Deploy to GitHub Pages
-    id-token: write     # Required for OIDC authentication to Pages
+    contents: write     # Required to push the generated docs to gh-pages
 
 jobs:
     publish-docs:
         runs-on: ubuntu-latest
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
 
         steps:
             # Checkout the repository with minimal history for faster cloning.
@@ -34,14 +29,11 @@ jobs:
             - name: Build docs
               uses: ./.github/actions/docs-build
 
-            # Package the generated documentation for GitHub Pages deployment.
-            - name: Upload Pages artifact
-              uses: actions/upload-pages-artifact@v4
-              with:
-                path: docs
-
             # Deploy the documentation to GitHub Pages.
             # The deployment URL is captured in the output for reference.
-            - name: Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
+            - uses: JamesIves/github-pages-deploy-action@62fec3add6773ec5dbbf18d2ee4260911aa35cf4 # v4.6.9
+              with:
+                  folder: docs
+                  branch: gh-pages
+                  clean-exclude: docs-preview
+                  force: true
