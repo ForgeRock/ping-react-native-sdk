@@ -1,0 +1,125 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+
+# Cancel in-progress runs for the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ── iOS E2E (macOS required for simulator) ────────────────────────────────
+  e2e-ios:
+    name: E2E — iOS Simulator
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: PingTestRunner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-proj
+
+      - name: Install Ruby gems (CocoaPods)
+        run: bundle install --path vendor/bundle
+
+      - name: Install CocoaPods dependencies
+        run: bundle exec pod install --project-directory=ios
+
+      - name: Build E2E app (Release simulator)
+        run: yarn build:e2e:ios:release
+
+      - name: Run E2E tests
+        run: yarn test:e2e:ios:release
+        env:
+          # Tier 1 tests always run — no server required.
+          # Tier 2 journey/OIDC tests self-skip when these are not set.
+          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+
+      - name: Upload Detox artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-artifacts-ios
+          path: PingTestRunner/artifacts/
+
+  # ── Android E2E (emulator on ubuntu-latest) ───────────────────────────────
+  e2e-android:
+    name: E2E — Android Emulator
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: PingTestRunner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-proj
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Enable KVM hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build E2E app (Release APK)
+        run: yarn build:e2e:android:release
+
+      - name: Run E2E tests (emulator starts via Detox AVD)
+        run: yarn test:e2e:android:release
+        env:
+          # Tier 1 tests always run — no server required.
+          # Tier 2 journey/OIDC tests self-skip when these are not set.
+          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+
+      - name: Upload Detox artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detox-artifacts-android
+          path: PingTestRunner/artifacts/

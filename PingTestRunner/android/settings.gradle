@@ -9,6 +9,17 @@ pluginManagement { includeBuild("../../node_modules/@react-native/gradle-plugin"
 plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingTestRunner'
+
+// Point Gradle at the local Detox AAR so com.wix:detox resolves to the
+// correct version bundled with the detox npm package (not the stale Maven artifact).
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        maven { url "$rootDir/../../node_modules/detox/Detox-android" }
+        google()
+        mavenCentral()
+    }
+}
 include ':app'
 includeBuild('../../node_modules/@react-native/gradle-plugin')
 

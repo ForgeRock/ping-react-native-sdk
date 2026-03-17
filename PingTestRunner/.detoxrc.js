@@ -6,14 +6,35 @@
  */
 
 /** @type {Detox.DetoxConfig} */
+const detoxPort = Number(process.env.DETOX_SERVER_PORT ?? 8099);
+
 module.exports = {
+  session: {
+    server: `ws://127.0.0.1:${detoxPort}`,
+    autoStart: true,
+  },
+  server: {
+    port: detoxPort,
+  },
+  artifacts: {
+    rootDir: 'artifacts',
+    plugins: {
+      screenshot: 'failing',
+      video: 'failing',
+    },
+  },
+  behavior: {
+    cleanup: {
+      shutdownDevice: false,
+    },
+  },
   testRunner: {
     args: {
       $0: 'jest',
       config: 'e2e/jest.config.js',
     },
     jest: {
-      setupTimeout: 120000,
+      setupTimeout: 300000,
     },
   },
   apps: {
@@ -36,13 +57,15 @@ module.exports = {
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
       build:
         'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
-      reversePorts: [8081],
+      reversePorts: [8081, detoxPort],
     },
     'android.release': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
+      testBinaryPath: 'android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
+      reversePorts: [detoxPort],
     },
   },
   devices: {
@@ -55,7 +78,7 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_7_API_34',
+        avdName: 'Pixel_9',
       },
     },
   },

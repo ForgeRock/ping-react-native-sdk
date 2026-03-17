@@ -39,6 +39,14 @@ const aicScopes = (Config.AIC_SCOPES ?? '')
   .filter(Boolean);
 
 /**
+ * Normalized PingOne OAuth scopes sourced from `PINGONE_SCOPES`.
+ */
+const pingOneScopes = (Config.PINGONE_SCOPES ?? '')
+  .split(',')
+  .map((item) => item.trim())
+  .filter(Boolean);
+
+/**
  * Base Journey module configuration resolved directly from environment
  * variables.
  */
@@ -127,6 +135,25 @@ export const sampleOidcClientConfig: OidcClientConfig = {
 };
 
 /**
+ * PingOne OIDC client configuration mirrored from SDK test configuration.
+ *
+ * @remarks
+ * Intended for local interoperability validation against the PingOne test
+ * tenant used by SDK tests.
+ */
+const pingOneOidcClientConfig: OidcClientConfig = {
+  clientId: Config.PINGONE_CLIENT_ID!,
+  discoveryEndpoint: Config.PINGONE_DISCOVERY_ENDPOINT!,
+  redirectUri: Config.PINGONE_REDIRECT_URI!,
+  scopes: pingOneScopes,
+  acrValues: Config.PINGONE_ACR_VALUES!,
+  ios: {
+    browserType: 'authSession',
+    browserMode: 'login',
+  },
+};
+
+/**
  * OIDC storage handle used by the sample OIDC client.
  */
 const sampleOidcStorage = configureOidcStorage({
@@ -156,12 +183,27 @@ const sampleOidcClient = createOidcClient({
 });
 
 /**
+ * Internal OIDC client instance for PingOne test-tenant validation.
+ */
+const pingOneOidcClient = createOidcClient({
+  ...pingOneOidcClientConfig,
+  storage: sampleOidcStorage,
+  logger: appLogger,
+});
+
+/**
  * Web-capable OIDC client used by sample UI flows.
  *
  * This wrapper exposes browser-driven authorization methods while reusing the
  * same underlying OIDC configuration and token storage behavior.
  */
 export const sampleOidcWebClient: OidcWebClient = createOidcWebClient(sampleOidcClient);
+
+/**
+ * Web-capable OIDC client for the PingOne test tenant profile.
+ */
+export const pingOneOidcWebClient: OidcWebClient =
+  createOidcWebClient(pingOneOidcClient);
 
 /**
  * Journey-only client for validating flows without OIDC module composition.
@@ -235,6 +277,10 @@ export type SampleAppClientProfile = {
    * OIDC web client bound to the profile.
    */
   oidcClient: OidcWebClient;
+  /**
+   * OIDC client configuration displayed by the OIDC demo panel.
+   */
+  oidcClientConfig: OidcClientConfig;
 };
 
 /**
@@ -260,6 +306,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     environment: journeyConfig.realm,
     journeyClient: loginClient,
     oidcClient: sampleOidcWebClient,
+    oidcClientConfig: sampleOidcClientConfig,
   },
   {
     key: 'journey-only',
@@ -269,6 +316,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     environment: journeyConfig.realm,
     journeyClient: journeyOnlyClient,
     oidcClient: sampleOidcWebClient,
+    oidcClientConfig: sampleOidcClientConfig,
   },
   {
     key: 'oidc-forgeblock',
@@ -278,17 +326,28 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     environment: journeyConfig.realm,
     journeyClient: loginClient,
     oidcClient: journeyOidcWebClient,
+    oidcClientConfig: {
+      clientId: journeyConfig.clientId,
+      discoveryEndpoint: journeyConfig.discoveryEndpoint,
+      redirectUri: journeyConfig.redirectUri,
+      scopes: [...journeyConfig.scopes],
+      ios: {
+        browserType: 'authSession',
+        browserMode: 'login',
+      },
+    },
   },
   {
     key: 'oidc-pingone',
     group: 'OIDC (Web)',
     name: 'OIDC PingOne',
-    host: hostnameFrom(pingAdvancedIdentityCloudConfig.discoveryEndpoint),
-    environment: pingAdvancedIdentityCloudConfig.realm,
+    host: hostnameFrom(pingOneOidcClientConfig.discoveryEndpoint ?? ''),
+    environment: Config.PINGONE_ENVIRONMENT_LABEL ?? 'PingOne',
     journeyClient: loginClient,
-    oidcClient: sampleOidcWebClient,
+    oidcClient: pingOneOidcWebClient,
+    oidcClientConfig: pingOneOidcClientConfig,
   },
-] as const;
+];
 
 /**
  * Default selected profile key for sample app boot.

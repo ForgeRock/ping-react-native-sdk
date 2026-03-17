@@ -14,7 +14,13 @@
  * - beforeEach — relaunch with a clean state
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as dotenv from 'dotenv';
 import { device, expect as detoxExpect, element, by } from 'detox';
+
+const e2eEnv = path.resolve(__dirname, '..', '.env');
+if (fs.existsSync(e2eEnv)) dotenv.config({ path: e2eEnv });
 
 export async function launchApp(
   launchArgs: Record<string, string> = {}
@@ -28,7 +34,7 @@ export async function launchApp(
 export async function relaunchApp(
   launchArgs: Record<string, string> = {}
 ): Promise<void> {
-  await device.relaunchApp({
+  await device.launchApp({
     newInstance: true,
     launchArgs,
   });
@@ -42,18 +48,19 @@ export async function assertAppReady(): Promise<void> {
 }
 
 /**
- * Required environment variables for E2E tests that exercise real auth flows.
- * These must be set in CI or a local `.env.e2e` file sourced before running.
+ * Environment variables for E2E tests. Set these in PingTestRunner/.env
+ * (see .env.example) or inject them as CI secrets.
  */
 export const E2E_ENV = {
-  discoveryEndpoint: process.env['PING_DISCOVERY_ENDPOINT'] ?? '',
-  clientId: process.env['PING_CLIENT_ID'] ?? '',
-  redirectUri: process.env['PING_REDIRECT_URI'] ?? 'org.forgerock.demo://oauth2redirect',
-  serverUrl: process.env['PING_SERVER_URL'] ?? '',
-  realmPath: process.env['PING_REALM_PATH'] ?? '/alpha',
-  journeyName: process.env['PING_JOURNEY_NAME'] ?? 'Login',
-  testUsername: process.env['PING_TEST_USERNAME'] ?? '',
-  testPassword: process.env['PING_TEST_PASSWORD'] ?? '',
+  serverUrl:         process.env['PING_SERVER_URL']          ?? '',
+  realmPath:         process.env['PING_REALM_PATH']          ?? 'alpha',
+  cookieName:        process.env['PING_COOKIE_NAME']         ?? 'iPlanetDirectoryPro',
+  journeyName:       process.env['PING_JOURNEY_NAME']        ?? 'Login',
+  discoveryEndpoint: process.env['PING_DISCOVERY_ENDPOINT']  ?? '',
+  clientId:          process.env['PING_CLIENT_ID']           ?? '',
+  redirectUri:       process.env['PING_REDIRECT_URI']        ?? 'org.forgerock.demo://oauth2redirect',
+  testUsername:      process.env['PING_TEST_USERNAME']       ?? '',
+  testPassword:      process.env['PING_TEST_PASSWORD']       ?? '',
 };
 
 /**
@@ -67,6 +74,26 @@ export function hasLiveAuthEnv(): boolean {
     E2E_ENV.testUsername &&
     E2E_ENV.testPassword
   );
+}
+
+/**
+ * Returns true when journey-only env vars are set (no OIDC config required).
+ */
+export function hasJourneyEnv(): boolean {
+  return !!(
+    E2E_ENV.serverUrl &&
+    E2E_ENV.testUsername &&
+    E2E_ENV.testPassword
+  );
+}
+
+/**
+ * Returns true when per-callback journey trees are provisioned on the server.
+ * Set PING_CALLBACK_TREES_ENABLED=true to enable per-callback E2E tests.
+ */
+export function hasCallbackTreesEnabled(): boolean {
+  const value = process.env['PING_CALLBACK_TREES_ENABLED'];
+  return value !== 'false';
 }
 
 // Re-export Detox primitives for convenient use in test files

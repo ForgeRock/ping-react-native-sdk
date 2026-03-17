@@ -4211,12 +4211,14 @@ __metadata:
     "@types/jest": "npm:^29.5.14"
     "@types/react": "npm:^19.1.0"
     detox: "npm:^20.32.0"
+    dotenv: "npm:^16.4.7"
     eslint: "npm:^8.19.0"
     jest: "npm:^29.7.0"
     jest-circus: "npm:^29.7.0"
     prettier: "npm:2.8.8"
     react: "npm:19.1.0"
     react-native: "npm:0.80.1"
+    react-native-launch-arguments: "npm:^4.1.1"
     react-test-renderer: "npm:19.1.0"
     ts-jest: "npm:^29.4.0"
     typescript: "npm:5.0.4"
@@ -5846,6 +5848,13 @@ __metadata:
   dependencies:
     esutils: "npm:^2.0.2"
   checksum: 10c0/c96bdccabe9d62ab6fea9399fdff04a66e6563c1d6fb3a3a063e8d53c3bb136ba63e84250bbf63d00086a769ad53aef92d2bd483f03f837fc97b71cbee6b2520
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^16.4.7":
+  version: 16.6.1
+  resolution: "dotenv@npm:16.6.1"
+  checksum: 10c0/15ce56608326ea0d1d9414a5c8ee6dcf0fffc79d2c16422b4ac2268e7e2d76ff5a572d37ffe747c377de12005f14b3cc22361e79fc7f1061cce81f77d2c973dc
   languageName: node
   linkType: hard
 
@@ -10900,6 +10909,16 @@ __metadata:
     react-native-windows:
       optional: true
   checksum: 10c0/9e2bbb7fb04bac878471f7b06132d84233c482952fc7dd0b651669a62cd35c35428302c7502a92898402505ec9b8d7997848122356b42de5c072dcce549d5813
+  languageName: node
+  linkType: hard
+
+"react-native-launch-arguments@npm:^4.1.1":
+  version: 4.1.1
+  resolution: "react-native-launch-arguments@npm:4.1.1"
+  peerDependencies:
+    react: ">=16.8.1"
+    react-native: ">=0.60.0-rc.0 <1.0.x"
+  checksum: 10c0/94a88b3c6ba583b20108200c794f2c132a5b94383f0eb22797ff21194d140904bd62510ee9a01ea464ba831ddd69b3c49fb9b2799728d1d7fbaebf0ed683edd2
   languageName: node
   linkType: hard
 

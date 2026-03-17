@@ -19,6 +19,17 @@ react {
     codegenDir = file("../../../node_modules/@react-native/codegen")
     cliFile = file("../../../node_modules/react-native/cli.js")
 
+    // Explicitly set hermesc path — required when the Gradle plugin cannot
+    // auto-detect the OS-specific bin directory from the monorepo root.
+    def osName = System.getProperty("os.name").toLowerCase()
+    if (osName.contains("mac") || osName.contains("darwin")) {
+        hermesCommand = "$rootDir/../../node_modules/react-native/sdks/hermesc/osx-bin/hermesc"
+    } else if (osName.contains("win")) {
+        hermesCommand = "$rootDir/../../node_modules/react-native/sdks/hermesc/win64-bin/hermesc"
+    } else {
+        hermesCommand = "$rootDir/../../node_modules/react-native/sdks/hermesc/linux64-bin/hermesc"
+    }
+
     autolinkLibrariesWithApp()
 }
 

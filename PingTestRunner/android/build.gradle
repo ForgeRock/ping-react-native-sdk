@@ -26,3 +26,16 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "androidx.test.core:core:1.6.1"
+        }
+    }
+    // Provide a default appRedirectUriScheme for library modules that reference
+    // this placeholder in their manifest (e.g. rn-browser).
+    plugins.withId("com.android.library") {
+        android.defaultConfig.manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
+    }
+}

@@ -250,8 +250,8 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    val forceAuth = options?.getBoolean("forceAuth") ?: false
-    val noSession = options?.getBoolean("noSession") ?: false
+    val forceAuth = getBooleanOption(options, "forceAuth")
+    val noSession = getBooleanOption(options, "noSession")
 
     scope.launch {
       try {
@@ -264,6 +264,27 @@ internal object RNPingJourneyCommon {
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.START), error)
       }
+    }
+  }
+
+  /**
+   * Reads an optional boolean flag from a React Native options map.
+   *
+   * Missing keys and non-boolean payloads default to `false` so JS callers can
+   * pass partial option objects without triggering bridge exceptions.
+   *
+   * @param options Optional React Native map.
+   * @param key Boolean key name to resolve.
+   * @return Parsed boolean value, or `false` when absent/invalid.
+   */
+  private fun getBooleanOption(options: ReadableMap?, key: String): Boolean {
+    if (options == null || !options.hasKey(key) || options.isNull(key)) {
+      return false
+    }
+    return try {
+      options.getBoolean(key)
+    } catch (_: Throwable) {
+      false
     }
   }
 

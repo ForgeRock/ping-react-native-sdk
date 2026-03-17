@@ -9,16 +9,14 @@
  * PingTestRunner App
  *
  * Minimal host application for automated integration and E2E testing.
- * This app provides a stable, dependency-light target for Detox E2E tests
- * and does not include any sample/demo UI.
- *
- * Test screens are only rendered when a PING_TEST_SCENARIO env var is present,
- * so the debug build remains a valid host for all test scenarios without
- * shipping demo logic to production.
+ * Reads PING_TEST_SCENARIO from Detox launchArgs and renders the matching
+ * scenario screen. When no scenario is set the default static UI is shown,
+ * keeping app-launch.test.ts passing in every build.
  */
 
 import React from 'react';
 import {
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -26,27 +24,78 @@ import {
   Text,
   View,
 } from 'react-native';
+import { LaunchArguments } from 'react-native-launch-arguments';
+
+// Scenario screens — imported lazily via standard requires so they are only
+// evaluated when actually needed, keeping the default bundle small.
+const JourneyScenario = React.lazy(() => import('./JourneyScenario'));
+const OidcScenario = React.lazy(() => import('./OidcScenario'));
+const DeviceIdScenario = React.lazy(() => import('./DeviceIdScenario'));
+const DeviceProfileScenario = React.lazy(() => import('./DeviceProfileScenario'));
+const StorageScenario = React.lazy(() => import('./StorageScenario'));
+const LoggerScenario = React.lazy(() => import('./LoggerScenario'));
+
+interface LaunchArgs {
+  PING_TEST_SCENARIO?: string;
+}
+
+const SCENARIO_TOP_PADDING = Platform.OS === 'android'
+  ? Math.max((StatusBar.currentHeight ?? 0) + 8, 40)
+  : 16;
+
+function ScenarioContent(): React.JSX.Element {
+  const { PING_TEST_SCENARIO } = LaunchArguments.value<LaunchArgs>();
+
+  switch (PING_TEST_SCENARIO) {
+    case 'journey':
+    case 'journey-failure':
+      return <JourneyScenario />;
+    case 'oidc':
+    case 'oidc-failure':
+      return <OidcScenario testScenario={PING_TEST_SCENARIO} />;
+    case 'device-id':
+      return <DeviceIdScenario />;
+    case 'device-profile':
+      return <DeviceProfileScenario />;
+    case 'storage':
+      return <StorageScenario />;
+    case 'logger':
+      return <LoggerScenario />;
+    default:
+      return <DefaultView />;
+  }
+}
+
+function DefaultView(): React.JSX.Element {
+  return (
+    <ScrollView contentInsetAdjustmentBehavior="automatic">
+      <View style={styles.header} testID="ping-test-runner-header">
+        <Text style={styles.title} testID="ping-test-runner-title">
+          PingTestRunner
+        </Text>
+        <Text style={styles.subtitle}>
+          Automated integration and E2E test host
+        </Text>
+      </View>
+      <View style={styles.body} testID="ping-test-runner-body">
+        <Text style={styles.info}>
+          This app is not intended for human interaction.{'\n'}
+          Run tests via the Detox or Jest CLI.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+}
 
 function App(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container} testID="ping-test-runner-root">
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <View style={styles.header} testID="ping-test-runner-header">
-          <Text style={styles.title} testID="ping-test-runner-title">
-            PingTestRunner
-          </Text>
-          <Text style={styles.subtitle}>
-            Automated integration and E2E test host
-          </Text>
-        </View>
-        <View style={styles.body} testID="ping-test-runner-body">
-          <Text style={styles.info}>
-            This app is not intended for human interaction.{'\n'}
-            Run tests via the Detox or Jest CLI.
-          </Text>
-        </View>
-      </ScrollView>
+      <View style={styles.contentContainer}>
+        <React.Suspense fallback={null}>
+          <ScenarioContent />
+        </React.Suspense>
+      </View>
     </SafeAreaView>
   );
 }
@@ -74,6 +123,11 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: 24,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingTop: SCENARIO_TOP_PADDING,
+    paddingHorizontal: 12,
   },
   info: {
     fontSize: 14,

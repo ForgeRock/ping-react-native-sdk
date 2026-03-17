@@ -13,7 +13,7 @@
  * that must pass before any other E2E suite is meaningful.
  */
 
-import { device, element, by } from 'detox';
+import { device, element, by, expect as detoxExpect } from 'detox';
 import { assertAppReady } from './setup';
 
 describe('PingTestRunner — app launch', () => {
@@ -34,15 +34,15 @@ describe('PingTestRunner — app launch', () => {
   });
 
   it('displays the PingTestRunner title', async () => {
-    await expect(element(by.id('ping-test-runner-title'))).toBeVisible();
-    await expect(element(by.text('PingTestRunner'))).toBeVisible();
+    await detoxExpect(element(by.id('ping-test-runner-title'))).toBeVisible();
+    await detoxExpect(element(by.text('PingTestRunner'))).toBeVisible();
   });
 
   it('displays the header section', async () => {
-    await expect(element(by.id('ping-test-runner-header'))).toBeVisible();
+    await detoxExpect(element(by.id('ping-test-runner-header'))).toBeVisible();
   });
 
   it('displays the body section', async () => {
-    await expect(element(by.id('ping-test-runner-body'))).toBeVisible();
+    await detoxExpect(element(by.id('ping-test-runner-body'))).toBeVisible();
   });
 });
