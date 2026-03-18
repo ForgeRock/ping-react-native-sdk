@@ -106,24 +106,24 @@ object RNPingLoggerCommon {
     val level = config.getString("level")
 
     if (id.isNullOrBlank()) {
-      Log.w(TAG, "syncLogger called without id")
+      Log.w(TAG, "Logger sync request ignored because the logger reference was missing")
       return
     }
     if (level.isNullOrBlank()) {
-      Log.w(TAG, "syncLogger called without level for id $id")
+      Log.w(TAG, "Logger sync request ignored because the log level was missing")
       return
     }
 
     val parsed = parseLevel(level)
     if (parsed == null) {
-      Log.w(TAG, "Invalid level '$level'")
+      Log.w(TAG, "Logger sync request ignored because the log level is unsupported")
       return
     }
 
     scope.launch {
       val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
       if (handle == null) {
-        Log.w(TAG, "No logger registered for id $id")
+        Log.w(TAG, "Logger sync request ignored because the logger could not be resolved")
         return@launch
       }
 
@@ -148,8 +148,8 @@ object RNPingLoggerCommon {
       CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle
     }
     if (handle == null) {
-      Log.w(TAG, "No logger registered for id $id")
-      return null
+      Log.w(TAG, "Logger apply request ignored because the logger could not be resolved")
+      return false
     }
 
     return handle.nativeLogger as? Logger

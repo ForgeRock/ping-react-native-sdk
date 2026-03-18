@@ -7,6 +7,7 @@
   },
   "scanSettingsSAST": {
     "enableScan": true,
+    "configExternalURL": "./.mendsastcli-config.json",
     "scanPullRequests": true,
     "incrementalScan": true,
     "findingSuppressions": "enabled",
