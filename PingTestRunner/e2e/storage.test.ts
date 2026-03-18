@@ -41,21 +41,9 @@ describe('Storage — bridge verification', () => {
     jestExpect(text).toMatch(/^session:.+$/);
   });
 
-  it('session storage handle has a non-empty id', async () => {
-    const attrs = await element(by.id('storage-session-result')).getAttributes();
-    const text = (attrs as any).text ?? (attrs as any).label ?? '';
-    jestExpect(text).toMatch(/^session:.+$/);
-  });
-
   it('configureOidcStorage returns a handle with kind=oidc', async () => {
     await element(by.id('storage-oidc-btn')).tap();
     await detoxExpect(element(by.id('storage-oidc-result'))).toBeVisible();
-    const attrs = await element(by.id('storage-oidc-result')).getAttributes();
-    const text = (attrs as any).text ?? (attrs as any).label ?? '';
-    jestExpect(text).toMatch(/^oidc:.+$/);
-  });
-
-  it('OIDC storage handle has a non-empty id', async () => {
     const attrs = await element(by.id('storage-oidc-result')).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(text).toMatch(/^oidc:.+$/);

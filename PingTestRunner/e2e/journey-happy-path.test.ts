@@ -33,6 +33,7 @@
  */
 
 import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
+import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady, hasJourneyEnv, hasLiveAuthEnv, E2E_ENV } from './setup';
 
 const NET_TIMEOUT = 30000; // ms to wait for network-dependent elements
@@ -95,17 +96,25 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
   });
 
-  it('access token is available after successful login (live)', async () => {
+  it('access token is available and non-empty after successful login (live)', async () => {
     if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
 
     await waitFor(element(by.id('journey-token-result'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    const attrs = await element(by.id('journey-token-result')).getAttributes();
+    const token = (attrs as any).text ?? (attrs as any).label ?? '';
+    jestExpect(token.length).toBeGreaterThan(0);
+    jestExpect(token).not.toBe('null');
+    jestExpect(token).not.toBe('undefined');
   });
 
-  it('userinfo() returns the user profile after success (live)', async () => {
+  it('userinfo() returns a payload containing sub (live)', async () => {
     if (!hasLiveAuthEnv()) { console.warn(OIDC_SKIP_REASON); return; }
 
     await element(by.id('journey-userinfo-btn')).tap();
     await waitFor(element(by.id('journey-userinfo-result'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    const attrs = await element(by.id('journey-userinfo-result')).getAttributes();
+    const text = (attrs as any).text ?? (attrs as any).label ?? '';
+    jestExpect(text).toContain('"sub"');
   });
 
   it('refresh() obtains a new token (live)', async () => {

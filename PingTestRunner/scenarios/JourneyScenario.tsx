@@ -291,6 +291,7 @@ export default function JourneyScenario(): React.JSX.Element {
               {tokenResult}
             </Text>
           )}
+
           <Button
             testID="journey-userinfo-btn"
             title="User Info"

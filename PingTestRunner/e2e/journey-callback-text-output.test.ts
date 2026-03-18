@@ -19,6 +19,7 @@
  */
 
 import { device, element, by, waitFor } from 'detox';
+import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady, hasCallbackTreesEnabled, hasJourneyEnv, E2E_ENV } from './setup';
 
 const TREE = 'TextOutputCallbackTest';
@@ -86,6 +87,9 @@ describe('Journey — TextOutputCallback', () => {
     await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
     await element(by.id('journey-submit-btn')).tap();
     await waitFor(element(by.id('journey-field-output-TextOutputCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    const attrs = await element(by.id('journey-field-output-TextOutputCallback:0')).getAttributes();
+    const text = (attrs as any).text ?? (attrs as any).label ?? '';
+    jestExpect(text.length).toBeGreaterThan(0);
   });
 
   it('submit output-only callbacks → reaches SuccessNode (live)', async () => {
