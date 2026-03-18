@@ -28,13 +28,15 @@ import { LaunchArguments } from 'react-native-launch-arguments';
 
 // Scenario screens — imported lazily via standard requires so they are only
 // evaluated when actually needed, keeping the default bundle small.
-const JourneyScenario = React.lazy(() => import('./JourneyScenario'));
-const OidcScenario = React.lazy(() => import('./OidcScenario'));
-const DeviceIdScenario = React.lazy(() => import('./DeviceIdScenario'));
-const DeviceProfileScenario = React.lazy(() => import('./DeviceProfileScenario'));
-const StorageScenario = React.lazy(() => import('./StorageScenario'));
-const LoggerScenario = React.lazy(() => import('./LoggerScenario'));
-const BrowserScenario = React.lazy(() => import('./BrowserScenario'));
+const JourneyScenario = React.lazy(() => import('./scenarios/JourneyScenario'));
+const OidcScenario = React.lazy(() => import('./scenarios/OidcScenario'));
+const DeviceIdScenario = React.lazy(() => import('./scenarios/DeviceIdScenario'));
+const DeviceProfileScenario = React.lazy(() => import('./scenarios/DeviceProfileScenario'));
+const StorageScenario = React.lazy(() => import('./scenarios/StorageScenario'));
+const LoggerScenario = React.lazy(() => import('./scenarios/LoggerScenario'));
+const BrowserScenario = React.lazy(() => import('./scenarios/BrowserScenario'));
+const UseJourneyScenario = React.lazy(() => import('./scenarios/UseJourneyScenario'));
+const UseOidcScenario = React.lazy(() => import('./scenarios/UseOidcScenario'));
 
 interface LaunchArgs {
   PING_TEST_SCENARIO?: string;
@@ -64,6 +66,12 @@ function ScenarioContent(): React.JSX.Element {
       return <LoggerScenario />;
     case 'browser':
       return <BrowserScenario />;
+    case 'use-journey':
+      return <UseJourneyScenario />;
+    case 'use-oidc':
+      return <UseOidcScenario />;
+    case 'use-oidc-error':
+      return <UseOidcScenario forceError />;
     default:
       return <DefaultView />;
   }

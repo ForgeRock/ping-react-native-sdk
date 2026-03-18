@@ -1,3 +1,12 @@
+<!--
+Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+
+This software may be modified and distributed under the terms
+of the MIT license. See the LICENSE file for details.
+-->
+
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
+
 # PingTestRunner
 
 Standalone React Native test-runner app for automated integration and E2E testing of the Ping Identity React Native SDK packages.
@@ -38,34 +47,35 @@ This app is **not** a demo or sample app. It is a minimal, dependency-light host
 
 - Node 20 (see `.nvmrc` at the repo root)
 - Yarn 4 (`corepack enable`)
-- For Android E2E: Android SDK 34+, an AVD named `Pixel_7_API_34`
+- For Android E2E: Android SDK 34+, an AVD named `Pixel_9`
 - For iOS E2E: Xcode 16+, an iPhone 16 simulator
 
 ---
 
 ## Setup
 
-### 1. Install dependencies
+### Step 1: Install dependencies
 
 From the **monorepo root**:
 
-```bash
+```sh
 yarn install
 yarn packages:build
 ```
 
-### 2. iOS — install CocoaPods
+### Step 2: iOS — install CocoaPods
 
-```bash
+```sh
 cd PingTestRunner
-yarn clean-install
-# or manually:
-cd ios && bundle install && bundle exec pod install --repo-update && cd ..
+bundle install
+bundle exec pod install --project-directory=ios
 ```
 
-### 3. Android — generate a debug keystore (first time only)
+For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
 
-```bash
+### Step 3: Android — generate a release keystore (first time only)
+
+```sh
 cd PingTestRunner/android/app
 keytool -genkey -v -keystore debug.keystore -storepass android \
   -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000
@@ -79,7 +89,7 @@ All test commands run entirely in Node — no device or simulator required.
 
 ### Integration tests only (what `turbo run test` calls)
 
-```bash
+```sh
 # From PingTestRunner directory
 yarn test
 
@@ -89,7 +99,7 @@ yarn test:runner
 
 ### All unit tests + integration tests in one pass
 
-```bash
+```sh
 # From PingTestRunner directory
 yarn test:all
 
@@ -109,7 +119,7 @@ mocks, setup files, and `transformIgnorePatterns` are preserved exactly.
 
 ### Integration tests (explicit)
 
-```bash
+```sh
 yarn test:integration
 yarn test:integration:coverage
 ```
@@ -124,11 +134,7 @@ is the host project that wires them together.
 
 ### Android — Kotlin/JUnit/Robolectric
 
-Requires `gradlew` in `PingTestRunner/android/` (copy from PingSampleApp or
-generate via `react-native init` — see setup notes in the "Prerequisites"
-section). All 8 package library modules are included in `settings.gradle`.
-
-```bash
+```sh
 # From PingTestRunner directory
 yarn test:native:android
 
@@ -137,16 +143,11 @@ yarn test:runner:native:android
 ```
 
 This runs `./gradlew :<module>:test` for every package in one Gradle
-invocation. Test reports land in
-`packages/<pkg>/android/build/reports/tests/`.
+invocation. Test reports land in `packages/<pkg>/android/build/reports/tests/`.
 
 ### iOS — Swift/XCTest via CocoaPods test_spec
 
-Requires a pod install after which `PingTestRunner.xcworkspace` contains all
-test targets. Packages with `ios/Tests/` and a `test_spec` in their podspec:
-`core`, `device-id`, `journey`, `logger`, `oidc`, `storage`.
-
-```bash
+```sh
 # After pod install:
 yarn test:native:ios
 
@@ -158,11 +159,15 @@ This calls `xcodebuild test` targeting each package's `Tests` spec. Pipe
 output through `xcpretty` for a readable summary (install with
 `gem install xcpretty`).
 
+---
+
 ## Running E2E tests (Detox)
+
+E2E builds are always **release** builds — no Metro bundler required.
 
 ### iOS
 
-```bash
+```sh
 # 1. Build the test app
 yarn build:e2e:ios
 
@@ -172,22 +177,12 @@ yarn test:e2e:ios
 
 ### Android
 
-```bash
-# 1. Start the Metro bundler
-yarn start &
-
-# 2. Build the test APK
+```sh
+# 1. Build the test APK
 yarn build:e2e:android
 
-# 3. Run the suite
+# 2. Run the suite
 yarn test:e2e:android
-```
-
-### Release builds
-
-```bash
-yarn test:e2e:ios:release
-yarn test:e2e:android:release
 ```
 
 ---
@@ -211,7 +206,7 @@ E2E tests that exercise live authentication flows are **self-skipping** when env
 
 You can export these from a local file (not committed):
 
-```bash
+```sh
 # .env.e2e (git-ignored)
 export PING_DISCOVERY_ENDPOINT=https://...
 export PING_CLIENT_ID=my-rn-client
@@ -264,7 +259,18 @@ PingTestRunner/
 ├── tsconfig.json
 ├── jest.config.js                 # Integration test Jest config
 ├── jest.setup.js                  # Global native module mocks
-├── .detoxrc.js                    # Detox E2E config
+├── .detoxrc.js                    # Detox E2E config (release only)
+│
+├── scenarios/                     # Headless test screens (one per feature)
+│   ├── JourneyScenario.tsx
+│   ├── OidcScenario.tsx
+│   ├── UseJourneyScenario.tsx
+│   ├── UseOidcScenario.tsx
+│   ├── DeviceIdScenario.tsx
+│   ├── DeviceProfileScenario.tsx
+│   ├── StorageScenario.tsx
+│   ├── LoggerScenario.tsx
+│   └── BrowserScenario.tsx
 │
 ├── __tests__/
 │   └── integration/               # Jest integration tests (one per package)
@@ -282,29 +288,19 @@ PingTestRunner/
 │   ├── jest.config.js
 │   ├── setup.ts                   # Shared helpers + env resolution
 │   ├── app-launch.test.ts         # Smoke test (always runs)
-│   ├── oidc-happy-path.test.ts    # OIDC auth + failure paths
-│   └── journey-happy-path.test.ts # Journey auth + failure paths
+│   ├── journey-happy-path.test.ts
+│   ├── journey-failure-path.test.ts
+│   ├── journey-callback-*.test.ts # Per-callback type tests
+│   ├── use-journey.test.ts        # useJourney + useJourneyForm hook tests
+│   ├── use-oidc.test.ts           # useOidc hook tests
+│   ├── oidc-happy-path.test.ts
+│   ├── device-id.test.ts
+│   ├── device-profile.test.ts
+│   ├── storage.test.ts
+│   └── logger.test.ts
 │
 ├── android/                       # Android native project
-│   ├── build.gradle
-│   ├── settings.gradle
-│   ├── gradle.properties
-│   └── app/
-│       ├── build.gradle
-│       ├── proguard-rules.pro
-│       └── src/main/
-│           ├── AndroidManifest.xml
-│           ├── java/com/pingtestrunner/
-│           │   ├── MainActivity.kt
-│           │   └── MainApplication.kt
-│           └── res/values/
-│               ├── strings.xml
-│               └── styles.xml
-│
 └── ios/                           # iOS native project
-    ├── Podfile
-    └── PingTestRunner/
-        └── Info.plist
 ```
 
 ---
@@ -320,5 +316,7 @@ PingTestRunner/
 ### E2E test
 
 1. Create `e2e/<feature>.test.ts`
-2. Import helpers from `e2e/setup.ts`
-3. Guard live-server assertions with `hasLiveAuthEnv()` so CI passes without credentials
+2. Create a matching scenario screen in `scenarios/` if needed
+3. Register the scenario in `App.tsx` under a new `PING_TEST_SCENARIO` case
+4. Import helpers from `e2e/setup.ts`
+5. Guard live-server assertions with `hasJourneyEnv()` so CI passes without credentials

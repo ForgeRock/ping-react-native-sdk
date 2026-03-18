@@ -4210,7 +4210,7 @@ __metadata:
     "@testing-library/react-native": "npm:^13.3.3"
     "@types/jest": "npm:^29.5.14"
     "@types/react": "npm:^19.1.0"
-    detox: "npm:^20.32.0"
+    detox: "npm:^20.47.0"
     dotenv: "npm:^16.4.7"
     eslint: "npm:^8.19.0"
     jest: "npm:^29.7.0"
@@ -5765,7 +5765,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detox@npm:^20.32.0":
+"detox@npm:^20.47.0":
   version: 20.47.0
   resolution: "detox@npm:20.47.0"
   dependencies:
