@@ -340,7 +340,8 @@ export interface Spec extends TurboModule {
   configureOidcStorage(id: string): NativeStorageConfig;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns The native RNPingStorage module implementation
  * @throws {Error} If no native module is registered

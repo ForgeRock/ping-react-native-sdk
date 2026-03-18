@@ -227,7 +227,8 @@ export interface Spec extends TurboModule {
   dispose(journeyId: string): Promise<void>;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns Native module implementation for Journey APIs.
  * @throws Error when no matching native module can be found.
