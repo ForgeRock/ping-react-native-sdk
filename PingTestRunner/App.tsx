@@ -34,6 +34,7 @@ const DeviceIdScenario = React.lazy(() => import('./DeviceIdScenario'));
 const DeviceProfileScenario = React.lazy(() => import('./DeviceProfileScenario'));
 const StorageScenario = React.lazy(() => import('./StorageScenario'));
 const LoggerScenario = React.lazy(() => import('./LoggerScenario'));
+const BrowserScenario = React.lazy(() => import('./BrowserScenario'));
 
 interface LaunchArgs {
   PING_TEST_SCENARIO?: string;
@@ -61,6 +62,8 @@ function ScenarioContent(): React.JSX.Element {
       return <StorageScenario />;
     case 'logger':
       return <LoggerScenario />;
+    case 'browser':
+      return <BrowserScenario />;
     default:
       return <DefaultView />;
   }

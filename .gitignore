@@ -16,6 +16,7 @@ ios/DerivedData/
 # IDEs
 .vscode/
 .idea/
+.claude/
 *.iml
 
 # OS files
