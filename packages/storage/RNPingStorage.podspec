@@ -37,13 +37,12 @@ Pod::Spec.new do |s|
 
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
-  s.swift_version = ['5.0', '5.1']
+  s.swift_version = ['5.0', '5.1', '6.0']
   s.requires_arc = true
 
   # Native Ping SDK dependency (internal iOS SDK)
   s.dependency "PingStorage"
   s.dependency "RNPingCore"
-  s.dependency "RNPingLogger"
 
   # Explicitly add ReactCodegen dependency for generated specs
   s.dependency "ReactCodegen"

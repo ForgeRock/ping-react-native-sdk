@@ -7,13 +7,12 @@
  
 import Foundation
 import PingLogger
-import React
 import RNPingCore
 
 /// Implementation of the native logger bridge for React Native.
 /// Manages logger creation, configuration, and synchronization with the PingLogger framework.
 @objcMembers
-public class RNPingLoggerImpl: NSObject {
+public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
   @objc public static let shared = RNPingLoggerImpl()
@@ -31,16 +30,75 @@ public class RNPingLoggerImpl: NSObject {
     case none = "NONE"
   }
 
+  /// Mutable logger that delegates to the current native logger level.
+  ///
+  /// Existing SDK clients keep this logger instance, so changing `level`
+  /// updates log behavior without recreating those clients.
+  private final class DynamicLogger: Logger, @unchecked Sendable {
+    private let lock = NSLock()
+    private var level: NativeLoggerLevel
+
+    init(level: NativeLoggerLevel) {
+      self.level = level
+    }
+
+    func setLevel(_ level: NativeLoggerLevel) {
+      lock.lock()
+      self.level = level
+      lock.unlock()
+    }
+
+    private func currentLogger() -> Logger {
+      lock.lock()
+      let currentLevel = level
+      lock.unlock()
+      return RNPingLoggerImpl.nativeLogger(for: currentLevel)
+    }
+
+    func d(_ message: String) {
+      currentLogger().d(message)
+    }
+
+    func i(_ message: String) {
+      currentLogger().i(message)
+    }
+
+    func w(_ message: String, error: Error?) {
+      currentLogger().w(message, error: error)
+    }
+
+    func e(_ message: String, error: Error?) {
+      currentLogger().e(message, error: error)
+    }
+  }
+
   // MARK: - Registry Handle
 
   /// Handle for storing logger configuration in the registry.
-  final class LoggerHandle: NativeHandle {
+  ///
+  /// - Note: `@unchecked Sendable` is required because this is a mutable
+  ///   reference type (`level`) passed through actor-based registries.
+  ///   Mutations are constrained to `createQueue`.
+  final class LoggerHandle: LoggerHandleContract, @unchecked Sendable {
     /// The native log level for this logger instance.
     var level: NativeLoggerLevel
+    var loggerLevel: String { level.rawValue }
+    private let dynamicLogger: DynamicLogger
+    var nativeLogger: Any? { dynamicLogger }
     
     /// Creates a new logger handle with the specified level.
     /// - Parameter level: The native log level to use.
-    init(level: NativeLoggerLevel) { self.level = level }
+    init(level: NativeLoggerLevel) {
+      self.level = level
+      self.dynamicLogger = DynamicLogger(level: level)
+    }
+
+    /// Updates the handle level and propagates it to the live logger.
+    /// - Parameter level: New logger level.
+    func setLevel(_ level: NativeLoggerLevel) {
+      self.level = level
+      dynamicLogger.setLevel(level)
+    }
   }
 
   // MARK: - Configure
@@ -75,17 +133,13 @@ public class RNPingLoggerImpl: NSObject {
     )
 
     let level = parseLevel(config["level"])
-    var id = ""
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      let handle = LoggerHandle(level: level)
-      id = await CoreRuntime.loggerRegistry.register(handle)
-      applyNativeLevel(level)
-      semaphore.signal()
-    }
-
-    semaphore.wait()
+    let handle = LoggerHandle(level: level)
+    let id = RegistrySync.registerSync(
+      handle,
+      registry: CoreRuntime.loggerRegistry,
+      queueKey: createQueueKey,
+      context: "RNPingLoggerImpl.create"
+    )
     return id
   }
 
@@ -102,41 +156,43 @@ public class RNPingLoggerImpl: NSObject {
       return
     }
 
-    Task {
-      guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle else {
+    Self.createQueue.async {
+      guard let handle = RegistrySync.resolveSync(
+        id,
+        registry: CoreRuntime.loggerRegistry,
+        queueKey: Self.createQueueKey,
+        context: "RNPingLoggerImpl.syncLogger"
+      ) as? LoggerHandle else {
         print("RNPingLogger: No logger registered for id \(id)")
         return
       }
 
-      handle.level = parsedLevel
-      Self.applyNativeLevel(parsedLevel)
+      handle.setLevel(parsedLevel)
     }
   }
 
-  /// Applies a previously registered logger by id.
-  /// - Parameter id: The registry ID of the logger to apply.
-  /// - Returns: True when the logger was resolved and applied.
-  @objc
-  public func applyLogger(_ id: String?) -> Bool {
+  /// Resolves a native logger instance for a registered logger id.
+  /// - Parameter id: The registry ID of the logger to resolve.
+  /// - Returns: Native logger instance, or `nil` if not found.
+  @nonobjc
+  public func resolveLogger(_ id: String?) -> Logger? {
     guard let id, !id.isEmpty else {
-      return false
+      return nil
     }
 
-    var applied = false
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      if let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle {
-        Self.applyNativeLevel(handle.level)
-        applied = true
-      } else {
+    return Self.createQueue.sync {
+      guard let handle = RegistrySync.resolveSync(
+        id,
+        registry: CoreRuntime.loggerRegistry,
+        queueKey: Self.createQueueKey,
+        context: "RNPingLoggerImpl.resolveLogger"
+      ) as? LoggerHandle else {
         print("RNPingLogger: No logger registered for id \(id)")
+        return nil
       }
-      semaphore.signal()
-    }
 
-    semaphore.wait()
-    return applied
+      return handle.nativeLogger as? Logger
+    }
   }
 
   // MARK: - Helpers
@@ -152,16 +208,17 @@ public class RNPingLoggerImpl: NSObject {
     return parsed
   }
 
-  /// Applies the specified log level to the native LogManager.
-  /// - Parameter level: The native logger level to apply.
-  private static func applyNativeLevel(_ level: NativeLoggerLevel) {
+  /// Maps internal logger levels to concrete native logger instances.
+  /// - Parameter level: The native logger level to map.
+  /// - Returns: Concrete native logger instance.
+  private static func nativeLogger(for level: NativeLoggerLevel) -> Logger {
     switch level {
     case .standard:
-      LogManager.logger = LogManager.standard
+      return LogManager.standard
     case .warn:
-      LogManager.logger = LogManager.warning
+      return LogManager.warning
     case .none:
-      LogManager.logger = LogManager.none
+      return LogManager.none
     }
   }
 
@@ -169,7 +226,7 @@ public class RNPingLoggerImpl: NSObject {
   /// Test helper to retrieve the current level for a logger.
   /// - Parameter id: The registry ID of the logger.
   /// - Returns: The current log level as a string, or nil if the logger is not found.
-  @objc
+  @nonobjc
   public func _testLevel(_ id: String) async -> String? {
     guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandle else {
       return nil

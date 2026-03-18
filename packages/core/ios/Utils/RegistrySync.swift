@@ -12,6 +12,34 @@ import Foundation
 /// These utilities enforce a caller-provided queue key to avoid blocking
 /// the main thread while waiting for async registry operations.
 public enum RegistrySync {
+  /// Sendable synchronization box used to bridge async work into blocking APIs.
+  ///
+  /// - Note: `@unchecked Sendable` is used because `value` is mutable.
+  ///   All reads/writes are guarded by `NSLock`, and synchronization uses
+  ///   `DispatchSemaphore`, so concurrent access remains serialized.
+  private final class SyncResultBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: T
+    let semaphore = DispatchSemaphore(value: 0)
+
+    init(_ value: T) {
+      self.value = value
+    }
+
+    func set(_ value: T) {
+      lock.lock()
+      self.value = value
+      lock.unlock()
+    }
+
+    func get() -> T {
+      lock.lock()
+      let current = value
+      lock.unlock()
+      return current
+    }
+  }
+
   /// Register a handle synchronously using a registry.
   public static func registerSync(
     _ handle: NativeHandle,
@@ -23,14 +51,14 @@ public enum RegistrySync {
       DispatchQueue.getSpecific(key: queueKey) != nil,
       "\(context) must be called on its create queue"
     )
-    var id = ""
-    let semaphore = DispatchSemaphore(value: 0)
-    Task {
-      id = await registry.register(handle)
-      semaphore.signal()
+    let box = SyncResultBox<String>("")
+    Task { [box, handle, registry] in
+      let id = await registry.register(handle)
+      box.set(id)
+      box.semaphore.signal()
     }
-    semaphore.wait()
-    return id
+    box.semaphore.wait()
+    return box.get()
   }
 
   /// Resolve a handle synchronously by id.
@@ -44,14 +72,14 @@ public enum RegistrySync {
       DispatchQueue.getSpecific(key: queueKey) != nil,
       "\(context) must be called on its create queue"
     )
-    var resolved: NativeHandle?
-    let semaphore = DispatchSemaphore(value: 0)
-    Task {
-      resolved = await registry.resolve(id)
-      semaphore.signal()
+    let box = SyncResultBox<NativeHandle?>(nil)
+    Task { [box, id, registry] in
+      let resolved = await registry.resolve(id)
+      box.set(resolved)
+      box.semaphore.signal()
     }
-    semaphore.wait()
-    return resolved
+    box.semaphore.wait()
+    return box.get()
   }
 
   /// Resolve a handle asynchronously by id.

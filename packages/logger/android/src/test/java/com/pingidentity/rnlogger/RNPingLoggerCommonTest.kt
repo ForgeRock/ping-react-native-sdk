@@ -10,8 +10,6 @@ package com.pingidentity.rnlogger
 import com.facebook.react.bridge.ReadableMap
 import com.pingidentity.logger.Logger
 import com.pingidentity.logger.NONE
-import com.pingidentity.logger.STANDARD
-import com.pingidentity.logger.WARN
 import com.pingidentity.rncore.CoreRuntime
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -20,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -67,20 +66,24 @@ class RNPingLoggerCommonTest {
   fun configureDefaultsToNoneOnInvalidLevel() {
     val config = createReadableMap(mapOf("level" to "INVALID"))
 
-    RNPingLoggerCommon.configure(config)
-
-    assertEquals(Logger.NONE, Logger.logger)
+    val id = RNPingLoggerCommon.configure(config)
+    val level = resolveLevel(id)
+    assertEquals("NONE", level)
   }
 
   @Test
   fun syncUpdatesLoggerLevel() {
     val registerConfig = createReadableMap(mapOf("level" to "STANDARD"))
     val id = RNPingLoggerCommon.configure(registerConfig)
+    val loggerBefore = RNPingLoggerCommon.resolveLogger(id)
+    assertNotNull(loggerBefore)
 
     val syncConfig = createReadableMap(mapOf("id" to id, "level" to "WARN"))
     RNPingLoggerCommon.sync(syncConfig)
 
-    assertTrue(waitForLogger(Logger.WARN))
+    assertTrue(waitForLevel(id, "WARN"))
+    val loggerAfter = RNPingLoggerCommon.resolveLogger(id)
+    assertSame(loggerBefore, loggerAfter)
   }
 
   @Test
@@ -92,19 +95,19 @@ class RNPingLoggerCommonTest {
     RNPingLoggerCommon.sync(syncConfig)
 
     Thread.sleep(150)
-    assertEquals(Logger.STANDARD, Logger.logger)
+    assertEquals("STANDARD", resolveLevel(id))
   }
 
   @Test
   fun syncWithMissingIdDoesNotChangeLogger() {
     val registerConfig = createReadableMap(mapOf("level" to "STANDARD"))
-    RNPingLoggerCommon.configure(registerConfig)
+    val id = RNPingLoggerCommon.configure(registerConfig)
 
     val syncConfig = createReadableMap(mapOf("id" to "missing", "level" to "WARN"))
     RNPingLoggerCommon.sync(syncConfig)
 
     Thread.sleep(150)
-    assertEquals(Logger.STANDARD, Logger.logger)
+    assertEquals("STANDARD", resolveLevel(id))
   }
 
   private fun createReadableMap(data: Map<String, String>): ReadableMap {
@@ -115,14 +118,19 @@ class RNPingLoggerCommonTest {
     return map
   }
 
-  private fun waitForLogger(expected: Logger, timeoutMs: Long = 2_000): Boolean {
+  private fun waitForLevel(id: String, expected: String, timeoutMs: Long = 2_000): Boolean {
     val deadline = System.currentTimeMillis() + timeoutMs
     while (System.currentTimeMillis() < deadline) {
-      if (Logger.logger == expected) {
+      if (resolveLevel(id) == expected) {
         return true
       }
       Thread.sleep(50)
     }
     return false
+  }
+
+  private fun resolveLevel(id: String): String? {
+    val handle = runBlocking { CoreRuntime.loggerRegistry.resolve(id) } as? com.pingidentity.rncore.logger.LoggerHandleContract
+    return handle?.loggerLevel
   }
 }

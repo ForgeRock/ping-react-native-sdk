@@ -6,7 +6,6 @@
  */
 import Foundation
 import RNPingCore
-import RNPingLogger
 
 /// A common utility class for managing storage configurations in React Native Ping SDK.
 ///
@@ -23,7 +22,7 @@ public class RNPingStorageCommon: NSObject {
    Stores platform-specific configuration values without creating actual storage instances.
    The actual storage instances are created lazily by the Core SDK when needed.
    */
-  struct StorageConfig: Codable {
+  struct StorageConfig: Codable, Sendable {
     /// Whether the storage should be cacheable
     let cacheable: Bool?
     /// The account identifier for keychain storage
@@ -35,10 +34,17 @@ public class RNPingStorageCommon: NSObject {
   /**
    A wrapper class for storage configuration that conforms to `NativeHandle`.
    This allows storage configs to be registered in Core's NativeHandle registry.
+
+   - Note: `@unchecked Sendable` is used because this is a reference type
+   crossing actor boundaries through `Registry`. The wrapped `StorageConfig`
+   is immutable (`let`) and `Sendable`, so the handle is effectively immutable.
    */
-  final class StorageConfigHandle: NativeHandle {
+  final class StorageConfigHandle: StorageConfigHandleContract, @unchecked Sendable {
     /// The wrapped storage configuration
     let config: StorageConfig
+    var cacheable: Bool? { config.cacheable }
+    var account: String? { config.account }
+    var encryptor: Bool? { config.encryptor }
     
     /// Creates a new storage config handle.
     /// - Parameter config: The storage configuration to wrap
@@ -62,14 +68,6 @@ public class RNPingStorageCommon: NSObject {
     return q
   }()
 
-  /// Applies a logger handle id to native SDK logging when provided.
-  ///
-  /// Kept as an assignable closure to simplify unit testing without mutating
-  /// global logger state across tests.
-  private static var applyLogger: (String?) -> Bool = { id in
-    RNPingLoggerImpl.shared.applyLogger(id)
-  }
-  
   // MARK: - Public Methods - Configuration
   
   /// Registers a session storage configuration.
@@ -79,9 +77,8 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      let loggerId = config["loggerId"] as? String
-      _ = applyLogger(loggerId)
-      return registerConfig(config, register: registerSessionStorage)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
+      registerConfig(config, registry: CoreRuntime.sessionStorageConfigRegistry)
     }
   }
 
@@ -92,9 +89,8 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerOidcStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      let loggerId = config["loggerId"] as? String
-      _ = applyLogger(loggerId)
-      return registerConfig(config, register: registerOidcStorage)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
+      registerConfig(config, registry: CoreRuntime.oidcStorageConfigRegistry)
     }
   }
 
@@ -105,7 +101,7 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func configureSessionStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
-      let resolvedConfig = resolveConfig(id, resolve: resolveSessionStorage)
+      let resolvedConfig = resolveConfig(id, registry: CoreRuntime.sessionStorageConfigRegistry)
       return encodeConfig(resolvedConfig)
     }
   }
@@ -117,25 +113,23 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func configureOidcStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
-      let resolvedConfig = resolveConfig(id, resolve: resolveOidcStorage)
+      let resolvedConfig = resolveConfig(id, registry: CoreRuntime.oidcStorageConfigRegistry)
       return encodeConfig(resolvedConfig)
     }
   }
 
   // MARK: - Private Methods - Configuration
 
-  /// Registers a storage configuration by converting it to a StorageConfig and calling the provided registration closure.
+  /// Registers a storage configuration by converting it to a StorageConfig and storing it in the provided registry.
   ///
   /// This method must be called on the createQueue to prevent blocking critical threads.
-  /// It uses a semaphore to wait synchronously for the async registration to complete.
-  ///
   /// - Parameters:
   ///   - config: The storage configuration dictionary
-  ///   - register: An async closure that handles the actual registration
+  ///   - registry: The target registry used to store the configuration handle
   /// - Returns: A unique identifier for the registered storage configuration
   private static func registerConfig(
     _ config: NSDictionary,
-    register: @escaping (StorageConfigHandle) async -> String
+    registry: Registry
   ) -> String {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
@@ -143,47 +137,40 @@ public class RNPingStorageCommon: NSObject {
     )
 
     let storageConfig = buildStorageConfig(from: config)
-    var id = ""
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      let handle = StorageConfigHandle(storageConfig)
-      id = await register(handle)
-      semaphore.signal()
-    }
-
-    semaphore.wait()
-    return id
+    let handle = StorageConfigHandle(storageConfig)
+    return RegistrySync.registerSync(
+      handle,
+      registry: registry,
+      queueKey: createQueueKey,
+      context: "RNPingStorageCommon.registerConfig"
+    )
   }
 
-  /// Resolves a storage configuration by ID using the provided resolution closure.
+  /// Resolves a storage configuration by ID using the provided registry.
   ///
   /// This method must be called on the createQueue to prevent blocking critical threads.
-  /// It uses a semaphore to wait synchronously for the async resolution to complete.
-  ///
   /// - Parameters:
   ///   - id: The unique identifier of the storage configuration to resolve
-  ///   - resolve: An async closure that handles the actual resolution
+  ///   - registry: The source registry that stores configuration handles
   /// - Returns: The resolved storage configuration
   /// - Throws: Raises an exception when no configuration is registered for the id
   private static func resolveConfig(
     _ id: String,
-    resolve: @escaping (String) async -> StorageConfig?
+    registry: Registry
   ) -> StorageConfig {
     precondition(
       DispatchQueue.getSpecific(key: createQueueKey) != nil,
       "RNPingStorageCommon.resolveConfig must be called on createQueue"
     )
 
-    var resolvedConfig: StorageConfig?
-    let semaphore = DispatchSemaphore(value: 0)
-
-    Task {
-      resolvedConfig = await resolve(id)
-      semaphore.signal()
-    }
-
-    semaphore.wait()
+    let resolvedConfig = (
+      RegistrySync.resolveSync(
+        id,
+        registry: registry,
+        queueKey: createQueueKey,
+        context: "RNPingStorageCommon.resolveConfig"
+      ) as? StorageConfigHandle
+    )?.config
     guard let resolvedConfig else {
       NSException(
         name: .invalidArgumentException,
@@ -278,17 +265,4 @@ public class RNPingStorageCommon: NSObject {
     return configHandle?.config
   }
 
-#if DEBUG
-  /// Test helper to override logger application behavior.
-  static func _testSetApplyLogger(_ applier: @escaping (String?) -> Bool) {
-    applyLogger = applier
-  }
-
-  /// Test helper to reset logger application behavior.
-  static func _testResetApplyLogger() {
-    applyLogger = { id in
-      RNPingLoggerImpl.shared.applyLogger(id)
-    }
-  }
-#endif
 }

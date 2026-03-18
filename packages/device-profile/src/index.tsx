@@ -7,8 +7,7 @@
 
 import type { JourneyInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
-import { logger as createLogger } from '@ping-identity/rn-logger';
-import type { LoggerInstance } from '@ping-identity/rn-logger';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
@@ -21,12 +20,21 @@ import type {
  */
 let defaultLoggerInstance: LoggerInstance | null = null;
 
+const createNoopLogger = (): LoggerInstance => ({
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+});
+
 /**
  * Lazily initializes a default logger instance.
  */
 const getDefaultLogger = (): LoggerInstance => {
   if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createLogger({ level: 'none' });
+    defaultLoggerInstance = createNoopLogger();
   }
   return defaultLoggerInstance;
 };
@@ -38,10 +46,11 @@ const resolveLogger = (
   options?: DeviceProfileLoggerOptions
 ): { logger: LoggerInstance; loggerId?: string } => {
   const logger = options?.logger ?? getDefaultLogger();
-  const loggerId =
+  const rawLoggerId =
     options?.nativeLogger?.id ??
     logger.nativeHandle?.id ??
     getDefaultLogger().nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
   return { logger, loggerId };
 };

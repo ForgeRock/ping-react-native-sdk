@@ -14,17 +14,19 @@ import com.facebook.react.bridge.ReactApplicationContext
 import android.util.Log
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.logger.Logger
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.OidcUser
+import com.pingidentity.rncore.logger.LoggerHandleContract
+import com.pingidentity.rncore.oidc.OidcClientConfigHandle
+import com.pingidentity.rncore.oidc.OidcOpenIdConfig
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.registry.NativeHandle
-import com.pingidentity.rnlogger.RNPingLoggerCommon
-import com.pingidentity.rnstorage.StorageConfigRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,13 +55,28 @@ object RNPingOidcCommon {
   /** Core registry storing OIDC web clients. */
   private val webRegistry = CoreRuntime.oidcWebClientRegistry
   /** Core registry storing OIDC storage configurations. */
-  private val oidcStorageRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+  private val oidcStorageRegistry = CoreRuntime.oidcStorageConfigRegistry
   /** Factory for building native OIDC clients/web clients. */
   private val clientFactory = OidcClientFactory(oidcStorageRegistry) { id ->
-    RNPingLoggerCommon.applyLogger(id)
+    resolveLoggerFromCore(id)
   }
   /** Cached React context for resolving activity when needed. */
   private var appContext: ReactApplicationContext? = null
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) {
+      return null
+    }
+
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return handle.nativeLogger as? Logger
+  }
 
 
   /**
@@ -69,7 +86,61 @@ object RNPingOidcCommon {
     val payload: OidcClientPayload,
     val client: OidcClient,
     val user: OidcUser
-  ) : NativeHandle
+  ) : NativeHandle, OidcClientConfigHandle {
+    override val clientId: String
+      get() = payload.clientId
+
+    override val discoveryEndpoint: String?
+      get() = payload.discoveryEndpoint
+
+    override val redirectUri: String
+      get() = payload.redirectUri
+
+    override val scopes: List<String>
+      get() = payload.scopes
+
+    override val openId: OidcOpenIdConfig?
+      get() = payload.openId?.let {
+        OidcOpenIdConfig(
+          authorizationEndpoint = it.authorizationEndpoint,
+          tokenEndpoint = it.tokenEndpoint,
+          userinfoEndpoint = it.userinfoEndpoint,
+          endSessionEndpoint = it.endSessionEndpoint,
+          pingEndIdpSessionEndpoint = it.pingEndIdpSessionEndpoint,
+          revocationEndpoint = it.revocationEndpoint
+        )
+      }
+
+    override val acrValues: String?
+      get() = payload.acrValues
+
+    override val signOutRedirectUri: String?
+      get() = payload.signOutRedirectUri
+
+    override val state: String?
+      get() = payload.state
+
+    override val nonce: String?
+      get() = payload.nonce
+
+    override val uiLocales: String?
+      get() = payload.uiLocales
+
+    override val refreshThreshold: Long?
+      get() = payload.refreshThreshold
+
+    override val loginHint: String?
+      get() = payload.loginHint
+
+    override val display: String?
+      get() = payload.display
+
+    override val prompt: String?
+      get() = payload.prompt
+
+    override val additionalParameters: Map<String, String>
+      get() = payload.additionalParameters
+  }
 
   /**
    * Handle for a configured web client.

@@ -16,19 +16,21 @@ import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.test.core.app.ApplicationProvider
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.logger.WARN
 import com.pingidentity.rnlogger.RNPingLoggerCommon
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import io.mockk.verify
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -59,6 +61,8 @@ class RNPingBrowserCommonTest {
     val app = ApplicationProvider.getApplicationContext<Application>()
     reactContext = mockk(relaxed = true)
     every { reactContext.packageManager } returns app.packageManager
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } answers { JavaOnlyMap() }
     fakeLauncher = FakeBrowserLauncher()
     RNPingBrowserCommon.browserLauncher = fakeLauncher
     RNPingBrowserCommon.mapFactory = { JavaOnlyMap() }
@@ -250,18 +254,16 @@ class RNPingBrowserCommonTest {
   }
 
   @Test
-  fun openSucceedsWhenCallbackSchemeMissing() = runTest {
-    val targetUri = Uri.parse("com.example.app://callback")
-    fakeLauncher.launchResult = Result.success(targetUri)
-
+  fun openRejectsWhenCallbackSchemeMissing() = runTest {
     val promise = TestPromise()
     val options = JavaOnlyMap()
 
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    assertEquals("success", promise.resolved?.getString("type"))
-    assertEquals(targetUri.toString(), promise.resolved?.getString("url"))
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("callbackUrlScheme is required", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
   }
 
   @Test
@@ -275,7 +277,89 @@ class RNPingBrowserCommonTest {
     mainDispatcher.scheduler.advanceUntilIdle()
 
     assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
-    assertTrue(promise.rejectMessage?.contains("no protocol") == true)
+    assertTrue(promise.rejectMessage?.contains("Illegal character") == true)
+  }
+
+  @Test
+  fun openRejectsWhenUrlSchemeUnsupported() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("ftp://example.com", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals(
+      "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.",
+      promise.rejectMessage
+    )
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openRejectsWhenUrlRelative() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("/relative/path", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals(
+      "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.",
+      promise.rejectMessage
+    )
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openRejectsWhenUrlHostMissing() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("https:///missing-host", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("Invalid URL. Provide an absolute HTTP(S) URL with a host.", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openRejectsWhenUrlContainsUserInfo() = runTest {
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("https://user:pass@example.com/path", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("BROWSER_OPEN_ERROR", promise.rejectCode)
+    assertEquals("Unsupported URL format. User info is not allowed.", promise.rejectMessage)
+    assertEquals(0, fakeLauncher.launchCount)
+  }
+
+  @Test
+  fun openAllowsHttpUrl() = runTest {
+    fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
+
+    val promise = TestPromise()
+    val options = JavaOnlyMap().apply {
+      putString("callbackUrlScheme", "com.example.app")
+    }
+
+    RNPingBrowserCommon.open("http://example.com/path?x=1", options, promise)
+    mainDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("success", promise.resolved?.getString("type"))
+    assertEquals(1, fakeLauncher.launchCount)
   }
 
   @Test
@@ -296,7 +380,7 @@ class RNPingBrowserCommonTest {
   @Test
   fun openAppliesNativeLoggerWhenLoggerIdProvided() = runTest {
     mockkObject(RNPingLoggerCommon)
-    every { RNPingLoggerCommon.applyLogger("logger-1") } returns true
+    every { RNPingLoggerCommon.resolveLogger("logger-1") } returns WARN
     fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
 
     val promise = TestPromise()
@@ -308,7 +392,7 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    verify(exactly = 1) { RNPingLoggerCommon.applyLogger("logger-1") }
+    verify(exactly = 1) { RNPingLoggerCommon.resolveLogger("logger-1") }
   }
 
   private class FakeBrowserLauncher : BrowserLauncherAdapter {

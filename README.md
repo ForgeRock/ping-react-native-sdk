@@ -84,6 +84,7 @@ yarn sample:run:ios
 ## Notes
 
 * `sample:clean-install` clears and reinstalls dependencies inside the sample app (`PingSampleApp`).
+* TODO(testing): remove the temporary `react-test-renderer` deprecation-warning suppression in `packages/journey/jest.setup.js` once `@testing-library/react-native` no longer depends on it.
 
 ---
 

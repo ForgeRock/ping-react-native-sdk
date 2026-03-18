@@ -8,8 +8,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { commonStyles } from '../src/styles/common';
 import {
@@ -17,6 +17,7 @@ import {
   configureOidcStorageInfo,
   configureSessionStorageInfo,
 } from '../src/tokenStorages';
+import PayloadViewer from './components/atoms/PayloadViewer';
 
 export default function MultiStorageScreen() {
   const [oidcStorage, setOidcStorage] = useState(
@@ -27,10 +28,10 @@ export default function MultiStorageScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container}>
+    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
       {/* OIDC STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🔑 OIDC Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>OIDC Storage</Text>
 
         {!oidcStorage ? (
           <TouchableOpacity
@@ -43,19 +44,16 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <Text style={commonStyles.textSmall}>
-              Storage ID: {oidcStorage.id}
-            </Text>
-            <Text style={commonStyles.textSmall}>
-              Config: {JSON.stringify(oidcStorage.config, null, 2)}
-            </Text>
+            <PayloadViewer
+              payload={`Config: ${JSON.stringify(oidcStorage.config, null, 2)}`}
+            />
           </View>
         )}
       </View>
 
       {/* SESSION STORAGE CARD */}
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🎫 Session Storage</Text>
+        <Text style={commonStyles.journeySectionTitle}>Session Storage</Text>
 
         {!sessionStorage ? (
           <TouchableOpacity
@@ -68,12 +66,9 @@ export default function MultiStorageScreen() {
           </TouchableOpacity>
         ) : (
           <View>
-            <Text style={commonStyles.textSmall}>
-              Storage ID: {sessionStorage.id}
-            </Text>
-            <Text style={commonStyles.textSmall}>
-              Config: {JSON.stringify(sessionStorage.config, null, 2)}
-            </Text>
+            <PayloadViewer
+              payload={`Config: ${JSON.stringify(sessionStorage.config, null, 2)}`}
+            />
           </View>
         )}
       </View>

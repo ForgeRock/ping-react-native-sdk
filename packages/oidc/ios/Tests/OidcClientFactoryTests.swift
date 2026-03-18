@@ -6,7 +6,9 @@
  */
 
 import XCTest
+import PingLogger
 import PingOidc
+import RNPingCore
 @testable import RNPingOidc
 
 final class OidcClientFactoryTests: XCTestCase {
@@ -41,7 +43,7 @@ final class OidcClientFactoryTests: XCTestCase {
       additionalParameters: [:]
     )
 
-    let config = OidcClientFactory.buildOidcClient(payload)
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
     XCTAssertEqual(config.openId?.endSessionEndpoint, "")
     XCTAssertEqual(config.openId?.revocationEndpoint, "")
@@ -54,7 +56,7 @@ final class OidcClientFactoryTests: XCTestCase {
       browserMode: "logout"
     )
 
-    let web = OidcClientFactory.buildWebClient(payload)
+    let web = OidcClientFactory.buildWebClient(payload, logger: nil)
     let config = web.config as? OidcWebConfig
 
     XCTAssertEqual(config?.browserType, .ephemeralAuthSession)
@@ -67,7 +69,7 @@ final class OidcClientFactoryTests: XCTestCase {
       browserMode: "unsupported"
     )
 
-    let web = OidcClientFactory.buildWebClient(payload)
+    let web = OidcClientFactory.buildWebClient(payload, logger: nil)
     let config = web.config as? OidcWebConfig
 
     XCTAssertEqual(config?.browserType, .authSession)
@@ -76,14 +78,54 @@ final class OidcClientFactoryTests: XCTestCase {
 
   func testBuildOidcClientAdditionalParametersOnlyWhenProvided() {
     var payload = basePayload(additionalParameters: [:])
-    let config = OidcClientFactory.buildOidcClient(payload)
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
-    XCTAssertEqual(config.additionalParameters, [:])
+    XCTAssertTrue(config.additionalParameters.isEmpty)
 
     payload = basePayload(additionalParameters: ["foo": "bar"])
-    let updated = OidcClientFactory.buildOidcClient(payload)
+    let updated = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
-    XCTAssertEqual(updated.additionalParameters, ["foo": "bar"])
+    XCTAssertEqual(updated.additionalParameters["foo"] as? String, "bar")
+    XCTAssertEqual(updated.additionalParameters.count, 1)
+  }
+
+  func testBuildOidcClientAppliesLoggerWhenProvided() {
+    let payload = basePayload()
+    let config = OidcClientFactory.buildOidcClient(payload, logger: LogManager.standard)
+
+    XCTAssertNotNil(config.logger)
+  }
+
+  func testBuildOidcClientResolvesStorageFromCoreRegistry() async {
+    let key = DispatchSpecificKey<Void>()
+    let queue = DispatchQueue(label: "com.ping.tests.oidc.storage")
+    queue.setSpecific(key: key, value: ())
+    let handle = TestStorageHandle(cacheable: false, account: "oidc-test-account", encryptor: true)
+    let storageId = await CoreRuntime.oidcStorageConfigRegistry.register(handle)
+    defer {
+      Task {
+        await CoreRuntime.oidcStorageConfigRegistry.remove(storageId)
+      }
+    }
+
+    let payload = basePayload().withStorageId(storageId)
+    let config = queue.sync {
+      OidcClientFactory.buildOidcClient(payload, logger: nil, queueKey: key)
+    }
+
+    XCTAssertNotNil(config.storage)
+  }
+
+  func testBuildOidcClientSkipsStorageWhenIdUnknown() {
+    let key = DispatchSpecificKey<Void>()
+    let queue = DispatchQueue(label: "com.ping.tests.oidc.storage.unknown")
+    queue.setSpecific(key: key, value: ())
+    let payload = basePayload().withStorageId("missing-storage")
+    let config = queue.sync {
+      OidcClientFactory.buildOidcClient(payload, logger: nil, queueKey: key)
+    }
+
+    XCTAssertNotNil(config.storage)
   }
 
   private func basePayload(
@@ -110,6 +152,44 @@ final class OidcClientFactoryTests: XCTestCase {
       loginHint: nil,
       display: nil,
       prompt: nil,
+      additionalParameters: additionalParameters
+    )
+  }
+
+  private final class TestStorageHandle: StorageConfigHandleContract, @unchecked Sendable {
+    let cacheable: Bool?
+    let account: String?
+    let encryptor: Bool?
+
+    init(cacheable: Bool?, account: String?, encryptor: Bool?) {
+      self.cacheable = cacheable
+      self.account = account
+      self.encryptor = encryptor
+    }
+  }
+}
+
+private extension OidcClientPayload {
+  func withStorageId(_ storageId: String?) -> OidcClientPayload {
+    return OidcClientPayload(
+      clientId: clientId,
+      discoveryEndpoint: discoveryEndpoint,
+      openId: openId,
+      redirectUri: redirectUri,
+      scopes: scopes,
+      storageId: storageId,
+      loggerId: loggerId,
+      browserType: browserType,
+      browserMode: browserMode,
+      acrValues: acrValues,
+      signOutRedirectUri: signOutRedirectUri,
+      state: state,
+      nonce: nonce,
+      uiLocales: uiLocales,
+      refreshThreshold: refreshThreshold,
+      loginHint: loginHint,
+      display: display,
+      prompt: prompt,
       additionalParameters: additionalParameters
     )
   }

@@ -5,7 +5,6 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import Foundation
-import React
 import RNPingCore
 
 /**
@@ -19,6 +18,7 @@ import RNPingCore
 public class RNPingStorageImpl: NSObject {
 
   /// Shared singleton instance.
+  @MainActor
   @objc public static let shared = RNPingStorageImpl()
 
   @objc private override init() {

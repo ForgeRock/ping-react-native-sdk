@@ -109,7 +109,7 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 
@@ -139,7 +139,7 @@ describe('OIDC JS API', () => {
       discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
       redirectUri: 'app://redirect',
       scopes: ['openid'],
-      storage: { id: 'storage-id' } as any,
+      storage: { id: 'storage-id', kind: 'oidc' } as any,
       logger,
     });
 
@@ -147,6 +147,25 @@ describe('OIDC JS API', () => {
       expect.objectContaining({
         storageId: 'storage-id',
         loggerId: 'native-logger-id',
+      })
+    );
+  });
+
+  it('does not pass signOutRedirectUri from JS config', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+      signOutRedirectUri: 'app://logout',
+    } as any);
+
+    expect(nativeModule.createClient).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        signOutRedirectUri: expect.anything(),
       })
     );
   });
@@ -172,6 +191,24 @@ describe('OIDC JS API', () => {
     );
   });
 
+  it('does not pass loggerId when logger and nativeLogger are both omitted', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    expect(nativeModule.createClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        loggerId: undefined,
+      })
+    );
+  });
+
   it('throws when storage handle is missing an id', async () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);
@@ -185,7 +222,27 @@ describe('OIDC JS API', () => {
         storage: {} as any,
       })
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+    );
+  });
+
+  it('throws when storage handle has a non-oidc kind', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    expect(() =>
+      createOidcClient({
+        clientId: 'client',
+        discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+        redirectUri: 'app://redirect',
+        scopes: ['openid'],
+        storage: {
+          id: 'storage-id',
+          kind: 'session',
+        } as any,
+      })
+    ).toThrow(
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   });
 

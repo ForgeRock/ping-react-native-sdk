@@ -14,43 +14,27 @@ import type {
   OidcUser,
   OidcWebClient,
 } from './types';
-import type { Tokens } from '@ping-identity/rn-types';
-import type {
-  LoggerInstance,
-  LogLevel,
-} from '@ping-identity/rn-logger';
-import { logger as createLogger } from '@ping-identity/rn-logger';
+import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
+export { OidcProvider, useOidc } from './useOidc';
+export type {
+  OidcHookActions,
+  OidcHookResult,
+  OidcHookState,
+  OidcProviderProps,
+} from './useOidc';
 
 /**
  * In-memory registry mapping native client ids to JS logger instances.
  */
 const loggerRegistry = new Map<string, LoggerInstance>();
 
-/**
- * Fallback logger used when no logger is registered for a client.
- */
 const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
-  changeLevel: (_level: LogLevel) => {},
+  changeLevel: () => {},
   error: () => {},
   warn: () => {},
   info: () => {},
   debug: () => {},
-};
-
-/**
- * Cached default logger used when callers do not provide one.
- */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-/**
- * Lazily initialize and return the default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createLogger({ level: 'none' });
-  }
-  return defaultLoggerInstance;
 };
 
 /**
@@ -81,11 +65,12 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
     );
   }
-  const jsLogger = config.logger ?? getDefaultLogger();
-  const loggerId =
+  // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
+  const jsLogger = config.logger ?? noopLogger;
+  const rawLoggerId =
     config.nativeLogger?.id ??
-    jsLogger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
+    jsLogger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
       config,
@@ -93,8 +78,13 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       2
     )}`
   );
+  // Ignore legacy signOutRedirectUri values if callers pass them via `any`.
+  const {
+    signOutRedirectUri: _ignoredSignOutRedirectUri,
+    ...nativeConfig
+  } = config as OidcClientConfig & { signOutRedirectUri?: string };
   const clientId = getNativeModule().createClient({
-    ...config,
+    ...nativeConfig,
     storageId: resolveStorageId(config.storage),
     loggerId,
   });
@@ -159,18 +149,28 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
 /**
  * Resolve a storage id from a configured storage handle.
  *
- * @throws Error when a storage object is provided without an id.
+ * @throws Error when a storage object is provided without a valid OIDC handle.
  */
 function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
   if (!value) {
     return undefined;
   }
-  if (!value.id) {
+  const handle = value as {
+    id?: unknown;
+    kind?: unknown;
+  };
+
+  if (
+    typeof handle.id !== 'string' ||
+    !handle.id.trim() ||
+    handle.kind !== 'oidc'
+  ) {
     throw new Error(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Expected a storage config with an id.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. ' +
+        'Use configureOidcStorage(...) from @ping-identity/rn-storage.'
     );
   }
-  return value.id;
+  return handle.id;
 }
 
 /**
@@ -248,15 +248,6 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().authorize(webClientId, options ?? {});
       } catch (error) {
         loggerInstance.error('OIDC authorize failed');
-        throw error;
-      }
-    },
-    hasUser: async () => {
-      loggerInstance.debug('OIDC hasUser requested');
-      try {
-        return await getNativeModule().hasUser(webClientId);
-      } catch (error) {
-        loggerInstance.error('OIDC hasUser failed');
         throw error;
       }
     },

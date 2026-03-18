@@ -35,8 +35,8 @@ cd ios && pod install
 Use the shared registry to keep native objects alive and retrievable by id:
 
 ```kotlin
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.registry.NativeHandle
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.registry.NativeHandle
 
 class MyHandle : NativeHandle
 
@@ -80,9 +80,9 @@ data. The shape mirrors `@ping-identity/rn-types` (type, error, message, code, s
 #### Android
 
 ```kotlin
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.error.GenericError
-import com.reactnativepingidentity.core.error.reject
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.error.GenericError
+import com.pingidentity.rncore.error.reject
 
 val error = GenericError(
   type = ErrorType.ARGUMENT_ERROR,

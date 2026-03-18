@@ -20,9 +20,9 @@ import com.pingidentity.oidc.OidcWeb
 import com.pingidentity.oidc.Token
 import com.pingidentity.oidc.User
 import com.pingidentity.utils.Result
-import com.reactnativepingidentity.core.CoreRuntime
-import com.reactnativepingidentity.core.error.ErrorType
-import com.reactnativepingidentity.core.registry.NativeHandle
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.registry.NativeHandle
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -46,6 +47,8 @@ import org.robolectric.annotation.Implements
 import org.robolectric.annotation.Config
 import org.robolectric.RobolectricTestRunner
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -53,11 +56,12 @@ import org.junit.runner.RunWith
 class RNPingOidcCommonTest {
 
   private val dispatcher = StandardTestDispatcher()
+  private val mainDispatcher = UnconfinedTestDispatcher()
   private val scope = TestScope(dispatcher)
 
   @Before
   fun setUp() {
-    Dispatchers.setMain(dispatcher)
+    Dispatchers.setMain(mainDispatcher)
     CoreRuntime.oidcClientRegistry.removeAll()
     CoreRuntime.oidcWebClientRegistry.removeAll()
   }
@@ -189,7 +193,8 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.clientEndSession(clientId, promise)
     advanceUntilIdle()
 
-    assertEquals(true, promise.resolvedValue)
+    val resolved = captureResolve(promise)
+    assertEquals(true, resolved)
   }
 
   @Test
@@ -202,7 +207,9 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.authorize(webId, JavaOnlyMap(), promise)
     advanceUntilIdle()
 
-    val resolved = captureResolve(promise) as ReadableMap
+    val resolved = captureResolve(promise)
+    assertTrue(resolved is ReadableMap)
+    resolved as ReadableMap
     assertEquals("success", resolved.getString("type"))
   }
 
@@ -216,7 +223,9 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.authorize(webId, JavaOnlyMap(), promise)
     advanceUntilIdle()
 
-    val resolved = captureResolve(promise) as ReadableMap
+    val resolved = captureResolve(promise)
+    assertTrue(resolved is ReadableMap)
+    resolved as ReadableMap
     assertEquals("cancel", resolved.getString("type"))
   }
 
@@ -230,7 +239,9 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.authorize(webId, JavaOnlyMap(), promise)
     advanceUntilIdle()
 
-    val resolved = captureResolve(promise) as ReadableMap
+    val resolved = captureResolve(promise)
+    assertTrue(resolved is ReadableMap)
+    resolved as ReadableMap
     assertEquals("cancel", resolved.getString("type"))
   }
 
@@ -258,7 +269,8 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.hasUser(webId, promise)
     advanceUntilIdle()
 
-    assertEquals(false, promise.resolvedValue)
+    val resolved = captureResolve(promise)
+    assertEquals(false, resolved)
   }
 
   @Test
@@ -271,7 +283,8 @@ class RNPingOidcCommonTest {
     RNPingOidcCommon.hasUser(webId, promise)
     advanceUntilIdle()
 
-    assertEquals(true, promise.resolvedValue)
+    val resolved = captureResolve(promise)
+    assertEquals(true, resolved)
   }
 
   @Test
@@ -398,9 +411,13 @@ class RNPingOidcCommonTest {
     return ctor.newInstance(clientId, web) as NativeHandle
   }
 
-  private fun captureResolve(promise: TestPromise): Any? = promise.resolvedValue
+  private fun captureResolve(promise: TestPromise): Any? {
+    promise.await()
+    return promise.resolvedValue
+  }
 
   private fun captureReject(promise: TestPromise): WritableMap {
+    promise.await()
     return promise.rejectUserInfo ?: JavaOnlyMap()
   }
 }
@@ -417,6 +434,7 @@ object ShadowOidcCommonArguments {
 }
 
 private class TestPromise : com.facebook.react.bridge.Promise {
+  private val latch = CountDownLatch(1)
   var resolvedValue: Any? = null
   var rejectCode: String? = null
   var rejectMessage: String? = null
@@ -425,48 +443,57 @@ private class TestPromise : com.facebook.react.bridge.Promise {
 
   override fun resolve(value: Any?) {
     resolvedValue = value
+    latch.countDown()
   }
 
   override fun reject(code: String, message: String?) {
     rejectCode = code
     rejectMessage = message
+    latch.countDown()
   }
 
   override fun reject(code: String, throwable: Throwable?) {
     rejectCode = code
     rejectThrowable = throwable
+    latch.countDown()
   }
 
   override fun reject(code: String, message: String?, throwable: Throwable?) {
     rejectCode = code
     rejectMessage = message
     rejectThrowable = throwable
+    latch.countDown()
   }
 
   override fun reject(throwable: Throwable) {
     rejectThrowable = throwable
+    latch.countDown()
   }
 
   override fun reject(throwable: Throwable, userInfo: WritableMap) {
     rejectThrowable = throwable
     rejectUserInfo = userInfo
+    latch.countDown()
   }
 
   override fun reject(code: String, userInfo: WritableMap) {
     rejectCode = code
     rejectUserInfo = userInfo
+    latch.countDown()
   }
 
   override fun reject(code: String, throwable: Throwable?, userInfo: WritableMap) {
     rejectCode = code
     rejectThrowable = throwable
     rejectUserInfo = userInfo
+    latch.countDown()
   }
 
   override fun reject(code: String, message: String?, userInfo: WritableMap) {
     rejectCode = code
     rejectMessage = message
     rejectUserInfo = userInfo
+    latch.countDown()
   }
 
   override fun reject(code: String?, message: String?, throwable: Throwable?, userInfo: WritableMap?) {
@@ -474,6 +501,7 @@ private class TestPromise : com.facebook.react.bridge.Promise {
     rejectMessage = message
     rejectThrowable = throwable
     rejectUserInfo = userInfo
+    latch.countDown()
   }
 
   @Deprecated(
@@ -482,5 +510,10 @@ private class TestPromise : com.facebook.react.bridge.Promise {
   )
   override fun reject(message: String) {
     rejectMessage = message
+    latch.countDown()
+  }
+
+  fun await(timeoutMs: Long = 10_000) {
+    latch.await(timeoutMs, TimeUnit.MILLISECONDS)
   }
 }

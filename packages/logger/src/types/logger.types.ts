@@ -6,8 +6,13 @@
  */
 
 import type { CustomLogger, LogLevel, LogMessage } from '@forgerock/sdk-logger';
+import type {
+  LoggerInstance,
+  NativeLoggerHandle,
+} from '@ping-identity/rn-types';
 
 export type { CustomLogger, LogLevel, LogMessage };
+export type { LoggerInstance, NativeLoggerHandle };
 
 /**
  * Configuration options for the logger.
@@ -29,56 +34,4 @@ export type LoggerConfig = {
    * If not provided, default console methods will be used.
    */
   custom?: CustomLogger;
-};
-
-/**
- * Handle for a registered native logger instance.
- * @public
- */
-export type NativeLoggerHandle = {
-  /**
-   * Native logger identifier.
-   */
-  id: string;
-};
-
-/**
- * Logger instance with methods for logging at different levels.
- * @public
- */
-export type LoggerInstance = {
-  /**
-   * Native logger handle associated with this logger instance.
-   *
-   * @remarks
-   * Use this when a native logger handle is required by other APIs.
-   */
-  nativeHandle: NativeLoggerHandle;
-  /**
-   * Changes the current logging level.
-   * @param level - The new logging level to set
-   * @remarks
-   * This method updates both the JavaScript and native logger levels.
-   */
-  changeLevel: (level: LogLevel) => void;
-  /**
-   * Logs an error message.
-   * @param args - The message(s) to log
-   */
-  error: (...args: LogMessage[]) => void;
-  /**
-   * Logs a warning message.
-   * @param args - The message(s) to log
-   */
-  warn: (...args: LogMessage[]) => void;
-  /**
-   * Logs an informational message.
-   * @param args - The message(s) to log
-   */
-  info: (...args: LogMessage[]) => void;
-  /**
-   * Logs a debug message.
-   * @param args - The message(s) to log
-   */
-  debug: (...args: LogMessage[]) => void;
 };

@@ -25,7 +25,7 @@ export default function LoggerScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
       <View style={commonStyles.card}>
-        <Text style={commonStyles.journeySectionTitle}>🧪 Logger Demo</Text>
+        <Text style={commonStyles.journeySectionTitle}>Logger Demo</Text>
         <TouchableOpacity
           style={commonStyles.buttonSecondary}
           onPress={() => {

@@ -9,11 +9,9 @@ package com.pingidentity.rnoidc
 
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcClientConfig
-import com.reactnativepingidentity.core.registry.NativeHandle
-import com.reactnativepingidentity.core.registry.Registry
-import com.reactnativepingidentity.storage.StorageConfig
-import com.reactnativepingidentity.storage.StorageConfigHandle
-import com.reactnativepingidentity.storage.StorageConfigRegistry
+import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.registry.Registry
+import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -28,8 +26,11 @@ class OidcClientFactoryTest {
   @Test
   fun buildWebClient_appliesLoggerId() {
     val loggerIds = mutableListOf<String?>()
-    val storageRegistry = StorageConfigRegistry(RecordingRegistry())
-    val factory = OidcClientFactory(storageRegistry) { loggerIds.add(it) }
+    val storageRegistry = RecordingRegistry()
+    val factory = OidcClientFactory(storageRegistry) {
+      loggerIds.add(it)
+      null
+    }
 
     factory.buildWebClient(basePayload(loggerId = "logger-1"))
 
@@ -39,10 +40,9 @@ class OidcClientFactoryTest {
   @Test
   fun buildWebClient_resolvesStorageConfigWhenIdProvided() {
     val registry = RecordingRegistry().apply {
-      addHandle("storage-1", StorageConfigHandle(StorageConfig(fileName = "oidc-store")))
+      addHandle("storage-1", TestStorageConfigHandle(fileName = "oidc-store"))
     }
-    val storageRegistry = StorageConfigRegistry(registry)
-    val factory = OidcClientFactory(storageRegistry) {}
+    val factory = OidcClientFactory(registry) { null }
 
     factory.buildWebClient(basePayload(storageId = "storage-1"))
 
@@ -52,8 +52,7 @@ class OidcClientFactoryTest {
   @Test
   fun buildOidcClient_skipsStorageResolveWhenIdMissing() {
     val registry = RecordingRegistry()
-    val storageRegistry = StorageConfigRegistry(registry)
-    val factory = OidcClientFactory(storageRegistry) {}
+    val factory = OidcClientFactory(registry) { null }
 
     factory.buildOidcClient(basePayload(storageId = null))
 
@@ -63,8 +62,11 @@ class OidcClientFactoryTest {
   @Test
   fun buildOidcClient_appliesLoggerIdWhenNull() {
     val loggerIds = mutableListOf<String?>()
-    val storageRegistry = StorageConfigRegistry(RecordingRegistry())
-    val factory = OidcClientFactory(storageRegistry) { loggerIds.add(it) }
+    val storageRegistry = RecordingRegistry()
+    val factory = OidcClientFactory(storageRegistry) {
+      loggerIds.add(it)
+      null
+    }
 
     factory.buildOidcClient(basePayload(loggerId = null))
 
@@ -73,8 +75,8 @@ class OidcClientFactoryTest {
 
   @Test
   fun buildOidcClient_defaultsOptionalOpenIdEndpoints() {
-    val storageRegistry = StorageConfigRegistry(RecordingRegistry())
-    val factory = OidcClientFactory(storageRegistry) {}
+    val storageRegistry = RecordingRegistry()
+    val factory = OidcClientFactory(storageRegistry) { null }
     val payload = basePayload().copy(
       openId = OpenIdPayload(
         authorizationEndpoint = "https://example.com/oauth2/authorize",
@@ -96,7 +98,7 @@ class OidcClientFactoryTest {
 
   @Test
   fun parseCacheStrategy_fallsBackToNoCache() {
-    val factory = OidcClientFactory(StorageConfigRegistry(RecordingRegistry())) {}
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
     val parsed = factory.invokeParseCacheStrategy("unknown_value")
 
     assertEquals(com.pingidentity.storage.CacheStrategy.NO_CACHE, parsed)
@@ -104,7 +106,7 @@ class OidcClientFactoryTest {
 
   @Test
   fun parseCacheStrategy_acceptsKnownValues() {
-    val factory = OidcClientFactory(StorageConfigRegistry(RecordingRegistry())) {}
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
     val parsed = factory.invokeParseCacheStrategy("cache_on_failure")
 
     assertEquals(com.pingidentity.storage.CacheStrategy.CACHE_ON_FAILURE, parsed)
@@ -176,4 +178,11 @@ class OidcClientFactoryTest {
       handles.clear()
     }
   }
+
+  private data class TestStorageConfigHandle(
+    override val keyAlias: String? = null,
+    override val fileName: String? = null,
+    override val strongBoxPreferred: Boolean? = null,
+    override val cacheStrategy: String? = null
+  ) : StorageConfigHandleContract
 }

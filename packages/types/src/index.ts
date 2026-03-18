@@ -64,6 +64,42 @@ export type Node = import('@forgerock/sdk-types').Step;
 export type NodeCallback = import('@forgerock/sdk-types').Callback;
 
 /**
+ * React Native native-extension callback type constants not currently present in
+ * ForgeRock shared sdk-types.
+ */
+export const nativeExtensionCallbackType = {
+  ConsentMappingCallback: 'ConsentMappingCallback',
+  IdPCallback: 'IdPCallback',
+  FidoRegistrationCallback: 'FidoRegistrationCallback',
+  FidoAuthenticationCallback: 'FidoAuthenticationCallback',
+  BindingCallback: 'BindingCallback',
+  DeviceBindingCallback: 'DeviceBindingCallback',
+  DeviceSigningVerifierCallback: 'DeviceSigningVerifierCallback',
+} as const;
+
+/**
+ * Union of native-extension callback types used by RN Journey integrations.
+ */
+export type NativeExtensionCallbackType =
+  (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];
+
+/**
+ * TODO(DX): Expose a single Journey callback constant source that merges
+ * ForgeRock `callbackType` and `nativeExtensionCallbackType` so consumers do
+ * not need to import from two separate constant maps.
+ */
+
+/**
+ * Shared OIDC base configuration contracts used across RN modules.
+ */
+export type * from './oidc.types';
+
+/**
+ * Shared native handle and logger contracts used across RN modules.
+ */
+export type * from './handles.types';
+
+/*
  * Minimal Journey instance contract for cross-module coordination.
  *
  * @remarks

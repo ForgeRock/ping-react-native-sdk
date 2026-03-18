@@ -13,6 +13,7 @@ import PingDeviceProfile
 public class RNPingDeviceProfileImpl: NSObject {
 
   /// Shared singleton instance.
+  @MainActor
   public static let shared = RNPingDeviceProfileImpl()
 
   private override init() {

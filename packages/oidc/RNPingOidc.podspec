@@ -36,11 +36,16 @@ Pod::Spec.new do |s|
 
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
+  s.swift_version = ['5.0', '5.1', '6.0']
 
   s.dependency 'PingOidc', '1.3.1'
   s.dependency 'RNPingCore'
-  s.dependency 'RNPingLogger'
-  s.dependency 'RNPingStorage'
+
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+    test_spec.dependency "PingOidc"
+    test_spec.dependency "RNPingCore"
+  end
 
   # Explicitly add ReactCodegen dependency for generated specs
   s.dependency "ReactCodegen"

@@ -5,62 +5,133 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
-import { loginClient, loginClient2 } from '../src/clients';
-import { getDeviceId, type DeviceIdError } from '@ping-identity/rn-device-id';
+import { getDeviceId } from '@ping-identity/rn-device-id';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
+import { colors } from '../src/styles/colors';
+import HomeMenuRow, { type HomeMenuItem } from './components/molecules/HomeMenuRow';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-type Props = { navigation: HomeScreenNavProp };
+type Props = {
+  navigation: HomeScreenNavProp;
+  selectedConfigName: string;
+};
+type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
+  screen?: keyof RootStackParamList;
+};
+
+/**
+ * Converts device ID errors into user friendly text.
+ *
+ * @param error Unknown error value from native calls.
+ * @returns Safe display string for the screen.
+ */
+function formatDeviceIdError(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return 'Unable to fetch device ID.';
+}
 
 /**
  * Home screen with entry points for each SDK demo flow.
  */
-export default function HomeScreen({ navigation }: Props) {
+export default function HomeScreen({ navigation, selectedConfigName }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
 
-  const menuItems = [
-    { title: '📦 Launch Storage', screen: 'Storage' },
+  const authenticationItems: HomeScreenMenuItem[] = [
     {
-      title: '🌐 Launch Journey',
-      screen: 'Journey',
-      params: { journeyClient: loginClient },
+      title: 'DaVinci Flow',
+      subtitle: 'Test Davinci Authentication',
+      icon: 'vpn-key',
+      comingSoon: true,
     },
     {
-      title: '🌐 Launch Journey 2',
-      screen: 'Journey',
-      params: { journeyClient: loginClient2 },
+      title: 'Journey Flow',
+      subtitle: 'Test Journey Authentication',
+      icon: 'map',
+      screen: 'JourneyRoute',
     },
-    { title: '🧭 Launch Browser', screen: 'Browser' },
     {
-      title: '🧪 Logger Demo',
+      title: 'OIDC Login',
+      subtitle: 'OpenID Connect Flow',
+      icon: 'lock',
+      screen: 'Oidc',
+    },
+  ];
+
+  const userManagementItems: HomeScreenMenuItem[] = [
+    {
+      title: 'Access Token',
+      subtitle: 'View current token',
+      icon: 'token',
+      screen: 'Token',
+    },
+    {
+      title: 'User Profile',
+      subtitle: 'View user details',
+      icon: 'account-circle',
+      screen: 'UserProfile',
+    },
+    {
+      title: 'Device Management',
+      subtitle: 'Manage registered devices',
+      icon: 'device-hub',
+      comingSoon: true,
+    },
+    {
+      title: 'Logout',
+      subtitle: 'End session',
+      icon: 'logout',
+      screen: 'Logout',
+    },
+  ];
+
+  const developerToolsItems: HomeScreenMenuItem[] = [
+    {
+      title: 'Browser',
+      subtitle: 'Test browser flow',
+      icon: 'language',
+      screen: 'Browser',
+    },
+    {
+      title: 'Logger',
+      subtitle: 'Test logging',
+      icon: 'logo-dev',
       screen: 'Logger',
     },
     {
-      title: '🔐 Launch OIDC',
-      subtitle: 'OpenID Connect Flow',
-      icon: '🔒',
-      screen: 'Oidc',
+      title: 'Storage',
+      subtitle: 'Test storage',
+      icon: 'storage',
+      screen: 'Storage',
     },
     {
-      title: '📲 Device Profile',
+      title: 'Device Profile',
+      subtitle: 'Collect device profile data',
+      icon: 'phone-android',
       screen: 'DeviceProfile',
     },
   ];
 
-  const formatDeviceIdError = (err: unknown): string => {
-    const errorPayload = err as DeviceIdError;
-    const errorDetails = {
-      type: errorPayload?.type ?? 'unknown_error',
-      error: errorPayload?.error ?? 'DEVICE_ID_ERROR',
-      message: errorPayload?.message ?? 'Failed to load device ID.',
-      code: errorPayload?.code,
-      status: errorPayload?.status,
-    };
-    return JSON.stringify(errorDetails, null, 2);
+  const renderMenuItem = (item: HomeScreenMenuItem): React.ReactElement => {
+    const isDisabled = item.comingSoon || !item.screen;
+
+    return (
+      <HomeMenuRow
+        key={item.title}
+        title={item.title}
+        subtitle={item.subtitle}
+        icon={item.icon}
+        comingSoon={item.comingSoon}
+        disabled={isDisabled}
+        onPress={() => navigation.navigate(item.screen as keyof RootStackParamList)}
+      />
+    );
   };
 
   useEffect(() => {
@@ -95,46 +166,56 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={commonStyles.homeHeaderSubtitle}>Version 1.0</Text>
       </View>
 
-      <View style={commonStyles.homeList}>
-        {menuItems.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={commonStyles.homeRow}
-            onPress={() => navigation.navigate(item.screen as any, item.params)}
-          >
-            <View style={commonStyles.homeRowContent}>
-              {item.subtitle ? (
-                <View style={commonStyles.homeRowCompact}>
-                  <Text style={commonStyles.homeRowIcon}>{item.icon}</Text>
-                  <View style={commonStyles.homeRowTextStack}>
-                    <Text style={commonStyles.homeRowTitle}>OIDC Login</Text>
-                    <Text style={commonStyles.homeRowSubtitle}>
-                      {item.subtitle}
-                    </Text>
-                  </View>
-                </View>
+      <ScrollView
+        style={commonStyles.homeBody}
+        contentContainerStyle={commonStyles.homeBodyContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={commonStyles.homeList}>
+          <Text style={commonStyles.homeSectionTitle}>AUTHENTICATION</Text>
+          {authenticationItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>USER MANAGEMENT</Text>
+          {userManagementItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>DEVELOPER TOOLS</Text>
+          {developerToolsItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>SETUP</Text>
+          <HomeMenuRow
+            title="Configuration"
+            subtitle="Edit Configuration"
+            icon="settings"
+            onPress={() => navigation.navigate('Configuration')}
+          />
+
+          <View style={commonStyles.homeFooter}>
+            <View style={commonStyles.deviceIdCard}>
+              <View style={commonStyles.deviceIdHeaderRow}>
+                <MaterialIcon name="smartphone" size={30} color={colors.iconBody} />
+                <Text style={commonStyles.deviceIdTitle}>Device ID</Text>
+                {!deviceIdError ? (
+                  <Text style={commonStyles.deviceIdSecuredText}>Secured</Text>
+                ) : null}
+              </View>
+              <View style={commonStyles.deviceIdDivider} />
+              {deviceIdError ? (
+                <Text style={commonStyles.deviceIdErrorText}>{deviceIdError}</Text>
               ) : (
-                <Text style={commonStyles.homeRowText}>{item.title}</Text>
+                <Text style={commonStyles.deviceIdValueText}>
+                  {deviceId ?? 'Loading...'}
+                </Text>
               )}
             </View>
-            <Text style={commonStyles.homeRowChevron}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={commonStyles.homeFooter}>
-        <Text style={commonStyles.homeFooterText}>
-          React Native Unified SDK
-        </Text>
-        <Text style={commonStyles.devideIdText}>
-          Device Id: {deviceId ?? 'Loading...'}
-        </Text>
-        {deviceIdError && (
-          <Text style={commonStyles.devideIdText}>
-            Device Id Error: {deviceIdError}
-          </Text>
-        )}
-      </View>
+            {deviceIdError ? (
+              <Text style={commonStyles.deviceIdText}>
+                Device ID could not be resolved.
+              </Text>
+            ) : null}
+            <Text style={commonStyles.homeFooterText}>React Native Unified SDK</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }

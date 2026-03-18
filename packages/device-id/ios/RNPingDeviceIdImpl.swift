@@ -15,6 +15,7 @@ import RNPingCore
 public class RNPingDeviceIdImpl: NSObject {
 
   /// Shared singleton instance.
+  @MainActor
   @objc public static let shared = RNPingDeviceIdImpl()
 
   /// Stable error codes emitted by the Device ID module.
@@ -67,11 +68,12 @@ public class RNPingDeviceIdImpl: NSObject {
   ///   - resolve: Promise resolver for the identifier string.
   ///   - rejecter: Promise rejecter for errors.
   @objc
+  @MainActor
   public func getDefaultDeviceId(
     _ resolve: @escaping RCTPromiseResolveBlock,
     rejecter rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    Task {
+    Task { @MainActor in
       switch Self.defaultIdentifierResult {
       case .success(let identifier):
         do {

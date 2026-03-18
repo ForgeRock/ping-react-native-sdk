@@ -131,7 +131,7 @@ export type {
   BrowserError,
   BrowserErrorCode,
   BrowserLoggerOptions,
-  IOSBrowserOpenOptions,
   BrowserOpenOptions,
   BrowserResult,
 } from './types';
+export type { IOSBrowserOpenOptions } from '@ping-identity/rn-types';

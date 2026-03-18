@@ -11,7 +11,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.rncore.CoreRuntime
-import com.pingidentity.rnlogger.RNPingLoggerCommon
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.
@@ -44,8 +43,7 @@ object RNPingStorageCommon {
   fun registerSessionStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
-      val loggerId = map["loggerId"] as? String
-      RNPingLoggerCommon.applyLogger(loggerId)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       val storageConfig = buildStorageConfig(map)
       sessionConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
@@ -68,8 +66,7 @@ object RNPingStorageCommon {
   fun registerOidcStorage(config: ReadableMap): String {
     return try {
       val map = config.toHashMap()
-      val loggerId = map["loggerId"] as? String
-      RNPingLoggerCommon.applyLogger(loggerId)
+      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       val storageConfig = buildStorageConfig(map)
       oidcConfigRegistry.register(storageConfig)
     } catch (e: Exception) {

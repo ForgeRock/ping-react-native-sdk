@@ -4,291 +4,221 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
- 
+
 import Foundation
-import PingJourney
-import PingLogger
-import PingOrchestrate
-import React
-import RNPingCore
 
-@available(iOS 16.0.0, *) // Keeping 16 for POC
-@objc(RNPingJourneyImpl)
-public class RNPingJourneyImpl: NSObject {
+/// Swift entry point used by the Obj-C++ Journey bridge.
+@objcMembers
+public final class RNPingJourneyImpl: NSObject {
+  /// Promise resolver for Journey identifiers.
+  public typealias JourneyIdResolver = @Sendable (String) -> Void
+  /// Promise resolver for Journey node payloads.
+  public typealias NodeResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for optional Journey session payloads.
+  public typealias SessionResolver = @Sendable (NSDictionary?) -> Void
+  /// Promise resolver for boolean results.
+  public typealias BoolResolver = @Sendable (Bool) -> Void
+  /// Promise resolver for void results.
+  public typealias VoidResolver = @Sendable () -> Void
+  /// Promise rejecter closure type used by the Journey Swift bridge.
+  public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
-  // Singleton instance
-  @objc public static let shared = RNPingJourneyImpl()
-  // Private initializer to enforce singleton
-  @objc private override init() {
+  /// Shared singleton instance.
+  @MainActor
+  public static let shared = RNPingJourneyImpl()
+
+  private override init() {
     super.init()
-    /// TODO: Remove once journey module matures and types package is available.
-    CoreRuntime.journeyCallbackResolver = { [weak self] journeyId in
-      guard let node = self?.continueNodeMap[journeyId] else {
-        return nil
-      }
-      return node.callbacks
-    }
   }
 
-  // Local registry of Journey instances keyed by generated id
-  private var journeyMap: [String: Journey] = [:]
-  // Store nodes per journey instance
-  private var nodeMap: [String: Node] = [:]
-  // Store ContinueNode instances for handling callbacks and progression
-  /// TODO: Remove once journey module matures and types package is available.
-  private var continueNodeMap: [String: ContinueNode] = [:]
-  /// Clear the current node when the Journey node flow completes.
-  /// TODO: Remove once journey module matures and types package is available.
-  private func clearIfFinished(_ journeyId: String, node: Node) async {
-    if node is SuccessNode || node is FailureNode || node is ErrorNode {
-      nodeMap.removeValue(forKey: journeyId)
-      continueNodeMap.removeValue(forKey: journeyId)
-    }
+  /// Cleans up native resources when the bridge is invalidated.
+  @objc
+  public func invalidate() {
+    RNPingJourneyCommon.cleanup()
   }
 
-  // MARK: - Node Serialization 
-  private func serializeNode(_ node: Node) -> NSDictionary {
-    var dict: [String: Any] = ["id": UUID().uuidString]
-    switch node {
-    case let c as ContinueNode:
-      dict["type"] = "ContinueNode"
-      dict["callbacks"] = c.callbacks.map { cb in
-        ["type": String(describing: type(of: cb)),
-          "prompt": (cb as? TextOutputCallback)?.message ?? "",
-         "value": NSNull()]
-      }
-    case let e as ErrorNode:
-      dict["type"] = "ErrorNode"; dict["message"] = e.message
-    case let f as FailureNode:
-      dict["type"] = "FailureNode"; dict["cause"] = f.cause.localizedDescription
-    case let s as SuccessNode:
-      dict["type"] = "SuccessNode"; dict["session"] = s.session
-    default: dict["type"] = "Unknown"
-    }
-    return dict as NSDictionary
-  }
-
-  // MARK: - Configure
+  /// Configures the native Journey runtime for one client instance.
+  ///
+  /// - Parameters:
+  ///   - config: Journey configuration payload from JS.
+  ///   - resolver: Promise resolver called with Journey id.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(configureJourney:resolver:rejecter:)
   public func configureJourney(
     _ config: NSDictionary,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    resolver: @escaping JourneyIdResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    print("RNPingJourney: configureJourney called with \(config)")
-    guard let serverUrl = config["serverUrl"] as? String else {
-      let error = NSError(
-        domain: "RNPingJourney",
-        code: 400,
-        userInfo: [NSLocalizedDescriptionKey: "Missing serverUrl"]
-      )
-      reject("E_MISSING_SERVER_URL", "Missing serverUrl", error)
-      return
-    }
-
-    let realm = config["realm"] as? String
-    let cookieName = config["cookie"] as? String
-    let clientId = config["clientId"] as? String
-    let discoveryEndpoint = config["discoveryEndpoint"] as? String
-    let redirectUri = config["redirectUri"] as? String
-    let scopes = config["scopes"] as? [String] ?? ["openid", "email", "profile"]
-
-    // Create Journey instance 
-    let journey = Journey.createJourney { j in
-      j.serverUrl = serverUrl
-      if let realm = realm { j.realm = realm }
-      if let cookie = cookieName { j.cookie = cookie }
-      j.timeout = 30
-      j.logger = LogManager.standard
-
-      // Optional OIDC block
-      if let clientId = clientId,
-        let discoveryEndpoint = discoveryEndpoint,
-        let redirectUri = redirectUri
-      {
-        j.module(PingJourney.OidcModule.config) { oidc in
-          oidc.clientId = clientId
-          oidc.discoveryEndpoint = discoveryEndpoint
-          oidc.redirectUri = redirectUri
-          oidc.scopes = Set(scopes)
-        }
-      }
-    }
-
-    // Register instance locally
-    let journeyId = UUID().uuidString
-    journeyMap[journeyId] = journey
-
-    Task {
-      print("RNPingJourney: Journey registered → \(journeyId)")
-      resolve(journeyId)
-    }
+    RNPingJourneyCommon.configureJourney(config, resolver: resolver, rejecter: rejecter)
   }
 
-  // MARK: - Start Journey
+  /// Starts Journey execution by tree name.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - journeyName: Journey/tree name.
+  ///   - options: Optional start flags.
+  ///   - resolver: Promise resolver called with first node payload.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(start:journeyName:options:resolver:rejecter:)
   public func start(
     _ journeyId: String,
     journeyName: String,
     options: NSDictionary?,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    guard let journey = journeyMap[journeyId] else {
-      reject("NOT_CONFIGURED", "Journey not found for id \(journeyId)", nil)
-      return
-    }
-
     let forceAuth = options?["forceAuth"] as? Bool ?? false
     let noSession = options?["noSession"] as? Bool ?? false
-
-    Task {
-      let node = await journey.start(journeyName) { $0.forceAuth = forceAuth; $0.noSession = noSession }
-      nodeMap[journeyId] = node
-      if let continueNode = node as? ContinueNode {
-        continueNodeMap[journeyId] = continueNode
-      } else {
-        continueNodeMap.removeValue(forKey: journeyId)
-      }
-      await clearIfFinished(journeyId, node: node)
-      resolve(self.serializeNode(node))
-    }
+    RNPingJourneyCommon.start(
+      journeyId,
+      journeyName: journeyName,
+      forceAuth: forceAuth,
+      noSession: noSession,
+      resolver: resolver,
+      rejecter: rejecter
+    )
   }
 
-  // MARK: - Next
+  /// Applies callback input and advances Journey to the next node.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - nodeId: Legacy node id argument kept for bridge compatibility.
+  ///   - input: Callback mutation payload.
+  ///   - resolver: Promise resolver called with next node payload.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(next:nodeId:input:resolver:rejecter:)
   public func next(
-    _ journeyId: NSString,
-    nodeId: NSString,
+    _ journeyId: String,
+    nodeId: String,
     input: NSDictionary,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let id = journeyId as String
-
-    // Get the current node for this journey
-    guard let current = continueNodeMap[id] else {
-      reject("NO_ACTIVE_JOURNEY", "No active ContinueNode for journeyId=\(id)", nil)
-      return
-    }
-    if let callbacks = input["callbacks"] as? [[String: Any]] {
-      for cb in callbacks {
-        switch cb["type"] as? String {
-        case "NameCallback":
-          (current.callbacks.first { $0 is NameCallback } as? NameCallback)?
-            .name = cb["value"] as? String ?? ""
-        case "PasswordCallback":
-          (current.callbacks.first { $0 is PasswordCallback } as? PasswordCallback)?
-            .password = cb["value"] as? String ?? ""
-        default:
-          break
-        }
-      }
-    }
-
-    Task {
-      let nextNode = await current.next()
-      nodeMap[id] = nextNode
-      if let continueNode = nextNode as? ContinueNode {
-        continueNodeMap[id] = continueNode
-      } else {
-        continueNodeMap.removeValue(forKey: id)
-      }
-      await clearIfFinished(id, node: nextNode)
-      resolve(self.serializeNode(nextNode))
-    }
+    _ = nodeId
+    RNPingJourneyCommon.next(journeyId, input: input, resolver: resolver, rejecter: rejecter)
   }
 
-  // MARK: - Resume
+  /// Resumes a suspended Journey flow.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - uri: Resume URI from redirect/magic-link flow.
+  ///   - resolver: Promise resolver called with resumed node payload.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(resume:uri:resolver:rejecter:)
   public func resume(
-    _ journeyId: NSString,
-    uri: NSString,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    _ journeyId: String,
+    uri: String,
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    let id = journeyId as String
-
-    guard let journey = journeyMap[id] else {
-      reject("NOT_CONFIGURED", "Journey not configured for id=\(id)", nil)
-      return
-    }
-
-    guard let resumeUrl = URL(string: uri as String) else {
-      reject("422", "Invalid resume URI", nil)
-      return
-    }
-
-    Task {
-      let node = await journey.resume(resumeUrl)
-      nodeMap[id] = node
-      if let continueNode = node as? ContinueNode {
-        continueNodeMap[id] = continueNode
-      } else {
-        continueNodeMap.removeValue(forKey: id)
-      }
-
-      await clearIfFinished(id, node: node)
-      resolve(self.serializeNode(node))
-    }
+    RNPingJourneyCommon.resume(journeyId, uri: uri, resolver: resolver, rejecter: rejecter)
   }
 
-  // MARK: - Get Session
+  /// Resolves session details for an active Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with session payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(getSession:resolver:rejecter:)
   public func getSession(
     _ journeyId: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    guard let journey = journeyMap[journeyId] else {
-      reject("NOT_CONFIGURED", "Journey not found", nil)
-      return
-    }
-
-    Task {
-      let user = await journey.journeyUser()
-      let token = await user?.token()
-
-      switch token {
-      case .success(let t):
-        resolve(["accessToken": t.accessToken])
-      case .failure(let err):
-        reject("NO_SESSION", err.localizedDescription, err)
-      case .none:
-        resolve(nil)
-      }
-    }
+    RNPingJourneyCommon.getSession(journeyId, resolver: resolver, rejecter: rejecter)
   }
 
-  // MARK: - Logout
+  /// Refreshes session details for an active Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with refreshed session payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(refresh:resolver:rejecter:)
+  public func refresh(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.refresh(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Revokes active Journey user token set.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with `true` when revoke succeeds.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(revoke:resolver:rejecter:)
+  public func revoke(
+    _ journeyId: String,
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.revoke(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolves userinfo for an active Journey user.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with userinfo payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(userinfo:resolver:rejecter:)
+  public func userinfo(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.userinfo(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolves SSO token payload for an active Journey session.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with SSO token payload or `nil`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(ssoToken:resolver:rejecter:)
+  public func ssoToken(
+    _ journeyId: String,
+    resolver: @escaping SessionResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingJourneyCommon.ssoToken(journeyId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Logs out active Journey user and clears node state.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called with `true` on success.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc(logout:resolver:rejecter:)
   public func logout(
     _ journeyId: String,
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+    resolver: @escaping BoolResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    guard let journey = journeyMap[journeyId] else {
-      reject("NOT_CONFIGURED", "Journey not found", nil)
-      return
-    }
-    Task {
-      let user = await journey.journeyUser()
-      await user?.logout()
-      nodeMap.removeValue(forKey: journeyId)
-      continueNodeMap.removeValue(forKey: journeyId)
-      resolve(true)
-    }
+    RNPingJourneyCommon.logout(journeyId, resolver: resolver, rejecter: rejecter)
   }
 
-  // MARK: - List Registered Storages
-  @objc
-  public func listRegisteredStoragesFromCore(
-    _ resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
+  /// Disposes one Journey client and clears associated native state.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - resolver: Promise resolver called when dispose completes.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(dispose:resolver:rejecter:)
+  public func dispose(
+    _ journeyId: String,
+    resolver: @escaping VoidResolver,
+    rejecter: @escaping PromiseRejecter
   ) {
-    Task {
-      //let ids = await StorageRegistry.shared.listIds()
-      resolve([""])
-    }
+    RNPingJourneyCommon.dispose(journeyId, resolver: resolver, rejecter: rejecter)
   }
 }

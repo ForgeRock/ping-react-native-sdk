@@ -9,7 +9,6 @@ import Foundation
 import PingDeviceProfile
 import PingLogger
 import RNPingCore
-import RNPingLogger
 
 /// Shared device profile collection logic for React Native iOS bridges.
 @objcMembers
@@ -37,23 +36,23 @@ public class RNPingDeviceProfileCommon: NSObject {
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     let nativeCollectors = buildCollectors(from: collectors, includeLocation: true)
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
 
     Task {
       do {
         if nativeCollectors.isEmpty {
-          resolver([:] as NSDictionary)
+          handlers.resolve([:] as NSDictionary)
           return
         }
 
         let payload = try await collectPayload(from: nativeCollectors)
-        resolver(NSDictionary(dictionary: payload))
+        handlers.resolve(NSDictionary(dictionary: payload))
       } catch {
-        let mapped = GenericError(
-          type: .internalError,
-          error: DeviceProfileErrorCode.collectError.rawValue,
-          message: "Failed to collect device profile: \(error.localizedDescription)"
+        handlers.reject(
+          code: DeviceProfileErrorCode.collectError.rawValue,
+          message: "Failed to collect device profile: \(error.localizedDescription)",
+          underlying: error as NSError
         )
-        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }
@@ -74,43 +73,53 @@ public class RNPingDeviceProfileCommon: NSObject {
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    let isLoggerConfigured = RNPingLoggerImpl.shared.applyLogger(loggerId)
     let locationRequested = collectors.contains("location")
-    let metadataCollectors = buildCollectors(from: collectors, includeLocation: false)
-    let metadataRequested = !metadataCollectors.isEmpty
+    let metadataRequested = !buildCollectors(from: collectors, includeLocation: false).isEmpty
+    let handlers = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
 
     Task {
+      let resolvedLogger = await resolveLoggerFromCore(loggerId)
       guard let callback = await resolveDeviceProfileCallback(journeyId) else {
-        let error = GenericError(
-          type: .stateError,
-          error: DeviceProfileErrorCode.callbackNotFound.rawValue,
-          message: "No active Device Profile callback found for journey \(journeyId)."
+        handlers.reject(
+          code: DeviceProfileErrorCode.callbackNotFound.rawValue,
+          message: "No active Device Profile callback found for journey \(journeyId).",
+          underlying: nil
         )
-        reject(error, rejecter: rejecter)
         return
       }
 
       let result = await callback.collect { config in
-        if isLoggerConfigured {
-          config.logger = LogManager.logger
-        }
+        config.logger = resolvedLogger ?? LogManager.none
         config.metadata = callback.metadata && metadataRequested
         config.location = callback.location && locationRequested
-        config.collectors { metadataCollectors }
+        config.collectors { buildCollectors(from: collectors, includeLocation: false) }
       }
 
       switch result {
       case .success:
-        resolver(createJourneyResultPayload(type: "success"))
+        handlers.resolve(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        let mapped = GenericError(
-          type: .internalError,
-          error: DeviceProfileErrorCode.collectError.rawValue,
-          message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)"
+        handlers.reject(
+          code: DeviceProfileErrorCode.collectError.rawValue,
+          message: "Failed to collect device profile for journey \(journeyId): \(error.localizedDescription)",
+          underlying: error as NSError
         )
-        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
       }
     }
+  }
+
+  /// Resolve a native logger from the shared Core logger registry.
+  ///
+  /// - Parameter id: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or nil when missing/invalid.
+  private static func resolveLoggerFromCore(_ id: String?) async -> Logger? {
+    guard let id, !id.isEmpty else {
+      return nil
+    }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? Logger
   }
 
   /// Builds native DeviceProfile collectors from JS identifiers.

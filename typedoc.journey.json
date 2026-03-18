@@ -1,0 +1,12 @@
+{
+  "entryPoints": ["packages/journey/src/index.tsx"],
+  "out": "docs/journey",
+  "tsconfig": "packages/journey/tsconfig.json",
+  "exclude": [
+    "**/__tests__/**",
+    "packages/journey/lib/**"
+  ],
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "skipErrorChecking": true
+}

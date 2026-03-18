@@ -1,7 +1,9 @@
 {
-  "name": "@react-native-pingidentity/journey",
+  "name": "@ping-identity/rn-journey",
   "version": "0.1.0",
-  "description": "Ping Identity Journey TurboModule for React Native",
+  "description": "Ping Identity Journey for React Native",
+  "homepage": "https://www.pingidentity.com/",
+  "author": "Ping Identity",
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -14,24 +16,21 @@
   "scripts": {
     "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
     "build": "bob build",
-    "clean": "rimraf lib",
-    "test": "jest --config jest.config.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
-    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
+    "test": "jest",
+    "clean": "rimraf lib"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^0.1.0"
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
   },
   "peerDependencies": {
-    "@ping-identity/rn-storage": "*",
     "react": "*",
     "react-native": "*"
   },
   "devDependencies": {
-    "@ping-identity/rn-core": "^0.1.0",
-    "@ping-identity/rn-storage": "^0.1.0",
+    "@testing-library/react-native": "^13.3.3",
     "react-native-builder-bob": "^0.40.14",
+    "react-test-renderer": "19.1.0",
     "typescript": "^5.9.2"
   },
   "license": "MIT",
@@ -40,7 +39,7 @@
     "type": "modules",
     "jsSrcsDir": "src",
     "android": {
-      "javaPackageName": "com.reactnativepingidentity.journey"
+      "javaPackageName": "com.pingidentity.rnjourney"
     }
   },
   "react-native-builder-bob": {

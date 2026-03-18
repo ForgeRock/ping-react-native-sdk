@@ -58,17 +58,6 @@ const loadModule = async ({
     })
   );
 
-  jest.doMock('@ping-identity/rn-logger', () => ({
-    logger: jest.fn(() => ({
-      nativeHandle: { id: 'native-logger-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    })),
-  }));
-
   return require('../index');
 };
 
@@ -109,7 +98,7 @@ describe('device-profile package', () => {
     expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
       'journey-123',
       collectors,
-      'native-logger-id'
+      undefined
     );
     expect(result).toEqual({ type: 'success' });
   });

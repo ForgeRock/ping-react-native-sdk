@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "react-native-pingidentity",
+  "name": "ping-identity",
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
     "test:browser": "yarn workspace @ping-identity/rn-browser test",
+    "test:journey": "yarn workspace @ping-identity/rn-journey test",
     "test:oidc": "yarn workspace @ping-identity/rn-oidc test",
     "test:logger": "yarn workspace @ping-identity/rn-logger test",
     "test:storage": "yarn workspace @ping-identity/rn-storage run test",
@@ -24,6 +25,8 @@
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
     "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",
+    "storage:test": "yarn workspace @ping-identity/rn-storage run test",
+    "docs:journey": "typedoc --options typedoc.journey.json",
     "prettier": "turbo run prettier",
     "typecheck": "turbo run typecheck"
   },

@@ -6,7 +6,7 @@
 */
 
 import type { GenericError } from '@ping-identity/rn-types';
-import type { LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-logger';
+import type { LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-types';
 /**
  * Supported device profile collectors.
  *

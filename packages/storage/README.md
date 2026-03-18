@@ -27,6 +27,16 @@ yarn add @ping-identity/rn-storage
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
+```
+
+If you install the logger package, you can pass `StorageLoggerOptions` to storage APIs for
+JavaScript-side logging. Native storage logger application is not enabled yet; `loggerId` remains
+bridge-only for now.
+
 ## How to use the SDK
 
 ### Session and OIDC helpers
@@ -69,21 +79,22 @@ const oidcStorage: OidcStorage = configureOidcStorage({
 ```
 
 Notes:
-- `configureSessionStorage` / `configureOidcStorage` return a normalized config
-  with an `id` you can pass into native-backed modules that accept storage handles.
+- `configureSessionStorage` / `configureOidcStorage` return opaque storage handles.
+  Handle objects include `id` and `kind` and can be passed into native-backed modules.
 - Android uses encrypted storage by default; `android.keyAlias` and other
   `android` options (including `fileName`, `strongBoxPreferred`) are optional.
 - iOS uses Keychain storage and supports `ios.account` (Keychain account)
   and `ios.encryptor` (true uses an Encryptor, false uses NoEncryptor).
 - `android.cacheStrategy` controls how the SDK caches data when native storage
   is unavailable.
+- `StorageLoggerOptions` / `loggerId` are currently bridge-only for storage registration.
+  Native storage logger application is planned and tracked as a TODO in both iOS and Android implementations.
 
 ### StorageConfig type
 
-You can import `StorageConfig` to type storage configuration objects that can be
-passed to `configureSessionStorage`/`configureOidcStorage` or reused by modules
-that accept inline storage configuration. The configured outputs are branded
-as `SessionStorage` or `OidcStorage` for type safety.
+You can import `StorageConfig` to type the input passed to
+`configureSessionStorage` / `configureOidcStorage`. The configured outputs are
+branded as `SessionStorage` or `OidcStorage` for type safety.
 
 ```ts
 import type { OidcStorage, StorageConfig } from '@ping-identity/rn-storage';
@@ -103,14 +114,25 @@ const oidcStorage: OidcStorage = configureOidcStorage(oidcCfg);
 
 ### Journey module usage
 
-The Journey module will accept a storage configuration inline in a future release.
-Because the native storage fields differ between Android and iOS, pass the normalized
-config fields explicitly so the same JS code works on both platforms:
+Pass the storage handle returned by `configureSessionStorage` or
+`configureOidcStorage` directly into Journey config:
 
 ```ts
-import type { OidcStorage } from '@ping-identity/rn-storage';
+import {
+  configureOidcStorage,
+  configureSessionStorage,
+  type OidcStorage,
+} from '@ping-identity/rn-storage';
+import { createJourneyClient } from '@ping-identity/rn-journey';
 
-const oidcConfig: OidcStorage = configureOidcStorage({
+const sessionStorage = configureSessionStorage({
+  android: {
+    keyAlias: 'ping.session',
+    fileName: 'ping_session_store',
+  },
+});
+
+const oidcStorage: OidcStorage = configureOidcStorage({
   // Android-only fields
   android: {
     keyAlias: 'ping.oidc',
@@ -123,24 +145,14 @@ const oidcConfig: OidcStorage = configureOidcStorage({
   },
 });
 
-const journey = configureJourney({
+const journeyClient = createJourneyClient({
+  serverUrl: 'https://example.com/am',
   modules: {
+    session: {
+      storage: sessionStorage,
+    },
     oidc: {
-      storage: {
-        // Android fields (ignored on iOS)
-        android: {
-          keyAlias: oidcConfig.android?.keyAlias,
-          fileName: oidcConfig.android?.fileName,
-          strongBoxPreferred: oidcConfig.android?.strongBoxPreferred,
-          cacheStrategy: oidcConfig.android?.cacheStrategy,
-        },
-        // iOS fields (ignored on Android)
-        ios: {
-          account: oidcConfig.ios?.account,
-          encryptor: oidcConfig.ios?.encryptor,
-          cacheable: oidcConfig.ios?.cacheable,
-        },
-      },
+      storage: oidcStorage,
     },
   },
 });

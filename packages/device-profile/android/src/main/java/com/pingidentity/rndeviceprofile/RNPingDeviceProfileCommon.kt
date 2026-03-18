@@ -24,13 +24,14 @@ import com.pingidentity.device.profile.collector.PlatformCollector
 import com.pingidentity.device.profile.collector.TelephonyCollector
 import com.pingidentity.device.profile.collector.collect
 import com.pingidentity.logger.Logger
+import com.pingidentity.logger.NONE
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
+import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.utils.JsonBridgeMapper
-import com.pingidentity.rnlogger.RNPingLoggerCommon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,6 +50,21 @@ object RNPingDeviceProfileCommon {
 
   internal var locationServicesClassResolver: (String) -> java.lang.Class<*> =
     { java.lang.Class.forName(it) }
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) {
+      return null
+    }
+
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return handle.nativeLogger as? Logger
+  }
 
   /**
    * Validates that location services are available if the location collector is requested.
@@ -109,7 +125,11 @@ object RNPingDeviceProfileCommon {
           deviceCollectors.collect()
         }
         Log.d("Device Profile", "metadata collection succeeded")
-        promise.resolve(JsonBridgeMapper.encodeJsonElement(jsonElement))
+        val bridgePayload = when (jsonElement) {
+          is JsonObject -> JsonBridgeMapper.encodeJsonObject(jsonElement)
+          else -> JsonBridgeMapper.encodeJsonElement(jsonElement)
+        }
+        promise.resolve(bridgePayload)
       } catch (e: Throwable) {
         Log.e("Device Profile", "metadata collection failed", e)
         promise.reject(
@@ -139,7 +159,7 @@ object RNPingDeviceProfileCommon {
     loggerId: String?,
     promise: Promise
   ) {
-    val isLoggerConfigured = RNPingLoggerCommon.applyLogger(loggerId)
+    val resolvedLogger = resolveLoggerFromCore(loggerId)
     val collectorTypes = readCollectors(collectorNames)
 
     if (!validateLocationAvailability(collectorTypes, promise)) {
@@ -166,9 +186,7 @@ object RNPingDeviceProfileCommon {
         }
 
         val result = callback.collect {
-          if (isLoggerConfigured) {
-            logger = Logger.logger
-          }
+          logger = resolvedLogger ?: Logger.NONE
           collectors {
             addAll(metadataCollectors)
           }

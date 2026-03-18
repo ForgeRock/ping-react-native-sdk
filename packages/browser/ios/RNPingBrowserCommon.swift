@@ -18,7 +18,6 @@ import RNPingLogger
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
-
   /// Stable error codes emitted by the Browser module.
   ///
   /// Keep these in sync with JS `BrowserErrorCode` and Android `BrowserErrorCodes`.
@@ -76,6 +75,7 @@ public class RNPingBrowserCommon: NSObject {
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     let loggerId = options["loggerId"] as? String
 
     // Validate required options before launching.
@@ -86,7 +86,7 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "callbackUrlScheme is required"
       )
-      reject(error, rejecter: rejecter)
+      handlers.reject(error)
       return
     }
 
@@ -96,7 +96,16 @@ public class RNPingBrowserCommon: NSObject {
         error: BrowserErrorCode.openError.rawValue,
         message: "Invalid URL"
       )
-      reject(error, rejecter: rejecter)
+      handlers.reject(error)
+      return
+    }
+    guard isSupportedHttpUrl(launchUrl) else {
+      let error = GenericError(
+        type: .argumentError,
+        error: BrowserErrorCode.openError.rawValue,
+        message: "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported."
+      )
+      handlers.reject(error)
       return
     }
 
@@ -134,8 +143,9 @@ public class RNPingBrowserCommon: NSObject {
       // } else {
       //   BrowserLauncher.logger = LogManager.none
       // }
-      // For now we only apply the logger to the SDK-wide LogManager.
-      _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
+      // TODO: Apply loggerId once Browser can support non-global logger wiring.
+      // Intentionally disabled for now to avoid SDK-wide logger side effects.
+      // _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
 
       do {
         let result = try await browserLauncher.launch(
@@ -146,13 +156,13 @@ public class RNPingBrowserCommon: NSObject {
           callbackURLScheme: callbackScheme
         )
 
-        resolver([
+        handlers.resolve([
           "type": "success",
           "url": result.absoluteString
-        ])
+        ] as NSDictionary)
       } catch let error as BrowserError {
         if case .externalUserAgentCancelled = error {
-          resolver(["type": "cancel"])
+          handlers.resolve(["type": "cancel"] as NSDictionary)
         } else {
           // Browser errors are mapped to the shared native error contract.
           let mapped = GenericError(
@@ -160,11 +170,11 @@ public class RNPingBrowserCommon: NSObject {
             error: BrowserErrorCode.openError.rawValue,
             message: error.localizedDescription
           )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+          handlers.reject(mapped, underlying: error as NSError)
         }
       } catch let error as ASWebAuthenticationSessionError {
         if error.code == .canceledLogin {
-          resolver(["type": "cancel"])
+          handlers.resolve(["type": "cancel"] as NSDictionary)
         } else {
           let mapped = GenericError(
             type: .internalError,
@@ -172,7 +182,7 @@ public class RNPingBrowserCommon: NSObject {
             message: error.localizedDescription,
             code: error.code.rawValue
           )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+          handlers.reject(mapped, underlying: error as NSError)
         }
       } catch {
         let mapped = GenericError(
@@ -180,8 +190,19 @@ public class RNPingBrowserCommon: NSObject {
           error: BrowserErrorCode.openError.rawValue,
           message: error.localizedDescription
         )
-        reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+        handlers.reject(mapped, underlying: error as NSError)
       }
     }
+  }
+
+  /// Validates that a URL uses an HTTP(S) scheme.
+  ///
+  /// - Parameter url: URL provided from JavaScript.
+  /// - Returns: `true` when the URL scheme is `http` or `https`.
+  private static func isSupportedHttpUrl(_ url: URL) -> Bool {
+    guard let scheme = url.scheme?.lowercased() else {
+      return false
+    }
+    return scheme == "http" || scheme == "https"
   }
 }

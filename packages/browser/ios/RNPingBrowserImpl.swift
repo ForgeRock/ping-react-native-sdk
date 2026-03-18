@@ -11,6 +11,7 @@
 import Foundation
 
 /// Swift entry point used by the Obj-C++ bridges.
+@MainActor
 @objcMembers
 public class RNPingBrowserImpl: NSObject {
 

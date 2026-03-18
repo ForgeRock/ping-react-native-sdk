@@ -8,6 +8,16 @@
 import { StyleSheet, Platform } from 'react-native';
 import { colors } from './colors';
 
+/**
+ * Shared control tokens used by interactive inputs.
+ */
+export const commonControlTokens = {
+  primarySwitchTrackColor: {
+    false: colors.border,
+    true: colors.primary,
+  },
+} as const;
+
 export const commonStyles = StyleSheet.create({
   // ===== Base Containers =====
   container: {
@@ -23,7 +33,7 @@ export const commonStyles = StyleSheet.create({
     width: '100%',
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOpacity: 0.04,
     shadowRadius: 1,
     elevation: 1,
@@ -70,7 +80,7 @@ export const commonStyles = StyleSheet.create({
     marginTop: 6,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: '600',
     fontSize: 15,
   },
@@ -78,6 +88,17 @@ export const commonStyles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
     fontSize: 15,
+  },
+  buttonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  buttonGridItem: {
+    width: '48%',
+    marginTop: 0,
+    marginBottom: 10,
   },
 
   // ===== Text =====
@@ -112,86 +133,147 @@ export const commonStyles = StyleSheet.create({
   codeText: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontSize: 12,
-    color: '#333',
+    color: colors.codeText,
+  },
+  payloadScrollContainer: {
+    width: '100%',
+    maxHeight: 220,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.payloadBorder,
+    backgroundColor: colors.payloadBackground,
+    overflow: 'hidden',
+  },
+  payloadScroll: {
+    width: '100%',
+  },
+  payloadScrollContent: {
+    padding: 10,
   },
 
   // ===== Home Screen Extensions =====
   homeContainer: {
-    flexGrow: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flex: 1,
+    backgroundColor: colors.homeBackground,
   },
   homeHeader: {
     width: '100%',
     backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 28,
+    paddingTop: 44,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   homeHeaderLogo: {
-    width: 190,
-    height: 64,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
-    marginBottom: 8,
+    marginBottom: 12,
+    borderRadius: 8,
   },
   homeHeaderTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.white,
+    letterSpacing: 0.5,
   },
   homeHeaderSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#FCECEC',
+    marginTop: 2,
+    fontSize: 14,
+    color: colors.homeHeaderSubtitle,
+  },
+  homeBody: {
+    flex: 1,
+  },
+  homeBodyContent: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 18,
+  },
+  homeSectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.homeSectionTitle,
+    letterSpacing: 0.8,
+    marginTop: 10,
+    marginBottom: 8,
   },
   homeList: {
     width: '100%',
-    paddingHorizontal: 20,
-    paddingTop: 16,
   },
   homeRow: {
     backgroundColor: colors.surface,
     width: '100%',
     alignSelf: 'center',
-    borderColor: colors.border,
-    borderWidth: 1,
+    borderColor: colors.homeRowBorder,
+    borderWidth: 1.2,
     paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginVertical: 8,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingHorizontal: 14,
+    marginVertical: 6,
+    borderRadius: 10,
+    shadowColor: colors.black,
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 1,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  homeRowDisabled: {
+    backgroundColor: colors.homeRowDisabledBackground,
+    borderColor: colors.homeRowDisabledBorder,
+    opacity: 1,
   },
   homeRowContent: {
     flex: 1,
-    paddingRight: 12,
-  },
-  homeRowCompact: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingRight: 10,
   },
-  homeRowIcon: {
-    fontSize: 22,
-    color: colors.primary,
-    marginRight: 12,
+  homeRowIconWrap: {
+    width: 42,
+    height: 42,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
   homeRowTextStack: {
+    flex: 1,
     flexDirection: 'column',
   },
+  homeRowTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   homeRowTitle: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.homeRowTitle,
+  },
+  homeRowTitleDisabled: {
+    color: colors.homeRowDisabledTitle,
+  },
+  homeComingSoonBadge: {
+    backgroundColor: colors.homeBadgeBackground,
+    borderColor: colors.homeBadgeBorder,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  homeComingSoonText: {
+    color: colors.primary,
+    fontSize: 9,
     fontWeight: '700',
-    color: colors.textDark,
+    letterSpacing: 0.3,
   },
   homeRowSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: colors.gray,
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.homeRowSubtitle,
+  },
+  homeRowSubtitleDisabled: {
+    color: colors.homeRowDisabledSubtitle,
   },
   homeRowText: {
     fontSize: 16,
@@ -199,24 +281,247 @@ export const commonStyles = StyleSheet.create({
     color: colors.textDark,
   },
   homeRowChevron: {
-    fontSize: 22,
-    color: colors.gray,
+    fontSize: 34,
+    color: colors.homeChevron,
+    lineHeight: 36,
+  },
+  homeRowChevronDisabled: {
+    color: colors.homeRowDisabledChevron,
   },
   homeFooter: {
-    marginTop: 24,
-    paddingBottom: 24,
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    width: '100%',
   },
   homeFooterText: {
     fontSize: 13,
-    color: colors.gray,
+    color: colors.homeFooterText,
     textAlign: 'center',
+    marginTop: 12,
   },
-  devideIdText:{
-    fontSize: 9,
-    color: colors.gray,
+  configScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  configScreenContent: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 28,
+  },
+  configSelectedLabel: {
+    color: colors.textDark,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  configSelectedValue: {
+    color: colors.primary,
+    fontSize: 26,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  configSection: {
+    marginBottom: 14,
+  },
+  configSectionTitle: {
+    color: colors.primary,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  configOptionRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 14,
+    paddingBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  configOptionTextBlock: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  configOptionName: {
+    color: colors.textDark,
+    fontSize: 21,
+    fontWeight: '500',
+  },
+  configOptionMeta: {
+    color: colors.textDark,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  deviceIdCard: {
+    width: '100%',
+    backgroundColor: colors.deviceIdCardBackground,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.deviceIdCardBorder,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 12,
+    shadowColor: colors.black,
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  deviceIdHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deviceIdTitle: {
+    marginLeft: 10,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.homeRowTitle,
+  },
+  deviceIdSecuredText: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: colors.brandGreen,
+    fontWeight: '600',
+  },
+  deviceIdDivider: {
+    marginTop: 12,
+    marginBottom: 10,
+    height: 1,
+    backgroundColor: colors.brandRed,
+  },
+  deviceIdValueText: {
+    color: colors.brandRed,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '500',
+    flexWrap: 'wrap',
+  },
+  deviceIdErrorText: {
+    color: colors.deviceIdError,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  deviceIdText:{
+    marginTop: 3,
+    fontSize: 11,
+    color: colors.homeFooterText,
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
 
+  // ===== User Profile Screen Styles =====
+  userProfileContainer: {
+    flex: 1,
+    backgroundColor: colors.homeBackground,
+  },
+  userProfileTabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.homeBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.tabDivider,
+  },
+  userProfileTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  userProfileTabActive: {
+    borderBottomColor: colors.primary,
+  },
+  userProfileTabText: {
+    fontSize: 17,
+    color: colors.tabText,
+    fontWeight: '500',
+  },
+  userProfileTabTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  userProfileBody: {
+    flex: 1,
+  },
+  userProfileBodyContent: {
+    padding: 16,
+  },
+  userProfileCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.userProfileCardBorder,
+    padding: 16,
+    shadowColor: colors.black,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  userProfileLoadingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.userProfileCardBorder,
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  userProfileEmptyCard: {
+    backgroundColor: colors.userProfileEmptyBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.userProfileEmptyBorder,
+    padding: 20,
+    shadowColor: colors.black,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  userProfileEmptyTitle: {
+    fontSize: 18,
+    color: colors.userProfileEmptyTitle,
+    textAlign: 'center',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  userProfileSubText: {
+    fontSize: 16,
+    color: colors.userProfileSubText,
+    lineHeight: 24,
+    marginBottom: 14,
+  },
+  userProfileErrorText: {
+    marginTop: 10,
+    color: colors.error,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  userProfileSection: {
+    marginTop: 14,
+  },
+  userProfileSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.userProfileSectionTitle,
+    marginBottom: 8,
+  },
+  userProfileInfoLine: {
+    fontSize: 18,
+    color: colors.userProfileInfoLine,
+    lineHeight: 30,
+    marginBottom: 2,
+  },
+  userProfileTokenLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.userProfileTokenLabel,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  userProfileCode: {
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 12,
+    color: colors.userProfileCodeText,
+  },
   // ===== Journey Screen Styles =====
   journeyContainer: {
     flexGrow: 1,
@@ -233,7 +538,7 @@ export const commonStyles = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 3,
@@ -263,7 +568,7 @@ export const commonStyles = StyleSheet.create({
   },
 
   journeyButtonSecondary: {
-    backgroundColor: '#0056b3',
+    backgroundColor: colors.blue,
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -271,7 +576,7 @@ export const commonStyles = StyleSheet.create({
   },
 
   journeyButtonText: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: '600',
     fontSize: 16,
   },
@@ -282,7 +587,7 @@ export const commonStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    backgroundColor: '#fafafa',
+    backgroundColor: colors.journeyInputBackground,
     marginBottom: 10,
   },
 

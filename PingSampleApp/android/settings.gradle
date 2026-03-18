@@ -12,11 +12,8 @@ rootProject.name = 'PingSampleApp'
 include ':app'
 includeBuild('../../node_modules/@react-native/gradle-plugin')
 
-// Core module is not autolinked as it's not a direct dependency
+// TODO REVISIT
 include(":ping-identity_rn-core")
 project(":ping-identity_rn-core").projectDir = file("../../packages/core/android")
 include(":ping-identity_rn-oidc")
 project(":ping-identity_rn-oidc").projectDir = file("../../packages/oidc/android")
-
-// include(":react-native-pingidentity-journey")
-// project(":react-native-pingidentity-journey").projectDir = file("../../packages/journey/android")

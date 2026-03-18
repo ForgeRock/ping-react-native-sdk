@@ -33,7 +33,14 @@ RCT_EXPORT_MODULE()
 - (void)getDefaultDeviceId:(RCTPromiseResolveBlock)resolve
                     reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] getDefaultDeviceId:resolve rejecter:reject];
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] getDefaultDeviceId:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] getDefaultDeviceId:resolve rejecter:reject];
+  });
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

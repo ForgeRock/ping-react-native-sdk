@@ -26,8 +26,9 @@ import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rnlogger.RNPingLoggerCommon
-import java.net.URL
 import java.net.MalformedURLException
+import java.net.URI
+import java.net.URL
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -153,7 +154,7 @@ object RNPingBrowserCommon {
 
   /**
    * Launch a browser session and resolve to success/cancel, or reject on error.
-   */
+  */
   @JvmStatic
   fun open(url: String, options: ReadableMap, promise: Promise) {
     val loggerId = if (options.hasKey("loggerId")) {
@@ -161,8 +162,24 @@ object RNPingBrowserCommon {
     } else {
       null
     }
-    val isLoggerConfigured = RNPingLoggerCommon.applyLogger(loggerId)
-    BrowserLauncher.logger = if (isLoggerConfigured) Logger.logger else Logger.NONE
+    val resolvedLogger = RNPingLoggerCommon.resolveLogger(loggerId)
+    BrowserLauncher.logger = resolvedLogger ?: Logger.NONE
+
+    val callbackUrlScheme = if (options.hasKey("callbackUrlScheme")) {
+      options.getString("callbackUrlScheme")
+    } else {
+      null
+    }
+    if (callbackUrlScheme.isNullOrBlank()) {
+      promise.reject(
+        GenericError(
+          type = ErrorType.ARGUMENT_ERROR,
+          error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+          message = "callbackUrlScheme is required"
+        )
+      )
+      return
+    }
 
     val redirectUri = if (options.hasKey("redirectUri")) {
       options.getString("redirectUri")
@@ -171,9 +188,23 @@ object RNPingBrowserCommon {
     }
 
     scope.launch {
+      val launchUrl = try {
+        parseLaunchUrl(url)
+      } catch (e: MalformedURLException) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.ARGUMENT_ERROR,
+            error = BrowserErrorCodes.BROWSER_OPEN_ERROR,
+            message = e.message
+          ),
+          e
+        )
+        return@launch
+      }
+
       val result = try {
         val resolvedRedirectUri = redirectUri?.toUri() ?: browserLauncher.redirectUri
-        browserLauncher.launch(URL(url), resolvedRedirectUri)
+        browserLauncher.launch(launchUrl, resolvedRedirectUri)
       } catch (e: Exception) {
         Result.failure(e)
       }
@@ -237,6 +268,41 @@ object RNPingBrowserCommon {
       true
     } catch (e: Exception) {
       false
+    }
+  }
+
+  /**
+   * Parse and validate launch URL from an untrusted input string.
+   *
+   * Enforces:
+   * - absolute URL with host
+   * - `http` or `https` scheme only
+   * - no embedded userinfo (credentials)
+   */
+  private fun parseLaunchUrl(rawUrl: String): URL {
+    val uri = try {
+      URI(rawUrl.trim())
+    } catch (e: Exception) {
+      throw MalformedURLException(e.message)
+    }
+
+    val scheme = uri.scheme?.lowercase()
+    if (scheme != "http" && scheme != "https") {
+      throw MalformedURLException("Unsupported URL scheme. Only HTTP and HTTPS URLs are supported.")
+    }
+
+    if (!uri.isAbsolute || uri.host.isNullOrBlank()) {
+      throw MalformedURLException("Invalid URL. Provide an absolute HTTP(S) URL with a host.")
+    }
+
+    if (!uri.userInfo.isNullOrBlank()) {
+      throw MalformedURLException("Unsupported URL format. User info is not allowed.")
+    }
+
+    return try {
+      uri.toURL()
+    } catch (e: Exception) {
+      throw MalformedURLException(e.message)
     }
   }
 

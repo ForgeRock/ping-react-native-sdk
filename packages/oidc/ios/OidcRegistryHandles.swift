@@ -13,7 +13,11 @@ import PingOidc
 import RNPingCore
 
 /// Handle for storing OIDC client instances.
-final class OidcClientHandle: NativeHandle {
+///
+/// - Note: `@unchecked Sendable` is used because upstream SDK reference types
+///   (`OidcClient`, `OidcUser`) are not declared `Sendable`. This handle is
+///   immutable (`let` properties only) after initialization.
+final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
   let payload: OidcClientPayload
   let client: OidcClient
   let user: OidcUser
@@ -23,10 +27,41 @@ final class OidcClientHandle: NativeHandle {
     self.client = client
     self.user = user
   }
+
+  var clientId: String { payload.clientId }
+  var discoveryEndpoint: String? { payload.discoveryEndpoint }
+  var redirectUri: String { payload.redirectUri }
+  var scopes: [String] { payload.scopes }
+  var openId: OidcOpenIdConfig? {
+    guard let openId = payload.openId else {
+      return nil
+    }
+    return OidcOpenIdConfig(
+      authorizationEndpoint: openId.authorizationEndpoint,
+      tokenEndpoint: openId.tokenEndpoint,
+      userinfoEndpoint: openId.userinfoEndpoint,
+      endSessionEndpoint: openId.endSessionEndpoint,
+      pingEndIdpSessionEndpoint: openId.pingEndIdpSessionEndpoint,
+      revocationEndpoint: openId.revocationEndpoint
+    )
+  }
+  var acrValues: String? { payload.acrValues }
+  var signOutRedirectUri: String? { payload.signOutRedirectUri }
+  var state: String? { payload.state }
+  var nonce: String? { payload.nonce }
+  var uiLocales: String? { payload.uiLocales }
+  var refreshThreshold: Int64? { payload.refreshThreshold }
+  var loginHint: String? { payload.loginHint }
+  var display: String? { payload.display }
+  var prompt: String? { payload.prompt }
+  var additionalParameters: [String: String] { payload.additionalParameters }
 }
 
 /// Handle for storing OIDC web client instances.
-final class OidcWebHandle: NativeHandle {
+///
+/// - Note: `@unchecked Sendable` is used because `OidcWeb` is an SDK
+///   reference type not declared `Sendable`. This wrapper remains immutable.
+final class OidcWebHandle: NativeHandle, @unchecked Sendable {
   let clientId: String
   let web: OidcWeb
 

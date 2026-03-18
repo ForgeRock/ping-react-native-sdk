@@ -5,13 +5,16 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError, Tokens } from '@ping-identity/rn-types';
-import type { IOSBrowserOpenOptions } from '@ping-identity/rn-browser';
 import type {
+  GenericError,
   LoggerInstance,
   NativeLoggerHandle,
-} from '@ping-identity/rn-logger';
-import type { OidcStorage } from '@ping-identity/rn-storage';
+  OidcStorageHandle,
+  OidcCoreConfig,
+  OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
+  IOSBrowserOpenOptions,
+  Tokens,
+} from '@ping-identity/rn-types';
 
 /**
  * Configuration for creating a native-backed OIDC client.
@@ -48,38 +51,7 @@ import type { OidcStorage } from '@ping-identity/rn-storage';
  * });
  * ```
  */
-export type OidcClientConfig = {
-  /**
-   * Client identifier registered with the OIDC provider.
-   */
-  clientId: string;
-
-  /**
-   * Discovery endpoint for the OIDC provider.
-   *
-   * @remarks
-   * Required unless `openId` is provided.
-   */
-  discoveryEndpoint?: string;
-
-  /**
-   * Optional OpenID configuration override.
-   *
-   * @remarks
-   * When provided, the native layer skips discovery and uses these endpoints directly.
-   */
-  openId?: OidcOpenIdConfiguration;
-
-  /**
-   * Redirect URI for authorization responses.
-   */
-  redirectUri: string;
-
-  /**
-   * OIDC scopes to request (e.g. `openid`, `profile`).
-   */
-  scopes: string[];
-
+export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
   /**
    * Optional storage configuration created by the storage module.
    *
@@ -87,7 +59,7 @@ export type OidcClientConfig = {
    * Pass the object returned by `configureOidcStorage`. The native layer uses
    * the embedded `id` to resolve the registered storage configuration.
    */
-  storage?: OidcStorage;
+  storage?: OidcStorageHandle;
 
   /**
    * iOS-only browser configuration for OIDC web login.
@@ -98,40 +70,10 @@ export type OidcClientConfig = {
   ios?: IOSBrowserOpenOptions;
 
   /**
-   * Optional authentication context class reference values.
-   */
-  acrValues?: string;
-
-  /**
-   * Optional sign-out redirect URI for end-session flows.
-   */
-  signOutRedirectUri?: string;
-
-  /**
-   * Optional state parameter for the authorization request.
-   */
-  state?: string;
-
-  /**
-   * Optional nonce parameter for the authorization request.
-   */
-  nonce?: string;
-
-  /**
-   * Optional UI locales parameter for the authorization request.
-   */
-  uiLocales?: string;
-
-  /**
-   * Optional token refresh threshold in seconds.
-   */
-  refreshThreshold?: number;
-
-  /**
    * Optional JavaScript logger instance.
    *
    * @remarks
-   * Provide a logger created with `logger()` to control JS log output.
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
 
@@ -139,60 +81,16 @@ export type OidcClientConfig = {
    * Optional native logger handle.
    *
    * @remarks
-   * Pass the handle returned by `configureLogger()` to reuse a native logger.
+   * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
    */
   nativeLogger?: NativeLoggerHandle;
 
-  /**
-   * Optional login hint for the authorization request.
-   */
-  loginHint?: string;
-
-  /**
-   * Optional display parameter for the authorization request.
-   */
-  display?: string;
-
-  /**
-   * Optional prompt parameter for the authorization request.
-   */
-  prompt?: string;
-
-  /**
-   * Additional provider-specific parameters.
-   */
-  additionalParameters?: Record<string, string>;
 };
 
 /**
  * OpenID configuration override for native clients.
  */
-export type OidcOpenIdConfiguration = {
-  /**
-   * Authorization endpoint URL.
-   */
-  authorizationEndpoint: string;
-  /**
-   * Token endpoint URL.
-   */
-  tokenEndpoint: string;
-  /**
-   * Userinfo endpoint URL.
-   */
-  userinfoEndpoint: string;
-  /**
-   * End-session endpoint URL.
-   */
-  endSessionEndpoint?: string;
-  /**
-   * Ping end-session endpoint URL (ID token only).
-   */
-  pingEndIdpSessionEndpoint?: string;
-  /**
-   * Token revocation endpoint URL.
-   */
-  revocationEndpoint?: string;
-};
+export type OidcOpenIdConfiguration = SharedOidcOpenIdConfiguration;
 
 /**
  * Optional overrides when launching an authorization request.
@@ -259,6 +157,7 @@ export type OidcError = GenericError;
 export type OidcErrorCode =
   | 'OIDC_AUTHORIZE_ERROR'
   | 'OIDC_HAS_USER_ERROR'
+  | 'OIDC_STATE_ERROR'
   | 'OIDC_TOKEN_ERROR'
   | 'OIDC_REFRESH_ERROR'
   | 'OIDC_USERINFO_ERROR'
@@ -364,11 +263,6 @@ export type OidcWebClient = {
    * ```
    */
   authorize(options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult>;
-
-  /**
-   * Check if a user is available for the current web client.
-   */
-  hasUser(): Promise<boolean>;
 
   /**
    * Resolve the current user handle, if present.

@@ -1,203 +1,364 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
 import {
   configureJourney,
-  startJourney,
-  nextNode,
-  resumeJourney,
+  disposeJourney,
+  getSSOToken,
   getSession,
+  getUserInfo,
   logout,
+  nextNode,
+  refreshSession,
+  revokeSession,
+  resumeJourney,
+  startJourney,
 } from './journeyMethods';
+import type {
+  JourneyClient,
+  JourneyConfig,
+  JourneyError,
+  JourneyNextInput,
+  JourneyStartOptions,
+} from './types';
+import type { NativeJourneyConfig } from './NativeRNPingJourney';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 
-import type { JourneyClient, JourneyConfig, JourneyOptions } from './types';
+type StorageHandleKind = 'session' | 'oidc';
 
-/**
- * Configuration modules for journey initialization
- */
-type JourneyModules = {
-  /**
-   * Session storage configuration
-   */
-  session?: {
-    /**
-     * Identifier for the storage instance to use for session persistence
-     */
-    storageId?: string;
-  };
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
 };
 
 /**
- * Creates a Journey client instance for managing authentication flows
- * 
- * This factory function creates a Journey client that handles authentication journeys,
- * including starting flows, processing callbacks, resuming suspended flows, and managing sessions.
- * The configuration is lazily initialized on first use.
- * 
- * @param config - Journey configuration including server URL, OAuth client details, and optional settings
- * @param modules - Optional configuration modules for session storage and other features
- * 
- * @returns A configured JourneyClient instance with methods to interact with authentication flows
- * 
- * @example
- * ```typescript
- * const client = journey({
- *   serverUrl: 'https://auth.example.com',
- *   oauthClientId: 'my-client-id',
- *   oauthRedirectUri: 'myapp://callback',
- *   oauthScope: 'openid profile email'
- * });
- * 
- * // Start an authentication journey
- * const response = await client.start('Login');
- * ```
+ * Resolves and validates a storage handle id for Journey module config.
+ *
+ * @param value - Candidate storage handle value
+ * @param expectedKind - Required storage handle kind
+ * @param modulePath - Config path used in error messages
+ * @param configureMethod - Expected storage configure method name
+ * @returns Resolved handle id when present
+ * @throws {Error} When the handle shape is invalid
  */
-export function journey(
-  config: JourneyConfig,
-  modules?: JourneyModules
-) : JourneyClient{
-  let journeyId: string | null = null;
-  let sessionStorageId = modules?.session?.storageId;
-  
-  /**
-   * Ensures the journey instance is configured before use
-   * Lazily initializes the configuration on first call
-   * 
-   * @returns The unique journey instance identifier
-   * @internal
-   */
-  async function ensureConfigured() {
-    if (!journeyId) {
-      journeyId = await configureJourney(config, sessionStorageId);
-      // console.log('[JourneyClient] configured instance:', journeyId);
-    }
-    return journeyId;
+function resolveStorageHandleId(
+  value: unknown,
+  expectedKind: StorageHandleKind,
+  modulePath: string,
+  configureMethod: 'configureSessionStorage' | 'configureOidcStorage'
+): string | undefined {
+  if (!value) {
+    return undefined;
   }
 
+  const handle = value as {
+    id?: unknown;
+    kind?: unknown;
+  };
+
+  if (
+    typeof handle.id !== 'string' ||
+    !handle.id.trim() ||
+    handle.kind !== expectedKind
+  ) {
+    throw new Error(
+      `[@ping-identity/rn-journey] Invalid ${modulePath} handle. ` +
+        `Use ${configureMethod}(...) from @ping-identity/rn-storage.`
+    );
+  }
+
+  return handle.id;
+}
+
+/**
+ * Creates a native-backed Journey client instance.
+ *
+ * @param config - Journey configuration payload.
+ * @returns A `JourneyClient` handle for imperative Journey flows.
+ * @throws {Error} When required configuration is missing.
+ */
+export function createJourneyClient(
+  config: JourneyConfig
+): JourneyClient {
+  if (!config.serverUrl?.trim()) {
+    throw new Error(
+      '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.'
+    );
+  }
+
+  let journeyId: string | null = null;
+  const sessionStorageId = resolveStorageHandleId(
+    config.modules?.session?.storage,
+    'session',
+    'modules.session.storage',
+    'configureSessionStorage'
+  );
+  const oidcStorageId = resolveStorageHandleId(
+    config.modules?.oidc?.storage,
+    'oidc',
+    'modules.oidc.storage',
+    'configureOidcStorage'
+  );
+  const oidcConfig = config.modules?.oidc;
+  const jsLogger = config.logger ?? noopLogger;
+  const rawLoggerId =
+    config.logger?.nativeHandle?.id ??
+    oidcConfig?.nativeLogger?.id ??
+    jsLogger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
+
+  const nativeConfig: NativeJourneyConfig = {
+    serverUrl: config.serverUrl,
+    timeout: config.timeout,
+    realm: config.realm,
+    cookie: config.cookie,
+    clientId: oidcConfig?.clientId,
+    discoveryEndpoint: oidcConfig?.discoveryEndpoint,
+    openId: oidcConfig?.openId,
+    redirectUri: oidcConfig?.redirectUri,
+    scopes: oidcConfig?.scopes,
+    acrValues: oidcConfig?.acrValues,
+    signOutRedirectUri: oidcConfig?.signOutRedirectUri,
+    state: oidcConfig?.state,
+    nonce: oidcConfig?.nonce,
+    uiLocales: oidcConfig?.uiLocales,
+    refreshThreshold: oidcConfig?.refreshThreshold,
+    loginHint: oidcConfig?.loginHint,
+    display: oidcConfig?.display,
+    prompt: oidcConfig?.prompt,
+    additionalParameters: oidcConfig?.additionalParameters,
+    sessionStorageId,
+    oidcStorageId,
+    loggerId,
+  };
+
+  const serialize = (payload: Record<string, unknown>): string => (
+    JSON.stringify(payload, (_key, value) => (
+      typeof value === 'function' ? undefined : value
+    ))
+  );
+
+  const logDebug = (message: string, payload?: Record<string, unknown>): void => {
+    if (payload) {
+      jsLogger.debug(`${message} ${serialize(payload)}`);
+      return;
+    }
+    jsLogger.debug(message);
+  };
+
+  const logInfo = (message: string, payload?: Record<string, unknown>): void => {
+    if (payload) {
+      jsLogger.info(`${message} ${serialize(payload)}`);
+      return;
+    }
+    jsLogger.info(message);
+  };
+
+  const logError = (
+    message: string,
+    error: unknown,
+    payload?: Record<string, unknown>
+  ): void => {
+    const errorPayload: Record<string, unknown> = {
+      ...(payload ?? {}),
+      cause: error instanceof Error ? error.message : String(error),
+    };
+    jsLogger.error(`${message} ${serialize(errorPayload)}`);
+  };
+
+  /**
+   * Ensures the native Journey instance has been configured.
+   *
+   * @returns Native Journey identifier.
+   * @throws {JourneyError} When configuration fails.
+   */
+  const ensureConfigured = async (): Promise<string> => {
+    if (!journeyId) {
+      logDebug('Journey configure requested');
+      try {
+        journeyId = await configureJourney(nativeConfig);
+        logInfo('Journey configure succeeded', { journeyId });
+      } catch (error) {
+        logError('Journey configure failed', error);
+        throw error;
+      }
+    }
+    return journeyId;
+  };
+
   return {
-    /**
-     * Explicitly initializes the journey client
-     * 
-     * This method can be called during app startup to ensure the journey is configured
-     * before any authentication flows are needed. While initialization is lazy by default,
-     * this allows for eager initialization.
-     * 
-     * @returns Promise that resolves to the journey instance identifier
-     */
-    async init() {
-      return await ensureConfigured();
-    },
-    
-    /**
-     * Returns the native journey instance identifier
-     * 
-     * @returns Promise that resolves to the unique journey ID
-     */
-    async getId() {
-      return await ensureConfigured();
-    },
-
-    /**
-     * Starts a new authentication journey
-     * 
-     * Initiates an authentication flow by journey name. The server will return
-     * the first set of callbacks that need to be processed.
-     * 
-     * @param journeyName - The name of the journey to start (e.g., 'Login', 'Registration')
-     * @param options - Optional journey configuration including resume URI and query parameters
-     * 
-     * @returns Promise that resolves to the journey response containing callbacks or session
-     * 
-     * @example
-     * ```typescript
-     * const response = await client.start('Login');
-     * if (response.callbacks) {
-     *   // Process callbacks
-     * }
-     * ```
-     */
-    async start(journeyName: string, options?: JourneyOptions) {
+    async init(): Promise<string> {
+      logDebug('Journey init requested');
       const id = await ensureConfigured();
-      return startJourney(id, journeyName, options);
+      logInfo('Journey init succeeded', { journeyId: id });
+      return id;
     },
 
-    /**
-     * Continues an active authentication flow by submitting callback responses
-     * 
-     * After collecting user input for the current callbacks, submit them to receive
-     * the next step in the journey or the final result.
-     * 
-     * @param nodeId - The identifier of the current node in the journey
-     * @param input - Key-value pairs of callback responses
-     * 
-     * @returns Promise that resolves to the next journey response
-     * 
-     * @example
-     * ```typescript
-     * const response = await client.next(nodeId, {
-     *   'IDToken1': 'username',
-     *   'IDToken2': 'password'
-     * });
-     * ```
-     */
-    async next(nodeId: string, input: Record<string, any>) {
+    async getId(): Promise<string> {
       const id = await ensureConfigured();
-      return nextNode(id, nodeId, input);
+      logDebug('Journey getId resolved', { journeyId: id });
+      return id;
     },
 
-    /**
-     * Resumes a suspended authentication flow from a URI
-     * 
-     * When a flow is suspended (e.g., for email verification), it can be resumed
-     * using the provided URI.
-     * 
-     * @param uri - The resume URI provided by the suspended flow
-     * 
-     * @returns Promise that resolves to the resumed journey response
-     * 
-     * @example
-     * ```typescript
-     * const response = await client.resume('https://auth.example.com/resume?token=...');
-     * ```
-     */
+    async start(
+      journeyName: string,
+      options?: JourneyStartOptions
+    ) {
+      if (!journeyName.trim()) {
+        throw {
+          type: 'argument_error',
+          error: 'JOURNEY_START_ERROR',
+          message: 'Journey name must not be empty.',
+        } satisfies JourneyError;
+      }
+
+      const id = await ensureConfigured();
+      logDebug('Journey start requested', { journeyName });
+      try {
+        const node = await startJourney(id, journeyName, options);
+        logInfo('Journey start succeeded', { journeyId: id, journeyName });
+        return node;
+      } catch (error) {
+        logError('Journey start failed', error, { journeyId: id, journeyName });
+        throw error;
+      }
+    },
+
+    async next(input: JourneyNextInput = {}) {
+      const id = await ensureConfigured();
+      logDebug('Journey next requested');
+      try {
+        const node = await nextNode(id, input);
+        logInfo('Journey next succeeded', { journeyId: id });
+        return node;
+      } catch (error) {
+        logError('Journey next failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
     async resume(uri: string) {
+      if (!uri.trim()) {
+        throw {
+          type: 'argument_error',
+          error: 'JOURNEY_RESUME_ERROR',
+          message: 'Resume URI must not be empty.',
+        } satisfies JourneyError;
+      }
+
       const id = await ensureConfigured();
-      return resumeJourney(id, uri);
+      logDebug('Journey resume requested');
+      try {
+        const node = await resumeJourney(id, uri);
+        logInfo('Journey resume succeeded', { journeyId: id });
+        return node;
+      } catch (error) {
+        logError('Journey resume failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
-    /**
-     * Retrieves the current user session
-     * 
-     * Gets the session information for the authenticated user, including tokens
-     * and user profile data.
-     * 
-     * @returns Promise that resolves to the session data, or null if no active session
-     * 
-     * @example
-     * ```typescript
-     * const session = await client.user();
-     * if (session) {
-     *   console.log('Access token:', session.accessToken);
-     * }
-     * ```
-     */
     async user() {
       const id = await ensureConfigured();
-      return getSession(id);
+      logDebug('Journey user requested', { journeyId: id });
+      try {
+        const session = await getSession(id);
+        logInfo('Journey user resolved', { journeyId: id, hasSession: Boolean(session) });
+        return session;
+      } catch (error) {
+        logError('Journey user failed', error, { journeyId: id });
+        throw error;
+      }
     },
 
-    /**
-     * Logs out the current user and ends their session
-     * 
-     * Terminates the user's session on the server and clears local session data.
-     * 
-     * @returns Promise that resolves when logout is complete
-     * 
-     * @example
-     * ```typescript
-     * await client.logoutUser();
-     * ```
-     */
+    async refresh() {
+      const id = await ensureConfigured();
+      logDebug('Journey refresh requested', { journeyId: id });
+      try {
+        const session = await refreshSession(id);
+        logInfo('Journey refresh succeeded', { journeyId: id, hasSession: Boolean(session) });
+        return session;
+      } catch (error) {
+        logError('Journey refresh failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
+    async revoke() {
+      const id = await ensureConfigured();
+      logDebug('Journey revoke requested', { journeyId: id });
+      try {
+        const revoked = await revokeSession(id);
+        logInfo('Journey revoke succeeded', { journeyId: id, revoked });
+        return revoked;
+      } catch (error) {
+        logError('Journey revoke failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
+    async userinfo() {
+      const id = await ensureConfigured();
+      logDebug('Journey userinfo requested', { journeyId: id });
+      try {
+        const info = await getUserInfo(id);
+        logInfo('Journey userinfo resolved', { journeyId: id, hasUserInfo: Boolean(info) });
+        return info;
+      } catch (error) {
+        logError('Journey userinfo failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
+    async ssoToken() {
+      const id = await ensureConfigured();
+      logDebug('Journey ssoToken requested', { journeyId: id });
+      try {
+        const token = await getSSOToken(id);
+        logInfo('Journey ssoToken resolved', { journeyId: id, hasSsoToken: Boolean(token) });
+        return token;
+      } catch (error) {
+        logError('Journey ssoToken failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
     async logoutUser() {
       const id = await ensureConfigured();
-      return logout(id);
+      logDebug('Journey logout requested', { journeyId: id });
+      try {
+        const loggedOut = await logout(id);
+        logInfo('Journey logout succeeded', { journeyId: id, loggedOut });
+        return loggedOut;
+      } catch (error) {
+        logError('Journey logout failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
+    async dispose() {
+      if (!journeyId) {
+        logDebug('Journey dispose skipped (no active journey id)');
+        return;
+      }
+      const id = journeyId;
+      logDebug('Journey dispose requested', { journeyId: id });
+      try {
+        await disposeJourney(id);
+        logInfo('Journey dispose succeeded', { journeyId: id });
+        journeyId = null;
+      } catch (error) {
+        logError('Journey dispose failed', error, { journeyId: id });
+        throw error;
+      }
     },
   };
 }

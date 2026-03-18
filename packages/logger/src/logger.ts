@@ -148,9 +148,9 @@ export function logger(config: LoggerConfig = {}): LoggerInstance {
       jsLogger.changeLevel(level);
       syncNativeLogger(handle.id, logLevel);
     },
-    error: (...args: LogMessage[]) => jsLogger.error(...args),
-    warn: (...args: LogMessage[]) => jsLogger.warn(...args),
-    info: (...args: LogMessage[]) => jsLogger.info(...args),
-    debug: (...args: LogMessage[]) => jsLogger.debug(...args),
+    error: (...args: unknown[]) => jsLogger.error(...(args as LogMessage[])),
+    warn: (...args: unknown[]) => jsLogger.warn(...(args as LogMessage[])),
+    info: (...args: unknown[]) => jsLogger.info(...(args as LogMessage[])),
+    debug: (...args: unknown[]) => jsLogger.debug(...(args as LogMessage[])),
   };
 }
