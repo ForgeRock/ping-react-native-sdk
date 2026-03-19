@@ -102,7 +102,8 @@ export interface Spec extends TurboModule {
   logout(webClientId: string): Promise<void>;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns Native module implementation for the current architecture.
  * @throws Error when no native module is registered.

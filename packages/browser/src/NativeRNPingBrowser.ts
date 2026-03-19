@@ -54,7 +54,8 @@ export interface Spec extends TurboModule {
   ): Promise<BrowserResult>;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingBrowser');

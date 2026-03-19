@@ -52,7 +52,8 @@ export interface Spec extends TurboModule {
   syncLogger(config: LoggerSyncOptions): void;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  *
  * @returns The native Logger module implementation.
  * @throws Error if no native module is registered.

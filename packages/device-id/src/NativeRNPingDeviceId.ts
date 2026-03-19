@@ -41,7 +41,8 @@ export interface Spec extends TurboModule {
   getDefaultDeviceId(): Promise<string>;
 }
 
-/** * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+/**
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceId');
