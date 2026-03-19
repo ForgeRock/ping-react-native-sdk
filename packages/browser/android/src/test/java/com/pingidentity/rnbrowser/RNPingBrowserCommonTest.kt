@@ -16,20 +16,20 @@ import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.test.core.app.ApplicationProvider
 import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
+import com.pingidentity.logger.Logger
 import com.pingidentity.logger.WARN
 import com.pingidentity.rnlogger.RNPingLoggerCommon
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
-import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -379,7 +379,7 @@ class RNPingBrowserCommonTest {
   @Test
   fun openAppliesNativeLoggerWhenLoggerIdProvided() = runTest {
     mockkStatic(RNPingLoggerCommon::class)
-    every { RNPingLoggerCommon.resolveLogger("logger-1") } returns WARN
+    every { RNPingLoggerCommon.resolveLogger("logger-1") } returns Logger.WARN
     fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
 
     val promise = TestPromise()
@@ -391,7 +391,7 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    verify(exactly = 1) { RNPingLoggerCommon.applyLogger("logger-1") }
+    verify(exactly = 1) { RNPingLoggerCommon.resolveLogger("logger-1") }
     unmockkStatic(RNPingLoggerCommon::class)
   }
 

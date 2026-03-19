@@ -67,6 +67,7 @@ final class RNPingDeviceIdImplTests: XCTestCase {
     }
   }
 
+  @MainActor
   private func fetchDefaultDeviceId() async throws -> String {
     try await withCheckedThrowingContinuation { continuation in
       deviceIdImpl.getDefaultDeviceId { value in
