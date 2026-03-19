@@ -149,7 +149,7 @@ object RNPingLoggerCommon {
     }
     if (handle == null) {
       Log.w(TAG, "Logger apply request ignored because the logger could not be resolved")
-      return false
+      return null
     }
 
     return handle.nativeLogger as? Logger

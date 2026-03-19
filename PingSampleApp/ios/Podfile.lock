@@ -2676,39 +2676,6 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOidc/Tests (0.1.0):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - PingOidc (= 1.3.1)
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - RNPingCore
-    - RNPingLogger
-    - RNPingStorage
-    - SocketRocket
-    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -2769,7 +2736,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - RNPingCore
-    - RNPingLogger
     - SocketRocket
     - Yoga
   - RNScreens (4.18.0):
@@ -3311,18 +3277,18 @@ SPEC CHECKSUMS:
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingBrowser: 24f53af7d3cfdc8f1120270ea0b5696d05bdd803
-  RNPingCore: 51b9882f40746977d515dcafa444261a0eb598ab
+  RNPingCore: ef609e3ddcb42211d859bf09f3d120fa571ae8a5
   RNPingDeviceId: c3f81abc4ee8f5385a71088f08218995191344a9
-  RNPingDeviceProfile: dc0d6bff6a1f336bccf9bb776087349895ce4457
-  RNPingJourney: b0881832c330a7de8cd94a48844d8ed78a6cccd7
-  RNPingLogger: 8cbacbda2b406eed6e799f7d8cfea165faecbe4c
-  RNPingOidc: 43c6bf37223d2ec83ac76778386ce72dc1db54ad
-  RNPingStorage: a1a7502a2ba13e5093b619fb1c83c7cb053ad564
+  RNPingDeviceProfile: dcedb95b19e37c79b3e67d03620c29289d751417
+  RNPingJourney: c6148c0621bd53bfa9e80498e8f88b2234ee3864
+  RNPingLogger: b8907bf9e1f85c3903f8506b3fe7781325d04449
+  RNPingOidc: 0847cb9c12ce4417d958a854d708f428076bd46c
+  RNPingStorage: b009bca6fc32ad4e8a6c6a55b5f3feeec8a353e3
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 68f7f260f33ee506a13385b37f41cf6f973baae7
+PODFILE CHECKSUM: 613aba9f37bfa99dda43d9597da49cd313641ae2
 
 COCOAPODS: 1.15.2
