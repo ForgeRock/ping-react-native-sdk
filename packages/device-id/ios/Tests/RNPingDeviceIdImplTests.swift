@@ -9,6 +9,7 @@ import XCTest
 @testable import RNPingDeviceId
 
 
+@MainActor
 final class RNPingDeviceIdImplTests: XCTestCase {
 
   private var deviceIdImpl: RNPingDeviceIdImpl!
