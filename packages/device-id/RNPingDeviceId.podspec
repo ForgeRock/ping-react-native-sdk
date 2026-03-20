@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
-  s.license      = { :type => 'MIT', :file => 'LICENSE' }
-
+  s.license      = { :type => 'MIT', :file => 'LICENSE' } # changed from :file to :text to remove warnings
+  
   # CocoaPods requires this to be a hash
   s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
 
@@ -39,7 +39,11 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = ['5.0', '5.1', '6.0']
 
-  # Native Ping SDK dependency
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+  end
+
+  # Native Ping SDK 
   s.dependency "PingDeviceId"
   s.dependency "RNPingCore"
 

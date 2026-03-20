@@ -6,12 +6,14 @@
  */
 package com.pingidentity.rndeviceid
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.pingidentity.device.id.DeviceIdentifier
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.Assume
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -68,6 +70,8 @@ class RNPingDeviceIdTest {
    */
   @Test
   fun getDefaultDeviceIdRejectsOnException() {
+    assumeWritableMapAvailable()
+
     val error = IllegalStateException("boom")
     val promise = TestPromise()
     withDefaultIdentifier(identifierThrowing(error)) {
@@ -77,6 +81,14 @@ class RNPingDeviceIdTest {
       assertEquals("boom", promise.rejectedMessage)
       assertEquals(error, promise.rejectedThrowable)
       assertNull(promise.resolvedValue)
+    }
+  }
+
+  private fun assumeWritableMapAvailable() {
+    try {
+      Arguments.createMap()
+    } catch (error: Throwable) {
+      Assume.assumeNoException("React WritableMap is not available in JVM unit tests", error)
     }
   }
 

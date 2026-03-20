@@ -434,6 +434,7 @@ object ShadowOidcCommonArguments {
 }
 
 private class TestPromise : com.facebook.react.bridge.Promise {
+
   private val latch = CountDownLatch(1)
   var resolvedValue: Any? = null
   var rejectCode: String? = null
