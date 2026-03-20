@@ -1,0 +1,11 @@
+{
+    "scans": {
+        "pathExclusions": [
+          "PingSampleApp/**",
+          "packages/**/src/__tests__/**",
+          "packages/**/__tests__/**",
+          "packages/**/android/src/test/**",
+          "packages/**/ios/Tests/**"
+        ]
+    }
+}
