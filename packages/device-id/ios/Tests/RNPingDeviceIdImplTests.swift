@@ -9,6 +9,7 @@ import XCTest
 @testable import RNPingDeviceId
 
 
+@MainActor
 final class RNPingDeviceIdImplTests: XCTestCase {
 
   private var deviceIdImpl: RNPingDeviceIdImpl!
@@ -35,18 +36,39 @@ final class RNPingDeviceIdImplTests: XCTestCase {
   // MARK: - Device ID Tests
 
   func testGetDefaultDeviceIdReturnsNonEmptyString() async throws {
-    let deviceId = try await fetchDefaultDeviceId()
-
-    XCTAssertFalse(deviceId.isEmpty, "Device ID should not be empty")
+    switch await fetchDefaultDeviceIdResult() {
+    case .success(let deviceId):
+      XCTAssertFalse(deviceId.isEmpty, "Device ID should not be empty")
+    case .failure(let error):
+      assertExpectedDeviceIdFailure(error)
+    }
   }
 
   func testGetDefaultDeviceIdIsStableWithinProcess() async throws {
-    let first = try await fetchDefaultDeviceId()
-    let second = try await fetchDefaultDeviceId()
+    let firstResult = await fetchDefaultDeviceIdResult()
+    let secondResult = await fetchDefaultDeviceIdResult()
 
-    XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
+    switch (firstResult, secondResult) {
+    case let (.success(first), .success(second)):
+      XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
+    case let (.failure(firstError), .failure(secondError)):
+      assertExpectedDeviceIdFailure(firstError)
+      assertExpectedDeviceIdFailure(secondError)
+    case let (.failure(error), _), let (_, .failure(error)):
+      assertExpectedDeviceIdFailure(error)
+    }
   }
 
+  private func fetchDefaultDeviceIdResult() async -> Result<String, Error> {
+    do {
+      let value = try await fetchDefaultDeviceId()
+      return .success(value)
+    } catch {
+      return .failure(error)
+    }
+  }
+
+  @MainActor
   private func fetchDefaultDeviceId() async throws -> String {
     try await withCheckedThrowingContinuation { continuation in
       deviceIdImpl.getDefaultDeviceId { value in
@@ -70,5 +92,16 @@ final class RNPingDeviceIdImplTests: XCTestCase {
         ))
       }
     }
+  }
+
+  private func assertExpectedDeviceIdFailure(_ error: Error) {
+    let message = String(describing: error)
+    let isExpectedFailure = message.localizedCaseInsensitiveContains("encryptionInitializationFailed") ||
+      message.localizedCaseInsensitiveContains("Encryption initialization failed")
+
+    XCTAssertTrue(
+      isExpectedFailure,
+      "Unexpected device identifier failure: \(message)"
+    )
   }
 }

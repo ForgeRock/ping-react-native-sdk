@@ -8,6 +8,8 @@ name: CI
 on:
     pull_request:
         types: [opened, reopened, synchronize, edited]
+        
+    push:
         branches:
             - main
 
@@ -17,28 +19,62 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
-# Minimal permissions required for CI pipeline.
 permissions:
     contents: read
-    pull-requests: read
     
 jobs:
     # Run ESLint, TypeScript type checking, and Prettier format validation.
     lint-and-typecheck:
         uses: ./.github/workflows/lint-and-typecheck.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
     
     # Build affected packages to verify compilation succeeds.
     build-packages-check:
         needs: lint-and-typecheck
         uses: ./.github/workflows/build-packages.yml
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
     
     # Execute Jest unit tests across affected packages.
     js-unit-tests:
         needs: build-packages-check
+        permissions:
+            contents: read
+            checks: write
         uses: ./.github/workflows/js-unit-tests.yml
-
-
-    # Build TypeDoc documentation for affected packages and upload as artifact.
-    build-docs-check:
+        with:
+            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
+            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
+    
+    # Execute Android unit tests across affected packages.
+    android-unit-tests:
         needs: js-unit-tests
-        uses: ./.github/workflows/build-docs.yml
+        permissions:
+            contents: read
+            checks: write
+        uses: ./.github/workflows/build-and-test-android.yml
+
+    # Execute iOS unit tests across affected packages.
+    ios-unit-tests:
+        needs: js-unit-tests
+        permissions:
+            contents: read
+            checks: write
+        uses: ./.github/workflows/build-and-test-ios.yml
+
+    # Publish documentation preview to GitHub Pages on every PR for review.
+    # Allows reviewers to preview documentation changes before merging.
+    preview-docs-pr:
+        needs: js-unit-tests
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        permissions:
+            contents: write
+            pull-requests: write
+        uses: ./.github/workflows/preview-docs.yml
+        with:
+            pr_number: ${{ github.event.pull_request.number }}
+
+    

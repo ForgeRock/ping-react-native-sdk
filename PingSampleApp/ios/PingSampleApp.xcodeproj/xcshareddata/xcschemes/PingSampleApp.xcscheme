@@ -38,6 +38,17 @@
                ReferencedContainer = "container:PingSampleApp.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3466ED912F5B937B00E6A758"
+               BuildableName = "RNPackagesTests.xctest"
+               BlueprintName = "RNPackagesTests"
+               ReferencedContainer = "container:PingSampleApp.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

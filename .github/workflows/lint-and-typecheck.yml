@@ -7,6 +7,13 @@
 name: Lint and Typecheck
 on:
     workflow_call:
+        inputs:
+            turbo_scm_base:
+                required: true
+                type: string
+            turbo_scm_head:
+                required: true
+                type: string
 
 jobs:
     lint-and-typecheck:
@@ -14,6 +21,9 @@ jobs:
         timeout-minutes: 10
         # TODO: remove continue-on-error after all linting issues are fixed.
         continue-on-error: true
+        env:
+            TURBO_SCM_BASE: ${{ inputs.turbo_scm_base }}
+            TURBO_SCM_HEAD: ${{ inputs.turbo_scm_head }}
 
         steps:
             # Checkout with full history (fetch-depth: 0) to enable affected files detection.
@@ -21,10 +31,6 @@ jobs:
               uses: actions/checkout@v6
               with:
                 fetch-depth: 0
-
-            # Ensure base branch ref exists locally for Turborepo --affected git range.
-            - name: Fetch base branch ref
-              run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
 
             # Setup Node.js environment and install all dependencies.
             - name: Setup

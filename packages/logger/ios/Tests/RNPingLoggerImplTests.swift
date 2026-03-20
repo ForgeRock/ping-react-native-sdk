@@ -83,7 +83,7 @@ final class RNPingLoggerImplTests: XCTestCase {
     let id = loggerImpl.registerLogger(config)
 
     loggerImpl.syncLogger(id, level: "WARN")
-    let level = await waitForLevel(id)
+    let level = await waitForLevel(id, expected: "WARN")
 
     XCTAssertEqual(level, "WARN", "syncLogger should update the stored level")
   }
@@ -98,11 +98,21 @@ final class RNPingLoggerImplTests: XCTestCase {
     XCTAssertEqual(level, "STANDARD", "syncLogger should ignore invalid levels")
   }
 
-  private func waitForLevel(_ id: String, timeout: TimeInterval = 2.0) async -> String? {
+  private func waitForLevel(
+    _ id: String,
+    expected: String? = nil,
+    timeout: TimeInterval = 2.0
+  ) async -> String? {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
       if let level = await loggerImpl._testLevel(id) {
-        return level
+        if let expected {
+          if level == expected {
+            return level
+          }
+        } else {
+          return level
+        }
       }
       try? await Task.sleep(nanoseconds: 50_000_000)
     }
