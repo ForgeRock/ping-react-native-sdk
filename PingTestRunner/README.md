@@ -85,30 +85,19 @@ keytool -genkey -v -keystore debug.keystore -storepass android \
 
 ## Running tests
 
-All test commands run entirely in Node — no device or simulator required.
+JS integration/unit commands run entirely in Node (no device or simulator required).
+Native unit and Detox E2E commands require platform toolchains and emulator/simulator targets.
 
 ### Integration tests only (what `turbo run test` calls)
 
 ```sh
-# From PingTestRunner directory
-yarn test
-
-# From monorepo root
 yarn test:runner
 ```
 
 ### All unit tests + integration tests in one pass
 
 ```sh
-# From PingTestRunner directory
-yarn test:all
-
-# With combined coverage report
-yarn test:all:coverage
-
-# From monorepo root
 yarn test:runner:all
-yarn test:runner:all:coverage
 ```
 
 `test:all` uses Jest `projects` to run the unit tests of every package
@@ -120,8 +109,7 @@ mocks, setup files, and `transformIgnorePatterns` are preserved exactly.
 ### Integration tests (explicit)
 
 ```sh
-yarn test:integration
-yarn test:integration:coverage
+yarn test:runner:integration
 ```
 
 ---
@@ -135,10 +123,6 @@ is the host project that wires them together.
 ### Android — Kotlin/JUnit/Robolectric
 
 ```sh
-# From PingTestRunner directory
-yarn test:native:android
-
-# From monorepo root
 yarn test:runner:native:android
 ```
 
@@ -148,10 +132,6 @@ invocation. Test reports land in `packages/<pkg>/android/build/reports/tests/`.
 ### iOS — Swift/XCTest via CocoaPods test_spec
 
 ```sh
-# After pod install:
-yarn test:native:ios
-
-# From monorepo root
 yarn test:runner:native:ios
 ```
 
@@ -169,20 +149,20 @@ E2E builds are always **release** builds — no Metro bundler required.
 
 ```sh
 # 1. Build the test app
-yarn build:e2e:ios
+yarn build:runner:e2e:ios
 
 # 2. Run the suite
-yarn test:e2e:ios
+yarn test:runner:e2e:ios
 ```
 
 ### Android
 
 ```sh
 # 1. Build the test APK
-yarn build:e2e:android
+yarn build:runner:e2e:android
 
 # 2. Run the suite
-yarn test:e2e:android
+yarn test:runner:e2e:android
 ```
 
 ---
@@ -191,7 +171,9 @@ yarn test:e2e:android
 
 Integration tests mock all native modules and **do not** require any environment variables.
 
-E2E tests that exercise live authentication flows are **self-skipping** when env vars are absent — the app-launch smoke tests still run. To enable live auth flows set the following before running Detox:
+E2E tests that exercise live authentication flows are **self-skipping** when env vars are absent — the app-launch smoke tests still run. To enable live auth flows set the following before running Detox.
+
+Use the same keys as `PingTestRunner/.env.example`:
 
 | Variable | Description | Example |
 |---|---|---|
@@ -200,6 +182,7 @@ E2E tests that exercise live authentication flows are **self-skipping** when env
 | `PING_REDIRECT_URI` | Redirect URI (must be registered on server) | `org.forgerock.demo://oauth2redirect` |
 | `PING_SERVER_URL` | PingAM base URL | `https://openam.example.com/openam` |
 | `PING_REALM_PATH` | Realm path | `/alpha` |
+| `PING_COOKIE_NAME` | Session cookie key used by Journey config | `iPlanetDirectoryPro` |
 | `PING_JOURNEY_NAME` | Auth tree / journey name | `Login` |
 | `PING_TEST_USERNAME` | Test user login | `testuser@example.com` |
 | `PING_TEST_PASSWORD` | Test user password | *(store in CI secrets)* |
@@ -213,38 +196,23 @@ export PING_CLIENT_ID=my-rn-client
 # ... etc
 
 source .env.e2e
-yarn test:e2e:ios
+yarn test:runner:e2e:ios
 ```
 
----
+### Verifying runtime env values
 
-## CI integration
+To confirm the app receives the expected launch arguments at runtime, run the
+`env` scenario (`PING_TEST_SCENARIO=env`). The scenario renders effective values
+for server, realm, cookie, discovery endpoint, client ID, redirect URI, and test
+username (password is masked).
 
-Add the following steps to your pipeline (example for GitHub Actions):
+### OIDC troubleshooting
 
-```yaml
-- name: Install dependencies
-  run: yarn install && yarn packages:build
+If Journey login succeeds but token/userinfo/refresh tests do not:
 
-- name: Run integration tests
-  run: yarn workspace PingTestRunner test:integration
-
-- name: Build E2E app (iOS)
-  run: yarn workspace PingTestRunner build:e2e:ios
-
-- name: Run E2E tests (iOS)
-  env:
-    PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
-    PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
-    PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
-    PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
-    PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
-    PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
-    PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
-  run: yarn workspace PingTestRunner test:e2e:ios
-```
-
----
+1. Verify `PING_CLIENT_ID` and `PING_DISCOVERY_ENDPOINT` are non-empty.
+2. Verify `PING_COOKIE_NAME` matches your server configuration used by the sample app.
+3. Launch the `env` scenario to confirm values are passed via launch args.
 
 ## Project structure
 
@@ -266,6 +234,7 @@ PingTestRunner/
 │   ├── OidcScenario.tsx
 │   ├── UseJourneyScenario.tsx
 │   ├── UseOidcScenario.tsx
+│   ├── EnvScenario.tsx
 │   ├── DeviceIdScenario.tsx
 │   ├── DeviceProfileScenario.tsx
 │   ├── StorageScenario.tsx
