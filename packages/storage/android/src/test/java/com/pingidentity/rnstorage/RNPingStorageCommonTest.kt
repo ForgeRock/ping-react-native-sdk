@@ -26,7 +26,6 @@ class RNPingStorageCommonTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-
         // Mock Arguments.createMap() to return a proper WritableMap
         mockkStatic(Arguments::class)
         every { Arguments.createMap() } answers {

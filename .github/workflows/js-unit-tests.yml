@@ -7,6 +7,18 @@
 name: Js Unit Tests
 on:
     workflow_call:
+        inputs:
+            turbo_scm_base:
+                required: true
+                type: string
+            turbo_scm_head:
+                required: true
+                type: string
+
+# Permissions needed for dorny/test-reporter to create check runs.
+permissions:
+    contents: read
+    checks: write
 
 jobs:
     js-unit-tests:
@@ -14,6 +26,9 @@ jobs:
         timeout-minutes: 15
         # TODO: remove continue-on-error after all test failures are fixed.
         continue-on-error: true
+        env:
+            TURBO_SCM_BASE: ${{ inputs.turbo_scm_base }}
+            TURBO_SCM_HEAD: ${{ inputs.turbo_scm_head }}
 
         steps:
             # Checkout with full history (fetch-depth: 0) for git-based test context.
@@ -22,10 +37,6 @@ jobs:
               with:
                 fetch-depth: 0
 
-            # Ensure base branch ref exists locally for Turborepo --affected git range.
-            - name: Fetch base branch ref
-              run: git fetch origin "${{ github.base_ref }}:${{ github.base_ref }}"
-
             # Setup Node.js environment and install all dependencies.
             - name: Setup
               uses: ./.github/actions/setup-proj
@@ -33,3 +44,15 @@ jobs:
             # Execute Jest unit tests across affected packages in the monorepo.
             - name: Run unit tests
               run: yarn test --affected
+
+            # Publish test results as GitHub check runs.
+            - name: Publish test report
+              if: always()
+              uses: dorny/test-reporter@v2
+              with:
+                name: JavaScript Unit Test Results
+                path: 'packages/*/build/test-results/js/*.xml'
+                reporter: jest-junit
+                list-suites: 'all'
+                list-tests: 'all'
+                fail-on-error: 'false'

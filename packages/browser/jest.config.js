@@ -14,4 +14,13 @@ module.exports = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: './build/test-results/js',
+      outputName: 'junit.xml',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+    }],
+  ],
 };

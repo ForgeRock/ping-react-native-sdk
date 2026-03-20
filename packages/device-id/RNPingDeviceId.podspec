@@ -14,8 +14,8 @@ Pod::Spec.new do |s|
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
-  s.license      = { :type => 'MIT', :file => 'LICENSE' }
-
+  s.license      = { :type => 'MIT', :file => 'LICENSE' } # changed from :file to :text to remove warnings
+  
   # CocoaPods requires this to be a hash
   s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
 

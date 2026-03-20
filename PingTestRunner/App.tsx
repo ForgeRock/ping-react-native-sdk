@@ -37,6 +37,7 @@ const LoggerScenario = React.lazy(() => import('./scenarios/LoggerScenario'));
 const BrowserScenario = React.lazy(() => import('./scenarios/BrowserScenario'));
 const UseJourneyScenario = React.lazy(() => import('./scenarios/UseJourneyScenario'));
 const UseOidcScenario = React.lazy(() => import('./scenarios/UseOidcScenario'));
+const EnvScenario = React.lazy(() => import('./scenarios/EnvScenario'));
 
 interface LaunchArgs {
   PING_TEST_SCENARIO?: string;
@@ -72,6 +73,8 @@ function ScenarioContent(): React.JSX.Element {
       return <UseOidcScenario />;
     case 'use-oidc-error':
       return <UseOidcScenario forceError />;
+    case 'env':
+      return <EnvScenario />;
     default:
       return <DefaultView />;
   }

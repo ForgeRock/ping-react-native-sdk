@@ -63,6 +63,16 @@ final class RNPingDeviceIdImplTests: XCTestCase {
     XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
   }
 
+  private func fetchDefaultDeviceIdResult() async -> Result<String, Error> {
+    do {
+      let value = try await fetchDefaultDeviceId()
+      return .success(value)
+    } catch {
+      return .failure(error)
+    }
+  }
+
+  @MainActor
   private func fetchDefaultDeviceId() async throws -> String {
     try await withCheckedThrowingContinuation { continuation in
       deviceIdImpl.getDefaultDeviceId { value in
@@ -86,5 +96,16 @@ final class RNPingDeviceIdImplTests: XCTestCase {
         ))
       }
     }
+  }
+
+  private func assertExpectedDeviceIdFailure(_ error: Error) {
+    let message = String(describing: error)
+    let isExpectedFailure = message.localizedCaseInsensitiveContains("encryptionInitializationFailed") ||
+      message.localizedCaseInsensitiveContains("Encryption initialization failed")
+
+    XCTAssertTrue(
+      isExpectedFailure,
+      "Unexpected device identifier failure: \(message)"
+    )
   }
 }

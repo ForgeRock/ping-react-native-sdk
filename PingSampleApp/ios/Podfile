@@ -75,6 +75,17 @@ target 'PingSampleApp' do
   pod 'RNPingOidc',
   :path => '../../node_modules/@ping-identity/rn-oidc',
   :testspecs => ['Tests']
+
+  target 'RNPackagesTests' do
+    inherit! :complete
+
+    # Test specs for each package - using same paths as autolinking
+    pod 'RNPingCore', :path => '../../packages/core', :testspecs => ['Tests']
+    pod 'RNPingDeviceId', :path => '../../node_modules/@ping-identity/rn-device-id', :testspecs => ['Tests']
+    pod 'RNPingLogger', :path => '../../node_modules/@ping-identity/rn-logger', :testspecs => ['Tests']
+    pod 'RNPingOidc', :path => '../../node_modules/@ping-identity/rn-oidc', :testspecs => ['Tests']
+    pod 'RNPingStorage', :path => '../../node_modules/@ping-identity/rn-storage', :testspecs => ['Tests']
+  end
   
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202

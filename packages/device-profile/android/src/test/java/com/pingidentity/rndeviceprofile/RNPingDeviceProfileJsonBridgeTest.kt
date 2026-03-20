@@ -32,6 +32,14 @@ import org.robolectric.annotation.Config
 
 /**
  * Unit tests for JSON-to-React conversions exposed by `RNPingDeviceProfileCommon`.
+ *
+ * `JsonBridgeMapper.encodeJsonElement` returns plain Kotlin types:
+ * - [JsonObject] → `Map<String, Any?>`
+ * - [JsonArray] → `List<Any?>`
+ * - primitives → Kotlin scalars
+ *
+ * Only `encodeJsonObject` returns a [ReadableMap] directly.
+ * Tests use these actual return types instead of casting to bridge interfaces.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
@@ -123,7 +131,7 @@ class RNPingDeviceProfileJsonBridgeTest {
   }
 
   /**
-   * Verifies JsonNull converts to a nullable React Native value.
+   * Verifies JsonNull converts to null.
    */
   @Test
   fun jsonNullToReactValueReturnsNull() {
@@ -174,8 +182,17 @@ class RNPingDeviceProfileJsonBridgeTest {
 
     val map = JsonBridgeMapper.encodeJsonObject(json)
     val level1 = map.getArray("level1") as ReadableArray
-    val level2 = level1.getMap(0) as ReadableMap
-    val level3 = (level2.getMap("level2") as ReadableMap).getArray("level3") as ReadableArray
+
+    @Suppress("UNCHECKED_CAST")
+    val level1Item = level1.getMap(0) as ReadableMap
+
+    @Suppress("UNCHECKED_CAST")
+    val level2 = level1Item.getMap("level2") as ReadableMap
+
+    @Suppress("UNCHECKED_CAST")
+    val level3 = level2.getArray("level3") as ReadableArray
+
+    @Suppress("UNCHECKED_CAST")
     val nested = level3.getMap(1) as ReadableMap
 
     assertEquals(1.0, level3.getDouble(0), 0.0)
@@ -184,6 +201,7 @@ class RNPingDeviceProfileJsonBridgeTest {
 
   /**
    * Verifies primitive string values are not coerced into other types.
+   * Uses `encodeJsonObject` to get a [ReadableMap] for type introspection.
    */
   @Test
   fun jsonPrimitiveStringDoesNotCoerceTypes() {
@@ -203,6 +221,7 @@ class RNPingDeviceProfileJsonBridgeTest {
 
   /**
    * Verifies large numbers beyond JS safe integer range convert to Double.
+   * Uses `encodeJsonObject` to get a [ReadableMap] for numeric access.
    */
   @Test
   fun largeNumbersConvertToDouble() {
@@ -216,7 +235,9 @@ class RNPingDeviceProfileJsonBridgeTest {
     val unsafe = map.getDouble("unsafe")
     val maxLong = map.getDouble("maxLong")
 
+    @Suppress("USELESS_IS_CHECK")
     assertTrue(unsafe is Double)
+    @Suppress("USELESS_IS_CHECK")
     assertTrue(maxLong is Double)
   }
 
@@ -234,6 +255,7 @@ class RNPingDeviceProfileJsonBridgeTest {
 
   /**
    * Verifies JsonNull within objects maps to ReadableType.Null.
+   * Uses `encodeJsonObject` to get a [ReadableMap] for type introspection.
    */
   @Test
   fun jsonNullInObjectMapsToNullType() {
