@@ -152,7 +152,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
   @objc
   public func syncLogger(_ id: String, level: String) {
     guard let parsedLevel = NativeLoggerLevel(rawValue: level) else {
-      print("RNPingLogger: Invalid level '\(level)'")
+      print("RNPingLogger: Logger sync request ignored because the log level is unsupported")
       return
     }
 
@@ -163,7 +163,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
         queueKey: Self.createQueueKey,
         context: "RNPingLoggerImpl.syncLogger"
       ) as? LoggerHandle else {
-        print("RNPingLogger: No logger registered for id \(id)")
+        print("RNPingLogger: Logger sync request ignored because the logger could not be resolved")
         return
       }
 
@@ -187,7 +187,7 @@ public class RNPingLoggerImpl: NSObject, @unchecked Sendable {
         queueKey: Self.createQueueKey,
         context: "RNPingLoggerImpl.resolveLogger"
       ) as? LoggerHandle else {
-        print("RNPingLogger: No logger registered for id \(id)")
+        print("RNPingLogger: Logger apply request ignored because the logger could not be resolved")
         return nil
       }
 
