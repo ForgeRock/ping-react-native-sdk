@@ -48,7 +48,7 @@ const loadModule = async ({
     })
   );
 
-  return require('../index');
+  return import('../index');
 };
 
 describe('device-profile package', () => {
@@ -213,7 +213,7 @@ describe('device-profile package', () => {
         nativeModule: { SomeOtherModule: {} },
       })
     ).rejects.toThrow(
-      'Available NativeModules: [\"SomeOtherModule\"]'
+      'Available NativeModules: ["SomeOtherModule"]'
     );
   });
 });

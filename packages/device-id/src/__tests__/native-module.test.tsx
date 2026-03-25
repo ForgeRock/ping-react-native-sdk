@@ -36,7 +36,7 @@ const loadModule = async ({
     })
   );
 
-  return require('../index');
+  return import('../index');
 };
 
 describe('device-id native module wiring', () => {
@@ -74,7 +74,7 @@ describe('device-id native module wiring', () => {
     });
 
     await expect(getDeviceId()).rejects.toThrow(
-      'Available NativeModules: [\"SomeOtherModule\"]'
+      'Available NativeModules: ["SomeOtherModule"]'
     );
   });
 });

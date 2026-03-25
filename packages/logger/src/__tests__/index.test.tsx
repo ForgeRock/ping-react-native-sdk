@@ -4,7 +4,8 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-/* eslint-env jest */
+
+import packageJson from '@ping-identity/rn-logger/package.json';
 
 export {};
 
@@ -71,7 +72,7 @@ const loadModule = async () => {
     logger: sdkLogger.factory,
   }));
 
-  const module = require('../logger');
+  const module = await import('../logger');
   return { module, nativeLogger, sdkLogger };
 };
 
@@ -114,7 +115,7 @@ describe('logger package', () => {
       })),
     }));
 
-    const module = require('../logger');
+    const module = await import('../logger');
 
     expect(() => module.configureLogger({ level: 'info' })).toThrow(
       '[@ping-identity/rn-logger] Failed to configure native logger'
@@ -137,7 +138,6 @@ describe('logger package', () => {
 
   it('logger tags messages with the SDK prefix', async () => {
     const { module, sdkLogger } = await loadModule();
-    const pkg = require('@ping-identity/rn-logger/package.json');
 
     const custom = {
       error: jest.fn(() => true),
@@ -149,7 +149,7 @@ describe('logger package', () => {
     const instance = module.logger({ level: 'info', custom });
     instance.info('hello');
 
-    const expectedPrefix = `[RNPingSDK v${pkg.version}]`;
+    const expectedPrefix = `[RNPingSDK v${packageJson.version}]`;
     expect(custom.info).toHaveBeenCalledWith(`${expectedPrefix} hello`);
     expect(sdkLogger.instance.info).toHaveBeenCalledWith('hello');
   });

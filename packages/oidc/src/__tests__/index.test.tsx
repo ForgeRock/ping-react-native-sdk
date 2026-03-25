@@ -5,6 +5,9 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { OidcStorageHandle } from '@ping-identity/rn-types';
+import type { OidcClientConfig } from '../index';
+
 type NativeModuleMock = {
   createClient: jest.Mock;
   createWebClient: jest.Mock;
@@ -66,7 +69,7 @@ const loadModule = async (nativeModule: NativeModuleMock) => {
       debug: jest.fn(),
     })),
   }));
-  return require('../index');
+  return import('../index');
 };
 
 describe('OIDC JS API', () => {
@@ -106,7 +109,7 @@ describe('OIDC JS API', () => {
         discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
         redirectUri: 'app://redirect',
         scopes: ['openid'],
-        storage: {} as any,
+        storage: {} as unknown as OidcStorageHandle,
       })
     ).toThrow(
       '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
@@ -139,7 +142,7 @@ describe('OIDC JS API', () => {
       discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
       redirectUri: 'app://redirect',
       scopes: ['openid'],
-      storage: { id: 'storage-id', kind: 'oidc' } as any,
+      storage: { id: 'storage-id', kind: 'oidc' } as unknown as OidcStorageHandle,
       logger,
     });
 
@@ -161,7 +164,7 @@ describe('OIDC JS API', () => {
       redirectUri: 'app://redirect',
       scopes: ['openid'],
       signOutRedirectUri: 'app://logout',
-    } as any);
+    } as OidcClientConfig & { signOutRedirectUri: string });
 
     expect(nativeModule.createClient).toHaveBeenCalledWith(
       expect.not.objectContaining({
@@ -219,7 +222,7 @@ describe('OIDC JS API', () => {
         discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
         redirectUri: 'app://redirect',
         scopes: ['openid'],
-        storage: {} as any,
+        storage: {} as unknown as OidcStorageHandle,
       })
     ).toThrow(
       '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
@@ -239,7 +242,7 @@ describe('OIDC JS API', () => {
         storage: {
           id: 'storage-id',
           kind: 'session',
-        } as any,
+        } as unknown as OidcStorageHandle,
       })
     ).toThrow(
       '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'

@@ -50,6 +50,7 @@ export interface Spec extends TurboModule {
    */
   open(
     url: string,
+    // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
     options: Object
   ): Promise<BrowserResult>;
 }

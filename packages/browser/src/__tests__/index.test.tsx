@@ -53,7 +53,7 @@ const loadModule = async ({
     })
   );
 
-  return require('../index');
+  return import('../index');
 };
 
 describe('browser package', () => {
@@ -260,6 +260,6 @@ describe('browser package', () => {
 
     expect(() =>
       openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
-    ).toThrow('Available NativeModules: [\"SomeOtherModule\"]');
+    ).toThrow('Available NativeModules: ["SomeOtherModule"]');
   });
 });

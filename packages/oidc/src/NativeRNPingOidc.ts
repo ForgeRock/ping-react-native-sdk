@@ -41,6 +41,7 @@ export type NativeOidcClientConfig = {
   loginHint?: string;
   display?: string;
   prompt?: string;
+  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
   additionalParameters?: Object;
 };
 
@@ -55,6 +56,7 @@ export type NativeOidcAuthorizeOptions = {
   loginHint?: string;
   display?: string;
   prompt?: string;
+  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
   additionalParameters?: Object;
 };
 

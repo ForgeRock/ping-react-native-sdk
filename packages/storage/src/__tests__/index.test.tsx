@@ -4,11 +4,13 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
+import type { LoggerInstance } from "@ping-identity/rn-types";
 import {
   CacheStrategy,
   configureSessionStorage,
   configureOidcStorage,
 } from "../index";
+import type { StorageConfig } from "../index";
 
 const mockLogger = {
   nativeHandle: { id: "native-none-id" },
@@ -99,7 +101,7 @@ describe("Storage API", () => {
     });
 
     it("configureSessionStorage validates config", () => {
-      expect(() => configureSessionStorage(null as any)).toThrow(/Missing configuration/);
+      expect(() => configureSessionStorage(null as unknown as StorageConfig)).toThrow(/Missing configuration/);
     });
 
     it("configureOidcStorage returns the config", () => {
@@ -154,7 +156,7 @@ describe("Storage API", () => {
     });
 
     it("configureOidcStorage validates config", () => {
-      expect(() => configureOidcStorage(null as any)).toThrow(/Missing configuration/);
+      expect(() => configureOidcStorage(null as unknown as StorageConfig)).toThrow(/Missing configuration/);
     });
 
     it("passes loggerId from logger options", () => {
@@ -226,7 +228,7 @@ describe("Storage API", () => {
         {
           android: { keyAlias: "session-key" },
         },
-        { logger: logger as any }
+        { logger: logger as LoggerInstance }
       );
 
       expect(mockNativeRNPingStorage.registerSessionStorage).toHaveBeenCalledWith({
