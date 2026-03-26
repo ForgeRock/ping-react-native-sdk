@@ -25,7 +25,9 @@ type NativeModuleMock = {
   logout: jest.Mock;
 };
 
-const createNativeMock = (overrides: Partial<NativeModuleMock> = {}): NativeModuleMock => {
+const createNativeMock = (
+  overrides: Partial<NativeModuleMock> = {},
+): NativeModuleMock => {
   return {
     createClient: jest.fn(() => 'client-id'),
     createWebClient: jest.fn(() => 'web-id'),
@@ -95,7 +97,7 @@ describe('OIDC JS API', () => {
           tokenEndpoint: 'https://issuer/token',
           userinfoEndpoint: 'https://issuer/userinfo',
         },
-      })
+      }),
     );
   });
 
@@ -110,9 +112,9 @@ describe('OIDC JS API', () => {
         redirectUri: 'app://redirect',
         scopes: ['openid'],
         storage: {} as unknown as OidcStorageHandle,
-      })
+      }),
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.',
     );
   });
 
@@ -125,9 +127,9 @@ describe('OIDC JS API', () => {
         clientId: 'client',
         redirectUri: 'app://redirect',
         scopes: ['openid'],
-      })
+      }),
     ).toThrow(
-      '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
+      '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.',
     );
   });
 
@@ -142,7 +144,10 @@ describe('OIDC JS API', () => {
       discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
       redirectUri: 'app://redirect',
       scopes: ['openid'],
-      storage: { id: 'storage-id', kind: 'oidc' } as unknown as OidcStorageHandle,
+      storage: {
+        id: 'storage-id',
+        kind: 'oidc',
+      } as unknown as OidcStorageHandle,
       logger,
     });
 
@@ -150,7 +155,7 @@ describe('OIDC JS API', () => {
       expect.objectContaining({
         storageId: 'storage-id',
         loggerId: 'native-logger-id',
-      })
+      }),
     );
   });
 
@@ -169,7 +174,7 @@ describe('OIDC JS API', () => {
     expect(nativeModule.createClient).toHaveBeenCalledWith(
       expect.not.objectContaining({
         signOutRedirectUri: expect.anything(),
-      })
+      }),
     );
   });
 
@@ -190,7 +195,7 @@ describe('OIDC JS API', () => {
     });
 
     expect(nativeModule.createClient).toHaveBeenCalledWith(
-      expect.objectContaining({ loggerId: 'explicit-native-id' })
+      expect.objectContaining({ loggerId: 'explicit-native-id' }),
     );
   });
 
@@ -208,7 +213,7 @@ describe('OIDC JS API', () => {
     expect(nativeModule.createClient).toHaveBeenCalledWith(
       expect.objectContaining({
         loggerId: undefined,
-      })
+      }),
     );
   });
 
@@ -223,9 +228,9 @@ describe('OIDC JS API', () => {
         redirectUri: 'app://redirect',
         scopes: ['openid'],
         storage: {} as unknown as OidcStorageHandle,
-      })
+      }),
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.',
     );
   });
 
@@ -243,15 +248,16 @@ describe('OIDC JS API', () => {
           id: 'storage-id',
           kind: 'session',
         } as unknown as OidcStorageHandle,
-      })
+      }),
     ).toThrow(
-      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+      '[@ping-identity/rn-oidc] Invalid storage handle. Use configureOidcStorage(...) from @ping-identity/rn-storage.',
     );
   });
 
   it('creates a web client and forwards authorize options', async () => {
     const nativeModule = createNativeMock();
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -271,7 +277,8 @@ describe('OIDC JS API', () => {
 
   it('passes empty options to authorize when none are provided', async () => {
     const nativeModule = createNativeMock();
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -299,7 +306,9 @@ describe('OIDC JS API', () => {
       logger,
     });
 
-    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('OIDC createClient config'));
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringContaining('OIDC createClient config'),
+    );
     expect(logger.info).toHaveBeenCalledWith('OIDC createClient success');
   });
 
@@ -310,7 +319,8 @@ describe('OIDC JS API', () => {
         throw error;
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
     const logger = createJsLogger();
 
     const client = createOidcClient({
@@ -333,7 +343,8 @@ describe('OIDC JS API', () => {
         throw error;
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -347,8 +358,11 @@ describe('OIDC JS API', () => {
   });
 
   it('returns null from user when hasUser is false', async () => {
-    const nativeModule = createNativeMock({ hasUser: jest.fn(async () => false) });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const nativeModule = createNativeMock({
+      hasUser: jest.fn(async () => false),
+    });
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -370,7 +384,8 @@ describe('OIDC JS API', () => {
         throw new Error('hasUser failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -385,7 +400,8 @@ describe('OIDC JS API', () => {
 
   it('uses default cache=false for userinfo when not provided', async () => {
     const nativeModule = createNativeMock();
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -405,7 +421,8 @@ describe('OIDC JS API', () => {
 
   it('forwards userinfo cache flag when provided', async () => {
     const nativeModule = createNativeMock();
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -461,7 +478,8 @@ describe('OIDC JS API', () => {
         throw new Error('logout failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -518,7 +536,8 @@ describe('OIDC JS API', () => {
         throw new Error('user token failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -539,7 +558,8 @@ describe('OIDC JS API', () => {
         throw new Error('user refresh failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -560,7 +580,8 @@ describe('OIDC JS API', () => {
         throw new Error('user revoke failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -581,7 +602,8 @@ describe('OIDC JS API', () => {
         throw new Error('user userinfo failed');
       }),
     });
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',
@@ -647,12 +669,15 @@ describe('OIDC JS API', () => {
       scopes: ['openid'],
     });
 
-    await expect(client.userinfo(true)).rejects.toThrow('client userinfo failed');
+    await expect(client.userinfo(true)).rejects.toThrow(
+      'client userinfo failed',
+    );
   });
 
   it('propagates client token errors with web client path untouched', async () => {
     const nativeModule = createNativeMock();
-    const { createOidcClient, createOidcWebClient } = await loadModule(nativeModule);
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
 
     const client = createOidcClient({
       clientId: 'client',

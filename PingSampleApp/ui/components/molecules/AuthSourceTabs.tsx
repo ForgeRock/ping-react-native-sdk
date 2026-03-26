@@ -36,18 +36,21 @@ export type AuthSourceTabsProps<T extends string> = {
  * @returns Tab strip element.
  */
 export default function AuthSourceTabs<T extends string>(
-  props: AuthSourceTabsProps<T>
+  props: AuthSourceTabsProps<T>,
 ): React.ReactElement {
   const { tabs, activeTab, onTabChange } = props;
 
   return (
     <View style={commonStyles.userProfileTabs}>
-      {tabs.map((tab) => {
+      {tabs.map(tab => {
         const selected = tab === activeTab;
         return (
           <TouchableOpacity
             key={tab}
-            style={[commonStyles.userProfileTab, selected ? commonStyles.userProfileTabActive : null]}
+            style={[
+              commonStyles.userProfileTab,
+              selected ? commonStyles.userProfileTabActive : null,
+            ]}
             onPress={() => onTabChange(tab)}
           >
             <Text

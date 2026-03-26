@@ -45,7 +45,7 @@ const loadModule = async ({
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
       TurboModuleRegistry: { get },
-    })
+    }),
   );
 
   return import('../index');
@@ -54,7 +54,7 @@ const loadModule = async ({
 describe('device-profile package', () => {
   it('collects a device profile via the classic native module', async () => {
     const collectDeviceProfile = jest.fn(() =>
-      Promise.resolve({ hardware: { model: 'mock' } })
+      Promise.resolve({ hardware: { model: 'mock' } }),
     );
     const { collectDeviceProfile: collect } = await loadModule({
       nativeModule: { RNPingDeviceProfileClassic: { collectDeviceProfile } },
@@ -69,7 +69,7 @@ describe('device-profile package', () => {
 
   it('collects a device profile for a Journey instance', async () => {
     const collectDeviceProfileForJourney = jest.fn(() =>
-      Promise.resolve({ type: 'success' })
+      Promise.resolve({ type: 'success' }),
     );
     const { collectDeviceProfileForJourney: collectForJourney } =
       await loadModule({
@@ -88,14 +88,14 @@ describe('device-profile package', () => {
     expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
       'journey-123',
       collectors,
-      undefined
+      undefined,
     );
     expect(result).toEqual({ type: 'success' });
   });
 
   it('uses the provided JS logger handle for Journey collection options', async () => {
     const collectDeviceProfileForJourney = jest.fn(() =>
-      Promise.resolve({ type: 'success' })
+      Promise.resolve({ type: 'success' }),
     );
     const { collectDeviceProfileForJourney: collectForJourney } =
       await loadModule({
@@ -115,13 +115,13 @@ describe('device-profile package', () => {
     expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
       'journey-logger-test',
       ['hardware'],
-      'logger-from-options'
+      'logger-from-options',
     );
   });
 
   it('prefers nativeLogger over logger.nativeHandle for Journey collection', async () => {
     const collectDeviceProfileForJourney = jest.fn(() =>
-      Promise.resolve({ type: 'success' })
+      Promise.resolve({ type: 'success' }),
     );
     const { collectDeviceProfileForJourney: collectForJourney } =
       await loadModule({
@@ -142,7 +142,7 @@ describe('device-profile package', () => {
     expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
       'journey-native-logger-test',
       ['network'],
-      'explicit-native-logger'
+      'explicit-native-logger',
     );
   });
 
@@ -170,14 +170,14 @@ describe('device-profile package', () => {
     };
 
     await expect(collectForJourney(journey, ['platform'])).rejects.toThrow(
-      'journey failure'
+      'journey failure',
     );
     expect(collectDeviceProfileForJourney).not.toHaveBeenCalled();
   });
 
   it('uses TurboModule when New Architecture is enabled', async () => {
     const collectDeviceProfile = jest.fn(() =>
-      Promise.resolve({ network: { ip: '127.0.0.1' } })
+      Promise.resolve({ network: { ip: '127.0.0.1' } }),
     );
     const { collectDeviceProfile: collect } = await loadModule({
       turboModule: { collectDeviceProfile },
@@ -190,7 +190,7 @@ describe('device-profile package', () => {
 
   it('falls back to classic module when TurboModule is missing', async () => {
     const collectDeviceProfile = jest.fn(() =>
-      Promise.resolve({ platform: { os: 'ios' } })
+      Promise.resolve({ platform: { os: 'ios' } }),
     );
     const { collectDeviceProfile: collect } = await loadModule({
       nativeModule: { RNPingDeviceProfileClassic: { collectDeviceProfile } },
@@ -203,7 +203,7 @@ describe('device-profile package', () => {
 
   it('throws when called without a native module', async () => {
     await expect(loadModule({})).rejects.toThrow(
-      '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.'
+      '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.',
     );
   });
 
@@ -211,9 +211,7 @@ describe('device-profile package', () => {
     await expect(
       loadModule({
         nativeModule: { SomeOtherModule: {} },
-      })
-    ).rejects.toThrow(
-      'Available NativeModules: ["SomeOtherModule"]'
-    );
+      }),
+    ).rejects.toThrow('Available NativeModules: ["SomeOtherModule"]');
   });
 });

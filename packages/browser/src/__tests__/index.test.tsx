@@ -15,7 +15,7 @@ const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
   const base: ReactNativeMock = {
     NativeModules: {},
     Platform: { OS: 'android' },
-    TurboModuleRegistry: { get: jest.fn(() => ({ })) },
+    TurboModuleRegistry: { get: jest.fn(() => ({})) },
   };
 
   return { ...base, ...overrides };
@@ -50,7 +50,7 @@ const loadModule = async ({
       Platform: { OS: platform },
       NativeModules: nativeModule ?? {},
       TurboModuleRegistry: { get },
-    })
+    }),
   );
 
   return import('../index');
@@ -134,7 +134,7 @@ describe('browser package', () => {
     });
 
     expect(() => resetBrowser()).toThrow(
-      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.'
+      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.',
     );
   });
 
@@ -205,7 +205,7 @@ describe('browser package', () => {
     await openBrowser(
       'https://example.com',
       { callbackUrlScheme: 'com.example.app' },
-      { nativeLogger: { id: 'explicit-native-id' } }
+      { nativeLogger: { id: 'explicit-native-id' } },
     );
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
@@ -235,7 +235,7 @@ describe('browser package', () => {
     });
 
     await expect(
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
     ).resolves.toEqual({ type: 'cancel' });
     expect(open).toHaveBeenCalledTimes(1);
   });
@@ -246,9 +246,9 @@ describe('browser package', () => {
     });
 
     expect(() =>
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
     ).toThrow(
-      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.'
+      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.',
     );
   });
 
@@ -259,7 +259,7 @@ describe('browser package', () => {
     });
 
     expect(() =>
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
     ).toThrow('Available NativeModules: ["SomeOtherModule"]');
   });
 });

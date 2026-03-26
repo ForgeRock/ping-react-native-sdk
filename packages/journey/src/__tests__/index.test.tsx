@@ -20,18 +20,34 @@ type NativeJourneyModuleMock = {
 };
 
 const createNativeMock = (
-  overrides: Partial<NativeJourneyModuleMock> = {}
+  overrides: Partial<NativeJourneyModuleMock> = {},
 ): NativeJourneyModuleMock => {
   return {
     configureJourney: jest.fn(async () => 'journey-id-1'),
-    start: jest.fn(async () => ({ id: 'n1', type: 'ContinueNode', callbacks: [] })),
-    next: jest.fn(async () => ({ id: 'n2', type: 'ContinueNode', callbacks: [] })),
-    resume: jest.fn(async () => ({ id: 'n3', type: 'ContinueNode', callbacks: [] })),
+    start: jest.fn(async () => ({
+      id: 'n1',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
+    next: jest.fn(async () => ({
+      id: 'n2',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
+    resume: jest.fn(async () => ({
+      id: 'n3',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     getSession: jest.fn(async () => ({ accessToken: 'token' })),
     refresh: jest.fn(async () => ({ accessToken: 'refreshed-token' })),
     revoke: jest.fn(async () => true),
     userinfo: jest.fn(async () => ({ sub: 'user-1' })),
-    ssoToken: jest.fn(async () => ({ value: 'sso', successUrl: '/enduser', realm: '/alpha' })),
+    ssoToken: jest.fn(async () => ({
+      value: 'sso',
+      successUrl: '/enduser',
+      realm: '/alpha',
+    })),
     logout: jest.fn(async () => true),
     dispose: jest.fn(async () => undefined),
     ...overrides,
@@ -56,8 +72,10 @@ describe('Journey JS API', () => {
     expect(() =>
       createJourneyClient({
         serverUrl: '',
-      })
-    ).toThrow('[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.');
+      }),
+    ).toThrow(
+      '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.',
+    );
   });
 
   it('passes storage and logger ids to configureJourney', async () => {
@@ -90,7 +108,7 @@ describe('Journey JS API', () => {
       expect.objectContaining({
         sessionStorageId: 'session-storage-id',
         loggerId: 'logger-id',
-      })
+      }),
     );
   });
 
@@ -117,7 +135,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         loggerId: 'oidc-native-logger-id',
-      })
+      }),
     );
   });
 
@@ -153,7 +171,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         loggerId: undefined,
-      })
+      }),
     );
   });
 
@@ -190,7 +208,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         loggerId: 'top-level-logger-id',
-      })
+      }),
     );
   });
 
@@ -207,7 +225,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         loggerId: undefined,
-      })
+      }),
     );
   });
 
@@ -225,7 +243,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: 30000,
-      })
+      }),
     );
   });
 
@@ -285,7 +303,7 @@ describe('Journey JS API', () => {
         additionalParameters: {
           audience: 'urn:example:api',
         },
-      })
+      }),
     );
   });
 
@@ -315,7 +333,7 @@ describe('Journey JS API', () => {
     expect(native.configureJourney).toHaveBeenCalledWith(
       expect.objectContaining({
         oidcStorageId: 'oidc-storage-id',
-      })
+      }),
     );
   });
 
@@ -333,10 +351,10 @@ describe('Journey JS API', () => {
             } as any,
           },
         },
-      })
+      }),
     ).toThrow(
       '[@ping-identity/rn-journey] Invalid modules.session.storage handle. ' +
-        'Use configureSessionStorage(...) from @ping-identity/rn-storage.'
+        'Use configureSessionStorage(...) from @ping-identity/rn-storage.',
     );
   });
 
@@ -360,10 +378,10 @@ describe('Journey JS API', () => {
             } as any,
           },
         },
-      })
+      }),
     ).toThrow(
       '[@ping-identity/rn-journey] Invalid modules.oidc.storage handle. ' +
-        'Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+        'Use configureOidcStorage(...) from @ping-identity/rn-storage.',
     );
   });
 
@@ -387,11 +405,10 @@ describe('Journey JS API', () => {
 
     await client.start('Login', { forceAuth: true, noSession: true });
 
-    expect(native.start).toHaveBeenCalledWith(
-      'journey-id-1',
-      'Login',
-      { forceAuth: true, noSession: true }
-    );
+    expect(native.start).toHaveBeenCalledWith('journey-id-1', 'Login', {
+      forceAuth: true,
+      noSession: true,
+    });
   });
 
   it('throws argument error when start journey name is empty', async () => {
@@ -447,7 +464,11 @@ describe('Journey JS API', () => {
     expect(refreshedSession).toEqual({ accessToken: 'refreshed-token' });
     expect(didRevoke).toBe(true);
     expect(userInfo).toEqual({ sub: 'user-1' });
-    expect(ssoToken).toEqual({ value: 'sso', successUrl: '/enduser', realm: '/alpha' });
+    expect(ssoToken).toEqual({
+      value: 'sso',
+      successUrl: '/enduser',
+      realm: '/alpha',
+    });
     expect(didLogout).toBe(true);
     expect(native.getSession).toHaveBeenCalledWith('journey-id-1');
     expect(native.refresh).toHaveBeenCalledWith('journey-id-1');

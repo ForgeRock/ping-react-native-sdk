@@ -22,7 +22,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Boolean field card.
  */
 export default function JourneyBooleanField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
@@ -40,11 +40,13 @@ export default function JourneyBooleanField(
         </Text>
       ) : null}
       {termsText.length > 0 ? (
-        <Text style={[fieldStyles.helperText, fieldStyles.contentText]}>{termsText}</Text>
+        <Text style={[fieldStyles.helperText, fieldStyles.contentText]}>
+          {termsText}
+        </Text>
       ) : null}
       <Switch
         value={readBoolean(currentValue, false)}
-        onValueChange={(value) => setFieldValue(field.id, value)}
+        onValueChange={value => setFieldValue(field.id, value)}
       />
     </View>
   );

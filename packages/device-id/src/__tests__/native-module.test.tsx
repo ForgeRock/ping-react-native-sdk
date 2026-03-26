@@ -33,7 +33,7 @@ const loadModule = async ({
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
       TurboModuleRegistry: { get },
-    })
+    }),
   );
 
   return import('../index');
@@ -64,7 +64,7 @@ describe('device-id native module wiring', () => {
     const { getDeviceId } = await loadModule({});
 
     await expect(getDeviceId()).rejects.toThrow(
-      '[@ping-identity/rn-device-id] Native module RNPingDeviceId not found.'
+      '[@ping-identity/rn-device-id] Native module RNPingDeviceId not found.',
     );
   });
 
@@ -74,7 +74,7 @@ describe('device-id native module wiring', () => {
     });
 
     await expect(getDeviceId()).rejects.toThrow(
-      'Available NativeModules: ["SomeOtherModule"]'
+      'Available NativeModules: ["SomeOtherModule"]',
     );
   });
 });

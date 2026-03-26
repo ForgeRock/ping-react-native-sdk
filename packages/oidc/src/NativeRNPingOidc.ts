@@ -89,17 +89,23 @@ export interface Spec extends TurboModule {
   createWebClient(clientId: string): string;
   clientToken(clientId: string): Promise<NativeOidcTokens>;
   clientRefresh(clientId: string): Promise<NativeOidcTokens>;
-  clientUserinfo(clientId: string, cache: boolean): Promise<Record<string, unknown>>;
+  clientUserinfo(
+    clientId: string,
+    cache: boolean,
+  ): Promise<Record<string, unknown>>;
   clientRevoke(clientId: string): Promise<void>;
   clientEndSession(clientId: string): Promise<boolean>;
   authorize(
     webClientId: string,
-    options: NativeOidcAuthorizeOptions
+    options: NativeOidcAuthorizeOptions,
   ): Promise<NativeOidcAuthorizeResult>;
   hasUser(webClientId: string): Promise<boolean>;
   token(webClientId: string): Promise<NativeOidcTokens>;
   refresh(webClientId: string): Promise<NativeOidcTokens>;
-  userinfo(webClientId: string, cache: boolean): Promise<Record<string, unknown>>;
+  userinfo(
+    webClientId: string,
+    cache: boolean,
+  ): Promise<Record<string, unknown>>;
   revoke(webClientId: string): Promise<void>;
   logout(webClientId: string): Promise<void>;
 }
@@ -125,6 +131,6 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-oidc] Native module RNPingOidc not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }

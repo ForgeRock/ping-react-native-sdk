@@ -84,7 +84,6 @@ export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
    * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
    */
   nativeLogger?: NativeLoggerHandle;
-
 };
 
 /**

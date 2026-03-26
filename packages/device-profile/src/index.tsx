@@ -43,7 +43,7 @@ const getDefaultLogger = (): LoggerInstance => {
  * Resolves JS logger instance and native logger identifier for bridge calls.
  */
 const resolveLogger = (
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
   const logger = options?.logger ?? getDefaultLogger();
   const rawLoggerId =
@@ -60,7 +60,7 @@ const resolveLogger = (
  *
  * @remarks
  * Native implementations remain authoritative for permissions, formatting, and execution.
- * 
+ *
  * @example
  * ```ts
  * try {
@@ -75,7 +75,7 @@ const resolveLogger = (
  * @returns A JSON-compatible device profile payload.
  */
 export async function collectDeviceProfile(
-  collectors: DeviceProfileCollector[]
+  collectors: DeviceProfileCollector[],
 ): Promise<DeviceProfile> {
   const nativeModule = getNativeModule();
   return nativeModule.collectDeviceProfile(collectors);
@@ -111,11 +111,11 @@ export async function collectDeviceProfile(
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[],
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): Promise<DeviceProfileJourneyResult> {
   const { logger, loggerId } = resolveLogger(options);
   logger.debug(
-    `Device profile journey requested ${JSON.stringify({ collectors, loggerId })}`
+    `Device profile journey requested ${JSON.stringify({ collectors, loggerId })}`,
   );
   let journeyId: string;
   try {
@@ -129,16 +129,16 @@ export async function collectDeviceProfileForJourney(
 
   const nativeModule = getNativeModule();
   logger.debug(
-    `Device profile native module requested ${JSON.stringify({ collectors })}`
+    `Device profile native module requested ${JSON.stringify({ collectors })}`,
   );
   try {
     const result = await nativeModule.collectDeviceProfileForJourney(
       journeyId,
       collectors,
-      loggerId
+      loggerId,
     );
     logger.debug(
-      `Device profile metadata collection successful ${JSON.stringify(result)}`
+      `Device profile metadata collection successful ${JSON.stringify(result)}`,
     );
     return result;
   } catch (error) {

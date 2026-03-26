@@ -48,7 +48,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
 
   const availableCollectors = useMemo<DeviceProfileCollector[]>(
     () => Object.keys(defaultCollectorSelections) as DeviceProfileCollector[],
-    []
+    [],
   );
 
   const toggleCollector = (collector: DeviceProfileCollector): void => {
@@ -60,7 +60,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
 
   const onCollect = async (): Promise<void> => {
     const collectors = availableCollectors.filter(
-      collector => collectorSelections[collector]
+      collector => collectorSelections[collector],
     );
 
     if (collectors.length === 0) {
@@ -93,7 +93,10 @@ export default function DeviceProfileScreen(): React.ReactElement {
   };
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.container}
+      nestedScrollEnabled
+    >
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>Device Profile</Text>
         <Text style={commonStyles.helperNote}>

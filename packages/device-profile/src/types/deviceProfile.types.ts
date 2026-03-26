@@ -1,12 +1,15 @@
 /*
-* Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-*
-* This software may be modified and distributed under the terms
-* of the MIT license. See the LICENSE file for details.
-*/
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
 
 import type { GenericError } from '@ping-identity/rn-types';
-import type { LoggerInstance, NativeLoggerHandle } from '@ping-identity/rn-types';
+import type {
+  LoggerInstance,
+  NativeLoggerHandle,
+} from '@ping-identity/rn-types';
 /**
  * Supported device profile collectors.
  *
@@ -75,8 +78,7 @@ export type DeviceProfileCallbackInputValue = {
  * The native implementation resolves this payload once the callback has been submitted.
  * Errors reject with {@link DeviceProfileError}.
  */
-export type DeviceProfileJourneyResult =
-  { type: 'success' };
+export type DeviceProfileJourneyResult = { type: 'success' };
 
 /**
  * Optional logger configuration for device profile native calls.

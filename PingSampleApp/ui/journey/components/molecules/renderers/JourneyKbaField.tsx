@@ -30,28 +30,32 @@ type JourneyKbaValue = {
  * @returns KBA field card.
  */
 export default function JourneyKbaField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
-  const [isQuestionDropdownOpen, setQuestionDropdownOpen] = useState<boolean>(false);
+  const [isQuestionDropdownOpen, setQuestionDropdownOpen] =
+    useState<boolean>(false);
 
-  const kbaValue: JourneyKbaValue =
-    (currentValue as JourneyKbaValue | undefined) ?? {
-      selectedQuestion: '',
-      selectedAnswer: '',
-      allowUserDefinedQuestions: false,
-    };
+  const kbaValue: JourneyKbaValue = (currentValue as
+    | JourneyKbaValue
+    | undefined) ?? {
+    selectedQuestion: '',
+    selectedAnswer: '',
+    allowUserDefinedQuestions: false,
+  };
   const questionOptions = useMemo(
     () =>
-      (field.options ?? []).map((option) =>
-        resolveOptionLabel(option.label, option.value, option.index)
+      (field.options ?? []).map(option =>
+        resolveOptionLabel(option.label, option.value, option.index),
       ),
-    [field.options]
+    [field.options],
   );
   const selectedQuestion = readString(kbaValue.selectedQuestion);
   const selectedQuestionLabel =
-    selectedQuestion.length > 0 ? selectedQuestion : 'Select a security question';
+    selectedQuestion.length > 0
+      ? selectedQuestion
+      : 'Select a security question';
 
   return (
     <View style={fieldStyles.card}>
@@ -62,9 +66,13 @@ export default function JourneyKbaField(
         <View style={fieldStyles.optionWrap}>
           <TouchableOpacity
             style={fieldStyles.dropdownTrigger}
-            onPress={() => setQuestionDropdownOpen((previousValue) => !previousValue)}
+            onPress={() =>
+              setQuestionDropdownOpen(previousValue => !previousValue)
+            }
           >
-            <Text style={fieldStyles.dropdownTriggerText}>{selectedQuestionLabel}</Text>
+            <Text style={fieldStyles.dropdownTriggerText}>
+              {selectedQuestionLabel}
+            </Text>
             <Text style={fieldStyles.dropdownChevron}>
               {isQuestionDropdownOpen ? '▲' : '▼'}
             </Text>
@@ -86,7 +94,7 @@ export default function JourneyKbaField(
                       selectedAnswer: readString(kbaValue.selectedAnswer),
                       allowUserDefinedQuestions: readBoolean(
                         kbaValue.allowUserDefinedQuestions,
-                        false
+                        false,
                       ),
                     });
                     setQuestionDropdownOpen(false);
@@ -109,16 +117,18 @@ export default function JourneyKbaField(
         </View>
       ) : null}
       <PingTextInput
-        containerStyle={questionOptions.length > 0 ? fieldStyles.topGap : undefined}
+        containerStyle={
+          questionOptions.length > 0 ? fieldStyles.topGap : undefined
+        }
         label="Answer"
         value={readString(kbaValue.selectedAnswer)}
-        onChangeText={(text) =>
+        onChangeText={text =>
           setFieldValue(field.id, {
             selectedQuestion,
             selectedAnswer: text,
             allowUserDefinedQuestions: readBoolean(
               kbaValue.allowUserDefinedQuestions,
-              false
+              false,
             ),
           })
         }

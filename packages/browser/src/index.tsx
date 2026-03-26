@@ -36,7 +36,7 @@ const getDefaultLogger = (): LoggerInstance => {
  * Resolve JS logger instance and native logger identifier for bridge calls.
  */
 const resolveLogger = (
-  options?: BrowserLoggerOptions
+  options?: BrowserLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
   const logger = options?.logger ?? getDefaultLogger();
   const loggerId =
@@ -57,7 +57,7 @@ const resolveLogger = (
  */
 export function configureBrowser(
   config: BrowserConfig,
-  options?: BrowserLoggerOptions
+  options?: BrowserLoggerOptions,
 ): void {
   const { logger, loggerId } = resolveLogger(options);
   logger.debug(`Browser configure requested ${JSON.stringify({ loggerId })}`);
@@ -100,7 +100,7 @@ export function resetBrowser(options?: BrowserLoggerOptions): void {
 export function open(
   url: string,
   options: BrowserOpenOptions,
-  loggerOptions?: BrowserLoggerOptions
+  loggerOptions?: BrowserLoggerOptions,
 ): Promise<BrowserResult> {
   const { logger, loggerId } = resolveLogger(loggerOptions);
   logger.info('Browser open requested');
@@ -110,7 +110,7 @@ export function open(
       callbackUrlScheme: options.callbackUrlScheme,
       redirectUri: options.redirectUri,
       loggerId,
-    })}`
+    })}`,
   );
 
   const nativeOptions = { ...options, loggerId };

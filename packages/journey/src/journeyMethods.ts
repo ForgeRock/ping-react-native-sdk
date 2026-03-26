@@ -23,7 +23,7 @@ import type { NativeJourneyConfig } from './NativeRNPingJourney';
  * @returns Native Journey instance identifier.
  */
 export async function configureJourney(
-  config: NativeJourneyConfig
+  config: NativeJourneyConfig,
 ): Promise<string> {
   return await NativeRNPingJourney.configureJourney(config);
 }
@@ -39,7 +39,7 @@ export async function configureJourney(
 export async function startJourney(
   journeyId: string,
   journeyName: string,
-  options?: JourneyStartOptions
+  options?: JourneyStartOptions,
 ): Promise<JourneyNode> {
   const node = await NativeRNPingJourney.start(journeyId, journeyName, options);
   return node as unknown as JourneyNode;
@@ -54,7 +54,7 @@ export async function startJourney(
  */
 export async function nextNode(
   journeyId: string,
-  input: JourneyNextInput = {}
+  input: JourneyNextInput = {},
 ): Promise<JourneyNode> {
   const node = await NativeRNPingJourney.next(journeyId, '', input);
   return node as unknown as JourneyNode;
@@ -69,7 +69,7 @@ export async function nextNode(
  */
 export async function resumeJourney(
   journeyId: string,
-  uri: string
+  uri: string,
 ): Promise<JourneyNode> {
   const node = await NativeRNPingJourney.resume(journeyId, uri);
   return node as unknown as JourneyNode;
@@ -82,7 +82,7 @@ export async function resumeJourney(
  * @returns Session payload, or `null` when unavailable.
  */
 export async function getSession(
-  journeyId: string
+  journeyId: string,
 ): Promise<JourneyUserSession | null> {
   const session = await NativeRNPingJourney.getSession(journeyId);
   return session ? (session as JourneyUserSession) : null;
@@ -95,7 +95,7 @@ export async function getSession(
  * @returns Refreshed session payload, or `null` when unavailable.
  */
 export async function refreshSession(
-  journeyId: string
+  journeyId: string,
 ): Promise<JourneyUserSession | null> {
   const session = await NativeRNPingJourney.refresh(journeyId);
   return session ? (session as JourneyUserSession) : null;
@@ -107,9 +107,7 @@ export async function refreshSession(
  * @param journeyId - Native Journey instance identifier.
  * @returns `true` when revoke succeeds.
  */
-export async function revokeSession(
-  journeyId: string
-): Promise<boolean> {
+export async function revokeSession(journeyId: string): Promise<boolean> {
   return await NativeRNPingJourney.revoke(journeyId);
 }
 
@@ -120,7 +118,7 @@ export async function revokeSession(
  * @returns Userinfo payload, or `null` when unavailable.
  */
 export async function getUserInfo(
-  journeyId: string
+  journeyId: string,
 ): Promise<JourneyUserInfo | null> {
   const userInfo = await NativeRNPingJourney.userinfo(journeyId);
   return userInfo ? (userInfo as JourneyUserInfo) : null;
@@ -133,7 +131,7 @@ export async function getUserInfo(
  * @returns SSO token payload, or `null` when unavailable.
  */
 export async function getSSOToken(
-  journeyId: string
+  journeyId: string,
 ): Promise<JourneySSOToken | null> {
   const ssoToken = await NativeRNPingJourney.ssoToken(journeyId);
   return ssoToken ? (ssoToken as JourneySSOToken) : null;
@@ -145,9 +143,7 @@ export async function getSSOToken(
  * @param journeyId - Native Journey instance identifier.
  * @returns `true` when logout succeeds.
  */
-export async function logout(
-  journeyId: string
-): Promise<boolean> {
+export async function logout(journeyId: string): Promise<boolean> {
   return await NativeRNPingJourney.logout(journeyId);
 }
 
@@ -156,8 +152,6 @@ export async function logout(
  *
  * @param journeyId - Native Journey instance identifier.
  */
-export async function disposeJourney(
-  journeyId: string
-): Promise<void> {
+export async function disposeJourney(journeyId: string): Promise<void> {
   await NativeRNPingJourney.dispose(journeyId);
 }

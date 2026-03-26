@@ -13,7 +13,10 @@ const oidcPackage = path.resolve(__dirname, '../packages/oidc');
 const journeyPackage = path.resolve(__dirname, '../packages/journey');
 const browserPackage = path.resolve(__dirname, '../packages/browser');
 const deviceIdPackage = path.resolve(__dirname, '../packages/device-id');
-const deviceProfilePackage = path.resolve(__dirname, '../packages/device-profile');
+const deviceProfilePackage = path.resolve(
+  __dirname,
+  '../packages/device-profile',
+);
 const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');
 const loggerPackage = path.resolve(__dirname, '../packages/logger');

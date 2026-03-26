@@ -51,7 +51,7 @@ export interface Spec extends TurboModule {
   open(
     url: string,
     // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
-    options: Object
+    options: Object,
   ): Promise<BrowserResult>;
 }
 
@@ -73,6 +73,6 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-browser] Native module RNPingBrowser not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }

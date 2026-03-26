@@ -43,16 +43,18 @@ const createSdkLoggerMock = () => {
     debug: jest.fn(),
   };
 
-  const factory = jest.fn((options: { level: string; custom?: CustomLoggerMock }) => {
-    const custom = options.custom;
-    if (custom) {
-      instance.error.mockImplementation((...args) => custom.error(...args));
-      instance.warn.mockImplementation((...args) => custom.warn(...args));
-      instance.info.mockImplementation((...args) => custom.info(...args));
-      instance.debug.mockImplementation((...args) => custom.debug(...args));
-    }
-    return instance;
-  });
+  const factory = jest.fn(
+    (options: { level: string; custom?: CustomLoggerMock }) => {
+      const custom = options.custom;
+      if (custom) {
+        instance.error.mockImplementation((...args) => custom.error(...args));
+        instance.warn.mockImplementation((...args) => custom.warn(...args));
+        instance.info.mockImplementation((...args) => custom.info(...args));
+        instance.debug.mockImplementation((...args) => custom.debug(...args));
+      }
+      return instance;
+    },
+  );
 
   return { factory, instance };
 };
@@ -118,7 +120,7 @@ describe('logger package', () => {
     const module = await import('../logger');
 
     expect(() => module.configureLogger({ level: 'info' })).toThrow(
-      '[@ping-identity/rn-logger] Failed to configure native logger'
+      '[@ping-identity/rn-logger] Failed to configure native logger',
     );
   });
 
@@ -128,7 +130,9 @@ describe('logger package', () => {
     const instance = module.logger({ level: 'debug' });
     instance.changeLevel('warn');
 
-    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'STANDARD' });
+    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({
+      level: 'STANDARD',
+    });
     expect(sdkLogger.instance.changeLevel).toHaveBeenCalledWith('warn');
     expect(nativeLogger.syncLogger).toHaveBeenCalledWith({
       id: 'logger-id',

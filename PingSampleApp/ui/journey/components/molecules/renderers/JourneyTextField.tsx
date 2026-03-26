@@ -19,7 +19,7 @@ import PingTextInput from '../../../../components/atoms/PingTextInput';
  * @returns Text field card.
  */
 export default function JourneyTextField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
@@ -31,7 +31,7 @@ export default function JourneyTextField(
       <PingTextInput
         label={promptText.length > 0 ? promptText : field.ref.type}
         value={toDisplayString(currentValue)}
-        onChangeText={(text) => setFieldValue(field.id, text)}
+        onChangeText={text => setFieldValue(field.id, text)}
         secureTextEntry={secureTextEntry}
         allowPasswordToggle={isPasswordField}
         keyboardType={field.kind === 'number' ? 'numeric' : 'default'}

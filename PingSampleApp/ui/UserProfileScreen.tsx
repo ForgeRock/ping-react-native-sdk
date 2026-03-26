@@ -20,7 +20,10 @@ import UserProfileOidcPanel from './userProfile/components/organisms/UserProfile
 type UserProfileTab = 'Journey' | 'OIDC';
 const USER_PROFILE_TABS = ['Journey', 'OIDC'] as const;
 
-type UserProfileNavigationProp = NativeStackNavigationProp<RootStackParamList, 'UserProfile'>;
+type UserProfileNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'UserProfile'
+>;
 
 type Props = {
   navigation: UserProfileNavigationProp;
@@ -33,13 +36,18 @@ type Props = {
  * @param props.navigation Stack navigation controller.
  * @returns User profile screen element.
  */
-export default function UserProfileScreen({ navigation }: Props): React.ReactElement {
+export default function UserProfileScreen({
+  navigation,
+}: Props): React.ReactElement {
   const [activeTab, setActiveTab] = useState<UserProfileTab>('Journey');
-  const [journeySession, setJourneySession] = useState<JourneyUserSession | null>(null);
+  const [journeySession, setJourneySession] =
+    useState<JourneyUserSession | null>(null);
   const [journeyLoading, setJourneyLoading] = useState<boolean>(false);
   const [journeyError, setJourneyError] = useState<string | null>(null);
-  const [showRawJourneyUserInfo, setShowRawJourneyUserInfo] = useState<boolean>(false);
-  const [showRawOidcUserInfo, setShowRawOidcUserInfo] = useState<boolean>(false);
+  const [showRawJourneyUserInfo, setShowRawJourneyUserInfo] =
+    useState<boolean>(false);
+  const [showRawOidcUserInfo, setShowRawOidcUserInfo] =
+    useState<boolean>(false);
 
   const [, journeyActions] = useJourney();
   const [oidcState, oidcActions] = useOidc();
@@ -57,7 +65,9 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Unable to resolve Journey session.';
+        error instanceof Error
+          ? error.message
+          : 'Unable to resolve Journey session.';
       setJourneyError(message);
       setJourneySession(null);
     } finally {
@@ -86,7 +96,7 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
         void refreshOidcSession();
       }
       return undefined;
-    }, [activeTab, refreshJourneySession, refreshOidcSession])
+    }, [activeTab, refreshJourneySession, refreshOidcSession]),
   );
 
   /**
@@ -124,7 +134,9 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
             session={journeySession}
             error={journeyError}
             showRawUserInfo={showRawJourneyUserInfo}
-            onToggleRawUserInfo={() => setShowRawJourneyUserInfo((value) => !value)}
+            onToggleRawUserInfo={() =>
+              setShowRawJourneyUserInfo(value => !value)
+            }
             onStartJourney={() => navigation.navigate('JourneyRoute')}
           />
         ) : null}
@@ -136,7 +148,7 @@ export default function UserProfileScreen({ navigation }: Props): React.ReactEle
             hasSession={oidcState.isAuthenticated}
             error={oidcState.error?.message ?? null}
             showRawUserInfo={showRawOidcUserInfo}
-            onToggleRawUserInfo={() => setShowRawOidcUserInfo((value) => !value)}
+            onToggleRawUserInfo={() => setShowRawOidcUserInfo(value => !value)}
             onStartOidc={async () => {
               try {
                 await oidcActions.authorize();

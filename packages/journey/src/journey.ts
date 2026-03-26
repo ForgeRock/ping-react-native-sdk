@@ -53,7 +53,7 @@ function resolveStorageHandleId(
   value: unknown,
   expectedKind: StorageHandleKind,
   modulePath: string,
-  configureMethod: 'configureSessionStorage' | 'configureOidcStorage'
+  configureMethod: 'configureSessionStorage' | 'configureOidcStorage',
 ): string | undefined {
   if (!value) {
     return undefined;
@@ -71,7 +71,7 @@ function resolveStorageHandleId(
   ) {
     throw new Error(
       `[@ping-identity/rn-journey] Invalid ${modulePath} handle. ` +
-        `Use ${configureMethod}(...) from @ping-identity/rn-storage.`
+        `Use ${configureMethod}(...) from @ping-identity/rn-storage.`,
     );
   }
 
@@ -85,12 +85,10 @@ function resolveStorageHandleId(
  * @returns A `JourneyClient` handle for imperative Journey flows.
  * @throws {Error} When required configuration is missing.
  */
-export function createJourneyClient(
-  config: JourneyConfig
-): JourneyClient {
+export function createJourneyClient(config: JourneyConfig): JourneyClient {
   if (!config.serverUrl?.trim()) {
     throw new Error(
-      '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.'
+      '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.',
     );
   }
 
@@ -99,13 +97,13 @@ export function createJourneyClient(
     config.modules?.session?.storage,
     'session',
     'modules.session.storage',
-    'configureSessionStorage'
+    'configureSessionStorage',
   );
   const oidcStorageId = resolveStorageHandleId(
     config.modules?.oidc?.storage,
     'oidc',
     'modules.oidc.storage',
-    'configureOidcStorage'
+    'configureOidcStorage',
   );
   const oidcConfig = config.modules?.oidc;
   const jsLogger = config.logger ?? noopLogger;
@@ -140,13 +138,15 @@ export function createJourneyClient(
     loggerId,
   };
 
-  const serialize = (payload: Record<string, unknown>): string => (
-    JSON.stringify(payload, (_key, value) => (
-      typeof value === 'function' ? undefined : value
-    ))
-  );
+  const serialize = (payload: Record<string, unknown>): string =>
+    JSON.stringify(payload, (_key, value) =>
+      typeof value === 'function' ? undefined : value,
+    );
 
-  const logDebug = (message: string, payload?: Record<string, unknown>): void => {
+  const logDebug = (
+    message: string,
+    payload?: Record<string, unknown>,
+  ): void => {
     if (payload) {
       jsLogger.debug(`${message} ${serialize(payload)}`);
       return;
@@ -154,7 +154,10 @@ export function createJourneyClient(
     jsLogger.debug(message);
   };
 
-  const logInfo = (message: string, payload?: Record<string, unknown>): void => {
+  const logInfo = (
+    message: string,
+    payload?: Record<string, unknown>,
+  ): void => {
     if (payload) {
       jsLogger.info(`${message} ${serialize(payload)}`);
       return;
@@ -165,7 +168,7 @@ export function createJourneyClient(
   const logError = (
     message: string,
     error: unknown,
-    payload?: Record<string, unknown>
+    payload?: Record<string, unknown>,
   ): void => {
     const errorPayload: Record<string, unknown> = {
       ...(payload ?? {}),
@@ -208,10 +211,7 @@ export function createJourneyClient(
       return id;
     },
 
-    async start(
-      journeyName: string,
-      options?: JourneyStartOptions
-    ) {
+    async start(journeyName: string, options?: JourneyStartOptions) {
       if (!journeyName.trim()) {
         throw {
           type: 'argument_error',
@@ -271,7 +271,10 @@ export function createJourneyClient(
       logDebug('Journey user requested', { journeyId: id });
       try {
         const session = await getSession(id);
-        logInfo('Journey user resolved', { journeyId: id, hasSession: Boolean(session) });
+        logInfo('Journey user resolved', {
+          journeyId: id,
+          hasSession: Boolean(session),
+        });
         return session;
       } catch (error) {
         logError('Journey user failed', error, { journeyId: id });
@@ -284,7 +287,10 @@ export function createJourneyClient(
       logDebug('Journey refresh requested', { journeyId: id });
       try {
         const session = await refreshSession(id);
-        logInfo('Journey refresh succeeded', { journeyId: id, hasSession: Boolean(session) });
+        logInfo('Journey refresh succeeded', {
+          journeyId: id,
+          hasSession: Boolean(session),
+        });
         return session;
       } catch (error) {
         logError('Journey refresh failed', error, { journeyId: id });
@@ -310,7 +316,10 @@ export function createJourneyClient(
       logDebug('Journey userinfo requested', { journeyId: id });
       try {
         const info = await getUserInfo(id);
-        logInfo('Journey userinfo resolved', { journeyId: id, hasUserInfo: Boolean(info) });
+        logInfo('Journey userinfo resolved', {
+          journeyId: id,
+          hasUserInfo: Boolean(info),
+        });
         return info;
       } catch (error) {
         logError('Journey userinfo failed', error, { journeyId: id });
@@ -323,7 +332,10 @@ export function createJourneyClient(
       logDebug('Journey ssoToken requested', { journeyId: id });
       try {
         const token = await getSSOToken(id);
-        logInfo('Journey ssoToken resolved', { journeyId: id, hasSsoToken: Boolean(token) });
+        logInfo('Journey ssoToken resolved', {
+          journeyId: id,
+          hasSsoToken: Boolean(token),
+        });
         return token;
       } catch (error) {
         logError('Journey ssoToken failed', error, { journeyId: id });
