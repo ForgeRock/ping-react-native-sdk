@@ -14,6 +14,8 @@
  * - Handles native errors gracefully
  */
 
+export {}
+
 const TEST_URL = 'https://example.com/oauth2/authorize';
 
 // ─── helpers ────────────────────────────────────────────────────────────────

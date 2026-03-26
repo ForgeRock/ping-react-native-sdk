@@ -47,7 +47,7 @@ export default function HomeScreen({
 }: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
-  const runtime = global as {
+  const runtime = globalThis as {
     RN$Bridgeless?: boolean;
     nativeFabricUIManager?: unknown;
   };

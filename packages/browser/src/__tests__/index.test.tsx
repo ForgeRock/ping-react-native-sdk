@@ -164,7 +164,7 @@ describe('browser package', () => {
 
     const options = {
       callbackUrlScheme: 'com.example.app',
-      ios: { browserType: 'authSession' },
+      ios: { browserType: 'authSession' as const },
     };
 
     await openBrowser('https://example.com', options);
@@ -184,7 +184,7 @@ describe('browser package', () => {
 
     const options = {
       callbackUrlScheme: 'com.example.app',
-      ios: { browserType: 'ephemeralAuthSession', browserMode: 'login' },
+      ios: { browserType: 'ephemeralAuthSession' as const, browserMode: 'login' as const },
     };
 
     await openBrowser('https://example.com', options);
