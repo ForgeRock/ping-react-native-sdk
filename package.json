@@ -25,6 +25,20 @@
     "sample:run:ios": "yarn workspace PingSampleApp run ios",
     "sample:run:android": "yarn workspace PingSampleApp run android",
     "sample:restart:metro": "yarn workspace PingSampleApp run reset-cache",
+    "test:runner": "yarn workspace PingTestRunner test",
+    "test:runner:all": "yarn workspace PingTestRunner test:all",
+    "test:runner:all:coverage": "yarn workspace PingTestRunner test:all:coverage",
+    "test:runner:integration": "yarn workspace PingTestRunner test:integration",
+    "test:runner:integration:coverage": "yarn workspace PingTestRunner test:integration:coverage",
+    "test:runner:native:android": "yarn workspace PingTestRunner test:native:android",
+    "test:runner:native:ios": "yarn workspace PingTestRunner test:native:ios",
+    "build:runner:e2e:ios": "yarn workspace PingTestRunner build:e2e:ios",
+    "build:runner:e2e:android": "yarn workspace PingTestRunner build:e2e:android",
+    "test:runner:e2e:ios": "yarn workspace PingTestRunner test:e2e:ios",
+    "test:runner:e2e:android": "yarn workspace PingTestRunner test:e2e:android",
+    "runner:clean-install": "yarn workspace PingTestRunner run clean-install",
+    "runner:run:ios": "yarn workspace PingTestRunner run ios",
+    "runner:run:android": "yarn workspace PingTestRunner run android",
     "storage:test": "yarn workspace @ping-identity/rn-storage run test",
     "docs:journey": "typedoc --options typedoc.journey.json",
     "prettier": "turbo run prettier",
@@ -33,7 +47,8 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "PingSampleApp"
+      "PingSampleApp",
+      "PingTestRunner"
     ]
   },
   "devDependencies": {

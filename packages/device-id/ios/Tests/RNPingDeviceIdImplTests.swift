@@ -36,27 +36,31 @@ final class RNPingDeviceIdImplTests: XCTestCase {
   // MARK: - Device ID Tests
 
   func testGetDefaultDeviceIdReturnsNonEmptyString() async throws {
-    switch await fetchDefaultDeviceIdResult() {
-    case .success(let deviceId):
-      XCTAssertFalse(deviceId.isEmpty, "Device ID should not be empty")
-    case .failure(let error):
-      assertExpectedDeviceIdFailure(error)
+    let deviceId: String
+    do {
+      deviceId = try await fetchDefaultDeviceId()
+    } catch {
+      if "\(error)".contains("encryptionInitializationFailed") {
+        throw XCTSkip("Device ID encryption not available in this environment")
+      }
+      throw error
     }
+    XCTAssertFalse(deviceId.isEmpty, "Device ID should not be empty")
   }
 
   func testGetDefaultDeviceIdIsStableWithinProcess() async throws {
-    let firstResult = await fetchDefaultDeviceIdResult()
-    let secondResult = await fetchDefaultDeviceIdResult()
-
-    switch (firstResult, secondResult) {
-    case let (.success(first), .success(second)):
-      XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
-    case let (.failure(firstError), .failure(secondError)):
-      assertExpectedDeviceIdFailure(firstError)
-      assertExpectedDeviceIdFailure(secondError)
-    case let (.failure(error), _), let (_, .failure(error)):
-      assertExpectedDeviceIdFailure(error)
+    let first: String
+    let second: String
+    do {
+      first = try await fetchDefaultDeviceId()
+      second = try await fetchDefaultDeviceId()
+    } catch {
+      if "\(error)".contains("encryptionInitializationFailed") {
+        throw XCTSkip("Device ID encryption not available in this environment")
+      }
+      throw error
     }
+    XCTAssertEqual(first, second, "Device ID should be stable across multiple calls")
   }
 
   private func fetchDefaultDeviceIdResult() async -> Result<String, Error> {

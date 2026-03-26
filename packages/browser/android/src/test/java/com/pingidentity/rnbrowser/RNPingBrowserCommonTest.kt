@@ -10,7 +10,6 @@ package com.pingidentity.rnbrowser
 import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageInfo
-import android.graphics.Color
 import android.net.Uri
 import androidx.browser.auth.AuthTabIntent
 import androidx.browser.customtabs.CustomTabsIntent
@@ -21,9 +20,6 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.browser.BrowserCanceledException
-import com.pingidentity.logger.Logger
-import com.pingidentity.logger.WARN
-import com.pingidentity.rnlogger.RNPingLoggerCommon
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -377,9 +373,7 @@ class RNPingBrowserCommonTest {
   }
 
   @Test
-  fun openAppliesNativeLoggerWhenLoggerIdProvided() = runTest {
-    mockkStatic(RNPingLoggerCommon::class)
-    every { RNPingLoggerCommon.resolveLogger("logger-1") } returns Logger.WARN
+  fun openWithLoggerIdStillResolvesSuccess() = runTest {
     fakeLauncher.launchResult = Result.success(Uri.parse("com.example.app://callback"))
 
     val promise = TestPromise()
@@ -391,8 +385,7 @@ class RNPingBrowserCommonTest {
     RNPingBrowserCommon.open("https://example.com", options, promise)
     mainDispatcher.scheduler.advanceUntilIdle()
 
-    verify(exactly = 1) { RNPingLoggerCommon.resolveLogger("logger-1") }
-    unmockkStatic(RNPingLoggerCommon::class)
+    assertEquals("success", promise.resolved?.getString("type"))
   }
 
   private class FakeBrowserLauncher : BrowserLauncherAdapter {

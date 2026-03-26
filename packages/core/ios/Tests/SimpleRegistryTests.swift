@@ -51,7 +51,6 @@ final class SimpleRegistryTests: XCTestCase {
 
     let resolved1 = await registry.resolve(id1)
     let resolved2 = await registry.resolve(id2)
-
     XCTAssertNil(resolved1)
     XCTAssertNil(resolved2)
   }

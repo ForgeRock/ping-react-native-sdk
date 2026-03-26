@@ -5,20 +5,27 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ScrollView } from 'react-native';
 import type { OidcClientConfig } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../src/styles/common';
-import { sampleOidcClientConfig } from '../src/clients';
 import OidcClientPanel from './oidc/components/organisms/OidcClientPanel';
+
+type OidcScreenProps = {
+  /**
+   * OIDC config for the currently selected app profile.
+   */
+  clientConfig: OidcClientConfig;
+};
 
 /**
  * Renders OIDC helper screen with provider-backed state.
  *
+ * @param props OIDC screen props.
  * @returns OIDC screen element.
  */
-export default function OidcScreen(): React.ReactElement {
-  const clientConfig = useMemo<OidcClientConfig>(() => sampleOidcClientConfig, []);
+export default function OidcScreen(props: OidcScreenProps): React.ReactElement {
+  const { clientConfig } = props;
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>

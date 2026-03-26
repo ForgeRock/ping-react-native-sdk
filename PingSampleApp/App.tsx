@@ -216,9 +216,15 @@ export default function App() {
             />
             <Stack.Screen
               name="Oidc"
-              component={OidcScreen}
               options={{ title: 'OIDC Demo' }}
-            />
+            >
+              {(props) => (
+                <OidcScreen
+                  {...props}
+                  clientConfig={selectedProfile.oidcClientConfig}
+                />
+              )}
+            </Stack.Screen>
             <Stack.Screen
               name="DeviceProfile"
               component={DeviceProfileScreen}

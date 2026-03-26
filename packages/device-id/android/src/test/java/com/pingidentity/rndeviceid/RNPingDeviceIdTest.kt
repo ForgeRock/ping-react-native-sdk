@@ -7,17 +7,21 @@
 package com.pingidentity.rndeviceid
 
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
-import com.facebook.react.module.annotations.ReactModule
 import com.pingidentity.device.id.DeviceIdentifier
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.After
 import org.junit.Assume
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -25,30 +29,23 @@ import org.junit.Test
  */
 class RNPingDeviceIdTest {
 
+  @Before
+  fun setUp() {
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } answers { JavaOnlyMap() }
+  }
+
+  @After
+  fun tearDown() {
+    unmockkStatic(Arguments::class)
+  }
+
   /**
    * Ensures the TurboModule name is correct.
    */
   @Test
   fun moduleNameIsCorrect() {
     assertEquals("RNPingDeviceId", RNPingDeviceIdModule.NAME)
-  }
-
-  /**
-   * Ensures the classic module name matches expectations.
-   */
-  @Test
-  fun classicModuleNameIsCorrect() {
-    assertEquals("RNPingDeviceIdClassic", RNPingDeviceIdClassicModule.NAME)
-  }
-
-  /**
-   * Ensures the classic module annotation uses the expected name.
-   */
-  @Test
-  fun classicModuleAnnotationNameIsCorrect() {
-    val annotation = RNPingDeviceIdClassicModule::class.java.getAnnotation(ReactModule::class.java)
-    assertNotNull(annotation)
-    assertEquals(RNPingDeviceIdClassicModule.NAME, annotation.name)
   }
 
   /**

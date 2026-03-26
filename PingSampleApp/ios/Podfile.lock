@@ -3276,12 +3276,12 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingBrowser: ee98bfb8ab8f803dd29deb04ae74f64d0dc9f911
   RNPingCore: f41b28de7c94d2e2af7fae663531d0d0341d2775
-  RNPingDeviceId: 91b27d604f58f805af9d7d12d5f2f65063008188
+  RNPingDeviceId: fd74c58f4eb179de3052adad1c1345bd402c10f5
   RNPingDeviceProfile: 4f7d48210c1f7929db4f0a15b1bd091d4e5c64c9
   RNPingJourney: 6f38c0a4ae2ca523541ce1950bd40440f085f2a7
-  RNPingLogger: dc98dba6ac1bf005d7056d8e9e6448adcb047546
+  RNPingLogger: 92fd0e87739f7fabf9c16883827b450b13a512f2
   RNPingOidc: e522fcc12a6ed3e6e4ed8688db18e191aa1e1db1
-  RNPingStorage: 89e6a01b27f7ce5b81b3c9c1682cb1da79b65586
+  RNPingStorage: bddf2eac79587794f1f4928efe81637f163ee8eb
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
