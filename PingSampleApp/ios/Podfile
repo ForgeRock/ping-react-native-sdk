@@ -53,6 +53,12 @@ target 'PingSampleApp' do
   pod 'PingDeviceProfile',
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch
+  pod 'PingFido',
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
+  pod 'PingDavinciPlugin',
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch
   pod 'PingJourneyPlugin',
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch
@@ -82,6 +88,7 @@ target 'PingSampleApp' do
     # Test specs for each package - using same paths as autolinking
     pod 'RNPingCore', :path => '../../packages/core', :testspecs => ['Tests']
     pod 'RNPingDeviceId', :path => '../../node_modules/@ping-identity/rn-device-id', :testspecs => ['Tests']
+    pod 'RNPingFido', :path => '../../node_modules/@ping-identity/rn-fido', :testspecs => ['Tests']
     pod 'RNPingLogger', :path => '../../node_modules/@ping-identity/rn-logger', :testspecs => ['Tests']
     pod 'RNPingOidc', :path => '../../node_modules/@ping-identity/rn-oidc', :testspecs => ['Tests']
     pod 'RNPingStorage', :path => '../../node_modules/@ping-identity/rn-storage', :testspecs => ['Tests']

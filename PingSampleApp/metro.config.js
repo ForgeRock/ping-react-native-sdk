@@ -14,6 +14,7 @@ const journeyPackage = path.resolve(__dirname, '../packages/journey');
 const browserPackage = path.resolve(__dirname, '../packages/browser');
 const deviceIdPackage = path.resolve(__dirname, '../packages/device-id');
 const deviceProfilePackage = path.resolve(__dirname, '../packages/device-profile');
+const fidoPackage = path.resolve(__dirname, '../packages/fido');
 const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');
 const loggerPackage = path.resolve(__dirname, '../packages/logger');
@@ -26,6 +27,7 @@ const config = {
     browserPackage,
     deviceIdPackage,
     deviceProfilePackage,
+    fidoPackage,
     storagePackage,
     corePackage,
     loggerPackage,
@@ -46,6 +48,7 @@ const config = {
       '@ping-identity/rn-browser': browserPackage,
       '@ping-identity/rn-device-id': deviceIdPackage,
       '@ping-identity/rn-device-profile': deviceProfilePackage,
+      '@ping-identity/rn-fido': fidoPackage,
       '@ping-identity/rn-storage': storagePackage,
       '@ping-identity/rn-core': corePackage,
       '@ping-identity/rn-logger': loggerPackage,

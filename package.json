@@ -19,6 +19,7 @@
     "test:logger": "yarn workspace @ping-identity/rn-logger test",
     "test:storage": "yarn workspace @ping-identity/rn-storage run test",
     "test:device-id": "yarn workspace @ping-identity/rn-device-id run test",
+    "test:fido": "yarn workspace @ping-identity/rn-fido run test",
     "test:device-profile": "yarn workspace @ping-identity/rn-device-profile run test",
     "sample:clean-install": "yarn workspace PingSampleApp run clean-install",
     "sample:clean-android": "rm -rf PingSampleApp/android/app/build PingSampleApp/android/build PingSampleApp/android/.gradle && (rm -f ~/.gradle/wrapper/dists/gradle-8.14.1-bin/*/gradle-8.14.1-bin.zip.lck || true) && (cd PingSampleApp/android && ./gradlew clean)",
