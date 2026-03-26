@@ -42,37 +42,26 @@ export interface Spec extends TurboModule {
   ): Promise<DeviceProfileJourneyResult>;
 }
 
-// Detect New Architecture (Turbo)
-const isNewArchEnabled =
-  typeof global.__turboModuleProxy !== 'undefined' &&
-  global.__turboModuleProxy != null;
-
 /**
- * Resolve the native module, preferring TurboModules when enabled.
- *
- * @throws If the classic module is missing at runtime.
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  */
 export function getNativeModule(): Spec {
-  if (isNewArchEnabled) {
-    try {
-      return TurboModuleRegistry.getEnforcing<Spec>('RNPingDeviceProfile');
-    } catch {
-      // Fall back to classic if TurboModule isn't registered at runtime.
-    }
+  const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceProfile');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic =
-    NativeModules.RNPingDeviceProfileClassic ?? NativeModules.RNPingDeviceProfile;
-  if (!classic) {
-    const available = Object.keys(NativeModules).slice(0, 10);
-    throw new Error(
-      '[@pingidentity/device-profile] Native RNPingDeviceProfile module not found.\n' +
-        'Available NativeModules: ' +
-        JSON.stringify(available)
-    );
+  const classic = NativeModules.RNPingDeviceProfileClassic as Spec | undefined;
+  if (classic) {
+    return classic;
   }
 
-  return classic as Spec;
+  throw new Error(
+    '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
+      'Available NativeModules: ' +
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }
 
 export default getNativeModule();

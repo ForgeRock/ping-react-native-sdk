@@ -42,35 +42,23 @@ export interface Spec extends TurboModule {
 }
 
 /**
- * Detects if the New Architecture (Turbo Modules) is enabled.
- */
-const isNewArchEnabled =
-  typeof global.__turboModuleProxy !== 'undefined' &&
-  global.__turboModuleProxy != null;
-
-/**
- * Resolve the native module, preferring TurboModules when enabled.
- *
- * @throws If the classic module is missing at runtime.
+ * Resolve by probing TurboModule first, then falling back to the classic bridge module.
  */
 export function getNativeModule(): Spec {
-  if (isNewArchEnabled) {
-    try {
-      return TurboModuleRegistry.getEnforcing<Spec>('RNPingDeviceId');
-    } catch {
-      // Fall back to classic if TurboModule isn't registered at runtime.
-    }
+  const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceId');
+  if (turbo) {
+    return turbo;
   }
 
-  const classic = NativeModules.RNPingDeviceIdClassic;
-  if (!classic) {
-    const available = Object.keys(NativeModules).slice(0, 10);
-    throw new Error(
-      '[@ping-identity/rn-device-id] Classic RNPingDeviceIdClassic native module not found.\n' +
+  const classic = NativeModules.RNPingDeviceIdClassic as Spec | undefined;
+  if (classic) {
+    return classic;
+  }
+
+  throw new Error(
+    '[@ping-identity/rn-device-id] Native module RNPingDeviceId not found.\n' +
+      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(available)
-    );
-  }
-
-  return classic as Spec;
+      JSON.stringify(Object.keys(NativeModules))
+  );
 }

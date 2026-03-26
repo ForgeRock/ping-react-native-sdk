@@ -15,34 +15,37 @@ Pod::Spec.new do |s|
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
-  
+
   # CocoaPods requires this to be a hash
   s.authors      = { "Ping Identity" => "sdk@pingidentity.com" }
+
   # Minimum iOS version
-  s.platforms        = { :ios => "16.0" }
+  s.platforms    = { :ios => "16.0" }
 
   # IMPORTANT: local monorepo source path (not git)
-  s.source           = { :path => "." }
+  s.source       = { :path => "." }
 
   if new_arch_enabled
     s.source_files = "ios/**/*.{h,m,mm,cpp,swift}"
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=1"
-    # Gating of codegen
-    install_modules_dependencies(s)
   else
-    s.source_files = "ios/RNPingDeviceProfileClassic.mm"
-    s.compiler_flags = "-DRCT_NEW_ARCH_ENABLED=0"
+    s.source_files = [
+      "ios/RNPingDeviceProfileClassic.mm",
+      "ios/**/*.swift",
+      "ios/**/*.h"
+    ]
   end
 
-  s.exclude_files    = "ios/Tests/**/*"
+  s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
-  s.swift_version    = ['5.0', '5.1']
-  s.requires_arc     = true
+  s.swift_version = ['5.0', '5.1', '6.0']
 
   # Native Ping SDK dependency
   s.dependency "PingDeviceProfile"
   s.dependency "RNPingCore"
 
-  # Explicitly add ReactCodegen dependency for generated specs
-  s.dependency "ReactCodegen"
+  install_modules_dependencies(s)
+
+  if new_arch_enabled
+    s.dependency "ReactCodegen"
+  end
 end

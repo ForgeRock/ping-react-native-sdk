@@ -41,8 +41,6 @@ apply plugin: "com.facebook.react"
 def newArchEnabled = project.hasProperty("newArchEnabled") &&
         project.newArchEnabled.toBoolean()
 
-println("[RNPingOidc] newArchEnabled = ${newArchEnabled}")
-
 android {
   namespace "com.pingidentity.rnoidc"
 
@@ -51,6 +49,7 @@ android {
   defaultConfig {
     minSdkVersion getExtOrDefault("minSdkVersion")
     targetSdkVersion getExtOrDefault("targetSdkVersion")
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled.toString()
   }
 
   buildFeatures {
@@ -75,10 +74,9 @@ android {
   sourceSets {
     main {
       if (newArchEnabled) {
-        java.srcDirs += ["generated/java", "generated/jni"]
+        java.srcDirs += ["src/newarch/java", "generated/java"]
       } else {
-        println("[RNPingOidc] Skipping generated/java and jni (New Arch disabled)")
-        java.srcDirs -= ["generated/java", "generated/jni"]
+        java.srcDirs += ["src/oldarch/java"]
       }
     }
   }
@@ -107,24 +105,4 @@ dependencies {
   testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
   testImplementation "io.mockk:mockk:1.13.12"
   testImplementation "org.robolectric:robolectric:4.12.2"
-}
-
-//
-// Disable all Turbo/JSI/CMake/codegen tasks
-//
-if (!newArchEnabled) {
-    println("[RNPingOidc] Disabling TurboModule codegen + CMake tasks...")
-
-    tasks.configureEach { task ->
-        if (task.name.contains("Codegen") ||
-            task.name.contains("generateCodegen") ||
-            task.name.contains("generateSchema") ||
-            task.name.contains("configureCMake") ||
-            task.name.contains("externalNativeBuild") ||
-            task.name.contains("buildCMake")
-        ) {
-            task.enabled = false
-            println("[RNPingOidc] Disabled task: ${task.name}")
-        }
-    }
 }

@@ -38,6 +38,9 @@ apply plugin: "kotlin-android"
 
 apply plugin: "com.facebook.react"
 
+def newArchEnabled = project.hasProperty("newArchEnabled") &&
+        project.newArchEnabled.toBoolean()
+
 android {
   namespace "com.pingidentity.rndeviceid"
 
@@ -46,6 +49,7 @@ android {
   defaultConfig {
     minSdkVersion getExtOrDefault("minSdkVersion")
     targetSdkVersion getExtOrDefault("targetSdkVersion")
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled.toString()
   }
 
   buildFeatures {
@@ -65,6 +69,16 @@ android {
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_17
     targetCompatibility JavaVersion.VERSION_17
+  }
+
+  sourceSets {
+    main {
+      if (newArchEnabled) {
+        java.srcDirs += ["src/newarch/java", "generated/java"]
+      } else {
+        java.srcDirs += ["src/oldarch/java"]
+      }
+    }
   }
 }
 

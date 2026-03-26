@@ -2342,7 +2342,6 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingJourney
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2372,7 +2371,6 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingJourney
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3276,14 +3274,14 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBrowser: 24f53af7d3cfdc8f1120270ea0b5696d05bdd803
-  RNPingCore: ef609e3ddcb42211d859bf09f3d120fa571ae8a5
-  RNPingDeviceId: c3f81abc4ee8f5385a71088f08218995191344a9
-  RNPingDeviceProfile: dcedb95b19e37c79b3e67d03620c29289d751417
-  RNPingJourney: c6148c0621bd53bfa9e80498e8f88b2234ee3864
-  RNPingLogger: b8907bf9e1f85c3903f8506b3fe7781325d04449
-  RNPingOidc: 0847cb9c12ce4417d958a854d708f428076bd46c
-  RNPingStorage: b009bca6fc32ad4e8a6c6a55b5f3feeec8a353e3
+  RNPingBrowser: ee98bfb8ab8f803dd29deb04ae74f64d0dc9f911
+  RNPingCore: f41b28de7c94d2e2af7fae663531d0d0341d2775
+  RNPingDeviceId: 91b27d604f58f805af9d7d12d5f2f65063008188
+  RNPingDeviceProfile: 4f7d48210c1f7929db4f0a15b1bd091d4e5c64c9
+  RNPingJourney: 6f38c0a4ae2ca523541ce1950bd40440f085f2a7
+  RNPingLogger: dc98dba6ac1bf005d7056d8e9e6448adcb047546
+  RNPingOidc: e522fcc12a6ed3e6e4ed8688db18e191aa1e1db1
+  RNPingStorage: 89e6a01b27f7ce5b81b3c9c1682cb1da79b65586
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

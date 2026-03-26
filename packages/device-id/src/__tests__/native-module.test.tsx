@@ -7,13 +7,13 @@
 
 type ReactNativeMock = {
   NativeModules: Record<string, unknown>;
-  TurboModuleRegistry: { getEnforcing: jest.Mock };
+  TurboModuleRegistry: { get: jest.Mock };
 };
 
 const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
   const base: ReactNativeMock = {
     NativeModules: {},
-    TurboModuleRegistry: { getEnforcing: jest.fn(() => ({})) },
+    TurboModuleRegistry: { get: jest.fn(() => ({})) },
   };
 
   return { ...base, ...overrides };
@@ -22,27 +22,17 @@ const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
 const loadModule = async ({
   nativeModule,
   turboModule,
-  enableTurbo,
 }: {
   nativeModule?: Record<string, unknown>;
   turboModule?: Record<string, unknown>;
-  enableTurbo?: boolean;
 }) => {
   jest.resetModules();
-  (global as { __turboModuleProxy?: unknown }).__turboModuleProxy =
-    enableTurbo ? {} : undefined;
-
-  const getEnforcing = jest.fn(() => {
-    if (!turboModule) {
-      throw new Error('missing');
-    }
-    return turboModule;
-  });
+  const get = jest.fn(() => turboModule);
 
   jest.doMock('react-native', () =>
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
-      TurboModuleRegistry: { getEnforcing },
+      TurboModuleRegistry: { get },
     })
   );
 
@@ -54,7 +44,6 @@ describe('device-id native module wiring', () => {
     const getDefaultDeviceId = jest.fn(() => Promise.resolve('device-id'));
     const { getDeviceId } = await loadModule({
       turboModule: { getDefaultDeviceId },
-      enableTurbo: true,
     });
 
     await expect(getDeviceId()).resolves.toBe('device-id');
@@ -65,7 +54,6 @@ describe('device-id native module wiring', () => {
     const getDefaultDeviceId = jest.fn(() => Promise.resolve('classic-id'));
     const { getDeviceId } = await loadModule({
       nativeModule: { RNPingDeviceIdClassic: { getDefaultDeviceId } },
-      enableTurbo: true,
     });
 
     await expect(getDeviceId()).resolves.toBe('classic-id');
@@ -76,7 +64,7 @@ describe('device-id native module wiring', () => {
     const { getDeviceId } = await loadModule({});
 
     await expect(getDeviceId()).rejects.toThrow(
-      '[@ping-identity/rn-device-id] Classic RNPingDeviceIdClassic native module not found.'
+      '[@ping-identity/rn-device-id] Native module RNPingDeviceId not found.'
     );
   });
 

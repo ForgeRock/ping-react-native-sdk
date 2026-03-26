@@ -12,11 +12,10 @@ import Foundation
 
 /// Swift entry point used by the Obj-C++ bridges.
 @objcMembers
-public class RNPingOidcImpl: NSObject {
+public class RNPingOidcImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
-  @MainActor
-  public static let shared = RNPingOidcImpl()
+  @objc public static let shared = RNPingOidcImpl()
 
   private override init() {
     super.init()

@@ -9,7 +9,7 @@ import Foundation
 
 /// Swift entry point used by the Obj-C++ Journey bridge.
 @objcMembers
-public final class RNPingJourneyImpl: NSObject {
+public final class RNPingJourneyImpl: NSObject, @unchecked Sendable {
   /// Promise resolver for Journey identifiers.
   public typealias JourneyIdResolver = @Sendable (String) -> Void
   /// Promise resolver for Journey node payloads.
@@ -24,8 +24,7 @@ public final class RNPingJourneyImpl: NSObject {
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
   /// Shared singleton instance.
-  @MainActor
-  public static let shared = RNPingJourneyImpl()
+  @objc public static let shared = RNPingJourneyImpl()
 
   private override init() {
     super.init()
