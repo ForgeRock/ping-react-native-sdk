@@ -10,7 +10,7 @@ export type LogMessage = unknown;
  * Shared native logger handle contract.
  *
  * @remarks
- * Returned by `configureLogger(...)` from `@ping-identity/rn-logger`.
+ * Accessible via `logger(...).nativeHandle` from `@ping-identity/rn-logger`.
  */
 export type NativeLoggerHandle = {
     /**
