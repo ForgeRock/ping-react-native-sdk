@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig",
   "compilerOptions": {
-    "rootDir": "."
+    "rootDir": ".",
+    "paths": {
+      "@ping-identity/rn-browser": ["./src/index"],
+      "@ping-identity/rn-types": ["../types/lib/typescript/src/index"]
+    }
   },
   "exclude": ["example", "lib", "**/__tests__/**"]
 }

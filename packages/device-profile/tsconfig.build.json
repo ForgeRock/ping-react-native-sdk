@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig",
   "compilerOptions": {
-    "rootDir": "."
+    "rootDir": ".",
+    "paths": {
+      "@ping-identity/rn-device-profile": ["./src/index"],
+      "@ping-identity/rn-types": ["../types/lib/typescript/src/index"]
+    }
   },
   "exclude": ["example", "lib"]
 }
