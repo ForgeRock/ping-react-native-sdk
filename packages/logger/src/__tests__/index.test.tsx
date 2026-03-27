@@ -79,51 +79,6 @@ const loadModule = async () => {
 };
 
 describe('logger package', () => {
-  it('configureLogger registers a native logger and returns a handle', async () => {
-    const { module, nativeLogger } = await loadModule();
-
-    const handle = module.configureLogger({ level: 'warn' });
-
-    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'WARN' });
-    expect(handle).toEqual({ id: 'logger-id' });
-  });
-
-  it('configureLogger defaults to NONE when no level provided', async () => {
-    const { module, nativeLogger } = await loadModule();
-
-    module.configureLogger();
-
-    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'NONE' });
-  });
-
-  it('configureLogger throws when native registration fails', async () => {
-    jest.resetModules();
-    const nativeLogger = createNativeLoggerMock();
-    nativeLogger.registerLogger.mockReturnValue('');
-
-    jest.doMock('../NativeRNPingLogger', () => ({
-      __esModule: true,
-      default: nativeLogger,
-    }));
-
-    jest.doMock('@forgerock/sdk-logger', () => ({
-      __esModule: true,
-      logger: jest.fn(() => ({
-        changeLevel: jest.fn(),
-        error: jest.fn(),
-        warn: jest.fn(),
-        info: jest.fn(),
-        debug: jest.fn(),
-      })),
-    }));
-
-    const module = await import('../logger');
-
-    expect(() => module.configureLogger({ level: 'info' })).toThrow(
-      '[@ping-identity/rn-logger] Failed to configure native logger',
-    );
-  });
-
   it('logger creates a native handle and syncs level changes', async () => {
     const { module, nativeLogger, sdkLogger } = await loadModule();
 

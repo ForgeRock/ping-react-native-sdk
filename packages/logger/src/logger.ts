@@ -76,12 +76,12 @@ function syncNativeLogger(id: string, level: LogLevel) {
  * @param config - Logger configuration options
  * @returns Handle to the registered native logger
  * @throws {Error} If the native logger registration fails
- * @public
+ * @internal
  * @remarks
  * This function registers a logger with the native platform (iOS/Android)
  * and returns an identifier that can be used to sync logger settings.
  */
-export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
+function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
   const level = config.level ?? 'none';
   const id = NativeLogger.registerLogger({
     level: nativeLevelMap[level],

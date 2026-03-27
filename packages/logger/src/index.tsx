@@ -31,5 +31,5 @@
  * ```
  */
 
-export { configureLogger, logger } from './logger';
+export { logger } from './logger';
 export type * from './types/logger.types';
