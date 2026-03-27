@@ -119,33 +119,6 @@ describe('device-profile package', () => {
     );
   });
 
-  it('prefers nativeLogger over logger.nativeHandle for Journey collection', async () => {
-    const collectDeviceProfileForJourney = jest.fn(() =>
-      Promise.resolve({ type: 'success' }),
-    );
-    const { collectDeviceProfileForJourney: collectForJourney } =
-      await loadModule({
-        nativeModule: {
-          RNPingDeviceProfileClassic: { collectDeviceProfileForJourney },
-        },
-      });
-
-    const journey: JourneyInstance = {
-      getId: jest.fn(() => Promise.resolve('journey-native-logger-test')),
-    };
-
-    await collectForJourney(journey, ['network'], {
-      logger: createJsLogger('logger-from-options'),
-      nativeLogger: { id: 'explicit-native-logger' },
-    });
-
-    expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
-      'journey-native-logger-test',
-      ['network'],
-      'explicit-native-logger',
-    );
-  });
-
   it('propagates native errors when collecting a device profile', async () => {
     const error = new Error('native failure');
     const collectDeviceProfile = jest.fn(() => Promise.reject(error));
