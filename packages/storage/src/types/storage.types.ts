@@ -9,7 +9,6 @@ import { CacheStrategy } from '../NativeRNPingStorage';
 import type {
   GenericError,
   LoggerInstance,
-  NativeLoggerHandle,
 } from '@ping-identity/rn-types';
 import type {
   OidcStorageHandle,
@@ -107,11 +106,6 @@ export type StorageLoggerOptions = {
    * Optional JavaScript logger instance.
    */
   logger?: LoggerInstance;
-
-  /**
-   * Optional native logger handle.
-   */
-  nativeLogger?: NativeLoggerHandle;
 };
 
 export { CacheStrategy };
