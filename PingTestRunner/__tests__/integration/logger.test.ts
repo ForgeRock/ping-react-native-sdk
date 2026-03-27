@@ -9,22 +9,18 @@
  * Integration tests for @ping-identity/rn-logger
  *
  * Validates that the logger package:
- * - Exports `logger` and `configureLogger` factory functions
+ * - Exports the `logger` factory function
  * - Creates logger instances with the correct level API
  * - Delegates log calls through the JS logger API
  * - Handles level changes at runtime
  */
 
-import { logger, configureLogger } from '@ping-identity/rn-logger';
+import { logger } from '@ping-identity/rn-logger';
 
 describe('@ping-identity/rn-logger — integration', () => {
   describe('exports', () => {
     it('exports logger factory function', () => {
       expect(typeof logger).toBe('function');
-    });
-
-    it('exports configureLogger function', () => {
-      expect(typeof configureLogger).toBe('function');
     });
   });
 
@@ -59,18 +55,6 @@ describe('@ping-identity/rn-logger — integration', () => {
     it('does not throw when changing log level', () => {
       const log = logger({ level: 'debug' });
       expect(() => log.changeLevel('error')).not.toThrow();
-    });
-  });
-
-  describe('configureLogger()', () => {
-    it('returns a logger when native module is present', () => {
-      // configureLogger may return a full LoggerInstance or throw if native is absent
-      try {
-        const result = configureLogger({ level: 'info' });
-        expect(result).toBeDefined();
-      } catch {
-        // Native module not available in test environment — acceptable
-      }
     });
   });
 
