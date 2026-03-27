@@ -178,28 +178,7 @@ describe('OIDC JS API', () => {
     );
   });
 
-  it('prefers nativeLogger over logger.nativeHandle', async () => {
-    const nativeModule = createNativeMock();
-    const { createOidcClient } = await loadModule(nativeModule);
-
-    const logger = createJsLogger();
-    logger.nativeHandle.id = 'logger-native-id';
-
-    createOidcClient({
-      clientId: 'client',
-      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
-      redirectUri: 'app://redirect',
-      scopes: ['openid'],
-      logger,
-      nativeLogger: { id: 'explicit-native-id' },
-    });
-
-    expect(nativeModule.createClient).toHaveBeenCalledWith(
-      expect.objectContaining({ loggerId: 'explicit-native-id' }),
-    );
-  });
-
-  it('does not pass loggerId when logger and nativeLogger are both omitted', async () => {
+  it('does not pass loggerId when logger is omitted', async () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);
 

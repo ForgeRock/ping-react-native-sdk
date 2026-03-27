@@ -66,7 +66,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
   }
   // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
   const jsLogger = config.logger ?? noopLogger;
-  const rawLoggerId = config.nativeLogger?.id ?? jsLogger.nativeHandle?.id;
+  const rawLoggerId = jsLogger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
