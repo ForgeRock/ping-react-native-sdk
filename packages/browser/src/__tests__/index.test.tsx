@@ -195,25 +195,6 @@ describe('browser package', () => {
     });
   });
 
-  it('prefers provided nativeLogger for Android open calls', async () => {
-    const open = jest.fn(() => Promise.resolve({ type: 'cancel' }));
-    const { open: openBrowser } = await loadModule({
-      platform: 'android',
-      nativeModule: { RNPingBrowserClassic: { open } },
-    });
-
-    await openBrowser(
-      'https://example.com',
-      { callbackUrlScheme: 'com.example.app' },
-      { nativeLogger: { id: 'explicit-native-id' } },
-    );
-
-    expect(open).toHaveBeenCalledWith('https://example.com', {
-      callbackUrlScheme: 'com.example.app',
-      loggerId: 'explicit-native-id',
-    });
-  });
-
   it('uses TurboModule when New Architecture is enabled', async () => {
     const open = jest.fn(() => Promise.resolve({ type: 'cancel' }));
     const turboModule = { open };
