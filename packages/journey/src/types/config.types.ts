@@ -7,7 +7,6 @@
 
 import type {
   LoggerInstance,
-  NativeLoggerHandle,
   OidcStorageHandle,
   OidcCoreConfig,
   OidcOpenIdConfiguration,
@@ -42,13 +41,6 @@ export type JourneyOidcModuleConfig = OidcCoreConfig & {
    * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
-  /**
-   * Optional native logger handle.
-   *
-   * @remarks
-   * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
-   */
-  nativeLogger?: NativeLoggerHandle;
 };
 
 /**

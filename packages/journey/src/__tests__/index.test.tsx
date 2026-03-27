@@ -112,33 +112,6 @@ describe('Journey JS API', () => {
     );
   });
 
-  it('uses modules.oidc.nativeLogger id when top-level logger is not provided', async () => {
-    const native = createNativeMock();
-    const { createJourneyClient } = await loadModule(native);
-
-    const client = createJourneyClient({
-      serverUrl: 'https://example.com',
-      modules: {
-        oidc: {
-          clientId: 'rn-client',
-          discoveryEndpoint:
-            'https://example.com/am/oauth2/.well-known/openid-configuration',
-          redirectUri: 'com.example.app://oauth2redirect',
-          scopes: ['openid'],
-          nativeLogger: { id: 'oidc-native-logger-id' },
-        },
-      },
-    });
-
-    await client.init();
-
-    expect(native.configureJourney).toHaveBeenCalledWith(
-      expect.objectContaining({
-        loggerId: 'oidc-native-logger-id',
-      }),
-    );
-  });
-
   it('does not use modules.oidc.logger for journey logger id resolution', async () => {
     const native = createNativeMock();
     const { createJourneyClient } = await loadModule(native);
@@ -175,7 +148,7 @@ describe('Journey JS API', () => {
     );
   });
 
-  it('prefers top-level logger over module native logger', async () => {
+  it('uses top-level logger nativeHandle as loggerId', async () => {
     const native = createNativeMock();
     const { createJourneyClient } = await loadModule(native);
 
@@ -198,7 +171,6 @@ describe('Journey JS API', () => {
             'https://example.com/am/oauth2/.well-known/openid-configuration',
           redirectUri: 'com.example.app://oauth2redirect',
           scopes: ['openid'],
-          nativeLogger: { id: 'oidc-native-logger-id' },
         },
       },
     });

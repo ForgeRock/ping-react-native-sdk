@@ -109,7 +109,6 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
   const jsLogger = config.logger ?? noopLogger;
   const rawLoggerId =
     config.logger?.nativeHandle?.id ??
-    oidcConfig?.nativeLogger?.id ??
     jsLogger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
