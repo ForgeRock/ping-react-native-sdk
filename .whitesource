@@ -7,7 +7,6 @@
   },
   "scanSettingsSAST": {
     "enableScan": true,
-    "configExternalURL": "https://raw.githubusercontent.com/ForgeRock/ping-react-native-sdk/SDKS-4556/.mendsastcli-config.json",
     "scanPullRequests": true,
     "incrementalScan": true,
     "findingSuppressions": "enabled",
