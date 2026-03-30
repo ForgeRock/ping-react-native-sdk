@@ -29,7 +29,7 @@ import {
   sampleAppClientProfiles,
 } from './src/clients';
 import { configureBrowser } from '@ping-identity/rn-browser';
-import { configureLogger, logger } from '@ping-identity/rn-logger';
+import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from './src/styles/colors';
 
@@ -118,9 +118,6 @@ export default function App() {
     };
 
     void initializeJourneyClient();
-
-    // ( TODO: REVISIT )Global SDK logger baseline. Tune this when debugging integration issues.
-    configureLogger({ level: 'info' });
 
     // Browser defaults used by OIDC/browser flows in this sample app.
     configureBrowser(
