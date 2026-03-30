@@ -6,10 +6,7 @@
  */
 import type { BaseStorageConfig } from '../NativeRNPingStorage';
 import { CacheStrategy } from '../NativeRNPingStorage';
-import type {
-  GenericError,
-  LoggerInstance,
-} from '@ping-identity/rn-types';
+import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
 import type {
   OidcStorageHandle,
   SessionStorageHandle,

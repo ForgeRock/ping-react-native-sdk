@@ -61,8 +61,7 @@ const resolveLogger = (
 ): { logger: LoggerInstance; loggerId?: string } => {
   const logger = options?.logger ?? getDefaultLogger();
   const loggerId =
-    logger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
+    logger.nativeHandle?.id ?? getDefaultLogger().nativeHandle?.id;
 
   return { logger, loggerId };
 };
