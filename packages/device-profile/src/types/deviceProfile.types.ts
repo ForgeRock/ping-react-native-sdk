@@ -5,8 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
 /**
  * Supported device profile collectors.
  *
