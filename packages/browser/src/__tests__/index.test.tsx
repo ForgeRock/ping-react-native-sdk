@@ -32,17 +32,6 @@ const loadModule = async ({
 }) => {
   jest.resetModules();
 
-  jest.doMock('@ping-identity/rn-logger', () => ({
-    logger: jest.fn(() => ({
-      nativeHandle: { id: 'native-none-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    })),
-  }));
-
   const get = jest.fn(() => turboModule);
 
   jest.doMock('react-native', () =>
@@ -150,7 +139,7 @@ describe('browser package', () => {
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
+      loggerId: undefined,
     });
     expect(result).toEqual({ type: 'cancel' });
   });
@@ -171,7 +160,7 @@ describe('browser package', () => {
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
+      loggerId: undefined,
     });
   });
 
@@ -184,14 +173,17 @@ describe('browser package', () => {
 
     const options = {
       callbackUrlScheme: 'com.example.app',
-      ios: { browserType: 'ephemeralAuthSession' as const, browserMode: 'login' as const },
+      ios: {
+        browserType: 'ephemeralAuthSession' as const,
+        browserMode: 'login' as const,
+      },
     };
 
     await openBrowser('https://example.com', options);
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
+      loggerId: undefined,
     });
   });
 

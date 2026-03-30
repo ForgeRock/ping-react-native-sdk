@@ -2728,7 +2728,6 @@ __metadata:
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
   dependencies:
     "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-logger": "npm:^0.1.0"
     "@ping-identity/rn-types": "npm:^0.1.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
@@ -2794,7 +2793,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-logger@npm:^0.1.0, @ping-identity/rn-logger@workspace:*, @ping-identity/rn-logger@workspace:packages/logger":
+"@ping-identity/rn-logger@workspace:*, @ping-identity/rn-logger@workspace:packages/logger":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-logger@workspace:packages/logger"
   dependencies:

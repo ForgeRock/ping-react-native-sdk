@@ -8,8 +8,8 @@
 import type {
   GenericError,
   IOSBrowserOpenOptions,
+  LoggerInstance,
 } from '@ping-identity/rn-types';
-import type { LoggerInstance } from '@ping-identity/rn-logger';
 
 /**
  * Result of a browser launch.
