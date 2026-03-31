@@ -66,14 +66,14 @@ jobs:
                   ${{ runner.os }}-pods-
 
             # Cache DerivedData
+            # Note: restore-keys is intentionally omitted. A partial/stale DerivedData cache
+            # causes Clang module mtime mismatch errors when SDK framework files on the runner
+            # are newer than the cached .pcm files. Only an exact cache hit is safe to restore.
             - name: Cache DerivedData
               uses: actions/cache@v3
               with:
                 path: ${{ env.DERIVED_DATA_PATH }}
                 key: ${{ runner.os }}-xcode-${{ env.XCODE_VERSION }}-deriveddata-${{ hashFiles('PingTestRunner/ios/Podfile.lock', 'PingTestRunner/ios/PingTestRunner.xcodeproj/project.pbxproj', 'PingTestRunner/ios/PingTestRunner.xcodeproj/xcshareddata/xcschemes/RNPackagesTests.xcscheme', 'packages/*/*.podspec', 'packages/*/ios/**/*.swift', 'packages/*/ios/**/*.{m,mm,h,cpp}') }}
-                restore-keys: |
-                  ${{ runner.os }}-xcode-${{ env.XCODE_VERSION }}-deriveddata-
-
               # Setup Node.js environment and install dependencies.
             - name: Setup project dependencies
               uses: ./.github/actions/setup-proj
