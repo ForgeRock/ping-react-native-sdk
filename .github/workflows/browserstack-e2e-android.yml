@@ -28,7 +28,7 @@ jobs:
 
     env:
       # APK paths — defined once, referenced in upload steps
-      APP_APK_PATH:  android/app/build/outputs/apk/release/app-release.apk
+      APP_APK_PATH:  android/app/build/outputs/apk/debug/app-debug.apk
       TEST_APK_PATH: android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
       # BrowserStack credentials available to all steps
       BROWSERSTACK_USERNAME:       ${{ secrets.BROWSERSTACK_USERNAME }}
@@ -74,7 +74,23 @@ jobs:
           echo "BROWSERSTACK_PROJECT_NAME=rn-sdk-test" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_SESSION_NAME=android-detox-e2e" >> "$GITHUB_ENV"
 
+      - name: Generate codegen artifacts for all SDK modules
+        # React Native New Architecture requires each library's codegen JNI
+        # directories to exist before CMake configures the app. Run codegen
+        # across all included modules so the directories are present.
+        run: |
+          cd android && ./gradlew \
+            :ping-identity_rn-browser:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-id:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-profile:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema
+
       - name: Build Release APK and androidTest APK
+        run: yarn build:e2e:android:bs
+      - name: Build Debug APK and androidTest APK
         run: yarn build:e2e:android:bs
 
       - name: Upload app to BrowserStack
@@ -82,7 +98,7 @@ jobs:
         run: |
           response=$(curl --silent --fail-with-body \
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
-            -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/app" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app" \
             -F "file=@$APP_APK_PATH")
           app_url=$(echo "$response" | jq -r '.app_url')
           if [[ "$app_url" == "null" || -z "$app_url" ]]; then

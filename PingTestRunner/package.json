@@ -21,7 +21,7 @@
     "test:e2e:android:bs": "NODE_NO_WARNINGS=1 detox test --configuration android.bs --loglevel trace",
     "test:e2e:ios": "sh -c 'export DETOX_SERVER_PORT=${DETOX_SERVER_PORT:-8099}; export NODE_NO_WARNINGS=1; yarn e2e:android:free-detox-port && detox test --configuration ios.sim \"$@\"' --",
     "build:e2e:android": "detox build --configuration android.emu",
-    "build:e2e:android:bs": "cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release",
+    "build:e2e:android:bs": "cd android && ./gradlew assembleDebug && ./gradlew assembleAndroidTest",
     "build:e2e:ios": "detox build --configuration ios.sim",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
