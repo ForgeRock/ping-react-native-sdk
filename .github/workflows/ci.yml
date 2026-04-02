@@ -76,10 +76,3 @@ jobs:
         uses: ./.github/workflows/preview-docs.yml
         with:
             pr_number: ${{ github.event.pull_request.number }}
-
-    browserstack-e2e-android:
-        needs: android-unit-tests
-        uses: ./.github/workflows/browserstack-e2e-android.yml
-        secrets: inherit
-
-    

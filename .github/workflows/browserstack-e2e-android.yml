@@ -7,32 +7,9 @@
 name: BrowserStack E2E — Android
 
 on:
-  workflow_call:
-    secrets:
-      BROWSERSTACK_USERNAME:
-        required: true
-      BROWSERSTACK_ACCESS_KEY:
-        required: true
-      PING_SERVER_URL:
-        required: true
-      PING_REALM_PATH:
-        required: true
-      PING_COOKIE_NAME:
-        required: true
-      PING_JOURNEY_NAME:
-        required: true
-      PING_TEST_USERNAME:
-        required: true
-      PING_TEST_PASSWORD:
-        required: true
-      PING_DISCOVERY_ENDPOINT:
-        required: true
-      PING_CLIENT_ID:
-        required: true
-      PING_REDIRECT_URI:
-        required: true
-      PING_CALLBACK_TREES_ENABLED:
-        required: true
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
 
 # Cancel in-progress runs for the same ref.
 concurrency:
@@ -89,15 +66,11 @@ jobs:
       - name: Compute BrowserStack identifiers
         # Naming convention:
         #   Project : rn-<moduleName>-test  → rn-sdk-test
-        #   Build   : pr-<PR_NUMBER>-<SHORT_SHA>  (main-<SHORT_SHA> on push)
+        #   Build   : pr-<PR_NUMBER>-<SHORT_SHA>
         #   Session : <platform>-<framework>-<test_name>
         run: |
           SHORT_SHA="${GITHUB_SHA:0:7}"
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "BROWSERSTACK_BUILD_ID=pr-${{ github.event.pull_request.number }}-${SHORT_SHA}" >> "$GITHUB_ENV"
-          else
-            echo "BROWSERSTACK_BUILD_ID=main-${SHORT_SHA}" >> "$GITHUB_ENV"
-          fi
+          echo "BROWSERSTACK_BUILD_ID=pr-${{ github.event.pull_request.number }}-${SHORT_SHA}" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_PROJECT_NAME=rn-sdk-test" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_SESSION_NAME=android-detox-e2e" >> "$GITHUB_ENV"
 
