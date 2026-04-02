@@ -33,12 +33,6 @@ allprojects {
             force "androidx.test.core:core:1.6.1"
         }
     }
-    repositories {
-        maven {
-            // BrowserStack Detox Android artifacts
-            url("$rootDir/../node_modules/detox/Detox-android")
-        }
-    }
     // Provide a default appRedirectUriScheme for library modules that reference
     // this placeholder in their manifest (e.g. rn-browser).
     plugins.withId("com.android.library") {

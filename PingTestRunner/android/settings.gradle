@@ -10,12 +10,18 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingTestRunner'
 
-// Point Gradle at the local Detox AAR so com.wix:detox resolves to the
-// correct version bundled with the detox npm package (not the stale Maven artifact).
+// Include the Detox Android source project from node_modules so Gradle
+// compiles it as a composite build (detox v20+ no longer ships a pre-built
+// Detox-android maven repository — it ships source only).
+includeBuild('../../node_modules/detox/android') {
+    dependencySubstitution {
+        substitute module('com.wix:detox') using project(':detox')
+    }
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        maven { url "$rootDir/../../node_modules/detox/Detox-android" }
         google()
         mavenCentral()
     }

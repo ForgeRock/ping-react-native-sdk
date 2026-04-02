@@ -51,6 +51,8 @@ android {
         manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
         // Enable Detox test orchestration
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Detox ships a 'detox' flavor dimension; pick 'full' for e2e tests.
+        missingDimensionStrategy 'detox', 'full'
     }
     signingConfigs {
         debug {
@@ -76,9 +78,6 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
-    androidTestImplementation('com.wix:detox:+')
-
-    // Detox test dependency
     androidTestImplementation("com.wix:detox:+")
 
     if (hermesEnabled.toBoolean()) {
