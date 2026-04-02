@@ -10,14 +10,12 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingTestRunner'
 
-// Include the Detox Android source project from node_modules so Gradle
-// compiles it as a composite build (detox v20+ no longer ships a pre-built
-// Detox-android maven repository — it ships source only).
-includeBuild('../../node_modules/detox/android') {
-    dependencySubstitution {
-        substitute module('com.wix:detox') using project(':detox')
-    }
-}
+// Include only the :detox module from node_modules as a regular subproject
+// (detox v20+ ships source only; its settings.gradle can't be used as a
+// composite build because it re-includes @react-native/gradle-plugin
+// under a conflicting build path).
+include ':detox'
+project(':detox').projectDir = file('../../node_modules/detox/android/detox')
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
