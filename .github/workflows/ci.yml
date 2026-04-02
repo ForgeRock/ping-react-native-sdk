@@ -27,16 +27,16 @@ jobs:
     lint-and-typecheck:
         uses: ./.github/workflows/lint-and-typecheck.yml
         with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
+            turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+            turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     
     # Build affected packages to verify compilation succeeds.
     build-packages-check:
         needs: lint-and-typecheck
         uses: ./.github/workflows/build-packages.yml
         with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
+            turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+            turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     
     # Execute Jest unit tests across affected packages.
     js-unit-tests:
@@ -46,8 +46,8 @@ jobs:
             checks: write
         uses: ./.github/workflows/js-unit-tests.yml
         with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
+            turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+            turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     
     # Execute Android unit tests across affected packages.
     android-unit-tests:
@@ -76,5 +76,10 @@ jobs:
         uses: ./.github/workflows/preview-docs.yml
         with:
             pr_number: ${{ github.event.pull_request.number }}
+
+    # TODO: Wire to CI dependent on android-unit-tests job after validating BrowserStack E2E flow.
+    browserstack-e2e-android:
+        uses: ./.github/workflows/browserstack-e2e-android.yml
+        secrets: inherit
 
     
