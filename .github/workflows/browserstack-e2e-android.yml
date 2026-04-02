@@ -8,6 +8,31 @@ name: BrowserStack E2E — Android
 
 on:
   workflow_call:
+    secrets:
+      BROWSERSTACK_USERNAME:
+        required: true
+      BROWSERSTACK_ACCESS_KEY:
+        required: true
+      PING_SERVER_URL:
+        required: true
+      PING_REALM_PATH:
+        required: true
+      PING_COOKIE_NAME:
+        required: true
+      PING_JOURNEY_NAME:
+        required: true
+      PING_TEST_USERNAME:
+        required: true
+      PING_TEST_PASSWORD:
+        required: true
+      PING_DISCOVERY_ENDPOINT:
+        required: true
+      PING_CLIENT_ID:
+        required: true
+      PING_REDIRECT_URI:
+        required: true
+      PING_CALLBACK_TREES_ENABLED:
+        required: true
 
 # Cancel in-progress runs for the same ref.
 concurrency:
