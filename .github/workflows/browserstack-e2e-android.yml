@@ -48,8 +48,6 @@ jobs:
     name: E2E — Android BrowserStack
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # Skip on forks where BrowserStack credentials are not available.
-    if: ${{ secrets.BROWSERSTACK_USERNAME != '' }}
     defaults:
       run:
         working-directory: PingTestRunner
