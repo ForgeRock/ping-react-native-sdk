@@ -88,8 +88,6 @@ jobs:
             :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-storage:generateCodegenArtifactsFromSchema
 
-      - name: Build Release APK and androidTest APK
-        run: yarn build:e2e:android:bs
       - name: Build Debug APK and androidTest APK
         run: yarn build:e2e:android:bs
 

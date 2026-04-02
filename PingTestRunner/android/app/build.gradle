@@ -76,6 +76,7 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+    androidTestImplementation('com.wix:detox:+')
 
     // Detox test dependency
     androidTestImplementation("com.wix:detox:+")
