@@ -6,16 +6,7 @@
  */
 
 /** @type {Detox.DetoxConfig} */
-const detoxPort = Number(process.env.DETOX_SERVER_PORT ?? 8099)
-
 module.exports = {
-  session: {
-    server: `ws://127.0.0.1:${detoxPort}`,
-    autoStart: true,
-  },
-  server: {
-    port: detoxPort,
-  },
   artifacts: {
     rootDir: 'artifacts',
     plugins: {
@@ -51,7 +42,6 @@ module.exports = {
       testBinaryPath: 'android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
-      reversePorts: [detoxPort],
     },
     // BrowserStack cloud app — URLs are resolved after uploading binaries to BrowserStack.
     'android.cloud': {
