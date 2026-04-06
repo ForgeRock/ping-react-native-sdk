@@ -25,6 +25,7 @@
 import type { Spec as BrowserSpec } from '../../../packages/browser/src/NativeRNPingBrowser';
 import type { Spec as DeviceIdSpec } from '../../../packages/device-id/src/NativeRNPingDeviceId';
 import type { Spec as DeviceProfileSpec } from '../../../packages/device-profile/src/NativeRNPingDeviceProfile';
+import type { Spec as FidoSpec } from '../../../packages/fido/src/NativeRNPingFido';
 import type { Spec as JourneySpec } from '../../../packages/journey/src/NativeRNPingJourney';
 import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPingLogger';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
@@ -49,6 +50,13 @@ type _DeviceIdMockedMethods = Pick<DeviceIdSpec,
 type _DeviceProfileMockedMethods = Pick<DeviceProfileSpec,
   | 'collectDeviceProfile'
   | 'collectDeviceProfileForJourney'
+>;
+
+// ─── rn-fido ────────────────────────────────────────────────────────────────
+// jest.setup.js mocks: registerCredential, authenticateCredential
+type _FidoMockedMethods = Pick<FidoSpec,
+  | 'registerCredential'
+  | 'authenticateCredential'
 >;
 
 // ─── rn-journey ─────────────────────────────────────────────────────────────

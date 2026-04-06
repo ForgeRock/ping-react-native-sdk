@@ -4336,90 +4336,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"PingSampleApp@workspace:PingSampleApp":
-  version: 0.0.0-use.local
-  resolution: "PingSampleApp@workspace:PingSampleApp"
-  dependencies:
-    "@babel/core": "npm:^7.25.2"
-    "@babel/preset-env": "npm:^7.25.3"
-    "@babel/runtime": "npm:^7.25.0"
-    "@ping-identity/rn-browser": "workspace:*"
-    "@ping-identity/rn-device-id": "workspace:*"
-    "@ping-identity/rn-device-profile": "workspace:*"
-    "@ping-identity/rn-fido": "workspace:*"
-    "@ping-identity/rn-journey": "workspace:*"
-    "@ping-identity/rn-logger": "workspace:*"
-    "@ping-identity/rn-oidc": "workspace:*"
-    "@ping-identity/rn-storage": "workspace:*"
-    "@ping-identity/rn-types": "workspace:*"
-    "@react-native-async-storage/async-storage": "npm:^2.2.0"
-    "@react-native-community/cli": "npm:19.1.2"
-    "@react-native-community/cli-platform-android": "npm:19.1.2"
-    "@react-native-community/cli-platform-ios": "npm:19.1.2"
-    "@react-native/babel-preset": "npm:0.80.1"
-    "@react-native/eslint-config": "npm:0.80.1"
-    "@react-native/metro-config": "npm:0.80.1"
-    "@react-native/new-app-screen": "npm:0.80.1"
-    "@react-native/typescript-config": "npm:0.80.1"
-    "@react-navigation/native": "npm:^7.1.17"
-    "@react-navigation/native-stack": "npm:^7.3.26"
-    "@testing-library/react-native": "npm:^13.3.3"
-    "@types/react": "npm:^19.1.0"
-    eslint: "npm:^8.19.0"
-    prettier: "npm:2.8.8"
-    react: "npm:19.1.0"
-    react-native: "npm:0.80.1"
-    react-native-config: "npm:^1.5.9"
-    react-native-safe-area-context: "npm:^5.6.1"
-    react-native-screens: "npm:^4.16.0"
-    react-native-vector-icons: "npm:^10.3.0"
-    react-test-renderer: "npm:19.1.0"
-    typescript: "npm:5.0.4"
-  languageName: unknown
-  linkType: soft
-
-"PingTestRunner@workspace:PingTestRunner":
-  version: 0.0.0-use.local
-  resolution: "PingTestRunner@workspace:PingTestRunner"
-  dependencies:
-    "@babel/core": "npm:^7.25.2"
-    "@babel/preset-env": "npm:^7.25.3"
-    "@babel/runtime": "npm:^7.25.0"
-    "@ping-identity/rn-browser": "workspace:*"
-    "@ping-identity/rn-device-id": "workspace:*"
-    "@ping-identity/rn-device-profile": "workspace:*"
-    "@ping-identity/rn-fido": "workspace:*"
-    "@ping-identity/rn-journey": "workspace:*"
-    "@ping-identity/rn-logger": "workspace:*"
-    "@ping-identity/rn-oidc": "workspace:*"
-    "@ping-identity/rn-storage": "workspace:*"
-    "@ping-identity/rn-types": "workspace:*"
-    "@react-native-async-storage/async-storage": "npm:^2.2.0"
-    "@react-native-community/cli": "npm:19.0.0"
-    "@react-native-community/cli-platform-android": "npm:19.0.0"
-    "@react-native-community/cli-platform-ios": "npm:19.0.0"
-    "@react-native/babel-preset": "npm:0.80.1"
-    "@react-native/eslint-config": "npm:0.80.1"
-    "@react-native/metro-config": "npm:0.80.1"
-    "@react-native/typescript-config": "npm:0.80.1"
-    "@testing-library/react-native": "npm:^13.3.3"
-    "@types/jest": "npm:^29.5.14"
-    "@types/react": "npm:^19.1.0"
-    detox: "npm:^20.47.0"
-    dotenv: "npm:^16.4.7"
-    eslint: "npm:^8.19.0"
-    jest: "npm:^29.7.0"
-    jest-circus: "npm:^29.7.0"
-    prettier: "npm:2.8.8"
-    react: "npm:19.1.0"
-    react-native: "npm:0.80.1"
-    react-native-launch-arguments: "npm:^4.1.1"
-    react-test-renderer: "npm:19.1.0"
-    ts-jest: "npm:^29.4.0"
-    typescript: "npm:5.0.4"
-  languageName: unknown
-  linkType: soft
-
 "abbrev@npm:^4.0.0":
   version: 4.0.0
   resolution: "abbrev@npm:4.0.0"
@@ -11531,6 +11447,90 @@ __metadata:
   checksum: 10c0/5251a36053165d23248efec5077f9addc13ad7f742a02dcd9ac7adda9e208cbf7523901e96a9ca6c33059bd0b573b97eab3334cf1d9976cc5ddc8b3c24d9ddd7
   languageName: node
   linkType: hard
+
+"rn-sample-app@workspace:PingSampleApp":
+  version: 0.0.0-use.local
+  resolution: "rn-sample-app@workspace:PingSampleApp"
+  dependencies:
+    "@babel/core": "npm:^7.25.2"
+    "@babel/preset-env": "npm:^7.25.3"
+    "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-device-id": "workspace:*"
+    "@ping-identity/rn-device-profile": "workspace:*"
+    "@ping-identity/rn-fido": "workspace:*"
+    "@ping-identity/rn-journey": "workspace:*"
+    "@ping-identity/rn-logger": "workspace:*"
+    "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-storage": "workspace:*"
+    "@ping-identity/rn-types": "workspace:*"
+    "@react-native-async-storage/async-storage": "npm:^2.2.0"
+    "@react-native-community/cli": "npm:19.1.2"
+    "@react-native-community/cli-platform-android": "npm:19.1.2"
+    "@react-native-community/cli-platform-ios": "npm:19.1.2"
+    "@react-native/babel-preset": "npm:0.80.1"
+    "@react-native/eslint-config": "npm:0.80.1"
+    "@react-native/metro-config": "npm:0.80.1"
+    "@react-native/new-app-screen": "npm:0.80.1"
+    "@react-native/typescript-config": "npm:0.80.1"
+    "@react-navigation/native": "npm:^7.1.17"
+    "@react-navigation/native-stack": "npm:^7.3.26"
+    "@testing-library/react-native": "npm:^13.3.3"
+    "@types/react": "npm:^19.1.0"
+    eslint: "npm:^8.19.0"
+    prettier: "npm:2.8.8"
+    react: "npm:19.1.0"
+    react-native: "npm:0.80.1"
+    react-native-config: "npm:^1.5.9"
+    react-native-safe-area-context: "npm:^5.6.1"
+    react-native-screens: "npm:^4.16.0"
+    react-native-vector-icons: "npm:^10.3.0"
+    react-test-renderer: "npm:19.1.0"
+    typescript: "npm:5.0.4"
+  languageName: unknown
+  linkType: soft
+
+"rn-test-runner@workspace:PingTestRunner":
+  version: 0.0.0-use.local
+  resolution: "rn-test-runner@workspace:PingTestRunner"
+  dependencies:
+    "@babel/core": "npm:^7.25.2"
+    "@babel/preset-env": "npm:^7.25.3"
+    "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-device-id": "workspace:*"
+    "@ping-identity/rn-device-profile": "workspace:*"
+    "@ping-identity/rn-fido": "workspace:*"
+    "@ping-identity/rn-journey": "workspace:*"
+    "@ping-identity/rn-logger": "workspace:*"
+    "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-storage": "workspace:*"
+    "@ping-identity/rn-types": "workspace:*"
+    "@react-native-async-storage/async-storage": "npm:^2.2.0"
+    "@react-native-community/cli": "npm:19.0.0"
+    "@react-native-community/cli-platform-android": "npm:19.0.0"
+    "@react-native-community/cli-platform-ios": "npm:19.0.0"
+    "@react-native/babel-preset": "npm:0.80.1"
+    "@react-native/eslint-config": "npm:0.80.1"
+    "@react-native/metro-config": "npm:0.80.1"
+    "@react-native/typescript-config": "npm:0.80.1"
+    "@testing-library/react-native": "npm:^13.3.3"
+    "@types/jest": "npm:^29.5.14"
+    "@types/react": "npm:^19.1.0"
+    detox: "npm:^20.47.0"
+    dotenv: "npm:^16.4.7"
+    eslint: "npm:^8.19.0"
+    jest: "npm:^29.7.0"
+    jest-circus: "npm:^29.7.0"
+    prettier: "npm:2.8.8"
+    react: "npm:19.1.0"
+    react-native: "npm:0.80.1"
+    react-native-launch-arguments: "npm:^4.1.1"
+    react-test-renderer: "npm:19.1.0"
+    ts-jest: "npm:^29.4.0"
+    typescript: "npm:5.0.4"
+  languageName: unknown
+  linkType: soft
 
 "run-parallel@npm:^1.1.9":
   version: 1.2.0

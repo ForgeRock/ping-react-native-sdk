@@ -6,6 +6,15 @@
  */
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
+import type {
+  FidoAuthenticationOptions,
+  FidoAuthenticationResult,
+  FidoJourneyAuthenticationOptions,
+  FidoJourneyRegistrationOptions,
+  FidoJourneyResult,
+  FidoRegistrationOptions,
+  FidoRegistrationResult,
+} from './types';
 
 /**
  * Native module specification for RNPingFido.
@@ -20,11 +29,48 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
  */
 export interface Spec extends TurboModule {
   /**
-   * Returns the default FIDO identifier.
+   * Registers a new FIDO credential.
    *
-   * @returns A promise that resolves to the identifier string.
+   * @param options Registration options payload.
+   * @returns A promise that resolves to the registration result payload.
    */
-  getDefaultFido(): Promise<string>;
+  registerCredential(
+    options: Object
+  ): Promise<Object>;
+
+  /**
+   * Authenticates with an existing FIDO credential.
+   *
+   * @param options Authentication options payload.
+   * @returns A promise that resolves to the authentication result payload.
+   */
+  authenticateCredential(
+    options: Object
+  ): Promise<Object>;
+
+  /**
+   * Registers a Journey-scoped FIDO callback resolved from a Journey instance id.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Registration callback execution options.
+   * @returns A promise that resolves to a Journey success payload.
+   */
+  registerCredentialForJourney(
+    journeyId: string,
+    options: Object
+  ): Promise<Object>;
+
+  /**
+   * Authenticates a Journey-scoped FIDO callback resolved from a Journey instance id.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Authentication callback execution options.
+   * @returns A promise that resolves to a Journey success payload.
+   */
+  authenticateCredentialForJourney(
+    journeyId: string,
+    options: Object
+  ): Promise<Object>;
 }
 
 /**
@@ -47,4 +93,67 @@ export function getNativeModule(): Spec {
       'Available NativeModules: ' +
       JSON.stringify(Object.keys(NativeModules))
   );
+}
+
+/**
+ * Casts registration options to a codegen-compatible object.
+ */
+export function toNativeRegistrationOptions(
+  options: FidoRegistrationOptions
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts authentication options to a codegen-compatible object.
+ */
+export function toNativeAuthenticationOptions(
+  options: FidoAuthenticationOptions
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts the native payload to registration result type.
+ */
+export function fromNativeRegistrationResult(
+  result: Object
+): FidoRegistrationResult {
+  return result as unknown as FidoRegistrationResult;
+}
+
+/**
+ * Casts the native payload to authentication result type.
+ */
+export function fromNativeAuthenticationResult(
+  result: Object
+): FidoAuthenticationResult {
+  return result as unknown as FidoAuthenticationResult;
+}
+
+/**
+ * Casts Journey registration options to a codegen-compatible object.
+ */
+export function toNativeJourneyRegistrationOptions(
+  options: FidoJourneyRegistrationOptions
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts Journey authentication options to a codegen-compatible object.
+ */
+export function toNativeJourneyAuthenticationOptions(
+  options: FidoJourneyAuthenticationOptions
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts the native payload to a Journey success result type.
+ */
+export function fromNativeJourneyResult(
+  result: Object
+): FidoJourneyResult {
+  return result as unknown as FidoJourneyResult;
 }

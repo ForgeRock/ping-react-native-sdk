@@ -84,9 +84,13 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
+  implementation("com.pingidentity.sdks:journey:2.0.0-beta1")
   implementation("com.pingidentity.sdks:fido:2.0.0-beta1")
   implementation("com.pingidentity.sdks:android:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:logger:2.0.0-beta1")
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
   testImplementation "junit:junit:4.13.2"
   testImplementation "io.mockk:mockk:1.13.12"
+  testImplementation "org.robolectric:robolectric:4.11.1"
 }

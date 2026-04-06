@@ -89,9 +89,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.pingsampleapp"
+    namespace "com.pingidentity.rnsampleapp"
     defaultConfig {
-        applicationId "com.pingsampleapp"
+        applicationId "com.pingidentity.rnsampleapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -100,7 +100,7 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
+            storeFile file('pingsampleapp-debug.jks')
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'
@@ -123,6 +123,9 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // Align with ping-android-sdk sample app for non-discoverable FIDO2 credential support.
+    implementation("com.google.android.gms:play-services-fido:21.2.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
 

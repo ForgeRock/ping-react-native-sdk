@@ -4,11 +4,23 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import { getFido } from '../index';
+import {
+  authenticate,
+  authenticateForJourney,
+  register,
+  registerForJourney,
+} from '../index';
 
 jest.mock('../NativeRNPingFido', () => ({
   __esModule: true,
   getNativeModule: jest.fn(),
+  toNativeRegistrationOptions: jest.fn((options) => options),
+  toNativeAuthenticationOptions: jest.fn((options) => options),
+  fromNativeRegistrationResult: jest.fn((result) => result),
+  fromNativeAuthenticationResult: jest.fn((result) => result),
+  toNativeJourneyRegistrationOptions: jest.fn((options) => options),
+  toNativeJourneyAuthenticationOptions: jest.fn((options) => options),
+  fromNativeJourneyResult: jest.fn((result) => result),
 }));
 
 import { getNativeModule } from '../NativeRNPingFido';
@@ -18,11 +30,90 @@ describe('FIDO API', () => {
     jest.clearAllMocks();
   });
 
-  it('getFido forwards to native', async () => {
-    const getDefaultFido = jest.fn().mockResolvedValue('default-id');
-    (getNativeModule as jest.Mock).mockReturnValue({ getDefaultFido });
+  it('register forwards to native', async () => {
+    const registerNative = jest.fn().mockResolvedValue({ ok: true });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerCredential: registerNative,
+    });
 
-    await expect(getFido()).resolves.toBe('default-id');
-    expect(getDefaultFido).toHaveBeenCalledTimes(1);
+    await expect(register({ challenge: 'abc' })).resolves.toEqual({ ok: true });
+    expect(registerNative).toHaveBeenCalledWith({ challenge: 'abc' });
+  });
+
+  it('register passes options through to native unchanged', async () => {
+    const registerNative = jest.fn().mockResolvedValue({});
+    (getNativeModule as jest.Mock).mockReturnValue({ registerCredential: registerNative });
+
+    const options = { challenge: 'xyz', rp: { id: 'example.com', name: 'Example' } };
+    await register(options);
+
+    expect(registerNative).toHaveBeenCalledWith(options);
+  });
+
+  it('register rejects when native rejects', async () => {
+    const nativeError = new Error('FIDO_WINDOW_UNAVAILABLE');
+    const registerNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({ registerCredential: registerNative });
+
+    await expect(register({ challenge: 'abc' })).rejects.toThrow('FIDO_WINDOW_UNAVAILABLE');
+  });
+
+  it('authenticate forwards to native', async () => {
+    const authenticateNative = jest.fn().mockResolvedValue({ ok: true });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authenticateCredential: authenticateNative,
+    });
+
+    await expect(authenticate({ challenge: 'abc' })).resolves.toEqual({ ok: true });
+    expect(authenticateNative).toHaveBeenCalledWith({ challenge: 'abc' });
+  });
+
+  it('authenticate passes options through to native unchanged', async () => {
+    const authenticateNative = jest.fn().mockResolvedValue({});
+    (getNativeModule as jest.Mock).mockReturnValue({ authenticateCredential: authenticateNative });
+
+    const options = { challenge: 'xyz', rpId: 'example.com', allowCredentials: [] };
+    await authenticate(options);
+
+    expect(authenticateNative).toHaveBeenCalledWith(options);
+  });
+
+  it('authenticate rejects when native rejects', async () => {
+    const nativeError = new Error('FIDO_ACTIVITY_UNAVAILABLE');
+    const authenticateNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({ authenticateCredential: authenticateNative });
+
+    await expect(authenticate({ challenge: 'abc' })).rejects.toThrow('FIDO_ACTIVITY_UNAVAILABLE');
+  });
+
+  it('registerForJourney resolves journey id and forwards to native', async () => {
+    const registerJourneyNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerCredentialForJourney: registerJourneyNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-123') };
+
+    await expect(
+      registerForJourney(journey, { index: 2, deviceName: 'Pixel' })
+    ).resolves.toEqual({ type: 'success' });
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(registerJourneyNative).toHaveBeenCalledWith('journey-123', {
+      index: 2,
+      deviceName: 'Pixel',
+    });
+  });
+
+  it('authenticateForJourney resolves journey id and forwards to native', async () => {
+    const authenticateJourneyNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authenticateCredentialForJourney: authenticateJourneyNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-xyz') };
+
+    await expect(
+      authenticateForJourney(journey, { index: 1 })
+    ).resolves.toEqual({ type: 'success' });
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(authenticateJourneyNative).toHaveBeenCalledWith('journey-xyz', { index: 1 });
   });
 });

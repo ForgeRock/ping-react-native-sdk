@@ -27,7 +27,7 @@ describe('Journey callback helpers', () => {
       id: 'NameCallback:0',
       ref: { type: 'NameCallback', typeIndex: 0 },
       kind: 'text',
-      capability: 'manual',
+      executionMode: 'manual',
     });
     expect(fields[1]).toMatchObject({
       id: 'NameCallback:1',
@@ -106,6 +106,23 @@ describe('Journey callback helpers', () => {
 
     expect(fields).toHaveLength(1);
     expect(fields[0]?.defaultValue).toBeUndefined();
+  });
+
+  it('marks HiddenValueCallback as non-interactive manual field', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'HiddenValueCallback', value: 'false', output: [] }],
+    };
+
+    const fields = normalizeCallbacks(node);
+
+    expect(fields).toHaveLength(1);
+    expect(fields[0]).toMatchObject({
+      id: 'HiddenValueCallback:0',
+      executionMode: 'manual',
+      requiresUserInput: false,
+      kind: 'text',
+    });
   });
 
   it('does not treat negative selectedIndex as a default value', () => {
@@ -239,10 +256,32 @@ describe('Journey callback helpers', () => {
       id: 'ConsentMappingCallback:0',
       ref: { type: 'ConsentMappingCallback', typeIndex: 0 },
       kind: 'boolean',
-      capability: 'manual',
+      executionMode: 'manual',
       required: true,
       message: 'Allow profile sharing',
       defaultValue: false,
+    });
+  });
+
+  it('classifies fido and captcha callbacks as integration-required', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'FidoAuthenticationCallback', output: [] },
+        { type: 'ReCaptchaEnterpriseCallback', output: [] },
+      ],
+    };
+
+    const fields = normalizeCallbacks(node);
+
+    expect(fields).toHaveLength(2);
+    expect(fields[0]).toMatchObject({
+      id: 'FidoAuthenticationCallback:0',
+      executionMode: 'integration_required',
+    });
+    expect(fields[1]).toMatchObject({
+      id: 'ReCaptchaEnterpriseCallback:0',
+      executionMode: 'integration_required',
     });
   });
 

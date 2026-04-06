@@ -100,7 +100,7 @@ const journeySessionStorageClient1 = configureSessionStorage({
 /**
  * Shared logger instance used by sample clients.
  */
-const appLogger = logger({ level: 'none' });
+const appLogger = logger({ level: 'debug' });
 
 /**
  * OIDC client used by Journey module wiring.

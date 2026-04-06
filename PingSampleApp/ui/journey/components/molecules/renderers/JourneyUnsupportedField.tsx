@@ -25,7 +25,7 @@ export default function JourneyUnsupportedField(
     <View style={fieldStyles.warningCard}>
       <Text style={fieldStyles.warningTitle}>Callback Notice</Text>
       <Text style={fieldStyles.warningText}>
-        {field.capability === 'integration_required'
+        {field.executionMode === 'integration_required'
           ? 'Requires additional native integration.'
           : 'Unsupported callback type.'}
       </Text>

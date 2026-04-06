@@ -7,6 +7,7 @@
 package com.pingidentity.rnfido
 
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 
@@ -17,16 +18,49 @@ import com.facebook.react.module.annotations.ReactModule
 class RNPingFidoModule(reactContext: ReactApplicationContext) :
   NativeRNPingFidoSpec(reactContext) {
 
+  init {
+    RNPingFidoCommon.configure(reactContext)
+  }
+
   /**
    * Return the module name exposed to the React Native bridge.
    */
   override fun getName(): String = NAME
 
   /**
-   * Return the default FIDO identifier.
+   * Registers a new FIDO credential.
    */
-  override fun getDefaultFido(promise: Promise) {
-    RNPingFidoCommon.getDefaultFido(promise)
+  override fun registerCredential(options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.register(options, promise)
+  }
+
+  /**
+   * Authenticates with an existing FIDO credential.
+   */
+  override fun authenticateCredential(options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.authenticate(options, promise)
+  }
+
+  /**
+   * Executes a Journey-scoped FIDO registration callback.
+   */
+  override fun registerCredentialForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.registerForJourney(journeyId, options, promise)
+  }
+
+  /**
+   * Executes a Journey-scoped FIDO authentication callback.
+   */
+  override fun authenticateCredentialForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.authenticateForJourney(journeyId, options, promise)
   }
 
   companion object {

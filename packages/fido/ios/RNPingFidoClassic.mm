@@ -29,21 +29,75 @@
 
 RCT_EXPORT_MODULE(RNPingFidoClassic)
 
-#pragma mark - Default FIDO
+#pragma mark - FIDO Operations
 
 /**
- * Returns the default FIDO identifier.
+ * Registers a new FIDO credential.
  */
-RCT_EXPORT_METHOD(getDefaultFido:(RCTPromiseResolveBlock)resolve
+RCT_EXPORT_METHOD(registerCredential:(NSDictionary *)options
+                  resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] getDefaultFido:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] register:options resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] getDefaultFido:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] register:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ * Authenticates with an existing FIDO credential.
+ */
+RCT_EXPORT_METHOD(authenticateCredential:(NSDictionary *)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  if ([NSThread isMainThread]) {
+    [[RNPingFidoImpl shared] authenticate:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[RNPingFidoImpl shared] authenticate:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ * Executes a Journey-scoped FIDO registration callback.
+ */
+RCT_EXPORT_METHOD(registerCredentialForJourney:(NSString *)journeyId
+                  options:(NSDictionary *)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  if ([NSThread isMainThread]) {
+    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ * Executes a Journey-scoped FIDO authentication callback.
+ */
+RCT_EXPORT_METHOD(authenticateCredentialForJourney:(NSString *)journeyId
+                  options:(NSDictionary *)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  if ([NSThread isMainThread]) {
+    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
   });
 }
 

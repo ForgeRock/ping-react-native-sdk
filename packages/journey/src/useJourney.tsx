@@ -9,12 +9,9 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
-import { normalizeCallbacks } from './callbackHelpers';
 import type {
   JourneyClient,
   JourneyError,
@@ -25,64 +22,6 @@ import type {
   JourneyUserInfo,
   JourneyUserSession,
 } from './types';
-
-const DEFAULT_AUTO_POLLING_WAIT_MS = 3000;
-
-/**
- * Resolves polling wait time from normalized callback fields.
- *
- * @param fields - Normalized callback fields.
- * @returns Polling wait in milliseconds when available.
- */
-function resolvePollingWaitMs(
-  fields: ReturnType<typeof normalizeCallbacks>
-): number | null {
-  // AM flows are expected to return one PollingWaitCallback per node.
-  // If multiple are present, use the first callback in node order.
-  const pollingField = fields.find((field) => field.ref.type === 'PollingWaitCallback');
-  if (!pollingField) {
-    return null;
-  }
-
-  const waitTime = pollingField.raw.waitTime;
-  if (typeof waitTime === 'number' && Number.isFinite(waitTime) && waitTime > 0) {
-    return waitTime;
-  }
-  if (typeof waitTime === 'string') {
-    const parsed = Number(waitTime);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Returns true when a `ContinueNode` should auto-progress via polling.
- *
- * @param fields - Normalized callback fields.
- * @returns True when safe to auto-advance with `next({})`.
- */
-function shouldAutoPoll(fields: ReturnType<typeof normalizeCallbacks>): boolean {
-  const hasPollingWait = fields.some((field) => field.ref.type === 'PollingWaitCallback');
-  if (!hasPollingWait) {
-    return false;
-  }
-
-  return !fields.some((field) => {
-    if (field.capability === 'manual') {
-      return true;
-    }
-    if (field.capability === 'unsupported') {
-      return true;
-    }
-    return (
-      field.capability === 'integration_required' &&
-      field.ref.type !== 'DeviceProfileCallback'
-    );
-  });
-}
 
 /**
  * Actions exposed by {@link useJourney}.
@@ -279,13 +218,6 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
   const [node, setNode] = useState<JourneyNode | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<JourneyError | null>(null);
-  const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const normalizedFields = useMemo(() => normalizeCallbacks(node), [node]);
-  const canAutoPoll = useMemo(() => shouldAutoPoll(normalizedFields), [normalizedFields]);
-  const autoPollingWaitMs = useMemo(
-    () => resolvePollingWaitMs(normalizedFields),
-    [normalizedFields]
-  );
 
   const start = useCallback(
     async (
@@ -391,39 +323,6 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
     setNode(null);
     setError(null);
   }, [client]);
-
-  useEffect(() => {
-    if (node?.type !== 'ContinueNode' || loading || !canAutoPoll) {
-      if (pollingTimerRef.current) {
-        clearTimeout(pollingTimerRef.current);
-        pollingTimerRef.current = null;
-      }
-      return;
-    }
-
-    if (pollingTimerRef.current) {
-      return;
-    }
-
-    const waitMs = Math.max(500, autoPollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS);
-    pollingTimerRef.current = setTimeout(() => {
-      pollingTimerRef.current = null;
-      // `next` already updates hook error state; prevent unhandled rejections
-      // from timer-driven auto polling.
-      void next({}).catch(() => {
-        // Handled by `next` via hook error state.
-      });
-    }, waitMs);
-  }, [autoPollingWaitMs, canAutoPoll, loading, next, node?.type]);
-
-  useEffect(() => {
-    return () => {
-      if (pollingTimerRef.current) {
-        clearTimeout(pollingTimerRef.current);
-        pollingTimerRef.current = null;
-      }
-    };
-  }, []);
 
   return [
     node,

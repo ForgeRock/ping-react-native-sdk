@@ -6,7 +6,16 @@
  */
 
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Clipboard,
+  Platform,
+  ScrollView,
+  Text,
+  ToastAndroid,
+  View,
+  TouchableOpacity,
+} from 'react-native';
 import { commonStyles } from '../../../../src/styles/common';
 import { journeyDebugPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import {
@@ -18,7 +27,13 @@ import {
  * Props for Journey debug panel.
  */
 export type JourneyDebugPanelProps = {
+  /**
+   * Ordered debug entries to render, newest first.
+   */
   entries: JourneyDebugEntry[];
+  /**
+   * Clears all currently displayed debug entries.
+   */
   onClear: () => void;
 };
 
@@ -32,6 +47,36 @@ export default function JourneyDebugPanel(
   props: JourneyDebugPanelProps
 ): React.ReactElement {
   const { entries, onClear } = props;
+
+  /**
+   * Builds a plain-text copy payload for one debug entry.
+   *
+   * @param entry - Debug entry to serialize.
+   * @returns Copy-friendly string.
+   */
+  const toCopyText = (entry: JourneyDebugEntry): string => {
+    const header = `[${entry.timestamp}] ${entry.title}`;
+    if (entry.payload === undefined) {
+      return header;
+    }
+    return `${header}\n${debugPayloadToString(entry.payload)}`;
+  };
+
+  /**
+   * Copies one debug entry to the system clipboard and shows UX confirmation.
+   *
+   * @param entry - Debug entry to copy.
+   */
+  const copyEntry = (entry: JourneyDebugEntry): void => {
+    Clipboard.setString(toCopyText(entry));
+
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Debug log copied', ToastAndroid.SHORT);
+      return;
+    }
+
+    Alert.alert('Copied', 'Debug log copied to clipboard.');
+  };
 
   return (
     <View style={commonStyles.card}>
@@ -50,10 +95,23 @@ export default function JourneyDebugPanel(
         <Text style={styles.emptyText}>No debug events yet.</Text>
       ) : (
         entries.map((entry) => (
-          <View key={entry.id} style={styles.eventCard}>
-            <Text style={styles.eventTitle}>
-              [{entry.timestamp}] {entry.title}
-            </Text>
+          <View
+            key={entry.id}
+            style={styles.eventCard}
+          >
+            <View style={styles.eventHeaderRow}>
+              <Text style={styles.eventTitle}>
+                [{entry.timestamp}] {entry.title}
+              </Text>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={() => {
+                  copyEntry(entry);
+                }}
+              >
+                <Text style={styles.copyButtonText}>Copy</Text>
+              </TouchableOpacity>
+            </View>
             {entry.payload !== undefined ? (
               <ScrollView
                 style={styles.payloadScroll}

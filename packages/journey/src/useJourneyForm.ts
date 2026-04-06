@@ -104,7 +104,7 @@ function isSameValueMap(previous: JourneyFormValues, next: JourneyFormValues): b
 }
 
 /**
- * Derives aggregate callback capability metadata from fields/issues.
+ * Derives aggregate callback execution metadata from fields/issues.
  *
  * @param fields - Normalized callback fields.
  * @param issues - Submit issues from helper planning.
@@ -112,12 +112,15 @@ function isSameValueMap(previous: JourneyFormValues, next: JourneyFormValues): b
  */
 function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue[]): JourneyFormMeta {
   return {
-    hasManual: fields.some((field) => field.capability === 'manual'),
-    hasOutputOnly: fields.some((field) => field.capability === 'output_only'),
-    hasIntegrationRequired: fields.some(
-      (field) => field.capability === 'integration_required'
+    hasManual: fields.some((field) => field.requiresUserInput),
+    hasOutputOnly: fields.some((field) => field.executionMode === 'output_only'),
+    hasAutoCapable: fields.some(
+      (field) => field.executionMode === 'auto_capable'
     ),
-    hasUnsupported: fields.some((field) => field.capability === 'unsupported'),
+    hasIntegrationRequired: fields.some(
+      (field) => field.executionMode === 'integration_required'
+    ),
+    hasUnsupported: fields.some((field) => field.executionMode === 'unsupported'),
     hasRequiredConsentMissing: issues.some(
       (issue) => issue.code === 'REQUIRED_CONSENT_MISSING'
     ),
@@ -130,6 +133,17 @@ function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue
  * @remarks
  * This hook does not render UI or auto-execute integration-specific callbacks.
  * It only manages callback form state and submit planning.
+ *
+ * @example
+ * ```ts
+ * const [node, actions] = useJourney(client);
+ * const form = useJourneyForm(node);
+ *
+ * form.setValueByType('NameCallback', 'demo-user');
+ * if (form.canSubmit) {
+ *   await actions.next(form.input);
+ * }
+ * ```
  *
  * @param node - Current Journey node from `useJourney`.
  * @returns Normalized fields, managed values, and submit planning helpers.
@@ -179,6 +193,12 @@ export function useJourneyForm(
     [fields, submitPlan.issues]
   );
 
+  /**
+   * Sets one normalized callback field value.
+   *
+   * @param fieldId - Normalized field id.
+   * @param value - Next field value.
+   */
   const setValue = useCallback((fieldId: string, value: JourneyFormValue): void => {
     setValuesState((previous) => {
       if (previous[fieldId] === value) {
@@ -191,6 +211,11 @@ export function useJourneyForm(
     });
   }, []);
 
+  /**
+   * Merges one or more callback field values.
+   *
+   * @param updater - Static patch object or updater function.
+   */
   const setValues = useCallback((updater: JourneyFormValuesUpdater): void => {
     setValuesState((previous) => {
       const patch =
@@ -205,6 +230,11 @@ export function useJourneyForm(
     });
   }, []);
 
+  /**
+   * Clears one callback field value from local form state.
+   *
+   * @param fieldId - Normalized field id to remove.
+   */
   const clearValue = useCallback((fieldId: string): void => {
     setValuesState((previous) => {
       if (!(fieldId in previous)) {
@@ -216,6 +246,11 @@ export function useJourneyForm(
     });
   }, []);
 
+  /**
+   * Resets form values and reapplies callback defaults.
+   *
+   * @param nextValues - Optional value map applied before default hydration.
+   */
   const reset = useCallback((nextValues: JourneyFormValues = {}): void => {
     setValuesState((previous) => {
       const hydrated = hydrateValues(fields, { ...nextValues });
@@ -223,6 +258,12 @@ export function useJourneyForm(
     });
   }, [fields]);
 
+  /**
+   * Builds a fresh submit plan for the current node and optional value overrides.
+   *
+   * @param overrides - Optional value overrides applied on top of current values.
+   * @returns Submit plan with payload, submit eligibility, and issues.
+   */
   const buildInput = useCallback(
     (overrides: Partial<JourneyFormValues> = {}): JourneyBuildNextInputResult => {
       return buildNextInput(node, {
@@ -233,14 +274,33 @@ export function useJourneyForm(
     [node, values]
   );
 
+  /**
+   * Resolves one normalized field by id.
+   *
+   * @param fieldId - Normalized field id.
+   * @returns Matching field when present.
+   */
   const getField = useCallback((fieldId: string): JourneyNormalizedField | undefined => {
     return fieldsById.get(fieldId);
   }, [fieldsById]);
 
+  /**
+   * Resolves all normalized fields for one callback type.
+   *
+   * @param callbackType - Callback type to filter.
+   * @returns Ordered list of matching normalized fields.
+   */
   const getFieldsByType = useCallback((callbackType: JourneyCallbackType): JourneyNormalizedField[] => {
     return fieldsByType.get(callbackType) ?? [];
   }, [fieldsByType]);
 
+  /**
+   * Resolves one normalized field by callback type and index.
+   *
+   * @param callbackType - Callback type to filter.
+   * @param typeIndex - Optional zero-based index within callback type.
+   * @returns Matching field when present.
+   */
   const getFieldByType = useCallback(
     (callbackType: JourneyCallbackType, typeIndex = 0): JourneyNormalizedField | undefined => {
       if (typeIndex < 0) {
@@ -251,6 +311,14 @@ export function useJourneyForm(
     [fieldsByType]
   );
 
+  /**
+   * Sets one field value using callback type and optional index.
+   *
+   * @param callbackType - Callback type to target.
+   * @param value - Next field value.
+   * @param typeIndex - Optional zero-based index within callback type.
+   * @returns True when a matching field is found and updated.
+   */
   const setValueByType = useCallback(
     (callbackType: JourneyCallbackType, value: JourneyFormValue, typeIndex = 0): boolean => {
       const field = getFieldByType(callbackType, typeIndex);

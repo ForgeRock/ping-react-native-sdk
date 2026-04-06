@@ -21,6 +21,12 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -263,5 +269,67 @@ class RNPingDeviceProfileJsonBridgeTest {
 
     val map = JsonBridgeMapper.encodeJsonObject(json)
     assertEquals(ReadableType.Null, map.getType("value"))
+  }
+
+  /**
+   * Verifies decodeReadableMap converts nested bridge values to JSON elements.
+   */
+  @Test
+  fun decodeReadableMapConvertsNestedBridgeValues() {
+    val nested = JavaOnlyMap().apply { putString("inner", "ok") }
+    val values = JavaOnlyArray().apply {
+      pushDouble(2.0)
+      pushString("three")
+      pushBoolean(false)
+      pushNull()
+    }
+    val source = JavaOnlyMap().apply {
+      putString("name", "ping")
+      putBoolean("enabled", true)
+      putDouble("ratio", 1.25)
+      putDouble("whole", 7.0)
+      putMap("nested", nested)
+      putArray("values", values)
+      putNull("empty")
+    }
+
+    val decoded = JsonBridgeMapper.decodeReadableMap(source)
+
+    assertEquals("ping", decoded["name"]?.jsonPrimitive?.content)
+    assertEquals(true, decoded["enabled"]?.jsonPrimitive?.boolean)
+    assertEquals(1.25, decoded["ratio"]?.jsonPrimitive?.double ?: 0.0, 0.0)
+    assertEquals(7L, decoded["whole"]?.jsonPrimitive?.long)
+    assertEquals("ok", decoded["nested"]?.jsonObject?.get("inner")?.jsonPrimitive?.content)
+
+    val decodedValues = decoded["values"]?.jsonArray ?: JsonArray(emptyList())
+    assertEquals(2L, decodedValues[0].jsonPrimitive.long)
+    assertEquals("three", decodedValues[1].jsonPrimitive.content)
+    assertEquals(false, decodedValues[2].jsonPrimitive.boolean)
+    assertEquals(JsonNull, decodedValues[3])
+    assertEquals(JsonNull, decoded["empty"])
+  }
+
+  /**
+   * Verifies decodeReadableArray handles primitive and nested bridge values.
+   */
+  @Test
+  fun decodeReadableArrayConvertsBridgeValues() {
+    val source = JavaOnlyArray().apply {
+      pushDouble(9.0)
+      pushDouble(9.5)
+      pushString("value")
+      pushMap(JavaOnlyMap().apply { putString("k", "v") })
+      pushArray(JavaOnlyArray().apply { pushInt(1) })
+      pushNull()
+    }
+
+    val decoded = JsonBridgeMapper.decodeReadableArray(source)
+
+    assertEquals(9L, decoded[0].jsonPrimitive.long)
+    assertEquals(9.5, decoded[1].jsonPrimitive.double, 0.0)
+    assertEquals("value", decoded[2].jsonPrimitive.content)
+    assertEquals("v", decoded[3].jsonObject["k"]?.jsonPrimitive?.content)
+    assertEquals(1L, decoded[4].jsonArray[0].jsonPrimitive.long)
+    assertEquals(JsonNull, decoded[5])
   }
 }

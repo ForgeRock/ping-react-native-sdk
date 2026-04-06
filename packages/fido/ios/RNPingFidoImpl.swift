@@ -4,44 +4,92 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
+
 import Foundation
 import React
-import RNPingCore
 
-/// Implementation of the native FIDO bridge for React Native.
-@available(iOS 16.0.0, *)
+/// Swift entry point for the FIDO native module.
 @objcMembers
 public class RNPingFidoImpl: NSObject, @unchecked Sendable {
 
   /// Shared singleton instance.
   @objc public static let shared = RNPingFidoImpl()
 
-  /// Stable error codes emitted by the FIDO module.
-  ///
-  /// Keep these in sync with JS `FidoErrorCode` and Android `FidoErrorCodes`.
-  private enum FidoErrorCode: String {
-    case fidoError = "FIDO_ERROR"
-  }
-
   @objc private override init() {
     super.init()
   }
 
-  /// Returns the default FIDO identifier.
+  /// Registers a new FIDO credential.
   /// - Parameters:
-  ///   - resolve: Promise resolver for the identifier string.
+  ///   - options: Registration options payload.
+  ///   - resolve: Promise resolver for the registration result.
   ///   - rejecter: Promise rejecter for errors.
   @objc
   @MainActor
-  public func getDefaultFido(
-    _ resolve: @escaping RCTPromiseResolveBlock,
-    rejecter rejecter: @escaping RCTPromiseRejectBlock
+  public func register(
+    _ options: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    let mapped = GenericError(
-      type: .fidoError,
-      error: FidoErrorCode.fidoError.rawValue,
-      message: "FIDO bridge is scaffolded but not implemented."
+    RNPingFidoCommon.register(options, resolver: resolve, rejecter: rejecter)
+  }
+
+  /// Authenticates with an existing FIDO credential.
+  /// - Parameters:
+  ///   - options: Authentication options payload.
+  ///   - resolve: Promise resolver for the authentication result.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func authenticate(
+    _ options: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingFidoCommon.authenticate(options, resolver: resolve, rejecter: rejecter)
+  }
+
+  /// Executes a Journey-scoped FIDO registration callback.
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - options: Callback execution options.
+  ///   - resolve: Promise resolver for success payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func registerForJourney(
+    _ journeyId: String,
+    options: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingFidoCommon.registerForJourney(
+      journeyId,
+      options: options,
+      resolver: resolve,
+      rejecter: rejecter
     )
-    reject(mapped, rejecter: rejecter, underlyingError: mapped.asNSError())
+  }
+
+  /// Executes a Journey-scoped FIDO authentication callback.
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - options: Callback execution options.
+  ///   - resolve: Promise resolver for success payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func authenticateForJourney(
+    _ journeyId: String,
+    options: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingFidoCommon.authenticateForJourney(
+      journeyId,
+      options: options,
+      resolver: resolve,
+      rejecter: rejecter
+    )
   }
 }

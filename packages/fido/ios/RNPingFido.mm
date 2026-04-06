@@ -28,18 +28,72 @@ RCT_EXPORT_MODULE()
 }
 
 /**
- Returns the default FIDO identifier.
+ Registers a new FIDO credential.
  */
-- (void)getDefaultFido:(RCTPromiseResolveBlock)resolve
-                    reject:(RCTPromiseRejectBlock)reject
+- (void)registerCredential:(NSDictionary *)options
+                  resolve:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] getDefaultFido:resolve rejecter:reject];
+    [[self swiftImpl] register:options resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] getDefaultFido:resolve rejecter:reject];
+    [[self swiftImpl] register:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Authenticates with an existing FIDO credential.
+ */
+- (void)authenticateCredential:(NSDictionary *)options
+                     resolve:(RCTPromiseResolveBlock)resolve
+                      reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] authenticate:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] authenticate:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Executes a Journey-scoped FIDO registration callback.
+ */
+- (void)registerCredentialForJourney:(NSString *)journeyId
+                             options:(NSDictionary *)options
+                             resolve:(RCTPromiseResolveBlock)resolve
+                              reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Executes a Journey-scoped FIDO authentication callback.
+ */
+- (void)authenticateCredentialForJourney:(NSString *)journeyId
+                                options:(NSDictionary *)options
+                                resolve:(RCTPromiseResolveBlock)resolve
+                                 reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
   });
 }
 

@@ -24,16 +24,26 @@ function JourneyFieldRenderer(
   props: JourneyFieldRendererProps
 ): React.ReactElement | null {
   const { field } = props;
+  const isFidoRegistrationCallback = field.ref.type === 'FidoRegistrationCallback';
+  const isFidoAuthenticationCallback = field.ref.type === 'FidoAuthenticationCallback';
 
   if (field.ref.type === 'HiddenValueCallback') {
     return null;
   }
 
-  if (field.capability === 'output_only') {
+  if (isFidoAuthenticationCallback) {
+    return null;
+  }
+
+  if (isFidoRegistrationCallback) {
+    return <JourneyTextField {...props} />;
+  }
+
+  if (field.executionMode === 'output_only') {
     return <JourneyOutputField {...props} />;
   }
 
-  if (field.capability === 'integration_required' || field.capability === 'unsupported') {
+  if (field.executionMode === 'integration_required' || field.executionMode === 'unsupported') {
     return <JourneyUnsupportedField {...props} />;
   }
 

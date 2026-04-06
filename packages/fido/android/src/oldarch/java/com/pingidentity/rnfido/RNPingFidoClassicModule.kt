@@ -7,6 +7,7 @@
 package com.pingidentity.rnfido
 
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -26,19 +27,59 @@ class RNPingFidoClassicModule(
   reactContext: ReactApplicationContext
 ) : ReactContextBaseJavaModule(reactContext) {
 
+  init {
+    RNPingFidoCommon.configure(reactContext)
+  }
+
   /**
    * Return the module name exposed to the React Native bridge.
    */
   override fun getName(): String = NAME
 
   /**
-   * Return the default FIDO identifier.
+   * Registers a new FIDO credential.
    *
-   * @param promise React Native promise to resolve with the identifier or reject on error.
+   * @param options Registration options payload.
+   * @param promise React Native promise to resolve with the registration result or reject on error.
    */
   @ReactMethod
-  fun getDefaultFido(promise: Promise) {
-    RNPingFidoCommon.getDefaultFido(promise)
+  fun registerCredential(options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.register(options, promise)
+  }
+
+  /**
+   * Authenticates with an existing FIDO credential.
+   *
+   * @param options Authentication options payload.
+   * @param promise React Native promise to resolve with the authentication result or reject on error.
+   */
+  @ReactMethod
+  fun authenticateCredential(options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.authenticate(options, promise)
+  }
+
+  /**
+   * Executes a Journey-scoped FIDO registration callback.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Registration callback execution options.
+   * @param promise React Native promise for callback execution result.
+   */
+  @ReactMethod
+  fun registerCredentialForJourney(journeyId: String, options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.registerForJourney(journeyId, options, promise)
+  }
+
+  /**
+   * Executes a Journey-scoped FIDO authentication callback.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Authentication callback execution options.
+   * @param promise React Native promise for callback execution result.
+   */
+  @ReactMethod
+  fun authenticateCredentialForJourney(journeyId: String, options: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.authenticateForJourney(journeyId, options, promise)
   }
 
   companion object {

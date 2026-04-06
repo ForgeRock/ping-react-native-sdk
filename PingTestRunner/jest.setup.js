@@ -61,6 +61,19 @@ jest.mock('../packages/device-profile/src/NativeRNPingDeviceProfile', () => ({
   })),
 }));
 
+// ---------- rn-fido ----------
+jest.mock('../packages/fido/src/NativeRNPingFido', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    registerCredential: jest.fn(async () => ({ credentialId: 'mock-credential-id' })),
+    authenticateCredential: jest.fn(async () => ({ signature: 'mock-signature' })),
+  })),
+  toNativeRegistrationOptions: jest.fn((options) => options),
+  toNativeAuthenticationOptions: jest.fn((options) => options),
+  fromNativeRegistrationResult: jest.fn((result) => result),
+  fromNativeAuthenticationResult: jest.fn((result) => result),
+}));
+
 // ---------- rn-journey ----------
 jest.mock('../packages/journey/src/NativeRNPingJourney', () => ({
   __esModule: true,

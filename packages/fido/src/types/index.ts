@@ -5,4 +5,16 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export type { FidoError, FidoErrorCode } from './fido.types';
+export type {
+  FidoAuthenticationOptions,
+  FidoAuthenticationResult,
+  FidoError,
+  FidoErrorCode,
+  FidoJourneyAuthenticationOptions,
+  FidoJourneyRegistrationOptions,
+  FidoJourneyResult,
+  FidoJsonValue,
+  FidoRegistrationOptions,
+  FidoRegistrationResult,
+  JourneyInstance,
+} from './fido.types';
