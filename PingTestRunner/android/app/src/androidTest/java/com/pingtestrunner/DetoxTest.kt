@@ -28,6 +28,11 @@ class DetoxTest {
     @Test
     fun runDetoxTests() {
         val instrumentationArgs = InstrumentationRegistry.getArguments()
+        // Disable Detox RN synchronization before the initial isReady handshake.
+        // RN 0.80 bridgeless networking no longer exposes the reflected mClient
+        // field expected by Detox's NetworkIdlingResource, which otherwise
+        // crashes the instrumentation process during setup.
+        instrumentationArgs.putString("detoxEnableSynchronization", "0")
         val detoxServer = instrumentationArgs.getString("detoxServer")
         if (!detoxServer.isNullOrBlank()) {
             val rewritten = detoxServer
