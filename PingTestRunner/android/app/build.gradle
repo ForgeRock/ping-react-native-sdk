@@ -50,6 +50,7 @@ android {
         versionName "1.0"
         manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
         // Enable Detox test orchestration
+        testBuildType System.getProperty('testBuildType', 'debug')
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // Detox ships a 'detox' flavor dimension; pick 'full' for e2e tests.
         missingDimensionStrategy 'detox', 'full'
@@ -70,6 +71,7 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            proguardFile "${rootProject.projectDir}/../node_modules/detox/android/detox/proguard-rules-app.pro"
         }
     }
 }

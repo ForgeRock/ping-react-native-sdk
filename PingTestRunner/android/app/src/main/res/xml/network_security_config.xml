@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+
+  This software may be modified and distributed under the terms
+  of the MIT license. See the LICENSE file for details.
+-->
+<!--
+  Network security configuration required by Detox for Android instrumentation.
+  Allows cleartext (HTTP/WS) traffic to localhost and the Android emulator host
+  so that the Detox server can communicate with the app under test.
+  See: https://wix.github.io/Detox/docs/introduction/android#6-create-a-network-security-configuration-file
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">10.0.3.2</domain>
+    </domain-config>
+</network-security-config>
