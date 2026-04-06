@@ -86,9 +86,10 @@ jobs:
             :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema
+            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \
+            :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
 
-      - name: Build Debug APK and androidTest APK
+      - name: Build Release APK and androidTest APK
         run: yarn build:e2e:android:bs
 
       - name: Upload app to BrowserStack
