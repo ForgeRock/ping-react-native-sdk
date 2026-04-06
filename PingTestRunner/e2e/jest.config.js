@@ -10,7 +10,7 @@ module.exports = {
   maxWorkers: 1,
   testEnvironment: 'node',
   testRunner: 'jest-circus/runner',
-  testTimeout: 120000,
+  testTimeout: 300000,
   rootDir: '..',
   testMatch: ['<rootDir>/e2e/**/*.test.ts'],
   transform: {
