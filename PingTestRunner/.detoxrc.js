@@ -85,6 +85,13 @@ module.exports = {
     'android.bs': {
       device: 'browserstack',
       app: 'android.cloud',
+      artifacts: {
+        plugins: {
+          deviceLogs: {
+            enabled: true,
+          },
+        },
+      },
       // cloudAuthentication and session must live inside the configuration
       // entry — the BrowserStack detox fork reads localConfig, not the
       // top-level config, for these cloud-specific properties.
