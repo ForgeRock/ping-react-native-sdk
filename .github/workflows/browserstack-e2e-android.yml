@@ -74,6 +74,13 @@ jobs:
           echo "BROWSERSTACK_PROJECT_NAME=rn-sdk-test" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_SESSION_NAME=android-detox-e2e" >> "$GITHUB_ENV"
 
+      - name: Build SDK packages
+        # Metro bundles the JS at release build time and resolves the Ping SDK
+        # packages via their compiled lib/ output. Build all packages first so
+        # lib/module/index.js exists for every dependency.
+        run: yarn packages:build
+        working-directory: ${{ github.workspace }}
+
       - name: Generate codegen artifacts for all SDK modules
         # React Native New Architecture requires each library's codegen JNI
         # directories to exist before CMake configures the app. Run codegen
