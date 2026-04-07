@@ -97,7 +97,8 @@ jobs:
             :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
 
       - name: Build Release APK and androidTest APK
-        run: yarn build:e2e:android:bs
+        run: yarn build:runner:bs:android
+        working-directory: ${{ github.workspace }}
 
       - name: Upload app to BrowserStack
         id: upload-app
@@ -129,7 +130,8 @@ jobs:
 
       - name: Run E2E tests on BrowserStack real devices
         id: run-tests
-        run: yarn test:e2e:android:bs 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
+        run: yarn test:runner:bs:android 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
+        working-directory: ${{ github.workspace }}
         env:
           BROWSERSTACK_APP_URL:      ${{ steps.upload-app.outputs.app_url }}
           BROWSERSTACK_TEST_URL:     ${{ steps.upload-test.outputs.test_url }}

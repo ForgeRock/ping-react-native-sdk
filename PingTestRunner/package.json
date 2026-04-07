@@ -18,11 +18,16 @@
     "e2e:android:free-detox-port": "sh -c 'port=${DETOX_SERVER_PORT:-8099}; pids=$(lsof -tiTCP:$port -sTCP:LISTEN 2>/dev/null || true); [ -n \"$pids\" ] && kill -9 $pids || true'",
     "e2e:android:kill-emulators": "sh -c 'command -v adb >/dev/null 2>&1 || exit 0; adb devices | awk \"/^emulator-/{print \\$1}\" | while read -r id; do [ -n \"$id\" ] && adb -s \"$id\" emu kill || true; done'",
     "test:e2e:android": "sh -c 'export DETOX_SERVER_PORT=${DETOX_SERVER_PORT:-8100}; export NODE_NO_WARNINGS=1; yarn e2e:android:free-detox-port && yarn e2e:android:kill-emulators && detox test --configuration android.emu --cleanup \"$@\"' --",
-    "test:e2e:android:bs": "NODE_NO_WARNINGS=1 detox test --configuration android.bs --loglevel trace",
+    "test:bs:android": "NODE_NO_WARNINGS=1 detox test --configuration android.bs --loglevel trace",
     "test:e2e:ios": "sh -c 'export DETOX_SERVER_PORT=${DETOX_SERVER_PORT:-8099}; export NODE_NO_WARNINGS=1; yarn e2e:android:free-detox-port && detox test --configuration ios.sim \"$@\"' --",
     "build:e2e:android": "detox build --configuration android.emu",
-    "build:e2e:android:bs": "cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release",
+    "build:bs:android": "cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release",
     "build:e2e:ios": "detox build --configuration ios.sim",
+    "build:bs:ios:archive": "sh -c 'set -eu; ARCHIVE_PATH=${BS_IOS_ARCHIVE_PATH:-ios/build/browserstack/PingTestRunner.xcarchive}; EXTRA_XCODEBUILD_ARGS=${BS_IOS_ARCHIVE_XCODEBUILD_ARGS:-}; xcodebuild -workspace ios/PingTestRunner.xcworkspace -scheme PingTestRunner -configuration Release -destination generic/platform=iOS -archivePath \"$ARCHIVE_PATH\" $EXTRA_XCODEBUILD_ARGS archive'",
+    "build:bs:ios:ipa": "sh -c 'set -eu; ARCHIVE_PATH=${BS_IOS_ARCHIVE_PATH:-ios/build/browserstack/PingTestRunner.xcarchive}; EXPORT_PATH=${BS_IOS_EXPORT_PATH:-ios/build/browserstack/export}; EXPORT_OPTIONS_PLIST=${BS_IOS_EXPORT_OPTIONS_PLIST:?Set BS_IOS_EXPORT_OPTIONS_PLIST to an exportOptions.plist path}; xcodebuild -exportArchive -archivePath \"$ARCHIVE_PATH\" -exportPath \"$EXPORT_PATH\" -exportOptionsPlist \"$EXPORT_OPTIONS_PLIST\"'",
+    "build:bs:ios:test-suite": "sh -c 'set -eu; DERIVED_DATA_PATH=${BS_IOS_DERIVED_DATA_PATH:-ios/build/browserstack-derived-data}; EXTRA_XCODEBUILD_ARGS=${BS_IOS_TEST_SUITE_XCODEBUILD_ARGS:-}; xcodebuild -workspace ios/PingTestRunner.xcworkspace -scheme PingTestRunner -configuration Debug -sdk iphoneos -destination generic/platform=iOS -derivedDataPath \"$DERIVED_DATA_PATH\" $EXTRA_XCODEBUILD_ARGS build-for-testing; cd \"$DERIVED_DATA_PATH/Build/Products/Debug-iphoneos\"; rm -f PingTestRunnerUITests-Runner.zip; zip --symlinks -r PingTestRunnerUITests-Runner.zip PingTestRunnerUITests-Runner.app'",
+    "build:bs:ios": "yarn build:bs:ios:archive && yarn build:bs:ios:ipa && yarn build:bs:ios:test-suite",
+    "lint": "eslint --no-config-lookup --config ../eslint.config.mjs \"__tests__/**/*.{js,jsx,ts,tsx}\" \"e2e/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
