@@ -52,9 +52,6 @@ android {
         // Enable Detox test orchestration
         testBuildType System.getProperty('testBuildType', 'debug')
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        testInstrumentationRunnerArguments = [
-            detoxEnableSynchronization: "0"
-        ]
         // Detox ships a 'detox' flavor dimension; pick 'full' for e2e tests.
         missingDimensionStrategy 'detox', 'full'
     }
