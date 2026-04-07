@@ -1,0 +1,213 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: BrowserStack E2E — iOS
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-ios-artifacts:
+    name: Prepare iOS BrowserStack artifacts
+    uses: ./.github/workflows/prepare-ios-bs-artifacts.yml
+    secrets:
+      CERTIFICATES_FILE_BASE64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
+      CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      BUILD_PROVISION_PROFILE: ${{ secrets.BUILD_PROVISION_PROFILE }}
+      UI_TEST_PROVISION_PROFILE: ${{ secrets.UI_TEST_PROVISION_PROFILE }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+  e2e-ios-browserstack:
+    name: E2E — iOS BrowserStack
+    runs-on: ubuntu-latest
+    needs: prepare-ios-artifacts
+    timeout-minutes: 60
+
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      BROWSERSTACK_IOS_DEVICES: ${{ vars.BROWSERSTACK_IOS_DEVICES }}
+      PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+      PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+      PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+      PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+      PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+      PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+      PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+      PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+      PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
+      PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+
+    steps:
+      - name: Download IPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pingtestrunner-ios-bs-app
+          path: /tmp/pingtestrunner-ios-bs-app
+
+      - name: Download XCUITest suite artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pingtestrunner-ios-bs-test-suite
+          path: /tmp/pingtestrunner-ios-bs-test-suite
+
+      - name: Compute BrowserStack identifiers
+        run: |
+          set -euo pipefail
+
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          echo "BROWSERSTACK_BUILD_TAG=pr_${{ github.event.pull_request.number }}_${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_PROJECT_NAME=rn-sdk-test" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_BUILD_NAME=ios_xcuitest_${SHORT_SHA}" >> "$GITHUB_ENV"
+
+      - name: Validate BrowserStack device configuration
+        run: |
+          set -euo pipefail
+
+          if [ -z "$BROWSERSTACK_IOS_DEVICES" ]; then
+            echo "::error::Set repository variable BROWSERSTACK_IOS_DEVICES to a JSON array of iOS devices."
+            exit 1
+          fi
+
+          echo "$BROWSERSTACK_IOS_DEVICES" | jq -e '. | arrays and length > 0' > /dev/null
+
+      - name: Upload app to BrowserStack
+        id: upload-app
+        run: |
+          set -euo pipefail
+
+          IPA_PATH="$(find /tmp/pingtestrunner-ios-bs-app -name '*.ipa' | head -n 1)"
+          response="$(curl --silent --fail-with-body \
+            -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/xcuitest/v2/app" \
+            -F "file=@${IPA_PATH}")"
+          echo "$response" > /tmp/bs-ios-app-upload.json
+
+          app_url="$(echo "$response" | jq -r '.app_url')"
+          if [ "$app_url" = "null" ] || [ -z "$app_url" ]; then
+            echo "::error::Failed to get app_url from BrowserStack response: $response"
+            exit 1
+          fi
+
+          echo "app_url=$app_url" >> "$GITHUB_OUTPUT"
+
+      - name: Upload XCUITest suite to BrowserStack
+        id: upload-test-suite
+        run: |
+          set -euo pipefail
+
+          TEST_SUITE_PATH="$(find /tmp/pingtestrunner-ios-bs-test-suite -name 'PingTestRunnerUITests-Runner.zip' | head -n 1)"
+          response="$(curl --silent --fail-with-body \
+            -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/xcuitest/v2/test-suite" \
+            -F "file=@${TEST_SUITE_PATH}")"
+          echo "$response" > /tmp/bs-ios-test-suite-upload.json
+
+          test_suite_url="$(echo "$response" | jq -r '.test_suite_url')"
+          if [ "$test_suite_url" = "null" ] || [ -z "$test_suite_url" ]; then
+            echo "::error::Failed to get test_suite_url from BrowserStack response: $response"
+            exit 1
+          fi
+
+          echo "test_suite_url=$test_suite_url" >> "$GITHUB_OUTPUT"
+
+      - name: Start BrowserStack XCUITest build
+        id: start-build
+        run: |
+          set -euo pipefail
+
+          response="$(
+            jq -cn \
+              --arg app "${{ steps.upload-app.outputs.app_url }}" \
+              --arg testSuite "${{ steps.upload-test-suite.outputs.test_suite_url }}" \
+              --arg project "$BROWSERSTACK_PROJECT_NAME" \
+              --arg buildTag "$BROWSERSTACK_BUILD_TAG" \
+              --argjson devices "$BROWSERSTACK_IOS_DEVICES" \
+              --arg pingServerUrl "$PING_SERVER_URL" \
+              --arg pingRealmPath "$PING_REALM_PATH" \
+              --arg pingCookieName "$PING_COOKIE_NAME" \
+              --arg pingJourneyName "$PING_JOURNEY_NAME" \
+              --arg pingTestUsername "$PING_TEST_USERNAME" \
+              --arg pingTestPassword "$PING_TEST_PASSWORD" \
+              --arg pingDiscoveryEndpoint "$PING_DISCOVERY_ENDPOINT" \
+              --arg pingClientId "$PING_CLIENT_ID" \
+              --arg pingRedirectUri "$PING_REDIRECT_URI" \
+              --arg pingCallbackTreesEnabled "$PING_CALLBACK_TREES_ENABLED" \
+              '{
+                app: $app,
+                testSuite: $testSuite,
+                project: $project,
+                buildTag: $buildTag,
+                devices: $devices,
+                deviceLogs: true,
+                networkLogs: true,
+                video: true,
+                setEnvVariables: {
+                  PING_SERVER_URL: $pingServerUrl,
+                  PING_REALM_PATH: $pingRealmPath,
+                  PING_COOKIE_NAME: $pingCookieName,
+                  PING_JOURNEY_NAME: $pingJourneyName,
+                  PING_TEST_USERNAME: $pingTestUsername,
+                  PING_TEST_PASSWORD: $pingTestPassword,
+                  PING_DISCOVERY_ENDPOINT: $pingDiscoveryEndpoint,
+                  PING_CLIENT_ID: $pingClientId,
+                  PING_REDIRECT_URI: $pingRedirectUri,
+                  PING_CALLBACK_TREES_ENABLED: $pingCallbackTreesEnabled
+                }
+              }' | \
+            curl --silent --fail-with-body \
+              -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+              -X POST "https://api-cloud.browserstack.com/app-automate/xcuitest/v2/build" \
+              -H "Content-Type: application/json" \
+              --data-binary @-
+          )"
+          echo "$response" > /tmp/bs-ios-build-start.json
+
+          build_id="$(echo "$response" | jq -r '.build_id')"
+          if [ "$build_id" = "null" ] || [ -z "$build_id" ]; then
+            echo "::error::Failed to get build_id from BrowserStack response: $response"
+            exit 1
+          fi
+
+          echo "build_id=$build_id" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for BrowserStack build completion
+        run: |
+          set -euo pipefail
+
+          build_id="${{ steps.start-build.outputs.build_id }}"
+
+          for attempt in $(seq 1 60); do
+            response="$(curl --silent --fail-with-body \
+              -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+              -X GET "https://api-cloud.browserstack.com/app-automate/xcuitest/v2/builds/${build_id}")"
+            echo "$response" > /tmp/bs-ios-build-status.json
+
+            status="$(echo "$response" | jq -r '.status')"
+            echo "BrowserStack build status: $status"
+
+            case "$status" in
+              passed)
+                exit 0
+                ;;
+              failed|error|timedout)
+                echo "::error::BrowserStack XCUITest build finished with status: $status"
+                exit 1
+                ;;
+            esac
+
+            sleep 30
+          done
+
+          echo "::error::Timed out waiting for BrowserStack XCUITest build completion"
+          exit 1
