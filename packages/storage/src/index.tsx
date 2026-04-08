@@ -30,27 +30,15 @@ export type {
 export { CacheStrategy } from './types';
 
 /**
- * Cached default logger used when callers do not provide one.
+ * No-op logger used when callers do not provide one.
  */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-const createNoopLogger = (): LoggerInstance => ({
-  nativeHandle: { id: 'native-none-id' },
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
   changeLevel: () => {},
   error: () => {},
   warn: () => {},
   info: () => {},
   debug: () => {},
-});
-
-/**
- * Lazily initialize and return the default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createNoopLogger();
-  }
-  return defaultLoggerInstance;
 };
 
 /**
@@ -59,10 +47,9 @@ const getDefaultLogger = (): LoggerInstance => {
 const resolveLogger = (
   options?: StorageLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
-  const logger = options?.logger ?? getDefaultLogger();
-  const loggerId =
-    logger.nativeHandle?.id ?? getDefaultLogger().nativeHandle?.id;
-
+  const logger = options?.logger ?? noopLogger;
+  const rawLoggerId = logger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   return { logger, loggerId };
 };
 

@@ -9,7 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
-import MultiStorageScreen from './ui/MultiStorageScreeen';
+import MultiStorageScreen from './ui/MultiStorageScreen';
 import HomeScreen from './ui/HomeScreen';
 import ConfigurationScreen from './ui/ConfigurationScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';

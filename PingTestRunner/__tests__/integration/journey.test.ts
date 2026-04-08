@@ -19,7 +19,7 @@
  * - dispose() cleans up the native instance
  */
 
-export {}
+export {};
 
 type NativeJourneyMock = {
   configureJourney: jest.Mock;

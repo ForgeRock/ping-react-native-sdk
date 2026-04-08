@@ -12,19 +12,6 @@ import {
 } from '../index';
 import type { StorageConfig } from '../index';
 
-const mockLogger = {
-  nativeHandle: { id: 'native-none-id' },
-  changeLevel: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-};
-
-jest.mock('@ping-identity/rn-logger', () => ({
-  logger: jest.fn(() => mockLogger),
-}));
-
 // Mock the Native Module
 const mockNativeRNPingStorage = {
   registerSessionStorage: jest.fn(),
@@ -45,7 +32,6 @@ jest.mock('../NativeRNPingStorage', () => ({
 describe('Storage API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLogger.nativeHandle.id = 'native-none-id';
   });
 
   describe('Factory functions', () => {
@@ -64,7 +50,6 @@ describe('Storage API', () => {
       expect(
         mockNativeRNPingStorage.registerSessionStorage,
       ).toHaveBeenCalledWith({
-        loggerId: 'native-none-id',
         keyAlias: 'session-key',
       });
       expect(
@@ -125,7 +110,6 @@ describe('Storage API', () => {
       });
 
       expect(mockNativeRNPingStorage.registerOidcStorage).toHaveBeenCalledWith({
-        loggerId: 'native-none-id',
         keyAlias: 'oidc-key',
       });
       expect(mockNativeRNPingStorage.configureOidcStorage).toHaveBeenCalledWith(
@@ -202,7 +186,7 @@ describe('Storage API', () => {
       });
     });
 
-    it('falls back to default logger id when options.logger has no native handle id', () => {
+    it('omits loggerId when options.logger has no native handle id', () => {
       const logger = {
         nativeHandle: {},
         changeLevel: jest.fn(),
@@ -226,7 +210,6 @@ describe('Storage API', () => {
       expect(
         mockNativeRNPingStorage.registerSessionStorage,
       ).toHaveBeenCalledWith({
-        loggerId: 'native-none-id',
         keyAlias: 'session-key',
       });
     });

@@ -7,7 +7,6 @@
 
 import packageJson from '@ping-identity/rn-logger/package.json';
 
-export {};
 
 type NativeLoggerMock = {
   registerLogger: jest.Mock;
@@ -79,6 +78,42 @@ const loadModule = async () => {
 };
 
 describe('logger package', () => {
+  it('logger defaults to NONE native level when no level is provided', async () => {
+    const { module, nativeLogger } = await loadModule();
+
+    module.logger();
+
+    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'NONE' });
+  });
+
+  it('logger throws when native registration fails', async () => {
+    jest.resetModules();
+    const nativeLogger = createNativeLoggerMock();
+    nativeLogger.registerLogger.mockReturnValue('');
+
+    jest.doMock('../NativeRNPingLogger', () => ({
+      __esModule: true,
+      default: nativeLogger,
+    }));
+
+    jest.doMock('@forgerock/sdk-logger', () => ({
+      __esModule: true,
+      logger: jest.fn(() => ({
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      })),
+    }));
+
+    const { logger } = await import('../logger');
+
+    expect(() => logger({ level: 'info' })).toThrow(
+      '[@ping-identity/rn-logger] Failed to configure native logger',
+    );
+  });
+
   it('logger creates a native handle and syncs level changes', async () => {
     const { module, nativeLogger, sdkLogger } = await loadModule();
 

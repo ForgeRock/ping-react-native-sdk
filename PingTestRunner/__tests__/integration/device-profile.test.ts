@@ -15,7 +15,7 @@
  * - Propagates native errors to callers
  */
 
-export {}
+export {};
 
 type NativeDeviceProfileMock = {
   collectDeviceProfile: jest.Mock;

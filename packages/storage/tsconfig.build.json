@@ -7,5 +7,5 @@
       "@ping-identity/rn-types": ["../types/lib/typescript/src/index"]
     }
   },
-  "exclude": ["example", "lib"]
+  "exclude": ["lib", "**/__tests__/**"]
 }
