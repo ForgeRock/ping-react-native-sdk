@@ -40,8 +40,6 @@ jobs:
 
     env:
       XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.1.1' }}
-      RUBY_VERSION: ${{ vars.RUBY_VERSION || '2.6.10' }}
-      BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
       PING_TEST_RUNNER_DIR: PingTestRunner
       PING_TEST_RUNNER_IOS_DIR: PingTestRunner/ios
 
@@ -52,15 +50,13 @@ jobs:
       - name: Setup project dependencies
         uses: ./.github/actions/setup-proj
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ env.RUBY_VERSION }}
-          bundler-cache: true
+      - name: Install Ruby gems (CocoaPods)
+        working-directory: ${{ env.PING_TEST_RUNNER_DIR }}
+        run: bundle install --path vendor/bundle
 
       - name: Install CocoaPods
         working-directory: ${{ env.PING_TEST_RUNNER_DIR }}
-        run: bundle exec pod install --repo-update --project-directory=ios
+        run: bundle exec pod install --project-directory=ios
 
       - name: Install Apple certificate and provisioning profile
         env:
