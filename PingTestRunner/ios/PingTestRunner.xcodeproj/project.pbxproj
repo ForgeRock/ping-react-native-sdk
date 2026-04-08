@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -47,7 +47,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		342DFE042F8480FE00E081CB /* PingTestRunnerUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PingTestRunnerUITests; sourceTree = "<group>"; };
+		342DFE042F8480FE00E081CB /* PingTestRunnerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = PingTestRunnerUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,8 +187,6 @@
 				342DFE042F8480FE00E081CB /* PingTestRunnerUITests */,
 			);
 			name = PingTestRunnerUITests;
-			packageProductDependencies = (
-			);
 			productName = PingTestRunnerUITests;
 			productReference = 342DFE032F8480FE00E081CB /* PingTestRunnerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -267,13 +275,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PingTestRunner/Pods-PingTestRunner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PingTestRunner/Pods-PingTestRunner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -310,13 +314,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PingTestRunner/Pods-PingTestRunner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PingTestRunner/Pods-PingTestRunner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -372,6 +372,7 @@
 					"-ObjC",
 					"-lc++",
 				);
+				PROVISIONING_PROFILE = "$(APP_PROVISIONING_PROFILE_UUID)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.rntestrunner;
 				PRODUCT_NAME = PingTestRunner;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -399,6 +400,7 @@
 					"-ObjC",
 					"-lc++",
 				);
+				PROVISIONING_PROFILE = "$(APP_PROVISIONING_PROFILE_UUID)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.rntestrunner;
 				PRODUCT_NAME = PingTestRunner;
 				SWIFT_VERSION = 5.0;
@@ -427,6 +429,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
+				PROVISIONING_PROFILE = "$(UI_TEST_PROVISIONING_PROFILE_UUID)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.PingTestRunnerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -462,6 +465,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
+				PROVISIONING_PROFILE = "$(UI_TEST_PROVISIONING_PROFILE_UUID)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.pingidentity.PingTestRunnerUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -555,7 +559,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -635,7 +642,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
