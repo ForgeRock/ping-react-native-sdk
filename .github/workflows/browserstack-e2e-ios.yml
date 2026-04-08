@@ -18,7 +18,7 @@ concurrency:
 jobs:
   prepare-ios-artifacts:
     name: Prepare iOS BrowserStack artifacts
-    uses: ./.github/workflows/prepare-ios-bs-artifacts.yml
+    uses: ./.github/workflows/browserstack-prep-ios-artifacts.yml
     secrets:
       CERTIFICATES_FILE_BASE64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
       CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
