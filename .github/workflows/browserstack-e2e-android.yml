@@ -7,14 +7,63 @@
 name: BrowserStack E2E — Android
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    branches: [main]
+  workflow_call:
+    inputs:
+      browserstack_project_name:
+        description: BrowserStack project name used for Android E2E runs
+        required: false
+        type: string
+        default: rn-sdk-test
+      browserstack_session_name:
+        description: BrowserStack session name used by Detox
+        required: false
+        type: string
+        default: android-detox-e2e
+    secrets:
+      BROWSERSTACK_USERNAME:
+        description: BrowserStack account username
+        required: true
+      BROWSERSTACK_ACCESS_KEY:
+        description: BrowserStack account access key
+        required: true
+      PING_SERVER_URL:
+        description: Ping server base URL for Tier 2 E2E coverage
+        required: false
+      PING_REALM_PATH:
+        description: Ping realm path for journey and OIDC E2E coverage
+        required: false
+      PING_COOKIE_NAME:
+        description: Ping cookie name used by the test environment
+        required: false
+      PING_JOURNEY_NAME:
+        description: Ping journey name exercised by BrowserStack E2E tests
+        required: false
+      PING_TEST_USERNAME:
+        description: Test account username for server-backed BrowserStack scenarios
+        required: false
+      PING_TEST_PASSWORD:
+        description: Test account password for server-backed BrowserStack scenarios
+        required: false
+      PING_DISCOVERY_ENDPOINT:
+        description: OIDC discovery endpoint used by BrowserStack E2E tests
+        required: false
+      PING_CLIENT_ID:
+        description: OIDC client identifier used by BrowserStack E2E tests
+        required: false
+      PING_REDIRECT_URI:
+        description: OIDC redirect URI used by BrowserStack E2E tests
+        required: false
+      PING_CALLBACK_TREES_ENABLED:
+        description: Flag enabling callback tree coverage in BrowserStack E2E tests
+        required: false
 
 # Cancel in-progress runs for the same ref.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   e2e-android-browserstack:
@@ -66,13 +115,25 @@ jobs:
       - name: Compute BrowserStack identifiers
         # Naming convention:
         #   Project : rn-<moduleName>-test  → rn-sdk-test
-        #   Build   : pr-<PR_NUMBER>-<SHORT_SHA>
+        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>
         #   Session : <platform>-<framework>-<test_name>
         run: |
+          set -euo pipefail
           SHORT_SHA="${GITHUB_SHA:0:7}"
-          echo "BROWSERSTACK_BUILD_ID=pr-${{ github.event.pull_request.number }}-${SHORT_SHA}" >> "$GITHUB_ENV"
-          echo "BROWSERSTACK_PROJECT_NAME=rn-sdk-test" >> "$GITHUB_ENV"
-          echo "BROWSERSTACK_SESSION_NAME=android-detox-e2e" >> "$GITHUB_ENV"
+          case "${{ github.event_name }}" in
+            pull_request)
+              BUILD_PREFIX="pr"
+              ;;
+            push)
+              BUILD_PREFIX="push"
+              ;;
+            *)
+              BUILD_PREFIX="run"
+              ;;
+          esac
+          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_PROJECT_NAME=${{ inputs.browserstack_project_name }}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_SESSION_NAME=${{ inputs.browserstack_session_name }}" >> "$GITHUB_ENV"
 
       - name: Build SDK packages
         # Metro bundles the JS at release build time and resolves the Ping SDK
