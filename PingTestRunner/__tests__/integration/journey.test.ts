@@ -195,6 +195,57 @@ describe('@ping-identity/rn-journey — integration', () => {
       await expect(client.dispose()).resolves.not.toThrow();
       expect(mock.dispose).toHaveBeenCalledTimes(1);
     });
+
+    it('dispose() followed immediately by init() re-registers with native without error', async () => {
+      // Regression: rapid dispose → init must not reuse a stale journeyId nor
+      // fail because a concurrent native cleanup removed the newly registered handle.
+      const mock = makeMock({
+        configureJourney: jest.fn()
+          .mockResolvedValueOnce('journey-id-first')
+          .mockResolvedValueOnce('journey-id-second'),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+
+      await client.init();
+      expect(mock.configureJourney).toHaveBeenCalledTimes(1);
+
+      await client.dispose();
+      expect(mock.dispose).toHaveBeenCalledTimes(1);
+
+      // Immediately re-initialise — must call configureJourney again and return a fresh id.
+      const newId = await client.init();
+      expect(mock.configureJourney).toHaveBeenCalledTimes(2);
+      expect(newId).toBe('journey-id-second');
+    });
+
+    it('concurrent dispose() + init() calls do not leave journeyId in an inconsistent state', async () => {
+      // Ensure that if dispose and a subsequent init are issued back-to-back (no await
+      // between them), the client ends up in a valid configured state.
+      let resolveDispose!: () => void;
+      const deferredDispose = new Promise<undefined>((res) => {
+        resolveDispose = () => res(undefined);
+      });
+      const mock = makeMock({
+        dispose: jest.fn(() => deferredDispose),
+        configureJourney: jest.fn()
+          .mockResolvedValueOnce('journey-id-first')
+          .mockResolvedValueOnce('journey-id-second'),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+
+      await client.init();
+
+      // Start dispose but don't await — then immediately start init.
+      const disposePromise = client.dispose();
+      resolveDispose();                   // unblock the native dispose
+      await disposePromise;
+
+      const newId = await client.init();
+      expect(typeof newId).toBe('string');
+      expect(mock.configureJourney).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('failure paths', () => {

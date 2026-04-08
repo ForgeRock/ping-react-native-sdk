@@ -30,6 +30,13 @@ private actor JourneyLifecycleCoordinator {
   }
 }
 
+/// Thread-safe value box for passing results across `@Sendable` closure boundaries
+/// where access is guaranteed to be sequential (write inside an awaited coordinator
+/// enqueue, read after the enqueue returns).
+private final class Ref<T>: @unchecked Sendable {
+  var value: T?
+}
+
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
@@ -114,14 +121,26 @@ public final class RNPingJourneyCommon: NSObject {
     }
 
     Task { @MainActor in
-      await configureAsync()
+      // Build the journey client outside the coordinator — no shared state is touched here.
+      let journey: Journey
       do {
-        let journey = try await JourneyClientFactory().build(payload)
-        let journeyId = await journeyRegistry.register(JourneyHandle(journey: journey))
-        promise.resolve(journeyId)
+        journey = try await JourneyClientFactory().build(payload)
       } catch {
         promise.reject(JourneyErrorMapper.map(error, code: .initError))
+        return
       }
+
+      // Register atomically with the callback resolver setup inside the coordinator so
+      // that a concurrent cleanupAsync() cannot remove the newly registered handle
+      // between configureAsync() returning and register() being called.
+      let idRef = Ref<String>()
+      await lifecycleCoordinator.enqueue {
+        CoreRuntime.setJourneyCallbackResolver { journeyId in
+          stateStore.callbacks(for: journeyId)
+        }
+        idRef.value = await journeyRegistry.register(JourneyHandle(journey: journey))
+      }
+      promise.resolve(idRef.value!)
     }
   }
 
