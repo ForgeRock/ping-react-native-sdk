@@ -30,15 +30,18 @@ public class RNPingFidoCommon: NSObject {
   /// Registers a new FIDO credential.
   /// - Parameters:
   ///   - options: Registration options payload.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolver: Promise resolver for the registration result.
   ///   - rejecter: Promise rejecter for errors.
   @objc
   @MainActor
   public static func register(
     _ options: NSDictionary,
+    config: NSDictionary,
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
+    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     execute(
       options: options,
@@ -53,15 +56,18 @@ public class RNPingFidoCommon: NSObject {
   /// Authenticates with an existing FIDO credential.
   /// - Parameters:
   ///   - options: Authentication options payload.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolver: Promise resolver for the authentication result.
   ///   - rejecter: Promise rejecter for errors.
   @objc
   @MainActor
   public static func authenticate(
     _ options: NSDictionary,
+    config: NSDictionary,
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
+    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     execute(
       options: options,
@@ -77,6 +83,7 @@ public class RNPingFidoCommon: NSObject {
   /// - Parameters:
   ///   - journeyId: Native Journey instance id.
   ///   - options: Callback execution options.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolver: Promise resolver for success payload.
   ///   - rejecter: Promise rejecter for errors.
   @objc
@@ -84,9 +91,11 @@ public class RNPingFidoCommon: NSObject {
   public static func registerForJourney(
     _ journeyId: String,
     options: NSDictionary,
+    config: NSDictionary,
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
+    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -102,6 +111,17 @@ public class RNPingFidoCommon: NSObject {
     let callbackIndex = parseCallbackIndex(options)
     let deviceName = parseJourneyDeviceName(options)
 
+    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
+      handlers.reject(
+        GenericError(
+          type: .fidoError,
+          error: FidoErrorCode.windowUnavailable.rawValue,
+          message: "No active application window is available for Journey FIDO registration."
+        )
+      )
+      return
+    }
+
     Task { @MainActor in
       guard let callback = await resolveRegistrationCallback(
         journeyId: journeyId,
@@ -112,17 +132,6 @@ public class RNPingFidoCommon: NSObject {
             type: .stateError,
             error: FidoErrorCode.callbackNotFound.rawValue,
             message: "No active FIDO registration callback found for journey \(journeyId)."
-          )
-        )
-        return
-      }
-
-      guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-        handlers.reject(
-          GenericError(
-            type: .fidoError,
-            error: FidoErrorCode.windowUnavailable.rawValue,
-            message: "No active application window is available for Journey FIDO registration."
           )
         )
         return
@@ -149,6 +158,7 @@ public class RNPingFidoCommon: NSObject {
   /// - Parameters:
   ///   - journeyId: Native Journey instance id.
   ///   - options: Callback execution options.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolver: Promise resolver for success payload.
   ///   - rejecter: Promise rejecter for errors.
   @objc
@@ -156,9 +166,11 @@ public class RNPingFidoCommon: NSObject {
   public static func authenticateForJourney(
     _ journeyId: String,
     options: NSDictionary,
+    config: NSDictionary,
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
+    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -173,6 +185,17 @@ public class RNPingFidoCommon: NSObject {
 
     let callbackIndex = parseCallbackIndex(options)
 
+    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
+      handlers.reject(
+        GenericError(
+          type: .fidoError,
+          error: FidoErrorCode.windowUnavailable.rawValue,
+          message: "No active application window is available for Journey FIDO authentication."
+        )
+      )
+      return
+    }
+
     Task { @MainActor in
       guard let callback = await resolveAuthenticationCallback(
         journeyId: journeyId,
@@ -183,17 +206,6 @@ public class RNPingFidoCommon: NSObject {
             type: .stateError,
             error: FidoErrorCode.callbackNotFound.rawValue,
             message: "No active FIDO authentication callback found for journey \(journeyId)."
-          )
-        )
-        return
-      }
-
-      guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-        handlers.reject(
-          GenericError(
-            type: .fidoError,
-            error: FidoErrorCode.windowUnavailable.rawValue,
-            message: "No active application window is available for Journey FIDO authentication."
           )
         )
         return

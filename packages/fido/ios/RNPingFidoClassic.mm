@@ -35,16 +35,17 @@ RCT_EXPORT_MODULE(RNPingFidoClassic)
  * Registers a new FIDO credential.
  */
 RCT_EXPORT_METHOD(registerCredential:(NSDictionary *)options
+                  config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] register:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] register:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] register:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] register:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -52,16 +53,17 @@ RCT_EXPORT_METHOD(registerCredential:(NSDictionary *)options
  * Authenticates with an existing FIDO credential.
  */
 RCT_EXPORT_METHOD(authenticateCredential:(NSDictionary *)options
+                  config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] authenticate:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] authenticate:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] authenticate:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] authenticate:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -70,16 +72,17 @@ RCT_EXPORT_METHOD(authenticateCredential:(NSDictionary *)options
  */
 RCT_EXPORT_METHOD(registerCredentialForJourney:(NSString *)journeyId
                   options:(NSDictionary *)options
+                  config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -88,16 +91,17 @@ RCT_EXPORT_METHOD(registerCredentialForJourney:(NSString *)journeyId
  */
 RCT_EXPORT_METHOD(authenticateCredentialForJourney:(NSString *)journeyId
                   options:(NSDictionary *)options
+                  config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 

@@ -31,16 +31,17 @@ RCT_EXPORT_MODULE()
  Registers a new FIDO credential.
  */
 - (void)registerCredential:(NSDictionary *)options
+                    config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
                    reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] register:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] register:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] register:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] register:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -48,16 +49,17 @@ RCT_EXPORT_MODULE()
  Authenticates with an existing FIDO credential.
  */
 - (void)authenticateCredential:(NSDictionary *)options
+                        config:(NSDictionary *)config
                      resolve:(RCTPromiseResolveBlock)resolve
                       reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] authenticate:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] authenticate:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] authenticate:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] authenticate:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -66,16 +68,17 @@ RCT_EXPORT_MODULE()
  */
 - (void)registerCredentialForJourney:(NSString *)journeyId
                              options:(NSDictionary *)options
+                              config:(NSDictionary *)config
                              resolve:(RCTPromiseResolveBlock)resolve
                               reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] registerForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -84,16 +87,17 @@ RCT_EXPORT_MODULE()
  */
 - (void)authenticateCredentialForJourney:(NSString *)journeyId
                                 options:(NSDictionary *)options
+                                 config:(NSDictionary *)config
                                 resolve:(RCTPromiseResolveBlock)resolve
                                  reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] authenticateForJourney:journeyId options:options resolve:resolve rejecter:reject];
+    [[self swiftImpl] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 

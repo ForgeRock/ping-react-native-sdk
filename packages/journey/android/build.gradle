@@ -80,7 +80,6 @@ dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "com.pingidentity.sdks:journey:2.0.0-beta1"
-  implementation "com.pingidentity.sdks:fido:2.0.0-beta1"
   implementation "com.pingidentity.sdks:android:2.0.0-beta1"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
 

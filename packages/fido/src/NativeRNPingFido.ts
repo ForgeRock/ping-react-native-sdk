@@ -7,6 +7,7 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 import type {
+  FidoClientConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
   FidoJourneyAuthenticationOptions,
@@ -32,20 +33,24 @@ export interface Spec extends TurboModule {
    * Registers a new FIDO credential.
    *
    * @param options Registration options payload.
+   * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the registration result payload.
    */
   registerCredential(
-    options: Object
+    options: Object,
+    config: Object
   ): Promise<Object>;
 
   /**
    * Authenticates with an existing FIDO credential.
    *
    * @param options Authentication options payload.
+   * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the authentication result payload.
    */
   authenticateCredential(
-    options: Object
+    options: Object,
+    config: Object
   ): Promise<Object>;
 
   /**
@@ -53,11 +58,13 @@ export interface Spec extends TurboModule {
    *
    * @param journeyId Native Journey instance id.
    * @param options Registration callback execution options.
+   * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to a Journey success payload.
    */
   registerCredentialForJourney(
     journeyId: string,
-    options: Object
+    options: Object,
+    config: Object
   ): Promise<Object>;
 
   /**
@@ -65,13 +72,25 @@ export interface Spec extends TurboModule {
    *
    * @param journeyId Native Journey instance id.
    * @param options Authentication callback execution options.
+   * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to a Journey success payload.
    */
   authenticateCredentialForJourney(
     journeyId: string,
-    options: Object
+    options: Object,
+    config: Object
   ): Promise<Object>;
 }
+
+/**
+ * Native configuration shape sent over the bridge.
+ */
+export type NativeFidoConfig = {
+  /** Optional native logger handle id resolved by JavaScript. */
+  loggerId?: string;
+  /** Optional Android-only API selection toggle. */
+  useFido2Client?: boolean;
+};
 
 /**
  * Resolve by probing TurboModule first, then falling back to the classic bridge module.
@@ -102,6 +121,15 @@ export function toNativeRegistrationOptions(
   options: FidoRegistrationOptions
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts configure options to a codegen-compatible object.
+ */
+export function toNativeConfigOptions(
+  config: FidoClientConfig
+): Record<string, unknown> {
+  return config as unknown as Record<string, unknown>;
 }
 
 /**

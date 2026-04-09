@@ -15,11 +15,13 @@ import com.pingidentity.fido.FidoClient
 import com.pingidentity.fido.FidoClientConfig
 import com.pingidentity.fido.journey.FidoAuthenticationCallback
 import com.pingidentity.fido.journey.FidoRegistrationCallback
+import com.pingidentity.logger.Logger
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
+import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.utils.JsonBridgeMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,9 +35,19 @@ import kotlinx.serialization.json.put
  * Shared implementation for FIDO operations on Android.
  */
 object RNPingFidoCommon {
+  private const val LOGGER_ID_KEY = "loggerId"
+  private const val USE_FIDO2_CLIENT_KEY = "useFido2Client"
 
   /** Coroutine scope for executing FIDO operations asynchronously on the IO dispatcher. */
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+  /**
+   * Per-call FIDO runtime configuration.
+   */
+  private data class CallConfig(
+    val loggerId: String?,
+    val useFido2Client: Boolean?
+  )
 
   /**
    * Activity availability provider used by runtime checks and overridable in tests.
@@ -58,11 +70,13 @@ object RNPingFidoCommon {
    * Registers a new FIDO credential.
    *
    * @param options Registration options payload.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with the registration result or reject on error.
    */
   @JvmStatic
   fun register(
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
     if (!hasForegroundActivity()) {
@@ -77,7 +91,7 @@ object RNPingFidoCommon {
     scope.launch {
       try {
         val input = JsonBridgeMapper.decodeReadableMap(options)
-        val result = FidoClient(FidoClientConfig()).register(input)
+        val result = createFidoClient(parseCallConfig(config)).register(input)
         result.fold(
           onSuccess = { payload ->
             promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
@@ -114,11 +128,13 @@ object RNPingFidoCommon {
    * Authenticates with an existing FIDO credential.
    *
    * @param options Authentication options payload.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with the authentication result or reject on error.
    */
   @JvmStatic
   fun authenticate(
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
     if (!hasForegroundActivity()) {
@@ -133,7 +149,7 @@ object RNPingFidoCommon {
     scope.launch {
       try {
         val input = JsonBridgeMapper.decodeReadableMap(options)
-        val result = FidoClient(FidoClientConfig()).authenticate(input)
+        val result = createFidoClient(parseCallConfig(config)).authenticate(input)
         result.fold(
           onSuccess = { payload ->
             promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
@@ -171,12 +187,14 @@ object RNPingFidoCommon {
    *
    * @param journeyId Native Journey instance id.
    * @param options Optional callback execution options.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with success payload or reject on error.
    */
   @JvmStatic
   fun registerForJourney(
     journeyId: String,
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
     if (journeyId.isBlank()) {
@@ -256,12 +274,14 @@ object RNPingFidoCommon {
    *
    * @param journeyId Native Journey instance id.
    * @param options Optional callback execution options.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with success payload or reject on error.
    */
   @JvmStatic
   fun authenticateForJourney(
     journeyId: String,
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
     if (journeyId.isBlank()) {
@@ -367,6 +387,56 @@ object RNPingFidoCommon {
    */
   private fun hasForegroundActivity(): Boolean {
     return foregroundActivityProvider()
+  }
+
+  /**
+   * Builds a FIDO client using the currently configured runtime state.
+   */
+  private fun createFidoClient(callConfig: CallConfig): FidoClient {
+    val clientConfig = FidoClientConfig().apply {
+      resolveLoggerFromCore(callConfig.loggerId)?.let { logger = it }
+      callConfig.useFido2Client?.let { useFido2Client = it }
+    }
+    return FidoClient(clientConfig)
+  }
+
+  /**
+   * Parses per-call configuration payload.
+   */
+  private fun parseCallConfig(config: ReadableMap): CallConfig {
+    val loggerId = if (
+      config.hasKey(LOGGER_ID_KEY) && config.getType(LOGGER_ID_KEY) == ReadableType.String
+    ) {
+      config.getString(LOGGER_ID_KEY)?.trim()?.takeIf { it.isNotEmpty() }
+    } else {
+      null
+    }
+    val useFido2Client = if (
+      config.hasKey(USE_FIDO2_CLIENT_KEY) &&
+        config.getType(USE_FIDO2_CLIENT_KEY) == ReadableType.Boolean
+    ) {
+      config.getBoolean(USE_FIDO2_CLIENT_KEY)
+    } else {
+      null
+    }
+    return CallConfig(
+      loggerId = loggerId,
+      useFido2Client = useFido2Client
+    )
+  }
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) {
+      return null
+    }
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return handle.nativeLogger as? Logger
   }
 
   /**

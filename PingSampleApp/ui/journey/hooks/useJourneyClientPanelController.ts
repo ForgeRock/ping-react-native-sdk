@@ -17,8 +17,7 @@ import {
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
 import {
-  authenticateForJourney,
-  registerForJourney,
+  createFidoClient,
 } from '@ping-identity/rn-fido';
 import { collectDeviceProfile } from '@ping-identity/rn-device-profile';
 import {
@@ -220,7 +219,8 @@ export function useJourneyClientPanelController(
 
   const [journeyName, setJourneyName] = useState<string>(initialJourneyName ?? '');
   const defaultSystemDeviceNameRef = useRef<string | null>(null);
-  const [node, actions] = useJourney(journeyClient);
+  const fido = useMemo(() => createFidoClient({}), []);
+  const [node, actions] = useJourney();
   const { start, next, resume, user, logoutUser, loading, error } = actions;
   const form = useJourneyForm(node);
 
@@ -410,7 +410,7 @@ export function useJourneyClientPanelController(
             hasDeviceName: deviceName.length > 0,
             usedDefaultSystemDeviceName: inputDeviceName.length === 0,
           });
-          await registerForJourney(journeyClient, {
+          await fido.registerForJourney(journeyClient, {
             index: field.ref.typeIndex,
             deviceName,
           });
@@ -421,7 +421,7 @@ export function useJourneyClientPanelController(
           index: field.ref.typeIndex,
         });
         try {
-          await authenticateForJourney(journeyClient, {
+          await fido.authenticateForJourney(journeyClient, {
             index: field.ref.typeIndex,
           });
         } catch (error) {
@@ -448,6 +448,7 @@ export function useJourneyClientPanelController(
       hasFidoCallback,
       isContinueNode,
       journeyClient,
+      fido,
       resolveDefaultSystemDeviceName,
     ]
   );

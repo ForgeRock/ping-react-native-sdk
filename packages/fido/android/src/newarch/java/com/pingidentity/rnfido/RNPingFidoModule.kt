@@ -30,15 +30,15 @@ class RNPingFidoModule(reactContext: ReactApplicationContext) :
   /**
    * Registers a new FIDO credential.
    */
-  override fun registerCredential(options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.register(options, promise)
+  override fun registerCredential(options: ReadableMap, config: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.register(options, config, promise)
   }
 
   /**
    * Authenticates with an existing FIDO credential.
    */
-  override fun authenticateCredential(options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.authenticate(options, promise)
+  override fun authenticateCredential(options: ReadableMap, config: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.authenticate(options, config, promise)
   }
 
   /**
@@ -47,9 +47,10 @@ class RNPingFidoModule(reactContext: ReactApplicationContext) :
   override fun registerCredentialForJourney(
     journeyId: String,
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
-    RNPingFidoCommon.registerForJourney(journeyId, options, promise)
+    RNPingFidoCommon.registerForJourney(journeyId, options, config, promise)
   }
 
   /**
@@ -58,9 +59,10 @@ class RNPingFidoModule(reactContext: ReactApplicationContext) :
   override fun authenticateCredentialForJourney(
     journeyId: String,
     options: ReadableMap,
+    config: ReadableMap,
     promise: Promise
   ) {
-    RNPingFidoCommon.authenticateForJourney(journeyId, options, promise)
+    RNPingFidoCommon.authenticateForJourney(journeyId, options, config, promise)
   }
 
   companion object {

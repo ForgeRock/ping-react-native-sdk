@@ -44,73 +44,105 @@ const loadModule = async ({
 describe('fido native module wiring', () => {
   it('uses TurboModule when New Architecture is enabled', async () => {
     const registerNative = jest.fn(() => Promise.resolve({ type: 'register' }));
-    const { register } = await loadModule({
+    const { createFidoClient } = await loadModule({
       turboModule: { registerCredential: registerNative },
     });
+    const client = createFidoClient();
 
-    await expect(register({ challenge: 'abc' })).resolves.toEqual({
+    await expect(client.register({ challenge: 'abc' })).resolves.toEqual({
       type: 'register',
     });
     expect(registerNative).toHaveBeenCalledTimes(1);
+    expect(registerNative).toHaveBeenCalledWith({ challenge: 'abc' }, {});
+  });
+
+  it('createFidoClient captures config payload', async () => {
+    const registerNative = jest.fn(() => Promise.resolve({ type: 'register' }));
+    const { createFidoClient } = await loadModule({
+      turboModule: { registerCredential: registerNative },
+    });
+    const client = createFidoClient({
+      logger: {
+        nativeHandle: { id: 'logger-1' },
+        changeLevel: jest.fn(),
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+      },
+      android: { useFido2Client: false },
+    });
+
+    await client.register({ challenge: 'abc' });
+    expect(registerNative).toHaveBeenCalledWith(
+      { challenge: 'abc' },
+      { loggerId: 'logger-1', useFido2Client: false }
+    );
   });
 
   it('falls back to classic module when TurboModule is missing', async () => {
     const authenticateNative = jest.fn(() => Promise.resolve({ type: 'auth' }));
-    const { authenticate } = await loadModule({
+    const { createFidoClient } = await loadModule({
       nativeModule: {
         RNPingFidoClassic: { authenticateCredential: authenticateNative },
       },
     });
+    const client = createFidoClient();
 
-    await expect(authenticate({ challenge: 'abc' })).resolves.toEqual({
+    await expect(client.authenticate({ challenge: 'abc' })).resolves.toEqual({
       type: 'auth',
     });
     expect(authenticateNative).toHaveBeenCalledTimes(1);
+    expect(authenticateNative).toHaveBeenCalledWith({ challenge: 'abc' }, {});
   });
 
   it('registerForJourney forwards journey id and options to native module', async () => {
     const registerJourneyNative = jest.fn(() => Promise.resolve({ type: 'success' }));
-    const { registerForJourney } = await loadModule({
+    const { createFidoClient } = await loadModule({
       turboModule: { registerCredentialForJourney: registerJourneyNative },
     });
     const journey = { getId: jest.fn(() => Promise.resolve('journey-123')) };
+    const client = createFidoClient();
 
     await expect(
-      registerForJourney(journey, { index: 0, deviceName: 'Device' })
+      client.registerForJourney(journey, { index: 0, deviceName: 'Device' })
     ).resolves.toEqual({ type: 'success' });
     expect(registerJourneyNative).toHaveBeenCalledWith('journey-123', {
       index: 0,
       deviceName: 'Device',
-    });
+    }, {});
   });
 
   it('authenticateForJourney forwards journey id and options to native module', async () => {
     const authenticateJourneyNative = jest.fn(() => Promise.resolve({ type: 'success' }));
-    const { authenticateForJourney } = await loadModule({
+    const { createFidoClient } = await loadModule({
       turboModule: { authenticateCredentialForJourney: authenticateJourneyNative },
     });
     const journey = { getId: jest.fn(() => Promise.resolve('journey-456')) };
+    const client = createFidoClient();
 
-    await expect(authenticateForJourney(journey, { index: 1 })).resolves.toEqual({
+    await expect(client.authenticateForJourney(journey, { index: 1 })).resolves.toEqual({
       type: 'success',
     });
-    expect(authenticateJourneyNative).toHaveBeenCalledWith('journey-456', { index: 1 });
+    expect(authenticateJourneyNative).toHaveBeenCalledWith('journey-456', { index: 1 }, {});
   });
 
   it('throws a helpful error when the classic module is missing', async () => {
-    const { register } = await loadModule({});
+    const { createFidoClient } = await loadModule({});
+    const client = createFidoClient();
 
-    await expect(register({ challenge: 'abc' })).rejects.toThrow(
+    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
       '[@ping-identity/rn-fido] Native module RNPingFido not found.'
     );
   });
 
   it('includes available module names in the missing-module error', async () => {
-    const { register } = await loadModule({
+    const { createFidoClient } = await loadModule({
       nativeModule: { SomeOtherModule: {} },
     });
+    const client = createFidoClient();
 
-    await expect(register({ challenge: 'abc' })).rejects.toThrow(
+    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
       'Available NativeModules: ["SomeOtherModule"]'
     );
   });

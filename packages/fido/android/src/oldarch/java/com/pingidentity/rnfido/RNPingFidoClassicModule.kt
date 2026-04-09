@@ -40,22 +40,24 @@ class RNPingFidoClassicModule(
    * Registers a new FIDO credential.
    *
    * @param options Registration options payload.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with the registration result or reject on error.
    */
   @ReactMethod
-  fun registerCredential(options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.register(options, promise)
+  fun registerCredential(options: ReadableMap, config: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.register(options, config, promise)
   }
 
   /**
    * Authenticates with an existing FIDO credential.
    *
    * @param options Authentication options payload.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise to resolve with the authentication result or reject on error.
    */
   @ReactMethod
-  fun authenticateCredential(options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.authenticate(options, promise)
+  fun authenticateCredential(options: ReadableMap, config: ReadableMap, promise: Promise) {
+    RNPingFidoCommon.authenticate(options, config, promise)
   }
 
   /**
@@ -63,11 +65,17 @@ class RNPingFidoClassicModule(
    *
    * @param journeyId Native Journey instance id.
    * @param options Registration callback execution options.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise for callback execution result.
    */
   @ReactMethod
-  fun registerCredentialForJourney(journeyId: String, options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.registerForJourney(journeyId, options, promise)
+  fun registerCredentialForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.registerForJourney(journeyId, options, config, promise)
   }
 
   /**
@@ -75,11 +83,17 @@ class RNPingFidoClassicModule(
    *
    * @param journeyId Native Journey instance id.
    * @param options Authentication callback execution options.
+   * @param config Per-call configuration payload.
    * @param promise React Native promise for callback execution result.
    */
   @ReactMethod
-  fun authenticateCredentialForJourney(journeyId: String, options: ReadableMap, promise: Promise) {
-    RNPingFidoCommon.authenticateForJourney(journeyId, options, promise)
+  fun authenticateCredentialForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.authenticateForJourney(journeyId, options, config, promise)
   }
 
   companion object {

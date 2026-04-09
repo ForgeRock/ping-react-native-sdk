@@ -7,6 +7,7 @@
 
 import type { GenericError } from '@ping-identity/rn-types';
 import type { JourneyInstance } from '@ping-identity/rn-types';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 
 /**
  * JSON-compatible value used by FIDO bridge payloads.
@@ -75,6 +76,98 @@ export type FidoJourneyAuthenticationOptions = {
    */
   index?: number;
 };
+
+/**
+ * Android-specific FIDO runtime configuration options.
+ */
+export type FidoAndroidConfig = {
+  /**
+   * When true, prefers Google Play Services FIDO2 APIs.
+   *
+   * @remarks
+   * Applies on Android only.
+   */
+  useFido2Client?: boolean;
+};
+
+/**
+ * Runtime configuration for the FIDO module.
+ */
+export type FidoConfig = {
+  /**
+   * Optional JavaScript logger instance.
+   *
+   * @remarks
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
+   */
+  logger?: LoggerInstance;
+  /**
+   * Optional Android-specific configuration.
+   */
+  android?: FidoAndroidConfig;
+};
+
+/**
+ * Resolved per-client configuration consumed by native FIDO operations.
+ */
+export type FidoClientConfig = {
+  /**
+   * Optional native logger handle id resolved from `logger.nativeHandle.id`.
+   */
+  loggerId?: string;
+  /**
+   * Optional Android API selection toggle.
+   */
+  useFido2Client?: boolean;
+};
+
+/**
+ * Reusable client for FIDO operations.
+ */
+export interface FidoClient {
+  /**
+   * Registers a new FIDO credential using native platform APIs.
+   *
+   * @param options Registration options payload.
+   * @returns A promise that resolves to the registration result payload.
+   * @throws FidoError when native registration fails.
+   */
+  register(options: FidoRegistrationOptions): Promise<FidoRegistrationResult>;
+  /**
+   * Authenticates with an existing FIDO credential using native platform APIs.
+   *
+   * @param options Authentication options payload.
+   * @returns A promise that resolves to the authentication result payload.
+   * @throws FidoError when native authentication fails.
+   */
+  authenticate(
+    options: FidoAuthenticationOptions
+  ): Promise<FidoAuthenticationResult>;
+  /**
+   * Executes an active Journey FIDO registration callback.
+   *
+   * @param journey Active Journey instance.
+   * @param options Optional registration callback execution options.
+   * @returns A promise that resolves when callback execution succeeds.
+   * @throws FidoError when native callback execution fails.
+   */
+  registerForJourney(
+    journey: JourneyInstance,
+    options?: FidoJourneyRegistrationOptions
+  ): Promise<FidoJourneyResult>;
+  /**
+   * Executes an active Journey FIDO authentication callback.
+   *
+   * @param journey Active Journey instance.
+   * @param options Optional authentication callback execution options.
+   * @returns A promise that resolves when callback execution succeeds.
+   * @throws FidoError when native callback execution fails.
+   */
+  authenticateForJourney(
+    journey: JourneyInstance,
+    options?: FidoJourneyAuthenticationOptions
+  ): Promise<FidoJourneyResult>;
+}
 
 /**
  * Error payload returned when FIDO operations fail.

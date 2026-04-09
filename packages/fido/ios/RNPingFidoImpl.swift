@@ -22,37 +22,42 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   /// Registers a new FIDO credential.
   /// - Parameters:
   ///   - options: Registration options payload.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolve: Promise resolver for the registration result.
   ///   - rejecter: Promise rejecter for errors.
   @objc
   @MainActor
   public func register(
     _ options: NSDictionary,
+    config: NSDictionary,
     resolve: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    RNPingFidoCommon.register(options, resolver: resolve, rejecter: rejecter)
+    RNPingFidoCommon.register(options, config: config, resolver: resolve, rejecter: rejecter)
   }
 
   /// Authenticates with an existing FIDO credential.
   /// - Parameters:
   ///   - options: Authentication options payload.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolve: Promise resolver for the authentication result.
   ///   - rejecter: Promise rejecter for errors.
   @objc
   @MainActor
   public func authenticate(
     _ options: NSDictionary,
+    config: NSDictionary,
     resolve: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    RNPingFidoCommon.authenticate(options, resolver: resolve, rejecter: rejecter)
+    RNPingFidoCommon.authenticate(options, config: config, resolver: resolve, rejecter: rejecter)
   }
 
   /// Executes a Journey-scoped FIDO registration callback.
   /// - Parameters:
   ///   - journeyId: Native Journey instance id.
   ///   - options: Callback execution options.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolve: Promise resolver for success payload.
   ///   - rejecter: Promise rejecter for errors.
   @objc
@@ -60,12 +65,14 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   public func registerForJourney(
     _ journeyId: String,
     options: NSDictionary,
+    config: NSDictionary,
     resolve: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
     RNPingFidoCommon.registerForJourney(
       journeyId,
       options: options,
+      config: config,
       resolver: resolve,
       rejecter: rejecter
     )
@@ -75,6 +82,7 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   /// - Parameters:
   ///   - journeyId: Native Journey instance id.
   ///   - options: Callback execution options.
+  ///   - config: Per-call runtime configuration payload.
   ///   - resolve: Promise resolver for success payload.
   ///   - rejecter: Promise rejecter for errors.
   @objc
@@ -82,12 +90,14 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   public func authenticateForJourney(
     _ journeyId: String,
     options: NSDictionary,
+    config: NSDictionary,
     resolve: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
     RNPingFidoCommon.authenticateForJourney(
       journeyId,
       options: options,
+      config: config,
       resolver: resolve,
       rejecter: rejecter
     )

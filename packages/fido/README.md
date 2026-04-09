@@ -9,159 +9,139 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native FIDO
 
-This module provides a native-backed WebAuthn/FIDO bridge for React Native.
+This package provides a native-backed FIDO bridge for React Native.
 
 ## Table of contents
 
-- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
+- [Install](#install)
 - [FIDO prerequisites](#fido-prerequisites)
-- [How to Use the SDK](#how-to-use-the-sdk)
+- [Client-first usage](#client-first-usage)
 - [Journey integration](#journey-integration)
-- [Payload model](#payload-model)
-- [Error handling](#error-handling)
-- [Platform caveats](#platform-caveats)
+- [Optional `useJourneyForm` integration](#optional-usejourneyform-integration)
+- [API reference](#api-reference)
+- [Errors](#errors)
+- [Platform notes](#platform-notes)
 - [License](#license)
 
-## Integrating the SDK into your project
-
-Add the package and let autolinking wire native code:
+## Install
 
 ```bash
 yarn add @ping-identity/rn-fido
 cd ios && pod install
 ```
 
-Or using npm:
+Optional integration packages:
 
 ```bash
-npm install @ping-identity/rn-fido
-cd ios && pod install
+yarn add @ping-identity/rn-logger
 ```
 
 ## FIDO prerequisites
 
-Before testing passkey registration or authentication, ensure your app and server are associated correctly for your RP domain.
+### Android
 
-### Android prerequisites
+- Host Digital Asset Links at `https://<rp-domain>/.well-known/assetlinks.json`.
+- Ensure `assetlinks.json` contains your Android package name and signing cert fingerprint(s).
+- Configure Android origin domains for FIDO on your RP/server.
+- If you support Android API 33 and older, explicitly include `androidx.credentials:credentials-play-services-auth`.
+- If you need non-discoverable credentials / legacy security-key support, explicitly include `com.google.android.gms:play-services-fido`.
 
-- Host Digital Asset Links at:
-  - `https://<rp-domain>/.well-known/assetlinks.json`
-- Ensure the file contains your Android package name and signing certificate fingerprint(s).
-- Configure Android origin domains for FIDO on your server/RP configuration.
-- If you support Android API 33 and older, include:
-  - `androidx.credentials:credentials-play-services-auth`
-- If you need non-discoverable credentials / legacy security-key support, include:
-  - `com.google.android.gms:play-services-fido`
+### iOS
 
-### iOS prerequisites
-
-- Enable Associated Domains entitlement for your app target.
-- Configure the correct associated domain entries (for example `webcredentials:<rp-domain>`).
-- Host Apple App Site Association at:
-  - `https://<rp-domain>/.well-known/apple-app-site-association`
+- Enable Associated Domains entitlement.
+- Add associated domain entries (for example `webcredentials:<rp-domain>`).
+- Host Apple App Site Association at `https://<rp-domain>/.well-known/apple-app-site-association`.
 - Ensure AASA contains your Apple Team ID and Bundle ID mapping.
 
-## How to Use the SDK
+## Client-first usage
 
-### Register a credential
+Use `createFidoClient(config?)` and call operations on the returned client.
 
 ```ts
-import { register } from "@ping-identity/rn-fido";
+import { createFidoClient } from '@ping-identity/rn-fido';
+import { logger } from '@ping-identity/rn-logger';
 
-const registrationResult = await register({
-  challenge: "base64url-challenge",
-  rp: {
-    id: "example.com",
-    name: "Example Inc.",
+const log = logger({ level: 'debug' });
+
+const fido = createFidoClient({
+  logger: log,
+  android: {
+    useFido2Client: true,
   },
+});
+
+const registrationResult = await fido.register({
+  challenge: 'base64url-challenge',
+  rp: { id: 'example.com', name: 'Example Inc.' },
   user: {
-    id: "base64url-user-id",
-    name: "user@example.com",
-    displayName: "Example User",
+    id: 'base64url-user-id',
+    name: 'user@example.com',
+    displayName: 'Example User',
   },
-  pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+  pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
 });
 
-console.log(registrationResult);
+const authenticationResult = await fido.authenticate({
+  challenge: 'base64url-challenge',
+  rpId: 'example.com',
+  allowCredentials: [],
+});
 ```
 
-### Authenticate a credential
+### Logging integration (optional)
+
+If you install the logger package, pass a JS logger instance created via
+`@ping-identity/rn-logger`.
+If the logger package is not installed/configured, do not pass logger values in FIDO config.
 
 ```ts
-import { authenticate } from "@ping-identity/rn-fido";
+import { createFidoClient } from '@ping-identity/rn-fido';
+import { logger } from '@ping-identity/rn-logger';
 
-const authenticationResult = await authenticate({
-  challenge: "base64url-challenge",
-  rpId: "example.com",
-  allowCredentials: [
-    {
-      type: "public-key",
-      id: "base64url-credential-id",
-    },
-  ],
+const jsLogger = logger({ level: 'debug' });
+
+const fido = createFidoClient({
+  logger: jsLogger,
+});
+```
+
+### Multi-client example
+
+```ts
+import { createFidoClient } from '@ping-identity/rn-fido';
+
+const fidoA = createFidoClient({
+  android: { useFido2Client: true },
 });
 
-console.log(authenticationResult);
-```
+const fidoB = createFidoClient({
+  android: { useFido2Client: false },
+});
 
-### API reference
-
-```ts
-import {
-  authenticate,
-  authenticateForJourney,
-  register,
-  registerForJourney,
-} from "@ping-identity/rn-fido";
-import type {
-  FidoAuthenticationOptions,
-  FidoAuthenticationResult,
-  FidoError,
-  FidoErrorCode,
-  FidoJourneyAuthenticationOptions,
-  FidoJourneyRegistrationOptions,
-  FidoJourneyResult,
-  FidoRegistrationOptions,
-  FidoRegistrationResult,
-  JourneyInstance,
-} from "@ping-identity/rn-fido";
-
-function register(
-  options: FidoRegistrationOptions,
-): Promise<FidoRegistrationResult>;
-
-function authenticate(
-  options: FidoAuthenticationOptions,
-): Promise<FidoAuthenticationResult>;
-
-function registerForJourney(
-  journey: JourneyInstance,
-  options?: FidoJourneyRegistrationOptions,
-): Promise<FidoJourneyResult>;
-
-function authenticateForJourney(
-  journey: JourneyInstance,
-  options?: FidoJourneyAuthenticationOptions,
-): Promise<FidoJourneyResult>;
+await fidoA.register({ challenge: '...' });
+await fidoB.authenticate({ challenge: '...' });
 ```
 
 ## Journey integration
 
-Use Journey-scoped APIs to run active FIDO callbacks explicitly from app code.
+Run Journey FIDO callbacks explicitly before `journey.next(...)`.
 
 ```ts
-import {
-  authenticateForJourney,
-  registerForJourney,
-} from "@ping-identity/rn-fido";
+import { createFidoClient } from '@ping-identity/rn-fido';
 
-if (node.type === "ContinueNode") {
+const fido = createFidoClient();
+
+if (node.type === 'ContinueNode') {
   for (const callback of node.callbacks ?? []) {
-    if (callback.type === "FidoRegistrationCallback") {
-      await registerForJourney(journey, { index: 0, deviceName: "My Device" });
+    if (callback.type === 'FidoRegistrationCallback') {
+      await fido.registerForJourney(journey, {
+        index: 0,
+        deviceName: 'My Device',
+      });
     }
-    if (callback.type === "FidoAuthenticationCallback") {
-      await authenticateForJourney(journey, { index: 0 });
+
+    if (callback.type === 'FidoAuthenticationCallback') {
+      await fido.authenticateForJourney(journey, { index: 0 });
     }
   }
 
@@ -169,63 +149,72 @@ if (node.type === "ContinueNode") {
 }
 ```
 
-### Optional: `useJourneyForm` integration
+## Optional `useJourneyForm` integration
 
-When using `@ping-identity/rn-journey` form helpers, FIDO callbacks are exposed as
-`executionMode: 'integration_required'`. You can detect those fields and run
-FIDO explicitly before calling `next(...)`.
+When using `useJourneyForm`, FIDO fields are marked with `executionMode: 'integration_required'`.
+This indicates app code must run FIDO integration explicitly.
 
 ```ts
 import { useJourneyForm } from '@ping-identity/rn-journey';
-import {
-  authenticateForJourney,
-  registerForJourney,
-} from '@ping-identity/rn-fido';
+import { createFidoClient } from '@ping-identity/rn-fido';
 
 const form = useJourneyForm(node);
+const fido = createFidoClient();
 
 for (const field of form.fields) {
   if (field.ref.type === 'FidoRegistrationCallback') {
-    await registerForJourney(journey, { index: field.ref.index, deviceName: 'My Device' });
+    await fido.registerForJourney(journey, {
+      index: field.ref.typeIndex,
+      deviceName: 'My Device',
+    });
   }
+
   if (field.ref.type === 'FidoAuthenticationCallback') {
-    await authenticateForJourney(journey, { index: field.ref.index });
+    await fido.authenticateForJourney(journey, {
+      index: field.ref.typeIndex,
+    });
   }
 }
 
 await journey.next({});
 ```
 
-## Payload model
-
-`register` and `authenticate` use dictionary-style payloads:
-
-- `FidoRegistrationOptions` and `FidoAuthenticationOptions` are JSON-compatible maps.
-- `FidoRegistrationResult` and `FidoAuthenticationResult` are JSON-compatible maps.
-
-This is intentionally flexible to match native WebAuthn/FIDO payloads from platform SDKs.
-
-## Error handling
-
-Promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+## API reference
 
 ```ts
-import { authenticate } from "@ping-identity/rn-fido";
-import type { FidoError } from "@ping-identity/rn-fido";
+import { createFidoClient } from '@ping-identity/rn-fido';
+import type {
+  FidoClient,
+  FidoConfig,
+  FidoRegistrationOptions,
+  FidoRegistrationResult,
+  FidoAuthenticationOptions,
+  FidoAuthenticationResult,
+  FidoJourneyRegistrationOptions,
+  FidoJourneyAuthenticationOptions,
+  FidoJourneyResult,
+  JourneyInstance,
+} from '@ping-identity/rn-fido';
 
-try {
-  await authenticate({ challenge: "..." });
-} catch (error) {
-  const fidoError = error as FidoError;
-  console.log({
-    type: fidoError.type,
-    error: fidoError.error,
-    message: fidoError.message,
-    code: fidoError.code,
-    status: fidoError.status,
-  });
+function createFidoClient(config?: FidoConfig): FidoClient;
+
+interface FidoClient {
+  register(options: FidoRegistrationOptions): Promise<FidoRegistrationResult>;
+  authenticate(options: FidoAuthenticationOptions): Promise<FidoAuthenticationResult>;
+  registerForJourney(
+    journey: JourneyInstance,
+    options?: FidoJourneyRegistrationOptions,
+  ): Promise<FidoJourneyResult>;
+  authenticateForJourney(
+    journey: JourneyInstance,
+    options?: FidoJourneyAuthenticationOptions,
+  ): Promise<FidoJourneyResult>;
 }
 ```
+
+## Errors
+
+Rejected promises use `GenericError` shape (`FidoError`).
 
 Stable error codes:
 
@@ -237,14 +226,17 @@ Stable error codes:
 - `FIDO_WINDOW_UNAVAILABLE` (iOS)
 - `FIDO_CALLBACK_NOT_FOUND`
 
-## Platform caveats
+## Platform notes
 
-- Android: a foreground `Activity` must be available when invoking `register`, `authenticate`, or Journey-scoped FIDO operations.
-- iOS: an active `UIWindowScene`/`ASPresentationAnchor` must be available when invoking `register`, `authenticate`, or Journey-scoped FIDO operations.
+- `android.useFido2Client` is an Android-only override.
+- iOS accepts the same config shape for API parity, but does not currently apply native client-level config.
+- Journey callback execution currently follows native SDK behavior; Android Journey callback APIs do not currently accept injected custom native `FidoClient` configuration.
+- Android requires a foreground `Activity` for FIDO calls.
+- iOS requires an active `UIWindowScene`/`ASPresentationAnchor` for FIDO calls.
 
 ## E2E testing note
 
-- Full passkey E2E strategy (including OS-level credential surfaces outside app UI) is still to be determined.
+Full passkey E2E strategy (including OS-level credential surfaces outside app UI) is still to be determined.
 
 ## License
 

@@ -9,12 +9,16 @@ import {
   fromNativeJourneyResult,
   fromNativeRegistrationResult,
   getNativeModule,
+  toNativeConfigOptions,
   toNativeAuthenticationOptions,
   toNativeJourneyAuthenticationOptions,
   toNativeJourneyRegistrationOptions,
   toNativeRegistrationOptions,
 } from './NativeRNPingFido';
 import type {
+  FidoClient,
+  FidoClientConfig,
+  FidoConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
   FidoJourneyAuthenticationOptions,
@@ -26,105 +30,104 @@ import type {
 } from './types';
 
 /**
- * Registers a new FIDO credential using native platform APIs.
+ * Creates a reusable FIDO client instance.
  *
- * @param options Registration options payload.
- * @returns A promise that resolves to the registration result payload.
- *
- * @remarks
- * Promise rejections use {@link FidoError}.
- *
- * @example
- * ```typescript
- * import { register } from '@ping-identity/rn-fido';
- *
- * const result = await register({
- *   challenge: '...',
- *   rp: { id: 'example.com', name: 'Example' },
- *   user: { id: 'user-id', name: 'user@example.com', displayName: 'User' },
- *   pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
- * });
- * console.log(result);
- * ```
- */
-export async function register(
-  options: FidoRegistrationOptions
-): Promise<FidoRegistrationResult> {
-  const result = await getNativeModule().registerCredential(
-    toNativeRegistrationOptions(options)
-  );
-  return fromNativeRegistrationResult(result);
-}
-
-/**
- * Authenticates with an existing FIDO credential using native platform APIs.
- *
- * @param options Authentication options payload.
- * @returns A promise that resolves to the authentication result payload.
+ * @param config Runtime FIDO configuration payload.
+ * @returns A FIDO client bound to the resolved configuration.
+ * @throws Error when the native FIDO module is unavailable.
  *
  * @remarks
- * Promise rejections use {@link FidoError}.
+ * Logger integration is optional and uses `logger(...).nativeHandle.id` when provided.
  *
- * @example
- * ```typescript
- * import { authenticate } from '@ping-identity/rn-fido';
- *
- * const result = await authenticate({
- *   challenge: '...',
- *   rpId: 'example.com',
- *   allowCredentials: [],
- * });
- * console.log(result);
- * ```
+ * Current runtime behavior:
+ * - Android applies `useFido2Client` for standalone FIDO operations.
+ * - iOS accepts this config shape, but no iOS-native client-level config is applied yet.
  */
-export async function authenticate(
-  options: FidoAuthenticationOptions
-): Promise<FidoAuthenticationResult> {
-  const result = await getNativeModule().authenticateCredential(
-    toNativeAuthenticationOptions(options)
-  );
-  return fromNativeAuthenticationResult(result);
-}
+export function createFidoClient(config: FidoConfig = {}): FidoClient {
+  const resolvedConfig: FidoClientConfig = {
+    loggerId: config.logger?.nativeHandle?.id?.trim() || undefined,
+    useFido2Client: config.android?.useFido2Client,
+  };
 
-/**
- * Executes an active Journey FIDO registration callback.
- *
- * @param journey - Active Journey instance.
- * @param options - Optional registration callback execution options.
- * @returns A promise that resolves when callback execution succeeds.
- */
-export async function registerForJourney(
-  journey: JourneyInstance,
-  options: FidoJourneyRegistrationOptions = {}
-): Promise<FidoJourneyResult> {
-  const journeyId = await journey.getId();
-  const result = await getNativeModule().registerCredentialForJourney(
-    journeyId,
-    toNativeJourneyRegistrationOptions(options)
-  );
-  return fromNativeJourneyResult(result);
-}
-
-/**
- * Executes an active Journey FIDO authentication callback.
- *
- * @param journey - Active Journey instance.
- * @param options - Optional authentication callback execution options.
- * @returns A promise that resolves when callback execution succeeds.
- */
-export async function authenticateForJourney(
-  journey: JourneyInstance,
-  options: FidoJourneyAuthenticationOptions = {}
-): Promise<FidoJourneyResult> {
-  const journeyId = await journey.getId();
-  const result = await getNativeModule().authenticateCredentialForJourney(
-    journeyId,
-    toNativeJourneyAuthenticationOptions(options)
-  );
-  return fromNativeJourneyResult(result);
+  return {
+    /**
+     * Registers a new FIDO credential using native platform APIs.
+     *
+     * @param options Registration options payload.
+     * @returns A promise that resolves to the registration result payload.
+     * @throws FidoError when native registration fails.
+     */
+    async register(options: FidoRegistrationOptions): Promise<FidoRegistrationResult> {
+      const result = await getNativeModule().registerCredential(
+        toNativeRegistrationOptions(options),
+        toNativeConfigOptions(resolvedConfig)
+      );
+      return fromNativeRegistrationResult(result);
+    },
+    /**
+     * Authenticates with an existing FIDO credential using native platform APIs.
+     *
+     * @param options Authentication options payload.
+     * @returns A promise that resolves to the authentication result payload.
+     * @throws FidoError when native authentication fails.
+     */
+    async authenticate(
+      options: FidoAuthenticationOptions
+    ): Promise<FidoAuthenticationResult> {
+      const result = await getNativeModule().authenticateCredential(
+        toNativeAuthenticationOptions(options),
+        toNativeConfigOptions(resolvedConfig)
+      );
+      return fromNativeAuthenticationResult(result);
+    },
+    /**
+     * Executes an active Journey FIDO registration callback.
+     *
+     * @param journey Active Journey instance.
+     * @param options Optional registration callback execution options.
+     * @returns A promise that resolves when callback execution succeeds.
+     * @throws FidoError when callback execution fails.
+     */
+    async registerForJourney(
+      journey: JourneyInstance,
+      options: FidoJourneyRegistrationOptions = {}
+    ): Promise<FidoJourneyResult> {
+      const journeyId = await journey.getId();
+      const result = await getNativeModule().registerCredentialForJourney(
+        journeyId,
+        toNativeJourneyRegistrationOptions(options),
+        toNativeConfigOptions(resolvedConfig)
+      );
+      return fromNativeJourneyResult(result);
+    },
+    /**
+     * Executes an active Journey FIDO authentication callback.
+     *
+     * @param journey Active Journey instance.
+     * @param options Optional authentication callback execution options.
+     * @returns A promise that resolves when callback execution succeeds.
+     * @throws FidoError when callback execution fails.
+     */
+    async authenticateForJourney(
+      journey: JourneyInstance,
+      options: FidoJourneyAuthenticationOptions = {}
+    ): Promise<FidoJourneyResult> {
+      const journeyId = await journey.getId();
+      const result = await getNativeModule().authenticateCredentialForJourney(
+        journeyId,
+        toNativeJourneyAuthenticationOptions(options),
+        toNativeConfigOptions(resolvedConfig)
+      );
+      return fromNativeJourneyResult(result);
+    },
+  };
 }
 
 export type {
+  FidoAndroidConfig,
+  FidoClient,
+  FidoClientConfig,
+  FidoConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
   FidoError,

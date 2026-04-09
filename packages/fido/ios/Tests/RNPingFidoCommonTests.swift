@@ -73,7 +73,7 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeRegister(options: NSDictionary) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.register(options) { _ in
+      RNPingFidoCommon.register(options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -83,7 +83,7 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeAuthenticate(options: NSDictionary) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.authenticate(options) { _ in
+      RNPingFidoCommon.authenticate(options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -96,7 +96,7 @@ final class RNPingFidoCommonTests: XCTestCase {
     options: NSDictionary
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.registerForJourney(journeyId, options: options) { _ in
+      RNPingFidoCommon.registerForJourney(journeyId, options: options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -109,7 +109,7 @@ final class RNPingFidoCommonTests: XCTestCase {
     options: NSDictionary
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.authenticateForJourney(journeyId, options: options) { _ in
+      RNPingFidoCommon.authenticateForJourney(journeyId, options: options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))

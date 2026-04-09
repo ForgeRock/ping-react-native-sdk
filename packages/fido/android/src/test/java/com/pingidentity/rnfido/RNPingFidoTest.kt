@@ -118,7 +118,7 @@ class RNPingFidoTest {
     RNPingFidoCommon.foregroundActivityProvider = { false }
     val promise = TestPromise()
 
-    RNPingFidoCommon.register(JavaOnlyMap(), promise)
+    RNPingFidoCommon.register(JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE, promise.rejectedCode)
@@ -136,7 +136,7 @@ class RNPingFidoTest {
     RNPingFidoCommon.foregroundActivityProvider = { false }
     val promise = TestPromise()
 
-    RNPingFidoCommon.authenticate(JavaOnlyMap(), promise)
+    RNPingFidoCommon.authenticate(JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE, promise.rejectedCode)
@@ -156,7 +156,7 @@ class RNPingFidoTest {
     every { JsonBridgeMapper.decodeReadableMap(any()) } throws IllegalArgumentException("bad payload")
 
     val promise = TestPromise()
-    RNPingFidoCommon.register(JavaOnlyMap(), promise)
+    RNPingFidoCommon.register(JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_REGISTER_ERROR, promise.rejectedCode)
@@ -173,7 +173,7 @@ class RNPingFidoTest {
     every { JsonBridgeMapper.decodeReadableMap(any()) } throws IllegalStateException("unexpected")
 
     val promise = TestPromise()
-    RNPingFidoCommon.authenticate(JavaOnlyMap(), promise)
+    RNPingFidoCommon.authenticate(JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_ERROR, promise.rejectedCode)
@@ -186,7 +186,7 @@ class RNPingFidoTest {
   @Test
   fun registerForJourneyRejectsWhenCallbackMissing() {
     val promise = TestPromise()
-    RNPingFidoCommon.registerForJourney("journey-missing", JavaOnlyMap(), promise)
+    RNPingFidoCommon.registerForJourney("journey-missing", JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND, promise.rejectedCode)
@@ -198,7 +198,7 @@ class RNPingFidoTest {
   @Test
   fun authenticateForJourneyRejectsWhenCallbackMissing() {
     val promise = TestPromise()
-    RNPingFidoCommon.authenticateForJourney("journey-missing", JavaOnlyMap(), promise)
+    RNPingFidoCommon.authenticateForJourney("journey-missing", JavaOnlyMap(), JavaOnlyMap(), promise)
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND, promise.rejectedCode)
