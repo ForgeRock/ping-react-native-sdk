@@ -35,7 +35,7 @@ class RNPingFidoPackage : BaseReactPackage() {
    */
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
-      val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
+      val moduleInfos = mutableMapOf<String, ReactModuleInfo>()
       moduleInfos[RNPingFidoClassicModule.NAME] = ReactModuleInfo(
         RNPingFidoClassicModule.NAME,
         RNPingFidoClassicModule.NAME,

@@ -6,6 +6,7 @@
  */
 package com.pingidentity.rnfido
 
+import androidx.annotation.VisibleForTesting
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
@@ -52,6 +53,7 @@ object RNPingFidoCommon {
   /**
    * Activity availability provider used by runtime checks and overridable in tests.
    */
+  @VisibleForTesting
   @JvmSynthetic
   internal var foregroundActivityProvider: () -> Boolean = {
     runCatching { ContextProvider.currentActivity }
