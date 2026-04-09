@@ -13,6 +13,9 @@ on:
   #   types: [opened, reopened, synchronize]
   #   branches: [main]
   workflow_call:
+  # TODO: Once lefthook is set up, this workflow will also be triggered as a
+  # pre-push hook via the gh CLI, so that e2e tests run in GitHub Actions
+  # before the push completes.
 
 
 # Cancel in-progress runs for the same ref.
@@ -34,15 +37,29 @@ jobs:
       run:
         working-directory: PingTestRunner
 
+    env:
+      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.1.1' }}
+      RUBY_VERSION: '2.6.10'
+      BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js and install dependencies
         uses: ./.github/actions/setup-proj
 
-      - name: Install Ruby gems (CocoaPods)
-        run: bundle install --path vendor/bundle
+      - name: Select Xcode version
+        run: sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
 
       - name: Install CocoaPods dependencies
         run: bundle exec pod install --project-directory=ios
@@ -74,7 +91,13 @@ jobs:
           path: PingTestRunner/artifacts/
 
   # ── Android E2E (emulator on ubuntu-latest) ───────────────────────────────
+  # NOTE: This job will currently fail. The BrowserStack Detox fork we depend on
+  # for cloud device testing is pinned to a Detox version that is incompatible
+  # with React Native 0.80.
+  # TODO: Re-enable and validate once BrowserStack releases an updated version
+  # of their Detox fork with RN 0.80 support.
   e2e-android:
+    if: false
     name: E2E — Android Emulator
     runs-on: ubuntu-latest
     timeout-minutes: 60
