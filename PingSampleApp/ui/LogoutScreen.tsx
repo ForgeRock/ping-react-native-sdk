@@ -52,7 +52,7 @@ export default function LogoutScreen(): React.ReactElement {
     useCallback(() => {
       void refreshSessionState();
       return undefined;
-    }, [refreshSessionState])
+    }, [refreshSessionState]),
   );
 
   const handleLogoutAll = useCallback(async (): Promise<void> => {
@@ -64,13 +64,17 @@ export default function LogoutScreen(): React.ReactElement {
     try {
       await journeyActions.logoutUser();
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : 'Journey logout failed');
+      errors.push(
+        error instanceof Error ? error.message : 'Journey logout failed',
+      );
     }
 
     try {
       await oidcActions.logout();
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : 'OIDC logout failed');
+      errors.push(
+        error instanceof Error ? error.message : 'OIDC logout failed',
+      );
     }
 
     await refreshSessionState();
@@ -94,7 +98,9 @@ export default function LogoutScreen(): React.ReactElement {
       await oidcActions.logout();
       setStatusMessage('OIDC Web session logged out.');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'OIDC Web logout failed');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'OIDC Web logout failed',
+      );
     } finally {
       setBusyOidc(false);
       await refreshSessionState();
@@ -109,7 +115,9 @@ export default function LogoutScreen(): React.ReactElement {
       await journeyActions.logoutUser();
       setStatusMessage('Journey session logged out.');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Journey logout failed');
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Journey logout failed',
+      );
     } finally {
       setBusyJourney(false);
       await refreshSessionState();
@@ -121,8 +129,10 @@ export default function LogoutScreen(): React.ReactElement {
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
-      <CardSection title="Active Sessions" subtitle="Select a session to logout">
-
+      <CardSection
+        title="Active Sessions"
+        subtitle="Select a session to logout"
+      >
         {hasAnySession ? (
           <AsyncActionButton
             label="Logout All Sessions"
@@ -133,13 +143,20 @@ export default function LogoutScreen(): React.ReactElement {
             disabled={disabled}
           />
         ) : (
-          <AsyncActionButton label="No Active Sessions" onPress={() => {}} variant="secondary" disabled />
+          <AsyncActionButton
+            label="No Active Sessions"
+            onPress={() => {}}
+            variant="secondary"
+            disabled
+          />
         )}
       </CardSection>
 
       {journeyActive ? (
         <CardSection title="Journey Session">
-          <Text style={commonStyles.codeText}>Logout from Journey authentication</Text>
+          <Text style={commonStyles.codeText}>
+            Logout from Journey authentication
+          </Text>
           <Text style={commonStyles.codeText}>Status: Active</Text>
           <AsyncActionButton
             label="Logout from Journey Session"
@@ -154,7 +171,9 @@ export default function LogoutScreen(): React.ReactElement {
 
       {oidcActive ? (
         <CardSection title="OIDC Web Session">
-          <Text style={commonStyles.codeText}>Logout from OIDC Web authentication</Text>
+          <Text style={commonStyles.codeText}>
+            Logout from OIDC Web authentication
+          </Text>
           <Text style={commonStyles.codeText}>Status: Active</Text>
           <AsyncActionButton
             label="Logout from OIDC Web Session"

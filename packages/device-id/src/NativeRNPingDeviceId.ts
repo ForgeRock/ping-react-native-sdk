@@ -9,19 +9,19 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
 
 /**
  * Native module specification for RNPingDeviceId.
- * 
+ *
  * Defines the interface contract for the native device identifier module.
  * Extends TurboModule for New Architecture (Fabric) support.
- * 
+ *
  * This interface is implemented by native code on both iOS and Android platforms,
  * providing secure device identification capabilities.
- * 
+ *
  * @interface
  */
 export interface Spec extends TurboModule {
   /**
    * Returns the default secure device identifier as determined by the native platform.
-   * 
+   *
    * The default identifier is platform-specific:
    * - **Android**: Uses KeyStore-generated RSA key pair (cryptographically secure, hardware-backed when available)
    *   - Generates new ID on app reinstall (KeyStore entries generally removed on uninstall)
@@ -32,10 +32,10 @@ export interface Spec extends TurboModule {
    *   - Only deleted on factory reset
    *   - Can be shared across apps from same developer via Keychain Access Groups
    *   - Automatically migrates legacy FRAuth identifiers
-   * 
+   *
    * This is the recommended method for most use cases as it provides
    * cryptographically secure identification.
-   * 
+   *
    * @returns A promise that resolves to the default device identifier string
    */
   getDefaultDeviceId(): Promise<string>;
@@ -59,6 +59,6 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-device-id] Native module RNPingDeviceId not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }

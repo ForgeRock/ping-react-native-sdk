@@ -26,34 +26,32 @@ const nativeLevelMap: Record<LogLevel, NativeLoggerLevel> = {
 
 const sdkTag = `[RNPingSDK v${pkg.version}]`;
 
-
 /**
  * Provide a default custom logger that returns a truthy value so the SDK
  * logger does not fall back to console.error (LogBox warnings in dev).
  */
 function createCustomLogger(
   custom: LoggerConfig['custom'],
-  tag: string
+  tag: string,
 ): Required<LoggerConfig>['custom'] {
-  const base =
-    custom ?? {
-      error: (...args: LogMessage[]) => {
-        console.log(...args);
-        return true;
-      },
-      warn: (...args: LogMessage[]) => {
-        console.warn(...args);
-        return true;
-      },
-      info: (...args: LogMessage[]) => {
-        console.info(...args);
-        return true;
-      },
-      debug: (...args: LogMessage[]) => {
-        console.debug(...args);
-        return true;
-      },
-    };
+  const base = custom ?? {
+    error: (...args: LogMessage[]) => {
+      console.log(...args);
+      return true;
+    },
+    warn: (...args: LogMessage[]) => {
+      console.warn(...args);
+      return true;
+    },
+    info: (...args: LogMessage[]) => {
+      console.info(...args);
+      return true;
+    },
+    debug: (...args: LogMessage[]) => {
+      console.debug(...args);
+      return true;
+    },
+  };
 
   return {
     error: (...args: LogMessage[]) => base.error(`${tag} ${args.join(' ')}`),
@@ -78,12 +76,12 @@ function syncNativeLogger(id: string, level: LogLevel) {
  * @param config - Logger configuration options
  * @returns Handle to the registered native logger
  * @throws {Error} If the native logger registration fails
- * @public
+ * @internal
  * @remarks
  * This function registers a logger with the native platform (iOS/Android)
  * and returns an identifier that can be used to sync logger settings.
  */
-export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
+function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
   const level = config.level ?? 'none';
   const id = NativeLogger.registerLogger({
     level: nativeLevelMap[level],
@@ -91,7 +89,7 @@ export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
 
   if (!id) {
     throw new Error(
-      '[@ping-identity/rn-logger] Failed to configure native logger'
+      '[@ping-identity/rn-logger] Failed to configure native logger',
     );
   }
 
@@ -106,19 +104,19 @@ export function configureLogger(config: LoggerConfig = {}): NativeLoggerHandle {
  * @remarks
  * This is the main entry point for creating a logger. It configures both
  * JavaScript and native loggers and provides a unified interface for logging.
- * 
+ *
  * @example
  * Basic usage:
  * ```typescript
  * import { logger } from '@ping-identity/rn-logger';
- * 
+ *
  * const log = logger({ level: 'debug' });
  * log.debug('Debug message');
  * log.info('Info message');
  * log.warn('Warning message');
  * log.error('Error message');
  * ```
- * 
+ *
  * @example
  * With custom logger:
  * ```typescript

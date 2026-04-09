@@ -88,7 +88,7 @@ export const SHOW_AM_TEST_JOURNEY_SUGGESTIONS =
  */
 export function isTestJourneyName(journeyName: string): boolean {
   const normalized = journeyName.trim();
-  return TEST_JOURNEY_NAME_SUGGESTIONS.some((name) => name === normalized);
+  return TEST_JOURNEY_NAME_SUGGESTIONS.some(name => name === normalized);
 }
 
 /**
@@ -97,12 +97,14 @@ export function isTestJourneyName(journeyName: string): boolean {
  * @param recentJourneys - Recently used journey names loaded from storage.
  * @returns Unique recent journey names excluding built-in test suggestions.
  */
-export function buildRecentJourneySuggestions(recentJourneys: string[]): string[] {
+export function buildRecentJourneySuggestions(
+  recentJourneys: string[],
+): string[] {
   const seen = new Set<string>();
 
   return recentJourneys
-    .map((value) => value.trim())
-    .filter((value) => {
+    .map(value => value.trim())
+    .filter(value => {
       if (!value || seen.has(value) || isTestJourneyName(value)) {
         return false;
       }
@@ -120,8 +122,8 @@ export function buildRecentJourneySuggestions(recentJourneys: string[]): string[
 export function buildUsedTestJourneys(usedJourneys: string[]): string[] {
   const seen = new Set<string>();
   return usedJourneys
-    .map((value) => value.trim())
-    .filter((value) => {
+    .map(value => value.trim())
+    .filter(value => {
       if (!value || seen.has(value) || !isTestJourneyName(value)) {
         return false;
       }
@@ -174,14 +176,22 @@ export function extractGivenName(session: unknown): string | undefined {
  * @param fields - Normalized callback fields.
  * @returns Polling wait time in milliseconds when available.
  */
-export function resolvePollingWaitMs(fields: JourneyNormalizedField[]): number | null {
-  const pollingField = fields.find((field) => field.ref.type === 'PollingWaitCallback');
+export function resolvePollingWaitMs(
+  fields: JourneyNormalizedField[],
+): number | null {
+  const pollingField = fields.find(
+    field => field.ref.type === 'PollingWaitCallback',
+  );
   if (!pollingField) {
     return null;
   }
 
   const waitTime = pollingField.raw.waitTime;
-  if (typeof waitTime === 'number' && Number.isFinite(waitTime) && waitTime > 0) {
+  if (
+    typeof waitTime === 'number' &&
+    Number.isFinite(waitTime) &&
+    waitTime > 0
+  ) {
     return waitTime;
   }
   if (typeof waitTime === 'string') {

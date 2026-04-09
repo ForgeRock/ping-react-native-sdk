@@ -1,4 +1,7 @@
 {
-  "extends": "./tsconfig.json",
-  "exclude": ["example", "lib", "**/__tests__/**"]
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "outDir": "./lib/typescript"
+  },
+  "exclude": ["lib", "**/__tests__/**"]
 }

@@ -29,7 +29,9 @@ type TokenOutputCardProps = {
  * @param props - Output card props.
  * @returns Token output card element.
  */
-export default function TokenOutputCard(props: TokenOutputCardProps): React.ReactElement {
+export default function TokenOutputCard(
+  props: TokenOutputCardProps,
+): React.ReactElement {
   const { tokenOutput, showComingSoonBadge } = props;
 
   return (

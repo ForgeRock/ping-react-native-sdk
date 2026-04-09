@@ -44,14 +44,19 @@ export type PayloadViewerProps = {
  * @param props - Component props.
  * @returns Payload viewer element.
  */
-export default function PayloadViewer(props: PayloadViewerProps): React.ReactElement {
+export default function PayloadViewer(
+  props: PayloadViewerProps,
+): React.ReactElement {
   const { payload, containerStyle, contentContainerStyle, textStyle } = props;
 
   return (
     <View style={[commonStyles.payloadScrollContainer, containerStyle]}>
       <ScrollView
         style={commonStyles.payloadScroll}
-        contentContainerStyle={[commonStyles.payloadScrollContent, contentContainerStyle]}
+        contentContainerStyle={[
+          commonStyles.payloadScrollContent,
+          contentContainerStyle,
+        ]}
         nestedScrollEnabled
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator

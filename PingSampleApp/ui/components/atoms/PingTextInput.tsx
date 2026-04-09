@@ -5,7 +5,13 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Animated,
   Easing,
@@ -56,7 +62,9 @@ type PingTextInputProps = TextInputProps & {
  * @param props.inactiveTextColor Text color in inactive state.
  * @returns Styled text input component.
  */
-export default function PingTextInput(props: PingTextInputProps): React.ReactElement {
+export default function PingTextInput(
+  props: PingTextInputProps,
+): React.ReactElement {
   const {
     label,
     showFloatingLabel = true,
@@ -94,23 +102,31 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
 
   const active = isFocused || hasValue;
   const selected = isFocused;
-  const floatingLabel = showFloatingLabel ? (label ?? placeholder ?? '') : '';
+  const floatingLabel = showFloatingLabel ? label ?? placeholder ?? '' : '';
   const labelAnimation = useRef(new Animated.Value(active ? 1 : 0)).current;
   const supportsSecureToggle = Boolean(allowPasswordToggle || secureTextEntry);
-  const secureMode = supportsSecureToggle ? !passwordVisible : Boolean(secureTextEntry);
+  const secureMode = supportsSecureToggle
+    ? !passwordVisible
+    : Boolean(secureTextEntry);
   const inputWrapperStateStyle = useMemo(
     () => ({
       borderColor: selected ? activeBorderColor : inactiveBorderColor,
       borderWidth: selected ? 2 : 1.5,
     }),
-    [selected, activeBorderColor, inactiveBorderColor]
+    [selected, activeBorderColor, inactiveBorderColor],
   );
   const floatingLabelStateStyle = useMemo(
     () => ({
       color: selected ? activeBorderColor : inactiveBorderColor,
       backgroundColor: active ? labelBackgroundColor : 'transparent',
     }),
-    [selected, active, activeBorderColor, inactiveBorderColor, labelBackgroundColor]
+    [
+      selected,
+      active,
+      activeBorderColor,
+      inactiveBorderColor,
+      labelBackgroundColor,
+    ],
   );
   const animatedLabelStyle = useMemo(
     () => ({
@@ -131,13 +147,13 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
         outputRange: [0, 5],
       }),
     }),
-    [labelAnimation]
+    [labelAnimation],
   );
   const inputTextStateStyle = useMemo(
     () => ({
       color: selected ? activeTextColor : inactiveTextColor,
     }),
-    [selected, activeTextColor, inactiveTextColor]
+    [selected, activeTextColor, inactiveTextColor],
   );
 
   useEffect(() => {
@@ -154,7 +170,7 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
       setIsFocused(true);
       onFocus?.(event);
     },
-    [onFocus]
+    [onFocus],
   );
 
   const handleBlur = useCallback<NonNullable<TextInputProps['onBlur']>>(
@@ -162,17 +178,13 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
       setIsFocused(false);
       onBlur?.(event);
     },
-    [onBlur]
+    [onBlur],
   );
 
   return (
     <View style={[styles.container, containerStyle]}>
       <View
-        style={[
-          styles.inputWrapper,
-          inputWrapperStateStyle,
-          inputWrapperStyle,
-        ]}
+        style={[styles.inputWrapper, inputWrapperStateStyle, inputWrapperStyle]}
       >
         {showFloatingLabel && floatingLabel.length > 0 ? (
           <Animated.Text
@@ -201,8 +213,10 @@ export default function PingTextInput(props: PingTextInputProps): React.ReactEle
         {supportsSecureToggle ? (
           <TouchableOpacity
             accessibilityRole="button"
-            accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
-            onPress={() => setPasswordVisible((previousValue) => !previousValue)}
+            accessibilityLabel={
+              passwordVisible ? 'Hide password' : 'Show password'
+            }
+            onPress={() => setPasswordVisible(previousValue => !previousValue)}
             style={styles.passwordToggle}
           >
             <MaterialIcon

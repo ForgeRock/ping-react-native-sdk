@@ -27,7 +27,7 @@ export type JourneyDebugEntry = {
  */
 export function createJourneyDebugEntry(
   title: string,
-  payload?: unknown
+  payload?: unknown,
 ): JourneyDebugEntry {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
@@ -45,7 +45,7 @@ export function createJourneyDebugEntry(
  */
 export function sanitizeDebugPayload(value: unknown): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => sanitizeDebugPayload(item));
+    return value.map(item => sanitizeDebugPayload(item));
   }
 
   if (!value || typeof value !== 'object') {
@@ -68,7 +68,7 @@ export function sanitizeDebugPayload(value: unknown): unknown {
       result[key] = sanitizeDebugPayload(nestedValue);
       return result;
     },
-    {}
+    {},
   );
 }
 

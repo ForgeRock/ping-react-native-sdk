@@ -5,26 +5,22 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
+import {
+  NativeModules,
+  TurboModuleRegistry,
+  type TurboModule,
+} from 'react-native';
 
 /**
  * JavaScript-level logger levels.
  * These are mapped to native logger levels internally.
  */
-export type LoggerLevel =
-  | 'debug'
-  | 'info'
-  | 'warn'
-  | 'error'
-  | 'none';
+export type LoggerLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
 
 /**
  * Native logger levels supported by the underlying platform logger.
  */
-export type NativeLoggerLevel =
-  | 'STANDARD'
-  | 'WARN'
-  | 'NONE';
+export type NativeLoggerLevel = 'STANDARD' | 'WARN' | 'NONE';
 
 /**
  * Configuration options for registering a logger.
@@ -73,7 +69,7 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-logger] Native module Logger not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }
 

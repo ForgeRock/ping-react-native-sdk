@@ -78,10 +78,7 @@ export function toDisplayString(value: unknown): string {
  * @param message - Native callback message value.
  * @returns Display-ready prompt text.
  */
-export function resolvePromptText(
-  prompt: unknown,
-  message: unknown
-): string {
+export function resolvePromptText(prompt: unknown, message: unknown): string {
   const promptText = readString(prompt, '').trim();
   if (promptText.length > 0) {
     return promptText;
@@ -106,7 +103,7 @@ export function resolvePromptText(
 export function resolveOptionLabel(
   label: unknown,
   value: unknown,
-  index: number
+  index: number,
 ): string {
   const labelText = readString(label, '').trim();
   if (labelText.length > 0) {

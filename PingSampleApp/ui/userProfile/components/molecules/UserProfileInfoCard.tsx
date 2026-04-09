@@ -9,7 +9,9 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { commonStyles } from '../../../../src/styles/common';
 import AsyncActionButton from '../../../components/molecules/AsyncActionButton';
-import KeyValueList, { type KeyValueItem } from '../../../components/atoms/KeyValueList';
+import KeyValueList, {
+  type KeyValueItem,
+} from '../../../components/atoms/KeyValueList';
 import UserProfileJsonBlock from './UserProfileJsonBlock';
 
 /**
@@ -59,7 +61,7 @@ const asDisplayValue = (value: unknown): string | null => {
  */
 const readProfileField = (
   payload: Record<string, unknown> | null,
-  keys: readonly string[]
+  keys: readonly string[],
 ): string => {
   if (!payload) {
     return 'Not available';
@@ -90,15 +92,15 @@ const wrapProfileValue = (value: string): string => {
  * @returns User info card element.
  */
 export default function UserProfileInfoCard(
-  props: UserProfileInfoCardProps
+  props: UserProfileInfoCardProps,
 ): React.ReactElement {
   const { title, userInfo, showRawUserInfo, onToggleRawUserInfo } = props;
 
   const firstName = wrapProfileValue(
-    readProfileField(userInfo, ['given_name', 'firstName', 'first_name'])
+    readProfileField(userInfo, ['given_name', 'firstName', 'first_name']),
   );
   const familyName = wrapProfileValue(
-    readProfileField(userInfo, ['family_name', 'lastName', 'last_name'])
+    readProfileField(userInfo, ['family_name', 'lastName', 'last_name']),
   );
   const email = wrapProfileValue(readProfileField(userInfo, ['email']));
   const infoItems: KeyValueItem[] = [
@@ -110,14 +112,19 @@ export default function UserProfileInfoCard(
   return (
     <View style={commonStyles.userProfileCard}>
       <Text style={commonStyles.userProfileSectionTitle}>{title}</Text>
-      <KeyValueList items={infoItems} textStyle={commonStyles.userProfileInfoLine} />
+      <KeyValueList
+        items={infoItems}
+        textStyle={commonStyles.userProfileInfoLine}
+      />
 
       <AsyncActionButton
         label={showRawUserInfo ? 'Hide Raw User Info' : 'Show Raw User Info'}
         onPress={onToggleRawUserInfo}
       />
 
-      {showRawUserInfo ? <UserProfileJsonBlock title="Raw User Info" payload={userInfo} /> : null}
+      {showRawUserInfo ? (
+        <UserProfileJsonBlock title="Raw User Info" payload={userInfo} />
+      ) : null}
     </View>
   );
 }

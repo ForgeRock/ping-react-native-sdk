@@ -6,13 +6,7 @@
  */
 
 import React from 'react';
-import {
-  StyleProp,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleProp, Text, TextStyle, View, ViewStyle } from 'react-native';
 import { commonStyles } from '../../../src/styles/common';
 import { cardSectionStyles as styles } from '../../../src/styles/componentStyles';
 
@@ -57,7 +51,9 @@ type CardSectionProps = {
  * @param props Card section props.
  * @returns Card section element.
  */
-export default function CardSection(props: CardSectionProps): React.ReactElement {
+export default function CardSection(
+  props: CardSectionProps,
+): React.ReactElement {
   const {
     title,
     subtitle,
@@ -73,7 +69,9 @@ export default function CardSection(props: CardSectionProps): React.ReactElement
     <View style={[commonStyles.card, style]}>
       {title || badgeText || headerRight ? (
         <View style={styles.headerRow}>
-          {title ? <Text style={[commonStyles.codeTitle, titleStyle]}>{title}</Text> : null}
+          {title ? (
+            <Text style={[commonStyles.codeTitle, titleStyle]}>{title}</Text>
+          ) : null}
           {badgeText ? (
             <View style={commonStyles.homeComingSoonBadge}>
               <Text style={commonStyles.homeComingSoonText}>{badgeText}</Text>
@@ -84,7 +82,9 @@ export default function CardSection(props: CardSectionProps): React.ReactElement
       ) : null}
 
       {subtitle ? (
-        <Text style={[commonStyles.codeText, styles.subtitle, subtitleStyle]}>{subtitle}</Text>
+        <Text style={[commonStyles.codeText, styles.subtitle, subtitleStyle]}>
+          {subtitle}
+        </Text>
       ) : null}
 
       {children}

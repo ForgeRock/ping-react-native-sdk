@@ -118,7 +118,6 @@ object RNPingDeviceProfileCommon {
         } else {
           deviceCollectors.collect()
         }
-        Log.d("Device Profile", "metadata collection succeeded")
         val bridgePayload = when (jsonElement) {
           is JsonObject -> JsonBridgeMapper.encodeJsonObject(jsonElement)
           else -> JsonBridgeMapper.encodeJsonElement(jsonElement)

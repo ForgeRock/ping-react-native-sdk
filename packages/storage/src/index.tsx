@@ -4,21 +4,21 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import { getNativeModule } from "./NativeRNPingStorage";
+import { getNativeModule } from './NativeRNPingStorage';
 import type {
   BaseStorageConfig,
   NativeCacheStrategy,
   NativeStorageConfig,
-} from "./NativeRNPingStorage";
-import { CacheStrategy } from "./types";
-import type { LoggerInstance } from "@ping-identity/rn-types";
+} from './NativeRNPingStorage';
+import { CacheStrategy } from './types';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   OidcStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
   StorageLoggerOptions,
-} from "./types";
+} from './types';
 
 export type {
   OidcStorage,
@@ -26,45 +26,30 @@ export type {
   StorageConfig,
   StorageError,
   StorageLoggerOptions,
-} from "./types";
-export { CacheStrategy } from "./types";
+} from './types';
+export { CacheStrategy } from './types';
 
 /**
- * Cached default logger used when callers do not provide one.
+ * No-op logger used when callers do not provide one.
  */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-const createNoopLogger = (): LoggerInstance => ({
-  nativeHandle: { id: "native-none-id" },
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
   changeLevel: () => {},
   error: () => {},
   warn: () => {},
   info: () => {},
   debug: () => {},
-});
-
-/**
- * Lazily initialize and return the default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createNoopLogger();
-  }
-  return defaultLoggerInstance;
 };
 
 /**
  * Resolve JS logger instance and native logger identifier for bridge calls.
  */
 const resolveLogger = (
-  options?: StorageLoggerOptions
+  options?: StorageLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
-  const logger = options?.logger ?? getDefaultLogger();
-  const loggerId =
-    options?.nativeLogger?.id ??
-    logger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
-
+  const logger = options?.logger ?? noopLogger;
+  const rawLoggerId = logger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   return { logger, loggerId };
 };
 
@@ -79,11 +64,11 @@ const resolveLogger = (
 function toNativeCacheStrategy(strategy: CacheStrategy): NativeCacheStrategy {
   switch (strategy) {
     case CacheStrategy.CACHE_ON_FAILURE:
-      return "cache_on_failure";
+      return 'cache_on_failure';
     case CacheStrategy.NO_CACHE:
-      return "no_cache";
+      return 'no_cache';
     case CacheStrategy.CACHE:
-      return "cache";
+      return 'cache';
     default: {
       const exhaustiveCheck: never = strategy;
       return exhaustiveCheck;
@@ -101,11 +86,11 @@ function toNativeCacheStrategy(strategy: CacheStrategy): NativeCacheStrategy {
  */
 function fromNativeCacheStrategy(strategy: NativeCacheStrategy): CacheStrategy {
   switch (strategy) {
-    case "cache_on_failure":
+    case 'cache_on_failure':
       return CacheStrategy.CACHE_ON_FAILURE;
-    case "no_cache":
+    case 'no_cache':
       return CacheStrategy.NO_CACHE;
-    case "cache":
+    case 'cache':
       return CacheStrategy.CACHE;
     default: {
       const exhaustiveCheck: never = strategy;
@@ -116,10 +101,10 @@ function fromNativeCacheStrategy(strategy: NativeCacheStrategy): CacheStrategy {
 
 /**
  * Validates the storage configuration.
- * 
+ *
  * @param config - The storage configuration to validate
  * @throws {StorageError} If the configuration is missing or invalid
- * 
+ *
  * @internal
  */
 function validateStorageConfig(config: StorageConfig) {
@@ -141,12 +126,12 @@ function validateStorageConfig(config: StorageConfig) {
  *
  * @param config - The base storage configuration
  * @returns The native storage configuration object with flattened platform options
- * 
+ *
  * @internal
  */
 function buildNativeConfig(
   config: StorageConfig,
-  loggerId?: string
+  loggerId?: string,
 ): NativeStorageConfig {
   return {
     ...(loggerId ? { loggerId } : {}),
@@ -159,8 +144,12 @@ function buildNativeConfig(
       ? { cacheStrategy: toNativeCacheStrategy(config.android.cacheStrategy) }
       : {}),
     ...(config.ios?.account ? { account: config.ios.account } : {}),
-    ...(config.ios?.encryptor !== undefined ? { encryptor: config.ios.encryptor } : {}),
-    ...(config.ios?.cacheable !== undefined ? { cacheable: config.ios.cacheable } : {}),
+    ...(config.ios?.encryptor !== undefined
+      ? { encryptor: config.ios.encryptor }
+      : {}),
+    ...(config.ios?.cacheable !== undefined
+      ? { cacheable: config.ios.cacheable }
+      : {}),
   };
 }
 
@@ -170,17 +159,22 @@ function buildNativeConfig(
  *
  * @param nativeResult - The native storage configuration to validate
  * @throws {StorageError} If the native result is not null, undefined, or an object
- * 
+ *
  * @internal
  */
 function validateNormalizedResult(
-  nativeResult: NativeStorageConfig | null | undefined
+  nativeResult: NativeStorageConfig | null | undefined,
 ) {
-  if (nativeResult !== null && nativeResult !== undefined && typeof nativeResult !== "object") {
+  if (
+    nativeResult !== null &&
+    nativeResult !== undefined &&
+    typeof nativeResult !== 'object'
+  ) {
     const error: StorageError = {
       type: 'parse_error',
       error: 'STORAGE_INVALID_RESULT',
-      message: '[@ping-identity/rn-storage] Failed to resolve storage configuration.',
+      message:
+        '[@ping-identity/rn-storage] Failed to resolve storage configuration.',
     };
     throw error;
   }
@@ -193,7 +187,7 @@ function validateNormalizedResult(
  *
  * @param parsed - The parsed native storage configuration
  * @returns iOS configuration object or undefined if no iOS values exist
- * 
+ *
  * @internal
  */
 function buildIosConfig(parsed: NativeStorageConfig) {
@@ -219,7 +213,7 @@ function buildIosConfig(parsed: NativeStorageConfig) {
  *
  * @param parsed - The parsed native storage configuration
  * @returns Android configuration object or undefined if no Android values exist
- * 
+ *
  * @internal
  */
 function buildAndroidConfig(parsed: NativeStorageConfig) {
@@ -252,11 +246,11 @@ function buildAndroidConfig(parsed: NativeStorageConfig) {
  * @param nativeResult - The native storage configuration to normalize
  * @returns Normalized StorageConfig with platform-specific options properly nested
  * @throws {StorageError} If the native result is not a valid configuration object
- * 
+ *
  * @internal
  */
 function normalizeStorageConfig(
-  nativeResult: NativeStorageConfig | null | undefined
+  nativeResult: NativeStorageConfig | null | undefined,
 ): StorageConfig {
   validateNormalizedResult(nativeResult);
 
@@ -281,11 +275,11 @@ function normalizeStorageConfig(
  */
 function createSessionStorageHandle(
   id: string,
-  config: BaseStorageConfig
+  config: BaseStorageConfig,
 ): SessionStorage {
   return {
     id,
-    kind: "session",
+    kind: 'session',
     ...config,
   } as SessionStorage;
 }
@@ -301,25 +295,25 @@ function createSessionStorageHandle(
  */
 function createOidcStorageHandle(
   id: string,
-  config: BaseStorageConfig
+  config: BaseStorageConfig,
 ): OidcStorage {
   return {
     id,
-    kind: "oidc",
+    kind: 'oidc',
     ...config,
   } as OidcStorage;
 }
 
 /**
  * Registers and resolves a session storage handle.
- * 
+ *
  * This function handles registration internally and returns a normalized
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns A branded SessionStorage handle with native storage id metadata
  * @throws {Error} If the configuration is missing or invalid
- * 
+ *
  * @example
  * ```typescript
  * const sessionStorage = configureSessionStorage({
@@ -329,7 +323,7 @@ function createOidcStorageHandle(
  *     strongBoxPreferred: true
  *   }
  * });
- * 
+ *
  * // Pass to Journey SDK
  * // initJourney({ sessionStorage, ... });
  * ```
@@ -337,40 +331,39 @@ function createOidcStorageHandle(
  */
 export function configureSessionStorage(
   config: StorageConfig,
-  options?: StorageLoggerOptions
+  options?: StorageLoggerOptions,
 ): SessionStorage {
   const { logger, loggerId } = resolveLogger(options);
-  logger.debug(
-    `Storage configureSessionStorage requested`
-  );
+  logger.debug(`Storage configureSessionStorage requested`);
   validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
   try {
     const storageId = NativeRNPingStorage.registerSessionStorage(
-      buildNativeConfig(config, loggerId)
+      buildNativeConfig(config, loggerId),
     );
-    logger.debug(
-      `Storage configureSessionStorage registered`
-    );
+    logger.debug(`Storage configureSessionStorage registered`);
     const result = NativeRNPingStorage.configureSessionStorage(storageId);
-    logger.info("Storage configureSessionStorage success");
-    return createSessionStorageHandle(storageId, normalizeStorageConfig(result));
+    logger.info('Storage configureSessionStorage success');
+    return createSessionStorageHandle(
+      storageId,
+      normalizeStorageConfig(result),
+    );
   } catch (error) {
-    logger.error("Storage configureSessionStorage failed");
+    logger.error('Storage configureSessionStorage failed');
     throw error;
   }
 }
 
 /**
  * Registers and resolves an OIDC storage handle.
- * 
+ *
  * This function handles registration internally and returns a normalized
  * storage configuration that can be passed to other modules or SDKs.
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns A branded OidcStorage handle with native storage id metadata
  * @throws {Error} If the configuration is missing or invalid
- * 
+ *
  * @example
  * ```typescript
  * const oidcStorage = configureOidcStorage({
@@ -384,7 +377,7 @@ export function configureSessionStorage(
  *     cacheable: false
  *   }
  * });
- * 
+ *
  * // Pass to OIDC configuration
  * // configureOidc({ storage: oidcStorage, ... });
  * ```
@@ -392,26 +385,22 @@ export function configureSessionStorage(
  */
 export function configureOidcStorage(
   config: StorageConfig,
-  options?: StorageLoggerOptions
+  options?: StorageLoggerOptions,
 ): OidcStorage {
   const { logger, loggerId } = resolveLogger(options);
-  logger.debug(
-    `Storage configureOidcStorage requested`
-  );
+  logger.debug(`Storage configureOidcStorage requested`);
   validateStorageConfig(config);
   const NativeRNPingStorage = getNativeModule();
   try {
     const storageId = NativeRNPingStorage.registerOidcStorage(
-      buildNativeConfig(config, loggerId)
+      buildNativeConfig(config, loggerId),
     );
-    logger.debug(
-      `Storage configureOidcStorage registered`
-    );
+    logger.debug(`Storage configureOidcStorage registered`);
     const result = NativeRNPingStorage.configureOidcStorage(storageId);
-    logger.info("Storage configureOidcStorage success");
+    logger.info('Storage configureOidcStorage success');
     return createOidcStorageHandle(storageId, normalizeStorageConfig(result));
   } catch (error) {
-    logger.error("Storage configureOidcStorage failed");
+    logger.error('Storage configureOidcStorage failed');
     throw error;
   }
 }

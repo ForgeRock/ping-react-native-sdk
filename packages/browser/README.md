@@ -30,6 +30,14 @@ yarn add @ping-identity/rn-browser
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
+```
+
+- `@ping-identity/rn-logger`: optional JS/native logger integration.
+
 ## How to Use the SDK
 
 ### Configure (Android only)
@@ -70,6 +78,30 @@ android {
     manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
   }
 }
+```
+
+### Configure logging (optional)
+
+If you install the logger package, pass a JS logger instance per call via `BrowserLoggerOptions`.
+The logger must be created via `@ping-identity/rn-logger`.
+If the logger package is not installed/configured, omit the logger option.
+
+```ts
+import { open, configureBrowser, resetBrowser } from '@ping-identity/rn-browser';
+import { logger } from '@ping-identity/rn-logger';
+
+const jsLogger = logger({ level: 'debug' });
+
+// Pass as the last argument to any browser call
+const result = await open(
+  'https://example.com',
+  { callbackUrlScheme: 'com.example.app' },
+  { logger: jsLogger },
+);
+
+// Also supported on configureBrowser and resetBrowser
+configureBrowser({ android: { customTabs: { showTitle: true } } }, { logger: jsLogger });
+resetBrowser({ logger: jsLogger });
 ```
 
 ### Open a browser session
@@ -115,7 +147,6 @@ try {
 ## TODO
 
 - Add an iOS test runner target to execute module unit tests.
-- Make logger integration optional (align with OIDC/Storage optional package pattern).
 
 ## License
 

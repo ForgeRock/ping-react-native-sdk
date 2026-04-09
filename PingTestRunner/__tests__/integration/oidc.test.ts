@@ -23,6 +23,7 @@ const VALID_CONFIG = {
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   clientId: 'test-client',
   redirectUri: 'org.forgerock.demo://oauth2redirect',
+  scopes: ['openid', 'profile'],
 };
 
 describe('@ping-identity/rn-oidc — integration', () => {

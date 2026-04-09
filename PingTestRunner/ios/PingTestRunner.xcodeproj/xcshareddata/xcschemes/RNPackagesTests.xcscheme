@@ -16,23 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "PingSampleApp.app"
-               BlueprintName = "PingSampleApp"
-               ReferencedContainer = "container:PingSampleApp.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3466ED912F5B937B00E6A758"
-               BuildableName = "RNPackagesTests.xctest"
-               BlueprintName = "RNPackagesTests"
-               ReferencedContainer = "container:PingSampleApp.xcodeproj">
+               BuildableName = "PingTestRunner.app"
+               BlueprintName = "PingTestRunner"
+               ReferencedContainer = "container:PingTestRunner.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,23 +33,12 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "PingSampleApp.app"
-            BlueprintName = "PingSampleApp"
-            ReferencedContainer = "container:PingSampleApp.xcodeproj">
+            BuildableName = "PingTestRunner.app"
+            BlueprintName = "PingTestRunner"
+            ReferencedContainer = "container:PingTestRunner.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3466ED912F5B937B00E6A758"
-               BuildableName = "RNPackagesTests.xctest"
-               BlueprintName = "RNPackagesTests"
-               ReferencedContainer = "container:PingSampleApp.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
          <TestableReference
             skipped = "NO"
             parallelizable = "YES">
@@ -136,9 +111,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "PingSampleApp.app"
-            BlueprintName = "PingSampleApp"
-            ReferencedContainer = "container:PingSampleApp.xcodeproj">
+            BuildableName = "PingTestRunner.app"
+            BlueprintName = "PingTestRunner"
+            ReferencedContainer = "container:PingTestRunner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -153,9 +128,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "PingSampleApp.app"
-            BlueprintName = "PingSampleApp"
-            ReferencedContainer = "container:PingSampleApp.xcodeproj">
+            BuildableName = "PingTestRunner.app"
+            BlueprintName = "PingTestRunner"
+            ReferencedContainer = "container:PingTestRunner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

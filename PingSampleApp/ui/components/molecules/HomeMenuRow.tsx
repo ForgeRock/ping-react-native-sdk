@@ -48,11 +48,21 @@ export type HomeMenuItem = {
  * @returns Home menu row element.
  */
 export default function HomeMenuRow(props: HomeMenuItem): React.ReactElement {
-  const { title, subtitle, icon, disabled = false, comingSoon = false, onPress } = props;
+  const {
+    title,
+    subtitle,
+    icon,
+    disabled = false,
+    comingSoon = false,
+    onPress,
+  } = props;
 
   return (
     <TouchableOpacity
-      style={[commonStyles.homeRow, disabled ? commonStyles.homeRowDisabled : null]}
+      style={[
+        commonStyles.homeRow,
+        disabled ? commonStyles.homeRowDisabled : null,
+      ]}
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
     >
@@ -66,7 +76,12 @@ export default function HomeMenuRow(props: HomeMenuItem): React.ReactElement {
         </View>
         <View style={commonStyles.homeRowTextStack}>
           <View style={commonStyles.homeRowTitleContainer}>
-            <Text style={[commonStyles.homeRowTitle, disabled ? commonStyles.homeRowTitleDisabled : null]}>
+            <Text
+              style={[
+                commonStyles.homeRowTitle,
+                disabled ? commonStyles.homeRowTitleDisabled : null,
+              ]}
+            >
               {title}
             </Text>
             {comingSoon ? (
@@ -75,12 +90,22 @@ export default function HomeMenuRow(props: HomeMenuItem): React.ReactElement {
               </View>
             ) : null}
           </View>
-          <Text style={[commonStyles.homeRowSubtitle, disabled ? commonStyles.homeRowSubtitleDisabled : null]}>
+          <Text
+            style={[
+              commonStyles.homeRowSubtitle,
+              disabled ? commonStyles.homeRowSubtitleDisabled : null,
+            ]}
+          >
             {subtitle}
           </Text>
         </View>
       </View>
-      <Text style={[commonStyles.homeRowChevron, disabled ? commonStyles.homeRowChevronDisabled : null]}>
+      <Text
+        style={[
+          commonStyles.homeRowChevron,
+          disabled ? commonStyles.homeRowChevronDisabled : null,
+        ]}
+      >
         {'>'}
       </Text>
     </TouchableOpacity>

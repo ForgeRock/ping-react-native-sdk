@@ -43,7 +43,9 @@ type TokenActionsCardProps = {
  * @param props - Actions card props.
  * @returns Token actions card element.
  */
-export default function TokenActionsCard(props: TokenActionsCardProps): React.ReactElement {
+export default function TokenActionsCard(
+  props: TokenActionsCardProps,
+): React.ReactElement {
   const { loading, onAccessToken, onRefresh, onRevoke, onClear } = props;
 
   return (

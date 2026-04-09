@@ -5,7 +5,13 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Alert, Linking, Text, TouchableOpacity, View } from 'react-native';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import {
@@ -51,7 +57,7 @@ export type JourneyClientPanelProps = {
  * @returns Journey panel element.
  */
 export default function JourneyClientPanel(
-  props: JourneyClientPanelProps
+  props: JourneyClientPanelProps,
 ): React.ReactElement {
   const {
     journeyClient,
@@ -61,13 +67,17 @@ export default function JourneyClientPanel(
     onAuthenticated,
     requireSuccessConfirmation = false,
   } = props;
-  const [node, { start, next, resume, user, logoutUser, loading, error }] = useJourney(journeyClient);
+  const [node, { start, next, resume, user, logoutUser, loading, error }] =
+    useJourney(journeyClient);
   const form = useJourneyForm(node);
 
-  const [journeyName, setJourneyName] = useState<string>(initialJourneyName?.trim() ?? '');
+  const [journeyName, setJourneyName] = useState<string>(
+    initialJourneyName?.trim() ?? '',
+  );
   const [resumeUrl, setResumeUrl] = useState<string>('');
   const [hasActiveSession, setHasActiveSession] = useState<boolean>(false);
-  const [isSessionCheckRunning, setIsSessionCheckRunning] = useState<boolean>(true);
+  const [isSessionCheckRunning, setIsSessionCheckRunning] =
+    useState<boolean>(true);
 
   const hasAutoStartedRef = useRef<boolean>(false);
   const lastAutoResumedUrlRef = useRef<string | null>(null);
@@ -77,12 +87,17 @@ export default function JourneyClientPanel(
   const fields = form.fields;
   const deviceProfileFields = form.getFieldsByType('DeviceProfileCallback');
   const hasDeviceProfileCallback = deviceProfileFields.length > 0;
-  const hasPollingWaitCallback = form.getFieldsByType('PollingWaitCallback').length > 0;
-  const hasSuspendedCallback = form.getFieldsByType('SuspendedTextOutputCallback').length > 0;
-  const pollingWaitMs = useMemo<number | null>(() => resolvePollingWaitMs(fields), [fields]);
+  const hasPollingWaitCallback =
+    form.getFieldsByType('PollingWaitCallback').length > 0;
+  const hasSuspendedCallback =
+    form.getFieldsByType('SuspendedTextOutputCallback').length > 0;
+  const pollingWaitMs = useMemo<number | null>(
+    () => resolvePollingWaitMs(fields),
+    [fields],
+  );
   const deviceProfileRequestKey = useMemo<string>(() => {
     return deviceProfileFields
-      .map((field) => `${field.ref.type}:${field.ref.typeIndex}`)
+      .map(field => `${field.ref.type}:${field.ref.typeIndex}`)
       .join('|');
   }, [deviceProfileFields]);
 
@@ -112,7 +127,9 @@ export default function JourneyClientPanel(
       return;
     }
 
-    if (lastAutoDeviceProfileRequestKeyRef.current === deviceProfileRequestKey) {
+    if (
+      lastAutoDeviceProfileRequestKeyRef.current === deviceProfileRequestKey
+    ) {
       return;
     }
 
@@ -120,7 +137,9 @@ export default function JourneyClientPanel(
 
     const runAutoDeviceProfile = async (): Promise<void> => {
       try {
-        await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
+        await collectDeviceProfileForJourney(journeyClient, [
+          ...DEVICE_PROFILE_COLLECTORS,
+        ]);
 
         if (!form.meta.hasManual && !hasPollingWaitCallback) {
           await next({});
@@ -142,17 +161,20 @@ export default function JourneyClientPanel(
     node?.type,
   ]);
 
-  const refreshSession = useCallback(async (showError = true): Promise<void> => {
-    try {
-      const session = await user();
-      setHasActiveSession(Boolean(session));
-    } catch (cause) {
-      setHasActiveSession(false);
-      if (showError) {
-        Alert.alert('Session refresh failed', String(cause));
+  const refreshSession = useCallback(
+    async (showError = true): Promise<void> => {
+      try {
+        const session = await user();
+        setHasActiveSession(Boolean(session));
+      } catch (cause) {
+        setHasActiveSession(false);
+        if (showError) {
+          Alert.alert('Session refresh failed', String(cause));
+        }
       }
-    }
-  }, [user]);
+    },
+    [user],
+  );
 
   useEffect(() => {
     // Bootstrap current session state on mount/client change.
@@ -208,7 +230,12 @@ export default function JourneyClientPanel(
 
     hasNotifiedAuthenticatedRef.current = true;
     onAuthenticated();
-  }, [hasActiveSession, node?.type, onAuthenticated, requireSuccessConfirmation]);
+  }, [
+    hasActiveSession,
+    node?.type,
+    onAuthenticated,
+    requireSuccessConfirmation,
+  ]);
 
   const onContinueAfterSuccess = useCallback((): void => {
     // Explicit continuation path for UX that requires user confirmation
@@ -298,7 +325,10 @@ export default function JourneyClientPanel(
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
       const trimmedResumeUrl = url.trim();
-      if (!trimmedResumeUrl || lastAutoResumedUrlRef.current === trimmedResumeUrl) {
+      if (
+        !trimmedResumeUrl ||
+        lastAutoResumedUrlRef.current === trimmedResumeUrl
+      ) {
         return;
       }
 
@@ -351,7 +381,7 @@ export default function JourneyClientPanel(
 
       Alert.alert(
         'Cannot continue',
-        firstIssue?.message ?? 'Resolve callback issues before submitting.'
+        firstIssue?.message ?? 'Resolve callback issues before submitting.',
       );
       return;
     }
@@ -384,7 +414,10 @@ export default function JourneyClientPanel(
 
         {showSuccessScreen ? (
           <View style={styles.successActionsContainer}>
-            <TouchableOpacity style={commonStyles.buttonPrimary} onPress={onLogout}>
+            <TouchableOpacity
+              style={commonStyles.buttonPrimary}
+              onPress={onLogout}
+            >
               <Text style={commonStyles.buttonText}>Logout</Text>
             </TouchableOpacity>
             {requireSuccessConfirmation && onAuthenticated ? (
@@ -411,8 +444,8 @@ export default function JourneyClientPanel(
             {typeof node.cause === 'string'
               ? node.cause
               : typeof node.message === 'string'
-                ? node.message
-                : 'An unexpected failure occurred.'}
+              ? node.message
+              : 'An unexpected failure occurred.'}
           </Text>
         ) : null}
 
@@ -422,12 +455,14 @@ export default function JourneyClientPanel(
           </Text>
         ) : null}
 
-        {!showCallbackScreen && !showSuccessScreen && !loading && !isSessionCheckRunning ? (
+        {!showCallbackScreen &&
+        !showSuccessScreen &&
+        !loading &&
+        !isSessionCheckRunning ? (
           <Text style={styles.autoPollingNote}>
             No active Journey flow. Start from Journey Configuration.
           </Text>
         ) : null}
-
       </View>
     </View>
   );

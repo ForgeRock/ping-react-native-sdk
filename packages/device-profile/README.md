@@ -20,6 +20,7 @@ collection, permissions, and payload formatting.
 - [Getting started](#getting-started)
 - [Built-in collectors](#built-in-collectors)
 - [Android setup](#android-setup)
+- [Configure logging](#configure-logging-optional)
 - [Journey integration](#journey-integration)
 - [API reference](#api-reference)
 - [Errors](#errors)
@@ -47,6 +48,14 @@ If you use CocoaPods, install pods after adding the package:
 ```sh
 cd ios && pod install
 ```
+
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
+```
+
+- `@ping-identity/rn-logger`: optional JS/native logger integration.
 
 ### Basic usage (outside Journey)
 
@@ -172,6 +181,24 @@ app's `Info.plist` so iOS can prompt the user for permission.
 
 TODO: Re-check `@MainActor` usage in Device Profile iOS paths for potential UI-thread bottlenecks.
 
+## Configure logging (optional)
+
+If you install the logger package, pass a JS logger instance per call via `DeviceProfileLoggerOptions`.
+The logger must be created via `@ping-identity/rn-logger`.
+If the logger package is not installed/configured, omit the logger option.
+
+```ts
+import { collectDeviceProfile, collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+import { logger } from '@ping-identity/rn-logger';
+
+const jsLogger = logger({ level: 'debug' });
+
+// Pass as the last argument to any device profile call
+await collectDeviceProfile(['platform', 'hardware'], { logger: jsLogger });
+
+await collectDeviceProfileForJourney(journey, ['platform', 'hardware'], { logger: jsLogger });
+```
+
 ## Journey integration
 
 ```ts
@@ -201,17 +228,20 @@ result object describing success. Failures reject with a shared `GenericError`.
 import type {
   DeviceProfile,
   DeviceProfileCollector,
+  DeviceProfileLoggerOptions,
   DeviceProfileJourneyResult,
 } from '@ping-identity/rn-device-profile';
 import type { JourneyInstance } from '@ping-identity/rn-types';
 
 function collectDeviceProfile(
-  collectors: DeviceProfileCollector[]
+  collectors: DeviceProfileCollector[],
+  options?: DeviceProfileLoggerOptions
 ): Promise<DeviceProfile>;
 
 function collectDeviceProfileForJourney(
   journey: JourneyInstance,
-  collectors: DeviceProfileCollector[]
+  collectors: DeviceProfileCollector[],
+  options?: DeviceProfileLoggerOptions
 ): Promise<DeviceProfileJourneyResult>;
 ```
 

@@ -15,6 +15,8 @@
  * - Propagates native errors to callers
  */
 
+export {};
+
 type NativeDeviceIdMock = {
   getDefaultDeviceId: jest.Mock;
 };

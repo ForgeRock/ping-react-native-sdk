@@ -22,10 +22,11 @@ import com.pingidentity.browser.BrowserLauncher
 import com.pingidentity.browser.BrowserCanceledException
 import com.pingidentity.logger.Logger
 import com.pingidentity.logger.NONE
+import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
-import com.pingidentity.rnlogger.RNPingLoggerCommon
+import com.pingidentity.rncore.logger.LoggerHandleContract
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URL
@@ -162,7 +163,7 @@ object RNPingBrowserCommon {
     } else {
       null
     }
-    val resolvedLogger = RNPingLoggerCommon.resolveLogger(loggerId)
+    val resolvedLogger = resolveLoggerFromCore(loggerId)
     BrowserLauncher.logger = resolvedLogger ?: Logger.NONE
 
     val callbackUrlScheme = if (options.hasKey("callbackUrlScheme")) {
@@ -256,6 +257,18 @@ object RNPingBrowserCommon {
   @JvmStatic
   fun reset() {
     // Android BrowserLauncher does not expose a public reset API.
+  }
+
+  /**
+   * Resolve a native logger from the shared Core logger registry.
+   *
+   * @param id Logger handle identifier from JS.
+   * @return Native logger instance, or null when missing/invalid.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) return null
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return handle.nativeLogger as? Logger
   }
 
   /**

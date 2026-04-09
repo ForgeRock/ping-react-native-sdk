@@ -29,7 +29,7 @@ export type JourneyDebugPanelProps = {
  * @returns Debug panel element.
  */
 export default function JourneyDebugPanel(
-  props: JourneyDebugPanelProps
+  props: JourneyDebugPanelProps,
 ): React.ReactElement {
   const { entries, onClear } = props;
 
@@ -49,7 +49,7 @@ export default function JourneyDebugPanel(
       {entries.length === 0 ? (
         <Text style={styles.emptyText}>No debug events yet.</Text>
       ) : (
-        entries.map((entry) => (
+        entries.map(entry => (
           <View key={entry.id} style={styles.eventCard}>
             <Text style={styles.eventTitle}>
               [{entry.timestamp}] {entry.title}

@@ -42,15 +42,21 @@ export type EmptyStateCardProps = {
  * @param props Empty state card props.
  * @returns Empty state card element.
  */
-export default function EmptyStateCard(props: EmptyStateCardProps): React.ReactElement {
+export default function EmptyStateCard(
+  props: EmptyStateCardProps,
+): React.ReactElement {
   const { title, message, ctaLabel, onCtaPress, errorMessage } = props;
 
   return (
     <View style={commonStyles.userProfileEmptyCard}>
       <Text style={commonStyles.userProfileEmptyTitle}>{title}</Text>
       <Text style={commonStyles.userProfileSubText}>{message}</Text>
-      {ctaLabel && onCtaPress ? <AsyncActionButton label={ctaLabel} onPress={onCtaPress} /> : null}
-      {errorMessage ? <Text style={commonStyles.userProfileErrorText}>{errorMessage}</Text> : null}
+      {ctaLabel && onCtaPress ? (
+        <AsyncActionButton label={ctaLabel} onPress={onCtaPress} />
+      ) : null}
+      {errorMessage ? (
+        <Text style={commonStyles.userProfileErrorText}>{errorMessage}</Text>
+      ) : null}
     </View>
   );
 }
