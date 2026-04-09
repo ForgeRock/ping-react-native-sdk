@@ -29,6 +29,23 @@
 
 RCT_EXPORT_MODULE(RNPingFidoClassic)
 
+/**
+ * Executes a block with the shared Swift implementation on the main thread.
+ *
+ * - Parameter block: Work item that receives the shared Swift bridge object.
+ */
+- (void)withSwiftImpl:(void (^)(RNPingFidoImpl *impl))block
+{
+  if ([NSThread isMainThread]) {
+    block([RNPingFidoImpl shared]);
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    block([RNPingFidoImpl shared]);
+  });
+}
+
 #pragma mark - FIDO Operations
 
 /**
@@ -39,14 +56,9 @@ RCT_EXPORT_METHOD(registerCredential:(NSDictionary *)options
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] register:options config:config resolve:resolve rejecter:reject];
-    return;
-  }
-
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] register:options config:config resolve:resolve rejecter:reject];
-  });
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl register:options config:config resolve:resolve rejecter:reject];
+  }];
 }
 
 /**
@@ -57,14 +69,9 @@ RCT_EXPORT_METHOD(authenticateCredential:(NSDictionary *)options
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] authenticate:options config:config resolve:resolve rejecter:reject];
-    return;
-  }
-
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] authenticate:options config:config resolve:resolve rejecter:reject];
-  });
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl authenticate:options config:config resolve:resolve rejecter:reject];
+  }];
 }
 
 /**
@@ -76,14 +83,9 @@ RCT_EXPORT_METHOD(registerCredentialForJourney:(NSString *)journeyId
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
-    return;
-  }
-
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
-  });
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl registerForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+  }];
 }
 
 /**
@@ -95,14 +97,9 @@ RCT_EXPORT_METHOD(authenticateCredentialForJourney:(NSString *)journeyId
                   resolve:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  if ([NSThread isMainThread]) {
-    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
-    return;
-  }
-
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [[RNPingFidoImpl shared] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
-  });
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+  }];
 }
 
 @end
