@@ -6,6 +6,7 @@
  */
  
 #import <string>
+// TODO(cleanup): Remove this scaffold import in a cross-module iOS bridge cleanup pass.
 #import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingFido.h"
 
