@@ -44,7 +44,9 @@ final class UseJourneyUITests: BaseTestCase {
         assertAppReady()
     }
 
-    func testStartSurfacesLoginFormViaUseJourneyFormFields() throws {
+    /// Verifies form rendering (useJourneyForm fields), successful login via next(),
+    /// and that the token is available after SuccessNode — one login round-trip.
+    func testFormRendersAndLoginSucceeds() throws {
         try skipIfNoJourneyEnv()
         elementWithTestID("use-journey-start-btn").tapWhenReady()
         XCTAssertTrue(
@@ -55,12 +57,6 @@ final class UseJourneyUITests: BaseTestCase {
             elementWithTestID("use-journey-field-PasswordCallback:0").waitForExistence(timeout: netTimeout),
             "Expected PasswordCallback field via useJourneyForm"
         )
-    }
-
-    func testNextWithValidCredentialsReachesSuccessNode() throws {
-        try skipIfNoJourneyEnv()
-        elementWithTestID("use-journey-start-btn").tapWhenReady()
-        waitForElementWithTestID("use-journey-field-NameCallback:0", timeout: netTimeout)
         elementWithTestID("use-journey-field-NameCallback:0").typeTextWhenReady(env.testUsername)
         elementWithTestID("use-journey-field-PasswordCallback:0").typeTextWhenReady(env.testPassword)
         elementWithTestID("use-journey-submit-btn").tapWhenReady()
@@ -68,25 +64,19 @@ final class UseJourneyUITests: BaseTestCase {
             elementWithTestID("use-journey-success").waitForExistence(timeout: netTimeout),
             "Expected use-journey-success after valid credentials"
         )
-    }
-
-    func testTokenIsAvailableAfterSuccess() throws {
-        try skipIfNoJourneyEnv()
-        loginWithValidCredentials()
         XCTAssertTrue(
             elementWithTestID("use-journey-token-result").waitForExistence(timeout: netTimeout),
             "Expected use-journey-token-result after success"
         )
     }
 
-    func testUserinfoReturnsPayloadViaHookActions() throws {
+    /// Verifies userinfo(), refresh(), and revoke() hook actions — one login round-trip.
+    func testUserinfoRefreshAndRevoke() throws {
         try skipIfNoLiveAuthEnv()
         loginWithValidCredentials()
+
         elementWithTestID("use-journey-userinfo-btn").tapWhenReady()
         let userinfo = textContentOfElement(withTestID: "use-journey-userinfo-result", timeout: netTimeout)
-        // Parse the JSON and assert that "sub" is a non-empty string.
-        // A substring check like contains("\"sub\"") would pass for {"sub": null}
-        // or any echoed JSON that incidentally contains the key.
         guard
             let data = userinfo.data(using: .utf8),
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -96,23 +86,15 @@ final class UseJourneyUITests: BaseTestCase {
             XCTFail("Expected userinfo payload with a non-empty string 'sub', got '\(userinfo)'")
             return
         }
-        _ = sub // assertion is the guard above
-    }
+        _ = sub
 
-    func testRefreshUpdatesTokenViaHookActions() throws {
-        try skipIfNoLiveAuthEnv()
-        loginWithValidCredentials()
         elementWithTestID("use-journey-refresh-btn").tapWhenReady()
         waitForElementWithTestID("use-journey-refreshed", timeout: netTimeout)
         let token = textContentOfElement(withTestID: "use-journey-refreshed-token-result", timeout: netTimeout)
         XCTAssertFalse(token.isEmpty, "Expected a non-empty access token from refresh()")
         XCTAssertNotEqual(token, "null", "Refreshed token must not be the string 'null'")
         XCTAssertNotEqual(token, "undefined", "Refreshed token must not be the string 'undefined'")
-    }
 
-    func testRevokeCompletesViaHookActions() throws {
-        try skipIfNoJourneyEnv()
-        loginWithValidCredentials()
         elementWithTestID("use-journey-revoke-btn").tapWhenReady()
         XCTAssertTrue(
             elementWithTestID("use-journey-revoked").waitForExistence(timeout: netTimeout),
