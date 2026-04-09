@@ -9,7 +9,7 @@ import XCTest
 
 /// XCUITest for journey failure path (Tier 2 — server required).
 ///
-/// Android SDK parity:
+/// Flow:
 ///   handleError → testInvalidCredentialsShowsFailureNode
 final class JourneyFailurePathUITests: BaseTestCase {
 

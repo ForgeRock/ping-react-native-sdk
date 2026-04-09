@@ -25,7 +25,9 @@
  *   use-oidc-authorize-btn    → calls actions.authorize()
  *   use-oidc-restore-btn      → calls actions.restore()
  *   use-oidc-token-btn        → calls actions.token()
- *   use-oidc-refresh-btn      → calls actions.refresh()
+ *   use-oidc-refresh-btn              → calls actions.refresh()
+ *   use-oidc-refreshed                → visible after refresh() succeeds
+ *   use-oidc-refreshed-token-result   → state.tokens.accessToken after refresh (proves hook state updated)
  *   use-oidc-userinfo-btn     → calls actions.userinfo()
  *   use-oidc-revoke-btn       → calls actions.revoke()
  *   use-oidc-logout-btn       → calls actions.logout()
@@ -115,6 +117,7 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
 
   const [state, actions] = useOidc(client);
   const [hasDeauthed, setHasDeauthed] = useState(false);
+  const [refreshed, setRefreshed] = useState(false);
 
   const handleAuthorize = useCallback(async () => {
     try {
@@ -143,6 +146,7 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
   const handleRefresh = useCallback(async () => {
     try {
       await actions.refresh();
+      setRefreshed(true);
     } catch {
       // state.error updated by hook
     }
@@ -187,6 +191,10 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
       )}
       {state.tokens !== null && (
         <Text testID="use-oidc-token-result">Token OK</Text>
+      )}
+      {refreshed && <Text testID="use-oidc-refreshed">Refreshed</Text>}
+      {refreshed && state.tokens !== null && (
+        <Text testID="use-oidc-refreshed-token-result">{state.tokens.accessToken}</Text>
       )}
       {state.userInfo !== null && (
         <Text testID="use-oidc-userinfo-result">Userinfo OK</Text>

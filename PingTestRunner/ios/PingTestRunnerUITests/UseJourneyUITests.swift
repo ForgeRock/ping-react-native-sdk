@@ -80,23 +80,34 @@ final class UseJourneyUITests: BaseTestCase {
     }
 
     func testUserinfoReturnsPayloadViaHookActions() throws {
-        try skipIfNoJourneyEnv()
+        try skipIfNoLiveAuthEnv()
         loginWithValidCredentials()
         elementWithTestID("use-journey-userinfo-btn").tapWhenReady()
-        XCTAssertTrue(
-            elementWithTestID("use-journey-userinfo-result").waitForExistence(timeout: netTimeout),
-            "Expected use-journey-userinfo-result after userinfo()"
-        )
+        let userinfo = textContentOfElement(withTestID: "use-journey-userinfo-result", timeout: netTimeout)
+        // Parse the JSON and assert that "sub" is a non-empty string.
+        // A substring check like contains("\"sub\"") would pass for {"sub": null}
+        // or any echoed JSON that incidentally contains the key.
+        guard
+            let data = userinfo.data(using: .utf8),
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let sub = json["sub"] as? String,
+            !sub.isEmpty
+        else {
+            XCTFail("Expected userinfo payload with a non-empty string 'sub', got '\(userinfo)'")
+            return
+        }
+        _ = sub // assertion is the guard above
     }
 
     func testRefreshUpdatesTokenViaHookActions() throws {
-        try skipIfNoJourneyEnv()
+        try skipIfNoLiveAuthEnv()
         loginWithValidCredentials()
         elementWithTestID("use-journey-refresh-btn").tapWhenReady()
-        XCTAssertTrue(
-            elementWithTestID("use-journey-refreshed").waitForExistence(timeout: netTimeout),
-            "Expected use-journey-refreshed after refresh()"
-        )
+        waitForElementWithTestID("use-journey-refreshed", timeout: netTimeout)
+        let token = textContentOfElement(withTestID: "use-journey-refreshed-token-result", timeout: netTimeout)
+        XCTAssertFalse(token.isEmpty, "Expected a non-empty access token from refresh()")
+        XCTAssertNotEqual(token, "null", "Refreshed token must not be the string 'null'")
+        XCTAssertNotEqual(token, "undefined", "Refreshed token must not be the string 'undefined'")
     }
 
     func testRevokeCompletesViaHookActions() throws {

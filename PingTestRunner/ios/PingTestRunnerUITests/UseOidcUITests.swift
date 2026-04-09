@@ -12,7 +12,7 @@ import XCTest
 /// Uses a JS-only mock OidcWebClient, so no native OIDC calls are made.
 /// Verifies that useOidc correctly manages hook state transitions:
 ///   - isAuthenticated set after authorize()
-///   - user / tokens / userInfo populated after respective actions
+///   - user / tokens / userInfo / refreshed populated after respective actions
 ///   - isAuthenticated cleared after revoke() / logout()
 final class UseOidcUITests: BaseTestCase {
 
@@ -50,16 +50,21 @@ final class UseOidcUITests: BaseTestCase {
         )
     }
 
-    func testRefreshKeepsTokensPopulated() {
+    func testRefreshUpdatesHookTokenState() {
         elementWithTestID("use-oidc-authorize-btn").tapWhenReady()
         waitForElementWithTestID("use-oidc-authenticated", timeout: actionTimeout)
         elementWithTestID("use-oidc-token-btn").tapWhenReady()
         waitForElementWithTestID("use-oidc-token-result", timeout: actionTimeout)
 
         elementWithTestID("use-oidc-refresh-btn").tapWhenReady()
-        XCTAssertTrue(
-            elementWithTestID("use-oidc-token-result").waitForExistence(timeout: actionTimeout),
-            "Expected use-oidc-token-result to persist after refresh()"
+        waitForElementWithTestID("use-oidc-refreshed", timeout: actionTimeout)
+        // Assert the refreshed accessToken value from hook state (state.tokens.accessToken),
+        // not just the local flag. This fails if refresh() resolves but the hook does not
+        // update state.tokens (e.g. a no-op refresh).
+        let token = textContentOfElement(withTestID: "use-oidc-refreshed-token-result", timeout: actionTimeout)
+        XCTAssertEqual(
+            token, "hook-test-refreshed-token",
+            "Expected state.tokens.accessToken to reflect the refreshed value after refresh()"
         )
     }
 

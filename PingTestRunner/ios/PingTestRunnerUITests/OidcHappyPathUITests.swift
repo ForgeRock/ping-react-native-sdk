@@ -13,7 +13,7 @@ import XCTest
 /// without opening an external browser. No live server is required;
 /// all tests run unconditionally.
 ///
-/// Flow under test:
+/// Flow:
 ///   1. authorize() → oidc-browser-open marker + oidc-token-result visible
 ///   2. userinfo()  → oidc-userinfo-result visible
 ///   3. logout()    → oidc-logged-out marker visible

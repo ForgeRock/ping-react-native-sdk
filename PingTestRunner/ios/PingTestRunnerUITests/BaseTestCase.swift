@@ -16,7 +16,7 @@ import XCTest
 ///   via react-native-launch-arguments and surfaces them as JS process.env.
 /// - Provides `el()` / `waitForEl()` helpers that query by accessibilityIdentifier,
 ///   which React Native sets from the `testID` prop on every component.
-/// - Provides skip helpers that mirror hasJourneyEnv / hasCallbackTreesEnabled
+/// - Provides skip helpers that mirror hasJourneyEnv / hasCallbackTreesEnabled / hasLiveAuthEnv
 ///   from e2e/setup.ts so Tier 2 tests self-skip when server secrets are absent.
 class BaseTestCase: XCTestCase {
 
@@ -62,10 +62,16 @@ class BaseTestCase: XCTestCase {
             "PING_JOURNEY_NAME": tree ?? env.journeyName,
             "PING_COOKIE_NAME":  env.cookieName,
         ]
-        if noSession                       { extras["PING_NO_SESSION"]           = "true" }
-        if !env.clientId.isEmpty           { extras["PING_CLIENT_ID"]            = env.clientId }
-        if !env.discoveryEndpoint.isEmpty  { extras["PING_DISCOVERY_ENDPOINT"]   = env.discoveryEndpoint }
-        if !env.redirectUri.isEmpty        { extras["PING_REDIRECT_URI"]         = env.redirectUri }
+        if noSession {
+            // noSession tests exercise the pure journey flow without an OIDC session.
+            // Do NOT pass OIDC credentials — they would trigger an ASWebAuthenticationSession
+            // browser pop-up after SuccessNode, disabling the app window and breaking XCUITest.
+            extras["PING_NO_SESSION"] = "true"
+        } else {
+            if !env.clientId.isEmpty           { extras["PING_CLIENT_ID"]            = env.clientId }
+            if !env.discoveryEndpoint.isEmpty  { extras["PING_DISCOVERY_ENDPOINT"]   = env.discoveryEndpoint }
+            if !env.redirectUri.isEmpty        { extras["PING_REDIRECT_URI"]         = env.redirectUri }
+        }
         launchApp(scenario: "journey", extras: extras)
     }
 

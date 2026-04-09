@@ -197,9 +197,39 @@ jobs:
           BROWSERSTACK_APP_URL:      ${{ steps.upload-app.outputs.app_url }}
           BROWSERSTACK_TEST_URL:     ${{ steps.upload-test.outputs.test_url }}
 
-      - name: Upload Detox artifacts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: detox-artifacts-android-bs
-          path: PingTestRunner/artifacts/
+      - name: Prepare test summary report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          overall_status="${{ steps.run-tests.outcome }}"
+          build_id="${BROWSERSTACK_BUILD_ID}"
+
+          if [ "$overall_status" = "success" ]; then
+            result_label="✅ Passed"
+          else
+            result_label="❌ Failed"
+          fi
+
+          # Extract Jest-style test counts written by Detox to stdout
+          test_detail=""
+          if [ -f /tmp/detox-bs.log ]; then
+            suites_line="$(grep -E "^Test Suites:" /tmp/detox-bs.log | tail -1 || true)"
+            tests_line="$(grep -E "^Tests:" /tmp/detox-bs.log | tail -1 || true)"
+            if [ -n "$suites_line" ] || [ -n "$tests_line" ]; then
+              test_detail=$'\n### Test Results\n'
+              [ -n "$suites_line" ] && test_detail+=$'\n'"- ${suites_line}"
+              [ -n "$tests_line" ]  && test_detail+=$'\n'"- ${tests_line}"
+            fi
+          fi
+
+          {
+            echo "## BrowserStack Android Detox Summary"
+            echo
+            echo "- Build ID: \`${build_id}\`"
+            echo "- Overall status: ${overall_status}"
+            echo "- Result: ${result_label}"
+            echo "- BrowserStack dashboard: https://app-automate.browserstack.com/dashboard/v2"
+            echo -e "$test_detail"
+          } >> "$GITHUB_STEP_SUMMARY"

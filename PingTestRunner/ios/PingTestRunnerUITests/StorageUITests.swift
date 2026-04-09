@@ -9,7 +9,7 @@ import XCTest
 
 /// XCUITest for storage scenarios (Tier 1 — no server required).
 ///
-/// Android SDK parity:
+/// Flow:
 ///   createsStorageWithValidConfig → session + OIDC handle creation succeeds
 ///   invalid config path           → throws OR falls back to native defaults
 final class StorageUITests: BaseTestCase {
@@ -43,8 +43,6 @@ final class StorageUITests: BaseTestCase {
 
     func testConfigureSessionStorageWithEmptyConfigThrowsOrFallsBackToDefaults() {
         elementWithTestID("storage-invalid-btn").tapWhenReady()
-        waitForElementWithTestID("storage-invalid-status", timeout: 10)
-
         let status = textContentOfElement(withTestID: "storage-invalid-status", timeout: 10)
         if status == "error" {
             // Native bridge threw — error UI must be shown

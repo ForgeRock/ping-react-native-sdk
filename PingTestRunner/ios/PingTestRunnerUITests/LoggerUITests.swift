@@ -9,7 +9,7 @@ import XCTest
 
 /// XCUITest for logger scenarios (Tier 1 — no server required).
 ///
-/// Android SDK parity:
+/// Flow:
 ///   testConsoleLogger → create debug logger, call all 4 levels
 ///   testWarnLogger    → changeLevel('warn') does not throw
 ///   testNoneLogger    → level 'none' logger creates without throwing
