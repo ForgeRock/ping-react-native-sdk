@@ -93,6 +93,8 @@ const authenticationResult = await fido.authenticate({
 If you install the logger package, pass a JS logger instance created via
 `@ping-identity/rn-logger`.
 If the logger package is not installed/configured, do not pass logger values in FIDO config.
+JavaScript-side FIDO logs use this logger on both platforms.
+Native logger forwarding currently applies on Android; iOS native forwarding is a no-op.
 
 ```ts
 import { createFidoClient } from '@ping-identity/rn-fido';
@@ -229,6 +231,9 @@ Stable error codes:
 ## Platform notes
 
 - `android.useFido2Client` is an Android-only override.
+  - `undefined` (default): native SDK auto-detection/default behavior.
+  - `true`: force Google Play Services FIDO2 APIs.
+  - `false`: force Android Credential Manager APIs.
 - iOS accepts the same config shape for API parity, but does not currently apply native client-level config.
 - Journey callback execution currently follows native SDK behavior; Android Journey callback APIs do not currently accept injected custom native `FidoClient` configuration.
 - Android requires a foreground `Activity` for FIDO calls.

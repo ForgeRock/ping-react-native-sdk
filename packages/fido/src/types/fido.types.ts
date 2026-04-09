@@ -82,10 +82,13 @@ export type FidoJourneyAuthenticationOptions = {
  */
 export type FidoAndroidConfig = {
   /**
-   * When true, prefers Google Play Services FIDO2 APIs.
+   * Android API selection override.
    *
    * @remarks
    * Applies on Android only.
+   * - `undefined`: Use native SDK auto-detection/default behavior.
+   * - `true`: Force Google Play Services FIDO2 APIs.
+   * - `false`: Force Android Credential Manager APIs.
    */
   useFido2Client?: boolean;
 };
@@ -99,6 +102,8 @@ export type FidoConfig = {
    *
    * @remarks
    * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
+   * JavaScript-side FIDO logs use this logger on both platforms.
+   * Native logger forwarding currently applies on Android; iOS native forwarding is a no-op.
    */
   logger?: LoggerInstance;
   /**
@@ -116,7 +121,12 @@ export type FidoClientConfig = {
    */
   loggerId?: string;
   /**
-   * Optional Android API selection toggle.
+   * Optional Android API selection override.
+   *
+   * @remarks
+   * - `undefined`: Use native SDK auto-detection/default behavior.
+   * - `true`: Force Google Play Services FIDO2 APIs.
+   * - `false`: Force Android Credential Manager APIs.
    */
   useFido2Client?: boolean;
 };
