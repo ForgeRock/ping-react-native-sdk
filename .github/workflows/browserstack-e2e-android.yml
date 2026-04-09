@@ -57,11 +57,6 @@ on:
         description: Flag enabling callback tree coverage in BrowserStack E2E tests
         required: false
 
-# Cancel in-progress runs for the same ref.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 

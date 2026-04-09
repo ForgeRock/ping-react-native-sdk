@@ -76,6 +76,5 @@ jobs:
                 pr-number: ${{ inputs.pr_number }}
                 preview-branch: gh-pages
                 umbrella-dir: docs-preview
-                pages-base-path: docs
                 comment: true
                 wait-for-pages-deployment: false

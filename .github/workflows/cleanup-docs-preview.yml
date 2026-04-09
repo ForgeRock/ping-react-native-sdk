@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: preview-pages-${{ github.ref }}
@@ -27,7 +28,6 @@ jobs:
         uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           action: remove
-          pr-number: ${{ github.event.number }}
+          pr-number: ${{ github.event.pull_request.number }}
           preview-branch: gh-pages
           umbrella-dir: docs-preview
-          pages-base-path: docs
