@@ -7,7 +7,6 @@
 
 import packageJson from '@ping-identity/rn-logger/package.json';
 
-
 type NativeLoggerMock = {
   registerLogger: jest.Mock;
   syncLogger: jest.Mock;
