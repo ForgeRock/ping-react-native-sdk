@@ -69,7 +69,10 @@ jobs:
         secrets: inherit
 
     # Run Android E2E tests on BrowserStack real devices after Android unit tests pass.
+    # Blocked: BrowserStack cloud driver does not yet support Detox 20.43+.
+    # Remove the `if false` guard once the upstream fix is released.
     browserstack-android:
+        if: false
         needs: android-unit-tests
         permissions:
             contents: read
