@@ -8,6 +8,7 @@ of the MIT license. See the LICENSE file for details.
 [![Ping Identity][ping-image]][repo-url]
 [![License][license-image]][license-url]
 [![Yarn][yarn-image]][yarn-url]
+[![codecov][codecov-image]][codecov-url]
 # React Native Ping SDK
 
 This repository demonstrates the **Ping Identity React Native SDK** — a modular setup where native SDKs (Storage, OIDC, Browser, Journey, etc.) are wrapped as independent TurboModules and integrated into a sample React Native app.
@@ -126,3 +127,5 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 [license-url]: ./LICENSE
 [yarn-image]: https://img.shields.io/badge/yarn-4.11.0-2C8EBB?logo=yarn&logoColor=white
 [yarn-url]: https://yarnpkg.com/
+[codecov-image]: https://codecov.io/gh/ForgeRock/ping-react-native-sdk/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/ForgeRock/ping-react-native-sdk

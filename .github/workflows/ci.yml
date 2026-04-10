@@ -48,6 +48,7 @@ jobs:
         with:
             turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
             turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        secrets: inherit
     
     # Execute Android unit tests across affected packages.
     android-unit-tests:
@@ -56,6 +57,7 @@ jobs:
             contents: read
             checks: write
         uses: ./.github/workflows/build-and-test-android.yml
+        secrets: inherit
 
     # Execute iOS unit tests across affected packages.
     ios-unit-tests:
@@ -64,6 +66,7 @@ jobs:
             contents: read
             checks: write
         uses: ./.github/workflows/build-and-test-ios.yml
+        secrets: inherit
 
     # Run Android E2E tests on BrowserStack real devices after Android unit tests pass.
     browserstack-android:

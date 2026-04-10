@@ -116,13 +116,14 @@ jobs:
             # Run iOS unit tests using xcodebuild.
             - name: Run iOS unit tests
               run: |
-                set -o pipefail 
+                set -o pipefail
                 xcodebuild \
                   -workspace ${{ env.WORKSPACE }} \
                   -scheme ${{ env.SCHEME }} \
                   -destination "${{ env.DESTINATION }}" \
                   -derivedDataPath ${{ env.DERIVED_DATA_PATH }} \
                   -resultBundlePath TestResults.xcresult \
+                  -enableCodeCoverage YES \
                   -parallel-testing-enabled YES \
                   -parallel-testing-worker-count 2 \
                   test \
@@ -141,6 +142,22 @@ jobs:
             - name: Convert Test Results to JUnit
               if: always()
               run: xcresultparser -o junit TestResults.xcresult > test-report.xml
+
+              # Convert coverage data to Cobertura format for reporting
+            - name: Generate coverage report (Cobertura)
+              if: always()
+              run: xcresultparser -o cobertura TestResults.xcresult > coverage.xml
+
+              # Upload coverage report to Codecov
+            - name: Upload coverage to Codecov
+              if: always()
+              continue-on-error: true
+              uses: codecov/codecov-action@v5
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+                files: coverage.xml
+                flags: ios
+                fail_ci_if_error: false
 
               # Publish the test results
             - name: Publish test results

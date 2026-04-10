@@ -23,4 +23,7 @@ module.exports = {
       titleTemplate: '{title}',
     }],
   ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**'],
+  coverageDirectory: './build/coverage',
+  coverageReporters: ['lcov', 'text-summary'],
 };
