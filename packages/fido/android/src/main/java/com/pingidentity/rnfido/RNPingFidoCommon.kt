@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -90,40 +91,15 @@ object RNPingFidoCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val input = JsonBridgeMapper.decodeReadableMap(options)
-        val result = createFidoClient(parseCallConfig(config)).register(input)
-        result.fold(
-          onSuccess = { payload ->
-            promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
-          },
-          onFailure = { error ->
-            rejectWithError(
-              promise = promise,
-              code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-              message = error.localizedMessage ?: "FIDO registration failed.",
-              throwable = error
-            )
-          }
-        )
-      } catch (error: IllegalArgumentException) {
-        rejectWithError(
-          promise = promise,
-          code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-          message = error.localizedMessage ?: "Invalid FIDO registration options payload.",
-          type = ErrorType.ARGUMENT_ERROR,
-          throwable = error
-        )
-      } catch (error: Throwable) {
-        rejectWithError(
-          promise = promise,
-          code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-          message = error.localizedMessage ?: "FIDO registration failed.",
-          throwable = error
-        )
-      }
-    }
+    executeFidoOperation(
+      options = options,
+      config = config,
+      promise = promise,
+      errorCode = FidoErrorCodes.FIDO_REGISTER_ERROR,
+      invalidOptionsMessage = "Invalid FIDO registration options payload.",
+      defaultFailureMessage = "FIDO registration failed.",
+      operation = { client, input -> client.register(input) }
+    )
   }
 
   /**
@@ -148,10 +124,34 @@ object RNPingFidoCommon {
       return
     }
 
+    executeFidoOperation(
+      options = options,
+      config = config,
+      promise = promise,
+      errorCode = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
+      invalidOptionsMessage = "Invalid FIDO authentication options payload.",
+      defaultFailureMessage = "FIDO authentication failed.",
+      operation = { client, input -> client.authenticate(input) }
+    )
+  }
+
+  /**
+   * Executes a standalone FIDO operation with shared payload decoding and error handling.
+   */
+  private fun executeFidoOperation(
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise,
+    errorCode: String,
+    invalidOptionsMessage: String,
+    defaultFailureMessage: String,
+    operation: suspend (client: FidoClient, input: JsonObject) -> Result<JsonObject>
+  ) {
     scope.launch {
       try {
         val input = JsonBridgeMapper.decodeReadableMap(options)
-        val result = createFidoClient(parseCallConfig(config)).authenticate(input)
+        val client = createFidoClient(parseCallConfig(config))
+        val result = operation(client, input)
         result.fold(
           onSuccess = { payload ->
             promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
@@ -159,8 +159,8 @@ object RNPingFidoCommon {
           onFailure = { error ->
             rejectWithError(
               promise = promise,
-              code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
-              message = error.localizedMessage ?: "FIDO authentication failed.",
+              code = errorCode,
+              message = error.localizedMessage ?: defaultFailureMessage,
               throwable = error
             )
           }
@@ -168,16 +168,16 @@ object RNPingFidoCommon {
       } catch (error: IllegalArgumentException) {
         rejectWithError(
           promise = promise,
-          code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
-          message = error.localizedMessage ?: "Invalid FIDO authentication options payload.",
+          code = errorCode,
+          message = error.localizedMessage ?: invalidOptionsMessage,
           type = ErrorType.ARGUMENT_ERROR,
           throwable = error
         )
       } catch (error: Throwable) {
         rejectWithError(
           promise = promise,
-          code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
-          message = error.localizedMessage ?: "FIDO authentication failed.",
+          code = errorCode,
+          message = error.localizedMessage ?: defaultFailureMessage,
           throwable = error
         )
       }

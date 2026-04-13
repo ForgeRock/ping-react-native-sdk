@@ -43,7 +43,7 @@ public class RNPingFidoCommon: NSObject {
   ) {
     _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    execute(
+    executeFidoOperation(
       options: options,
       action: "registration",
       methodErrorCode: .registerError,
@@ -69,7 +69,7 @@ public class RNPingFidoCommon: NSObject {
   ) {
     _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    execute(
+    executeFidoOperation(
       options: options,
       action: "authentication",
       methodErrorCode: .authenticateError,
@@ -240,7 +240,7 @@ public class RNPingFidoCommon: NSObject {
   ///   - handlers: Shared promise bridge handlers.
   ///   - operation: Native FIDO operation closure to execute.
   @MainActor
-  private static func execute(
+  private static func executeFidoOperation(
     options: NSDictionary,
     action: String,
     methodErrorCode: FidoErrorCode,

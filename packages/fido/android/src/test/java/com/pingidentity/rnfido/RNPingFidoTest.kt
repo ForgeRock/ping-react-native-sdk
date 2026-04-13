@@ -164,6 +164,42 @@ class RNPingFidoTest {
   }
 
   /**
+   * Ensures registration uses the stable invalid-options fallback message when decode errors
+   * without a detail message.
+   */
+  @Test
+  fun registerRejectsWithInvalidOptionsMessageWhenDecodeFailsWithoutMessage() {
+    RNPingFidoCommon.foregroundActivityProvider = { true }
+    mockkObject(JsonBridgeMapper)
+    every { JsonBridgeMapper.decodeReadableMap(any()) } throws IllegalArgumentException()
+
+    val promise = TestPromise()
+    RNPingFidoCommon.register(JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_REGISTER_ERROR, promise.rejectedCode)
+    assertEquals("Invalid FIDO registration options payload.", promise.rejectedMessage)
+  }
+
+  /**
+   * Ensures authentication uses the stable invalid-options fallback message when decode errors
+   * without a detail message.
+   */
+  @Test
+  fun authenticateRejectsWithInvalidOptionsMessageWhenDecodeFailsWithoutMessage() {
+    RNPingFidoCommon.foregroundActivityProvider = { true }
+    mockkObject(JsonBridgeMapper)
+    every { JsonBridgeMapper.decodeReadableMap(any()) } throws IllegalArgumentException()
+
+    val promise = TestPromise()
+    RNPingFidoCommon.authenticate(JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_ERROR, promise.rejectedCode)
+    assertEquals("Invalid FIDO authentication options payload.", promise.rejectedMessage)
+  }
+
+  /**
    * Ensures authentication maps unexpected exceptions to the stable authentication code.
    */
   @Test

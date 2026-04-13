@@ -53,20 +53,20 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   // MARK: - Journey Callback Tests
 
-  func testRegisterForJourneyRejectsWhenCallbackMissing() async {
+  func testRegisterForJourneyRejectsWithWindowUnavailableWhenNoActiveWindow() async {
     let (code, _) = await invokeRegisterForJourney(
       journeyId: "journey-missing",
       options: [:]
     )
-    XCTAssertEqual(code, "FIDO_CALLBACK_NOT_FOUND")
+    XCTAssertEqual(code, "FIDO_WINDOW_UNAVAILABLE")
   }
 
-  func testAuthenticateForJourneyRejectsWhenCallbackMissing() async {
+  func testAuthenticateForJourneyRejectsWithWindowUnavailableWhenNoActiveWindow() async {
     let (code, _) = await invokeAuthenticateForJourney(
       journeyId: "journey-missing",
       options: [:]
     )
-    XCTAssertEqual(code, "FIDO_CALLBACK_NOT_FOUND")
+    XCTAssertEqual(code, "FIDO_WINDOW_UNAVAILABLE")
   }
 
   // MARK: - Helpers
