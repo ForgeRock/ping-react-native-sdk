@@ -221,8 +221,9 @@ describe('@ping-identity/rn-journey — integration', () => {
     });
 
     it('concurrent dispose() + init() calls do not leave journeyId in an inconsistent state', async () => {
-      // Ensure that if dispose and a subsequent init are issued back-to-back (no await
-      // between them), the client ends up in a valid configured state.
+      // When init() is called while dispose() is still pending, init() sees the
+      // existing journeyId and returns it without re-configuring. Once dispose()
+      // resolves it nulls the internal id, so the next init() gets a fresh one.
       let resolveDispose!: () => void;
       const deferredDispose = new Promise<undefined>((res) => {
         resolveDispose = () => res(undefined);
@@ -238,18 +239,30 @@ describe('@ping-identity/rn-journey — integration', () => {
 
       await client.init();
 
-      // Start dispose but don't await — then immediately start init.
-      const disposePromise = client.dispose();
+      // Start dispose and init concurrently — init is in-flight while dispose is still pending.
+      const disposeP = client.dispose();
+      const initP = client.init();
       resolveDispose();                   // unblock the native dispose
-      await disposePromise;
+      await Promise.all([disposeP, initP]);
 
-      const newId = await client.init();
-      expect(typeof newId).toBe('string');
+      // After dispose settles it nulls the internal id. A subsequent init()
+      // must call configureJourney again and return a fresh id.
+      const freshId = await client.init();
+      expect(freshId).toBe('journey-id-second');
       expect(mock.configureJourney).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('failure paths', () => {
+    it('init() propagates native errors', async () => {
+      const mock = makeMock({
+        configureJourney: jest.fn(async () => { throw new Error('configure failed'); }),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await expect(client.init()).rejects.toThrow('configure failed');
+    });
+
     it('start() propagates native errors', async () => {
       const mock = makeMock({
         start: jest.fn(async () => { throw new Error('Journey start failed'); }),

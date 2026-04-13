@@ -64,29 +64,12 @@ public final class RNPingJourneyCommon: NSObject {
   /// Lifecycle coordinator ensuring ordered configure/cleanup execution.
   private static let lifecycleCoordinator = JourneyLifecycleCoordinator()
 
-  /// Applies Journey callback resolver registration in serialized lifecycle order.
-  private static func configureAsync() async {
-    await lifecycleCoordinator.enqueue {
-      CoreRuntime.setJourneyCallbackResolver { journeyId in
-        stateStore.callbacks(for: journeyId)
-      }
-    }
-  }
-
   /// Clears Journey runtime state in serialized lifecycle order.
   private static func cleanupAsync() async {
     await lifecycleCoordinator.enqueue {
       CoreRuntime.setJourneyCallbackResolver(nil)
       stateStore.removeAll()
       await journeyRegistry.removeAll()
-    }
-  }
-
-  /// Initializes common runtime wiring for Journey bridge operations.
-  @objc
-  public static func configure() {
-    Task {
-      await configureAsync()
     }
   }
 
@@ -132,7 +115,7 @@ public final class RNPingJourneyCommon: NSObject {
 
       // Register atomically with the callback resolver setup inside the coordinator so
       // that a concurrent cleanupAsync() cannot remove the newly registered handle
-      // between configureAsync() returning and register() being called.
+      // between the resolver being set and register() being called.
       let idRef = Ref<String>()
       await lifecycleCoordinator.enqueue {
         CoreRuntime.setJourneyCallbackResolver { journeyId in
@@ -140,7 +123,11 @@ public final class RNPingJourneyCommon: NSObject {
         }
         idRef.value = await journeyRegistry.register(JourneyHandle(journey: journey))
       }
-      promise.resolve(idRef.value!)
+      guard let journeyId = idRef.value else {
+        promise.reject(JourneyErrorMapper.state(code: .initError, message: "Failed to register Journey instance"))
+        return
+      }
+      promise.resolve(journeyId)
     }
   }
 
