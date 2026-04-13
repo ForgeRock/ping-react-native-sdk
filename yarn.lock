@@ -3030,7 +3030,6 @@ __metadata:
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
   dependencies:
     "@ping-identity/rn-core": "workspace:*"
-    "@ping-identity/rn-logger": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
