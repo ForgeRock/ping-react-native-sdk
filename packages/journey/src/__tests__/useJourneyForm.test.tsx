@@ -37,7 +37,9 @@ function requireLatest(result: JourneyFormResult | null): JourneyFormResult {
  * @param props - Harness props.
  * @returns Null render output.
  */
-function JourneyFormHarness(props: JourneyFormHarnessProps): React.ReactElement | null {
+function JourneyFormHarness(
+  props: JourneyFormHarnessProps,
+): React.ReactElement | null {
   const { node, onResult } = props;
   const form = useJourneyForm(node);
 
@@ -66,7 +68,7 @@ describe('useJourneyForm', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     const form = requireLatest(latest);
@@ -91,7 +93,7 @@ describe('useJourneyForm', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     act(() => {
@@ -130,7 +132,7 @@ describe('useJourneyForm', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
     rerender = rendered.rerender;
 
@@ -147,7 +149,7 @@ describe('useJourneyForm', () => {
           onResult={(result) => {
             latest = result;
           }}
-        />
+        />,
       );
     });
 
@@ -172,7 +174,7 @@ describe('useJourneyForm', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     const form = requireLatest(latest);
@@ -180,13 +182,21 @@ describe('useJourneyForm', () => {
     expect(form.getFieldByType('NameCallback', 1)?.id).toBe('NameCallback:1');
 
     act(() => {
-      const applied = requireLatest(latest).setValueByType('NameCallback', 'typed-user', 1);
+      const applied = requireLatest(latest).setValueByType(
+        'NameCallback',
+        'typed-user',
+        1,
+      );
       expect(applied).toBe(true);
     });
 
     expect(requireLatest(latest).values['NameCallback:1']).toBe('typed-user');
 
-    const missing = requireLatest(latest).setValueByType('NameCallback', 'nope', 99);
+    const missing = requireLatest(latest).setValueByType(
+      'NameCallback',
+      'nope',
+      99,
+    );
     expect(missing).toBe(false);
   });
 });

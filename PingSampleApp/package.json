@@ -5,7 +5,7 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint --no-config-lookup --config ../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\" \"ui/**/*.{js,jsx,ts,tsx}\" \"__tests__/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.{js,jsx,ts,tsx}\" \"ui/**/*.{js,jsx,ts,tsx}\" \"__tests__/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
     "start": "react-native start",
     "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && bundle install --path vendor/bundle && bundle exec pod install --repo-update --project-directory=ios",
     "codegen": "npx react-native codegen",

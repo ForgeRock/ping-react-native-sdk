@@ -21,7 +21,6 @@
     "test:e2e:ios": "sh -c 'export DETOX_SERVER_PORT=${DETOX_SERVER_PORT:-8099}; export NODE_NO_WARNINGS=1; yarn e2e:android:free-detox-port && detox test --configuration ios.sim \"$@\"' --",
     "build:e2e:android": "detox build --configuration android.emu",
     "build:e2e:ios": "detox build --configuration ios.sim",
-    "lint": "eslint --no-config-lookup --config ../eslint.config.mjs \"__tests__/**/*.{js,jsx,ts,tsx}\" \"e2e/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

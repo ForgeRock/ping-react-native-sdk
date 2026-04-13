@@ -36,7 +36,10 @@ export type JourneySSOToken = {
 /**
  * Session payload exposed by `user()`.
  */
-export type JourneyUserSession = Pick<Tokens, 'accessToken' | 'refreshToken'> & {
+export type JourneyUserSession = Pick<
+  Tokens,
+  'accessToken' | 'refreshToken'
+> & {
   /**
    * Optional token expiry in seconds.
    */

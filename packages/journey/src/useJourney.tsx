@@ -35,7 +35,10 @@ export type JourneyHookActions = {
    * @returns First Journey node.
    * @throws {JourneyError} When start fails.
    */
-  start: (journeyName: string, options?: JourneyStartOptions) => Promise<JourneyNode>;
+  start: (
+    journeyName: string,
+    options?: JourneyStartOptions,
+  ) => Promise<JourneyNode>;
 
   /**
    * Advance the active Journey node.
@@ -125,7 +128,10 @@ export type JourneyHookActions = {
 /**
  * Tuple result returned by {@link useJourney}.
  */
-export type JourneyHookResult = readonly [JourneyNode | null, JourneyHookActions];
+export type JourneyHookResult = readonly [
+  JourneyNode | null,
+  JourneyHookActions,
+];
 
 type JourneyContextValue = {
   client: JourneyClient;
@@ -200,12 +206,19 @@ export type JourneyProviderProps = {
  * @param props - Provider props.
  * @returns Journey context provider element.
  */
-export function JourneyProvider(props: JourneyProviderProps): React.ReactElement {
+export function JourneyProvider(
+  props: JourneyProviderProps,
+): React.ReactElement {
   const { client, children } = props;
   const journey = useJourneyState(client);
-  const value = useMemo<JourneyContextValue>(() => ({ client, journey }), [client, journey]);
+  const value = useMemo<JourneyContextValue>(
+    () => ({ client, journey }),
+    [client, journey],
+  );
 
-  return <JourneyContext.Provider value={value}>{children}</JourneyContext.Provider>;
+  return (
+    <JourneyContext.Provider value={value}>{children}</JourneyContext.Provider>
+  );
 }
 
 /**
@@ -225,7 +238,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
       options: JourneyStartOptions = {
         forceAuth: false,
         noSession: false,
-      }
+      },
     ): Promise<JourneyNode> => {
       try {
         setLoading(true);
@@ -241,7 +254,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const next = useCallback(
@@ -270,7 +283,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client, node]
+    [client, node],
   );
 
   const resume = useCallback(
@@ -289,7 +302,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const user = useCallback(async (): Promise<JourneyUserSession | null> => {
@@ -358,7 +371,9 @@ export function useJourney(client: JourneyClient): JourneyHookResult;
 export function useJourney(): JourneyHookResult;
 export function useJourney(client?: JourneyClient): JourneyHookResult {
   const contextValue = useContext(JourneyContext);
-  const localJourney = useJourneyState(client ?? contextValue?.client ?? missingJourneyClient);
+  const localJourney = useJourneyState(
+    client ?? contextValue?.client ?? missingJourneyClient,
+  );
 
   if (client) {
     return localJourney;

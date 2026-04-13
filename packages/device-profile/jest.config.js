@@ -11,6 +11,8 @@ module.exports = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
+  modulePathIgnorePatterns: ['<rootDir>/lib/'],
+  watchPathIgnorePatterns: ['<rootDir>/lib/'],
   reporters: [
     'default',
     ['jest-junit', {

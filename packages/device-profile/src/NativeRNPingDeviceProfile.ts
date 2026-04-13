@@ -5,7 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
+import {
+  NativeModules,
+  TurboModuleRegistry,
+  type TurboModule,
+} from 'react-native';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
@@ -26,7 +30,7 @@ export interface Spec extends TurboModule {
    * Rejects with a `DeviceProfileError` on failure.
    */
   collectDeviceProfile(
-    collectors: DeviceProfileCollector[]
+    collectors: DeviceProfileCollector[],
   ): Promise<DeviceProfile>;
 
   /**
@@ -38,7 +42,7 @@ export interface Spec extends TurboModule {
   collectDeviceProfileForJourney(
     journeyId: string,
     collectors: DeviceProfileCollector[],
-    loggerId?: string
+    loggerId?: string,
   ): Promise<DeviceProfileJourneyResult>;
 }
 
@@ -60,7 +64,7 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }
 

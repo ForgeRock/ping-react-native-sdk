@@ -5,12 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { commonStyles } from '../src/styles/common';
 import {
   getTokenStorages,
@@ -28,7 +23,10 @@ export default function MultiStorageScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.container}
+      nestedScrollEnabled
+    >
       {/* OIDC STORAGE CARD */}
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>OIDC Storage</Text>
@@ -62,12 +60,18 @@ export default function MultiStorageScreen() {
               setSessionStorage(configureSessionStorageInfo());
             }}
           >
-            <Text style={commonStyles.buttonText}>Configure Session Storage</Text>
+            <Text style={commonStyles.buttonText}>
+              Configure Session Storage
+            </Text>
           </TouchableOpacity>
         ) : (
           <View>
             <PayloadViewer
-              payload={`Config: ${JSON.stringify(sessionStorage.config, null, 2)}`}
+              payload={`Config: ${JSON.stringify(
+                sessionStorage.config,
+                null,
+                2,
+              )}`}
             />
           </View>
         )}

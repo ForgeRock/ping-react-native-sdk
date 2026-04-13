@@ -46,23 +46,6 @@ const deviceId = await getDeviceId();
 console.log('Device ID:', deviceId);
 ```
 
-### Optional: pass logger options
-
-The Device ID call accepts the same logger pattern used across the SDK modules.
-
-```ts
-import { getDeviceId } from '@ping-identity/rn-device-id';
-import { logger, configureLogger } from '@ping-identity/rn-logger';
-
-const log = logger({ level: 'debug' });
-const nativeLogger = configureLogger({ level: 'info' });
-
-const deviceId = await getDeviceId({
-  logger: log,
-  nativeLogger,
-});
-```
-
 ### API reference
 
 ```ts

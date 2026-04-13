@@ -17,7 +17,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Warning field card.
  */
 export default function JourneyUnsupportedField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field } = props;
 

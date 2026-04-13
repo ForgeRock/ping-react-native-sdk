@@ -295,7 +295,9 @@ export type JourneyFormResult = {
    * @param overrides - Optional value overrides applied before planning.
    * @returns Submit planning result.
    */
-  buildInput: (overrides?: Partial<JourneyFormValues>) => JourneyBuildNextInputResult;
+  buildInput: (
+    overrides?: Partial<JourneyFormValues>,
+  ) => JourneyBuildNextInputResult;
   /**
    * Returns one normalized field by id.
    *
@@ -309,7 +311,9 @@ export type JourneyFormResult = {
    * @param callbackType - Native callback type.
    * @returns Matching fields for the callback type, or an empty list.
    */
-  getFieldsByType: (callbackType: JourneyCallbackType) => JourneyNormalizedField[];
+  getFieldsByType: (
+    callbackType: JourneyCallbackType,
+  ) => JourneyNormalizedField[];
   /**
    * Returns one normalized field by callback type and per-type index.
    *
@@ -319,7 +323,7 @@ export type JourneyFormResult = {
    */
   getFieldByType: (
     callbackType: JourneyCallbackType,
-    typeIndex?: number
+    typeIndex?: number,
   ) => JourneyNormalizedField | undefined;
   /**
    * Sets one field value by callback type and per-type index.
@@ -332,6 +336,6 @@ export type JourneyFormResult = {
   setValueByType: (
     callbackType: JourneyCallbackType,
     value: JourneyFormValue,
-    typeIndex?: number
+    typeIndex?: number,
   ) => boolean;
 };

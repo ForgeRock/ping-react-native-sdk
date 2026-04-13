@@ -7,7 +7,11 @@
 
 import React, { useEffect } from 'react';
 import { render, act } from '@testing-library/react-native';
-import { JourneyProvider, useJourney, type JourneyHookResult } from '../useJourney';
+import {
+  JourneyProvider,
+  useJourney,
+  type JourneyHookResult,
+} from '../useJourney';
 
 type JourneyClient = import('../types').JourneyClient;
 type JourneyNode = import('../types').JourneyNode;
@@ -99,14 +103,17 @@ describe('useJourney provider and native module resolution', () => {
             latest = result;
           }}
         />
-      </JourneyProvider>
+      </JourneyProvider>,
     );
 
     await act(async () => {
       await requireLatest(latest)[1].start('Login');
     });
 
-    expect(client.start).toHaveBeenCalledWith('Login', { forceAuth: false, noSession: false });
+    expect(client.start).toHaveBeenCalledWith('Login', {
+      forceAuth: false,
+      noSession: false,
+    });
   });
 
   it('throws clear error when legacy native module is unavailable', () => {
@@ -117,7 +124,7 @@ describe('useJourney provider and native module resolution', () => {
       }));
       const nativeModule = require('../NativeRNPingJourney');
       expect(() => nativeModule.getNativeModule()).toThrow(
-        '[@ping-identity/rn-journey] Native module RNPingJourney not found.'
+        '[@ping-identity/rn-journey] Native module RNPingJourney not found.',
       );
     });
   });

@@ -21,7 +21,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Field element.
  */
 function JourneyFieldRenderer(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement | null {
   const { field } = props;
   const isFidoRegistrationCallback = field.ref.type === 'FidoRegistrationCallback';

@@ -27,7 +27,10 @@ import type {
  * `WeakMap` keeps this cache GC-safe so stale node entries are released
  * automatically when node objects are no longer referenced.
  */
-const normalizedFieldCache = new WeakMap<JourneyNode, JourneyNormalizedField[]>();
+const normalizedFieldCache = new WeakMap<
+  JourneyNode,
+  JourneyNormalizedField[]
+>();
 
 /**
  * Resolves normalized callback fields with node-identity caching.
@@ -35,7 +38,9 @@ const normalizedFieldCache = new WeakMap<JourneyNode, JourneyNormalizedField[]>(
  * @param node - Current Journey node.
  * @returns Normalized callback fields.
  */
-function getNormalizedFields(node: JourneyNode | null | undefined): JourneyNormalizedField[] {
+function getNormalizedFields(
+  node: JourneyNode | null | undefined,
+): JourneyNormalizedField[] {
   if (!node) {
     return normalizeCallbacks(node);
   }
@@ -57,7 +62,7 @@ function getNormalizedFields(node: JourneyNode | null | undefined): JourneyNorma
  * @returns Seed value when one should be applied.
  */
 function resolveSeedValue(
-  field: JourneyNormalizedField
+  field: JourneyNormalizedField,
 ): JourneyFormValue | undefined {
   return field.defaultValue;
 }
@@ -71,7 +76,7 @@ function resolveSeedValue(
  */
 function hydrateValues(
   fields: JourneyNormalizedField[],
-  baseValues: JourneyFormValues
+  baseValues: JourneyFormValues,
 ): JourneyFormValues {
   const nextValues: JourneyFormValues = { ...baseValues };
   fields.forEach((field) => {
@@ -93,7 +98,10 @@ function hydrateValues(
  * @param next - Next map.
  * @returns True when both maps contain identical keys and values.
  */
-function isSameValueMap(previous: JourneyFormValues, next: JourneyFormValues): boolean {
+function isSameValueMap(
+  previous: JourneyFormValues,
+  next: JourneyFormValues,
+): boolean {
   const previousKeys = Object.keys(previous);
   const nextKeys = Object.keys(next);
   if (previousKeys.length !== nextKeys.length) {
@@ -110,7 +118,10 @@ function isSameValueMap(previous: JourneyFormValues, next: JourneyFormValues): b
  * @param issues - Submit issues from helper planning.
  * @returns Form metadata.
  */
-function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue[]): JourneyFormMeta {
+function deriveMeta(
+  fields: JourneyNormalizedField[],
+  issues: JourneySubmitIssue[],
+): JourneyFormMeta {
   return {
     hasManual: fields.some((field) => field.requiresUserInput),
     hasOutputOnly: fields.some((field) => field.executionMode === 'output_only'),
@@ -122,7 +133,7 @@ function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue
     ),
     hasUnsupported: fields.some((field) => field.executionMode === 'unsupported'),
     hasRequiredConsentMissing: issues.some(
-      (issue) => issue.code === 'REQUIRED_CONSENT_MISSING'
+      (issue) => issue.code === 'REQUIRED_CONSENT_MISSING',
     ),
   };
 }
@@ -149,17 +160,19 @@ function deriveMeta(fields: JourneyNormalizedField[], issues: JourneySubmitIssue
  * @returns Normalized fields, managed values, and submit planning helpers.
  */
 export function useJourneyForm(
-  node: JourneyNode | null | undefined
+  node: JourneyNode | null | undefined,
 ): JourneyFormResult {
   const fields = useMemo<JourneyNormalizedField[]>(
     () => getNormalizedFields(node),
-    [node]
+    [node],
   );
   const fieldsById = useMemo<Map<string, JourneyNormalizedField>>(
     () => new Map(fields.map((field) => [field.id, field])),
-    [fields]
+    [fields],
   );
-  const fieldsByType = useMemo<Map<JourneyCallbackType, JourneyNormalizedField[]>>(() => {
+  const fieldsByType = useMemo<
+    Map<JourneyCallbackType, JourneyNormalizedField[]>
+  >(() => {
     const byType = new Map<JourneyCallbackType, JourneyNormalizedField[]>();
     fields.forEach((field) => {
       const existing = byType.get(field.ref.type);
@@ -173,7 +186,7 @@ export function useJourneyForm(
   }, [fields]);
 
   const [values, setValuesState] = useState<JourneyFormValues>(() =>
-    hydrateValues(fields, {})
+    hydrateValues(fields, {}),
   );
 
   useEffect(() => {
@@ -185,12 +198,12 @@ export function useJourneyForm(
 
   const submitPlan = useMemo<JourneyBuildNextInputResult>(
     () => buildNextInput(node, values),
-    [node, values]
+    [node, values],
   );
 
   const meta = useMemo<JourneyFormMeta>(
     () => deriveMeta(fields, submitPlan.issues),
-    [fields, submitPlan.issues]
+    [fields, submitPlan.issues],
   );
 
   /**
@@ -218,10 +231,7 @@ export function useJourneyForm(
    */
   const setValues = useCallback((updater: JourneyFormValuesUpdater): void => {
     setValuesState((previous) => {
-      const patch =
-        typeof updater === 'function'
-          ? updater(previous)
-          : updater;
+      const patch = typeof updater === 'function' ? updater(previous) : updater;
       const nextValues = {
         ...previous,
         ...patch,
@@ -265,13 +275,15 @@ export function useJourneyForm(
    * @returns Submit plan with payload, submit eligibility, and issues.
    */
   const buildInput = useCallback(
-    (overrides: Partial<JourneyFormValues> = {}): JourneyBuildNextInputResult => {
+    (
+      overrides: Partial<JourneyFormValues> = {},
+    ): JourneyBuildNextInputResult => {
       return buildNextInput(node, {
         ...values,
         ...overrides,
       });
     },
-    [node, values]
+    [node, values],
   );
 
   /**
@@ -302,13 +314,16 @@ export function useJourneyForm(
    * @returns Matching field when present.
    */
   const getFieldByType = useCallback(
-    (callbackType: JourneyCallbackType, typeIndex = 0): JourneyNormalizedField | undefined => {
+    (
+      callbackType: JourneyCallbackType,
+      typeIndex = 0,
+    ): JourneyNormalizedField | undefined => {
       if (typeIndex < 0) {
         return undefined;
       }
       return fieldsByType.get(callbackType)?.[typeIndex];
     },
-    [fieldsByType]
+    [fieldsByType],
   );
 
   /**
@@ -320,7 +335,11 @@ export function useJourneyForm(
    * @returns True when a matching field is found and updated.
    */
   const setValueByType = useCallback(
-    (callbackType: JourneyCallbackType, value: JourneyFormValue, typeIndex = 0): boolean => {
+    (
+      callbackType: JourneyCallbackType,
+      value: JourneyFormValue,
+      typeIndex = 0,
+    ): boolean => {
       const field = getFieldByType(callbackType, typeIndex);
       if (!field) {
         return false;
@@ -328,7 +347,7 @@ export function useJourneyForm(
       setValue(field.id, value);
       return true;
     },
-    [getFieldByType, setValue]
+    [getFieldByType, setValue],
   );
 
   return {

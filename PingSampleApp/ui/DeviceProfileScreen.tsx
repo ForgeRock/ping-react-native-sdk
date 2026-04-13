@@ -19,6 +19,7 @@ import {
   type DeviceProfileCollector,
   type DeviceProfileError,
 } from '@ping-identity/rn-device-profile';
+import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
 import { deviceProfileScreenStyles as styles } from '../src/styles/componentStyles';
@@ -39,6 +40,7 @@ const defaultCollectorSelections: Record<DeviceProfileCollector, boolean> = {
  * Displays a simple device profile collector demo.
  */
 export default function DeviceProfileScreen(): React.ReactElement {
+  const deviceProfileLogger = useMemo(() => logger({ level: 'debug' }), []);
   const [collectorSelections, setCollectorSelections] = useState<
     Record<DeviceProfileCollector, boolean>
   >(defaultCollectorSelections);
@@ -48,7 +50,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
 
   const availableCollectors = useMemo<DeviceProfileCollector[]>(
     () => Object.keys(defaultCollectorSelections) as DeviceProfileCollector[],
-    []
+    [],
   );
 
   const toggleCollector = (collector: DeviceProfileCollector): void => {
@@ -60,7 +62,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
 
   const onCollect = async (): Promise<void> => {
     const collectors = availableCollectors.filter(
-      collector => collectorSelections[collector]
+      collector => collectorSelections[collector],
     );
 
     if (collectors.length === 0) {
@@ -74,7 +76,9 @@ export default function DeviceProfileScreen(): React.ReactElement {
     setProfile(null);
 
     try {
-      const collectedProfile = await collectDeviceProfile(collectors);
+      const collectedProfile = await collectDeviceProfile(collectors, {
+        logger: deviceProfileLogger,
+      });
       setProfile(collectedProfile);
     } catch (err: unknown) {
       const errorPayload = err as DeviceProfileError;
@@ -93,7 +97,10 @@ export default function DeviceProfileScreen(): React.ReactElement {
   };
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.container}
+      nestedScrollEnabled
+    >
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>Device Profile</Text>
         <Text style={commonStyles.helperNote}>

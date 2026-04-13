@@ -44,7 +44,7 @@ export type JourneyDebugPanelProps = {
  * @returns Debug panel element.
  */
 export default function JourneyDebugPanel(
-  props: JourneyDebugPanelProps
+  props: JourneyDebugPanelProps,
 ): React.ReactElement {
   const { entries, onClear } = props;
 

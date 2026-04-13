@@ -23,7 +23,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Choice field card.
  */
 export default function JourneyChoiceField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
   const selected = readNumber(currentValue, readNumber(field.defaultValue, -1));
@@ -35,9 +35,11 @@ export default function JourneyChoiceField(
         <Text style={fieldStyles.promptText}>{promptText}</Text>
       ) : null}
       {!field.options || field.options.length === 0 ? (
-        <Text style={fieldStyles.helperText}>No options were provided by this callback.</Text>
+        <Text style={fieldStyles.helperText}>
+          No options were provided by this callback.
+        </Text>
       ) : null}
-      {field.options?.map((option) => (
+      {field.options?.map(option => (
         <TouchableOpacity
           key={`${field.id}:${option.index}`}
           style={[

@@ -7,7 +7,10 @@
 
 import React, { useMemo } from 'react';
 import { Text, TouchableOpacity } from 'react-native';
-import type { JourneyCallbackType, JourneyFormResult } from '@ping-identity/rn-journey';
+import type {
+  JourneyCallbackType,
+  JourneyFormResult,
+} from '@ping-identity/rn-journey';
 import { commonStyles } from '../../../../src/styles/common';
 import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import JourneyFieldRenderer from '../molecules/renderers/JourneyFieldRenderer';
@@ -62,7 +65,7 @@ export type JourneyContinuePanelProps = {
  * @returns Continue node panel markup.
  */
 export default function JourneyContinuePanel(
-  props: JourneyContinuePanelProps
+  props: JourneyContinuePanelProps,
 ): React.ReactElement {
   const {
     form,
@@ -76,8 +79,8 @@ export default function JourneyContinuePanel(
   const { fields, values, meta, setValue } = form;
 
   const callbackTypes = useMemo<Set<JourneyCallbackType>>(
-    () => new Set(fields.map((field) => field.ref.type)),
-    [fields]
+    () => new Set(fields.map(field => field.ref.type)),
+    [fields],
   );
   // These flags drive integration UX:
   // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
@@ -183,7 +186,8 @@ export default function JourneyContinuePanel(
     !hasDeviceProfileCallback &&
     !hasSuspendedCallback &&
     !hasPollingWaitCallback;
-  const shouldShowContinueButton = hasManualSubmit || canAutoAdvanceWithContinueButton;
+  const shouldShowContinueButton =
+    hasManualSubmit || canAutoAdvanceWithContinueButton;
   const submitDisabled =
     loading ||
     hasUnacceptedRequiredAgreements ||
@@ -191,13 +195,13 @@ export default function JourneyContinuePanel(
     hasUnsupportedCallbacks;
   const pollingWaitSeconds = Math.max(
     1,
-    Math.ceil((pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS) / 1000)
+    Math.ceil((pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS) / 1000),
   );
 
   return (
     <>
       {/* `setFieldValue` writes into `useJourneyForm` state, consumed as `form.input` on submit. */}
-      {fields.map((field) => (
+      {fields.map(field => (
         <JourneyFieldRenderer
           key={field.id}
           field={field}
@@ -280,7 +284,8 @@ export default function JourneyContinuePanel(
 
       {!hasManualSubmit && hasPollingWaitCallback ? (
         <Text style={styles.autoPollingNote}>
-          Polling callback detected. Continuing automatically in {pollingWaitSeconds}s.
+          Polling callback detected. Continuing automatically in{' '}
+          {pollingWaitSeconds}s.
         </Text>
       ) : null}
     </>

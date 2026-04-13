@@ -6,13 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { callbackType } from '@ping-identity/rn-types';
 import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { commonStyles } from '../src/styles/common';
@@ -40,7 +34,10 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
 
   const continueJourney = async (): Promise<void> => {
     if (!form.canSubmit) {
-      Alert.alert('Cannot continue', form.issues[0]?.message ?? 'Resolve callback issues first.');
+      Alert.alert(
+        'Cannot continue',
+        form.issues[0]?.message ?? 'Resolve callback issues first.',
+      );
       return;
     }
     await actions.next(form.input);
@@ -51,13 +48,21 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
     const passwordFields = form.getFieldsByType(callbackType.PasswordCallback);
     const passwordField = passwordFields[0];
 
-    const didSetName = form.setValueByType(callbackType.NameCallback, 'demo-user');
-    const didSetPassword = form.setValueByType(callbackType.PasswordCallback, 'demo-password');
+    const didSetName = form.setValueByType(
+      callbackType.NameCallback,
+      'demo-user',
+    );
+    const didSetPassword = form.setValueByType(
+      callbackType.PasswordCallback,
+      'demo-password',
+    );
 
     if (!didSetName || !didSetPassword) {
       Alert.alert(
         'Demo credentials skipped',
-        `Name field: ${nameField ? 'found' : 'missing'}, Password field: ${passwordField ? 'found' : 'missing'}`
+        `Name field: ${nameField ? 'found' : 'missing'}, Password field: ${
+          passwordField ? 'found' : 'missing'
+        }`,
       );
     }
   };
@@ -65,7 +70,9 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
   return (
     <ScrollView contentContainerStyle={commonStyles.journeyContainer}>
       <View style={commonStyles.journeyCard}>
-        <Text style={commonStyles.journeyTitle}>Journey (minimal useJourneyForm)</Text>
+        <Text style={commonStyles.journeyTitle}>
+          Journey (minimal useJourneyForm)
+        </Text>
 
         <PingTextInput
           label="Journey name"
@@ -76,7 +83,11 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
         />
         <TouchableOpacity
           style={commonStyles.journeyButtonPrimary}
-          onPress={() => startJourney().catch((cause) => Alert.alert('Start failed', String(cause)))}
+          onPress={() =>
+            startJourney().catch(cause =>
+              Alert.alert('Start failed', String(cause)),
+            )
+          }
           disabled={actions.loading}
         >
           <Text style={commonStyles.journeyButtonText}>
@@ -86,7 +97,7 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
 
         {node?.type === 'ContinueNode' ? (
           <>
-            {form.fields.map((field) => (
+            {form.fields.map(field => (
               <JourneyFieldRenderer
                 key={field.id}
                 field={field}
@@ -96,7 +107,9 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
             ))}
 
             {!form.canSubmit && form.issues.length > 0 ? (
-              <Text style={commonStyles.textError}>{form.issues[0]?.message}</Text>
+              <Text style={commonStyles.textError}>
+                {form.issues[0]?.message}
+              </Text>
             ) : null}
 
             {form.meta.hasManual ? (
@@ -106,11 +119,17 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
                   onPress={applyDemoCredentials}
                   disabled={actions.loading}
                 >
-                  <Text style={commonStyles.buttonText}>Apply Demo Credentials</Text>
+                  <Text style={commonStyles.buttonText}>
+                    Apply Demo Credentials
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={commonStyles.journeyButtonPrimary}
-                  onPress={() => continueJourney().catch((cause) => Alert.alert('Continue failed', String(cause)))}
+                  onPress={() =>
+                    continueJourney().catch(cause =>
+                      Alert.alert('Continue failed', String(cause)),
+                    )
+                  }
                   disabled={actions.loading}
                 >
                   <Text style={commonStyles.journeyButtonText}>Continue</Text>
@@ -129,7 +148,11 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
             <Text style={commonStyles.textSuccess}>Success</Text>
             <TouchableOpacity
               style={commonStyles.buttonDanger}
-              onPress={() => actions.logoutUser().catch((cause) => Alert.alert('Logout failed', String(cause)))}
+              onPress={() =>
+                actions
+                  .logoutUser()
+                  .catch(cause => Alert.alert('Logout failed', String(cause)))
+              }
             >
               <Text style={commonStyles.buttonText}>Logout</Text>
             </TouchableOpacity>
@@ -137,7 +160,9 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
         ) : null}
 
         {node?.type === 'ErrorNode' || node?.type === 'FailureNode' ? (
-          <Text style={commonStyles.textError}>{node.message || node.cause || 'Journey failed'}</Text>
+          <Text style={commonStyles.textError}>
+            {node.message || node.cause || 'Journey failed'}
+          </Text>
         ) : null}
 
         {actions.error ? (

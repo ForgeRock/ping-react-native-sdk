@@ -7,8 +7,7 @@
 
 import { Platform } from 'react-native';
 import { getNativeModule } from './NativeRNPingBrowser';
-import { logger as createLogger } from '@ping-identity/rn-logger';
-import type { LoggerInstance } from '@ping-identity/rn-logger';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 
 import type {
   BrowserConfig,
@@ -18,32 +17,26 @@ import type {
 } from './types';
 
 /**
- * Cached default logger used when callers do not provide one.
+ * No-op logger used when callers do not provide one.
  */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-/**
- * Lazily initialize and return the default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createLogger({ level: 'none' });
-  }
-  return defaultLoggerInstance;
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
 };
 
 /**
  * Resolve JS logger instance and native logger identifier for bridge calls.
  */
 const resolveLogger = (
-  options?: BrowserLoggerOptions
+  options?: BrowserLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
-  const logger = options?.logger ?? getDefaultLogger();
-  const loggerId =
-    options?.nativeLogger?.id ??
-    logger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
-
+  const logger = options?.logger ?? noopLogger;
+  const rawLoggerId = logger.nativeHandle?.id;
+  const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   return { logger, loggerId };
 };
 
@@ -57,7 +50,7 @@ const resolveLogger = (
  */
 export function configureBrowser(
   config: BrowserConfig,
-  options?: BrowserLoggerOptions
+  options?: BrowserLoggerOptions,
 ): void {
   const { logger, loggerId } = resolveLogger(options);
   logger.debug(`Browser configure requested ${JSON.stringify({ loggerId })}`);
@@ -100,7 +93,7 @@ export function resetBrowser(options?: BrowserLoggerOptions): void {
 export function open(
   url: string,
   options: BrowserOpenOptions,
-  loggerOptions?: BrowserLoggerOptions
+  loggerOptions?: BrowserLoggerOptions,
 ): Promise<BrowserResult> {
   const { logger, loggerId } = resolveLogger(loggerOptions);
   logger.info('Browser open requested');
@@ -110,7 +103,7 @@ export function open(
       callbackUrlScheme: options.callbackUrlScheme,
       redirectUri: options.redirectUri,
       loggerId,
-    })}`
+    })}`,
   );
 
   const nativeOptions = { ...options, loggerId };

@@ -40,7 +40,11 @@ describe('Journey callback helpers', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
-        { type: 'TextOutputCallback', message: 'Server message only', output: [] },
+        {
+          type: 'TextOutputCallback',
+          message: 'Server message only',
+          output: [],
+        },
       ],
     };
 
@@ -128,7 +132,9 @@ describe('Journey callback helpers', () => {
   it('does not treat negative selectedIndex as a default value', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'ConfirmationCallback', selectedIndex: -1, output: [] }],
+      callbacks: [
+        { type: 'ConfirmationCallback', selectedIndex: -1, output: [] },
+      ],
     };
 
     const fields = normalizeCallbacks(node);
@@ -140,7 +146,9 @@ describe('Journey callback helpers', () => {
   it('resolves required when callback payload uses isRequired key', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'TermsAndConditionsCallback', isRequired: true, output: [] }],
+      callbacks: [
+        { type: 'TermsAndConditionsCallback', isRequired: true, output: [] },
+      ],
     };
 
     const fields = normalizeCallbacks(node);
@@ -190,7 +198,8 @@ describe('Journey callback helpers', () => {
     expect(result.issues).toEqual([
       {
         code: 'INVALID_VALUE',
-        message: 'Callback "NumberAttributeInputCallback" requires a numeric value.',
+        message:
+          'Callback "NumberAttributeInputCallback" requires a numeric value.',
         fieldId: 'NumberAttributeInputCallback:0',
         callbackType: 'NumberAttributeInputCallback',
       },
@@ -200,9 +209,7 @@ describe('Journey callback helpers', () => {
   it('treats device profile callback as output-only for helper submit planning', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'DeviceProfileCallback', output: [] },
-      ],
+      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
     };
 
     const result = buildNextInput(node, {});
@@ -228,7 +235,8 @@ describe('Journey callback helpers', () => {
     expect(result.issues).toEqual([
       {
         code: 'REQUIRED_CONSENT_MISSING',
-        message: 'Required callback "TermsAndConditionsCallback" must be accepted to continue.',
+        message:
+          'Required callback "TermsAndConditionsCallback" must be accepted to continue.',
         fieldId: 'TermsAndConditionsCallback:0',
         callbackType: 'TermsAndConditionsCallback',
       },
@@ -306,7 +314,8 @@ describe('Journey callback helpers', () => {
     expect(rejected.issues).toEqual([
       {
         code: 'REQUIRED_CONSENT_MISSING',
-        message: 'Required callback "ConsentMappingCallback" must be accepted to continue.',
+        message:
+          'Required callback "ConsentMappingCallback" must be accepted to continue.',
         fieldId: 'ConsentMappingCallback:0',
         callbackType: 'ConsentMappingCallback',
       },
@@ -391,7 +400,8 @@ describe('Journey callback helpers', () => {
     expect(result.issues).toEqual([
       {
         code: 'INVALID_VALUE',
-        message: 'Callback "KbaCreateCallback" requires non-empty KBA question and answer values.',
+        message:
+          'Callback "KbaCreateCallback" requires non-empty KBA question and answer values.',
         fieldId: 'KbaCreateCallback:0',
         callbackType: 'KbaCreateCallback',
       },
@@ -418,7 +428,8 @@ describe('Journey callback helpers', () => {
     expect(result.issues).toEqual([
       {
         code: 'INVALID_VALUE',
-        message: 'Callback "ChoiceCallback" selected option index is out of range.',
+        message:
+          'Callback "ChoiceCallback" selected option index is out of range.',
         fieldId: 'ChoiceCallback:0',
         callbackType: 'ChoiceCallback',
       },

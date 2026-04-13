@@ -55,7 +55,9 @@ function JourneyHarness(props: JourneyHarnessProps): React.ReactElement | null {
  * @param overrides - Optional client overrides.
  * @returns Journey client mock.
  */
-function createJourneyClientMock(overrides: Partial<JourneyClient> = {}): JourneyClient {
+function createJourneyClientMock(
+  overrides: Partial<JourneyClient> = {},
+): JourneyClient {
   const continueNode: JourneyNode = { type: 'ContinueNode', callbacks: [] };
   const successNode: JourneyNode = { type: 'SuccessNode' };
 
@@ -104,7 +106,7 @@ describe('useJourney', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {
@@ -167,7 +169,7 @@ describe('useJourney', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {

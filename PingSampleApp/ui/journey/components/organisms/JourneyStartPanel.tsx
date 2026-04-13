@@ -45,13 +45,13 @@ export type JourneyStartPanelProps = {
  */
 function buildSuggestionRows(
   suggestions: string[],
-  rowCount: number
+  rowCount: number,
 ): string[][] {
   const rows: string[][] = Array.from({ length: rowCount }, () => []);
   suggestions.forEach((suggestion, index) => {
     rows[index % rowCount].push(suggestion);
   });
-  return rows.filter((row) => row.length > 0);
+  return rows.filter(row => row.length > 0);
 }
 
 /**
@@ -61,7 +61,7 @@ function buildSuggestionRows(
  * @returns Journey start panel markup.
  */
 export default function JourneyStartPanel(
-  props: JourneyStartPanelProps
+  props: JourneyStartPanelProps,
 ): React.ReactElement {
   const {
     showJourneyInput,
@@ -95,8 +95,13 @@ export default function JourneyStartPanel(
             <View style={styles.suggestionPanel}>
               <Text style={styles.suggestionPanelTitle}>AM Test Journeys</Text>
               {useWrappedSuggestions ? (
-                <View style={[commonStyles.suggestionContainer, styles.wrappedSuggestionContainer]}>
-                  {testJourneys.map((name) => {
+                <View
+                  style={[
+                    commonStyles.suggestionContainer,
+                    styles.wrappedSuggestionContainer,
+                  ]}
+                >
+                  {testJourneys.map(name => {
                     return (
                       <TouchableOpacity
                         key={`test-wrap-${name}`}
@@ -120,15 +125,20 @@ export default function JourneyStartPanel(
                 >
                   <View style={styles.suggestionRowsContainer}>
                     {testJourneyRows.map((row, rowIndex) => (
-                      <View key={`test-journey-row-${rowIndex}`} style={styles.suggestionRow}>
-                        {row.map((name) => {
+                      <View
+                        key={`test-journey-row-${rowIndex}`}
+                        style={styles.suggestionRow}
+                      >
+                        {row.map(name => {
                           return (
                             <TouchableOpacity
                               key={`test-${rowIndex}-${name}`}
                               onPress={() => onPressTestJourney(name)}
                               style={commonStyles.suggestionChip}
                             >
-                              <Text style={commonStyles.suggestionText}>{name}</Text>
+                              <Text style={commonStyles.suggestionText}>
+                                {name}
+                              </Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -144,8 +154,13 @@ export default function JourneyStartPanel(
             <View style={styles.suggestionPanel}>
               <Text style={styles.suggestionPanelTitle}>Recent Journeys</Text>
               {useWrappedSuggestions ? (
-                <View style={[commonStyles.suggestionContainer, styles.wrappedSuggestionContainer]}>
-                  {recentJourneys.map((name) => (
+                <View
+                  style={[
+                    commonStyles.suggestionContainer,
+                    styles.wrappedSuggestionContainer,
+                  ]}
+                >
+                  {recentJourneys.map(name => (
                     <TouchableOpacity
                       key={`recent-wrap-${name}`}
                       onPress={() => onPressRecentJourney(name)}
@@ -167,14 +182,19 @@ export default function JourneyStartPanel(
                 >
                   <View style={styles.suggestionRowsContainer}>
                     {recentJourneyRows.map((row, rowIndex) => (
-                      <View key={`recent-journey-row-${rowIndex}`} style={styles.suggestionRow}>
-                        {row.map((name) => (
+                      <View
+                        key={`recent-journey-row-${rowIndex}`}
+                        style={styles.suggestionRow}
+                      >
+                        {row.map(name => (
                           <TouchableOpacity
                             key={`recent-${rowIndex}-${name}`}
                             onPress={() => onPressRecentJourney(name)}
                             style={commonStyles.suggestionChip}
                           >
-                            <Text style={commonStyles.suggestionText}>{name}</Text>
+                            <Text style={commonStyles.suggestionText}>
+                              {name}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -187,7 +207,9 @@ export default function JourneyStartPanel(
         </>
       ) : null}
 
-      {loading ? <ActivityIndicator size="large" color={colors.primary} /> : null}
+      {loading ? (
+        <ActivityIndicator size="large" color={colors.primary} />
+      ) : null}
 
       {canStart ? (
         <TouchableOpacity

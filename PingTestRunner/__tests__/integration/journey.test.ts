@@ -113,7 +113,6 @@ describe('@ping-identity/rn-journey — integration', () => {
     it('throws when serverUrl is missing', async () => {
       const mod = await loadJourney(makeMock());
       expect(() =>
-        // @ts-expect-error — intentional bad input
         mod.createJourneyClient({})
       ).toThrow();
     });

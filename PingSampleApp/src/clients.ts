@@ -27,7 +27,7 @@ import {
  */
 const journeyScopes = (Config.JOURNEY_SCOPES ?? '')
   .split(',')
-  .map((item) => item.trim())
+  .map(item => item.trim())
   .filter(Boolean);
 
 /**
@@ -35,7 +35,7 @@ const journeyScopes = (Config.JOURNEY_SCOPES ?? '')
  */
 const aicScopes = (Config.AIC_SCOPES ?? '')
   .split(',')
-  .map((item) => item.trim())
+  .map(item => item.trim())
   .filter(Boolean);
 
 /**
@@ -43,7 +43,7 @@ const aicScopes = (Config.AIC_SCOPES ?? '')
  */
 const pingOneScopes = (Config.PINGONE_SCOPES ?? '')
   .split(',')
-  .map((item) => item.trim())
+  .map(item => item.trim())
   .filter(Boolean);
 
 /**
@@ -118,7 +118,8 @@ export const journeyOidcClient = createOidcClient({
 /**
  * OIDC web client derived from Journey environment settings.
  */
-export const journeyOidcWebClient: OidcWebClient = createOidcWebClient(journeyOidcClient);
+export const journeyOidcWebClient: OidcWebClient =
+  createOidcWebClient(journeyOidcClient);
 
 /**
  * OIDC storage handle dedicated to sample OIDC screens that should stay
@@ -236,7 +237,8 @@ const pingOneOidcClient = createOidcClient({
  * This wrapper exposes browser-driven authorization methods while reusing the
  * same underlying OIDC configuration and token storage behavior.
  */
-export const sampleOidcWebClient: OidcWebClient = createOidcWebClient(sampleOidcClient);
+export const sampleOidcWebClient: OidcWebClient =
+  createOidcWebClient(sampleOidcClient);
 
 /**
  * Web-capable OIDC client for the PingOne test tenant profile.
@@ -391,4 +393,5 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
 /**
  * Default selected profile key for sample app boot.
  */
-export const DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY = sampleAppClientProfiles[0].key;
+export const DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY =
+  sampleAppClientProfiles[0].key;

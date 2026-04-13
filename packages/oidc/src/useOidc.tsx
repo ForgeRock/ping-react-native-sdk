@@ -145,7 +145,8 @@ const OIDC_STATE_ERROR_CODE: OidcErrorCode = 'OIDC_STATE_ERROR';
 const missingOidcClientError: OidcError = {
   type: 'state_error',
   error: OIDC_STATE_ERROR_CODE,
-  message: 'No OIDC client found. Use useOidc(client) or wrap with <OidcProvider client={...}>.',
+  message:
+    'No OIDC client found. Use useOidc(client) or wrap with <OidcProvider client={...}>.',
 };
 
 /**
@@ -156,12 +157,18 @@ const missingOidcClientError: OidcError = {
  */
 function toOidcError(value: unknown): OidcError {
   const asRecord =
-    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
+    typeof value === 'object' && value !== null
+      ? (value as Record<string, unknown>)
+      : null;
   const type = asRecord?.type;
   const error = asRecord?.error;
   const message = asRecord?.message;
 
-  if (typeof type === 'string' && typeof error === 'string' && typeof message === 'string') {
+  if (
+    typeof type === 'string' &&
+    typeof error === 'string' &&
+    typeof message === 'string'
+  ) {
     return {
       ...asRecord,
       type,
@@ -222,7 +229,10 @@ export type OidcProviderProps = {
 export function OidcProvider(props: OidcProviderProps): React.ReactElement {
   const { client, children } = props;
   const oidc = useOidcState(client);
-  const value = useMemo<OidcContextValue>(() => ({ client, oidc }), [client, oidc]);
+  const value = useMemo<OidcContextValue>(
+    () => ({ client, oidc }),
+    [client, oidc],
+  );
   return <OidcContext.Provider value={value}>{children}</OidcContext.Provider>;
 }
 
@@ -242,8 +252,11 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<OidcUser | null>(null);
   const [tokens, setTokens] = useState<OidcTokenSet | null>(null);
-  const [userInfo, setUserInfo] = useState<Record<string, unknown> | null>(null);
-  const [authorizeResult, setAuthorizeResult] = useState<OidcAuthorizeResult | null>(null);
+  const [userInfo, setUserInfo] = useState<Record<string, unknown> | null>(
+    null,
+  );
+  const [authorizeResult, setAuthorizeResult] =
+    useState<OidcAuthorizeResult | null>(null);
   const [error, setError] = useState<OidcError | null>(null);
 
   /**
@@ -282,13 +295,16 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
         setError(typed);
         throw typed;
       } finally {
-        activeActionCountRef.current = Math.max(0, activeActionCountRef.current - 1);
+        activeActionCountRef.current = Math.max(
+          0,
+          activeActionCountRef.current - 1,
+        );
         if (activeActionCountRef.current === 0) {
           setIsLoading(false);
         }
       }
     },
-    []
+    [],
   );
 
   /**
@@ -368,7 +384,7 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
         return result;
       });
     },
-    [clearAuthState, client, restore, withAction]
+    [clearAuthState, client, restore, withAction],
   );
 
   /**
@@ -429,7 +445,7 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
         return nextUserInfo;
       });
     },
-    [resolveCurrentUser, withAction]
+    [resolveCurrentUser, withAction],
   );
 
   /**
@@ -480,7 +496,15 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
       authorizeResult,
       error,
     }),
-    [authorizeResult, error, isAuthenticated, isLoading, tokens, user, userInfo]
+    [
+      authorizeResult,
+      error,
+      isAuthenticated,
+      isLoading,
+      tokens,
+      user,
+      userInfo,
+    ],
   );
 
   const actionsValue = useMemo<OidcHookActions>(
@@ -494,7 +518,7 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
       logout,
       clear,
     }),
-    [authorize, clear, logout, refresh, restore, revoke, token, userinfo]
+    [authorize, clear, logout, refresh, restore, revoke, token, userinfo],
   );
 
   return [stateValue, actionsValue];

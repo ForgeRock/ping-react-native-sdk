@@ -8,11 +8,8 @@
 import type {
   GenericError,
   IOSBrowserOpenOptions,
-} from '@ping-identity/rn-types';
-import type {
   LoggerInstance,
-  NativeLoggerHandle,
-} from '@ping-identity/rn-logger';
+} from '@ping-identity/rn-types';
 
 /**
  * Result of a browser launch.
@@ -132,6 +129,7 @@ export type AndroidBrowserConfig = {
 /**
  * iOS-only global configuration.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type IOSBrowserConfig = {};
 
 /**
@@ -144,20 +142,10 @@ export type BrowserConfig = {
 
 /**
  * Optional logger configuration for browser native calls.
- *
- * @remarks
- * Mirrors OIDC and device-profile logger behavior:
- * - `nativeLogger` has highest precedence for native logger application.
- * - `logger.nativeHandle` is used when `nativeLogger` is not provided.
  */
 export type BrowserLoggerOptions = {
   /**
    * Optional JavaScript logger instance.
    */
   logger?: LoggerInstance;
-
-  /**
-   * Optional native logger handle.
-   */
-  nativeLogger?: NativeLoggerHandle;
 };

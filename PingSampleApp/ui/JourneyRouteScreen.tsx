@@ -38,7 +38,7 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
 
   const usedTestJourneySet = useMemo<Set<string>>(
     () => new Set(usedTestJourneys),
-    [usedTestJourneys]
+    [usedTestJourneys],
   );
 
   useEffect(() => {
@@ -49,8 +49,12 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
           AsyncStorage.getItem(USED_TEST_JOURNEYS_STORAGE_KEY),
         ]);
 
-        const recentParsed = recentStored ? (JSON.parse(recentStored) as string[]) : [];
-        const usedParsed = usedStored ? (JSON.parse(usedStored) as string[]) : [];
+        const recentParsed = recentStored
+          ? (JSON.parse(recentStored) as string[])
+          : [];
+        const usedParsed = usedStored
+          ? (JSON.parse(usedStored) as string[])
+          : [];
 
         setRecentJourneys(buildRecentJourneySuggestions(recentParsed));
         setUsedTestJourneys(buildUsedTestJourneys(usedParsed));
@@ -62,11 +66,14 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
 
   const saveRecentJourney = useCallback(
     async (name: string): Promise<void> => {
-      const updated = [name, ...recentJourneys.filter((item) => item !== name)];
+      const updated = [name, ...recentJourneys.filter(item => item !== name)];
       setRecentJourneys(updated);
-      await AsyncStorage.setItem(RECENT_JOURNEYS_STORAGE_KEY, JSON.stringify(updated));
+      await AsyncStorage.setItem(
+        RECENT_JOURNEYS_STORAGE_KEY,
+        JSON.stringify(updated),
+      );
     },
-    [recentJourneys]
+    [recentJourneys],
   );
 
   const markTestJourneyUsed = useCallback(
@@ -75,11 +82,17 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
       if (!isTestJourneyName(trimmedName)) {
         return;
       }
-      const updated = [trimmedName, ...usedTestJourneys.filter((item) => item !== trimmedName)];
+      const updated = [
+        trimmedName,
+        ...usedTestJourneys.filter(item => item !== trimmedName),
+      ];
       setUsedTestJourneys(updated);
-      await AsyncStorage.setItem(USED_TEST_JOURNEYS_STORAGE_KEY, JSON.stringify(updated));
+      await AsyncStorage.setItem(
+        USED_TEST_JOURNEYS_STORAGE_KEY,
+        JSON.stringify(updated),
+      );
     },
-    [usedTestJourneys]
+    [usedTestJourneys],
   );
 
   const handleStart = useCallback(async (): Promise<void> => {
@@ -92,7 +105,9 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
     try {
       await Promise.all([
         saveRecentJourney(trimmedName),
-        SHOW_AM_TEST_JOURNEY_SUGGESTIONS ? markTestJourneyUsed(trimmedName) : Promise.resolve(),
+        SHOW_AM_TEST_JOURNEY_SUGGESTIONS
+          ? markTestJourneyUsed(trimmedName)
+          : Promise.resolve(),
       ]);
     } catch {
       // Ignore local suggestion persistence failures and continue to Journey flow.
@@ -110,7 +125,7 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
       setJourneyName(name);
       void markTestJourneyUsed(name);
     },
-    [markTestJourneyUsed]
+    [markTestJourneyUsed],
   );
 
   return (
@@ -125,7 +140,11 @@ export default function JourneyRouteScreen(props: Props): React.ReactElement {
         journeyName={journeyName}
         onJourneyNameChange={setJourneyName}
         recentJourneys={recentJourneys}
-        testJourneys={SHOW_AM_TEST_JOURNEY_SUGGESTIONS ? [...TEST_JOURNEY_NAME_SUGGESTIONS] : []}
+        testJourneys={
+          SHOW_AM_TEST_JOURNEY_SUGGESTIONS
+            ? [...TEST_JOURNEY_NAME_SUGGESTIONS]
+            : []
+        }
         usedTestJourneys={usedTestJourneySet}
         onPressRecentJourney={handlePressRecentJourney}
         onPressTestJourney={handlePressTestJourney}

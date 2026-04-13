@@ -24,7 +24,9 @@ type TokenDaVinciPanelProps = {
  * @param props - DaVinci token panel props.
  * @returns DaVinci token panel element.
  */
-export default function TokenDaVinciPanel(props: TokenDaVinciPanelProps): React.ReactElement {
+export default function TokenDaVinciPanel(
+  props: TokenDaVinciPanelProps,
+): React.ReactElement {
   const { tokenOutput } = props;
 
   return <TokenOutputCard tokenOutput={tokenOutput} showComingSoonBadge />;

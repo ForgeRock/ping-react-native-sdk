@@ -8,37 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		58D1E2442F9AA3D900A9C001 /* RNPackagesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58D1E2432F9AA3D900A9C001 /* RNPackagesTests.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9AB93DE9EBD16069E9C8DF74 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		A1B2C3D4E5F60718293A4B5C /* Montserrat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B6C /* Montserrat-Regular.ttf */; };
 		A1B2C3D4E5F60718293A4B5D /* Montserrat-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B6D /* Montserrat-Medium.ttf */; };
-		B917E76229BB09F9FA32F738 /* libPods-PingSampleApp-RNPackagesTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5A72139ABAEFF201794DFE71 /* libPods-PingSampleApp-RNPackagesTests.a */; };
 		F81FD5E1DCEE2C1F8C2A8E61 /* libPods-PingSampleApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D63B5B7F0DB91711A6DB0883 /* libPods-PingSampleApp.a */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		3466ED962F5B937B00E6A758 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = PingSampleApp;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		0430115BDEFE4C6E0A3BD63B /* Pods-RNPackagesTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNPackagesTests.release.xcconfig"; path = "Target Support Files/Pods-RNPackagesTests/Pods-RNPackagesTests.release.xcconfig"; sourceTree = "<group>"; };
 		0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.release.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* PingSampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PingSampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = PingSampleApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = PingSampleApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = PingSampleApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		344692DB2F0EC3FC001EF2C5 /* libRNPingStorage.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libRNPingStorage.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		3466ED922F5B937B00E6A758 /* RNPackagesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RNPackagesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-PingSampleApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.debug.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.debug.xcconfig"; sourceTree = "<group>"; };
-		533C67601567314E010C1D7B /* Pods-RNPackagesTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNPackagesTests.debug.xcconfig"; path = "Target Support Files/Pods-RNPackagesTests/Pods-RNPackagesTests.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp.release.xcconfig"; path = "Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.release.xcconfig"; sourceTree = "<group>"; };
 		58D1E2432F9AA3D900A9C001 /* RNPackagesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RNPackagesTests.swift; sourceTree = "<group>"; };
 		5A72139ABAEFF201794DFE71 /* libPods-PingSampleApp-RNPackagesTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PingSampleApp-RNPackagesTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,11 +31,9 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = PingSampleApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = PingSampleApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RNStorageTests.debug.xcconfig"; path = "Target Support Files/Pods-RNStorageTests/Pods-RNStorageTests.debug.xcconfig"; sourceTree = "<group>"; };
-		95DFD7557CF7911438C8069E /* Pods-PingSampleApp-RNPackagesTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp-RNPackagesTests.release.xcconfig"; path = "Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests.release.xcconfig"; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B6C /* Montserrat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Montserrat-Regular.ttf"; path = "PingSampleApp/Montserrat-Regular.ttf"; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B6D /* Montserrat-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Montserrat-Medium.ttf"; path = "PingSampleApp/Montserrat-Medium.ttf"; sourceTree = "<group>"; };
 		ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RNStorageTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		C2B771211279C46F8CE60D23 /* Pods-PingSampleApp-RNPackagesTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PingSampleApp-RNPackagesTests.debug.xcconfig"; path = "Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests.debug.xcconfig"; sourceTree = "<group>"; };
 		D63B5B7F0DB91711A6DB0883 /* libPods-PingSampleApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-PingSampleApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -61,14 +44,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F81FD5E1DCEE2C1F8C2A8E61 /* libPods-PingSampleApp.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3466ED8F2F5B937B00E6A758 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				B917E76229BB09F9FA32F738 /* libPods-PingSampleApp-RNPackagesTests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,17 +72,8 @@
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				ADD5B0C2A0EE12ADE51AAF01 /* libPods-RNStorageTests.a */,
 				D63B5B7F0DB91711A6DB0883 /* libPods-PingSampleApp.a */,
-				5A72139ABAEFF201794DFE71 /* libPods-PingSampleApp-RNPackagesTests.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		3466ED932F5B937B00E6A758 /* RNPackagesTests */ = {
-			isa = PBXGroup;
-			children = (
-				58D1E2432F9AA3D900A9C001 /* RNPackagesTests.swift */,
-			);
-			path = RNPackagesTests;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -122,7 +88,6 @@
 			children = (
 				13B07FAE1A68108700A75B9A /* PingSampleApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				3466ED932F5B937B00E6A758 /* RNPackagesTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
@@ -136,7 +101,6 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* PingSampleApp.app */,
-				3466ED922F5B937B00E6A758 /* RNPackagesTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -148,10 +112,6 @@
 				5709B34CF0A7D63546082F79 /* Pods-PingSampleApp.release.xcconfig */,
 				8772F6B807DAA5A3C61E05F0 /* Pods-RNStorageTests.debug.xcconfig */,
 				0B341BD4880DD91608CC85CA /* Pods-RNStorageTests.release.xcconfig */,
-				533C67601567314E010C1D7B /* Pods-RNPackagesTests.debug.xcconfig */,
-				0430115BDEFE4C6E0A3BD63B /* Pods-RNPackagesTests.release.xcconfig */,
-				C2B771211279C46F8CE60D23 /* Pods-PingSampleApp-RNPackagesTests.debug.xcconfig */,
-				95DFD7557CF7911438C8069E /* Pods-PingSampleApp-RNPackagesTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -180,27 +140,6 @@
 			productReference = 13B07F961A680F5B00A75B9A /* PingSampleApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		3466ED912F5B937B00E6A758 /* RNPackagesTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 3466ED9A2F5B937B00E6A758 /* Build configuration list for PBXNativeTarget "RNPackagesTests" */;
-			buildPhases = (
-				E066FA01A78FCF682DD07933 /* [CP] Check Pods Manifest.lock */,
-				3466ED8E2F5B937B00E6A758 /* Sources */,
-				3466ED8F2F5B937B00E6A758 /* Frameworks */,
-				3466ED902F5B937B00E6A758 /* Resources */,
-				39C1AAC3C2DCF6E64C8D91F2 /* [CP] Embed Pods Frameworks */,
-				939A82E4EA9D19A522184732 /* [CP] Copy Pods Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				3466ED972F5B937B00E6A758 /* PBXTargetDependency */,
-			);
-			name = RNPackagesTests;
-			productName = RNPackagesTests;
-			productReference = 3466ED922F5B937B00E6A758 /* RNPackagesTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -212,10 +151,6 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
-					};
-					3466ED912F5B937B00E6A758 = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 				};
 			};
@@ -233,7 +168,6 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* PingSampleApp */,
-				3466ED912F5B937B00E6A758 /* RNPackagesTests */,
 			);
 		};
 /* End PBXProject section */
@@ -248,13 +182,6 @@
 				9AB93DE9EBD16069E9C8DF74 /* PrivacyInfo.xcprivacy in Resources */,
 				A1B2C3D4E5F60718293A4B5C /* Montserrat-Regular.ttf in Resources */,
 				A1B2C3D4E5F60718293A4B5D /* Montserrat-Medium.ttf in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		3466ED902F5B937B00E6A758 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,40 +221,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		39C1AAC3C2DCF6E64C8D91F2 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		939A82E4EA9D19A522184732 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PingSampleApp-RNPackagesTests/Pods-PingSampleApp-RNPackagesTests-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -344,28 +237,6 @@
 			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-PingSampleApp-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		E066FA01A78FCF682DD07933 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-PingSampleApp-RNPackagesTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -400,23 +271,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		3466ED8E2F5B937B00E6A758 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				58D1E2442F9AA3D900A9C001 /* RNPackagesTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		3466ED972F5B937B00E6A758 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* PingSampleApp */;
-			targetProxy = 3466ED962F5B937B00E6A758 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -736,15 +591,6 @@
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
 				13B07F951A680F5B00A75B9A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		3466ED9A2F5B937B00E6A758 /* Build configuration list for PBXNativeTarget "RNPackagesTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				3466ED982F5B937B00E6A758 /* Debug */,
-				3466ED992F5B937B00E6A758 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -76,13 +76,11 @@ target 'PingSampleApp' do
   pod 'PingOidc',
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch
-  pod 'RNPingCore', :path => '../../packages/core'
-  pod 'RNPingJourney',
-  :path => '../../node_modules/@ping-identity/rn-journey',
-  :testspecs => ['Tests']
-  pod 'RNPingOidc',
-  :path => '../../node_modules/@ping-identity/rn-oidc',
-  :testspecs => ['Tests']
+    pod 'RNPingCore', :path => '../../packages/core'
+    pod 'RNPingJourney',
+    :path => '../../node_modules/@ping-identity/rn-journey'
+    pod 'RNPingOidc',
+    :path => '../../node_modules/@ping-identity/rn-oidc'
 
   target 'RNPackagesTests' do
     inherit! :complete

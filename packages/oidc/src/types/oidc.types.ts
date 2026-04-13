@@ -8,7 +8,6 @@
 import type {
   GenericError,
   LoggerInstance,
-  NativeLoggerHandle,
   OidcStorageHandle,
   OidcCoreConfig,
   OidcOpenIdConfiguration as SharedOidcOpenIdConfiguration,
@@ -76,15 +75,6 @@ export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
    * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    */
   logger?: LoggerInstance;
-
-  /**
-   * Optional native logger handle.
-   *
-   * @remarks
-   * Must be created by `@ping-identity/rn-logger` (`configureLogger(...)`).
-   */
-  nativeLogger?: NativeLoggerHandle;
-
 };
 
 /**
