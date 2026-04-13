@@ -77,4 +77,38 @@ jobs:
         with:
             pr_number: ${{ github.event.pull_request.number }}
 
-    
+    # Enforce that every PR includes a changeset file.
+    # changeset version consumes these files on release to bump versions and write CHANGELOGs.
+    # Disabled until the first alpha release — re-enable by removing the `if: false` condition.
+    changeset-check:
+        if: false
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+            - name: Install dependencies
+              run: yarn install
+            - name: Check for changeset file
+              run: yarn changeset status --since=origin/main
+
+    # Detect manual version drift in package.json files.
+    # Fails if any @ping-identity/* package version has been edited outside of changeset version.
+    lockstep-check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+            - name: Install dependencies
+              run: yarn install
+            - name: Check lockstep versions
+              run: yarn release:check-lockstep
+
+

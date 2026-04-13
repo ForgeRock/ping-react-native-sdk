@@ -1,0 +1,65 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write  # required for npm provenance signing
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # PAT required — GITHUB_TOKEN cannot push to a branch protected by required status checks
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Version packages
+        run: yarn release:version
+        env:
+          # changelog-github uses GITHUB_TOKEN to resolve PR links and author info in CHANGELOG.md
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Check lockstep
+        run: yarn release:check-lockstep
+
+      - name: Commit and push version bump
+        run: |
+          git add -A
+          git commit -m "chore: version packages"
+          git push
+
+      - name: Build and publish
+        # changeset publish: publishes packages not yet at current version, creates git tags
+        # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
+        run: yarn release:publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Push tags
+        # Tags are created by changeset publish — push them after publish succeeds
+        run: git push --follow-tags

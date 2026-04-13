@@ -33,9 +33,9 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^0.1.0",
-    "@ping-identity/rn-logger": "^0.1.0",
-    "@ping-identity/rn-types": "^0.1.0"
+    "@ping-identity/rn-core": "workspace:*",
+    "@ping-identity/rn-logger": "workspace:*",
+    "@ping-identity/rn-types": "workspace:*"
   },
   "react-native-builder-bob": {
     "source": "src",
