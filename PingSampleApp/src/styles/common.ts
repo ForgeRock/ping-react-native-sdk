@@ -409,7 +409,7 @@ export const commonStyles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  deviceIdText:{
+  deviceIdText: {
     marginTop: 3,
     fontSize: 11,
     color: colors.homeFooterText,
@@ -630,7 +630,6 @@ export const commonStyles = StyleSheet.create({
   inputGroup: {
     marginBottom: 14,
   },
-
 
   suspendedBox: {
     borderRadius: 10,

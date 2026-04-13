@@ -45,8 +45,11 @@ type TokenJourneyPanelProps = {
  * @param props - Journey token panel props.
  * @returns Journey token panel element.
  */
-export default function TokenJourneyPanel(props: TokenJourneyPanelProps): React.ReactElement {
-  const { tokenOutput, loading, onAccessToken, onRefresh, onRevoke, onClear } = props;
+export default function TokenJourneyPanel(
+  props: TokenJourneyPanelProps,
+): React.ReactElement {
+  const { tokenOutput, loading, onAccessToken, onRefresh, onRevoke, onClear } =
+    props;
 
   return (
     <>

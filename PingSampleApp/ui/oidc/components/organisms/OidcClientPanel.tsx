@@ -13,7 +13,9 @@ import { commonStyles } from '../../../../src/styles/common';
 import CardSection from '../../../components/molecules/CardSection';
 import AsyncActionButton from '../../../components/molecules/AsyncActionButton';
 import PayloadViewer from '../../../components/atoms/PayloadViewer';
-import KeyValueList, { type KeyValueItem } from '../../../components/atoms/KeyValueList';
+import KeyValueList, {
+  type KeyValueItem,
+} from '../../../components/atoms/KeyValueList';
 import OidcActionsCard from '../molecules/OidcActionsCard';
 
 /**
@@ -32,7 +34,9 @@ type OidcClientPanelProps = {
  * @param props Panel props.
  * @returns OIDC panel element.
  */
-export default function OidcClientPanel(props: OidcClientPanelProps): React.ReactElement {
+export default function OidcClientPanel(
+  props: OidcClientPanelProps,
+): React.ReactElement {
   const { clientConfig } = props;
   const [state, actions] = useOidc();
 
@@ -114,7 +118,10 @@ export default function OidcClientPanel(props: OidcClientPanelProps): React.Reac
       { label: 'Given Name', value: String(state.userInfo.given_name ?? '') },
       { label: 'Family Name', value: String(state.userInfo.family_name ?? '') },
       { label: 'Email', value: String(state.userInfo.email ?? '') },
-      { label: 'Preferred Username', value: String(state.userInfo.preferred_username ?? '') },
+      {
+        label: 'Preferred Username',
+        value: String(state.userInfo.preferred_username ?? ''),
+      },
       { label: 'Sub', value: String(state.userInfo.sub ?? '') },
     ];
   }, [state.userInfo]);
@@ -146,14 +153,21 @@ export default function OidcClientPanel(props: OidcClientPanelProps): React.Reac
         {state.userInfo ? (
           <View style={commonStyles.codeBox}>
             <Text style={commonStyles.codeTitle}>Userinfo Summary</Text>
-            <KeyValueList items={userinfoSummaryItems} textStyle={commonStyles.codeText} />
+            <KeyValueList
+              items={userinfoSummaryItems}
+              textStyle={commonStyles.codeText}
+            />
             <AsyncActionButton
-              label={showRawUserInfo ? 'Hide Raw User Info' : 'Show Raw User Info'}
+              label={
+                showRawUserInfo ? 'Hide Raw User Info' : 'Show Raw User Info'
+              }
               variant="secondary"
-              onPress={() => setShowRawUserInfo((previous) => !previous)}
+              onPress={() => setShowRawUserInfo(previous => !previous)}
             />
             {showRawUserInfo ? (
-              <PayloadViewer payload={JSON.stringify(state.userInfo, null, 2)} />
+              <PayloadViewer
+                payload={JSON.stringify(state.userInfo, null, 2)}
+              />
             ) : null}
           </View>
         ) : null}

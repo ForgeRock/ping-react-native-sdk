@@ -5,7 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { NativeModules, TurboModuleRegistry, type TurboModule } from 'react-native';
+import {
+  NativeModules,
+  TurboModuleRegistry,
+  type TurboModule,
+} from 'react-native';
 
 /**
  * Native callback payload returned by Journey bridge.
@@ -149,7 +153,11 @@ export interface Spec extends TurboModule {
    * @param options Optional start flags.
    * @returns First native node payload.
    */
-  start(journeyId: string, journeyName: string, options?: JourneyOptions): Promise<NativeJourneyNode>;
+  start(
+    journeyId: string,
+    journeyName: string,
+    options?: JourneyOptions,
+  ): Promise<NativeJourneyNode>;
 
   /**
    * Advance to the next Journey node.
@@ -159,7 +167,11 @@ export interface Spec extends TurboModule {
    * @param input Callback mutation payload.
    * @returns Next native node payload.
    */
-  next(journeyId: string, nodeId: string, input: NativeJourneyNextInput): Promise<NativeJourneyNode>;
+  next(
+    journeyId: string,
+    nodeId: string,
+    input: NativeJourneyNextInput,
+  ): Promise<NativeJourneyNode>;
 
   /**
    * Resume a suspended Journey flow.
@@ -248,7 +260,7 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-journey] Native module RNPingJourney not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }
 

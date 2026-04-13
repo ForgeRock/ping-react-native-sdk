@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "rootDir": ".",
     "paths": {
-      "@ping-identity/rn-browser": ["./src/index"]
+      "@ping-identity/rn-browser": ["./src/index"],
+      "@ping-identity/rn-types": ["../types/src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
@@ -26,5 +26,6 @@
     "strict": true,
     "target": "ESNext",
     "verbatimModuleSyntax": true
-  }
+  },
+  "exclude": ["lib", "**/__tests__/**"]
 }

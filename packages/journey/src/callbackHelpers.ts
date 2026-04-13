@@ -5,7 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
+import {
+  callbackType,
+  nativeExtensionCallbackType,
+} from '@ping-identity/rn-types';
 import type {
   JourneyBuildNextInputResult,
   JourneyCallback,
@@ -238,7 +241,9 @@ function resolveFieldKind(type: JourneyCallbackType): JourneyFieldKind {
  * @param type - Callback type.
  * @returns Callback capability.
  */
-function resolveFieldCapability(type: JourneyCallbackType): JourneyFieldCapability {
+function resolveFieldCapability(
+  type: JourneyCallbackType,
+): JourneyFieldCapability {
   if (integrationRequiredCallbackTypes.has(type)) {
     return 'integration_required';
   }
@@ -257,7 +262,9 @@ function resolveFieldCapability(type: JourneyCallbackType): JourneyFieldCapabili
  * @param callback - Journey callback payload.
  * @returns Option list.
  */
-function resolveCallbackOptions(callback: JourneyCallback): JourneyFieldOption[] {
+function resolveCallbackOptions(
+  callback: JourneyCallback,
+): JourneyFieldOption[] {
   const mapOptions = (items: unknown[]): JourneyFieldOption[] =>
     items.map((option, index) => ({
       index,
@@ -300,7 +307,7 @@ function resolveCallbackOptions(callback: JourneyCallback): JourneyFieldOption[]
  */
 function resolveDefaultValue(
   callback: JourneyCallback,
-  type: JourneyCallbackType
+  type: JourneyCallbackType,
 ): JourneyFormValue | undefined {
   if (booleanCallbackTypes.has(type)) {
     if (hasCallbackKey(callback, 'accepted')) {
@@ -311,7 +318,10 @@ function resolveDefaultValue(
     }
     return undefined;
   }
-  if (type === callbackType.ChoiceCallback || type === callbackType.ConfirmationCallback) {
+  if (
+    type === callbackType.ChoiceCallback ||
+    type === callbackType.ConfirmationCallback
+  ) {
     if (!hasCallbackKey(callback, 'selectedIndex')) {
       return undefined;
     }
@@ -333,15 +343,22 @@ function resolveDefaultValue(
     const hasSelectedAnswer = hasCallbackKey(callback, 'selectedAnswer');
     const hasAllowUserDefinedQuestions = hasCallbackKey(
       callback,
-      'allowUserDefinedQuestions'
+      'allowUserDefinedQuestions',
     );
-    if (!hasSelectedQuestion && !hasSelectedAnswer && !hasAllowUserDefinedQuestions) {
+    if (
+      !hasSelectedQuestion &&
+      !hasSelectedAnswer &&
+      !hasAllowUserDefinedQuestions
+    ) {
       return undefined;
     }
     return {
       selectedQuestion: readString(callback.selectedQuestion, ''),
       selectedAnswer: readString(callback.selectedAnswer, ''),
-      allowUserDefinedQuestions: readBoolean(callback.allowUserDefinedQuestions, false),
+      allowUserDefinedQuestions: readBoolean(
+        callback.allowUserDefinedQuestions,
+        false,
+      ),
     };
   }
   if (textCallbackTypes.has(type) || passwordCallbackTypes.has(type)) {
@@ -359,7 +376,9 @@ function resolveDefaultValue(
  * @param node - Journey node from `useJourney`.
  * @returns Normalized field list with deterministic ids and capability metadata.
  */
-export function normalizeCallbacks(node: JourneyNode | null | undefined): JourneyNormalizedField[] {
+export function normalizeCallbacks(
+  node: JourneyNode | null | undefined,
+): JourneyNormalizedField[] {
   if (!node || node.type !== 'ContinueNode' || !Array.isArray(node.callbacks)) {
     return [];
   }
@@ -406,7 +425,7 @@ export function normalizeCallbacks(node: JourneyNode | null | undefined): Journe
  */
 export function buildNextInput(
   node: JourneyNode | null | undefined,
-  values: JourneyFormValues
+  values: JourneyFormValues,
 ): JourneyBuildNextInputResult {
   if (!node || node.type !== 'ContinueNode') {
     return {
@@ -494,7 +513,11 @@ export function buildNextInput(
 
     if (field.kind === 'choice') {
       const selected = readNumber(resolvedValue, Number.NaN);
-      if (!Number.isFinite(selected) || !Number.isInteger(selected) || selected < 0) {
+      if (
+        !Number.isFinite(selected) ||
+        !Number.isInteger(selected) ||
+        selected < 0
+      ) {
         issues.push({
           code: 'INVALID_VALUE',
           message: `Callback "${callbackType}" requires a selected option index.`,
@@ -536,19 +559,20 @@ export function buildNextInput(
 
       const selectedQuestion = readString(
         (kba as Record<string, unknown>).selectedQuestion,
-        ''
+        '',
       );
       const selectedAnswer = readString(
         (kba as Record<string, unknown>).selectedAnswer,
-        ''
+        '',
       );
       const allowUserDefinedQuestions = readBoolean(
         (kba as Record<string, unknown>).allowUserDefinedQuestions,
-        false
+        false,
       );
       if (
         field.required &&
-        (selectedQuestion.trim().length === 0 || selectedAnswer.trim().length === 0)
+        (selectedQuestion.trim().length === 0 ||
+          selectedAnswer.trim().length === 0)
       ) {
         issues.push({
           code: 'INVALID_VALUE',

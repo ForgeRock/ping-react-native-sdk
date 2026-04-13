@@ -9,7 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, TextInput } from 'react-native';
-import MultiStorageScreen from './ui/MultiStorageScreeen';
+import MultiStorageScreen from './ui/MultiStorageScreen';
 import HomeScreen from './ui/HomeScreen';
 import ConfigurationScreen from './ui/ConfigurationScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';
@@ -29,7 +29,7 @@ import {
   sampleAppClientProfiles,
 } from './src/clients';
 import { configureBrowser } from '@ping-identity/rn-browser';
-import { configureLogger, logger } from '@ping-identity/rn-logger';
+import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from './src/styles/colors';
 
@@ -94,15 +94,16 @@ export default function App() {
   const [initError, setInitError] = useState<string | null>(null);
   /** Key of the active client profile, defaults to the first configured profile. */
   const [selectedProfileKey, setSelectedProfileKey] = useState<string>(
-    DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY
+    DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY,
   );
 
   /** Resolved profile object for the current selection, falling back to the first profile. */
   const selectedProfile = useMemo(
     () =>
-      sampleAppClientProfiles.find((profile) => profile.key === selectedProfileKey) ??
-      sampleAppClientProfiles[0],
-    [selectedProfileKey]
+      sampleAppClientProfiles.find(
+        profile => profile.key === selectedProfileKey,
+      ) ?? sampleAppClientProfiles[0],
+    [selectedProfileKey],
   );
 
   useEffect(() => {
@@ -114,7 +115,8 @@ export default function App() {
       style: [textDefaults.style, { fontFamily: 'Montserrat-Regular' }],
     };
 
-    const textInputComponent = TextInput as unknown as ComponentWithDefaultStyle;
+    const textInputComponent =
+      TextInput as unknown as ComponentWithDefaultStyle;
     const textInputDefaults = textInputComponent.defaultProps ?? {};
     textInputComponent.defaultProps = {
       ...textInputDefaults,
@@ -142,7 +144,9 @@ export default function App() {
         console.error('Failed to initialize Journey client', error);
         if (isMounted) {
           const message =
-            error instanceof Error ? error.message : 'Failed to initialize Journey client.';
+            error instanceof Error
+              ? error.message
+              : 'Failed to initialize Journey client.';
           setInitError(message);
         }
       }
@@ -150,27 +154,27 @@ export default function App() {
 
     void initializeJourneyClient();
 
-    // ( TODO: REVISIT )Global SDK logger baseline. Tune this when debugging integration issues.
-    configureLogger({ level: 'info' });
-
     // Browser defaults used by OIDC/browser flows in this sample app.
-    configureBrowser({
-      android: {
-        customTabs: {
-          showTitle: false,
-          urlBarHidingEnabled: true,
-          colorScheme: 'dark',
-        },
-        authTabs: {
-          ephemeral: true,
-          colorScheme: 'dark',
-          toolbarColor: colors.browserToolbar,
-          navigationBarColor: colors.browserNavigationBar,
+    configureBrowser(
+      {
+        android: {
+          customTabs: {
+            showTitle: false,
+            urlBarHidingEnabled: true,
+            colorScheme: 'dark',
+          },
+          authTabs: {
+            ephemeral: true,
+            colorScheme: 'dark',
+            toolbarColor: colors.browserToolbar,
+            navigationBarColor: colors.browserNavigationBar,
+          },
         },
       },
-    }, {
-      logger: browserLogger,
-    });
+      {
+        logger: browserLogger,
+      },
+    );
 
     return () => {
       isMounted = false;
@@ -199,7 +203,7 @@ export default function App() {
               name="Home"
               options={{ title: 'PingIdentity Demo', headerShown: false }}
             >
-              {(props) => (
+              {props => (
                 <HomeScreen
                   {...props}
                   selectedConfigName={selectedProfile.name}
@@ -210,7 +214,7 @@ export default function App() {
               name="Configuration"
               options={{ title: 'Configuration' }}
             >
-              {(props) => (
+              {props => (
                 <ConfigurationScreen
                   {...props}
                   profiles={sampleAppClientProfiles}
@@ -249,11 +253,8 @@ export default function App() {
               component={LoggerScreen}
               options={{ title: 'Logger Demo' }}
             />
-            <Stack.Screen
-              name="Oidc"
-              options={{ title: 'OIDC Demo' }}
-            >
-              {(props) => (
+            <Stack.Screen name="Oidc" options={{ title: 'OIDC Demo' }}>
+              {props => (
                 <OidcScreen
                   {...props}
                   clientConfig={selectedProfile.oidcClientConfig}

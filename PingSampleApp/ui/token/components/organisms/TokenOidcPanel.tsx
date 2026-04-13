@@ -45,8 +45,11 @@ type TokenOidcPanelProps = {
  * @param props OIDC token panel props.
  * @returns OIDC token panel element.
  */
-export default function TokenOidcPanel(props: TokenOidcPanelProps): React.ReactElement {
-  const { tokenOutput, loading, onAccessToken, onRefresh, onRevoke, onClear } = props;
+export default function TokenOidcPanel(
+  props: TokenOidcPanelProps,
+): React.ReactElement {
+  const { tokenOutput, loading, onAccessToken, onRefresh, onRevoke, onClear } =
+    props;
 
   return (
     <>
@@ -61,4 +64,3 @@ export default function TokenOidcPanel(props: TokenOidcPanelProps): React.ReactE
     </>
   );
 }
-

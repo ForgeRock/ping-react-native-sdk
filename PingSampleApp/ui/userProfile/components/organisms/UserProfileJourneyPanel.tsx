@@ -50,15 +50,24 @@ type UserProfileJourneyPanelProps = {
  * @returns Journey profile panel element.
  */
 export default function UserProfileJourneyPanel(
-  props: UserProfileJourneyPanelProps
+  props: UserProfileJourneyPanelProps,
 ): React.ReactElement {
-  const { loading, session, error, showRawUserInfo, onToggleRawUserInfo, onStartJourney } = props;
+  const {
+    loading,
+    session,
+    error,
+    showRawUserInfo,
+    onToggleRawUserInfo,
+    onStartJourney,
+  } = props;
 
   if (loading) {
     return (
       <View style={commonStyles.userProfileLoadingCard}>
         <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={commonStyles.userProfileSubText}>Checking Journey session...</Text>
+        <Text style={commonStyles.userProfileSubText}>
+          Checking Journey session...
+        </Text>
       </View>
     );
   }

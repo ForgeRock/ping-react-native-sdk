@@ -6,7 +6,14 @@
  */
 
 import React from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { commonStyles } from '../../../src/styles/common';
 import { colors } from '../../../src/styles/colors';
 
@@ -55,7 +62,9 @@ export type AsyncActionButtonProps = {
  * @param props Button props.
  * @returns Async action button element.
  */
-export default function AsyncActionButton(props: AsyncActionButtonProps): React.ReactElement {
+export default function AsyncActionButton(
+  props: AsyncActionButtonProps,
+): React.ReactElement {
   const {
     label,
     onPress,
@@ -71,18 +80,29 @@ export default function AsyncActionButton(props: AsyncActionButtonProps): React.
     variant === 'secondary'
       ? commonStyles.buttonSecondary
       : variant === 'danger'
-        ? commonStyles.buttonDanger
-        : commonStyles.buttonPrimary;
-  const labelStyle = variant === 'secondary' ? commonStyles.buttonTextSecondary : commonStyles.buttonText;
+      ? commonStyles.buttonDanger
+      : commonStyles.buttonPrimary;
+  const labelStyle =
+    variant === 'secondary'
+      ? commonStyles.buttonTextSecondary
+      : commonStyles.buttonText;
   const loadingColor = variant === 'secondary' ? colors.primary : colors.white;
 
   return (
     <TouchableOpacity
-      style={[buttonStyle, isDisabled ? commonStyles.homeRowDisabled : null, style]}
+      style={[
+        buttonStyle,
+        isDisabled ? commonStyles.homeRowDisabled : null,
+        style,
+      ]}
       disabled={isDisabled}
       onPress={onPress}
     >
-      {loading ? <ActivityIndicator size="small" color={loadingColor} /> : <Text style={[labelStyle, textStyle]}>{label}</Text>}
+      {loading ? (
+        <ActivityIndicator size="small" color={loadingColor} />
+      ) : (
+        <Text style={[labelStyle, textStyle]}>{label}</Text>
+      )}
     </TouchableOpacity>
   );
 }

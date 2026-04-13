@@ -12,7 +12,9 @@ import { RootStackParamList } from '../App';
 import { getDeviceId } from '@ping-identity/rn-device-id';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../src/styles/colors';
-import HomeMenuRow, { type HomeMenuItem } from './components/molecules/HomeMenuRow';
+import HomeMenuRow, {
+  type HomeMenuItem,
+} from './components/molecules/HomeMenuRow';
 
 type HomeScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type Props = {
@@ -39,10 +41,13 @@ function formatDeviceIdError(error: unknown): string {
 /**
  * Home screen with entry points for each SDK demo flow.
  */
-export default function HomeScreen({ navigation, selectedConfigName }: Props) {
+export default function HomeScreen({
+  navigation,
+  selectedConfigName: _selectedConfigName,
+}: Props) {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [deviceIdError, setDeviceIdError] = useState<string | null>(null);
-  const runtime = global as {
+  const runtime = globalThis as {
     RN$Bridgeless?: boolean;
     nativeFabricUIManager?: unknown;
   };
@@ -135,7 +140,9 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
         icon={item.icon}
         comingSoon={item.comingSoon}
         disabled={isDisabled}
-        onPress={() => navigation.navigate(item.screen as keyof RootStackParamList)}
+        onPress={() =>
+          navigation.navigate(item.screen as keyof RootStackParamList)
+        }
       />
     );
   };
@@ -168,7 +175,9 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
           source={require('../assets/ping-logo.jpg')}
           style={commonStyles.homeHeaderLogo}
         />
-        <Text style={commonStyles.homeHeaderTitle}>React Native Sample App</Text>
+        <Text style={commonStyles.homeHeaderTitle}>
+          React Native Sample App
+        </Text>
         <Text style={commonStyles.homeHeaderSubtitle}>Version 1.0</Text>
       </View>
 
@@ -198,7 +207,11 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
           <View style={commonStyles.homeFooter}>
             <View style={commonStyles.deviceIdCard}>
               <View style={commonStyles.deviceIdHeaderRow}>
-                <MaterialIcon name="smartphone" size={30} color={colors.iconBody} />
+                <MaterialIcon
+                  name="smartphone"
+                  size={30}
+                  color={colors.iconBody}
+                />
                 <Text style={commonStyles.deviceIdTitle}>Device ID</Text>
                 {!deviceIdError ? (
                   <Text style={commonStyles.deviceIdSecuredText}>Secured</Text>
@@ -206,7 +219,9 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
               </View>
               <View style={commonStyles.deviceIdDivider} />
               {deviceIdError ? (
-                <Text style={commonStyles.deviceIdErrorText}>{deviceIdError}</Text>
+                <Text style={commonStyles.deviceIdErrorText}>
+                  {deviceIdError}
+                </Text>
               ) : (
                 <Text style={commonStyles.deviceIdValueText}>
                   {deviceId ?? 'Loading...'}
@@ -219,7 +234,9 @@ export default function HomeScreen({ navigation, selectedConfigName }: Props) {
               </Text>
             ) : null}
             <View style={commonStyles.homeFooterLabelRow}>
-              <Text style={commonStyles.homeFooterText}>React Native Unified SDK</Text>
+              <Text style={commonStyles.homeFooterText}>
+                React Native Unified SDK
+              </Text>
               <Text style={commonStyles.homeFooterText}>
                 {`New Arch: ${isNewArchEnabled ? 'Enabled' : 'Disabled'}`}
               </Text>

@@ -55,7 +55,9 @@ function JourneyHarness(props: JourneyHarnessProps): React.ReactElement | null {
  * @param overrides - Optional client overrides.
  * @returns Journey client mock.
  */
-function createJourneyClientMock(overrides: Partial<JourneyClient> = {}): JourneyClient {
+function createJourneyClientMock(
+  overrides: Partial<JourneyClient> = {},
+): JourneyClient {
   const continueNode: JourneyNode = { type: 'ContinueNode', callbacks: [] };
   const successNode: JourneyNode = { type: 'SuccessNode' };
 
@@ -108,7 +110,7 @@ describe('useJourney auto polling', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {
@@ -148,7 +150,7 @@ describe('useJourney auto polling', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {
@@ -188,7 +190,7 @@ describe('useJourney auto polling', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {
@@ -213,7 +215,9 @@ describe('useJourney auto polling', () => {
       type: 'ContinueNode',
       callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
     };
-    const nextSpy = jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode));
+    const nextSpy = jest.fn(
+      async () => ({ type: 'SuccessNode' }) as JourneyNode,
+    );
     const client = createJourneyClientMock({
       start: jest.fn(async () => pollingNode),
       next: nextSpy,
@@ -227,7 +231,7 @@ describe('useJourney auto polling', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
     unmount = rendered.unmount;
 
@@ -256,7 +260,9 @@ describe('useJourney auto polling', () => {
       type: 'ContinueNode',
       callbacks: [{ type: 'NameCallback', output: [] }],
     };
-    const nextSpy = jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode));
+    const nextSpy = jest.fn(
+      async () => ({ type: 'SuccessNode' }) as JourneyNode,
+    );
     const client = createJourneyClientMock({
       start: jest.fn(async () => pollingNode),
       resume: jest.fn(async () => manualNode),
@@ -270,7 +276,7 @@ describe('useJourney auto polling', () => {
         onResult={(result) => {
           latest = result;
         }}
-      />
+      />,
     );
 
     await act(async () => {

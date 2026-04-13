@@ -55,7 +55,9 @@ type OidcActionsCardProps = {
  * @param props Actions card props.
  * @returns OIDC actions card element.
  */
-export default function OidcActionsCard(props: OidcActionsCardProps): React.ReactElement {
+export default function OidcActionsCard(
+  props: OidcActionsCardProps,
+): React.ReactElement {
   const {
     loading,
     isAuthenticated,
@@ -70,7 +72,11 @@ export default function OidcActionsCard(props: OidcActionsCardProps): React.Reac
   return (
     <CardSection
       title="OIDC Actions"
-      subtitle={!isAuthenticated ? 'Start authorization or restore a session.' : undefined}
+      subtitle={
+        !isAuthenticated
+          ? 'Start authorization or restore a session.'
+          : undefined
+      }
     >
       <View style={commonStyles.buttonGrid}>
         <AsyncActionButton

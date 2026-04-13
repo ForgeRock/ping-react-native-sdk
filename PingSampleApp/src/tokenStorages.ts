@@ -9,8 +9,8 @@ import {
   configureOidcStorage,
   configureSessionStorage,
   type StorageConfig,
-} from "@ping-identity/rn-storage";
-import { logger } from "@ping-identity/rn-logger";
+} from '@ping-identity/rn-storage';
+import { logger } from '@ping-identity/rn-logger';
 
 /**
  * Information about a registered storage instance.
@@ -23,7 +23,7 @@ export type StorageInfo = {
 
 let oidcStorage: StorageInfo | null = null;
 let sessionStorage: StorageInfo | null = null;
-const storageLogger = logger({ level: "debug" });
+const storageLogger = logger({ level: 'debug' });
 
 /**
  * Configures and returns the OIDC storage instance.
@@ -35,12 +35,12 @@ export function configureOidcStorageInfo(): StorageInfo {
   if (!oidcStorage) {
     const baseConfig: StorageConfig = {
       android: {
-        keyAlias: "ping.oidc",
-        fileName: "ping_oidc_tokens",
+        keyAlias: 'ping.oidc',
+        fileName: 'ping_oidc_tokens',
         cacheStrategy: CacheStrategy.NO_CACHE,
       },
       ios: {
-        account: "com.pingidentity.rnsampleapp.oidc",
+        account: 'com.pingidentity.rnsampleapp.oidc',
         encryptor: true,
         cacheable: false,
       },
@@ -49,7 +49,7 @@ export function configureOidcStorageInfo(): StorageInfo {
       logger: storageLogger,
     });
     oidcStorage = { config: resolvedConfig };
-    console.log("Created OIDC Storage:", resolvedConfig);
+    console.log('Created OIDC Storage:', resolvedConfig);
   }
   return oidcStorage;
 }
@@ -64,12 +64,12 @@ export function configureSessionStorageInfo(): StorageInfo {
   if (!sessionStorage) {
     const baseConfig: StorageConfig = {
       android: {
-        keyAlias: "ping.session",
-        fileName: "ping_session_store",
+        keyAlias: 'ping.session',
+        fileName: 'ping_session_store',
         cacheStrategy: CacheStrategy.NO_CACHE,
       },
       ios: {
-        account: "com.pingidentity.rnsampleapp.session",
+        account: 'com.pingidentity.rnsampleapp.session',
         encryptor: true,
         cacheable: false,
       },
@@ -78,7 +78,7 @@ export function configureSessionStorageInfo(): StorageInfo {
       logger: storageLogger,
     });
     sessionStorage = { config: resolvedConfig };
-    console.log("Created Session Storage:", resolvedConfig);
+    console.log('Created Session Storage:', resolvedConfig);
   }
   return sessionStorage;
 }
@@ -88,6 +88,9 @@ export function configureSessionStorageInfo(): StorageInfo {
  *
  * @returns An object containing both storage instances (may be null if not yet configured)
  */
-export function getTokenStorages(): { oidcStorage: StorageInfo | null; sessionStorage: StorageInfo | null } {
+export function getTokenStorages(): {
+  oidcStorage: StorageInfo | null;
+  sessionStorage: StorageInfo | null;
+} {
   return { oidcStorage, sessionStorage };
 }
