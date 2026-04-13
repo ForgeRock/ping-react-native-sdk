@@ -27,7 +27,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Configuration'> & {
  * @returns Profile map keyed by section title.
  */
 function groupProfilesBySection(
-  profiles: readonly SampleAppClientProfile[]
+  profiles: readonly SampleAppClientProfile[],
 ): ReadonlyMap<SampleConfigGroup, readonly SampleAppClientProfile[]> {
   const grouped = new Map<SampleConfigGroup, SampleAppClientProfile[]>();
 
@@ -54,13 +54,19 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
 
   const groupedProfiles = useMemo(
     () => groupProfilesBySection(profiles),
-    [profiles]
+    [profiles],
   );
 
-  const selectedProfile = useMemo(
-    () => profiles.find((profile) => profile.key === selectedProfileKey),
-    [profiles, selectedProfileKey]
-  );
+  // NOTE: `selectedProfile` was removed because it triggered an ESLint error:
+  //   @typescript-eslint/no-unused-vars — 'selectedProfile' is assigned a value but never used.
+  // The variable was computed but never referenced in the JSX.
+  // It seems selectedProfileKey is sufficient for determining which profile is selected when rendering the list, so selectedProfile was not necessary.
+  // If we need to display additional details about the selected profile in the future, we can consider reintroducing it at that time.
+  //
+  // const selectedProfile = useMemo(
+  //   () => profiles.find((profile) => profile.key === selectedProfileKey),
+  //   [profiles, selectedProfileKey]
+  // );
 
   return (
     <ScrollView
@@ -74,7 +80,7 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
         <View key={group} style={commonStyles.configSection}>
           <Text style={commonStyles.configSectionTitle}>{group}</Text>
 
-          {items.map((profile) => {
+          {items.map(profile => {
             const selected = profile.key === selectedProfileKey;
             const iconName = selected ? 'check' : 'check-box-outline-blank';
             return (
@@ -86,9 +92,15 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
                 accessibilityState={{ selected }}
               >
                 <View style={commonStyles.configOptionTextBlock}>
-                  <Text style={commonStyles.configOptionName}>{profile.name}</Text>
-                  <Text style={commonStyles.configOptionMeta}>{profile.host}</Text>
-                  <Text style={commonStyles.configOptionMeta}>{profile.environment}</Text>
+                  <Text style={commonStyles.configOptionName}>
+                    {profile.name}
+                  </Text>
+                  <Text style={commonStyles.configOptionMeta}>
+                    {profile.host}
+                  </Text>
+                  <Text style={commonStyles.configOptionMeta}>
+                    {profile.environment}
+                  </Text>
                 </View>
                 <MaterialIcon
                   name={iconName}

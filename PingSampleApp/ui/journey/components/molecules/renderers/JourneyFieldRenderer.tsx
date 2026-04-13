@@ -21,7 +21,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Field element.
  */
 function JourneyFieldRenderer(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement | null {
   const { field } = props;
 
@@ -33,7 +33,10 @@ function JourneyFieldRenderer(
     return <JourneyOutputField {...props} />;
   }
 
-  if (field.capability === 'integration_required' || field.capability === 'unsupported') {
+  if (
+    field.capability === 'integration_required' ||
+    field.capability === 'unsupported'
+  ) {
     return <JourneyUnsupportedField {...props} />;
   }
 

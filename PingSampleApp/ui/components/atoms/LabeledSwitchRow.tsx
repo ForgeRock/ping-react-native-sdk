@@ -45,13 +45,15 @@ type LabeledSwitchRowProps = {
  * @returns Labeled switch row element.
  */
 export default function LabeledSwitchRow(
-  props: LabeledSwitchRowProps
+  props: LabeledSwitchRowProps,
 ): React.ReactElement {
   const { label, value, onValueChange, disabled, rowStyle, labelStyle } = props;
 
   return (
     <View style={[styles.row, rowStyle]}>
-      <Text style={[commonStyles.inputLabel, styles.label, labelStyle]}>{label}</Text>
+      <Text style={[commonStyles.inputLabel, styles.label, labelStyle]}>
+        {label}
+      </Text>
       <Switch
         value={value}
         onValueChange={onValueChange}

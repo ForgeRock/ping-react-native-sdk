@@ -15,7 +15,7 @@ const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
   const base: ReactNativeMock = {
     NativeModules: {},
     Platform: { OS: 'android' },
-    TurboModuleRegistry: { get: jest.fn(() => ({ })) },
+    TurboModuleRegistry: { get: jest.fn(() => ({})) },
   };
 
   return { ...base, ...overrides };
@@ -32,17 +32,6 @@ const loadModule = async ({
 }) => {
   jest.resetModules();
 
-  jest.doMock('@ping-identity/rn-logger', () => ({
-    logger: jest.fn(() => ({
-      nativeHandle: { id: 'native-none-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    })),
-  }));
-
   const get = jest.fn(() => turboModule);
 
   jest.doMock('react-native', () =>
@@ -50,10 +39,10 @@ const loadModule = async ({
       Platform: { OS: platform },
       NativeModules: nativeModule ?? {},
       TurboModuleRegistry: { get },
-    })
+    }),
   );
 
-  return require('../index');
+  return import('../index');
 };
 
 describe('browser package', () => {
@@ -134,7 +123,7 @@ describe('browser package', () => {
     });
 
     expect(() => resetBrowser()).toThrow(
-      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.'
+      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.',
     );
   });
 
@@ -150,7 +139,7 @@ describe('browser package', () => {
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
+      loggerId: undefined,
     });
     expect(result).toEqual({ type: 'cancel' });
   });
@@ -164,14 +153,14 @@ describe('browser package', () => {
 
     const options = {
       callbackUrlScheme: 'com.example.app',
-      ios: { browserType: 'authSession' },
+      ios: { browserType: 'authSession' as const },
     };
 
     await openBrowser('https://example.com', options);
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
+      loggerId: undefined,
     });
   });
 
@@ -184,33 +173,17 @@ describe('browser package', () => {
 
     const options = {
       callbackUrlScheme: 'com.example.app',
-      ios: { browserType: 'ephemeralAuthSession', browserMode: 'login' },
+      ios: {
+        browserType: 'ephemeralAuthSession' as const,
+        browserMode: 'login' as const,
+      },
     };
 
     await openBrowser('https://example.com', options);
 
     expect(open).toHaveBeenCalledWith('https://example.com', {
       ...options,
-      loggerId: 'native-none-id',
-    });
-  });
-
-  it('prefers provided nativeLogger for Android open calls', async () => {
-    const open = jest.fn(() => Promise.resolve({ type: 'cancel' }));
-    const { open: openBrowser } = await loadModule({
-      platform: 'android',
-      nativeModule: { RNPingBrowserClassic: { open } },
-    });
-
-    await openBrowser(
-      'https://example.com',
-      { callbackUrlScheme: 'com.example.app' },
-      { nativeLogger: { id: 'explicit-native-id' } }
-    );
-
-    expect(open).toHaveBeenCalledWith('https://example.com', {
-      callbackUrlScheme: 'com.example.app',
-      loggerId: 'explicit-native-id',
+      loggerId: undefined,
     });
   });
 
@@ -235,7 +208,7 @@ describe('browser package', () => {
     });
 
     await expect(
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
     ).resolves.toEqual({ type: 'cancel' });
     expect(open).toHaveBeenCalledTimes(1);
   });
@@ -246,9 +219,9 @@ describe('browser package', () => {
     });
 
     expect(() =>
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
     ).toThrow(
-      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.'
+      '[@ping-identity/rn-browser] Native module RNPingBrowser not found.',
     );
   });
 
@@ -259,7 +232,7 @@ describe('browser package', () => {
     });
 
     expect(() =>
-      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' })
-    ).toThrow('Available NativeModules: [\"SomeOtherModule\"]');
+      openBrowser('https://example.com', { callbackUrlScheme: 'com.app' }),
+    ).toThrow('Available NativeModules: ["SomeOtherModule"]');
   });
 });

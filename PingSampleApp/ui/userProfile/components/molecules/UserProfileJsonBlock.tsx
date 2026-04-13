@@ -31,7 +31,7 @@ type UserProfileJsonBlockProps = {
  * @returns JSON block element.
  */
 export default function UserProfileJsonBlock(
-  props: UserProfileJsonBlockProps
+  props: UserProfileJsonBlockProps,
 ): React.ReactElement {
   const { title, payload } = props;
 

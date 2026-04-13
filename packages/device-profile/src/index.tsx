@@ -16,42 +16,26 @@ import type {
 } from './types';
 
 /**
- * Cached default logger for device-profile operations.
+ * No-op logger used when callers do not provide one.
  */
-let defaultLoggerInstance: LoggerInstance | null = null;
-
-const createNoopLogger = (): LoggerInstance => ({
+const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
   changeLevel: () => {},
   error: () => {},
   warn: () => {},
   info: () => {},
   debug: () => {},
-});
-
-/**
- * Lazily initializes a default logger instance.
- */
-const getDefaultLogger = (): LoggerInstance => {
-  if (!defaultLoggerInstance) {
-    defaultLoggerInstance = createNoopLogger();
-  }
-  return defaultLoggerInstance;
 };
 
 /**
- * Resolves JS logger instance and native logger identifier for bridge calls.
+ * Resolve JS logger instance and native logger identifier for bridge calls.
  */
 const resolveLogger = (
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): { logger: LoggerInstance; loggerId?: string } => {
-  const logger = options?.logger ?? getDefaultLogger();
-  const rawLoggerId =
-    options?.nativeLogger?.id ??
-    logger.nativeHandle?.id ??
-    getDefaultLogger().nativeHandle?.id;
+  const logger = options?.logger ?? noopLogger;
+  const rawLoggerId = logger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
-
   return { logger, loggerId };
 };
 
@@ -60,7 +44,7 @@ const resolveLogger = (
  *
  * @remarks
  * Native implementations remain authoritative for permissions, formatting, and execution.
- * 
+ *
  * @example
  * ```ts
  * try {
@@ -72,13 +56,23 @@ const resolveLogger = (
  * ```
  *
  * @param collectors - Ordered list of predefined collectors to execute.
+ * @param options - Optional logger overrides for this call.
  * @returns A JSON-compatible device profile payload.
  */
 export async function collectDeviceProfile(
-  collectors: DeviceProfileCollector[]
+  collectors: DeviceProfileCollector[],
+  options?: DeviceProfileLoggerOptions,
 ): Promise<DeviceProfile> {
-  const nativeModule = getNativeModule();
-  return nativeModule.collectDeviceProfile(collectors);
+  const { logger } = resolveLogger(options);
+  logger.debug('Device profile collect requested');
+  try {
+    const profile = await getNativeModule().collectDeviceProfile(collectors);
+    logger.info('Device profile collect success');
+    return profile;
+  } catch (error) {
+    logger.error('Device profile collect failed');
+    throw error;
+  }
 }
 
 /**
@@ -111,12 +105,10 @@ export async function collectDeviceProfile(
 export async function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[],
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): Promise<DeviceProfileJourneyResult> {
   const { logger, loggerId } = resolveLogger(options);
-  logger.debug(
-    `Device profile journey requested ${JSON.stringify({ collectors, loggerId })}`
-  );
+  logger.debug('Device profile journey requested');
   let journeyId: string;
   try {
     logger.debug('Device profile journey getId requested');
@@ -128,18 +120,14 @@ export async function collectDeviceProfileForJourney(
   }
 
   const nativeModule = getNativeModule();
-  logger.debug(
-    `Device profile native module requested ${JSON.stringify({ collectors })}`
-  );
+  logger.debug('Device profile native call requested');
   try {
     const result = await nativeModule.collectDeviceProfileForJourney(
       journeyId,
       collectors,
-      loggerId
+      loggerId,
     );
-    logger.debug(
-      `Device profile metadata collection successful ${JSON.stringify(result)}`
-    );
+    logger.debug('Device profile metadata collection successful');
     return result;
   } catch (error) {
     logger.error('Device profile metadata collection for Journey failed');

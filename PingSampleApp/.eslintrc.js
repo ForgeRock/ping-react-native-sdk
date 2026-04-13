@@ -8,4 +8,23 @@
 module.exports = {
   root: true,
   extends: '@react-native',
+  rules: {
+    'no-void': ['warn', { allowAsStatement: true }],
+  },
+  overrides: [
+    {
+      files: ['*.ts', '*.tsx'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            varsIgnorePattern: '^_',
+            argsIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_',
+            destructuredArrayIgnorePattern: '^_',
+          },
+        ],
+      },
+    },
+  ],
 };

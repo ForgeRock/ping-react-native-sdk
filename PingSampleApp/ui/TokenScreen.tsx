@@ -37,7 +37,9 @@ const JOURNEY_AUTH_REQUIRED_MESSAGE =
  */
 export default function TokenScreen(): React.ReactElement {
   const [activeTab, setActiveTab] = useState<TokenTab>('Journey');
-  const [tokenOutputByTab, setTokenOutputByTab] = useState<Record<TokenTab, string>>({
+  const [tokenOutputByTab, setTokenOutputByTab] = useState<
+    Record<TokenTab, string>
+  >({
     Journey: getEmptyMessage('Journey'),
     OIDC: getEmptyMessage('OIDC'),
   });
@@ -48,9 +50,9 @@ export default function TokenScreen(): React.ReactElement {
 
   const setActiveTabOutput = useCallback(
     (value: string): void => {
-      setTokenOutputByTab((previous) => ({ ...previous, [activeTab]: value }));
+      setTokenOutputByTab(previous => ({ ...previous, [activeTab]: value }));
     },
-    [activeTab]
+    [activeTab],
   );
 
   const handleAccessToken = useCallback(async (): Promise<void> => {
@@ -85,7 +87,9 @@ export default function TokenScreen(): React.ReactElement {
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(error instanceof Error ? error.message : 'Token retrieval failed');
+        setActiveTabOutput(
+          error instanceof Error ? error.message : 'Token retrieval failed',
+        );
       }
     } finally {
       setLoading(false);
@@ -128,7 +132,9 @@ export default function TokenScreen(): React.ReactElement {
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(error instanceof Error ? error.message : 'Token refresh failed');
+        setActiveTabOutput(
+          error instanceof Error ? error.message : 'Token refresh failed',
+        );
       }
     } finally {
       setLoading(false);
@@ -149,8 +155,8 @@ export default function TokenScreen(): React.ReactElement {
                 : 'No active OIDC user to revoke.',
             },
             null,
-            2
-          )
+            2,
+          ),
         );
         return;
       }
@@ -165,14 +171,16 @@ export default function TokenScreen(): React.ReactElement {
               session,
             },
             null,
-            2
-          )
+            2,
+          ),
         );
       } else {
         setActiveTabOutput(getEmptyMessage('Journey'));
       }
     } catch (error) {
-      setActiveTabOutput(error instanceof Error ? error.message : 'Token revoke failed');
+      setActiveTabOutput(
+        error instanceof Error ? error.message : 'Token revoke failed',
+      );
     } finally {
       setLoading(false);
     }
@@ -180,7 +188,11 @@ export default function TokenScreen(): React.ReactElement {
 
   return (
     <View style={commonStyles.userProfileContainer}>
-      <AuthSourceTabs tabs={TOKEN_TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <AuthSourceTabs
+        tabs={TOKEN_TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       <ScrollView
         style={commonStyles.userProfileBody}

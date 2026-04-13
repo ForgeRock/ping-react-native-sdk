@@ -6,12 +6,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import type { BrowserError } from '@ping-identity/rn-browser';
 import { open } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
@@ -24,12 +19,9 @@ import PayloadViewer from './components/atoms/PayloadViewer';
  */
 export default function BrowserScreen() {
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
-  const [url, setUrl] = useState(
-    'https://www.pingidentity.com',
-  );
-  const [callbackUrlScheme, setCallbackUrlScheme] = useState(
-    'org.forgerock.demo',
-  );
+  const [url, setUrl] = useState('https://www.pingidentity.com');
+  const [callbackUrlScheme, setCallbackUrlScheme] =
+    useState('org.forgerock.demo');
   const [redirectUri, setRedirectUri] = useState(
     'org.forgerock.demo://oauth2redirect',
   );
@@ -46,16 +38,20 @@ export default function BrowserScreen() {
     setResult('');
 
     try {
-      const response = await open(overrideUrl ?? url, {
-        callbackUrlScheme,
-        redirectUri: redirectUri.trim() ? redirectUri : undefined,
-        ios: {
-          browserMode: 'login',
-          browserType: 'ephemeralAuthSession'
-        }
-      }, {
-        logger: browserLogger,
-      });
+      const response = await open(
+        overrideUrl ?? url,
+        {
+          callbackUrlScheme,
+          redirectUri: redirectUri.trim() ? redirectUri : undefined,
+          ios: {
+            browserMode: 'login',
+            browserType: 'ephemeralAuthSession',
+          },
+        },
+        {
+          logger: browserLogger,
+        },
+      );
       setResult(JSON.stringify(response, null, 2));
     } catch (e: unknown) {
       const errorPayload = e as BrowserError;
@@ -65,9 +61,11 @@ export default function BrowserScreen() {
     }
   };
 
-
   return (
-    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.container}
+      nestedScrollEnabled
+    >
       <View style={commonStyles.card}>
         <Text style={commonStyles.journeySectionTitle}>Browser</Text>
 

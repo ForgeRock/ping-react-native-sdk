@@ -28,7 +28,10 @@ export default function OidcScreen(props: OidcScreenProps): React.ReactElement {
   const { clientConfig } = props;
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.container} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.container}
+      nestedScrollEnabled
+    >
       <OidcClientPanel clientConfig={clientConfig} />
     </ScrollView>
   );

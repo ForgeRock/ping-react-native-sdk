@@ -45,7 +45,7 @@ cd ios && pod install
 ### Create a logger instance
 
 ```ts
-import { configureLogger, logger } from '@ping-identity/rn-logger';
+import { logger } from '@ping-identity/rn-logger';
 
 const log = logger({ level: 'info' });
 log.info('Application started');
@@ -56,8 +56,8 @@ log.changeLevel('debug');
 // Defaults to level "none" when omitted
 const silentLog = logger();
 
-// Get native logger handle for modules that accept native logger config
-const logHandle = configureLogger({ level: 'info' });
+// Access the native logger handle for modules that accept native logger config
+console.log(log.nativeHandle.id);
 ```
 
 ### Configure a custom logger sink
@@ -112,7 +112,6 @@ import type {
   LogLevel,
 } from '@ping-identity/rn-logger';
 
-function configureLogger(config?: LoggerConfig): NativeLoggerHandle;
 function logger(config?: LoggerConfig): LoggerInstance;
 
 type LoggerConfig = {
@@ -128,14 +127,14 @@ type LoggerConfig = {
 
 ## Error handling
 
-`configureLogger` throws when native logger registration fails.
+`logger` throws when native logger registration fails.
 
 ```ts
-import { configureLogger } from '@ping-identity/rn-logger';
+import { logger } from '@ping-identity/rn-logger';
 
 try {
-  const nativeHandle = configureLogger({ level: 'info' });
-  console.log(nativeHandle.id);
+  const log = logger({ level: 'info' });
+  console.log(log.nativeHandle.id);
 } catch (error) {
   console.error('Failed to configure logger', error);
 }

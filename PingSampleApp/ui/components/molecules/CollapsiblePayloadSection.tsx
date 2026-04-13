@@ -48,9 +48,16 @@ export type CollapsiblePayloadSectionProps = {
  * @returns Collapsible payload section element.
  */
 export default function CollapsiblePayloadSection(
-  props: CollapsiblePayloadSectionProps
+  props: CollapsiblePayloadSectionProps,
 ): React.ReactElement {
-  const { title, payload, expanded, onToggle, loading = false, isError = false } = props;
+  const {
+    title,
+    payload,
+    expanded,
+    onToggle,
+    loading = false,
+    isError = false,
+  } = props;
 
   return (
     <View style={commonStyles.codeBox}>
@@ -60,9 +67,16 @@ export default function CollapsiblePayloadSection(
             {expanded ? 'v' : '>'} {title}
           </Text>
         </TouchableOpacity>
-        {!expanded && loading ? <ActivityIndicator style={styles.loadingIndicator} size="small" /> : null}
+        {!expanded && loading ? (
+          <ActivityIndicator style={styles.loadingIndicator} size="small" />
+        ) : null}
       </View>
-      {expanded ? <PayloadViewer payload={payload} textStyle={isError ? commonStyles.textError : undefined} /> : null}
+      {expanded ? (
+        <PayloadViewer
+          payload={payload}
+          textStyle={isError ? commonStyles.textError : undefined}
+        />
+      ) : null}
     </View>
   );
 }

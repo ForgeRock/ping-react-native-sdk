@@ -41,12 +41,11 @@ const noopLogger: LoggerInstance = {
  * Strip internal token expiry fields before returning tokens to consumers.
  */
 const sanitizeTokens = (
-  tokens: { tokenExpiry?: number } & Omit<Tokens, never>
+  tokens: { tokenExpiry?: number } & Omit<Tokens, never>,
 ): Omit<Tokens, 'tokenExpiry'> => {
   const { tokenExpiry: _tokenExpiry, ...rest } = tokens;
   return rest;
 };
-
 
 /**
  * Create a native-backed OIDC client.
@@ -62,27 +61,23 @@ const sanitizeTokens = (
 export function createOidcClient(config: OidcClientConfig): OidcClient {
   if (!config.discoveryEndpoint && !config.openId) {
     throw new Error(
-      '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
+      '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.',
     );
   }
   // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
   const jsLogger = config.logger ?? noopLogger;
-  const rawLoggerId =
-    config.nativeLogger?.id ??
-    jsLogger.nativeHandle?.id;
+  const rawLoggerId = jsLogger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
   jsLogger.debug(
     `OIDC createClient config ${JSON.stringify(
       config,
       (_key, value) => (typeof value === 'function' ? undefined : value),
-      2
-    )}`
+      2,
+    )}`,
   );
   // Ignore legacy signOutRedirectUri values if callers pass them via `any`.
-  const {
-    signOutRedirectUri: _ignoredSignOutRedirectUri,
-    ...nativeConfig
-  } = config as OidcClientConfig & { signOutRedirectUri?: string };
+  const { signOutRedirectUri: _ignoredSignOutRedirectUri, ...nativeConfig } =
+    config as OidcClientConfig & { signOutRedirectUri?: string };
   const clientId = getNativeModule().createClient({
     ...nativeConfig,
     storageId: resolveStorageId(config.storage),
@@ -116,7 +111,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       jsLogger.debug(
         `OIDC client userinfo requested ${JSON.stringify({
           cache: cache ?? false,
-        })}`
+        })}`,
       );
       try {
         return await getNativeModule().clientUserinfo(clientId, cache ?? false);
@@ -151,7 +146,9 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
  *
  * @throws Error when a storage object is provided without a valid OIDC handle.
  */
-function resolveStorageId(value?: OidcClientConfig['storage']): string | undefined {
+function resolveStorageId(
+  value?: OidcClientConfig['storage'],
+): string | undefined {
   if (!value) {
     return undefined;
   }
@@ -167,7 +164,7 @@ function resolveStorageId(value?: OidcClientConfig['storage']): string | undefin
   ) {
     throw new Error(
       '[@ping-identity/rn-oidc] Invalid storage handle. ' +
-        'Use configureOidcStorage(...) from @ping-identity/rn-storage.'
+        'Use configureOidcStorage(...) from @ping-identity/rn-storage.',
     );
   }
   return handle.id;
@@ -210,7 +207,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
       loggerInstance.debug(
         `OIDC user userinfo requested ${JSON.stringify({
           cache: cache ?? false,
-        })}`
+        })}`,
       );
       try {
         return await getNativeModule().userinfo(webClientId, cache ?? false);
@@ -241,9 +238,13 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
 
   return {
     id: webClientId,
-    authorize: async (options?: OidcAuthorizeOptions): Promise<OidcAuthorizeResult> => {
+    authorize: async (
+      options?: OidcAuthorizeOptions,
+    ): Promise<OidcAuthorizeResult> => {
       loggerInstance.info('OIDC authorize requested');
-      loggerInstance.debug(`OIDC authorize options ${JSON.stringify(options ?? {})}`);
+      loggerInstance.debug(
+        `OIDC authorize options ${JSON.stringify(options ?? {})}`,
+      );
       try {
         return await getNativeModule().authorize(webClientId, options ?? {});
       } catch (error) {

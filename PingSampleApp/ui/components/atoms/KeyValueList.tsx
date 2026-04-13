@@ -37,12 +37,14 @@ type KeyValueListProps = {
  * @param props List props.
  * @returns Key/value list element.
  */
-export default function KeyValueList(props: KeyValueListProps): React.ReactElement {
+export default function KeyValueList(
+  props: KeyValueListProps,
+): React.ReactElement {
   const { items, textStyle, style } = props;
 
   return (
     <View style={style}>
-      {items.map((item) => (
+      {items.map(item => (
         <Text key={item.label} style={textStyle}>
           {item.label}: {item.value}
         </Text>

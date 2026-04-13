@@ -21,7 +21,7 @@ import type { JourneyFieldRendererProps } from './types';
  * @returns Output-only field card.
  */
 export default function JourneyOutputField(
-  props: JourneyFieldRendererProps
+  props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
@@ -84,7 +84,9 @@ export default function JourneyOutputField(
         onStartShouldSetResponderCapture={(): boolean => true}
         onMoveShouldSetResponderCapture={(): boolean => true}
       >
-        <Text style={commonStyles.codeText}>{toDisplayString(field.raw.value)}</Text>
+        <Text style={commonStyles.codeText}>
+          {toDisplayString(field.raw.value)}
+        </Text>
       </ScrollView>
     </View>
   );

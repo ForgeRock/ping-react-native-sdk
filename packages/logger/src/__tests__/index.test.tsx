@@ -4,9 +4,8 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-/* eslint-env jest */
 
-export {};
+import packageJson from '@ping-identity/rn-logger/package.json';
 
 type NativeLoggerMock = {
   registerLogger: jest.Mock;
@@ -42,16 +41,18 @@ const createSdkLoggerMock = () => {
     debug: jest.fn(),
   };
 
-  const factory = jest.fn((options: { level: string; custom?: CustomLoggerMock }) => {
-    const custom = options.custom;
-    if (custom) {
-      instance.error.mockImplementation((...args) => custom.error(...args));
-      instance.warn.mockImplementation((...args) => custom.warn(...args));
-      instance.info.mockImplementation((...args) => custom.info(...args));
-      instance.debug.mockImplementation((...args) => custom.debug(...args));
-    }
-    return instance;
-  });
+  const factory = jest.fn(
+    (options: { level: string; custom?: CustomLoggerMock }) => {
+      const custom = options.custom;
+      if (custom) {
+        instance.error.mockImplementation((...args) => custom.error(...args));
+        instance.warn.mockImplementation((...args) => custom.warn(...args));
+        instance.info.mockImplementation((...args) => custom.info(...args));
+        instance.debug.mockImplementation((...args) => custom.debug(...args));
+      }
+      return instance;
+    },
+  );
 
   return { factory, instance };
 };
@@ -71,29 +72,20 @@ const loadModule = async () => {
     logger: sdkLogger.factory,
   }));
 
-  const module = require('../logger');
+  const module = await import('../logger');
   return { module, nativeLogger, sdkLogger };
 };
 
 describe('logger package', () => {
-  it('configureLogger registers a native logger and returns a handle', async () => {
+  it('logger defaults to NONE native level when no level is provided', async () => {
     const { module, nativeLogger } = await loadModule();
 
-    const handle = module.configureLogger({ level: 'warn' });
-
-    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'WARN' });
-    expect(handle).toEqual({ id: 'logger-id' });
-  });
-
-  it('configureLogger defaults to NONE when no level provided', async () => {
-    const { module, nativeLogger } = await loadModule();
-
-    module.configureLogger();
+    module.logger();
 
     expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'NONE' });
   });
 
-  it('configureLogger throws when native registration fails', async () => {
+  it('logger throws when native registration fails', async () => {
     jest.resetModules();
     const nativeLogger = createNativeLoggerMock();
     nativeLogger.registerLogger.mockReturnValue('');
@@ -114,10 +106,10 @@ describe('logger package', () => {
       })),
     }));
 
-    const module = require('../logger');
+    const { logger } = await import('../logger');
 
-    expect(() => module.configureLogger({ level: 'info' })).toThrow(
-      '[@ping-identity/rn-logger] Failed to configure native logger'
+    expect(() => logger({ level: 'info' })).toThrow(
+      '[@ping-identity/rn-logger] Failed to configure native logger',
     );
   });
 
@@ -127,7 +119,9 @@ describe('logger package', () => {
     const instance = module.logger({ level: 'debug' });
     instance.changeLevel('warn');
 
-    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({ level: 'STANDARD' });
+    expect(nativeLogger.registerLogger).toHaveBeenCalledWith({
+      level: 'STANDARD',
+    });
     expect(sdkLogger.instance.changeLevel).toHaveBeenCalledWith('warn');
     expect(nativeLogger.syncLogger).toHaveBeenCalledWith({
       id: 'logger-id',
@@ -137,7 +131,6 @@ describe('logger package', () => {
 
   it('logger tags messages with the SDK prefix', async () => {
     const { module, sdkLogger } = await loadModule();
-    const pkg = require('@ping-identity/rn-logger/package.json');
 
     const custom = {
       error: jest.fn(() => true),
@@ -149,7 +142,7 @@ describe('logger package', () => {
     const instance = module.logger({ level: 'info', custom });
     instance.info('hello');
 
-    const expectedPrefix = `[RNPingSDK v${pkg.version}]`;
+    const expectedPrefix = `[RNPingSDK v${packageJson.version}]`;
     expect(custom.info).toHaveBeenCalledWith(`${expectedPrefix} hello`);
     expect(sdkLogger.instance.info).toHaveBeenCalledWith('hello');
   });

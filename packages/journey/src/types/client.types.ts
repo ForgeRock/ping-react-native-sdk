@@ -7,7 +7,11 @@
 
 import type { JourneyNextInput, JourneyStartOptions } from './config.types';
 import type { JourneyNode } from './node.types';
-import type { JourneySSOToken, JourneyUserInfo, JourneyUserSession } from './session.types';
+import type {
+  JourneySSOToken,
+  JourneyUserInfo,
+  JourneyUserSession,
+} from './session.types';
 
 /**
  * Journey imperative client API contracts.
@@ -43,7 +47,7 @@ export type JourneyClient = {
    */
   start: (
     journeyName: string,
-    options?: JourneyStartOptions
+    options?: JourneyStartOptions,
   ) => Promise<JourneyNode>;
 
   /**

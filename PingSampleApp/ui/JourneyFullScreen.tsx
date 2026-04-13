@@ -22,7 +22,10 @@ import {
   type JourneyNextInput,
   useJourney,
 } from '@ping-identity/rn-journey';
-import { callbackType, nativeExtensionCallbackType } from '@ping-identity/rn-types';
+import {
+  callbackType,
+  nativeExtensionCallbackType,
+} from '@ping-identity/rn-types';
 import { commonStyles } from '../src/styles/common';
 import { journeyFullScreenStyles as styles } from '../src/styles/journeyStyles';
 import PingTextInput from './components/atoms/PingTextInput';
@@ -75,13 +78,15 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
  * @param callbacks - Callback collection from a ContinueNode.
  * @returns Indexed callback entries.
  */
-function indexCallbacks(callbacks: JourneyCallback[] | undefined): IndexedCallback[] {
+function indexCallbacks(
+  callbacks: JourneyCallback[] | undefined,
+): IndexedCallback[] {
   if (!callbacks || callbacks.length === 0) {
     return [];
   }
 
   const counts = new Map<JourneyCallbackType, number>();
-  return callbacks.map((callback) => {
+  return callbacks.map(callback => {
     const type = callback.type;
     const typeIndex = counts.get(type) ?? 0;
     counts.set(type, typeIndex + 1);
@@ -104,8 +109,8 @@ function readOptions(callback: JourneyCallback): string[] {
   const candidate = Array.isArray(callback.options)
     ? callback.options
     : Array.isArray(callback.choices)
-      ? callback.choices
-      : [];
+    ? callback.choices
+    : [];
 
   return candidate.map((item, index) => {
     if (typeof item === 'string') {
@@ -134,12 +139,12 @@ function readOptions(callback: JourneyCallback): string[] {
  */
 function buildManualNextInput(
   callbacks: IndexedCallback[],
-  values: Record<string, JourneyFormValue | undefined>
+  values: Record<string, JourneyFormValue | undefined>,
 ): { input: JourneyNextInput; issues: string[] } {
   const mutations: JourneyCallbackInput[] = [];
   const issues: string[] = [];
 
-  callbacks.forEach((entry) => {
+  callbacks.forEach(entry => {
     const { key, type, typeIndex, callback } = entry;
 
     if (outputOnlyCallbackTypes.has(type)) {
@@ -179,8 +184,8 @@ function buildManualNextInput(
         typeof rawValue === 'number'
           ? rawValue
           : typeof rawValue === 'string'
-            ? Number(rawValue)
-            : Number.NaN;
+          ? Number(rawValue)
+          : Number.NaN;
       if (!Number.isFinite(numericValue)) {
         issues.push(`${type} requires a numeric value.`);
         return;
@@ -193,13 +198,16 @@ function buildManualNextInput(
       return;
     }
 
-    if (type === callbackType.ChoiceCallback || type === callbackType.ConfirmationCallback) {
+    if (
+      type === callbackType.ChoiceCallback ||
+      type === callbackType.ConfirmationCallback
+    ) {
       const selectedIndex =
         typeof rawValue === 'number'
           ? rawValue
           : typeof rawValue === 'string'
-            ? Number(rawValue)
-            : Number.NaN;
+          ? Number(rawValue)
+          : Number.NaN;
       if (!Number.isFinite(selectedIndex)) {
         issues.push(`${type} requires selecting one option.`);
         return;
@@ -222,7 +230,10 @@ function buildManualNextInput(
               allowUserDefinedQuestions: false,
             };
 
-      if (!kbaValue.selectedQuestion.trim() || !kbaValue.selectedAnswer.trim()) {
+      if (
+        !kbaValue.selectedQuestion.trim() ||
+        !kbaValue.selectedAnswer.trim()
+      ) {
         issues.push(`${type} requires both question and answer.`);
         return;
       }
@@ -233,7 +244,9 @@ function buildManualNextInput(
         value: {
           selectedQuestion: kbaValue.selectedQuestion,
           selectedAnswer: kbaValue.selectedAnswer,
-          allowUserDefinedQuestions: Boolean(kbaValue.allowUserDefinedQuestions),
+          allowUserDefinedQuestions: Boolean(
+            kbaValue.allowUserDefinedQuestions,
+          ),
         },
       });
       return;
@@ -275,20 +288,23 @@ function callbackLabel(callback: JourneyCallback): string {
  * @returns Journey full screen element.
  */
 export default function JourneyFullScreen(): React.ReactElement {
-  const [node, { start, next, resume, user, logoutUser, loading, error }] = useJourney();
+  const [node, { start, next, resume, user, logoutUser, loading, error }] =
+    useJourney();
   const [journeyName, setJourneyName] = useState<string>('Login');
   const [resumeUrl, setResumeUrl] = useState<string>('');
   const [sessionPayload, setSessionPayload] = useState<string | null>(null);
-  const [values, setValues] = useState<Record<string, JourneyFormValue | undefined>>({});
+  const [values, setValues] = useState<
+    Record<string, JourneyFormValue | undefined>
+  >({});
   const [issues, setIssues] = useState<string[]>([]);
 
   const indexedCallbacks = useMemo<IndexedCallback[]>(
     () => (node?.type === 'ContinueNode' ? indexCallbacks(node.callbacks) : []),
-    [node]
+    [node],
   );
 
   const setField = useCallback((key: string, value: JourneyFormValue): void => {
-    setValues((previous) => ({
+    setValues(previous => ({
       ...previous,
       [key]: value,
     }));
@@ -395,7 +411,8 @@ export default function JourneyFullScreen(): React.ReactElement {
           <View key={key} style={styles.callbackCard}>
             <Text style={styles.callbackType}>{type}</Text>
             <Text style={styles.integrationText}>
-              Requires additional integration module. Submit from this screen is blocked.
+              Requires additional integration module. Submit from this screen is
+              blocked.
             </Text>
           </View>
         );
@@ -416,14 +433,17 @@ export default function JourneyFullScreen(): React.ReactElement {
               </Text>
               <Switch
                 value={currentValue === true}
-                onValueChange={(value) => setField(key, value)}
+                onValueChange={value => setField(key, value)}
               />
             </View>
           </View>
         );
       }
 
-      if (type === callbackType.ChoiceCallback || type === callbackType.ConfirmationCallback) {
+      if (
+        type === callbackType.ChoiceCallback ||
+        type === callbackType.ConfirmationCallback
+      ) {
         const options = readOptions(callback);
         return (
           <View key={key} style={styles.callbackCard}>
@@ -434,7 +454,10 @@ export default function JourneyFullScreen(): React.ReactElement {
               return (
                 <TouchableOpacity
                   key={`${key}:option:${optionIndex}`}
-                  style={[styles.optionButton, selected ? styles.optionButtonSelected : null]}
+                  style={[
+                    styles.optionButton,
+                    selected ? styles.optionButtonSelected : null,
+                  ]}
                   onPress={() => setField(key, optionIndex)}
                 >
                   <Text
@@ -470,7 +493,7 @@ export default function JourneyFullScreen(): React.ReactElement {
               label="Security question"
               placeholder="Security question"
               value={value.selectedQuestion}
-              onChangeText={(text) =>
+              onChangeText={text =>
                 setField(key, {
                   ...value,
                   selectedQuestion: text,
@@ -481,7 +504,7 @@ export default function JourneyFullScreen(): React.ReactElement {
               label="Security answer"
               placeholder="Security answer"
               value={value.selectedAnswer}
-              onChangeText={(text) =>
+              onChangeText={text =>
                 setField(key, {
                   ...value,
                   selectedAnswer: text,
@@ -492,7 +515,7 @@ export default function JourneyFullScreen(): React.ReactElement {
               <Text style={styles.switchLabel}>Allow custom questions</Text>
               <Switch
                 value={Boolean(value.allowUserDefinedQuestions)}
-                onValueChange={(enabled) =>
+                onValueChange={enabled =>
                   setField(key, {
                     ...value,
                     allowUserDefinedQuestions: enabled,
@@ -505,15 +528,18 @@ export default function JourneyFullScreen(): React.ReactElement {
       }
 
       const secureTextEntry =
-        type === callbackType.PasswordCallback || type === callbackType.ValidatedCreatePasswordCallback;
+        type === callbackType.PasswordCallback ||
+        type === callbackType.ValidatedCreatePasswordCallback;
       const keyboardType =
-        type === callbackType.NumberAttributeInputCallback ? 'numeric' : 'default';
+        type === callbackType.NumberAttributeInputCallback
+          ? 'numeric'
+          : 'default';
       const textValue =
         typeof currentValue === 'string'
           ? currentValue
           : typeof callback.value === 'string'
-            ? callback.value
-            : '';
+          ? callback.value
+          : '';
 
       return (
         <View key={key} style={styles.callbackCard}>
@@ -525,18 +551,21 @@ export default function JourneyFullScreen(): React.ReactElement {
             secureTextEntry={secureTextEntry}
             allowPasswordToggle={secureTextEntry}
             keyboardType={keyboardType}
-            onChangeText={(text) => setField(key, text)}
+            onChangeText={text => setField(key, text)}
             autoCapitalize="none"
             placeholder={label}
           />
         </View>
       );
     },
-    [setField, values]
+    [setField, values],
   );
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.journeyContainer} nestedScrollEnabled>
+    <ScrollView
+      contentContainerStyle={commonStyles.journeyContainer}
+      nestedScrollEnabled
+    >
       <View style={commonStyles.journeyCard}>
         <Text style={commonStyles.journeyTitle}>Journey (useJourney only)</Text>
 

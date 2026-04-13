@@ -53,7 +53,7 @@ type UserProfileOidcPanelProps = {
  * @returns OIDC profile panel element.
  */
 export default function UserProfileOidcPanel(
-  props: UserProfileOidcPanelProps
+  props: UserProfileOidcPanelProps,
 ): React.ReactElement {
   const {
     loading,
@@ -69,7 +69,9 @@ export default function UserProfileOidcPanel(
     return (
       <View style={commonStyles.userProfileLoadingCard}>
         <ActivityIndicator size="small" color={colors.primary} />
-        <Text style={commonStyles.userProfileSubText}>Checking OIDC session...</Text>
+        <Text style={commonStyles.userProfileSubText}>
+          Checking OIDC session...
+        </Text>
       </View>
     );
   }

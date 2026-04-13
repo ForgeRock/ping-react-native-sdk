@@ -35,17 +35,23 @@ const DEFAULT_AUTO_POLLING_WAIT_MS = 3000;
  * @returns Polling wait in milliseconds when available.
  */
 function resolvePollingWaitMs(
-  fields: ReturnType<typeof normalizeCallbacks>
+  fields: ReturnType<typeof normalizeCallbacks>,
 ): number | null {
   // AM flows are expected to return one PollingWaitCallback per node.
   // If multiple are present, use the first callback in node order.
-  const pollingField = fields.find((field) => field.ref.type === 'PollingWaitCallback');
+  const pollingField = fields.find(
+    (field) => field.ref.type === 'PollingWaitCallback',
+  );
   if (!pollingField) {
     return null;
   }
 
   const waitTime = pollingField.raw.waitTime;
-  if (typeof waitTime === 'number' && Number.isFinite(waitTime) && waitTime > 0) {
+  if (
+    typeof waitTime === 'number' &&
+    Number.isFinite(waitTime) &&
+    waitTime > 0
+  ) {
     return waitTime;
   }
   if (typeof waitTime === 'string') {
@@ -64,8 +70,12 @@ function resolvePollingWaitMs(
  * @param fields - Normalized callback fields.
  * @returns True when safe to auto-advance with `next({})`.
  */
-function shouldAutoPoll(fields: ReturnType<typeof normalizeCallbacks>): boolean {
-  const hasPollingWait = fields.some((field) => field.ref.type === 'PollingWaitCallback');
+function shouldAutoPoll(
+  fields: ReturnType<typeof normalizeCallbacks>,
+): boolean {
+  const hasPollingWait = fields.some(
+    (field) => field.ref.type === 'PollingWaitCallback',
+  );
   if (!hasPollingWait) {
     return false;
   }
@@ -96,7 +106,10 @@ export type JourneyHookActions = {
    * @returns First Journey node.
    * @throws {JourneyError} When start fails.
    */
-  start: (journeyName: string, options?: JourneyStartOptions) => Promise<JourneyNode>;
+  start: (
+    journeyName: string,
+    options?: JourneyStartOptions,
+  ) => Promise<JourneyNode>;
 
   /**
    * Advance the active Journey node.
@@ -186,7 +199,10 @@ export type JourneyHookActions = {
 /**
  * Tuple result returned by {@link useJourney}.
  */
-export type JourneyHookResult = readonly [JourneyNode | null, JourneyHookActions];
+export type JourneyHookResult = readonly [
+  JourneyNode | null,
+  JourneyHookActions,
+];
 
 type JourneyContextValue = {
   client: JourneyClient;
@@ -261,12 +277,19 @@ export type JourneyProviderProps = {
  * @param props - Provider props.
  * @returns Journey context provider element.
  */
-export function JourneyProvider(props: JourneyProviderProps): React.ReactElement {
+export function JourneyProvider(
+  props: JourneyProviderProps,
+): React.ReactElement {
   const { client, children } = props;
   const journey = useJourneyState(client);
-  const value = useMemo<JourneyContextValue>(() => ({ client, journey }), [client, journey]);
+  const value = useMemo<JourneyContextValue>(
+    () => ({ client, journey }),
+    [client, journey],
+  );
 
-  return <JourneyContext.Provider value={value}>{children}</JourneyContext.Provider>;
+  return (
+    <JourneyContext.Provider value={value}>{children}</JourneyContext.Provider>
+  );
 }
 
 /**
@@ -281,10 +304,13 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
   const [error, setError] = useState<JourneyError | null>(null);
   const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const normalizedFields = useMemo(() => normalizeCallbacks(node), [node]);
-  const canAutoPoll = useMemo(() => shouldAutoPoll(normalizedFields), [normalizedFields]);
+  const canAutoPoll = useMemo(
+    () => shouldAutoPoll(normalizedFields),
+    [normalizedFields],
+  );
   const autoPollingWaitMs = useMemo(
     () => resolvePollingWaitMs(normalizedFields),
-    [normalizedFields]
+    [normalizedFields],
   );
 
   const start = useCallback(
@@ -293,7 +319,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
       options: JourneyStartOptions = {
         forceAuth: false,
         noSession: false,
-      }
+      },
     ): Promise<JourneyNode> => {
       try {
         setLoading(true);
@@ -309,7 +335,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const next = useCallback(
@@ -338,7 +364,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client, node]
+    [client, node],
   );
 
   const resume = useCallback(
@@ -357,7 +383,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setLoading(false);
       }
     },
-    [client]
+    [client],
   );
 
   const user = useCallback(async (): Promise<JourneyUserSession | null> => {
@@ -405,7 +431,10 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
       return;
     }
 
-    const waitMs = Math.max(500, autoPollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS);
+    const waitMs = Math.max(
+      500,
+      autoPollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS,
+    );
     pollingTimerRef.current = setTimeout(() => {
       pollingTimerRef.current = null;
       // `next` already updates hook error state; prevent unhandled rejections
@@ -459,7 +488,9 @@ export function useJourney(client: JourneyClient): JourneyHookResult;
 export function useJourney(): JourneyHookResult;
 export function useJourney(client?: JourneyClient): JourneyHookResult {
   const contextValue = useContext(JourneyContext);
-  const localJourney = useJourneyState(client ?? contextValue?.client ?? missingJourneyClient);
+  const localJourney = useJourneyState(
+    client ?? contextValue?.client ?? missingJourneyClient,
+  );
 
   if (client) {
     return localJourney;
