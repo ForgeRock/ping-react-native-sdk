@@ -2216,6 +2216,38 @@ PODS:
     - RNPingLogger
     - SocketRocket
     - Yoga
+  - RNPingBrowser/Tests (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingBrowser (= 1.3.1)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - RNPingLogger
+    - SocketRocket
+    - Yoga
   - RNPingCore (0.1.0):
     - boost
     - DoubleConversion
@@ -2337,6 +2369,37 @@ PODS:
     - SocketRocket
     - Yoga
   - RNPingDeviceProfile (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingDeviceProfile
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingDeviceProfile/Tests (0.1.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2708,11 +2771,13 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../../node_modules/react-native/ReactCommon`)
   - "RNCAsyncStorage (from `../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNPingBrowser (from `../../node_modules/@ping-identity/rn-browser`)"
+  - "RNPingBrowser/Tests (from `../../node_modules/@ping-identity/rn-browser`)"
   - RNPingCore (from `../../packages/core`)
   - RNPingCore/Tests (from `../../packages/core`)
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceId/Tests (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
+  - "RNPingDeviceProfile/Tests (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingJourney (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingJourney/Tests (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
@@ -3055,10 +3120,10 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBrowser: ee98bfb8ab8f803dd29deb04ae74f64d0dc9f911
+  RNPingBrowser: f6a00b6cabf89afc70a196e0a8bbce210e6f858a
   RNPingCore: f41b28de7c94d2e2af7fae663531d0d0341d2775
   RNPingDeviceId: fd74c58f4eb179de3052adad1c1345bd402c10f5
-  RNPingDeviceProfile: 4f7d48210c1f7929db4f0a15b1bd091d4e5c64c9
+  RNPingDeviceProfile: 89f1598c3d64d0209a7c22ef776a6f78485a3f44
   RNPingJourney: 6f38c0a4ae2ca523541ce1950bd40440f085f2a7
   RNPingLogger: 92fd0e87739f7fabf9c16883827b450b13a512f2
   RNPingOidc: e522fcc12a6ed3e6e4ed8688db18e191aa1e1db1
@@ -3066,6 +3131,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 2ec3648cfe2d0057c7e2ef26c5d28528364804e7
+PODFILE CHECKSUM: 735d5585ceafce431efeca006a56d8949a1d901f
 
 COCOAPODS: 1.15.2

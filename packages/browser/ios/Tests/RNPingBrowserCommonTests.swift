@@ -9,6 +9,7 @@ import PingBrowser
 import RNPingBrowser
 import RNPingLogger
 
+@MainActor
 final class RNPingBrowserCommonTests: XCTestCase {
   private let testUrl = "https://example.com"
   private var loggerId: String!
@@ -198,6 +199,7 @@ final class RNPingBrowserCommonTests: XCTestCase {
   }
 }
 
+@MainActor
 private final class FakeBrowserLauncher: BrowserLaunching {
   var result: Result<URL, Error> = .success(URL(string: "com.example.app://callback")!)
   var resetCalled = false

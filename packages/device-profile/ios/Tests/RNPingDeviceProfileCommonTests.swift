@@ -86,6 +86,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -103,20 +104,18 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     let expectation = expectation(description: "rejecter called")
     let journeyId = "empty-callbacks-journey"
 
-    // Save original resolver
-    let originalResolver = CoreRuntime.journeyCallbackResolver
-    defer { CoreRuntime.journeyCallbackResolver = originalResolver }
-
-    CoreRuntime.journeyCallbackResolver = { id in
+    CoreRuntime.setJourneyCallbackResolver { id in
       if id == journeyId {
         return []
       }
       return nil
     }
+    defer { CoreRuntime.setJourneyCallbackResolver(nil) }
 
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -251,6 +250,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "",
       collectors: ["platform"],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
