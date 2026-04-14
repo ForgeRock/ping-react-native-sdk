@@ -11,8 +11,6 @@
  * Provides collection buttons for:
  *  - Empty collectors []           (matches Android testDeviceProfileCallbackWithDefaultCollectors)
  *  - Named collectors [platform, hardware]  (matches Android testDeviceProfileCallbackWithCustomCollectors)
- *  - Bluetooth collector [bluetooth]         (used by iOS integration coverage)
- *  - Location collector [location]           (used by iOS integration coverage)
  */
 
 import React, { useCallback, useState } from 'react';
@@ -51,16 +49,6 @@ export default function DeviceProfileScenario(): React.JSX.Element {
         onPress={() =>
           runCollect(['platform', 'hardware'] as DeviceProfileCollector[])
         }
-      />
-      <Button
-        testID="device-profile-collect-bluetooth-btn"
-        title="Collect (bluetooth)"
-        onPress={() => runCollect(['bluetooth'] as DeviceProfileCollector[])}
-      />
-      <Button
-        testID="device-profile-collect-location-btn"
-        title="Collect (location)"
-        onPress={() => runCollect(['location'] as DeviceProfileCollector[])}
       />
 
       {result !== null && <Text testID="device-profile-result">{result}</Text>}

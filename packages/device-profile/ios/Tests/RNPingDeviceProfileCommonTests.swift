@@ -5,10 +5,15 @@
 
 import XCTest
 import RNPingCore
-import RNPingDeviceProfile
+@testable import RNPingDeviceProfile
 
 /// XCTest coverage for the shared iOS device profile bridge logic.
 final class RNPingDeviceProfileCommonTests: XCTestCase {
+
+  override func tearDown() {
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting(nil)
+    super.tearDown()
+  }
 
   func testCollectDeviceProfileResolvesEmptyWhenNoCollectorsProvided() {
     let expectation = expectation(description: "resolver called")
@@ -200,6 +205,82 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     )
 
     wait(for: [expectation], timeout: 2)
+  }
+
+  func testCollectDeviceProfileResolvesBluetoothPayloadWithInjectedExecutor() {
+    let expectation = expectation(description: "resolver called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["bluetooth"])
+      return ["bluetooth": ["supported": true]]
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["bluetooth"],
+      resolver: { payload in
+        let bluetooth = payload["bluetooth"] as? [String: Any]
+        XCTAssertEqual(payload.count, 1)
+        XCTAssertEqual(bluetooth?["supported"] as? Bool, true)
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in
+        XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCollectDeviceProfileResolvesLocationPayloadWithInjectedExecutor() {
+    let expectation = expectation(description: "resolver called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["location"])
+      return ["location": ["latitude": 49.2827, "longitude": -123.1207]]
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["location"],
+      resolver: { payload in
+        let location = payload["location"] as? [String: Any]
+        XCTAssertEqual(payload.count, 1)
+        XCTAssertEqual(location?["latitude"] as? Double, 49.2827)
+        XCTAssertEqual(location?["longitude"] as? Double, -123.1207)
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in
+        XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCollectDeviceProfileRejectsInjectedCollectorFailure() {
+    let expectation = expectation(description: "rejecter called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["location"])
+      throw NSError(
+        domain: "RNPingDeviceProfileTests",
+        code: 99,
+        userInfo: [NSLocalizedDescriptionKey: "Injected collector failure"]
+      )
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["location"],
+      resolver: { _ in
+        XCTFail("resolver should not be called")
+      },
+      rejecter: { code, message, _ in
+        XCTAssertEqual(code, "DEVICE_PROFILE_COLLECT_ERROR")
+        XCTAssertTrue(message.contains("Injected collector failure"))
+        expectation.fulfill()
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
   }
 
   func testCollectDeviceProfileForJourneyWithEmptyJourneyIdRejects() {
