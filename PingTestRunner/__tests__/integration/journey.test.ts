@@ -244,6 +244,8 @@ describe('@ping-identity/rn-journey — integration', () => {
       const initP = client.init();
       resolveDispose();                   // unblock the native dispose
       await Promise.all([disposeP, initP]);
+      // init() during the overlap sees the existing journeyId and returns it without re-configuring.
+      expect(await initP).toBe('journey-id-first');
 
       // After dispose settles it nulls the internal id. A subsequent init()
       // must call configureJourney again and return a fresh id.

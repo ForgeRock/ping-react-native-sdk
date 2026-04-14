@@ -83,9 +83,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  *
  * 4. **Navigation** — a `NativeStackNavigator` registers all demo screens.
  *
- * 5. **Global SDK setup** — `configureLogger` and `configureBrowser` are called once per
- *    effect cycle to set sensible defaults. The browser logger is intentionally separate
- *    from the global logger so browser diagnostics can be filtered independently.
+ * 5. **Global SDK setup** — `configureBrowser` is called once per effect cycle to set
+ *    sensible defaults. The browser logger is intentionally separate from the global logger
+ *    so browser diagnostics can be filtered independently.
  */
 export default function App() {
   // Dedicated browser logger keeps browser diagnostics separate from global SDK logging.
