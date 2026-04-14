@@ -20,7 +20,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # PAT required — GITHUB_TOKEN cannot push to a branch protected by required status checks
+          # PAT required — GITHUB_TOKEN cannot push to a branch protected by required status checks.
+          # Required scopes: contents:write (to push version bump commit and tags).
+          # Do NOT grant repo-wide admin or workflow scopes — contents:write is sufficient.
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node
@@ -48,7 +50,9 @@ jobs:
 
       - name: Commit and push version bump
         run: |
-          git add -A
+          # Stage only the files changeset version touches — avoids accidentally
+          # committing build artifacts or install-state changes from yarn install.
+          git add packages/*/package.json packages/*/CHANGELOG.md .changeset
           git commit -m "chore: version packages"
           git push
 

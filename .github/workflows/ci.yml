@@ -79,9 +79,10 @@ jobs:
 
     # Enforce that every PR includes a changeset file.
     # changeset version consumes these files on release to bump versions and write CHANGELOGs.
-    # Disabled until the first alpha release — re-enable by removing the `if: false` condition.
+    # Controlled by the REQUIRE_CHANGESET repo variable (Settings → Variables → Actions).
+    # Set REQUIRE_CHANGESET=true to enable. Leave unset or set to any other value to skip.
     changeset-check:
-        if: false
+        if: github.event_name == 'pull_request' && vars.REQUIRE_CHANGESET == 'true'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
