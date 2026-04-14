@@ -17,7 +17,6 @@ on:
   # pre-push hook via the gh CLI, so that e2e tests run in GitHub Actions
   # before the push completes.
 
-
 # Cancel in-progress runs for the same ref.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,7 +30,7 @@ jobs:
   # ── iOS E2E (macOS required for simulator) ────────────────────────────────
   e2e-ios:
     name: E2E — iOS Simulator
-    runs-on: macos-15
+    runs-on: macos-26-xlarge
     timeout-minutes: 60
     defaults:
       run:
@@ -72,15 +71,15 @@ jobs:
         env:
           # Tier 1 tests always run — no server required.
           # Tier 2 journey/OIDC tests self-skip when these are not set.
-          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
-          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
-          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
-          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
-          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
-          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
-          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
-          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
-          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+          PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
           PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
 
       - name: Upload Detox artifacts on failure
@@ -133,15 +132,15 @@ jobs:
         env:
           # Tier 1 tests always run — no server required.
           # Tier 2 journey/OIDC tests self-skip when these are not set.
-          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
-          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
-          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
-          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
-          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
-          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
-          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
-          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
-          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+          PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
           PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
 
       - name: Upload Detox artifacts on failure

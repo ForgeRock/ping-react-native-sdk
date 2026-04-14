@@ -23,7 +23,7 @@ on:
         required: true
       # XCUITest builds sign a separate UI test runner product in addition to the host app,
       # so CI needs a second provisioning profile unless one wildcard profile covers both IDs.
-      # BrowserStack also asks for two separately-signed products — the host app 
+      # BrowserStack also asks for two separately-signed products — the host app
       # and test suite — each needing its own valid profile.
       UI_TEST_PROVISION_PROFILE:
         description: Base64 encoded zip containing the iOS UI test provisioning profile
@@ -35,7 +35,7 @@ on:
 jobs:
   prepare-ios-bs-artifacts:
     name: Prepare iOS BrowserStack artifacts
-    runs-on: macos-15-xlarge
+    runs-on: macos-26-xlarge
     timeout-minutes: 60
 
     env:
