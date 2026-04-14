@@ -14,8 +14,6 @@ import RNPingCore
 @objcMembers
 public class RNPingDeviceProfileCommon: NSObject {
 
-  typealias DeviceProfilePayloadOverride = (_ collectors: [any DeviceCollector]) async throws -> [String: Any]
-
   /// Stable error codes emitted by the Device Profile module.
   ///
   /// Keep these in sync with JS `DeviceProfileErrorCode` and Android `DeviceProfileErrorCodes`.
@@ -25,10 +23,31 @@ public class RNPingDeviceProfileCommon: NSObject {
     case collectError = "DEVICE_PROFILE_COLLECT_ERROR"
   }
 
+#if DEBUG
+  typealias DeviceProfilePayloadOverride = (_ collectors: [any DeviceCollector]) async throws -> [String: Any]
+
+  private final class CollectPayloadOverrideStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var override: DeviceProfilePayloadOverride?
+
+    func set(_ override: DeviceProfilePayloadOverride?) {
+      lock.lock()
+      self.override = override
+      lock.unlock()
+    }
+
+    func get() -> DeviceProfilePayloadOverride? {
+      lock.lock()
+      defer { lock.unlock() }
+      return override
+    }
+  }
+
   /// Optional override used only by tests to bypass real collector execution.
   ///
   /// When unset, collection follows the existing production path unchanged.
-  private static var testCollectPayloadOverride: DeviceProfilePayloadOverride?
+  private static let testCollectPayloadOverrideStore = CollectPayloadOverrideStore()
+#endif
 
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
@@ -64,12 +83,14 @@ public class RNPingDeviceProfileCommon: NSObject {
     }
   }
 
+#if DEBUG
   /// Replaces the collection executor for deterministic unit tests.
   ///
   /// - Parameter executor: Custom executor to use. Pass `nil` to restore the default implementation.
   static func setCollectPayloadOverrideForTesting(_ executor: DeviceProfilePayloadOverride?) {
-    testCollectPayloadOverride = executor
+    testCollectPayloadOverrideStore.set(executor)
   }
+#endif
 
   /// Collects device profile data using the active Journey callback context.
   /// - Parameters:
@@ -179,9 +200,11 @@ public class RNPingDeviceProfileCommon: NSObject {
   private static func collectPayload(
     from collectors: [any DeviceCollector]
   ) async throws -> [String: Any] {
-    if let testCollectPayloadOverride {
+#if DEBUG
+    if let testCollectPayloadOverride = testCollectPayloadOverrideStore.get() {
       return try await testCollectPayloadOverride(collectors)
     }
+#endif
 
     var result: [String: Any] = [:]
 
