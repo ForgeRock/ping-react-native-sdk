@@ -14,7 +14,7 @@ env:
   WORKSPACE: PingTestRunner/ios/PingTestRunner.xcworkspace
   SCHEME: RNPackagesTests
   CONFIGURATION: Debug
-  DESTINATION: platform=iOS Simulator,name=iPhone 16e,OS=latest
+  DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=26.4
   DERIVED_DATA_PATH: DerivedData
   XCODE_VERSION: '26.1.1'
   RUBY_VERSION: '2.6.10'
@@ -109,9 +109,9 @@ jobs:
       - name: Prepare target simulator
         run: |
           xcrun simctl shutdown all || true
-          xcrun simctl erase "iPhone 16e" || true
-          xcrun simctl boot "iPhone 16e" || true
-          xcrun simctl bootstatus "iPhone 16e" -b || true
+          xcrun simctl erase "iPhone 17" || true
+          xcrun simctl boot "iPhone 17" || true
+          xcrun simctl bootstatus "iPhone 17" -b || true
 
       # Run iOS unit tests using xcodebuild.
       - name: Run iOS unit tests
