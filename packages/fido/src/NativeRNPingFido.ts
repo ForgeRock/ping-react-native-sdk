@@ -36,10 +36,7 @@ export interface Spec extends TurboModule {
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the registration result payload.
    */
-  registerCredential(
-    options: Object,
-    config: Object
-  ): Promise<Object>;
+  registerCredential(options: object, config: object): Promise<object>;
 
   /**
    * Authenticates with an existing FIDO credential.
@@ -48,10 +45,7 @@ export interface Spec extends TurboModule {
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the authentication result payload.
    */
-  authenticateCredential(
-    options: Object,
-    config: Object
-  ): Promise<Object>;
+  authenticateCredential(options: object, config: object): Promise<object>;
 
   /**
    * Registers a Journey-scoped FIDO callback resolved from a Journey instance id.
@@ -63,9 +57,9 @@ export interface Spec extends TurboModule {
    */
   registerCredentialForJourney(
     journeyId: string,
-    options: Object,
-    config: Object
-  ): Promise<Object>;
+    options: object,
+    config: object,
+  ): Promise<object>;
 
   /**
    * Authenticates a Journey-scoped FIDO callback resolved from a Journey instance id.
@@ -77,9 +71,9 @@ export interface Spec extends TurboModule {
    */
   authenticateCredentialForJourney(
     journeyId: string,
-    options: Object,
-    config: Object
-  ): Promise<Object>;
+    options: object,
+    config: object,
+  ): Promise<object>;
 }
 
 /**
@@ -110,7 +104,7 @@ export function getNativeModule(): Spec {
     '[@ping-identity/rn-fido] Native module RNPingFido not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.\n' +
       'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules))
+      JSON.stringify(Object.keys(NativeModules)),
   );
 }
 
@@ -118,7 +112,7 @@ export function getNativeModule(): Spec {
  * Casts registration options to a codegen-compatible object.
  */
 export function toNativeRegistrationOptions(
-  options: FidoRegistrationOptions
+  options: FidoRegistrationOptions,
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
 }
@@ -127,7 +121,7 @@ export function toNativeRegistrationOptions(
  * Casts configure options to a codegen-compatible object.
  */
 export function toNativeConfigOptions(
-  config: FidoClientConfig
+  config: FidoClientConfig,
 ): Record<string, unknown> {
   return config as unknown as Record<string, unknown>;
 }
@@ -136,7 +130,7 @@ export function toNativeConfigOptions(
  * Casts authentication options to a codegen-compatible object.
  */
 export function toNativeAuthenticationOptions(
-  options: FidoAuthenticationOptions
+  options: FidoAuthenticationOptions,
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
 }
@@ -145,7 +139,7 @@ export function toNativeAuthenticationOptions(
  * Casts the native payload to registration result type.
  */
 export function fromNativeRegistrationResult(
-  result: Object
+  result: object,
 ): FidoRegistrationResult {
   return result as unknown as FidoRegistrationResult;
 }
@@ -154,7 +148,7 @@ export function fromNativeRegistrationResult(
  * Casts the native payload to authentication result type.
  */
 export function fromNativeAuthenticationResult(
-  result: Object
+  result: object,
 ): FidoAuthenticationResult {
   return result as unknown as FidoAuthenticationResult;
 }
@@ -163,7 +157,7 @@ export function fromNativeAuthenticationResult(
  * Casts Journey registration options to a codegen-compatible object.
  */
 export function toNativeJourneyRegistrationOptions(
-  options: FidoJourneyRegistrationOptions
+  options: FidoJourneyRegistrationOptions,
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
 }
@@ -172,7 +166,7 @@ export function toNativeJourneyRegistrationOptions(
  * Casts Journey authentication options to a codegen-compatible object.
  */
 export function toNativeJourneyAuthenticationOptions(
-  options: FidoJourneyAuthenticationOptions
+  options: FidoJourneyAuthenticationOptions,
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
 }
@@ -180,8 +174,6 @@ export function toNativeJourneyAuthenticationOptions(
 /**
  * Casts the native payload to a Journey success result type.
  */
-export function fromNativeJourneyResult(
-  result: Object
-): FidoJourneyResult {
+export function fromNativeJourneyResult(result: object): FidoJourneyResult {
   return result as unknown as FidoJourneyResult;
 }

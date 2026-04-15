@@ -10,7 +10,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import MultiStorageScreen from './ui/MultiStorageScreeen';
+import MultiStorageScreen from './ui/MultiStorageScreen';
 import HomeScreen from './ui/HomeScreen';
 import ConfigurationScreen from './ui/ConfigurationScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';
@@ -301,7 +301,7 @@ export default function App() {
             >
               {props =>
                 selectedJourneyProfile ? (
-                  <JourneyFullScreen {...props} />
+                  <JourneyFullScreen />
                 ) : (
                   <ConfigurationRequiredScreen
                     {...props}
