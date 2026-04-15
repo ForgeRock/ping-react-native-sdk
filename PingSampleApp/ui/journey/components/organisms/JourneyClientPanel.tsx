@@ -128,8 +128,8 @@ export default function JourneyClientPanel(
             {typeof node.cause === 'string'
               ? node.cause
               : typeof node.message === 'string'
-              ? node.message
-              : 'An unexpected failure occurred.'}
+                ? node.message
+                : 'An unexpected failure occurred.'}
           </Text>
         ) : null}
 

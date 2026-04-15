@@ -11765,7 +11765,7 @@ __metadata:
     "@testing-library/react-native": "npm:^13.3.3"
     "@types/react": "npm:^19.1.0"
     eslint: "npm:^8.19.0"
-    prettier: "npm:2.8.8"
+    prettier: "npm:3.8.1"
     react: "npm:19.1.0"
     react-native: "npm:0.80.1"
     react-native-config: "npm:^1.5.9"

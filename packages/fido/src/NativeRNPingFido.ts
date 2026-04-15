@@ -28,6 +28,7 @@ import type {
  *
  * @interface
  */
+/* eslint-disable @typescript-eslint/no-wrapper-object-types -- RN TurboModule codegen requires Object in native spec signatures. */
 export interface Spec extends TurboModule {
   /**
    * Registers a new FIDO credential.
@@ -36,7 +37,7 @@ export interface Spec extends TurboModule {
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the registration result payload.
    */
-  registerCredential(options: object, config: object): Promise<object>;
+  registerCredential(options: Object, config: Object): Promise<Object>;
 
   /**
    * Authenticates with an existing FIDO credential.
@@ -45,7 +46,7 @@ export interface Spec extends TurboModule {
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the authentication result payload.
    */
-  authenticateCredential(options: object, config: object): Promise<object>;
+  authenticateCredential(options: Object, config: Object): Promise<Object>;
 
   /**
    * Registers a Journey-scoped FIDO callback resolved from a Journey instance id.
@@ -57,9 +58,9 @@ export interface Spec extends TurboModule {
    */
   registerCredentialForJourney(
     journeyId: string,
-    options: object,
-    config: object,
-  ): Promise<object>;
+    options: Object,
+    config: Object,
+  ): Promise<Object>;
 
   /**
    * Authenticates a Journey-scoped FIDO callback resolved from a Journey instance id.
@@ -71,10 +72,11 @@ export interface Spec extends TurboModule {
    */
   authenticateCredentialForJourney(
     journeyId: string,
-    options: object,
-    config: object,
-  ): Promise<object>;
+    options: Object,
+    config: Object,
+  ): Promise<Object>;
 }
+/* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
 /**
  * Native configuration shape sent over the bridge.
