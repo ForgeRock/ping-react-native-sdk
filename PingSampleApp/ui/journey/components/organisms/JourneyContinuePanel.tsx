@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import type {
   JourneyCallbackType,
@@ -86,20 +86,23 @@ export default function JourneyContinuePanel(
   // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
   // - "manual submit" means at least one callback requires user-provided values.
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
-  const isAutoHandledIntegrationCallback = (type: JourneyCallbackType): boolean =>
-    type === 'DeviceProfileCallback' ||
-    type === 'FidoRegistrationCallback' ||
-    type === 'FidoAuthenticationCallback';
+  const isAutoHandledIntegrationCallback = useCallback(
+    (type: JourneyCallbackType): boolean =>
+      type === 'DeviceProfileCallback' ||
+      type === 'FidoRegistrationCallback' ||
+      type === 'FidoAuthenticationCallback',
+    [],
+  );
   const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
   const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
-  const hasManualSubmit = fields.some((field) => field.requiresUserInput);
+  const hasManualSubmit = fields.some(field => field.requiresUserInput);
 
   const hasBlockingIntegration = fields.some(
-    (field) =>
+    field =>
       (field.executionMode === 'integration_required' &&
         !isAutoHandledIntegrationCallback(field.ref.type)) ||
       (field.executionMode === 'auto_capable' &&
-        !isAutoHandledIntegrationCallback(field.ref.type))
+        !isAutoHandledIntegrationCallback(field.ref.type)),
   );
   const blockingIntegrationCallbackTypes = useMemo<string[]>(
     () =>
@@ -107,16 +110,16 @@ export default function JourneyContinuePanel(
         new Set(
           fields
             .filter(
-              (field) =>
+              field =>
                 (field.executionMode === 'integration_required' &&
                   !isAutoHandledIntegrationCallback(field.ref.type)) ||
                 (field.executionMode === 'auto_capable' &&
-                  !isAutoHandledIntegrationCallback(field.ref.type))
+                  !isAutoHandledIntegrationCallback(field.ref.type)),
             )
-            .map((field) => field.ref.type)
-        )
+            .map(field => field.ref.type),
+        ),
       ),
-    [fields, isAutoHandledIntegrationCallback]
+    [fields, isAutoHandledIntegrationCallback],
   );
   const hasUnsupportedCallbacks = meta.hasUnsupported;
   const unsupportedCallbackTypes = useMemo<string[]>(
@@ -124,26 +127,26 @@ export default function JourneyContinuePanel(
       Array.from(
         new Set(
           fields
-            .filter((field) => field.executionMode === 'unsupported')
-            .map((field) => field.ref.type)
-        )
+            .filter(field => field.executionMode === 'unsupported')
+            .map(field => field.ref.type),
+        ),
       ),
-    [fields]
+    [fields],
   );
   const unsupportedIssueCallbackTypes = useMemo<JourneyCallbackType[]>(
     () =>
       Array.from(
         new Set(
           form.issues
-            .filter((issue) => issue.code === 'UNSUPPORTED_CALLBACK')
-            .map((issue) => issue.callbackType)
+            .filter(issue => issue.code === 'UNSUPPORTED_CALLBACK')
+            .map(issue => issue.callbackType)
             .filter(
               (value): value is JourneyCallbackType =>
-                typeof value === 'string' && value.length > 0
-            )
-        )
+                typeof value === 'string' && value.length > 0,
+            ),
+        ),
       ),
-    [form.issues]
+    [form.issues],
   );
   const integrationIssueCallbackTypes = useMemo<JourneyCallbackType[]>(
     () =>
@@ -151,32 +154,32 @@ export default function JourneyContinuePanel(
         new Set(
           form.issues
             .filter(
-              (issue) =>
+              issue =>
                 issue.code === 'INTEGRATION_REQUIRED' &&
                 !!issue.callbackType &&
-                !isAutoHandledIntegrationCallback(issue.callbackType)
+                !isAutoHandledIntegrationCallback(issue.callbackType),
             )
-            .map((issue) => issue.callbackType)
+            .map(issue => issue.callbackType)
             .filter(
               (value): value is JourneyCallbackType =>
-                typeof value === 'string' && value.length > 0
-            )
-        )
+                typeof value === 'string' && value.length > 0,
+            ),
+        ),
       ),
-    [form.issues, isAutoHandledIntegrationCallback]
+    [form.issues, isAutoHandledIntegrationCallback],
   );
   const blockingIssueMessages = useMemo<string[]>(
     () =>
       form.issues
         .filter(
-          (issue) =>
+          issue =>
             issue.code === 'UNSUPPORTED_CALLBACK' ||
             (issue.code === 'INTEGRATION_REQUIRED' &&
               !!issue.callbackType &&
-              !isAutoHandledIntegrationCallback(issue.callbackType))
+              !isAutoHandledIntegrationCallback(issue.callbackType)),
         )
-        .map((issue) => issue.message),
-    [form.issues, isAutoHandledIntegrationCallback]
+        .map(issue => issue.message),
+    [form.issues, isAutoHandledIntegrationCallback],
   );
   const hasUnacceptedRequiredAgreements = meta.hasRequiredConsentMissing;
   const canAutoAdvanceWithContinueButton =
@@ -214,12 +217,17 @@ export default function JourneyContinuePanel(
         <>
           <Text style={styles.blockingNote}>
             This node includes callbacks that require extra native integrations
-            (Protect, IdP, ReCaptcha, or Binding). Configure those modules to continue
-            this journey.
+            (Protect, IdP, ReCaptcha, or Binding). Configure those modules to
+            continue this journey.
           </Text>
           <Text style={styles.blockingNote}>
             Integration-required callbacks:{' '}
-            {[...new Set([...blockingIntegrationCallbackTypes, ...integrationIssueCallbackTypes])].join(', ') || 'Unknown'}
+            {[
+              ...new Set([
+                ...blockingIntegrationCallbackTypes,
+                ...integrationIssueCallbackTypes,
+              ]),
+            ].join(', ') || 'Unknown'}
           </Text>
         </>
       ) : null}
@@ -233,12 +241,17 @@ export default function JourneyContinuePanel(
       {hasUnsupportedCallbacks ? (
         <>
           <Text style={styles.blockingNote}>
-            This node includes callback types not handled by the helper submit planner.
-            Add custom handling for these callbacks to continue.
+            This node includes callback types not handled by the helper submit
+            planner. Add custom handling for these callbacks to continue.
           </Text>
           <Text style={styles.blockingNote}>
             Unsupported callbacks:{' '}
-            {[...new Set([...unsupportedCallbackTypes, ...unsupportedIssueCallbackTypes])].join(', ') || 'Unknown'}
+            {[
+              ...new Set([
+                ...unsupportedCallbackTypes,
+                ...unsupportedIssueCallbackTypes,
+              ]),
+            ].join(', ') || 'Unknown'}
           </Text>
         </>
       ) : null}
@@ -260,7 +273,10 @@ export default function JourneyContinuePanel(
             autoCapitalize="none"
           />
           <TouchableOpacity
-            style={[commonStyles.buttonSecondary, loading ? styles.disabledButton : null]}
+            style={[
+              commonStyles.buttonSecondary,
+              loading ? styles.disabledButton : null,
+            ]}
             onPress={onResume}
             disabled={loading}
           >
