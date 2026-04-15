@@ -8,7 +8,6 @@
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   maxWorkers: 1,
-  testEnvironment: 'node',
   testRunner: 'jest-circus/runner',
   testTimeout: 300000,
   rootDir: '..',

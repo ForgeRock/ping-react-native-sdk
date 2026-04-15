@@ -24,6 +24,7 @@ module.exports = {
     '^@ping-identity/rn-core$': '<rootDir>/../packages/core/index.js',
     '^@ping-identity/rn-device-id$': '<rootDir>/../packages/device-id/src/index.tsx',
     '^@ping-identity/rn-device-profile$': '<rootDir>/../packages/device-profile/src/index.tsx',
+    '^@ping-identity/rn-fido$': '<rootDir>/../packages/fido/src/index.tsx',
     '^@ping-identity/rn-journey$': '<rootDir>/../packages/journey/src/index.tsx',
     '^@ping-identity/rn-logger$': '<rootDir>/../packages/logger/src/index.tsx',
     '^@ping-identity/rn-oidc$': '<rootDir>/../packages/oidc/src/index.tsx',

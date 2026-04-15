@@ -62,6 +62,7 @@ async function loadJourney(nativeMock: NativeJourneyMock) {
     __esModule: true,
     default: nativeMock,
   }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-journey');
 }
 
@@ -188,6 +189,42 @@ describe('@ping-identity/rn-journey — integration', () => {
       expect(typeof result).toBe('boolean');
     });
 
+    it('user() resolves with the active session', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const session = await client.user();
+      expect(session).toMatchObject({ accessToken: 'mock-access-token' });
+    });
+
+    it('user() resolves with null when no session exists', async () => {
+      const mock = makeMock({ getSession: jest.fn(async () => null) });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const session = await client.user();
+      expect(session).toBeNull();
+    });
+
+    it('userinfo() resolves with the userinfo payload', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const info = await client.userinfo();
+      expect(info).toMatchObject({ sub: 'user-mock' });
+    });
+
+    it('ssoToken() resolves with the SSO token payload', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const token = await client.ssoToken();
+      expect(token).toMatchObject({ value: 'sso-mock' });
+    });
+
     it('dispose() cleans up the native instance', async () => {
       const mock = makeMock();
       const mod = await loadJourney(mock);
@@ -219,6 +256,16 @@ describe('@ping-identity/rn-journey — integration', () => {
       await client.start('Login');
       await expect(client.next({ callbacks: [] })).rejects.toThrow('Journey next failed');
     });
+
+    it('resume() propagates native errors', async () => {
+      const mock = makeMock({
+        resume: jest.fn(async () => { throw new Error('Journey resume failed'); }),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      await expect(client.resume('myapp://callback')).rejects.toThrow('Journey resume failed');
+    });
   });
 
   describe('normalizeCallbacks()', () => {
@@ -226,6 +273,21 @@ describe('@ping-identity/rn-journey — integration', () => {
       const mod = await loadJourney(makeMock());
       const result = mod.normalizeCallbacks([]);
       expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('returns normalized fields for a simple node', async () => {
+      const mod = await loadJourney(makeMock());
+      const node = {
+        type: 'ContinueNode',
+        callbacks: [
+          { type: 'NameCallback', output: [] },
+          { type: 'PasswordCallback', output: [] },
+        ],
+      };
+      const fields = mod.normalizeCallbacks(node);
+      expect(fields).toHaveLength(2);
+      expect(fields[0]).toMatchObject({ id: 'NameCallback:0', ref: { type: 'NameCallback' } });
+      expect(fields[1]).toMatchObject({ id: 'PasswordCallback:0', ref: { type: 'PasswordCallback' } });
     });
   });
 });

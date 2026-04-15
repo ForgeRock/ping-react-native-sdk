@@ -12,6 +12,8 @@ PODS:
     - PingLogger (~> 1.3.1)
   - PingCommons (1.3.1):
     - PingLogger (~> 1.3.1)
+  - PingDavinciPlugin (1.3.1):
+    - PingOrchestrate (~> 1.3.1)
   - PingDeviceId (1.3.1):
     - PingLogger (~> 1.3.1)
     - PingStorage (~> 1.3.1)
@@ -20,6 +22,10 @@ PODS:
     - PingJourney (~> 1.3.1)
     - PingJourneyPlugin (~> 1.3.1)
     - PingTamperDetector (~> 1.3.1)
+  - PingFido (1.3.1):
+    - PingCommons (~> 1.3.1)
+    - PingDavinciPlugin (~> 1.3.1)
+    - PingJourneyPlugin (~> 1.3.1)
   - PingJourney (1.3.1):
     - PingCommons (~> 1.3.1)
     - PingJourneyPlugin (~> 1.3.1)
@@ -2430,6 +2436,68 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingFido (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingFido
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingFido/Tests (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingFido
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingJourney (0.1.0):
     - boost
     - DoubleConversion
@@ -2437,6 +2505,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinciPlugin
+    - PingFido
     - PingJourney
     - PingJourneyPlugin
     - RCT-Folly
@@ -2469,6 +2539,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinciPlugin
+    - PingFido
     - PingJourney
     - PingJourneyPlugin
     - RCT-Folly
@@ -2693,8 +2765,10 @@ DEPENDENCIES:
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - PingBrowser (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingCommons (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
+  - PingDavinciPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingDeviceId (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingDeviceProfile (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
+  - PingFido (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingJourney (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingJourneyPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
   - PingLogger (from `https://github.com/ForgeRock/ping-ios-sdk.git`, branch `SDKS-4648-RN-Device`)
@@ -2778,6 +2852,8 @@ DEPENDENCIES:
   - "RNPingDeviceId/Tests (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingDeviceProfile/Tests (from `../../node_modules/@ping-identity/rn-device-profile`)"
+  - "RNPingFido (from `../../node_modules/@ping-identity/rn-fido`)"
+  - "RNPingFido/Tests (from `../../node_modules/@ping-identity/rn-fido`)"
   - "RNPingJourney (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingJourney/Tests (from `../../node_modules/@ping-identity/rn-journey`)"
   - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
@@ -2815,10 +2891,16 @@ EXTERNAL SOURCES:
   PingCommons:
     :branch: SDKS-4648-RN-Device
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinciPlugin:
+    :branch: SDKS-4648-RN-Device
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingDeviceId:
     :branch: SDKS-4648-RN-Device
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingDeviceProfile:
+    :branch: SDKS-4648-RN-Device
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingFido:
     :branch: SDKS-4648-RN-Device
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingJourney:
@@ -2985,6 +3067,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-device-id"
   RNPingDeviceProfile:
     :path: "../../node_modules/@ping-identity/rn-device-profile"
+  RNPingFido:
+    :path: "../../node_modules/@ping-identity/rn-fido"
   RNPingJourney:
     :path: "../../node_modules/@ping-identity/rn-journey"
   RNPingLogger:
@@ -3003,10 +3087,16 @@ CHECKOUT OPTIONS:
   PingCommons:
     :commit: a71deca27c1386e28f3b422f7797a40fbf02ad8e
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinciPlugin:
+    :commit: 657fdc70cd0e3bcb286d8ddc36616fdad75816ce
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingDeviceId:
     :commit: a71deca27c1386e28f3b422f7797a40fbf02ad8e
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingDeviceProfile:
+    :commit: a71deca27c1386e28f3b422f7797a40fbf02ad8e
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingFido:
     :commit: a71deca27c1386e28f3b422f7797a40fbf02ad8e
     :git: https://github.com/ForgeRock/ping-ios-sdk.git
   PingJourney:
@@ -3044,8 +3134,10 @@ SPEC CHECKSUMS:
   hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
   PingBrowser: edc09e095c66ce42a36ad3cb9e816d54322a5e5e
   PingCommons: 8033a83e775e5e08c3be4c4f321047d1fa01f318
+  PingDavinciPlugin: f060a9bb23acefb3e1adf6ed6c72f3902611d5bb
   PingDeviceId: 686b51d1db26579b64be523b68f826505a50fed4
   PingDeviceProfile: 5826058329ce80905b0fd5d5983a28709999532a
+  PingFido: 306b29b41f7243a8a7fdbe7df7c3e612a0306493
   PingJourney: 5563c1fe40ae285f0abc16b683712ac0cf8da331
   PingJourneyPlugin: fca9c893e77ae72890616fec51c96ac1ec7943bf
   PingLogger: 99e2ebe16c0dd1a7ef974565a7384f53a68b14c8
@@ -3124,13 +3216,14 @@ SPEC CHECKSUMS:
   RNPingCore: f41b28de7c94d2e2af7fae663531d0d0341d2775
   RNPingDeviceId: fd74c58f4eb179de3052adad1c1345bd402c10f5
   RNPingDeviceProfile: 89f1598c3d64d0209a7c22ef776a6f78485a3f44
-  RNPingJourney: 6f38c0a4ae2ca523541ce1950bd40440f085f2a7
+  RNPingFido: ee89068a0f14e4984f2a0a51355e7ca202cc943e
+  RNPingJourney: 58cdb9edeb9221ef09ffd265e5867b4500601849
   RNPingLogger: 92fd0e87739f7fabf9c16883827b450b13a512f2
   RNPingOidc: e522fcc12a6ed3e6e4ed8688db18e191aa1e1db1
   RNPingStorage: bddf2eac79587794f1f4928efe81637f163ee8eb
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 735d5585ceafce431efeca006a56d8949a1d901f
+PODFILE CHECKSUM: d6b3a9362aac5118af982274f12583e07d02a0ba
 
 COCOAPODS: 1.15.2

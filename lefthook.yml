@@ -13,7 +13,7 @@ pre-commit:
 
     - name: lint
       glob: '*.{js,ts,jsx,tsx}'
-      run: yarn eslint {staged_files}
+      run: yarn eslint --no-config-lookup --config eslint.config.mjs {staged_files}
 
     - name: copyright
       glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp,md}'

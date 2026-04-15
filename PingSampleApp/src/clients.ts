@@ -100,7 +100,7 @@ const journeySessionStorageClient1 = configureSessionStorage({
 /**
  * Shared logger instance used by sample clients.
  */
-const appLogger = logger({ level: 'none' });
+const appLogger = logger({ level: 'debug' });
 
 /**
  * OIDC client used by Journey module wiring.
@@ -120,6 +120,45 @@ export const journeyOidcClient = createOidcClient({
  */
 export const journeyOidcWebClient: OidcWebClient =
   createOidcWebClient(journeyOidcClient);
+
+/**
+ * OIDC storage handle dedicated to sample OIDC screens that should stay
+ * isolated from Journey-module OIDC state.
+ */
+const journeyStandaloneOidcStorage = configureOidcStorage({
+  android: {
+    fileName: 'journey-standalone-oidc',
+    keyAlias: 'journey.standalone.oidc',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.journey.standalone.oidc',
+    encryptor: true,
+    cacheable: true,
+  },
+});
+
+/**
+ * Standalone OIDC client for Forgeblock OIDC demo flows.
+ *
+ * This client intentionally uses dedicated storage to keep OIDC demo state
+ * separate from Journey-module OIDC state.
+ */
+const journeyStandaloneOidcClient = createOidcClient({
+  clientId: journeyConfig.clientId,
+  discoveryEndpoint: journeyConfig.discoveryEndpoint,
+  redirectUri: journeyConfig.redirectUri,
+  scopes: journeyConfig.scopes,
+  storage: journeyStandaloneOidcStorage,
+  logger: appLogger,
+});
+
+/**
+ * Web-capable wrapper around the standalone Journey OIDC client.
+ */
+export const journeyStandaloneOidcWebClient: OidcWebClient =
+  createOidcWebClient(journeyStandaloneOidcClient);
 
 /**
  * OIDC client configuration used to create the sample web-capable OIDC client.
@@ -327,7 +366,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     host: hostnameFrom(journeyConfig.discoveryEndpoint),
     environment: journeyConfig.realm,
     journeyClient: loginClient,
-    oidcClient: journeyOidcWebClient,
+    oidcClient: journeyStandaloneOidcWebClient,
     oidcClientConfig: {
       clientId: journeyConfig.clientId,
       discoveryEndpoint: journeyConfig.discoveryEndpoint,

@@ -53,6 +53,14 @@ target 'PingSampleApp' do
   pod 'PingDeviceProfile',
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch
+  pod 'PingFido',
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch,
+  :modular_headers => true
+  pod 'PingDavinciPlugin',
+  :git => ping_ios_sdk_git,
+  :branch => ping_ios_sdk_branch,
+  :modular_headers => true
   pod 'PingJourneyPlugin',
   :git => ping_ios_sdk_git,
   :branch => ping_ios_sdk_branch

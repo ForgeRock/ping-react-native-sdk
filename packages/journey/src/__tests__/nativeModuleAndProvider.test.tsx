@@ -129,6 +129,29 @@ describe('useJourney provider and native module resolution', () => {
     });
   });
 
+  it('shares journey state across multiple consumers under the same provider', async () => {
+    const client = createJourneyClientMock();
+    let resultA: JourneyHookResult | null = null;
+    let resultB: JourneyHookResult | null = null;
+
+    render(
+      <JourneyProvider client={client}>
+        <JourneyHarness onResult={(r) => { resultA = r; }} />
+        <JourneyHarness onResult={(r) => { resultB = r; }} />
+      </JourneyProvider>
+    );
+
+    await act(async () => {
+      await requireLatest(resultA)[1].start('Login');
+    });
+
+    // Both consumers should reflect the same node from the shared provider state.
+    expect(requireLatest(resultA)[0]).toEqual({ type: 'ContinueNode', callbacks: [] });
+    expect(requireLatest(resultB)[0]).toEqual({ type: 'ContinueNode', callbacks: [] });
+    // start() should only have been called once (not once per consumer).
+    expect(client.start).toHaveBeenCalledTimes(1);
+  });
+
   it('falls back to classic module when TurboModule is missing', () => {
     jest.isolateModules(() => {
       const classic = {};

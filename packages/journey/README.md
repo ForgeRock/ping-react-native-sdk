@@ -158,7 +158,7 @@ await client.logoutUser();
 await client.dispose();
 ```
 
-`useJourney` auto-advances `PollingWaitCallback` nodes when no manual or blocking integration callbacks are present.
+`useJourney` does not auto-advance nodes. Progression policy is app-controlled via explicit `next(...)` calls.
 
 Start options are supported when initiating a journey:
 
@@ -271,7 +271,23 @@ if (form.canSubmit) {
 }
 ```
 
-`useJourneyForm` is headless. It manages normalized fields and submit planning, but does not render UI and does not auto-run integration-required callbacks.
+`useJourneyForm` is headless. It manages normalized fields and submit planning, but does not render UI and does not auto-run callbacks.
+
+Each normalized field includes `executionMode` and `requiresUserInput`.
+
+| `executionMode` | Meaning | `requiresUserInput` default |
+| --- | --- | --- |
+| `manual` | Callback value is submitted from form/planned input. | `true` |
+| `auto_capable` | Callback can be executed by app auto-progress policy. | `false` |
+| `integration_required` | Callback family needs extra native/app integration before submit. | `false` |
+| `output_only` | Display/system callback, no input value expected. | `false` |
+| `unsupported` | Callback is not currently handled by helper submit logic. | `false` |
+
+`requiresUserInput` exceptions:
+
+| Callback Type | `executionMode` | `requiresUserInput` | Reason |
+| --- | --- | --- | --- |
+| `HiddenValueCallback` | `manual` | `false` | Hidden payload should pass through submit planning without forcing a visible input step. |
 
 > TODO(test-runner app): add Journey integration and E2E tests (including `SuspendedTextOutputCallback` deep link/email resume flow) once the test-runner app is set up.
 
@@ -300,7 +316,19 @@ The following AM core callbacks are supported on Android and iOS:
 | `ValidatedCreatePasswordCallback` | Collects password input with policy validation. | Manual input |
 | `ValidatedCreateUsernameCallback` | Collects username input with policy validation. | Manual input |
 
-Integration-dependent families (for example, device profile, FIDO/FIDO2, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission.
+Integration-dependent families (for example, device profile, FIDO, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission (`executionMode: 'integration_required'`).
+
+For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fido` (`registerForJourney(...)` / `authenticateForJourney(...)`) and then call `next(...)`.
+
+### Native parity contract
+
+Journey FIDO callback handling is standardized across Android and iOS with the following native contract:
+
+| Area | Standardized behavior |
+| --- | --- |
+| Callback type resolution | Runtime native callback class is authoritative; raw callback JSON `type` is fallback only. |
+| Callback execution ownership | FIDO callback execution is owned by `@ping-identity/rn-fido` Journey-scoped APIs, not `next(...)` callback mutations. |
+| Hidden callback ownership | Journey/native callback execution remains the source of truth for callback state; helper layer does not force custom override values. |
 
 ## Error handling
 

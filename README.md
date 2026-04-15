@@ -9,6 +9,7 @@ of the MIT license. See the LICENSE file for details.
 [![License][license-image]][license-url]
 [![Yarn][yarn-image]][yarn-url]
 [![codecov][codecov-image]][codecov-url]
+
 # React Native Ping SDK
 
 This repository demonstrates the **Ping Identity React Native SDK** — a modular setup where native SDKs (Storage, OIDC, Browser, Journey, etc.) are wrapped as independent TurboModules and integrated into a sample React Native app.
@@ -28,9 +29,9 @@ The SDK supports both React Native New Architecture (the sample app runs with `R
 ### Platform compatibility
 
 | Platform | Minimum version |
-| -------- | :---------: |
-| iOS      |    16.0     |
-| Android  |   API 29+   |
+| -------- | :-------------: |
+| iOS      |      16.0       |
+| Android  |     API 29+     |
 
 ### Android build settings
 
@@ -84,8 +85,8 @@ yarn sample:run:ios
 
 ## Notes
 
-* `sample:clean-install` clears and reinstalls dependencies inside the sample app (`PingSampleApp`).
-* TODO(testing): remove the temporary `react-test-renderer` deprecation-warning suppression in `packages/journey/jest.setup.js` once `@testing-library/react-native` no longer depends on it.
+- `sample:clean-install` clears and reinstalls dependencies inside the sample app (`PingSampleApp`).
+- TODO(testing): remove the temporary `react-test-renderer` deprecation-warning suppression in `packages/journey/jest.setup.js` once `@testing-library/react-native` no longer depends on it.
 
 ---
 
@@ -121,6 +122,7 @@ We welcome contributions to the React Native Ping SDK! Please read the guideline
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details
 
 <!-- Variables -->
+
 [ping-image]: https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg
 [repo-url]: https://github.com/ForgeRock/ping-react-native-sdk
 [license-image]: https://img.shields.io/badge/license-MIT-green.svg

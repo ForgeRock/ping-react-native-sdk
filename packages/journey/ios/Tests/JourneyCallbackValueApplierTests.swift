@@ -71,13 +71,13 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     }
   }
 
-  func testApplyUpdatesCoreManualCallbacks() throws {
-    let name = NameCallback().initialize(with: callbackPayload(
+  func testApplyUpdatesCoreManualCallbacks() async throws {
+    let name = await NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
       output: [["name": "prompt", "value": "User Name"]],
       input: [["name": "IDToken1", "value": ""]]
     )) as! NameCallback
-    let password = PasswordCallback().initialize(with: callbackPayload(
+    let password = await PasswordCallback().initialize(with: callbackPayload(
       type: "PasswordCallback",
       output: [["name": "prompt", "value": "Password"]],
       input: [["name": "IDToken2", "value": ""]]
@@ -88,19 +88,19 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "PasswordCallback", value: "demo-pass", index: nil)
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks([name, password], mutations: mutations)
+    try await JourneyCallbackValueApplier.applyToCallbacks([name, password], mutations: mutations)
 
     XCTAssertEqual(name.name, "demo-user")
     XCTAssertEqual(password.password, "demo-pass")
   }
 
-  func testApplyRespectsPerTypeIndexForDuplicateCallbacks() throws {
-    let firstName = NameCallback().initialize(with: callbackPayload(
+  func testApplyRespectsPerTypeIndexForDuplicateCallbacks() async throws {
+    let firstName = await NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
       output: [["name": "prompt", "value": "First"]],
       input: [["name": "IDToken1", "value": ""]]
     )) as! NameCallback
-    let secondName = NameCallback().initialize(with: callbackPayload(
+    let secondName = await NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
       output: [["name": "prompt", "value": "Second"]],
       input: [["name": "IDToken2", "value": ""]]
@@ -111,14 +111,14 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "NameCallback", value: "value-0", index: 0)
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks([firstName, secondName], mutations: mutations)
+    try await JourneyCallbackValueApplier.applyToCallbacks([firstName, secondName], mutations: mutations)
 
     XCTAssertEqual(firstName.name, "value-0")
     XCTAssertEqual(secondName.name, "value-1")
   }
 
-  func testApplyRejectsOutputOnlyCallbackMutation() {
-    let callback = TextOutputCallback().initialize(with: callbackPayload(
+  func testApplyRejectsOutputOnlyCallbackMutation() async {
+    let callback = await TextOutputCallback().initialize(with: callbackPayload(
       type: "TextOutputCallback",
       output: [
         ["name": "message", "value": "Read-only output"],
@@ -131,35 +131,61 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "TextOutputCallback", value: "mutate", index: nil)
     ]
 
-    XCTAssertThrowsError(
-      try JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
-    ) { error in
-      guard case let JourneyBridgeError.unsupportedCallback(message) = error else {
-        return XCTFail("Expected unsupported callback error, got \(error)")
-      }
+    do {
+      try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+      XCTFail("Expected unsupported callback error")
+    } catch let JourneyBridgeError.unsupportedCallback(message) {
       XCTAssertTrue(message.contains("output-only"))
+    } catch {
+      XCTFail("Expected unsupported callback error, got \(error)")
     }
   }
 
-  func testApplyRejectsIntegrationRequiredCallbacks() {
-    let callback = FidoRegistrationCallback()
+  func testApplyRejectsIntegrationRequiredCallbacks() async {
+    class DeviceProfileCallback {}
+    let callback = DeviceProfileCallback()
 
     let mutations = [
-      JourneyCallbackValueApplier.CallbackMutation(type: "FidoRegistrationCallback", value: "token", index: nil)
+      JourneyCallbackValueApplier.CallbackMutation(type: "DeviceProfileCallback", value: "token", index: nil)
     ]
 
-    XCTAssertThrowsError(
-      try JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
-    ) { error in
-      guard case let JourneyBridgeError.missingIntegration(message) = error else {
-        return XCTFail("Expected missing integration error, got \(error)")
-      }
+    do {
+      try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+      XCTFail("Expected missing integration error")
+    } catch let JourneyBridgeError.missingIntegration(message) {
       XCTAssertTrue(message.contains("requires additional native integration"))
+    } catch {
+      XCTFail("Expected missing integration error, got \(error)")
     }
   }
 
-  func testApplyMapsKbaObjectValues() throws {
-    let callback = KbaCreateCallback().initialize(with: callbackPayload(
+  @MainActor
+  func testApplyRejectsFidoIntegrationCallbacks() async {
+    class FidoRegistrationCallback {}
+    class FidoAuthenticationCallback {}
+
+    let cases: [(Any, String)] = [
+      (FidoRegistrationCallback(), "FidoRegistrationCallback"),
+      (FidoAuthenticationCallback(), "FidoAuthenticationCallback"),
+    ]
+
+    for (callback, type) in cases {
+      do {
+        let mutations = [
+          JourneyCallbackValueApplier.CallbackMutation(type: type, value: "token", index: nil)
+        ]
+        try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+        XCTFail("Expected missing integration error for \(type)")
+      } catch let JourneyBridgeError.missingIntegration(message) {
+        XCTAssertTrue(message.contains("@ping-identity/rn-fido"))
+      } catch {
+        XCTFail("Expected missing integration error for \(type), got \(error)")
+      }
+    }
+  }
+
+  func testApplyMapsKbaObjectValues() async throws {
+    let callback = await KbaCreateCallback().initialize(with: callbackPayload(
       type: "KbaCreateCallback",
       output: [
         ["name": "prompt", "value": "Choose question"],
@@ -181,14 +207,14 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "KbaCreateCallback", value: mutationValue, index: nil)
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+    try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
 
     XCTAssertEqual(callback.selectedQuestion, "Question 2")
     XCTAssertEqual(callback.selectedAnswer, "answer")
     XCTAssertEqual(callback.allowUserDefinedQuestions, false)
   }
 
-  func testApplyMutatesAttributeAndTermsCallbackValues() throws {
+  func testApplyMutatesAttributeAndTermsCallbackValues() async throws {
     let textInput = TextInputCallback()
     let stringAttribute = StringAttributeInputCallback()
     let numberAttribute = NumberAttributeInputCallback()
@@ -207,7 +233,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "ConsentMappingCallback", value: true, index: nil)
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks(
+    try await JourneyCallbackValueApplier.applyToCallbacks(
       [textInput, stringAttribute, numberAttribute, booleanAttribute, hiddenValue, terms, consent],
       mutations: mutations
     )
@@ -221,7 +247,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     XCTAssertEqual(consent.accepted, true)
   }
 
-  func testApplySupportsValidatedAliasTypes() throws {
+  func testApplySupportsValidatedAliasTypes() async throws {
     let validatedPassword = ValidatedPasswordCallback()
     let validatedUsername = ValidatedUsernameCallback()
     let mutations = [
@@ -237,7 +263,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       )
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks(
+    try await JourneyCallbackValueApplier.applyToCallbacks(
       [validatedPassword, validatedUsername],
       mutations: mutations
     )
@@ -246,7 +272,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     XCTAssertEqual(validatedUsername.username, "demo-user")
   }
 
-  func testApplyMutatesChoiceAndConfirmationCallbacks() throws {
+  func testApplyMutatesChoiceAndConfirmationCallbacks() async throws {
     let choice = ChoiceCallback()
     let confirmation = ConfirmationCallback()
     let mutations = [
@@ -254,7 +280,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       JourneyCallbackValueApplier.CallbackMutation(type: "ConfirmationCallback", value: "0", index: nil)
     ]
 
-    try JourneyCallbackValueApplier.applyToCallbacks(
+    try await JourneyCallbackValueApplier.applyToCallbacks(
       [choice, confirmation],
       mutations: mutations
     )
@@ -275,5 +301,3 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     ]
   }
 }
-
-private final class FidoRegistrationCallback {}

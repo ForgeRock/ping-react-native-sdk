@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import PingFido
 import PingJourney
 import PingJourneyPlugin
 import PingOrchestrate
@@ -15,10 +16,10 @@ enum JourneyCallbackValueApplier {
   /// Callback types that require additional integration before values can be mutated.
   private static let integrationCallbackRequirements: [String: String] = [
     "DeviceProfileCallback": "@ping-identity/rn-device-profile",
+    "FidoRegistrationCallback": "@ping-identity/rn-fido",
+    "FidoAuthenticationCallback": "@ping-identity/rn-fido",
     "PingOneProtectInitializeCallback": "PingOne Protect integration",
     "PingOneProtectEvaluationCallback": "PingOne Protect integration",
-    "FidoRegistrationCallback": "FIDO/WebAuthn integration",
-    "FidoAuthenticationCallback": "FIDO/WebAuthn integration",
     "SelectIdPCallback": "External IdP integration",
     "IdPCallback": "External IdP integration",
     "ReCaptchaCallback": "ReCaptcha integration",
@@ -84,8 +85,9 @@ enum JourneyCallbackValueApplier {
   ///   - continueNode: Active continue node.
   ///   - mutations: Parsed callback mutations.
   /// - Throws: `JourneyBridgeError` when mutation fails.
-  static func apply(_ continueNode: ContinueNode, mutations: [CallbackMutation]) throws {
-    try applyToCallbacks(continueNode.callbacks.map { $0 }, mutations: mutations)
+  @MainActor
+  static func apply(_ continueNode: ContinueNode, mutations: [CallbackMutation]) async throws {
+    try await applyToCallbacks(continueNode.callbacks.map { $0 }, mutations: mutations)
   }
 
   /// Applies parsed callback mutations to callback list.
@@ -94,7 +96,8 @@ enum JourneyCallbackValueApplier {
   ///   - callbacks: Active callbacks.
   ///   - mutations: Parsed callback mutations.
   /// - Throws: `JourneyBridgeError` when mutation fails.
-  static func applyToCallbacks(_ callbacks: [Any], mutations: [CallbackMutation]) throws {
+  @MainActor
+  static func applyToCallbacks(_ callbacks: [Any], mutations: [CallbackMutation]) async throws {
     var consumedIndexByType = [String: Int]()
 
     for mutation in mutations {
@@ -230,12 +233,54 @@ enum JourneyCallbackValueApplier {
   /// - Parameter callback: Runtime callback instance.
   /// - Returns: Normalized callback type.
   private static func callbackLookupType(_ callback: Any) -> String {
+    if callback is FidoAuthenticationCallback {
+      return "FidoAuthenticationCallback"
+    }
+    if callback is FidoRegistrationCallback {
+      return "FidoRegistrationCallback"
+    }
+    if let metadata = callback as? MetadataCallback,
+       let fidoType = fidoCallbackType(from: metadata) {
+      return normalizedCallbackType(fidoType)
+    }
     if let abstract = callback as? AbstractCallback,
        let rawType = abstract.json["type"] as? String,
        !rawType.isEmpty {
       return normalizedCallbackType(rawType)
     }
     return normalizedCallbackType(String(describing: type(of: callback)))
+  }
+
+  /// Resolves FIDO callback type aliases from WebAuthn metadata callbacks.
+  ///
+  /// - Parameter metadata: Metadata callback candidate.
+  /// - Returns: FIDO callback type when metadata describes a WebAuthn action.
+  private static func fidoCallbackType(from metadata: MetadataCallback) -> String? {
+    var payload: [String: Any]?
+    if let dictionary = metadata.value as? [String: Any] {
+      payload = dictionary
+    } else if let dictionary = metadata.value as? NSDictionary {
+      var mapped = [String: Any]()
+      dictionary.forEach { key, value in
+        guard let key = key as? String else {
+          return
+        }
+        mapped[key] = value
+      }
+      payload = mapped
+    }
+
+    guard let action = (payload?["_action"] as? String)?.lowercased() else {
+      return nil
+    }
+    switch action {
+    case "webauthn_registration":
+      return "FidoRegistrationCallback"
+    case "webauthn_authentication":
+      return "FidoAuthenticationCallback"
+    default:
+      return nil
+    }
   }
 
   /// Normalizes alias callback type names used by JS helper APIs.

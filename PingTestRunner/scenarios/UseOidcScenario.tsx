@@ -91,10 +91,11 @@ interface UseOidcScenarioProps {
   forceError?: boolean;
 }
 
-export default function UseOidcScenario({ forceError: forceErrorProp = false }: UseOidcScenarioProps): React.JSX.Element {
+export default function UseOidcScenario({
+  forceError: forceErrorProp = false,
+}: UseOidcScenarioProps): React.JSX.Element {
   const args = LaunchArguments.value<OidcLaunchArgs>();
   const liveMode = args.PING_OIDC_LIVE_MODE === 'true';
-  const forceError = forceErrorProp;
 
   const liveClient = useMemo<OidcWebClient | null>(() => {
     if (!liveMode) {
@@ -108,12 +109,19 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
       scopes: ['openid', 'profile', 'email'],
     });
     return createOidcWebClient(oidcClient);
-  }, [liveMode]);
+  }, [
+    liveMode,
+    args.PING_DISCOVERY_ENDPOINT,
+    args.PING_CLIENT_ID,
+    args.PING_REDIRECT_URI,
+  ]);
 
   const client: OidcWebClient =
-    liveMode && liveClient != null ? liveClient
-    : forceError ? errorMockWebClient
-    : mockWebClient;
+    liveMode && liveClient != null
+      ? liveClient
+      : forceErrorProp
+        ? errorMockWebClient
+        : mockWebClient;
 
   const [state, actions] = useOidc(client);
   const [hasDeauthed, setHasDeauthed] = useState(false);
@@ -180,9 +188,7 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
 
   return (
     <View>
-      {state.isLoading && (
-        <Text testID="use-oidc-loading">Loading…</Text>
-      )}
+      {state.isLoading && <Text testID="use-oidc-loading">Loading…</Text>}
       {state.isAuthenticated && (
         <Text testID="use-oidc-authenticated">Authenticated</Text>
       )}
@@ -194,7 +200,9 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
       )}
       {refreshed && <Text testID="use-oidc-refreshed">Refreshed</Text>}
       {refreshed && state.tokens !== null && (
-        <Text testID="use-oidc-refreshed-token-result">{state.tokens.accessToken}</Text>
+        <Text testID="use-oidc-refreshed-token-result">
+          {state.tokens.accessToken}
+        </Text>
       )}
       {state.userInfo !== null && (
         <Text testID="use-oidc-userinfo-result">Userinfo OK</Text>
@@ -216,11 +224,7 @@ export default function UseOidcScenario({ forceError: forceErrorProp = false }: 
         title="Restore"
         onPress={handleRestore}
       />
-      <Button
-        testID="use-oidc-token-btn"
-        title="Token"
-        onPress={handleToken}
-      />
+      <Button testID="use-oidc-token-btn" title="Token" onPress={handleToken} />
       <Button
         testID="use-oidc-refresh-btn"
         title="Refresh"

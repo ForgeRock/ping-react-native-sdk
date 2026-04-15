@@ -71,7 +71,8 @@ const JOURNEY_NAME = args.PING_JOURNEY_NAME ?? 'Login';
 const COOKIE_NAME = args.PING_COOKIE_NAME ?? 'iPlanetDirectoryPro';
 const CLIENT_ID = args.PING_CLIENT_ID ?? '';
 const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
-const REDIRECT_URI = args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+const REDIRECT_URI =
+  args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
 
 // ─── component ───────────────────────────────────────────────────────────────
 
@@ -96,7 +97,7 @@ export default function UseJourneyScenario(): React.JSX.Element {
             }
           : {}),
       }),
-    []
+    [],
   );
 
   const [node, actions] = useJourney(client);
@@ -195,9 +196,7 @@ export default function UseJourneyScenario(): React.JSX.Element {
         onPress={handleStart}
       />
 
-      {actions.loading && (
-        <Text testID="use-journey-loading">Loading…</Text>
-      )}
+      {actions.loading && <Text testID="use-journey-loading">Loading…</Text>}
 
       {actions.error !== null && (
         <Text testID="use-journey-error">{actions.error.message}</Text>
@@ -254,7 +253,11 @@ export default function UseJourneyScenario(): React.JSX.Element {
           />
           {refreshed && <Text testID="use-journey-refreshed">Refreshed</Text>}
           {refreshedToken !== null && (
-            <Text testID="use-journey-refreshed-token-result" numberOfLines={1} ellipsizeMode="middle">
+            <Text
+              testID="use-journey-refreshed-token-result"
+              numberOfLines={1}
+              ellipsizeMode="middle"
+            >
               {refreshedToken}
             </Text>
           )}
@@ -359,17 +362,13 @@ function HookFieldInput({
           testID={`${testID}-question`}
           placeholder="Question"
           value={kba.selectedQuestion}
-          onChangeText={(t) =>
-            onValueChange({ ...kba, selectedQuestion: t })
-          }
+          onChangeText={(t) => onValueChange({ ...kba, selectedQuestion: t })}
         />
         <TextInput
           testID={`${testID}-answer`}
           placeholder="Answer"
           value={kba.selectedAnswer}
-          onChangeText={(t) =>
-            onValueChange({ ...kba, selectedAnswer: t })
-          }
+          onChangeText={(t) => onValueChange({ ...kba, selectedAnswer: t })}
         />
       </View>
     );

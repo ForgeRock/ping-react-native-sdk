@@ -109,8 +109,8 @@ function readOptions(callback: JourneyCallback): string[] {
   const candidate = Array.isArray(callback.options)
     ? callback.options
     : Array.isArray(callback.choices)
-    ? callback.choices
-    : [];
+      ? callback.choices
+      : [];
 
   return candidate.map((item, index) => {
     if (typeof item === 'string') {
@@ -184,8 +184,8 @@ function buildManualNextInput(
         typeof rawValue === 'number'
           ? rawValue
           : typeof rawValue === 'string'
-          ? Number(rawValue)
-          : Number.NaN;
+            ? Number(rawValue)
+            : Number.NaN;
       if (!Number.isFinite(numericValue)) {
         issues.push(`${type} requires a numeric value.`);
         return;
@@ -206,8 +206,8 @@ function buildManualNextInput(
         typeof rawValue === 'number'
           ? rawValue
           : typeof rawValue === 'string'
-          ? Number(rawValue)
-          : Number.NaN;
+            ? Number(rawValue)
+            : Number.NaN;
       if (!Number.isFinite(selectedIndex)) {
         issues.push(`${type} requires selecting one option.`);
         return;
@@ -320,21 +320,40 @@ export default function JourneyFullScreen(): React.ReactElement {
   }, [user]);
 
   useEffect(() => {
-    refreshSession().catch(() => {
-      // Ignore initial session check failures in sample screen.
-    });
+    const timeoutId = setTimeout(() => {
+      refreshSession().catch(() => {
+        // Ignore initial session check failures in sample screen.
+      });
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [refreshSession]);
 
   useEffect(() => {
     if (node?.type === 'ContinueNode') {
-      setIssues([]);
-      setValues({});
+      const timeoutId = setTimeout(() => {
+        setIssues([]);
+        setValues({});
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
     if (node?.type === 'SuccessNode') {
-      refreshSession().catch(() => {
-        // Ignore session refresh failures in sample screen.
-      });
+      const timeoutId = setTimeout(() => {
+        refreshSession().catch(() => {
+          // Ignore session refresh failures in sample screen.
+        });
+      }, 0);
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
+    return undefined;
   }, [node, refreshSession]);
 
   const onStart = useCallback(async (): Promise<void> => {
@@ -538,8 +557,8 @@ export default function JourneyFullScreen(): React.ReactElement {
         typeof currentValue === 'string'
           ? currentValue
           : typeof callback.value === 'string'
-          ? callback.value
-          : '';
+            ? callback.value
+            : '';
 
       return (
         <View key={key} style={styles.callbackCard}>

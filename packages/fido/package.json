@@ -1,0 +1,68 @@
+{
+  "name": "@ping-identity/rn-fido",
+  "version": "0.1.0",
+  "description": "The FIDO Module provides native-backed FIDO capabilities for React Native.",
+  "homepage": "https://www.pingidentity.com/",
+  "author": "Ping Identity",
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "*.podspec"
+  ],
+  "scripts": {
+    "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
+    "build": "bob build",
+    "clean": "rimraf lib",
+    "test": "jest --config jest.config.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
+  },
+  "dependencies": {
+    "@ping-identity/rn-core": "^0.1.0",
+    "@ping-identity/rn-types": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "react-native-builder-bob": "^0.40.14",
+    "typescript": "^5.9.2"
+  },
+  "license": "MIT",
+  "codegenConfig": {
+    "name": "RNPingFidoSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pingidentity.rnfido"
+    }
+  },
+  "workspaces": [
+    "example"
+  ],
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}

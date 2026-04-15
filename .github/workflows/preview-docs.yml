@@ -6,75 +6,75 @@
 #
 name: Preview Docs
 on:
-    workflow_call:
-        inputs:
-            pr_number:
-                description: Pull request number used for preview deployment
-                required: true
-                type: number
+  workflow_call:
+    inputs:
+      pr_number:
+        description: Pull request number used for preview deployment
+        required: true
+        type: number
 
 # Required permissions for preview deployment and PR comments.
 jobs:
-    build-docs:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
+  build-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
-        outputs:
-            artifact-name: ${{ steps.artifact-name.outputs.value }}
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.value }}
 
-        steps:
-            # Checkout repository to build the documentation from the PR contents.
-            - name: Checkout
-              uses: actions/checkout@v6
-              with:
-                fetch-depth: 1
+    steps:
+      # Checkout repository to build the documentation from the PR contents.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
 
-            # Generate TypeDoc documentation for all packages using the composite action.
-            - name: Build docs
-              uses: ./.github/actions/docs-build
+      # Generate TypeDoc documentation for all packages using the composite action.
+      - name: Build docs
+        uses: ./.github/actions/docs-build
 
-            # Persist the generated docs so deployment can happen in a separate privileged job.
-            - name: Set artifact name
-              id: artifact-name
-              run: echo "value=docs-preview-${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
-              shell: bash
+      # Persist the generated docs so deployment can happen in a separate privileged job.
+      - name: Set artifact name
+        id: artifact-name
+        run: echo "value=docs-preview-${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+        shell: bash
 
-            - name: Upload docs artifact
-              uses: actions/upload-artifact@v7
-              with:
-                name: ${{ steps.artifact-name.outputs.value }}
-                path: docs
-                retention-days: 7
+      - name: Upload docs artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.artifact-name.outputs.value }}
+          path: docs
+          retention-days: 7
 
-    deploy-preview:
-        needs: build-docs
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            pull-requests: write
+  deploy-preview:
+    needs: build-docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
-        steps:
-            # Checkout the repository so the preview action has a valid git context for the preview branch update.
-            - name: Checkout
-              uses: actions/checkout@v6
-              with:
-                fetch-depth: 1
+    steps:
+      # Checkout the repository so the preview action has a valid git context for the preview branch update.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
 
-            - name: Download docs artifact
-              uses: actions/download-artifact@v5
-              with:
-                name: ${{ needs.build-docs.outputs.artifact-name }}
-                path: docs
+      - name: Download docs artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ needs.build-docs.outputs.artifact-name }}
+          path: docs
 
-            # Publish a PR-scoped preview to GitHub Pages and comment URL in PR.
-            - name: Deploy preview pages
-              uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
-              with:
-                source-dir: docs
-                action: deploy
-                pr-number: ${{ inputs.pr_number }}
-                preview-branch: gh-pages
-                umbrella-dir: docs-preview
-                comment: true
-                wait-for-pages-deployment: false
+      # Publish a PR-scoped preview to GitHub Pages and comment URL in PR.
+      - name: Deploy preview pages
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
+        with:
+          source-dir: docs
+          action: deploy
+          pr-number: ${{ inputs.pr_number }}
+          preview-branch: gh-pages
+          umbrella-dir: docs-preview
+          comment: true
+          wait-for-pages-deployment: false

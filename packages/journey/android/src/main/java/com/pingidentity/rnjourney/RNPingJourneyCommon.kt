@@ -307,31 +307,8 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    try {
-      val mutations = JourneyCallbackValueApplier.parseInput(input)
-      if (mutations.isNotEmpty()) {
-        JourneyCallbackValueApplier.apply(currentNode, mutations)
-      }
-    } catch (error: IllegalStateException) {
-      promise.reject(
-        GenericError(
-          type = ErrorType.STATE_ERROR,
-          error = JourneyErrorCodes.MISSING_INTEGRATION,
-          message = error.message
-        ),
-        error
-      )
-      return
-    } catch (error: UnsupportedOperationException) {
-      promise.reject(
-        GenericError(
-          type = ErrorType.ARGUMENT_ERROR,
-          error = JourneyErrorCodes.UNSUPPORTED_CALLBACK,
-          message = error.message
-        ),
-        error
-      )
-      return
+    val mutations = try {
+      JourneyCallbackValueApplier.parseInput(input)
     } catch (error: IllegalArgumentException) {
       promise.reject(
         GenericError(
@@ -346,9 +323,39 @@ internal object RNPingJourneyCommon {
 
     scope.launch {
       try {
+        if (mutations.isNotEmpty()) {
+          JourneyCallbackValueApplier.apply(currentNode, mutations)
+        }
         val nextNode = currentNode.next()
         setNodeState(journeyId, nextNode)
         promise.resolve(JourneyNodeMapper.mapNode(nextNode, resolveJourneyLogger(journeyId)))
+      } catch (error: JourneyCallbackValueApplier.MissingIntegrationException) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.STATE_ERROR,
+            error = JourneyErrorCodes.MISSING_INTEGRATION,
+            message = error.message
+          ),
+          error
+        )
+      } catch (error: UnsupportedOperationException) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.ARGUMENT_ERROR,
+            error = JourneyErrorCodes.UNSUPPORTED_CALLBACK,
+            message = error.message
+          ),
+          error
+        )
+      } catch (error: IllegalArgumentException) {
+        promise.reject(
+          GenericError(
+            type = ErrorType.ARGUMENT_ERROR,
+            error = JourneyErrorCodes.CALLBACK_APPLY,
+            message = error.message
+          ),
+          error
+        )
       } catch (error: Exception) {
         promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.NEXT), error)
       }

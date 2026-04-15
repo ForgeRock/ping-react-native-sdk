@@ -5,13 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -102,8 +96,10 @@ export default function PingTextInput(
 
   const active = isFocused || hasValue;
   const selected = isFocused;
-  const floatingLabel = showFloatingLabel ? label ?? placeholder ?? '' : '';
-  const labelAnimation = useRef(new Animated.Value(active ? 1 : 0)).current;
+  const floatingLabel = showFloatingLabel ? (label ?? placeholder ?? '') : '';
+  const [labelAnimation] = useState<Animated.Value>(
+    () => new Animated.Value(active ? 1 : 0),
+  );
   const supportsSecureToggle = Boolean(allowPasswordToggle || secureTextEntry);
   const secureMode = supportsSecureToggle
     ? !passwordVisible
