@@ -8,8 +8,8 @@
     "packages:install": "yarn install",
     "packages:build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test",
-    "test:affected:coverage": "turbo run test --affected -- --coverage",
+    "test": "turbo run test --filter='./packages/*'",
+    "test:affected:coverage": "turbo run test --filter=\"{packages/**}[$TURBO_SCM_BASE...$TURBO_SCM_HEAD]\" -- --coverage",
     "packages:info": "yarn workspaces info",
     "docs:generate": "typedoc --options typedoc.json",
     "packages:sample:build-install": "yarn packages:install && yarn packages:build && yarn sample:clean-install",
@@ -34,6 +34,12 @@
     "test:runner:native:ios": "yarn workspace PingTestRunner test:native:ios",
     "build:runner:e2e:ios": "yarn workspace PingTestRunner build:e2e:ios",
     "build:runner:e2e:android": "yarn workspace PingTestRunner build:e2e:android",
+    "build:runner:bs:android": "yarn workspace PingTestRunner build:bs:android",
+    "build:runner:bs:ios": "yarn workspace PingTestRunner build:bs:ios",
+    "build:runner:bs:ios:archive": "yarn workspace PingTestRunner build:bs:ios:archive",
+    "build:runner:bs:ios:ipa": "yarn workspace PingTestRunner build:bs:ios:ipa",
+    "build:runner:bs:ios:test-suite": "yarn workspace PingTestRunner build:bs:ios:test-suite",
+    "test:runner:bs:android": "yarn workspace PingTestRunner test:bs:android",
     "test:runner:e2e:ios": "yarn workspace PingTestRunner test:e2e:ios",
     "test:runner:e2e:android": "yarn workspace PingTestRunner test:e2e:android",
     "runner:clean-install": "yarn workspace PingTestRunner run clean-install",
@@ -42,7 +48,8 @@
     "storage:test": "yarn workspace @ping-identity/rn-storage run test",
     "docs:journey": "typedoc --options typedoc.journey.json",
     "prettier": "turbo run prettier",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "postinstall": "lefthook install"
   },
   "workspaces": {
     "packages": [
@@ -61,6 +68,7 @@
     "globals": "^17.3.0",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
+    "lefthook": "^2.1.5",
     "prettier": "3.8.1",
     "turbo": "^2.8.10",
     "typedoc": "^0.28",

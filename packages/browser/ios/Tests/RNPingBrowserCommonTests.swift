@@ -9,6 +9,7 @@ import PingBrowser
 import RNPingBrowser
 import RNPingLogger
 
+@MainActor
 final class RNPingBrowserCommonTests: XCTestCase {
   private let testUrl = "https://example.com"
   private var loggerId: String!
@@ -56,7 +57,10 @@ final class RNPingBrowserCommonTests: XCTestCase {
       resolver: { _ in XCTFail("resolver should not be called") },
       rejecter: { code, message, _ in
         XCTAssertEqual(code, "BROWSER_OPEN_ERROR")
-        XCTAssertEqual(message, "Invalid URL")
+        XCTAssertEqual(
+          message,
+          "Unsupported URL scheme. Only HTTP and HTTPS URLs are supported."
+        )
         expectation.fulfill()
       }
     )
@@ -189,18 +193,23 @@ final class RNPingBrowserCommonTests: XCTestCase {
   }
 
   func testResetDelegatesToLauncher() {
+    let expectation = expectation(description: "reset delegated")
     let launcher = FakeBrowserLauncher()
+    launcher.resetExpectation = expectation
     RNPingBrowserCommon._setBrowserLauncherForTesting(launcher)
 
     RNPingBrowserCommon.reset()
 
+    wait(for: [expectation], timeout: 1)
     XCTAssertTrue(launcher.resetCalled)
   }
 }
 
+@MainActor
 private final class FakeBrowserLauncher: BrowserLaunching {
   var result: Result<URL, Error> = .success(URL(string: "com.example.app://callback")!)
   var resetCalled = false
+  var resetExpectation: XCTestExpectation?
   var lastBrowserType: BrowserType?
   var lastBrowserMode: BrowserMode?
   var lastCallbackScheme: String?
@@ -220,5 +229,6 @@ private final class FakeBrowserLauncher: BrowserLaunching {
 
   func reset() {
     resetCalled = true
+    resetExpectation?.fulfill()
   }
 }

@@ -35,10 +35,10 @@ jobs:
                 java-version: '17'
                 cache: gradle
 
-            # Run Android unit tests from all packages using Gradle.
+            # Run Android unit tests and generate JaCoCo coverage report from all packages.
             - name: Run Android unit tests
               working-directory: PingSampleApp/android
-              run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
+              run: ./gradlew --no-daemon --stacktrace testDebugUnitTest createDebugUnitTestCoverageReport
 
             # Publish test results as GitHub check runs.
             - name: Publish test report
@@ -51,13 +51,24 @@ jobs:
                 list-suites: 'all'
                 list-tests: 'all'
                 fail-on-error: 'false'
-            
+
             -  name: Upload Android unit tests HTML report
                if: success() || failure()
                uses: actions/upload-artifact@v7
                with:
                  name: Android Unit Test Report
                  path: '**/build/reports/tests/testDebugUnitTest/**'
+
+            # Upload JaCoCo coverage reports to Codecov.
+            - name: Upload coverage to Codecov
+              if: success() || failure()
+              continue-on-error: true
+              uses: codecov/codecov-action@v5
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+                files: 'packages/*/android/build/reports/coverage/test/debug/report.xml'
+                flags: android
+                fail_ci_if_error: false
             
             
 

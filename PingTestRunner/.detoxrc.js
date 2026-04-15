@@ -6,16 +6,7 @@
  */
 
 /** @type {Detox.DetoxConfig} */
-const detoxPort = Number(process.env.DETOX_SERVER_PORT ?? 8099);
-
 module.exports = {
-  session: {
-    server: `ws://127.0.0.1:${detoxPort}`,
-    autoStart: true,
-  },
-  server: {
-    port: detoxPort,
-  },
   artifacts: {
     rootDir: 'artifacts',
     plugins: {
@@ -51,7 +42,12 @@ module.exports = {
       testBinaryPath: 'android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
-      reversePorts: [detoxPort],
+    },
+    // BrowserStack cloud app — URLs are resolved after uploading binaries to BrowserStack.
+    'android.cloud': {
+      type: 'android.cloud',
+      app: process.env.BROWSERSTACK_APP_URL,
+      appClient: process.env.BROWSERSTACK_TEST_URL,
     },
   },
   devices: {
@@ -67,6 +63,14 @@ module.exports = {
         avdName: 'Pixel_9',
       },
     },
+    // BrowserStack real device — override via env vars to target a different device.
+    browserstack: {
+      type: 'android.cloud',
+      device: {
+        name: process.env.BROWSERSTACK_DEVICE ?? 'Google Pixel 9',
+        osVersion: process.env.BROWSERSTACK_OS_VERSION ?? '15.0',
+      },
+    },
   },
   configurations: {
     'ios.sim': {
@@ -76,6 +80,32 @@ module.exports = {
     'android.emu': {
       device: 'emulator',
       app: 'android.release',
+    },
+    // BrowserStack real-device configuration.
+    'android.bs': {
+      device: 'browserstack',
+      app: 'android.cloud',
+      artifacts: {
+        plugins: {
+          deviceLogs: {
+            enabled: true,
+          },
+        },
+      },
+      // cloudAuthentication and session must live inside the configuration
+      // entry — the BrowserStack detox fork reads localConfig, not the
+      // top-level config, for these cloud-specific properties.
+      cloudAuthentication: {
+        username: process.env.BROWSERSTACK_USERNAME,
+        accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      },
+      session: {
+        server: 'wss://detox.browserstack.com/init',
+        name: process.env.BROWSERSTACK_SESSION_NAME,
+        build: process.env.BROWSERSTACK_BUILD_ID,
+        project: process.env.BROWSERSTACK_PROJECT_NAME,
+        local: false,
+      },
     },
   },
 };

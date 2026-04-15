@@ -41,9 +41,9 @@ jobs:
             - name: Setup
               uses: ./.github/actions/setup-proj
 
-            # Execute Jest unit tests across affected packages in the monorepo.
+            # Execute Jest unit tests with coverage across affected packages in the monorepo.
             - name: Run unit tests
-              run: yarn test --affected
+              run: yarn test:affected:coverage
 
             # Publish test results as GitHub check runs.
             - name: Publish test report
@@ -56,3 +56,14 @@ jobs:
                 list-suites: 'all'
                 list-tests: 'all'
                 fail-on-error: 'false'
+
+            # Upload coverage reports to Codecov.
+            - name: Upload coverage to Codecov
+              if: always()
+              continue-on-error: true
+              uses: codecov/codecov-action@v5
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+                files: 'packages/*/build/coverage/lcov.info'
+                flags: javascript
+                fail_ci_if_error: false

@@ -1,0 +1,233 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+# TODO: This workflow is not enforced right now and is currently failing.
+# We have an open ticket with BrowserStack waiting for them to release a new version
+# of the cloud driver based on Detox version 20.43+.
+name: BrowserStack E2E — Android
+
+on:
+  workflow_call:
+    inputs:
+      browserstack_project_name:
+        description: BrowserStack project name used for Android E2E runs
+        required: false
+        type: string
+        default: rn-sdk-test
+      browserstack_session_name:
+        description: BrowserStack session name used by Detox
+        required: false
+        type: string
+        default: android-detox-e2e
+    secrets:
+      BROWSERSTACK_USERNAME:
+        description: BrowserStack account username
+        required: true
+      BROWSERSTACK_ACCESS_KEY:
+        description: BrowserStack account access key
+        required: true
+      PING_SERVER_URL:
+        description: Ping server base URL for Tier 2 E2E coverage
+        required: false
+      PING_REALM_PATH:
+        description: Ping realm path for journey and OIDC E2E coverage
+        required: false
+      PING_COOKIE_NAME:
+        description: Ping cookie name used by the test environment
+        required: false
+      PING_JOURNEY_NAME:
+        description: Ping journey name exercised by BrowserStack E2E tests
+        required: false
+      PING_TEST_USERNAME:
+        description: Test account username for server-backed BrowserStack scenarios
+        required: false
+      PING_TEST_PASSWORD:
+        description: Test account password for server-backed BrowserStack scenarios
+        required: false
+      PING_DISCOVERY_ENDPOINT:
+        description: OIDC discovery endpoint used by BrowserStack E2E tests
+        required: false
+      PING_CLIENT_ID:
+        description: OIDC client identifier used by BrowserStack E2E tests
+        required: false
+      PING_REDIRECT_URI:
+        description: OIDC redirect URI used by BrowserStack E2E tests
+        required: false
+      PING_CALLBACK_TREES_ENABLED:
+        description: Flag enabling callback tree coverage in BrowserStack E2E tests
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-android-browserstack:
+    name: E2E — Android BrowserStack
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: PingTestRunner
+        shell: bash                                   
+
+    env:
+      # APK paths — defined once, referenced in upload steps
+      APP_APK_PATH:  android/app/build/outputs/apk/release/app-release.apk
+      TEST_APK_PATH: android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
+      # BrowserStack credentials available to all steps
+      BROWSERSTACK_USERNAME:       ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY:     ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      # Ping server configuration available to all steps
+      PING_SERVER_URL:             ${{ secrets.PING_SERVER_URL }}
+      PING_REALM_PATH:             ${{ secrets.PING_REALM_PATH }}
+      PING_COOKIE_NAME:            ${{ secrets.PING_COOKIE_NAME }}
+      PING_JOURNEY_NAME:           ${{ secrets.PING_JOURNEY_NAME }}
+      PING_TEST_USERNAME:          ${{ secrets.PING_TEST_USERNAME }}
+      PING_TEST_PASSWORD:          ${{ secrets.PING_TEST_PASSWORD }}
+      PING_DISCOVERY_ENDPOINT:     ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+      PING_CLIENT_ID:              ${{ secrets.PING_CLIENT_ID }}
+      PING_REDIRECT_URI:           ${{ secrets.PING_REDIRECT_URI }}
+      PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-proj
+
+      - name: Install global Jest and Detox CLI   
+        run: |
+          npm install -g jest
+          npm install -g detox-cli
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Compute BrowserStack identifiers
+        # Naming convention:
+        #   Project : rn-<moduleName>-test  → rn-sdk-test
+        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>
+        #   Session : <platform>-<framework>-<test_name>
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          case "${{ github.event_name }}" in
+            pull_request)
+              BUILD_PREFIX="pr"
+              ;;
+            push)
+              BUILD_PREFIX="push"
+              ;;
+            *)
+              BUILD_PREFIX="run"
+              ;;
+          esac
+          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_PROJECT_NAME=${{ inputs.browserstack_project_name }}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_SESSION_NAME=${{ inputs.browserstack_session_name }}" >> "$GITHUB_ENV"
+
+      - name: Build SDK packages
+        # Metro bundles the JS at release build time and resolves the Ping SDK
+        # packages via their compiled lib/ output. Build all packages first so
+        # lib/module/index.js exists for every dependency.
+        run: yarn packages:build
+        working-directory: ${{ github.workspace }}
+
+      - name: Generate codegen artifacts for all SDK modules
+        # React Native New Architecture requires each library's codegen JNI
+        # directories to exist before CMake configures the app. Run codegen
+        # across all included modules so the directories are present.
+        run: |
+          cd android && ./gradlew \
+            :ping-identity_rn-browser:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-id:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-profile:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \
+            :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+
+      - name: Build Release APK and androidTest APK
+        run: yarn build:runner:bs:android
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload app to BrowserStack
+        id: upload-app
+        run: |
+          response=$(curl --silent --fail-with-body \
+            -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app" \
+            -F "file=@$APP_APK_PATH")
+          app_url=$(echo "$response" | jq -r '.app_url')
+          if [[ "$app_url" == "null" || -z "$app_url" ]]; then
+            echo "::error::Failed to get app_url from BrowserStack response: $response"
+            exit 1
+          fi
+          echo "app_url=$app_url" >> "$GITHUB_OUTPUT"
+
+      - name: Upload app client to BrowserStack
+        id: upload-test
+        run: |
+          response=$(curl --silent --fail-with-body \
+            -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app-client" \
+            -F "file=@$TEST_APK_PATH")
+          test_url=$(echo "$response" | jq -r '.app_client_url')
+          if [[ "$test_url" == "null" || -z "$test_url" ]]; then
+            echo "::error::Failed to get app_client_url from BrowserStack response: $response"
+            exit 1
+          fi
+          echo "test_url=$test_url" >> "$GITHUB_OUTPUT"
+
+      - name: Run E2E tests on BrowserStack real devices
+        id: run-tests
+        run: yarn test:runner:bs:android 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
+        working-directory: ${{ github.workspace }}
+        env:
+          BROWSERSTACK_APP_URL:      ${{ steps.upload-app.outputs.app_url }}
+          BROWSERSTACK_TEST_URL:     ${{ steps.upload-test.outputs.test_url }}
+
+      - name: Prepare test summary report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          overall_status="${{ steps.run-tests.outcome }}"
+          build_id="${BROWSERSTACK_BUILD_ID}"
+
+          if [ "$overall_status" = "success" ]; then
+            result_label="✅ Passed"
+          else
+            result_label="❌ Failed"
+          fi
+
+          # Extract Jest-style test counts written by Detox to stdout
+          test_detail=""
+          if [ -f /tmp/detox-bs.log ]; then
+            suites_line="$(grep -E "^Test Suites:" /tmp/detox-bs.log | tail -1 || true)"
+            tests_line="$(grep -E "^Tests:" /tmp/detox-bs.log | tail -1 || true)"
+            if [ -n "$suites_line" ] || [ -n "$tests_line" ]; then
+              test_detail=$'\n### Test Results\n'
+              [ -n "$suites_line" ] && test_detail+=$'\n'"- ${suites_line}"
+              [ -n "$tests_line" ]  && test_detail+=$'\n'"- ${tests_line}"
+            fi
+          fi
+
+          {
+            echo "## BrowserStack Android Detox Summary"
+            echo
+            echo "- Build ID: \`${build_id}\`"
+            echo "- Overall status: ${overall_status}"
+            echo "- Result: ${result_label}"
+            echo "- BrowserStack dashboard: https://app-automate.browserstack.com/dashboard/v2"
+            echo -e "$test_detail"
+          } >> "$GITHUB_STEP_SUMMARY"

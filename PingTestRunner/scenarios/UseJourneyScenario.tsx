@@ -23,8 +23,9 @@
  *   use-journey-token-result       → visible after token fetched post-success
  *   use-journey-userinfo-btn       → calls actions.userinfo()
  *   use-journey-userinfo-result    → visible when userinfo returned
- *   use-journey-refresh-btn        → calls actions.refresh()
- *   use-journey-refreshed          → visible after refresh succeeds
+ *   use-journey-refresh-btn             → calls actions.refresh()
+ *   use-journey-refreshed               → visible after refresh succeeds
+ *   use-journey-refreshed-token-result  → access token returned by refresh()
  *   use-journey-revoke-btn         → calls actions.revoke()
  *   use-journey-revoked            → visible after revoke
  *   use-journey-logout-btn         → calls actions.logoutUser()
@@ -104,6 +105,7 @@ export default function UseJourneyScenario(): React.JSX.Element {
   const [tokenResult, setTokenResult] = useState<string | null>(null);
   const [userinfo, setUserinfo] = useState<string | null>(null);
   const [refreshed, setRefreshed] = useState(false);
+  const [refreshedToken, setRefreshedToken] = useState<string | null>(null);
   const [revoked, setRevoked] = useState(false);
   const [loggedOut, setLoggedOut] = useState(false);
 
@@ -157,7 +159,10 @@ export default function UseJourneyScenario(): React.JSX.Element {
 
   const handleRefresh = useCallback(async () => {
     try {
-      await actions.refresh();
+      const session = await actions.refresh();
+      if (session?.accessToken) {
+        setRefreshedToken(session.accessToken);
+      }
       setRefreshed(true);
     } catch {
       // actions.error updated by hook
@@ -167,19 +172,19 @@ export default function UseJourneyScenario(): React.JSX.Element {
   const handleRevoke = useCallback(async () => {
     try {
       await actions.revoke();
+      setRevoked(true);
     } catch {
       // actions.error updated by hook
     }
-    setRevoked(true);
   }, [actions]);
 
   const handleLogout = useCallback(async () => {
     try {
       await actions.logoutUser();
+      setLoggedOut(true);
     } catch {
       // actions.error updated by hook
     }
-    setLoggedOut(true);
   }, [actions]);
 
   return (
@@ -248,6 +253,11 @@ export default function UseJourneyScenario(): React.JSX.Element {
             onPress={handleRefresh}
           />
           {refreshed && <Text testID="use-journey-refreshed">Refreshed</Text>}
+          {refreshedToken !== null && (
+            <Text testID="use-journey-refreshed-token-result" numberOfLines={1} ellipsizeMode="middle">
+              {refreshedToken}
+            </Text>
+          )}
           <Button
             testID="use-journey-revoke-btn"
             title="Revoke"
