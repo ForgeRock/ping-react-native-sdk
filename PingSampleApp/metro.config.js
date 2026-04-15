@@ -5,7 +5,9 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 // Path to local library package (adjust the relative path if needed)
@@ -13,7 +15,10 @@ const oidcPackage = path.resolve(__dirname, '../packages/oidc');
 const journeyPackage = path.resolve(__dirname, '../packages/journey');
 const browserPackage = path.resolve(__dirname, '../packages/browser');
 const deviceIdPackage = path.resolve(__dirname, '../packages/device-id');
-const deviceProfilePackage = path.resolve(__dirname, '../packages/device-profile');
+const deviceProfilePackage = path.resolve(
+  __dirname,
+  '../packages/device-profile',
+);
 const fidoPackage = path.resolve(__dirname, '../packages/fido');
 const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');

@@ -35,7 +35,7 @@ const loadModule = async ({
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
       TurboModuleRegistry: { get },
-    })
+    }),
   );
 
   return import('../index');
@@ -76,7 +76,7 @@ describe('fido native module wiring', () => {
     await client.register({ challenge: 'abc' });
     expect(registerNative).toHaveBeenCalledWith(
       { challenge: 'abc' },
-      { loggerId: 'logger-1', useFido2Client: false }
+      { loggerId: 'logger-1', useFido2Client: false },
     );
   });
 
@@ -97,7 +97,9 @@ describe('fido native module wiring', () => {
   });
 
   it('registerForJourney forwards journey id and options to native module', async () => {
-    const registerJourneyNative = jest.fn(() => Promise.resolve({ type: 'success' }));
+    const registerJourneyNative = jest.fn(() =>
+      Promise.resolve({ type: 'success' }),
+    );
     const { createFidoClient } = await loadModule({
       turboModule: { registerCredentialForJourney: registerJourneyNative },
     });
@@ -105,26 +107,40 @@ describe('fido native module wiring', () => {
     const client = createFidoClient();
 
     await expect(
-      client.registerForJourney(journey, { index: 0, deviceName: 'Device' })
+      client.registerForJourney(journey, { index: 0, deviceName: 'Device' }),
     ).resolves.toEqual({ type: 'success' });
-    expect(registerJourneyNative).toHaveBeenCalledWith('journey-123', {
-      index: 0,
-      deviceName: 'Device',
-    }, {});
+    expect(registerJourneyNative).toHaveBeenCalledWith(
+      'journey-123',
+      {
+        index: 0,
+        deviceName: 'Device',
+      },
+      {},
+    );
   });
 
   it('authenticateForJourney forwards journey id and options to native module', async () => {
-    const authenticateJourneyNative = jest.fn(() => Promise.resolve({ type: 'success' }));
+    const authenticateJourneyNative = jest.fn(() =>
+      Promise.resolve({ type: 'success' }),
+    );
     const { createFidoClient } = await loadModule({
-      turboModule: { authenticateCredentialForJourney: authenticateJourneyNative },
+      turboModule: {
+        authenticateCredentialForJourney: authenticateJourneyNative,
+      },
     });
     const journey = { getId: jest.fn(() => Promise.resolve('journey-456')) };
     const client = createFidoClient();
 
-    await expect(client.authenticateForJourney(journey, { index: 1 })).resolves.toEqual({
+    await expect(
+      client.authenticateForJourney(journey, { index: 1 }),
+    ).resolves.toEqual({
       type: 'success',
     });
-    expect(authenticateJourneyNative).toHaveBeenCalledWith('journey-456', { index: 1 }, {});
+    expect(authenticateJourneyNative).toHaveBeenCalledWith(
+      'journey-456',
+      { index: 1 },
+      {},
+    );
   });
 
   it('throws a helpful error when the classic module is missing', async () => {
@@ -132,7 +148,7 @@ describe('fido native module wiring', () => {
     const client = createFidoClient();
 
     await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
-      '[@ping-identity/rn-fido] Native module RNPingFido not found.'
+      '[@ping-identity/rn-fido] Native module RNPingFido not found.',
     );
   });
 
@@ -143,7 +159,7 @@ describe('fido native module wiring', () => {
     const client = createFidoClient();
 
     await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
-      'Available NativeModules: ["SomeOtherModule"]'
+      'Available NativeModules: ["SomeOtherModule"]',
     );
   });
 });

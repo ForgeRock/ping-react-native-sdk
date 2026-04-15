@@ -4,9 +4,9 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import { createFidoClient } from "../index";
+import { createFidoClient } from '../index';
 
-jest.mock("../NativeRNPingFido", () => ({
+jest.mock('../NativeRNPingFido', () => ({
   __esModule: true,
   getNativeModule: jest.fn(),
   toNativeConfigOptions: jest.fn((options) => options),
@@ -19,29 +19,29 @@ jest.mock("../NativeRNPingFido", () => ({
   fromNativeJourneyResult: jest.fn((result) => result),
 }));
 
-import { getNativeModule } from "../NativeRNPingFido";
+import { getNativeModule } from '../NativeRNPingFido';
 
-describe("FIDO API", () => {
+describe('FIDO API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("createFidoClient returns operations that forward to native", async () => {
+  it('createFidoClient returns operations that forward to native', async () => {
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const client = createFidoClient();
 
-    await expect(client.register({ challenge: "abc" })).resolves.toEqual({
+    await expect(client.register({ challenge: 'abc' })).resolves.toEqual({
       ok: true,
     });
-    expect(registerNative).toHaveBeenCalledWith({ challenge: "abc" }, {});
+    expect(registerNative).toHaveBeenCalledWith({ challenge: 'abc' }, {});
   });
 
-  it("createFidoClient resolves per-client config once", async () => {
+  it('createFidoClient resolves per-client config once', async () => {
     const logger = {
-      nativeHandle: { id: "logger-1" },
+      nativeHandle: { id: 'logger-1' },
       changeLevel: jest.fn(),
       debug: jest.fn(),
       info: jest.fn(),
@@ -58,14 +58,14 @@ describe("FIDO API", () => {
       android: { useFido2Client: true },
     });
 
-    await client.register({ challenge: "abc" });
+    await client.register({ challenge: 'abc' });
     expect(registerNative).toHaveBeenCalledWith(
-      { challenge: "abc" },
-      { loggerId: "logger-1", useFido2Client: true },
+      { challenge: 'abc' },
+      { loggerId: 'logger-1', useFido2Client: true },
     );
   });
 
-  it("register passes options through to native unchanged", async () => {
+  it('register passes options through to native unchanged', async () => {
     const registerNative = jest.fn().mockResolvedValue({});
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
@@ -73,41 +73,41 @@ describe("FIDO API", () => {
     const client = createFidoClient();
 
     const options = {
-      challenge: "xyz",
-      rp: { id: "example.com", name: "Example" },
+      challenge: 'xyz',
+      rp: { id: 'example.com', name: 'Example' },
     };
     await client.register(options);
 
     expect(registerNative).toHaveBeenCalledWith(options, {});
   });
 
-  it("register rejects when native rejects", async () => {
-    const nativeError = new Error("FIDO_WINDOW_UNAVAILABLE");
+  it('register rejects when native rejects', async () => {
+    const nativeError = new Error('FIDO_WINDOW_UNAVAILABLE');
     const registerNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const client = createFidoClient();
 
-    await expect(client.register({ challenge: "abc" })).rejects.toThrow(
-      "FIDO_WINDOW_UNAVAILABLE",
+    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
+      'FIDO_WINDOW_UNAVAILABLE',
     );
   });
 
-  it("authenticate forwards to native", async () => {
+  it('authenticate forwards to native', async () => {
     const authenticateNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       authenticateCredential: authenticateNative,
     });
     const client = createFidoClient();
 
-    await expect(client.authenticate({ challenge: "abc" })).resolves.toEqual({
+    await expect(client.authenticate({ challenge: 'abc' })).resolves.toEqual({
       ok: true,
     });
-    expect(authenticateNative).toHaveBeenCalledWith({ challenge: "abc" }, {});
+    expect(authenticateNative).toHaveBeenCalledWith({ challenge: 'abc' }, {});
   });
 
-  it("authenticate passes options through to native unchanged", async () => {
+  it('authenticate passes options through to native unchanged', async () => {
     const authenticateNative = jest.fn().mockResolvedValue({});
     (getNativeModule as jest.Mock).mockReturnValue({
       authenticateCredential: authenticateNative,
@@ -115,8 +115,8 @@ describe("FIDO API", () => {
     const client = createFidoClient();
 
     const options = {
-      challenge: "xyz",
-      rpId: "example.com",
+      challenge: 'xyz',
+      rpId: 'example.com',
       allowCredentials: [],
     };
     await client.authenticate(options);
@@ -124,30 +124,30 @@ describe("FIDO API", () => {
     expect(authenticateNative).toHaveBeenCalledWith(options, {});
   });
 
-  it("authenticate rejects when native rejects", async () => {
-    const nativeError = new Error("FIDO_ACTIVITY_UNAVAILABLE");
+  it('authenticate rejects when native rejects', async () => {
+    const nativeError = new Error('FIDO_ACTIVITY_UNAVAILABLE');
     const authenticateNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       authenticateCredential: authenticateNative,
     });
     const client = createFidoClient();
 
-    await expect(client.authenticate({ challenge: "abc" })).rejects.toThrow(
-      "FIDO_ACTIVITY_UNAVAILABLE",
+    await expect(client.authenticate({ challenge: 'abc' })).rejects.toThrow(
+      'FIDO_ACTIVITY_UNAVAILABLE',
     );
   });
 
-  it("registerForJourney resolves journey id and forwards to native", async () => {
+  it('registerForJourney resolves journey id and forwards to native', async () => {
     const registerJourneyNative = jest
       .fn()
-      .mockResolvedValue({ type: "success" });
+      .mockResolvedValue({ type: 'success' });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredentialForJourney: registerJourneyNative,
     });
-    const journey = { getId: jest.fn().mockResolvedValue("journey-123") };
+    const journey = { getId: jest.fn().mockResolvedValue('journey-123') };
     const client = createFidoClient({
       logger: {
-        nativeHandle: { id: "logger-1" },
+        nativeHandle: { id: 'logger-1' },
         changeLevel: jest.fn(),
         debug: jest.fn(),
         info: jest.fn(),
@@ -158,33 +158,33 @@ describe("FIDO API", () => {
     });
 
     await expect(
-      client.registerForJourney(journey, { index: 2, deviceName: "Pixel" }),
-    ).resolves.toEqual({ type: "success" });
+      client.registerForJourney(journey, { index: 2, deviceName: 'Pixel' }),
+    ).resolves.toEqual({ type: 'success' });
     expect(journey.getId).toHaveBeenCalledTimes(1);
     expect(registerJourneyNative).toHaveBeenCalledWith(
-      "journey-123",
+      'journey-123',
       {
         index: 2,
-        deviceName: "Pixel",
+        deviceName: 'Pixel',
       },
       {
-        loggerId: "logger-1",
+        loggerId: 'logger-1',
         useFido2Client: true,
       },
     );
   });
 
-  it("authenticateForJourney resolves journey id and forwards to native", async () => {
+  it('authenticateForJourney resolves journey id and forwards to native', async () => {
     const authenticateJourneyNative = jest
       .fn()
-      .mockResolvedValue({ type: "success" });
+      .mockResolvedValue({ type: 'success' });
     (getNativeModule as jest.Mock).mockReturnValue({
       authenticateCredentialForJourney: authenticateJourneyNative,
     });
-    const journey = { getId: jest.fn().mockResolvedValue("journey-xyz") };
+    const journey = { getId: jest.fn().mockResolvedValue('journey-xyz') };
     const client = createFidoClient({
       logger: {
-        nativeHandle: { id: "logger-2" },
+        nativeHandle: { id: 'logger-2' },
         changeLevel: jest.fn(),
         debug: jest.fn(),
         info: jest.fn(),
@@ -195,23 +195,23 @@ describe("FIDO API", () => {
 
     await expect(
       client.authenticateForJourney(journey, { index: 1 }),
-    ).resolves.toEqual({ type: "success" });
+    ).resolves.toEqual({ type: 'success' });
     expect(journey.getId).toHaveBeenCalledTimes(1);
     expect(authenticateJourneyNative).toHaveBeenCalledWith(
-      "journey-xyz",
+      'journey-xyz',
       { index: 1 },
-      { loggerId: "logger-2" },
+      { loggerId: 'logger-2' },
     );
   });
 
-  it("normalizes blank logger id to undefined", async () => {
+  it('normalizes blank logger id to undefined', async () => {
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const client = createFidoClient({
       logger: {
-        nativeHandle: { id: "   " },
+        nativeHandle: { id: '   ' },
         changeLevel: jest.fn(),
         debug: jest.fn(),
         info: jest.fn(),
@@ -220,9 +220,9 @@ describe("FIDO API", () => {
       },
     });
 
-    await client.register({ challenge: "abc" });
+    await client.register({ challenge: 'abc' });
     expect(registerNative).toHaveBeenCalledWith(
-      { challenge: "abc" },
+      { challenge: 'abc' },
       {
         loggerId: undefined,
         useFido2Client: undefined,
@@ -230,7 +230,7 @@ describe("FIDO API", () => {
     );
   });
 
-  it("keeps client configs isolated per instance", async () => {
+  it('keeps client configs isolated per instance', async () => {
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
@@ -243,12 +243,12 @@ describe("FIDO API", () => {
       android: { useFido2Client: false },
     });
 
-    await clientA.register({ challenge: "a" });
-    await clientB.register({ challenge: "b" });
+    await clientA.register({ challenge: 'a' });
+    await clientB.register({ challenge: 'b' });
 
     expect(registerNative).toHaveBeenNthCalledWith(
       1,
-      { challenge: "a" },
+      { challenge: 'a' },
       {
         loggerId: undefined,
         useFido2Client: true,
@@ -256,7 +256,7 @@ describe("FIDO API", () => {
     );
     expect(registerNative).toHaveBeenNthCalledWith(
       2,
-      { challenge: "b" },
+      { challenge: 'b' },
       {
         loggerId: undefined,
         useFido2Client: false,
@@ -264,13 +264,13 @@ describe("FIDO API", () => {
     );
   });
 
-  it("logs operation lifecycle on success", async () => {
+  it('logs operation lifecycle on success', async () => {
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const logger = {
-      nativeHandle: { id: "logger-1" },
+      nativeHandle: { id: 'logger-1' },
       changeLevel: jest.fn(),
       debug: jest.fn(),
       info: jest.fn(),
@@ -279,21 +279,21 @@ describe("FIDO API", () => {
     };
 
     const client = createFidoClient({ logger });
-    await client.register({ challenge: "abc" });
+    await client.register({ challenge: 'abc' });
 
-    expect(logger.info).toHaveBeenCalledWith("FIDO createClient success");
-    expect(logger.info).toHaveBeenCalledWith("FIDO register requested");
-    expect(logger.debug).toHaveBeenCalledWith("FIDO register success");
+    expect(logger.info).toHaveBeenCalledWith('FIDO createClient success');
+    expect(logger.info).toHaveBeenCalledWith('FIDO register requested');
+    expect(logger.debug).toHaveBeenCalledWith('FIDO register success');
   });
 
-  it("logs operation failure before rethrowing", async () => {
-    const nativeError = new Error("FIDO_REGISTER_ERROR");
+  it('logs operation failure before rethrowing', async () => {
+    const nativeError = new Error('FIDO_REGISTER_ERROR');
     const registerNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const logger = {
-      nativeHandle: { id: "logger-1" },
+      nativeHandle: { id: 'logger-1' },
       changeLevel: jest.fn(),
       debug: jest.fn(),
       info: jest.fn(),
@@ -302,9 +302,9 @@ describe("FIDO API", () => {
     };
 
     const client = createFidoClient({ logger });
-    await expect(client.register({ challenge: "abc" })).rejects.toThrow(
-      "FIDO_REGISTER_ERROR",
+    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
+      'FIDO_REGISTER_ERROR',
     );
-    expect(logger.error).toHaveBeenCalledWith("FIDO register failed");
+    expect(logger.error).toHaveBeenCalledWith('FIDO register failed');
   });
 });

@@ -7,7 +7,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import type { JourneyNodeType, JourneyUserSession } from '@ping-identity/rn-journey';
+import type {
+  JourneyNodeType,
+  JourneyUserSession,
+} from '@ping-identity/rn-journey';
 
 /**
  * Configuration contract for `useJourneySessionController`.
@@ -38,7 +41,7 @@ export type UseJourneySessionControllerOptions = {
  * @returns Session state plus explicit success-notification action.
  */
 export function useJourneySessionController(
-  options: UseJourneySessionControllerOptions
+  options: UseJourneySessionControllerOptions,
 ): {
   /**
    * True when a session is confirmed active for the current Journey client.
@@ -70,24 +73,28 @@ export function useJourneySessionController(
   } = options;
 
   const [hasActiveSession, setHasActiveSession] = useState<boolean>(false);
-  const [isSessionCheckRunning, setIsSessionCheckRunning] = useState<boolean>(true);
+  const [isSessionCheckRunning, setIsSessionCheckRunning] =
+    useState<boolean>(true);
   // Ensures authenticated callback is emitted once per authenticated state transition.
   const hasNotifiedAuthenticatedRef = useRef<boolean>(false);
   // Keeps callback identity stable inside async refresh logic.
   const userRef = useRef(user);
   userRef.current = user;
 
-  const refreshSession = useCallback(async (showError = true): Promise<void> => {
-    try {
-      const session = await userRef.current();
-      setHasActiveSession(Boolean(session));
-    } catch (cause) {
-      setHasActiveSession(false);
-      if (showError) {
-        Alert.alert('Session refresh failed', String(cause));
+  const refreshSession = useCallback(
+    async (showError = true): Promise<void> => {
+      try {
+        const session = await userRef.current();
+        setHasActiveSession(Boolean(session));
+      } catch (cause) {
+        setHasActiveSession(false);
+        if (showError) {
+          Alert.alert('Session refresh failed', String(cause));
+        }
       }
-    }
-  }, []);
+    },
+    [],
+  );
 
   const onContinueAfterSuccess = useCallback((): void => {
     if (!onAuthenticated) {

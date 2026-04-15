@@ -42,10 +42,10 @@ export function useJourneyDebugEntries(): {
   const appendDebug = useCallback((title: string, payload?: unknown): void => {
     const entry = createJourneyDebugEntry(
       title,
-      payload === undefined ? undefined : sanitizeDebugPayload(payload)
+      payload === undefined ? undefined : sanitizeDebugPayload(payload),
     );
     // Keep newest entries first and cap in-memory history for UI responsiveness.
-    setDebugEntries((previous) => [entry, ...previous].slice(0, 50));
+    setDebugEntries(previous => [entry, ...previous].slice(0, 50));
   }, []);
 
   const clearDebugEntries = useCallback((): void => {

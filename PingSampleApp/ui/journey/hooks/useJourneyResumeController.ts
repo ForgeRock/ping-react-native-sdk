@@ -33,7 +33,7 @@ export type UseJourneyResumeControllerOptions = {
  * @returns Resume URL state and manual resume action.
  */
 export function useJourneyResumeController(
-  options: UseJourneyResumeControllerOptions
+  options: UseJourneyResumeControllerOptions,
 ): {
   /**
    * Current resume URL field value.
@@ -53,11 +53,7 @@ export function useJourneyResumeController(
    */
   onResume: () => Promise<void>;
 } {
-  const {
-    hasSuspendedCallback,
-    resume,
-    appendDebug,
-  } = options;
+  const { hasSuspendedCallback, resume, appendDebug } = options;
   const [resumeUrl, setResumeUrl] = useState<string>('');
   // Deduplicates repeated deep-link events for the same resume URI.
   const lastAutoResumedUrlRef = useRef<string | null>(null);
@@ -86,7 +82,10 @@ export function useJourneyResumeController(
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
       const trimmedResumeUrl = url.trim();
-      if (!trimmedResumeUrl || lastAutoResumedUrlRef.current === trimmedResumeUrl) {
+      if (
+        !trimmedResumeUrl ||
+        lastAutoResumedUrlRef.current === trimmedResumeUrl
+      ) {
         return;
       }
 

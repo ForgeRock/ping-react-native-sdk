@@ -32,7 +32,9 @@ export type UseJourneyDebugEffectsOptions = {
  * @param options - Debug effect options.
  * @returns Void.
  */
-export function useJourneyDebugEffects(options: UseJourneyDebugEffectsOptions): void {
+export function useJourneyDebugEffects(
+  options: UseJourneyDebugEffectsOptions,
+): void {
   const { node, error, appendDebug } = options;
 
   useEffect(() => {

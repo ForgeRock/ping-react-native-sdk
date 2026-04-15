@@ -94,11 +94,8 @@ export default function JourneyDebugPanel(
       {entries.length === 0 ? (
         <Text style={styles.emptyText}>No debug events yet.</Text>
       ) : (
-        entries.map((entry) => (
-          <View
-            key={entry.id}
-            style={styles.eventCard}
-          >
+        entries.map(entry => (
+          <View key={entry.id} style={styles.eventCard}>
             <View style={styles.eventHeaderRow}>
               <Text style={styles.eventTitle}>
                 [{entry.timestamp}] {entry.title}

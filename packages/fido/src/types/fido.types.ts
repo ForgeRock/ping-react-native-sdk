@@ -151,7 +151,7 @@ export interface FidoClient {
    * @throws FidoError when native authentication fails.
    */
   authenticate(
-    options: FidoAuthenticationOptions
+    options: FidoAuthenticationOptions,
   ): Promise<FidoAuthenticationResult>;
   /**
    * Executes an active Journey FIDO registration callback.
@@ -163,7 +163,7 @@ export interface FidoClient {
    */
   registerForJourney(
     journey: JourneyInstance,
-    options?: FidoJourneyRegistrationOptions
+    options?: FidoJourneyRegistrationOptions,
   ): Promise<FidoJourneyResult>;
   /**
    * Executes an active Journey FIDO authentication callback.
@@ -175,7 +175,7 @@ export interface FidoClient {
    */
   authenticateForJourney(
     journey: JourneyInstance,
-    options?: FidoJourneyAuthenticationOptions
+    options?: FidoJourneyAuthenticationOptions,
   ): Promise<FidoJourneyResult>;
 }
 

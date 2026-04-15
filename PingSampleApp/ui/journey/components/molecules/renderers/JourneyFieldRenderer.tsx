@@ -24,8 +24,10 @@ function JourneyFieldRenderer(
   props: JourneyFieldRendererProps,
 ): React.ReactElement | null {
   const { field } = props;
-  const isFidoRegistrationCallback = field.ref.type === 'FidoRegistrationCallback';
-  const isFidoAuthenticationCallback = field.ref.type === 'FidoAuthenticationCallback';
+  const isFidoRegistrationCallback =
+    field.ref.type === 'FidoRegistrationCallback';
+  const isFidoAuthenticationCallback =
+    field.ref.type === 'FidoAuthenticationCallback';
 
   if (field.ref.type === 'HiddenValueCallback') {
     return null;
@@ -43,7 +45,10 @@ function JourneyFieldRenderer(
     return <JourneyOutputField {...props} />;
   }
 
-  if (field.executionMode === 'integration_required' || field.executionMode === 'unsupported') {
+  if (
+    field.executionMode === 'integration_required' ||
+    field.executionMode === 'unsupported'
+  ) {
     return <JourneyUnsupportedField {...props} />;
   }
 

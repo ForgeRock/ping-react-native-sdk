@@ -70,7 +70,9 @@ export type UseJourneyAutomationEffectsOptions = {
  * @param options - Automation effect options.
  * @returns Void.
  */
-export function useJourneyAutomationEffects(options: UseJourneyAutomationEffectsOptions): void {
+export function useJourneyAutomationEffects(
+  options: UseJourneyAutomationEffectsOptions,
+): void {
   const {
     node,
     loading,
@@ -113,7 +115,13 @@ export function useJourneyAutomationEffects(options: UseJourneyAutomationEffects
     void next(formInput).catch(() => {
       // Hook state captures the error.
     });
-  }, [automationPolicy.canAutoSubmit, continueNodeKey, formCanSubmit, formInput, next]);
+  }, [
+    automationPolicy.canAutoSubmit,
+    continueNodeKey,
+    formCanSubmit,
+    formInput,
+    next,
+  ]);
 
   useEffect(() => {
     if (!automationPolicy.canAutoPoll) {
@@ -156,7 +164,9 @@ export function useJourneyAutomationEffects(options: UseJourneyAutomationEffects
       return;
     }
 
-    if (lastAutoDeviceProfileRequestKeyRef.current === deviceProfileRequestKey) {
+    if (
+      lastAutoDeviceProfileRequestKeyRef.current === deviceProfileRequestKey
+    ) {
       return;
     }
 
@@ -165,7 +175,9 @@ export function useJourneyAutomationEffects(options: UseJourneyAutomationEffects
 
     const runAutoDeviceProfile = async (): Promise<void> => {
       try {
-        await collectDeviceProfileForJourney(journeyClient, [...DEVICE_PROFILE_COLLECTORS]);
+        await collectDeviceProfileForJourney(journeyClient, [
+          ...DEVICE_PROFILE_COLLECTORS,
+        ]);
 
         if (automationPolicy.canAutoSubmitAfterDeviceProfile) {
           await next({});

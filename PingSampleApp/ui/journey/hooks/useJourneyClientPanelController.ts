@@ -16,32 +16,18 @@ import {
   type JourneyNode,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
-import {
-  createFidoClient,
-} from '@ping-identity/rn-fido';
+import { createFidoClient } from '@ping-identity/rn-fido';
 import { collectDeviceProfile } from '@ping-identity/rn-device-profile';
 import {
   resolveContinueNodeAutomationPolicy,
   resolvePollingWaitMs,
 } from '../utils/clientPanel';
-import {
-  useJourneySessionController,
-} from './useJourneySessionController';
-import {
-  useJourneyResumeController,
-} from './useJourneyResumeController';
-import {
-  useJourneyDebugEntries,
-} from './useJourneyDebugEntries';
-import {
-  useJourneyAutomationEffects,
-} from './useJourneyAutomationEffects';
-import {
-  useJourneyDebugEffects,
-} from './useJourneyDebugEffects';
-import {
-  useJourneyAutoStartEffect,
-} from './useJourneyAutoStartEffect';
+import { useJourneySessionController } from './useJourneySessionController';
+import { useJourneyResumeController } from './useJourneyResumeController';
+import { useJourneyDebugEntries } from './useJourneyDebugEntries';
+import { useJourneyAutomationEffects } from './useJourneyAutomationEffects';
+import { useJourneyDebugEffects } from './useJourneyDebugEffects';
+import { useJourneyAutoStartEffect } from './useJourneyAutoStartEffect';
 
 /**
  * Options for the Journey client panel controller hook.
@@ -162,7 +148,7 @@ function trimStringValue(value: unknown): string | null {
 
 function readRecordField(
   record: Record<string, unknown>,
-  keys: string[]
+  keys: string[],
 ): string | null {
   for (const key of keys) {
     const value = trimStringValue(record[key]);
@@ -204,7 +190,7 @@ function isFidoAuthenticationCancelledError(error: unknown): boolean {
  * @returns Controller state and actions consumed by `JourneyClientPanel`.
  */
 export function useJourneyClientPanelController(
-  options: UseJourneyClientPanelControllerOptions
+  options: UseJourneyClientPanelControllerOptions,
 ): UseJourneyClientPanelControllerResult {
   // TODO(DX): This controller currently owns lifecycle, FIDO integration, submit shaping,
   // and automation behavior. Split into focused hooks to reduce file-level complexity.
@@ -217,7 +203,9 @@ export function useJourneyClientPanelController(
     requireSuccessConfirmation = false,
   } = options;
 
-  const [journeyName, setJourneyName] = useState<string>(initialJourneyName ?? '');
+  const [journeyName, setJourneyName] = useState<string>(
+    initialJourneyName ?? '',
+  );
   const defaultSystemDeviceNameRef = useRef<string | null>(null);
   const fido = useMemo(() => createFidoClient({}), []);
   const [node, actions] = useJourney();
@@ -229,16 +217,21 @@ export function useJourneyClientPanelController(
   }, [initialJourneyName]);
 
   const isContinueNode = node?.type === 'ContinueNode';
-  const hasDeviceProfileCallback = form.getFieldsByType('DeviceProfileCallback').length > 0;
-  const hasPollingWaitCallback = form.getFieldsByType('PollingWaitCallback').length > 0;
-  const hasFidoRegistrationCallback = form.getFieldsByType('FidoRegistrationCallback').length > 0;
-  const hasFidoAuthenticationCallback = form.getFieldsByType('FidoAuthenticationCallback').length > 0;
-  const hasFidoCallback = hasFidoRegistrationCallback || hasFidoAuthenticationCallback;
+  const hasDeviceProfileCallback =
+    form.getFieldsByType('DeviceProfileCallback').length > 0;
+  const hasPollingWaitCallback =
+    form.getFieldsByType('PollingWaitCallback').length > 0;
+  const hasFidoRegistrationCallback =
+    form.getFieldsByType('FidoRegistrationCallback').length > 0;
+  const hasFidoAuthenticationCallback =
+    form.getFieldsByType('FidoAuthenticationCallback').length > 0;
+  const hasFidoCallback =
+    hasFidoRegistrationCallback || hasFidoAuthenticationCallback;
   const hasSuspendedCallback =
     form.getFieldsByType('SuspendedTextOutputCallback').length > 0;
   const pollingWaitMs = useMemo<number | null>(
     () => resolvePollingWaitMs(form.fields),
-    [form.fields]
+    [form.fields],
   );
 
   // Stable signature used to dedupe automation for logically identical ContinueNodes.
@@ -248,7 +241,7 @@ export function useJourneyClientPanelController(
     }
 
     return form.fields
-      .map((field) => `${field.ref.type}:${field.ref.typeIndex}:${field.id}`)
+      .map(field => `${field.ref.type}:${field.ref.typeIndex}:${field.id}`)
       .join('|');
   }, [form.fields, isContinueNode]);
 
@@ -259,8 +252,8 @@ export function useJourneyClientPanelController(
     }
 
     return `${continueNodeKey}:${form.fields
-      .filter((field) => field.ref.type === 'DeviceProfileCallback')
-      .map((field) => `${field.ref.typeIndex}`)
+      .filter(field => field.ref.type === 'DeviceProfileCallback')
+      .map(field => `${field.ref.typeIndex}`)
       .join(',')}`;
   }, [continueNodeKey, form.fields, hasDeviceProfileCallback, isContinueNode]);
 
@@ -285,7 +278,7 @@ export function useJourneyClientPanelController(
       isContinueNode,
       loading,
       pollingWaitMs,
-    ]
+    ],
   );
 
   const {
@@ -300,7 +293,8 @@ export function useJourneyClientPanelController(
     requireSuccessConfirmation,
   });
 
-  const { debugEntries, appendDebug, clearDebugEntries } = useJourneyDebugEntries();
+  const { debugEntries, appendDebug, clearDebugEntries } =
+    useJourneyDebugEntries();
   const lastAutoFidoAuthNodeKeyRef = useRef<string | null>(null);
 
   const { resumeUrl, setResumeUrl, onResume } = useJourneyResumeController({
@@ -309,28 +303,32 @@ export function useJourneyClientPanelController(
     appendDebug,
   });
 
-  const resolveDefaultSystemDeviceName = useCallback(async (): Promise<string> => {
-    if (defaultSystemDeviceNameRef.current) {
-      return defaultSystemDeviceNameRef.current;
-    }
-
-    try {
-      const profile = await collectDeviceProfile(['platform']);
-      const resolved = resolveDeviceNameFromDeviceProfile(profile);
-      if (resolved) {
-        defaultSystemDeviceNameRef.current = resolved;
-        appendDebug('Resolved default device name from platform profile', {
-          defaultDeviceName: resolved,
-        });
-        return resolved;
+  const resolveDefaultSystemDeviceName =
+    useCallback(async (): Promise<string> => {
+      if (defaultSystemDeviceNameRef.current) {
+        return defaultSystemDeviceNameRef.current;
       }
-    } catch (error) {
-      appendDebug('Failed to resolve platform profile for default device name', { error });
-    }
 
-    defaultSystemDeviceNameRef.current = 'Device';
-    return defaultSystemDeviceNameRef.current;
-  }, [appendDebug]);
+      try {
+        const profile = await collectDeviceProfile(['platform']);
+        const resolved = resolveDeviceNameFromDeviceProfile(profile);
+        if (resolved) {
+          defaultSystemDeviceNameRef.current = resolved;
+          appendDebug('Resolved default device name from platform profile', {
+            defaultDeviceName: resolved,
+          });
+          return resolved;
+        }
+      } catch (error) {
+        appendDebug(
+          'Failed to resolve platform profile for default device name',
+          { error },
+        );
+      }
+
+      defaultSystemDeviceNameRef.current = 'Device';
+      return defaultSystemDeviceNameRef.current;
+    }, [appendDebug]);
 
   useEffect(() => {
     if (!isContinueNode || !hasFidoRegistrationCallback) {
@@ -338,13 +336,13 @@ export function useJourneyClientPanelController(
     }
 
     const registrationFields = form.fields.filter(
-      (field) => field.ref.type === 'FidoRegistrationCallback'
+      field => field.ref.type === 'FidoRegistrationCallback',
     );
     if (registrationFields.length === 0) {
       return;
     }
 
-    const emptyRegistrationFields = registrationFields.filter((field) => {
+    const emptyRegistrationFields = registrationFields.filter(field => {
       const value = form.values[field.id];
       return typeof value !== 'string' || value.trim().length === 0;
     });
@@ -361,7 +359,10 @@ export function useJourneyClientPanelController(
 
       for (const field of emptyRegistrationFields) {
         const currentValue = form.values[field.id];
-        if (typeof currentValue === 'string' && currentValue.trim().length > 0) {
+        if (
+          typeof currentValue === 'string' &&
+          currentValue.trim().length > 0
+        ) {
           continue;
         }
         form.setValue(field.id, defaultDeviceName);
@@ -382,7 +383,7 @@ export function useJourneyClientPanelController(
 
   const runFidoIntegrations = useCallback(
     async (
-      options: FidoIntegrationExecutionOptions = {}
+      options: FidoIntegrationExecutionOptions = {},
     ): Promise<FidoIntegrationExecutionResult> => {
       const { continueOnAuthenticationCancel = false } = options;
       let authenticationCancelled = false;
@@ -392,9 +393,9 @@ export function useJourneyClientPanelController(
       }
 
       const fidoFields = form.fields.filter(
-        (field) =>
+        field =>
           field.ref.type === 'FidoRegistrationCallback' ||
-          field.ref.type === 'FidoAuthenticationCallback'
+          field.ref.type === 'FidoAuthenticationCallback',
       );
 
       for (const field of fidoFields) {
@@ -450,7 +451,7 @@ export function useJourneyClientPanelController(
       journeyClient,
       fido,
       resolveDefaultSystemDeviceName,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -460,12 +461,12 @@ export function useJourneyClientPanelController(
     }
 
     const hasNonFidoIntegrationIssue = form.issues.some(
-      (issue) =>
+      issue =>
         issue.code === 'INTEGRATION_REQUIRED' &&
         issue.callbackType !== 'FidoRegistrationCallback' &&
-        issue.callbackType !== 'FidoAuthenticationCallback'
+        issue.callbackType !== 'FidoAuthenticationCallback',
     );
-    const hasManualInput = form.fields.some((field) => field.requiresUserInput);
+    const hasManualInput = form.fields.some(field => field.requiresUserInput);
     const canAutoRunFidoAuthOnly =
       !loading &&
       hasFidoAuthenticationCallback &&
@@ -497,9 +498,12 @@ export function useJourneyClientPanelController(
           continueOnAuthenticationCancel: true,
         });
         if (fidoResult.authenticationCancelled) {
-          appendDebug('Journey auto-continue after cancelled FIDO authentication', {
-            continueNodeKey,
-          });
+          appendDebug(
+            'Journey auto-continue after cancelled FIDO authentication',
+            {
+              continueNodeKey,
+            },
+          );
         }
         await next({});
       } catch {
@@ -577,7 +581,7 @@ export function useJourneyClientPanelController(
   });
 
   const onSubmit = useCallback(async (): Promise<void> => {
-    const nonFidoBlockingIssues = form.issues.filter((issue) => {
+    const nonFidoBlockingIssues = form.issues.filter(issue => {
       if (issue.code !== 'INTEGRATION_REQUIRED') {
         return true;
       }
@@ -595,7 +599,7 @@ export function useJourneyClientPanelController(
     }
 
     appendDebug('Journey submit requested', {
-      callbacks: form.fields.map((field) => ({
+      callbacks: form.fields.map(field => ({
         type: field.ref.type,
         index: field.ref.typeIndex,
         value: form.values[field.id],
@@ -607,17 +611,19 @@ export function useJourneyClientPanelController(
         continueOnAuthenticationCancel: true,
       });
       if (fidoResult.authenticationCancelled) {
-        appendDebug('Journey submit continues after cancelled FIDO authentication');
+        appendDebug(
+          'Journey submit continues after cancelled FIDO authentication',
+        );
       }
 
       const callbacks = form.input.callbacks ?? [];
       const submitInput: JourneyNextInput = hasFidoCallback
         ? {
             callbacks: callbacks.filter(
-              (callback) =>
+              callback =>
                 callback.type !== 'FidoRegistrationCallback' &&
                 callback.type !== 'FidoAuthenticationCallback' &&
-                callback.type !== 'HiddenValueCallback'
+                callback.type !== 'HiddenValueCallback',
             ),
           }
         : form.input;

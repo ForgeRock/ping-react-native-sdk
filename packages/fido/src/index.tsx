@@ -67,8 +67,8 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         android: { useFido2Client: resolvedConfig.useFido2Client },
       },
       null,
-      2
-    )}`
+      2,
+    )}`,
   );
   logger.info('FIDO createClient success');
 
@@ -80,12 +80,14 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @returns A promise that resolves to the registration result payload.
      * @throws FidoError when native registration fails.
      */
-    async register(options: FidoRegistrationOptions): Promise<FidoRegistrationResult> {
+    async register(
+      options: FidoRegistrationOptions,
+    ): Promise<FidoRegistrationResult> {
       logger.info('FIDO register requested');
       try {
         const result = await getNativeModule().registerCredential(
           toNativeRegistrationOptions(options),
-          toNativeConfigOptions(resolvedConfig)
+          toNativeConfigOptions(resolvedConfig),
         );
         logger.debug('FIDO register success');
         return fromNativeRegistrationResult(result);
@@ -102,13 +104,13 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @throws FidoError when native authentication fails.
      */
     async authenticate(
-      options: FidoAuthenticationOptions
+      options: FidoAuthenticationOptions,
     ): Promise<FidoAuthenticationResult> {
       logger.info('FIDO authenticate requested');
       try {
         const result = await getNativeModule().authenticateCredential(
           toNativeAuthenticationOptions(options),
-          toNativeConfigOptions(resolvedConfig)
+          toNativeConfigOptions(resolvedConfig),
         );
         logger.debug('FIDO authenticate success');
         return fromNativeAuthenticationResult(result);
@@ -127,7 +129,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      */
     async registerForJourney(
       journey: JourneyInstance,
-      options: FidoJourneyRegistrationOptions = {}
+      options: FidoJourneyRegistrationOptions = {},
     ): Promise<FidoJourneyResult> {
       logger.info('FIDO registerForJourney requested');
       try {
@@ -135,7 +137,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         const result = await getNativeModule().registerCredentialForJourney(
           journeyId,
           toNativeJourneyRegistrationOptions(options),
-          toNativeConfigOptions(resolvedConfig)
+          toNativeConfigOptions(resolvedConfig),
         );
         logger.debug('FIDO registerForJourney success');
         return fromNativeJourneyResult(result);
@@ -154,7 +156,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      */
     async authenticateForJourney(
       journey: JourneyInstance,
-      options: FidoJourneyAuthenticationOptions = {}
+      options: FidoJourneyAuthenticationOptions = {},
     ): Promise<FidoJourneyResult> {
       logger.info('FIDO authenticateForJourney requested');
       try {
@@ -162,7 +164,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         const result = await getNativeModule().authenticateCredentialForJourney(
           journeyId,
           toNativeJourneyAuthenticationOptions(options),
-          toNativeConfigOptions(resolvedConfig)
+          toNativeConfigOptions(resolvedConfig),
         );
         logger.debug('FIDO authenticateForJourney success');
         return fromNativeJourneyResult(result);

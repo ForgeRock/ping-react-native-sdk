@@ -48,7 +48,9 @@ export type UseJourneyAutoStartEffectOptions = {
  * @param options - Auto-start effect options.
  * @returns Void.
  */
-export function useJourneyAutoStartEffect(options: UseJourneyAutoStartEffectOptions): void {
+export function useJourneyAutoStartEffect(
+  options: UseJourneyAutoStartEffectOptions,
+): void {
   const {
     autoStartOnMount,
     loading,
