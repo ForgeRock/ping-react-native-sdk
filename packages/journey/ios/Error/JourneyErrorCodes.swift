@@ -26,4 +26,3 @@ enum JourneyErrorCodes: String {
   case unsupportedCallbackError = "JOURNEY_UNSUPPORTED_CALLBACK_ERROR"
   case missingIntegrationError = "JOURNEY_MISSING_INTEGRATION_ERROR"
 }
-

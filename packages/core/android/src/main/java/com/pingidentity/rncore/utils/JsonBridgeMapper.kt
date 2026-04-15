@@ -8,7 +8,9 @@
 package com.pingidentity.rncore.utils
 
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import kotlinx.serialization.json.JsonArray
@@ -21,6 +23,30 @@ import kotlinx.serialization.json.JsonPrimitive
  * Helpers for converting JSON payloads into React Native bridge maps.
  */
 object JsonBridgeMapper {
+
+  /**
+   * Convert a React Native readable map into a JSON object.
+   */
+  fun decodeReadableMap(value: ReadableMap): JsonObject {
+    val output = mutableMapOf<String, JsonElement>()
+    val iterator = value.keySetIterator()
+    while (iterator.hasNextKey()) {
+      val key = iterator.nextKey()
+      output[key] = decodeReadableMapEntry(value, key)
+    }
+    return JsonObject(output)
+  }
+
+  /**
+   * Convert a React Native readable array into a JSON array.
+   */
+  fun decodeReadableArray(value: ReadableArray): JsonArray {
+    val items = mutableListOf<JsonElement>()
+    for (index in 0 until value.size()) {
+      items.add(decodeReadableArrayItem(value, index))
+    }
+    return JsonArray(items)
+  }
 
   /**
    * Convert a JSON object into a React Native readable map.
@@ -57,6 +83,50 @@ object JsonBridgeMapper {
     raw.toLongOrNull()?.let { return it }
     raw.toDoubleOrNull()?.let { return it }
     return raw
+  }
+
+  /**
+   * Read one key from a React Native map as a JSON element.
+   */
+  private fun decodeReadableMapEntry(map: ReadableMap, key: String): JsonElement {
+    if (!map.hasKey(key) || map.isNull(key)) {
+      return JsonNull
+    }
+    return when (map.getType(key)) {
+      ReadableType.Null -> JsonNull
+      ReadableType.Boolean -> JsonPrimitive(map.getBoolean(key))
+      ReadableType.Number -> decodeReadableNumber(map.getDouble(key))
+      ReadableType.String -> JsonPrimitive(map.getString(key) ?: "")
+      ReadableType.Map -> map.getMap(key)?.let { decodeReadableMap(it) } ?: JsonNull
+      ReadableType.Array -> map.getArray(key)?.let { decodeReadableArray(it) }
+        ?: JsonArray(emptyList())
+    }
+  }
+
+  /**
+   * Read one index from a React Native array as a JSON element.
+   */
+  private fun decodeReadableArrayItem(array: ReadableArray, index: Int): JsonElement {
+    return when (array.getType(index)) {
+      ReadableType.Null -> JsonNull
+      ReadableType.Boolean -> JsonPrimitive(array.getBoolean(index))
+      ReadableType.Number -> decodeReadableNumber(array.getDouble(index))
+      ReadableType.String -> JsonPrimitive(array.getString(index) ?: "")
+      ReadableType.Map -> array.getMap(index)?.let { decodeReadableMap(it) } ?: JsonNull
+      ReadableType.Array -> array.getArray(index)?.let { decodeReadableArray(it) }
+        ?: JsonArray(emptyList())
+    }
+  }
+
+  /**
+   * Converts a bridge double into integral or decimal JSON primitive.
+   */
+  private fun decodeReadableNumber(number: Double): JsonPrimitive {
+    return if (number % 1.0 == 0.0) {
+      JsonPrimitive(number.toLong())
+    } else {
+      JsonPrimitive(number)
+    }
   }
 
   private fun encodeJsonObjectInternal(value: JsonObject): Map<String, Any?> {

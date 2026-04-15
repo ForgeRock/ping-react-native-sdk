@@ -40,12 +40,16 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependency
   s.dependency "PingJourney"
   s.dependency "PingJourneyPlugin"
+  s.dependency "PingFido"
+  s.dependency "PingDavinciPlugin"
   s.dependency "RNPingCore"
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
     test_spec.dependency "PingJourney"
     test_spec.dependency "PingJourneyPlugin"
+    test_spec.dependency "PingFido"
+    test_spec.dependency "PingDavinciPlugin"
     test_spec.dependency "RNPingCore"
   end
 

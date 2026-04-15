@@ -216,7 +216,7 @@ public final class RNPingJourneyCommon: NSObject {
 
       do {
         if !mutations.isEmpty {
-          try JourneyCallbackValueApplier.apply(currentNode, mutations: mutations)
+          try await JourneyCallbackValueApplier.apply(currentNode, mutations: mutations)
         }
       } catch {
         promise.reject(JourneyErrorMapper.map(error, code: .nextError))

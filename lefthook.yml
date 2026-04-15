@@ -1,42 +1,28 @@
-# EXAMPLE USAGE:
 #
-#   Refer for explanation to following link:
-#   https://lefthook.dev/configuration/
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
 #
-# pre-push:
-#   jobs:
-#     - name: packages audit
-#       tags:
-#         - frontend
-#         - security
-#       run: yarn audit
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
 #
-#     - name: gems audit
-#       tags:
-#         - backend
-#         - security
-#       run: bundle audit
-#
-# pre-commit:
-#   parallel: true
-#   jobs:
-#     - run: yarn eslint {staged_files}
-#       glob: "*.{js,ts,jsx,tsx}"
-#
-#     - name: rubocop
-#       glob: "*.rb"
-#       exclude:
-#         - config/application.rb
-#         - config/routes.rb
-#       run: bundle exec rubocop --force-exclusion {all_files}
-#
-#     - name: govet
-#       files: git ls-files -m
-#       glob: "*.go"
-#       run: go vet {files}
-#
-#     - script: "hello.js"
-#       runner: node
-#
-#     - script: "hello.go"
-#       runner: go run
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format
+      glob: '*.{js,ts,jsx,tsx,json,md,yml,yaml}'
+      run: node_modules/.bin/prettier --check {staged_files}
+
+    - name: lint
+      glob: '*.{js,ts,jsx,tsx}'
+      run: yarn eslint --no-config-lookup --config eslint.config.mjs {staged_files}
+
+    - name: copyright
+      glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp,md}'
+      run: scripts/check-copyright.sh {staged_files}
+
+pre-push:
+  jobs:
+    - name: lint
+      run: yarn lint --affected
+
+    - name: typecheck
+      run: yarn typecheck --affected

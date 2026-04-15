@@ -5,7 +5,9 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 // Path to local library package (adjust the relative path if needed)
@@ -17,6 +19,7 @@ const deviceProfilePackage = path.resolve(
   __dirname,
   '../packages/device-profile',
 );
+const fidoPackage = path.resolve(__dirname, '../packages/fido');
 const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');
 const loggerPackage = path.resolve(__dirname, '../packages/logger');
@@ -29,6 +32,7 @@ const config = {
     browserPackage,
     deviceIdPackage,
     deviceProfilePackage,
+    fidoPackage,
     storagePackage,
     corePackage,
     loggerPackage,
@@ -49,6 +53,7 @@ const config = {
       '@ping-identity/rn-browser': browserPackage,
       '@ping-identity/rn-device-id': deviceIdPackage,
       '@ping-identity/rn-device-profile': deviceProfilePackage,
+      '@ping-identity/rn-fido': fidoPackage,
       '@ping-identity/rn-storage': storagePackage,
       '@ping-identity/rn-core': corePackage,
       '@ping-identity/rn-logger': loggerPackage,

@@ -23,6 +23,7 @@ ios/DerivedData/
 .DS_Store
 
 # Misc
+*.jks
 coverage/
 docs/
 classes.jar

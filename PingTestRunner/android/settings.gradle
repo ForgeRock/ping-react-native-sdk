@@ -10,12 +10,16 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingTestRunner'
 
-// Point Gradle at the local Detox AAR so com.wix:detox resolves to the
-// correct version bundled with the detox npm package (not the stale Maven artifact).
+// Include only the :detox module from node_modules as a regular subproject
+// (detox v20+ ships source only; its settings.gradle can't be used as a
+// composite build because it re-includes @react-native/gradle-plugin
+// under a conflicting build path).
+include ':detox'
+project(':detox').projectDir = file('../../node_modules/detox/android/detox')
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        maven { url "$rootDir/../../node_modules/detox/Detox-android" }
         google()
         mavenCentral()
     }
@@ -31,6 +35,8 @@ include(":ping-identity_rn-device-id")
 project(":ping-identity_rn-device-id").projectDir = file("../../packages/device-id/android")
 include(":ping-identity_rn-device-profile")
 project(":ping-identity_rn-device-profile").projectDir = file("../../packages/device-profile/android")
+include(":ping-identity_rn-fido")
+project(":ping-identity_rn-fido").projectDir = file("../../packages/fido/android")
 include(":ping-identity_rn-journey")
 project(":ping-identity_rn-journey").projectDir = file("../../packages/journey/android")
 include(":ping-identity_rn-logger")

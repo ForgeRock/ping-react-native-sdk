@@ -59,4 +59,15 @@ export default defineConfig([
     },
     rules: reactHooks.configs.recommended.rules,
   },
+  {
+    files: [
+      "**/__tests__/**/*.{js,ts,jsx,tsx}",
+      "**/*.{test,spec}.{js,ts,jsx,tsx}",
+      "**/jest.setup.{js,ts}",
+      "**/jest.config.{js,ts,mjs}",
+    ],
+    languageOptions: {
+      globals: globals.jest,
+    },
+  },
 ]);

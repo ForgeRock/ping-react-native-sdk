@@ -6,6 +6,7 @@
  */
 
 import Foundation
+import PingFido
 import PingJourney
 import PingJourneyPlugin
 import PingOrchestrate
@@ -214,6 +215,15 @@ enum JourneyNodeMapper {
   /// - Returns: Callback type string exposed to JavaScript.
   private static func callbackType(_ callback: Any) -> String {
     switch callback {
+    case is FidoRegistrationCallback:
+      return "FidoRegistrationCallback"
+    case is FidoAuthenticationCallback:
+      return "FidoAuthenticationCallback"
+    case let metadata as MetadataCallback:
+      if let fidoType = fidoCallbackType(from: metadata) {
+        return fidoType
+      }
+      return "MetadataCallback"
     case is ValidatedPasswordCallback:
       return "ValidatedCreatePasswordCallback"
     case is ValidatedUsernameCallback:
@@ -225,6 +235,26 @@ enum JourneyNodeMapper {
       return String(describing: type(of: callback))
     default:
       return String(describing: type(of: callback))
+    }
+  }
+
+  /// Resolves FIDO callback type aliases from WebAuthn metadata callbacks.
+  ///
+  /// - Parameter metadata: Metadata callback candidate.
+  /// - Returns: FIDO callback type when metadata describes a WebAuthn action.
+  private static func fidoCallbackType(from metadata: MetadataCallback) -> String? {
+    guard let payload = JsonBridgeMapper.encodeJsonElement(metadata.value) as? [String: Any] else {
+      return nil
+    }
+
+    let action = String(describing: payload["_action"] ?? "").lowercased()
+    switch action {
+    case "webauthn_registration":
+      return "FidoRegistrationCallback"
+    case "webauthn_authentication":
+      return "FidoAuthenticationCallback"
+    default:
+      return nil
     }
   }
 

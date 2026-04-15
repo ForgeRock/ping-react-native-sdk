@@ -27,6 +27,7 @@ import com.pingidentity.journey.callback.TextInputCallback
 import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -130,25 +131,27 @@ class JourneyCallbackValueApplierTest {
       )
     )
 
-    JourneyCallbackValueApplier.applyToCallbacks(
-      listOf(
-        name,
-        password,
-        textInput,
-        stringAttr,
-        numberAttr,
-        booleanAttr,
-        hiddenValue,
-        terms,
-        consent,
-        choice,
-        confirmation,
-        validatedPassword,
-        validatedUsername,
-        kba
-      ),
-      mutations
-    )
+    runBlocking {
+      JourneyCallbackValueApplier.applyToCallbacks(
+        listOf(
+          name,
+          password,
+          textInput,
+          stringAttr,
+          numberAttr,
+          booleanAttr,
+          hiddenValue,
+          terms,
+          consent,
+          choice,
+          confirmation,
+          validatedPassword,
+          validatedUsername,
+          kba
+        ),
+        mutations
+      )
+    }
 
     assertEquals("demo-user", name.name)
     assertEquals("demo-pass", password.password)
@@ -178,7 +181,9 @@ class JourneyCallbackValueApplierTest {
       JourneyCallbackValueApplier.CallbackMutation("NameCallback", "second-user", null)
     )
 
-    JourneyCallbackValueApplier.applyToCallbacks(listOf(first, second), mutations)
+    runBlocking {
+      JourneyCallbackValueApplier.applyToCallbacks(listOf(first, second), mutations)
+    }
 
     assertEquals("first-user", first.name)
     assertEquals("second-user", second.name)
@@ -195,10 +200,12 @@ class JourneyCallbackValueApplierTest {
 
     outputOnlyCallbacks.forEach { (callback, type) ->
       try {
-        JourneyCallbackValueApplier.applyToCallbacks(
-          listOf(callback),
-          listOf(JourneyCallbackValueApplier.CallbackMutation(type, "value", null))
-        )
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "value", null))
+          )
+        }
       } catch (error: UnsupportedOperationException) {
         assertTrue(error.message?.contains("output-only") == true)
         return@forEach
@@ -212,18 +219,46 @@ class JourneyCallbackValueApplierTest {
     class DeviceProfileCallback
 
     try {
-      JourneyCallbackValueApplier.applyToCallbacks(
-        listOf(DeviceProfileCallback()),
-        listOf(
-          JourneyCallbackValueApplier.CallbackMutation("DeviceProfileCallback", "payload", null)
+      runBlocking {
+        JourneyCallbackValueApplier.applyToCallbacks(
+          listOf(DeviceProfileCallback()),
+          listOf(
+            JourneyCallbackValueApplier.CallbackMutation("DeviceProfileCallback", "payload", null)
+          )
         )
-      )
+      }
     } catch (error: IllegalStateException) {
       assertTrue(error.message?.contains("additional native integration") == true)
       assertTrue(error.message?.contains("@ping-identity/rn-device-profile") == true)
       return
     }
     throw AssertionError("Expected IllegalStateException for integration callback")
+  }
+
+  @Test
+  fun applyThrowsForFidoIntegrationCallbacks() {
+    class FidoRegistrationCallback
+    class FidoAuthenticationCallback
+
+    val callbacks = listOf(
+      FidoRegistrationCallback() to "FidoRegistrationCallback",
+      FidoAuthenticationCallback() to "FidoAuthenticationCallback"
+    )
+
+    callbacks.forEach { (callback, type) ->
+      try {
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+          )
+        }
+      } catch (error: IllegalStateException) {
+        assertTrue(error.message?.contains("@ping-identity/rn-fido") == true)
+        return@forEach
+      }
+      throw AssertionError("Expected IllegalStateException for $type integration callback")
+    }
   }
 
   @Test
@@ -240,10 +275,12 @@ class JourneyCallbackValueApplierTest {
 
     callbacks.forEach { (callback, type, expectedRequirement) ->
       try {
-        JourneyCallbackValueApplier.applyToCallbacks(
-          listOf(callback),
-          listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
-        )
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+          )
+        }
       } catch (error: IllegalStateException) {
         assertTrue(error.message?.contains("additional native integration") == true)
         assertTrue(error.message?.contains(expectedRequirement) == true)
@@ -259,12 +296,14 @@ class JourneyCallbackValueApplierTest {
     class UnknownCustomCallback
 
     try {
-      JourneyCallbackValueApplier.applyToCallbacks(
-        listOf(UnknownCustomCallback()),
-        listOf(
-          JourneyCallbackValueApplier.CallbackMutation("UnknownCustomCallback", "payload", null)
+      runBlocking {
+        JourneyCallbackValueApplier.applyToCallbacks(
+          listOf(UnknownCustomCallback()),
+          listOf(
+            JourneyCallbackValueApplier.CallbackMutation("UnknownCustomCallback", "payload", null)
+          )
         )
-      )
+      }
     } catch (error: UnsupportedOperationException) {
       assertTrue(error.message?.contains("not supported for value mutation") == true)
       return
@@ -277,16 +316,18 @@ class JourneyCallbackValueApplierTest {
     val booleanAttr = BooleanAttributeInputCallback()
 
     try {
-      JourneyCallbackValueApplier.applyToCallbacks(
-        listOf(booleanAttr),
-        listOf(
-          JourneyCallbackValueApplier.CallbackMutation(
-            "BooleanAttributeInputCallback",
-            "maybe",
-            null
+      runBlocking {
+        JourneyCallbackValueApplier.applyToCallbacks(
+          listOf(booleanAttr),
+          listOf(
+            JourneyCallbackValueApplier.CallbackMutation(
+              "BooleanAttributeInputCallback",
+              "maybe",
+              null
+            )
           )
         )
-      )
+      }
     } catch (error: IllegalArgumentException) {
       assertTrue(error.message?.contains("expects a boolean value") == true)
       return

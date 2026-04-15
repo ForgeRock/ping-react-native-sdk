@@ -35,12 +35,22 @@ type NativeJourneyMock = {
   dispose: jest.Mock;
 };
 
-function makeMock(overrides: Partial<NativeJourneyMock> = {}): NativeJourneyMock {
+function makeMock(
+  overrides: Partial<NativeJourneyMock> = {},
+): NativeJourneyMock {
   return {
     configureJourney: jest.fn(async () => 'journey-id-mock'),
-    start: jest.fn(async () => ({ id: 'n1', type: 'ContinueNode', callbacks: [] })),
+    start: jest.fn(async () => ({
+      id: 'n1',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     next: jest.fn(async () => ({ id: 'n2', type: 'SuccessNode' })),
-    resume: jest.fn(async () => ({ id: 'n3', type: 'ContinueNode', callbacks: [] })),
+    resume: jest.fn(async () => ({
+      id: 'n3',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     getSession: jest.fn(async () => ({ accessToken: 'mock-access-token' })),
     refresh: jest.fn(async () => ({ accessToken: 'mock-refreshed-token' })),
     revoke: jest.fn(async () => true),
@@ -62,6 +72,7 @@ async function loadJourney(nativeMock: NativeJourneyMock) {
     __esModule: true,
     default: nativeMock,
   }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-journey');
 }
 
@@ -104,24 +115,32 @@ describe('@ping-identity/rn-journey — integration', () => {
   describe('createJourneyClient()', () => {
     it('throws when serverUrl is empty', async () => {
       const mod = await loadJourney(makeMock());
-      expect(() =>
-        mod.createJourneyClient({ serverUrl: '' })
-      ).toThrow('[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.');
+      expect(() => mod.createJourneyClient({ serverUrl: '' })).toThrow(
+        '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.',
+      );
     });
 
     it('throws when serverUrl is missing', async () => {
       const mod = await loadJourney(makeMock());
-      expect(() =>
-        mod.createJourneyClient({})
-      ).toThrow();
+      expect(() => mod.createJourneyClient({})).toThrow();
     });
 
     it('returns a client handle with the expected method surface', async () => {
       const mod = await loadJourney(makeMock());
       const client = mod.createJourneyClient(VALID_CONFIG);
       const methods = [
-        'init', 'getId', 'start', 'next', 'resume',
-        'user', 'refresh', 'revoke', 'userinfo', 'ssoToken', 'logoutUser', 'dispose',
+        'init',
+        'getId',
+        'start',
+        'next',
+        'resume',
+        'user',
+        'refresh',
+        'revoke',
+        'userinfo',
+        'ssoToken',
+        'logoutUser',
+        'dispose',
       ];
       for (const m of methods) {
         expect(typeof client[m]).toBe('function');
@@ -188,6 +207,42 @@ describe('@ping-identity/rn-journey — integration', () => {
       expect(typeof result).toBe('boolean');
     });
 
+    it('user() resolves with the active session', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const session = await client.user();
+      expect(session).toMatchObject({ accessToken: 'mock-access-token' });
+    });
+
+    it('user() resolves with null when no session exists', async () => {
+      const mock = makeMock({ getSession: jest.fn(async () => null) });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const session = await client.user();
+      expect(session).toBeNull();
+    });
+
+    it('userinfo() resolves with the userinfo payload', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const info = await client.userinfo();
+      expect(info).toMatchObject({ sub: 'user-mock' });
+    });
+
+    it('ssoToken() resolves with the SSO token payload', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const token = await client.ssoToken();
+      expect(token).toMatchObject({ value: 'sso-mock' });
+    });
+
     it('dispose() cleans up the native instance', async () => {
       const mock = makeMock();
       const mod = await loadJourney(mock);
@@ -201,7 +256,8 @@ describe('@ping-identity/rn-journey — integration', () => {
       // Regression: rapid dispose → init must not reuse a stale journeyId nor
       // fail because a concurrent native cleanup removed the newly registered handle.
       const mock = makeMock({
-        configureJourney: jest.fn()
+        configureJourney: jest
+          .fn()
           .mockResolvedValueOnce('journey-id-first')
           .mockResolvedValueOnce('journey-id-second'),
       });
@@ -230,7 +286,8 @@ describe('@ping-identity/rn-journey — integration', () => {
       });
       const mock = makeMock({
         dispose: jest.fn(() => deferredDispose),
-        configureJourney: jest.fn()
+        configureJourney: jest
+          .fn()
           .mockResolvedValueOnce('journey-id-first')
           .mockResolvedValueOnce('journey-id-second'),
       });
@@ -242,7 +299,7 @@ describe('@ping-identity/rn-journey — integration', () => {
       // Start dispose and init concurrently — init is in-flight while dispose is still pending.
       const disposeP = client.dispose();
       const initP = client.init();
-      resolveDispose();                   // unblock the native dispose
+      resolveDispose(); // unblock the native dispose
       await Promise.all([disposeP, initP]);
       // init() during the overlap sees the existing journeyId and returns it without re-configuring.
       expect(await initP).toBe('journey-id-first');
@@ -258,7 +315,9 @@ describe('@ping-identity/rn-journey — integration', () => {
   describe('failure paths', () => {
     it('init() propagates native errors', async () => {
       const mock = makeMock({
-        configureJourney: jest.fn(async () => { throw new Error('configure failed'); }),
+        configureJourney: jest.fn(async () => {
+          throw new Error('configure failed');
+        }),
       });
       const mod = await loadJourney(mock);
       const client = mod.createJourneyClient(VALID_CONFIG);
@@ -267,23 +326,45 @@ describe('@ping-identity/rn-journey — integration', () => {
 
     it('start() propagates native errors', async () => {
       const mock = makeMock({
-        start: jest.fn(async () => { throw new Error('Journey start failed'); }),
+        start: jest.fn(async () => {
+          throw new Error('Journey start failed');
+        }),
       });
       const mod = await loadJourney(mock);
       const client = mod.createJourneyClient(VALID_CONFIG);
       await client.init();
-      await expect(client.start('Login')).rejects.toThrow('Journey start failed');
+      await expect(client.start('Login')).rejects.toThrow(
+        'Journey start failed',
+      );
     });
 
     it('next() propagates native errors', async () => {
       const mock = makeMock({
-        next: jest.fn(async () => { throw new Error('Journey next failed'); }),
+        next: jest.fn(async () => {
+          throw new Error('Journey next failed');
+        }),
       });
       const mod = await loadJourney(mock);
       const client = mod.createJourneyClient(VALID_CONFIG);
       await client.init();
       await client.start('Login');
-      await expect(client.next({ callbacks: [] })).rejects.toThrow('Journey next failed');
+      await expect(client.next({ callbacks: [] })).rejects.toThrow(
+        'Journey next failed',
+      );
+    });
+
+    it('resume() propagates native errors', async () => {
+      const mock = makeMock({
+        resume: jest.fn(async () => {
+          throw new Error('Journey resume failed');
+        }),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      await expect(client.resume('myapp://callback')).rejects.toThrow(
+        'Journey resume failed',
+      );
     });
   });
 
@@ -292,6 +373,27 @@ describe('@ping-identity/rn-journey — integration', () => {
       const mod = await loadJourney(makeMock());
       const result = mod.normalizeCallbacks([]);
       expect(Array.isArray(result)).toBe(true);
+    });
+
+    it('returns normalized fields for a simple node', async () => {
+      const mod = await loadJourney(makeMock());
+      const node = {
+        type: 'ContinueNode',
+        callbacks: [
+          { type: 'NameCallback', output: [] },
+          { type: 'PasswordCallback', output: [] },
+        ],
+      };
+      const fields = mod.normalizeCallbacks(node);
+      expect(fields).toHaveLength(2);
+      expect(fields[0]).toMatchObject({
+        id: 'NameCallback:0',
+        ref: { type: 'NameCallback' },
+      });
+      expect(fields[1]).toMatchObject({
+        id: 'PasswordCallback:0',
+        ref: { type: 'PasswordCallback' },
+      });
     });
   });
 });

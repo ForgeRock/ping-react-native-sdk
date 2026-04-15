@@ -14,7 +14,7 @@ import type {
   JourneyCallback,
   JourneyCallbackType,
   JourneyCallbackInput,
-  JourneyFieldCapability,
+  JourneyExecutionMode,
   JourneyFieldKind,
   JourneyFieldOption,
   JourneyFormValue,
@@ -26,14 +26,14 @@ import type {
 } from './types';
 
 const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
+  nativeExtensionCallbackType.FidoRegistrationCallback,
+  nativeExtensionCallbackType.FidoAuthenticationCallback,
   callbackType.PingOneProtectInitializeCallback,
   callbackType.PingOneProtectEvaluationCallback,
   callbackType.SelectIdPCallback,
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
   nativeExtensionCallbackType.IdPCallback,
-  nativeExtensionCallbackType.FidoRegistrationCallback,
-  nativeExtensionCallbackType.FidoAuthenticationCallback,
   nativeExtensionCallbackType.BindingCallback,
   nativeExtensionCallbackType.DeviceBindingCallback,
   nativeExtensionCallbackType.DeviceSigningVerifierCallback,
@@ -236,14 +236,12 @@ function resolveFieldKind(type: JourneyCallbackType): JourneyFieldKind {
 }
 
 /**
- * Resolves callback execution capability for a callback type.
+ * Resolves callback execution mode for a callback type.
  *
  * @param type - Callback type.
- * @returns Callback capability.
+ * @returns Callback execution mode.
  */
-function resolveFieldCapability(
-  type: JourneyCallbackType,
-): JourneyFieldCapability {
+function resolveExecutionMode(type: JourneyCallbackType): JourneyExecutionMode {
   if (integrationRequiredCallbackTypes.has(type)) {
     return 'integration_required';
   }
@@ -254,6 +252,24 @@ function resolveFieldCapability(
     return 'manual';
   }
   return 'unsupported';
+}
+
+/**
+ * Resolves whether a callback requires explicit user input.
+ *
+ * @param type - Callback type.
+ * @param executionMode - Callback execution mode.
+ * @returns True when the user must provide input.
+ */
+function resolveRequiresUserInput(
+  type: JourneyCallbackType,
+  executionMode: JourneyExecutionMode,
+): boolean {
+  if (executionMode !== 'manual') {
+    return false;
+  }
+
+  return type !== callbackType.HiddenValueCallback;
 }
 
 /**
@@ -374,7 +390,7 @@ function resolveDefaultValue(
  * Returns normalized callback fields for a ContinueNode.
  *
  * @param node - Journey node from `useJourney`.
- * @returns Normalized field list with deterministic ids and capability metadata.
+ * @returns Normalized field list with deterministic ids and execution-mode metadata.
  */
 export function normalizeCallbacks(
   node: JourneyNode | null | undefined,
@@ -392,7 +408,8 @@ export function normalizeCallbacks(
     counts.set(type, typeIndex + 1);
 
     const kind = resolveFieldKind(type);
-    const capability = resolveFieldCapability(type);
+    const executionMode = resolveExecutionMode(type);
+    const requiresUserInput = resolveRequiresUserInput(type, executionMode);
     const options = resolveCallbackOptions(callback);
     const prompt = readString(callback.prompt, '');
     const message = readString(callback.message, '');
@@ -408,7 +425,8 @@ export function normalizeCallbacks(
       message: message.length > 0 ? message : undefined,
       required,
       kind,
-      capability,
+      executionMode,
+      requiresUserInput,
       defaultValue: resolveDefaultValue(callback, type),
       options: options.length > 0 ? options : undefined,
       raw: callback,
@@ -448,11 +466,11 @@ export function buildNextInput(
     const callbackType = field.ref.type;
     const callbackIndex = field.ref.typeIndex;
 
-    if (field.capability === 'output_only') {
+    if (field.executionMode === 'output_only') {
       return;
     }
 
-    if (field.capability === 'integration_required') {
+    if (field.executionMode === 'auto_capable') {
       issues.push({
         code: 'INTEGRATION_REQUIRED',
         message: `Callback "${callbackType}" requires additional integration.`,
@@ -462,7 +480,17 @@ export function buildNextInput(
       return;
     }
 
-    if (field.capability === 'unsupported') {
+    if (field.executionMode === 'integration_required') {
+      issues.push({
+        code: 'INTEGRATION_REQUIRED',
+        message: `Callback "${callbackType}" requires additional integration.`,
+        fieldId: field.id,
+        callbackType,
+      });
+      return;
+    }
+
+    if (field.executionMode === 'unsupported') {
       issues.push({
         code: 'UNSUPPORTED_CALLBACK',
         message: `Callback "${callbackType}" is not supported by the helper submit builder.`,
