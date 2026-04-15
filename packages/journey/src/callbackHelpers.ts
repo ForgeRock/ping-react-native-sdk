@@ -263,7 +263,7 @@ function resolveExecutionMode(type: JourneyCallbackType): JourneyExecutionMode {
  */
 function resolveRequiresUserInput(
   type: JourneyCallbackType,
-  executionMode: JourneyExecutionMode
+  executionMode: JourneyExecutionMode,
 ): boolean {
   if (executionMode !== 'manual') {
     return false;

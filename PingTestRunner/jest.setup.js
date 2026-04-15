@@ -37,7 +37,10 @@ jest.mock('../packages/browser/src/NativeRNPingBrowser', () => ({
   getNativeModule: jest.fn(() => ({
     configure: jest.fn(),
     reset: jest.fn(),
-    open: jest.fn(async () => ({ type: 'success', url: 'com.example://callback' })),
+    open: jest.fn(async () => ({
+      type: 'success',
+      url: 'com.example://callback',
+    })),
   })),
 }));
 
@@ -56,8 +59,14 @@ jest.mock('../packages/device-id/src/NativeRNPingDeviceId', () => ({
 jest.mock('../packages/device-profile/src/NativeRNPingDeviceProfile', () => ({
   __esModule: true,
   getNativeModule: jest.fn(() => ({
-    collectDeviceProfile: jest.fn(async () => ({ platform: 'android', version: '13' })),
-    collectDeviceProfileForJourney: jest.fn(async () => ({ nodeId: 'node-1', profile: {} })),
+    collectDeviceProfile: jest.fn(async () => ({
+      platform: 'android',
+      version: '13',
+    })),
+    collectDeviceProfileForJourney: jest.fn(async () => ({
+      nodeId: 'node-1',
+      profile: {},
+    })),
   })),
 }));
 
@@ -65,8 +74,12 @@ jest.mock('../packages/device-profile/src/NativeRNPingDeviceProfile', () => ({
 jest.mock('../packages/fido/src/NativeRNPingFido', () => ({
   __esModule: true,
   getNativeModule: jest.fn(() => ({
-    registerCredential: jest.fn(async () => ({ credentialId: 'mock-credential-id' })),
-    authenticateCredential: jest.fn(async () => ({ signature: 'mock-signature' })),
+    registerCredential: jest.fn(async () => ({
+      credentialId: 'mock-credential-id',
+    })),
+    authenticateCredential: jest.fn(async () => ({
+      signature: 'mock-signature',
+    })),
   })),
   toNativeRegistrationOptions: jest.fn((options) => options),
   toNativeAuthenticationOptions: jest.fn((options) => options),
@@ -79,14 +92,26 @@ jest.mock('../packages/journey/src/NativeRNPingJourney', () => ({
   __esModule: true,
   default: {
     configureJourney: jest.fn(async () => 'journey-id-mock'),
-    start: jest.fn(async () => ({ id: 'n1', type: 'ContinueNode', callbacks: [] })),
+    start: jest.fn(async () => ({
+      id: 'n1',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     next: jest.fn(async () => ({ id: 'n2', type: 'SuccessNode' })),
-    resume: jest.fn(async () => ({ id: 'n3', type: 'ContinueNode', callbacks: [] })),
+    resume: jest.fn(async () => ({
+      id: 'n3',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     getSession: jest.fn(async () => ({ accessToken: 'mock-access-token' })),
     refresh: jest.fn(async () => ({ accessToken: 'mock-refreshed-token' })),
     revoke: jest.fn(async () => true),
     userinfo: jest.fn(async () => ({ sub: 'user-mock' })),
-    ssoToken: jest.fn(async () => ({ value: 'sso-mock', successUrl: '/enduser', realm: '/alpha' })),
+    ssoToken: jest.fn(async () => ({
+      value: 'sso-mock',
+      successUrl: '/enduser',
+      realm: '/alpha',
+    })),
     logout: jest.fn(async () => true),
     dispose: jest.fn(async () => undefined),
   },
@@ -119,10 +144,16 @@ jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
       accessToken: 'mock-refreshed-access-token',
       idToken: 'mock-refreshed-id-token',
     })),
-    clientUserinfo: jest.fn(async () => ({ sub: 'user-mock', email: 'user@example.com' })),
+    clientUserinfo: jest.fn(async () => ({
+      sub: 'user-mock',
+      email: 'user@example.com',
+    })),
     clientRevoke: jest.fn(async () => undefined),
     clientEndSession: jest.fn(async () => undefined),
-    authorize: jest.fn(async () => ({ code: 'auth-code-mock', state: 'state-mock' })),
+    authorize: jest.fn(async () => ({
+      code: 'auth-code-mock',
+      state: 'state-mock',
+    })),
     hasUser: jest.fn(async () => true),
     token: jest.fn(async () => ({
       accessToken: 'mock-web-access-token',

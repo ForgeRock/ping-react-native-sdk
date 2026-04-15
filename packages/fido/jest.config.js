@@ -12,11 +12,14 @@ module.exports = {
   },
   reporters: [
     'default',
-    ['jest-junit', {
-      outputDirectory: './build/test-results/js',
-      outputName: 'junit.xml',
-      classNameTemplate: '{classname}',
-      titleTemplate: '{title}',
-    }],
+    [
+      'jest-junit',
+      {
+        outputDirectory: './build/test-results/js',
+        outputName: 'junit.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+      },
+    ],
   ],
 };

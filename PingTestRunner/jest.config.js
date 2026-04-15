@@ -20,15 +20,20 @@ module.exports = {
   moduleNameMapper: {
     // Map workspace packages to source so tests exercise real JS logic.
     // Use $ anchors to prevent subpath imports (e.g. package.json) from being captured.
-    '^@ping-identity/rn-browser$': '<rootDir>/../packages/browser/src/index.tsx',
+    '^@ping-identity/rn-browser$':
+      '<rootDir>/../packages/browser/src/index.tsx',
     '^@ping-identity/rn-core$': '<rootDir>/../packages/core/index.js',
-    '^@ping-identity/rn-device-id$': '<rootDir>/../packages/device-id/src/index.tsx',
-    '^@ping-identity/rn-device-profile$': '<rootDir>/../packages/device-profile/src/index.tsx',
+    '^@ping-identity/rn-device-id$':
+      '<rootDir>/../packages/device-id/src/index.tsx',
+    '^@ping-identity/rn-device-profile$':
+      '<rootDir>/../packages/device-profile/src/index.tsx',
     '^@ping-identity/rn-fido$': '<rootDir>/../packages/fido/src/index.tsx',
-    '^@ping-identity/rn-journey$': '<rootDir>/../packages/journey/src/index.tsx',
+    '^@ping-identity/rn-journey$':
+      '<rootDir>/../packages/journey/src/index.tsx',
     '^@ping-identity/rn-logger$': '<rootDir>/../packages/logger/src/index.tsx',
     '^@ping-identity/rn-oidc$': '<rootDir>/../packages/oidc/src/index.tsx',
-    '^@ping-identity/rn-storage$': '<rootDir>/../packages/storage/src/index.tsx',
+    '^@ping-identity/rn-storage$':
+      '<rootDir>/../packages/storage/src/index.tsx',
     '^@ping-identity/rn-types$': '<rootDir>/../packages/types/src/index.ts',
   },
   collectCoverageFrom: [

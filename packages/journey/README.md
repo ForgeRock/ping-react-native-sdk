@@ -40,7 +40,7 @@ const client = createJourneyClient({
   serverUrl: 'https://example.com/am',
   realm: 'alpha',
   cookie: 'iPlanetDirectoryPro',
-  timeout: 30000
+  timeout: 30000,
 });
 ```
 
@@ -96,7 +96,8 @@ const client = createJourneyClient({
   modules: {
     oidc: {
       clientId: 'rn-client',
-      discoveryEndpoint: 'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
+      discoveryEndpoint:
+        'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid', 'profile', 'email'],
       storage: oidcStorage,
@@ -130,7 +131,8 @@ const client = createJourneyClient({
   modules: {
     oidc: {
       clientId: 'rn-client',
-      discoveryEndpoint: 'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
+      discoveryEndpoint:
+        'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid'],
     },
@@ -275,19 +277,19 @@ if (form.canSubmit) {
 
 Each normalized field includes `executionMode` and `requiresUserInput`.
 
-| `executionMode` | Meaning | `requiresUserInput` default |
-| --- | --- | --- |
-| `manual` | Callback value is submitted from form/planned input. | `true` |
-| `auto_capable` | Callback can be executed by app auto-progress policy. | `false` |
-| `integration_required` | Callback family needs extra native/app integration before submit. | `false` |
-| `output_only` | Display/system callback, no input value expected. | `false` |
-| `unsupported` | Callback is not currently handled by helper submit logic. | `false` |
+| `executionMode`        | Meaning                                                           | `requiresUserInput` default |
+| ---------------------- | ----------------------------------------------------------------- | --------------------------- |
+| `manual`               | Callback value is submitted from form/planned input.              | `true`                      |
+| `auto_capable`         | Callback can be executed by app auto-progress policy.             | `false`                     |
+| `integration_required` | Callback family needs extra native/app integration before submit. | `false`                     |
+| `output_only`          | Display/system callback, no input value expected.                 | `false`                     |
+| `unsupported`          | Callback is not currently handled by helper submit logic.         | `false`                     |
 
 `requiresUserInput` exceptions:
 
-| Callback Type | `executionMode` | `requiresUserInput` | Reason |
-| --- | --- | --- | --- |
-| `HiddenValueCallback` | `manual` | `false` | Hidden payload should pass through submit planning without forcing a visible input step. |
+| Callback Type         | `executionMode` | `requiresUserInput` | Reason                                                                                   |
+| --------------------- | --------------- | ------------------- | ---------------------------------------------------------------------------------------- |
+| `HiddenValueCallback` | `manual`        | `false`             | Hidden payload should pass through submit planning without forcing a visible input step. |
 
 > TODO(test-runner app): add Journey integration and E2E tests (including `SuspendedTextOutputCallback` deep link/email resume flow) once the test-runner app is set up.
 
@@ -295,26 +297,26 @@ Each normalized field includes `executionMode` and `requiresUserInput`.
 
 The following AM core callbacks are supported on Android and iOS:
 
-| Callback Type | Description | Input Handling |
-| --- | --- | --- |
-| `BooleanAttributeInputCallback` | Collects true or false input. | Manual input |
-| `ChoiceCallback` | Collects a single selection from available choices. | Manual input |
-| `ConfirmationCallback` | Collects one selected option from a list. | Manual input |
-| `ConsentMappingCallback` | Prompts the user to consent to sharing profile data. | Manual input |
-| `HiddenValueCallback` | Carries non-visual form values. | Manual input |
-| `KbaCreateCallback` | Collects knowledge-based question and answer values. | Manual input |
-| `MetadataCallback` | Injects key-value metadata into the flow. | Output-only |
-| `NameCallback` | Collects a username. | Manual input |
-| `NumberAttributeInputCallback` | Collects a numeric value. | Manual input |
-| `PasswordCallback` | Collects a password or OTP value. | Manual input |
-| `PollingWaitCallback` | Instructs the client to wait and resubmit later. | Output-only |
-| `StringAttributeInputCallback` | Collects string attribute values. | Manual input |
-| `SuspendedTextOutputCallback` | Pauses flow and resumes through external callback/deep link. | Output-only |
-| `TermsAndConditionsCallback` | Collects acceptance of configured terms and conditions. | Manual input |
-| `TextInputCallback` | Collects arbitrary text input. | Manual input |
-| `TextOutputCallback` | Provides display-only message content. | Output-only |
-| `ValidatedCreatePasswordCallback` | Collects password input with policy validation. | Manual input |
-| `ValidatedCreateUsernameCallback` | Collects username input with policy validation. | Manual input |
+| Callback Type                     | Description                                                  | Input Handling |
+| --------------------------------- | ------------------------------------------------------------ | -------------- |
+| `BooleanAttributeInputCallback`   | Collects true or false input.                                | Manual input   |
+| `ChoiceCallback`                  | Collects a single selection from available choices.          | Manual input   |
+| `ConfirmationCallback`            | Collects one selected option from a list.                    | Manual input   |
+| `ConsentMappingCallback`          | Prompts the user to consent to sharing profile data.         | Manual input   |
+| `HiddenValueCallback`             | Carries non-visual form values.                              | Manual input   |
+| `KbaCreateCallback`               | Collects knowledge-based question and answer values.         | Manual input   |
+| `MetadataCallback`                | Injects key-value metadata into the flow.                    | Output-only    |
+| `NameCallback`                    | Collects a username.                                         | Manual input   |
+| `NumberAttributeInputCallback`    | Collects a numeric value.                                    | Manual input   |
+| `PasswordCallback`                | Collects a password or OTP value.                            | Manual input   |
+| `PollingWaitCallback`             | Instructs the client to wait and resubmit later.             | Output-only    |
+| `StringAttributeInputCallback`    | Collects string attribute values.                            | Manual input   |
+| `SuspendedTextOutputCallback`     | Pauses flow and resumes through external callback/deep link. | Output-only    |
+| `TermsAndConditionsCallback`      | Collects acceptance of configured terms and conditions.      | Manual input   |
+| `TextInputCallback`               | Collects arbitrary text input.                               | Manual input   |
+| `TextOutputCallback`              | Provides display-only message content.                       | Output-only    |
+| `ValidatedCreatePasswordCallback` | Collects password input with policy validation.              | Manual input   |
+| `ValidatedCreateUsernameCallback` | Collects username input with policy validation.              | Manual input   |
 
 Integration-dependent families (for example, device profile, FIDO, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission (`executionMode: 'integration_required'`).
 
@@ -324,11 +326,11 @@ For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fid
 
 Journey FIDO callback handling is standardized across Android and iOS with the following native contract:
 
-| Area | Standardized behavior |
-| --- | --- |
-| Callback type resolution | Runtime native callback class is authoritative; raw callback JSON `type` is fallback only. |
-| Callback execution ownership | FIDO callback execution is owned by `@ping-identity/rn-fido` Journey-scoped APIs, not `next(...)` callback mutations. |
-| Hidden callback ownership | Journey/native callback execution remains the source of truth for callback state; helper layer does not force custom override values. |
+| Area                         | Standardized behavior                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Callback type resolution     | Runtime native callback class is authoritative; raw callback JSON `type` is fallback only.                                            |
+| Callback execution ownership | FIDO callback execution is owned by `@ping-identity/rn-fido` Journey-scoped APIs, not `next(...)` callback mutations.                 |
+| Hidden callback ownership    | Journey/native callback execution remains the source of truth for callback state; helper layer does not force custom override values. |
 
 ## Error handling
 

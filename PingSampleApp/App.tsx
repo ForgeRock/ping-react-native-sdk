@@ -32,6 +32,7 @@ import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from './src/styles/colors';
 import { commonStyles } from './src/styles/common';
 
+/** Minimal shape required to patch `defaultProps.style` on a core RN component class. */
 type ComponentWithDefaultStyle = {
   defaultProps?: {
     style?: unknown;
@@ -39,6 +40,12 @@ type ComponentWithDefaultStyle = {
   };
 };
 
+/**
+ * Navigation route map for the sample app's native stack.
+ *
+ * Each key is a screen name; the value is the params type that screen accepts
+ * (`undefined` means no params).
+ */
 export type RootStackParamList = {
   Home: undefined;
   Configuration: undefined;
@@ -90,10 +97,30 @@ function ConfigurationRequiredScreen(
 
 /**
  * Root sample app component that wires navigation and initializes demo clients.
+ *
+ * ## Structure
+ *
+ * 1. **Profile selection** — `sampleAppClientProfiles` (defined in `src/clients.ts`) lists
+ *    pre-built client configurations. The active profile is stored as `selectedProfileKey`
+ *    and defaults to `DEFAULT_SAMPLE_APP_CLIENT_PROFILE_KEY`.
+ *
+ * 2. **Client initialization** — whenever `selectedProfile` changes the component calls
+ *    `journeyClient.init()` inside a guarded async effect. Init errors are surfaced as an
+ *    inline message instead of crashing.
+ *
+ * 3. **Context providers** — `JourneyProvider` and `OidcProvider` expose the active
+ *    clients to every screen via React context so screens do not import clients directly.
+ *
+ * 4. **Navigation** — a `NativeStackNavigator` registers all demo screens.
+ *
+ * 5. **Global SDK setup** — `configureBrowser` is called once per effect cycle to set
+ *    sensible defaults. The browser logger is intentionally separate from the global logger
+ *    so browser diagnostics can be filtered independently.
  */
 export default function App() {
   // Dedicated browser logger keeps browser diagnostics separate from global SDK logging.
   const browserLogger = useMemo(() => logger({ level: 'debug' }), []);
+  /** Non-null while the journey client failed to initialise after a profile switch. */
   const [initError, setInitError] = useState<string | null>(null);
   const [selectedJourneyProfileKey, setSelectedJourneyProfileKey] = useState<
     string | null

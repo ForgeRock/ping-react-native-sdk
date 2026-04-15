@@ -33,36 +33,31 @@ import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRN
 
 // ─── rn-browser ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: configure, reset, open
-type _BrowserMockedMethods = Pick<BrowserSpec,
-  | 'configure'
-  | 'reset'
-  | 'open'
->;
+type _BrowserMockedMethods = Pick<BrowserSpec, 'configure' | 'reset' | 'open'>;
 
 // ─── rn-device-id ───────────────────────────────────────────────────────────
 // jest.setup.js mocks: getDefaultDeviceId
-type _DeviceIdMockedMethods = Pick<DeviceIdSpec,
-  | 'getDefaultDeviceId'
->;
+type _DeviceIdMockedMethods = Pick<DeviceIdSpec, 'getDefaultDeviceId'>;
 
 // ─── rn-device-profile ──────────────────────────────────────────────────────
 // jest.setup.js mocks: collectDeviceProfile, collectDeviceProfileForJourney
-type _DeviceProfileMockedMethods = Pick<DeviceProfileSpec,
-  | 'collectDeviceProfile'
-  | 'collectDeviceProfileForJourney'
+type _DeviceProfileMockedMethods = Pick<
+  DeviceProfileSpec,
+  'collectDeviceProfile' | 'collectDeviceProfileForJourney'
 >;
 
 // ─── rn-fido ────────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerCredential, authenticateCredential
-type _FidoMockedMethods = Pick<FidoSpec,
-  | 'registerCredential'
-  | 'authenticateCredential'
+type _FidoMockedMethods = Pick<
+  FidoSpec,
+  'registerCredential' | 'authenticateCredential'
 >;
 
 // ─── rn-journey ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: configureJourney, start, next, resume, getSession,
 //                      refresh, revoke, userinfo, ssoToken, logout, dispose
-type _JourneyMockedMethods = Pick<JourneySpec,
+type _JourneyMockedMethods = Pick<
+  JourneySpec,
   | 'configureJourney'
   | 'start'
   | 'next'
@@ -78,17 +73,15 @@ type _JourneyMockedMethods = Pick<JourneySpec,
 
 // ─── rn-logger ──────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerLogger, syncLogger
-type _LoggerMockedMethods = Pick<LoggerSpec,
-  | 'registerLogger'
-  | 'syncLogger'
->;
+type _LoggerMockedMethods = Pick<LoggerSpec, 'registerLogger' | 'syncLogger'>;
 
 // ─── rn-oidc ────────────────────────────────────────────────────────────────
 // jest.setup.js mocks: createClient, createWebClient, clientToken,
 //                      clientRefresh, clientUserinfo, clientRevoke,
 //                      clientEndSession, authorize, hasUser, token,
 //                      refresh, userinfo, revoke, logout
-type _OidcMockedMethods = Pick<OidcSpec,
+type _OidcMockedMethods = Pick<
+  OidcSpec,
   | 'createClient'
   | 'createWebClient'
   | 'clientToken'
@@ -108,7 +101,8 @@ type _OidcMockedMethods = Pick<OidcSpec,
 // ─── rn-storage ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerSessionStorage, configureSessionStorage,
 //                      registerOidcStorage, configureOidcStorage
-type _StorageMockedMethods = Pick<StorageSpec,
+type _StorageMockedMethods = Pick<
+  StorageSpec,
   | 'registerSessionStorage'
   | 'configureSessionStorage'
   | 'registerOidcStorage'

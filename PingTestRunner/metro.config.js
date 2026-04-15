@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
@@ -14,7 +15,10 @@ const workspaceRoot = path.resolve(__dirname, '..');
 const browserPackage = path.resolve(workspaceRoot, 'packages/browser');
 const corePackage = path.resolve(workspaceRoot, 'packages/core');
 const deviceIdPackage = path.resolve(workspaceRoot, 'packages/device-id');
-const deviceProfilePackage = path.resolve(workspaceRoot, 'packages/device-profile');
+const deviceProfilePackage = path.resolve(
+  workspaceRoot,
+  'packages/device-profile',
+);
 const fidoPackage = path.resolve(workspaceRoot, 'packages/fido');
 const journeyPackage = path.resolve(workspaceRoot, 'packages/journey');
 const loggerPackage = path.resolve(workspaceRoot, 'packages/logger');

@@ -122,6 +122,7 @@ describe('useJourney provider and native module resolution', () => {
         NativeModules: {},
         TurboModuleRegistry: { get: jest.fn() },
       }));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const nativeModule = require('../NativeRNPingJourney');
       expect(() => nativeModule.getNativeModule()).toThrow(
         '[@ping-identity/rn-journey] Native module RNPingJourney not found.',
@@ -136,9 +137,17 @@ describe('useJourney provider and native module resolution', () => {
 
     render(
       <JourneyProvider client={client}>
-        <JourneyHarness onResult={(r) => { resultA = r; }} />
-        <JourneyHarness onResult={(r) => { resultB = r; }} />
-      </JourneyProvider>
+        <JourneyHarness
+          onResult={(r) => {
+            resultA = r;
+          }}
+        />
+        <JourneyHarness
+          onResult={(r) => {
+            resultB = r;
+          }}
+        />
+      </JourneyProvider>,
     );
 
     await act(async () => {
@@ -146,8 +155,14 @@ describe('useJourney provider and native module resolution', () => {
     });
 
     // Both consumers should reflect the same node from the shared provider state.
-    expect(requireLatest(resultA)[0]).toEqual({ type: 'ContinueNode', callbacks: [] });
-    expect(requireLatest(resultB)[0]).toEqual({ type: 'ContinueNode', callbacks: [] });
+    expect(requireLatest(resultA)[0]).toEqual({
+      type: 'ContinueNode',
+      callbacks: [],
+    });
+    expect(requireLatest(resultB)[0]).toEqual({
+      type: 'ContinueNode',
+      callbacks: [],
+    });
     // start() should only have been called once (not once per consumer).
     expect(client.start).toHaveBeenCalledTimes(1);
   });
@@ -161,6 +176,7 @@ describe('useJourney provider and native module resolution', () => {
           get: jest.fn(() => undefined),
         },
       }));
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const nativeModule = require('../NativeRNPingJourney');
       expect(nativeModule.getNativeModule()).toBe(classic);
     });

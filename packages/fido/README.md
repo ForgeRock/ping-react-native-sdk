@@ -202,7 +202,9 @@ function createFidoClient(config?: FidoConfig): FidoClient;
 
 interface FidoClient {
   register(options: FidoRegistrationOptions): Promise<FidoRegistrationResult>;
-  authenticate(options: FidoAuthenticationOptions): Promise<FidoAuthenticationResult>;
+  authenticate(
+    options: FidoAuthenticationOptions,
+  ): Promise<FidoAuthenticationResult>;
   registerForJourney(
     journey: JourneyInstance,
     options?: FidoJourneyRegistrationOptions,

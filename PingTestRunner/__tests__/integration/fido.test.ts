@@ -44,10 +44,16 @@ type FidoClient = import('@ping-identity/rn-fido').FidoClient;
 
 function makeMock(overrides: Partial<NativeFidoMock> = {}): NativeFidoMock {
   return {
-    registerCredential: jest.fn(async () => ({ credentialId: 'mock-credential-id' })),
-    authenticateCredential: jest.fn(async () => ({ signature: 'mock-signature' })),
+    registerCredential: jest.fn(async () => ({
+      credentialId: 'mock-credential-id',
+    })),
+    authenticateCredential: jest.fn(async () => ({
+      signature: 'mock-signature',
+    })),
     registerCredentialForJourney: jest.fn(async () => ({ type: 'success' })),
-    authenticateCredentialForJourney: jest.fn(async () => ({ type: 'success' })),
+    authenticateCredentialForJourney: jest.fn(async () => ({
+      type: 'success',
+    })),
     ...overrides,
   };
 }
@@ -63,7 +69,9 @@ async function loadFido(nativeMock: NativeFidoMock) {
     fromNativeRegistrationResult: jest.fn((result: unknown) => result),
     fromNativeAuthenticationResult: jest.fn((result: unknown) => result),
     toNativeJourneyRegistrationOptions: jest.fn((options: unknown) => options),
-    toNativeJourneyAuthenticationOptions: jest.fn((options: unknown) => options),
+    toNativeJourneyAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
     fromNativeJourneyResult: jest.fn((result: unknown) => result),
   }));
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -88,7 +96,7 @@ function makeJourneyMock(startNode: JourneyNode): NativeJourneyMock {
 
 async function loadJourneyAndFido(
   nativeJourneyMock: NativeJourneyMock,
-  nativeFidoMock: NativeFidoMock
+  nativeFidoMock: NativeFidoMock,
 ): Promise<{
   journey: typeof import('@ping-identity/rn-journey');
   fidoClient: FidoClient;
@@ -107,7 +115,9 @@ async function loadJourneyAndFido(
     fromNativeRegistrationResult: jest.fn((result: unknown) => result),
     fromNativeAuthenticationResult: jest.fn((result: unknown) => result),
     toNativeJourneyRegistrationOptions: jest.fn((options: unknown) => options),
-    toNativeJourneyAuthenticationOptions: jest.fn((options: unknown) => options),
+    toNativeJourneyAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
     fromNativeJourneyResult: jest.fn((result: unknown) => result),
   }));
 
@@ -119,7 +129,9 @@ async function loadJourneyAndFido(
   return { journey, fidoClient };
 }
 
-function getTypeIndexMap(callbacks: Array<{ type?: string }>): Record<string, number> {
+function getTypeIndexMap(
+  callbacks: Array<{ type?: string }>,
+): Record<string, number> {
   const counts: Record<string, number> = {};
   const indices: Record<string, number> = {};
   callbacks.forEach((callback, callbackIndex) => {
@@ -135,7 +147,7 @@ async function executeRNWebAuthnStep(
   node: JourneyNode,
   client: JourneyClient,
   fido: FidoClient,
-  options: { registrationDeviceName?: string } = {}
+  options: { registrationDeviceName?: string } = {},
 ): Promise<JourneyNode> {
   if (node.type !== 'ContinueNode' || !Array.isArray(node.callbacks)) {
     return node;
@@ -203,7 +215,10 @@ describe('@ping-identity/rn-fido — integration', () => {
       const mock = makeMock();
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      const options = { challenge: 'abc', rp: { id: 'example.com', name: 'Example' } };
+      const options = {
+        challenge: 'abc',
+        rp: { id: 'example.com', name: 'Example' },
+      };
       await fido.register(options);
       expect(mock.registerCredential).toHaveBeenCalledWith(options, {
         loggerId: undefined,
@@ -219,19 +234,31 @@ describe('@ping-identity/rn-fido — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = { code: 'FIDO_REGISTER_ERROR', message: 'Registration failed.' };
+      const nativeError = {
+        code: 'FIDO_REGISTER_ERROR',
+        message: 'Registration failed.',
+      };
       const mock = makeMock({
-        registerCredential: jest.fn(async () => { throw nativeError; }),
+        registerCredential: jest.fn(async () => {
+          throw nativeError;
+        }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      await expect(fido.register({ challenge: 'abc' })).rejects.toEqual(nativeError);
+      await expect(fido.register({ challenge: 'abc' })).rejects.toEqual(
+        nativeError,
+      );
     });
 
     it('propagates window unavailable error', async () => {
-      const nativeError = { code: 'FIDO_WINDOW_UNAVAILABLE', message: 'No active window.' };
+      const nativeError = {
+        code: 'FIDO_WINDOW_UNAVAILABLE',
+        message: 'No active window.',
+      };
       const mock = makeMock({
-        registerCredential: jest.fn(async () => { throw nativeError; }),
+        registerCredential: jest.fn(async () => {
+          throw nativeError;
+        }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
@@ -246,7 +273,11 @@ describe('@ping-identity/rn-fido — integration', () => {
       const mock = makeMock();
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      const options = { challenge: 'def', rpId: 'example.com', allowCredentials: [] };
+      const options = {
+        challenge: 'def',
+        rpId: 'example.com',
+        allowCredentials: [],
+      };
       await fido.authenticate(options);
       expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {
         loggerId: undefined,
@@ -262,23 +293,37 @@ describe('@ping-identity/rn-fido — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = { code: 'FIDO_AUTHENTICATE_ERROR', message: 'Authentication failed.' };
+      const nativeError = {
+        code: 'FIDO_AUTHENTICATE_ERROR',
+        message: 'Authentication failed.',
+      };
       const mock = makeMock({
-        authenticateCredential: jest.fn(async () => { throw nativeError; }),
+        authenticateCredential: jest.fn(async () => {
+          throw nativeError;
+        }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      await expect(fido.authenticate({ challenge: 'def' })).rejects.toEqual(nativeError);
+      await expect(fido.authenticate({ challenge: 'def' })).rejects.toEqual(
+        nativeError,
+      );
     });
 
     it('propagates activity unavailable error', async () => {
-      const nativeError = { code: 'FIDO_ACTIVITY_UNAVAILABLE', message: 'No foreground activity.' };
+      const nativeError = {
+        code: 'FIDO_ACTIVITY_UNAVAILABLE',
+        message: 'No foreground activity.',
+      };
       const mock = makeMock({
-        authenticateCredential: jest.fn(async () => { throw nativeError; }),
+        authenticateCredential: jest.fn(async () => {
+          throw nativeError;
+        }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      await expect(fido.authenticate({ challenge: 'def' })).rejects.toMatchObject({
+      await expect(
+        fido.authenticate({ challenge: 'def' }),
+      ).rejects.toMatchObject({
         code: 'FIDO_ACTIVITY_UNAVAILABLE',
       });
     });
@@ -290,15 +335,22 @@ describe('@ping-identity/rn-fido — integration', () => {
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
       const journey = { getId: jest.fn(async () => 'journey-123') };
-      await fido.registerForJourney(journey, { index: 1, deviceName: 'Device A' });
-      expect(journey.getId).toHaveBeenCalledTimes(1);
-      expect(mock.registerCredentialForJourney).toHaveBeenCalledWith('journey-123', {
+      await fido.registerForJourney(journey, {
         index: 1,
         deviceName: 'Device A',
-      }, {
-        loggerId: undefined,
-        useFido2Client: undefined,
       });
+      expect(journey.getId).toHaveBeenCalledTimes(1);
+      expect(mock.registerCredentialForJourney).toHaveBeenCalledWith(
+        'journey-123',
+        {
+          index: 1,
+          deviceName: 'Device A',
+        },
+        {
+          loggerId: undefined,
+          useFido2Client: undefined,
+        },
+      );
     });
   });
 
@@ -310,12 +362,16 @@ describe('@ping-identity/rn-fido — integration', () => {
       const journey = { getId: jest.fn(async () => 'journey-456') };
       await fido.authenticateForJourney(journey, { index: 0 });
       expect(journey.getId).toHaveBeenCalledTimes(1);
-      expect(mock.authenticateCredentialForJourney).toHaveBeenCalledWith('journey-456', {
-        index: 0,
-      }, {
-        loggerId: undefined,
-        useFido2Client: undefined,
-      });
+      expect(mock.authenticateCredentialForJourney).toHaveBeenCalledWith(
+        'journey-456',
+        {
+          index: 0,
+        },
+        {
+          loggerId: undefined,
+          useFido2Client: undefined,
+        },
+      );
     });
   });
 
@@ -330,7 +386,10 @@ describe('@ping-identity/rn-fido — integration', () => {
       };
       const nativeJourneyMock = makeJourneyMock(startNode);
       const nativeFidoMock = makeMock();
-      const { journey, fidoClient } = await loadJourneyAndFido(nativeJourneyMock, nativeFidoMock);
+      const { journey, fidoClient } = await loadJourneyAndFido(
+        nativeJourneyMock,
+        nativeFidoMock,
+      );
 
       const client = journey.createJourneyClient(VALID_JOURNEY_CONFIG);
       await client.init();
@@ -341,17 +400,16 @@ describe('@ping-identity/rn-fido — integration', () => {
 
       expect(nativeFidoMock.registerCredentialForJourney).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
-        { index: 0, deviceName: 'SM-A566W' }
-        ,
+        { index: 0, deviceName: 'SM-A566W' },
         {
           loggerId: undefined,
           useFido2Client: undefined,
-        }
+        },
       );
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
         '',
-        {}
+        {},
       );
     });
 
@@ -363,29 +421,36 @@ describe('@ping-identity/rn-fido — integration', () => {
       const nativeJourneyMock = makeJourneyMock(startNode);
       const nativeFidoMock = makeMock({
         authenticateCredentialForJourney: jest.fn(async () => {
-          throw { code: 'FIDO_AUTHENTICATE_CANCELLED', message: 'Cancelled by user' };
+          throw {
+            code: 'FIDO_AUTHENTICATE_CANCELLED',
+            message: 'Cancelled by user',
+          };
         }),
       });
-      const { journey, fidoClient } = await loadJourneyAndFido(nativeJourneyMock, nativeFidoMock);
+      const { journey, fidoClient } = await loadJourneyAndFido(
+        nativeJourneyMock,
+        nativeFidoMock,
+      );
 
       const client = journey.createJourneyClient(VALID_JOURNEY_CONFIG);
       await client.init();
       const node = await client.start('RN-WebAuthn');
       await executeRNWebAuthnStep(node, client, fidoClient);
 
-      expect(nativeFidoMock.authenticateCredentialForJourney).toHaveBeenCalledWith(
+      expect(
+        nativeFidoMock.authenticateCredentialForJourney,
+      ).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
-        { index: 0 }
-        ,
+        { index: 0 },
         {
           loggerId: undefined,
           useFido2Client: undefined,
-        }
+        },
       );
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
         '',
-        {}
+        {},
       );
     });
   });

@@ -93,7 +93,9 @@ describe('useJourney', () => {
       type: 'ContinueNode',
       callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
     };
-    const nextSpy = jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode));
+    const nextSpy = jest.fn(
+      async () => ({ type: 'SuccessNode' }) as JourneyNode,
+    );
     const client = createJourneyClientMock({
       start: jest.fn(async () => pollingNode),
       next: nextSpy,
@@ -125,10 +127,12 @@ describe('useJourney', () => {
 
   it('isolates state when two components pass different direct clients', async () => {
     const clientA = createJourneyClientMock({
-      start: jest.fn(async () => ({ type: 'ContinueNode', callbacks: [] } as JourneyNode)),
+      start: jest.fn(
+        async () => ({ type: 'ContinueNode', callbacks: [] }) as JourneyNode,
+      ),
     });
     const clientB = createJourneyClientMock({
-      start: jest.fn(async () => ({ type: 'SuccessNode' } as JourneyNode)),
+      start: jest.fn(async () => ({ type: 'SuccessNode' }) as JourneyNode),
     });
 
     let latestA: JourneyHookResult | null = null;
@@ -136,9 +140,19 @@ describe('useJourney', () => {
 
     render(
       <>
-        <JourneyHarness client={clientA} onResult={(r) => { latestA = r; }} />
-        <JourneyHarness client={clientB} onResult={(r) => { latestB = r; }} />
-      </>
+        <JourneyHarness
+          client={clientA}
+          onResult={(r) => {
+            latestA = r;
+          }}
+        />
+        <JourneyHarness
+          client={clientB}
+          onResult={(r) => {
+            latestB = r;
+          }}
+        />
+      </>,
     );
 
     await act(async () => {

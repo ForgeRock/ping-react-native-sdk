@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { buildNextInput, normalizeCallbacks } from './callbackHelpers';
 import type {
   JourneyBuildNextInputResult,
@@ -124,14 +124,18 @@ function deriveMeta(
 ): JourneyFormMeta {
   return {
     hasManual: fields.some((field) => field.requiresUserInput),
-    hasOutputOnly: fields.some((field) => field.executionMode === 'output_only'),
+    hasOutputOnly: fields.some(
+      (field) => field.executionMode === 'output_only',
+    ),
     hasAutoCapable: fields.some(
-      (field) => field.executionMode === 'auto_capable'
+      (field) => field.executionMode === 'auto_capable',
     ),
     hasIntegrationRequired: fields.some(
-      (field) => field.executionMode === 'integration_required'
+      (field) => field.executionMode === 'integration_required',
     ),
-    hasUnsupported: fields.some((field) => field.executionMode === 'unsupported'),
+    hasUnsupported: fields.some(
+      (field) => field.executionMode === 'unsupported',
+    ),
     hasRequiredConsentMissing: issues.some(
       (issue) => issue.code === 'REQUIRED_CONSENT_MISSING',
     ),
@@ -185,16 +189,16 @@ export function useJourneyForm(
     return byType;
   }, [fields]);
 
+  const [prevFields, setPrevFields] = useState(fields);
   const [values, setValuesState] = useState<JourneyFormValues>(() =>
     hydrateValues(fields, {}),
   );
 
-  useEffect(() => {
-    setValuesState((previous) => {
-      const hydrated = hydrateValues(fields, {});
-      return isSameValueMap(previous, hydrated) ? previous : hydrated;
-    });
-  }, [fields]);
+  // Adjust state during render when fields change (node switch resets form values).
+  if (prevFields !== fields) {
+    setPrevFields(fields);
+    setValuesState(hydrateValues(fields, {}));
+  }
 
   const submitPlan = useMemo<JourneyBuildNextInputResult>(
     () => buildNextInput(node, values),
@@ -212,17 +216,20 @@ export function useJourneyForm(
    * @param fieldId - Normalized field id.
    * @param value - Next field value.
    */
-  const setValue = useCallback((fieldId: string, value: JourneyFormValue): void => {
-    setValuesState((previous) => {
-      if (previous[fieldId] === value) {
-        return previous;
-      }
-      return {
-        ...previous,
-        [fieldId]: value,
-      };
-    });
-  }, []);
+  const setValue = useCallback(
+    (fieldId: string, value: JourneyFormValue): void => {
+      setValuesState((previous) => {
+        if (previous[fieldId] === value) {
+          return previous;
+        }
+        return {
+          ...previous,
+          [fieldId]: value,
+        };
+      });
+    },
+    [],
+  );
 
   /**
    * Merges one or more callback field values.
@@ -261,12 +268,15 @@ export function useJourneyForm(
    *
    * @param nextValues - Optional value map applied before default hydration.
    */
-  const reset = useCallback((nextValues: JourneyFormValues = {}): void => {
-    setValuesState((previous) => {
-      const hydrated = hydrateValues(fields, { ...nextValues });
-      return isSameValueMap(previous, hydrated) ? previous : hydrated;
-    });
-  }, [fields]);
+  const reset = useCallback(
+    (nextValues: JourneyFormValues = {}): void => {
+      setValuesState((previous) => {
+        const hydrated = hydrateValues(fields, { ...nextValues });
+        return isSameValueMap(previous, hydrated) ? previous : hydrated;
+      });
+    },
+    [fields],
+  );
 
   /**
    * Builds a fresh submit plan for the current node and optional value overrides.
@@ -292,9 +302,12 @@ export function useJourneyForm(
    * @param fieldId - Normalized field id.
    * @returns Matching field when present.
    */
-  const getField = useCallback((fieldId: string): JourneyNormalizedField | undefined => {
-    return fieldsById.get(fieldId);
-  }, [fieldsById]);
+  const getField = useCallback(
+    (fieldId: string): JourneyNormalizedField | undefined => {
+      return fieldsById.get(fieldId);
+    },
+    [fieldsById],
+  );
 
   /**
    * Resolves all normalized fields for one callback type.
@@ -302,9 +315,12 @@ export function useJourneyForm(
    * @param callbackType - Callback type to filter.
    * @returns Ordered list of matching normalized fields.
    */
-  const getFieldsByType = useCallback((callbackType: JourneyCallbackType): JourneyNormalizedField[] => {
-    return fieldsByType.get(callbackType) ?? [];
-  }, [fieldsByType]);
+  const getFieldsByType = useCallback(
+    (callbackType: JourneyCallbackType): JourneyNormalizedField[] => {
+      return fieldsByType.get(callbackType) ?? [];
+    },
+    [fieldsByType],
+  );
 
   /**
    * Resolves one normalized field by callback type and index.
