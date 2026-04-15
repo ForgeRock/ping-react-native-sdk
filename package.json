@@ -51,7 +51,11 @@
     "docs:journey": "typedoc --options typedoc.journey.json",
     "prettier": "turbo run prettier",
     "typecheck": "turbo run typecheck",
-    "postinstall": "lefthook install"
+    "postinstall": "lefthook install",
+    "release:status": "changeset status",
+    "release:version": "changeset version",
+    "release:publish": "yarn packages:build && changeset publish",
+    "release:check-lockstep": "node scripts/check-lockstep.mjs"
   },
   "workspaces": {
     "packages": [
@@ -61,6 +65,8 @@
     ]
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
     "@eslint/compat": "^2.0.5",
     "@eslint/js": "^10.0.1",
     "@react-native/codegen": "^0.82.1",

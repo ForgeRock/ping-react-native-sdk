@@ -12,6 +12,7 @@ android/build/
 ios/build/
 ios/Pods/
 ios/DerivedData/
+DerivedData/
 
 # IDEs
 .vscode/
@@ -24,6 +25,7 @@ ios/DerivedData/
 
 # Misc
 *.jks
+*.xcresult
 coverage/
 docs/
 classes.jar

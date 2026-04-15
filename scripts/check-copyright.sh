@@ -39,6 +39,14 @@ has_copyright_header() {
   head -"$HEADER_SEARCH_LINES" "$file_path" | grep -qiE "$COPYRIGHT_PATTERN"
 }
 
+# Returns 0 (true) if the given file should be excluded from validation.
+# Changesets must start with frontmatter and therefore cannot include a
+# leading copyright header.
+should_skip_file() {
+  local file_path="$1"
+  [[ "$file_path" == .changeset/*.md || "$file_path" == ./.changeset/*.md ]]
+}
+
 # Prints a formatted error listing all files missing the copyright header
 # and exits with a non-zero code to abort the commit.
 report_missing_and_fail() {
@@ -57,6 +65,7 @@ main() {
 
   for file_path in "${staged_files[@]}"; do
     file_exists "$file_path" || continue
+    should_skip_file "$file_path" && continue
     has_copyright_header "$file_path" || missing_files+=("$file_path")
   done
 

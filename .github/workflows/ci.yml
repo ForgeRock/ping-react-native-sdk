@@ -50,6 +50,41 @@ jobs:
       turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     secrets: inherit
 
+  # Enforce that every PR includes a changeset file.
+  # changeset version consumes these files on release to bump versions and write CHANGELOGs.
+  # Controlled by the REQUIRE_CHANGESET repo variable (Settings → Variables → Actions).
+  # Set REQUIRE_CHANGESET=true to enable. Leave unset or set to any other value to skip.
+  changeset-check:
+    if: github.event_name == 'pull_request' && vars.REQUIRE_CHANGESET == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: yarn install
+      - name: Check for changeset file
+        run: yarn changeset status --since=origin/main
+
+  # Detect manual version drift in package.json files.
+  # Fails if any @ping-identity/* package version has been edited outside of changeset version.
+  lockstep-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: yarn install
+      - name: Check lockstep versions
+        run: yarn release:check-lockstep
+
   # Execute Android unit tests across affected packages.
   android-unit-tests:
     needs: js-unit-tests

@@ -154,7 +154,9 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
       }
     )
 
-    wait(for: [expectation], timeout: 2)
+    // This path executes multiple real collectors and can exceed 2s under
+    // parallel simulator load in CI.
+    wait(for: [expectation], timeout: 5)
   }
 
   func testCollectDeviceProfileDeduplicatesDuplicateCollectors() {
