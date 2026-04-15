@@ -16,8 +16,10 @@ import { commonStyles } from '../src/styles/common';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Configuration'> & {
   profiles: readonly SampleAppClientProfile[];
-  selectedProfileKey: string;
-  onSelectProfile: (profileKey: string) => void;
+  selectedJourneyProfileKey: string | null;
+  selectedOidcProfileKey: string | null;
+  onSelectJourneyProfile: (profileKey: string) => void;
+  onSelectOidcProfile: (profileKey: string) => void;
 };
 
 /**
@@ -50,23 +52,28 @@ function groupProfilesBySection(
  * @returns Configuration selector screen.
  */
 export default function ConfigurationScreen(props: Props): React.ReactElement {
-  const { profiles, selectedProfileKey, onSelectProfile } = props;
+  const {
+    profiles,
+    selectedJourneyProfileKey,
+    selectedOidcProfileKey,
+    onSelectJourneyProfile,
+    onSelectOidcProfile,
+  } = props;
 
   const groupedProfiles = useMemo(
     () => groupProfilesBySection(profiles),
     [profiles],
   );
 
-  // NOTE: `selectedProfile` was removed because it triggered an ESLint error:
-  //   @typescript-eslint/no-unused-vars — 'selectedProfile' is assigned a value but never used.
-  // The variable was computed but never referenced in the JSX.
-  // It seems selectedProfileKey is sufficient for determining which profile is selected when rendering the list, so selectedProfile was not necessary.
-  // If we need to display additional details about the selected profile in the future, we can consider reintroducing it at that time.
-  //
-  // const selectedProfile = useMemo(
-  //   () => profiles.find((profile) => profile.key === selectedProfileKey),
-  //   [profiles, selectedProfileKey]
-  // );
+  const selectedJourneyProfile = useMemo(
+    () => profiles.find(profile => profile.key === selectedJourneyProfileKey),
+    [profiles, selectedJourneyProfileKey],
+  );
+
+  const selectedOidcProfile = useMemo(
+    () => profiles.find(profile => profile.key === selectedOidcProfileKey),
+    [profiles, selectedOidcProfileKey],
+  );
 
   return (
     <ScrollView
@@ -75,19 +82,34 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
       showsVerticalScrollIndicator={false}
     >
       <Text style={commonStyles.configSelectedLabel}>Selected Environment</Text>
+      <Text style={commonStyles.configSelectedValue}>
+        {`Journey: ${selectedJourneyProfile?.name ?? 'None'}`}
+      </Text>
+      <Text style={commonStyles.configSelectedValue}>
+        {`OIDC: ${selectedOidcProfile?.name ?? 'None'}`}
+      </Text>
 
       {[...groupedProfiles.entries()].map(([group, items]) => (
         <View key={group} style={commonStyles.configSection}>
           <Text style={commonStyles.configSectionTitle}>{group}</Text>
 
           {items.map(profile => {
-            const selected = profile.key === selectedProfileKey;
+            const selected =
+              group === 'Journey'
+                ? profile.key === selectedJourneyProfileKey
+                : profile.key === selectedOidcProfileKey;
             const iconName = selected ? 'check' : 'check-box-outline-blank';
             return (
               <TouchableOpacity
                 key={profile.key}
                 style={commonStyles.configOptionRow}
-                onPress={() => onSelectProfile(profile.key)}
+                onPress={() => {
+                  if (group === 'Journey') {
+                    onSelectJourneyProfile(profile.key);
+                    return;
+                  }
+                  onSelectOidcProfile(profile.key);
+                }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
               >

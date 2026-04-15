@@ -43,6 +43,12 @@ Pod::Spec.new do |s|
   s.dependency "PingDeviceProfile"
   s.dependency "RNPingCore"
 
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+    test_spec.dependency "PingDeviceProfile"
+    test_spec.dependency "RNPingCore"
+  end
+
   install_modules_dependencies(s)
 
   if new_arch_enabled

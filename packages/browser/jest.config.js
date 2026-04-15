@@ -16,11 +16,17 @@ module.exports = {
   },
   reporters: [
     'default',
-    ['jest-junit', {
-      outputDirectory: './build/test-results/js',
-      outputName: 'junit.xml',
-      classNameTemplate: '{classname}',
-      titleTemplate: '{title}',
-    }],
+    [
+      'jest-junit',
+      {
+        outputDirectory: './build/test-results/js',
+        outputName: 'junit.xml',
+        classNameTemplate: '{classname}',
+        titleTemplate: '{title}',
+      },
+    ],
   ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**'],
+  coverageDirectory: './build/coverage',
+  coverageReporters: ['lcov', 'text-summary'],
 };

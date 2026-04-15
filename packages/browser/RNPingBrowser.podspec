@@ -47,6 +47,13 @@ Pod::Spec.new do |s|
   # (see RNPingBrowserCommon.swift TODO) and this direct dependency is no longer needed.
   s.dependency 'RNPingLogger'
 
+  s.test_spec "Tests" do |test_spec|
+    test_spec.source_files = "ios/Tests/**/*.{swift}"
+    test_spec.dependency 'PingBrowser', '1.3.1'
+    test_spec.dependency 'RNPingCore'
+    test_spec.dependency 'RNPingLogger'
+  end
+
   install_modules_dependencies(s)
 
   if new_arch_enabled

@@ -78,7 +78,7 @@ function createJourneyClientMock(
   };
 }
 
-describe('useJourney auto polling', () => {
+describe('useJourney', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -88,16 +88,14 @@ describe('useJourney auto polling', () => {
     jest.useRealTimers();
   });
 
-  it('auto-advances PollingWaitCallback nodes when no manual callbacks exist', async () => {
+  it('does not auto-advance PollingWaitCallback nodes', async () => {
     const pollingNode: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
     };
-    const successNode: JourneyNode = { type: 'SuccessNode' };
-    const nextSpy = jest
-      .fn()
-      .mockResolvedValueOnce(successNode)
-      .mockResolvedValue(successNode);
+    const nextSpy = jest.fn(
+      async () => ({ type: 'SuccessNode' }) as JourneyNode,
+    );
     const client = createJourneyClientMock({
       start: jest.fn(async () => pollingNode),
       next: nextSpy,
@@ -124,22 +122,57 @@ describe('useJourney auto polling', () => {
       await Promise.resolve();
     });
 
-    expect(nextSpy).toHaveBeenCalledWith({});
-    expect(nextSpy).toHaveBeenCalledTimes(1);
+    expect(nextSpy).not.toHaveBeenCalled();
   });
 
-  it('does not auto-advance when PollingWaitCallback node includes manual callbacks', async () => {
-    const pollingAndManualNode: JourneyNode = {
+  it('isolates state when two components pass different direct clients', async () => {
+    const clientA = createJourneyClientMock({
+      start: jest.fn(
+        async () => ({ type: 'ContinueNode', callbacks: [] }) as JourneyNode,
+      ),
+    });
+    const clientB = createJourneyClientMock({
+      start: jest.fn(async () => ({ type: 'SuccessNode' }) as JourneyNode),
+    });
+
+    let latestA: JourneyHookResult | null = null;
+    let latestB: JourneyHookResult | null = null;
+
+    render(
+      <>
+        <JourneyHarness
+          client={clientA}
+          onResult={(r) => {
+            latestA = r;
+          }}
+        />
+        <JourneyHarness
+          client={clientB}
+          onResult={(r) => {
+            latestB = r;
+          }}
+        />
+      </>,
+    );
+
+    await act(async () => {
+      await requireLatest(latestA)[1].start('Login');
+    });
+
+    // Only clientA advanced; clientB node should still be null.
+    expect(requireLatest(latestA)[0]?.type).toBe('ContinueNode');
+    expect(requireLatest(latestB)[0]).toBeNull();
+  });
+
+  it('advances only when next() is called explicitly', async () => {
+    const continueNode: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'PollingWaitCallback', waitTime: 1000, output: [] },
-        { type: 'NameCallback', output: [] },
-      ],
+      callbacks: [{ type: 'NameCallback', output: [] }],
     };
     const successNode: JourneyNode = { type: 'SuccessNode' };
     const nextSpy = jest.fn(async () => successNode);
     const client = createJourneyClientMock({
-      start: jest.fn(async () => pollingAndManualNode),
+      start: jest.fn(async () => continueNode),
       next: nextSpy,
     });
 
@@ -158,137 +191,9 @@ describe('useJourney auto polling', () => {
     });
 
     await act(async () => {
-      jest.advanceTimersByTime(2000);
-      await Promise.resolve();
+      await requireLatest(latest)[1].next({});
     });
 
-    expect(nextSpy).not.toHaveBeenCalled();
-  });
-
-  it('uses the first PollingWaitCallback waitTime when multiple are present', async () => {
-    const multiPollingNode: JourneyNode = {
-      type: 'ContinueNode',
-      callbacks: [
-        { type: 'PollingWaitCallback', waitTime: 2000, output: [] },
-        { type: 'PollingWaitCallback', waitTime: 500, output: [] },
-      ],
-    };
-    const successNode: JourneyNode = { type: 'SuccessNode' };
-    const nextSpy = jest
-      .fn()
-      .mockResolvedValueOnce(successNode)
-      .mockResolvedValue(successNode);
-    const client = createJourneyClientMock({
-      start: jest.fn(async () => multiPollingNode),
-      next: nextSpy,
-    });
-
-    let latest: JourneyHookResult | null = null;
-    render(
-      <JourneyHarness
-        client={client}
-        onResult={(result) => {
-          latest = result;
-        }}
-      />,
-    );
-
-    await act(async () => {
-      await requireLatest(latest)[1].start('Login');
-    });
-
-    await act(async () => {
-      jest.advanceTimersByTime(500);
-      await Promise.resolve();
-    });
-    expect(nextSpy).not.toHaveBeenCalled();
-
-    await act(async () => {
-      jest.advanceTimersByTime(1500);
-      await Promise.resolve();
-    });
     expect(nextSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('clears pending polling timer when component unmounts', async () => {
-    const pollingNode: JourneyNode = {
-      type: 'ContinueNode',
-      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
-    };
-    const nextSpy = jest.fn(
-      async () => ({ type: 'SuccessNode' }) as JourneyNode,
-    );
-    const client = createJourneyClientMock({
-      start: jest.fn(async () => pollingNode),
-      next: nextSpy,
-    });
-
-    let latest: JourneyHookResult | null = null;
-    let unmount: (() => void) | null = null;
-    const rendered = render(
-      <JourneyHarness
-        client={client}
-        onResult={(result) => {
-          latest = result;
-        }}
-      />,
-    );
-    unmount = rendered.unmount;
-
-    await act(async () => {
-      await requireLatest(latest)[1].start('Login');
-    });
-
-    act(() => {
-      unmount?.();
-    });
-
-    await act(async () => {
-      jest.advanceTimersByTime(2000);
-      await Promise.resolve();
-    });
-
-    expect(nextSpy).not.toHaveBeenCalled();
-  });
-
-  it('clears pending polling timer when node changes to non-auto-poll state', async () => {
-    const pollingNode: JourneyNode = {
-      type: 'ContinueNode',
-      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1500, output: [] }],
-    };
-    const manualNode: JourneyNode = {
-      type: 'ContinueNode',
-      callbacks: [{ type: 'NameCallback', output: [] }],
-    };
-    const nextSpy = jest.fn(
-      async () => ({ type: 'SuccessNode' }) as JourneyNode,
-    );
-    const client = createJourneyClientMock({
-      start: jest.fn(async () => pollingNode),
-      resume: jest.fn(async () => manualNode),
-      next: nextSpy,
-    });
-
-    let latest: JourneyHookResult | null = null;
-    render(
-      <JourneyHarness
-        client={client}
-        onResult={(result) => {
-          latest = result;
-        }}
-      />,
-    );
-
-    await act(async () => {
-      await requireLatest(latest)[1].start('Login');
-      await requireLatest(latest)[1].resume('com.example.app://resume');
-    });
-
-    await act(async () => {
-      jest.advanceTimersByTime(2000);
-      await Promise.resolve();
-    });
-
-    expect(nextSpy).not.toHaveBeenCalled();
   });
 });

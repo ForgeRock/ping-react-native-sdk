@@ -45,12 +45,13 @@ export type JourneyFieldKind =
   | 'unknown';
 
 /**
- * Callback execution capability classification for normalized fields.
+ * Callback execution mode classification for normalized fields.
  */
-export type JourneyFieldCapability =
+export type JourneyExecutionMode =
   | 'manual'
-  | 'output_only'
+  | 'auto_capable'
   | 'integration_required'
+  | 'output_only'
   | 'unsupported';
 
 /**
@@ -123,9 +124,13 @@ export type JourneyNormalizedField = {
    */
   kind: JourneyFieldKind;
   /**
-   * Capability classification for submit behavior.
+   * Execution mode classification for submit behavior.
    */
-  capability: JourneyFieldCapability;
+  executionMode: JourneyExecutionMode;
+  /**
+   * Indicates whether user interaction is required before submission.
+   */
+  requiresUserInput: boolean;
   /**
    * Optional default value derived from callback payload.
    */
@@ -203,7 +208,11 @@ export type JourneyFormMeta = {
    */
   hasOutputOnly: boolean;
   /**
-   * True when at least one callback requires extra module integration.
+   * True when at least one callback can be executed automatically.
+   */
+  hasAutoCapable: boolean;
+  /**
+   * True when at least one callback requires additional native integration.
    */
   hasIntegrationRequired: boolean;
   /**
@@ -248,7 +257,7 @@ export type JourneyFormResult = {
    */
   issues: JourneySubmitIssue[];
   /**
-   * Derived callback capability metadata.
+   * Derived callback execution metadata.
    */
   meta: JourneyFormMeta;
   /**

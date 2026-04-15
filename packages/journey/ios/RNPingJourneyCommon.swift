@@ -30,6 +30,13 @@ private actor JourneyLifecycleCoordinator {
   }
 }
 
+/// Thread-safe value box for passing results across `@Sendable` closure boundaries
+/// where access is guaranteed to be sequential (write inside an awaited coordinator
+/// enqueue, read after the enqueue returns).
+private final class Ref<T>: @unchecked Sendable {
+  var value: T?
+}
+
 /// Shared iOS runtime orchestration for Journey bridge calls.
 @objcMembers
 public final class RNPingJourneyCommon: NSObject {
@@ -57,29 +64,12 @@ public final class RNPingJourneyCommon: NSObject {
   /// Lifecycle coordinator ensuring ordered configure/cleanup execution.
   private static let lifecycleCoordinator = JourneyLifecycleCoordinator()
 
-  /// Applies Journey callback resolver registration in serialized lifecycle order.
-  private static func configureAsync() async {
-    await lifecycleCoordinator.enqueue {
-      CoreRuntime.setJourneyCallbackResolver { journeyId in
-        stateStore.callbacks(for: journeyId)
-      }
-    }
-  }
-
   /// Clears Journey runtime state in serialized lifecycle order.
   private static func cleanupAsync() async {
     await lifecycleCoordinator.enqueue {
       CoreRuntime.setJourneyCallbackResolver(nil)
       stateStore.removeAll()
       await journeyRegistry.removeAll()
-    }
-  }
-
-  /// Initializes common runtime wiring for Journey bridge operations.
-  @objc
-  public static func configure() {
-    Task {
-      await configureAsync()
     }
   }
 
@@ -114,14 +104,30 @@ public final class RNPingJourneyCommon: NSObject {
     }
 
     Task { @MainActor in
-      await configureAsync()
+      // Build the journey client outside the coordinator — no shared state is touched here.
+      let journey: Journey
       do {
-        let journey = try await JourneyClientFactory().build(payload)
-        let journeyId = await journeyRegistry.register(JourneyHandle(journey: journey))
-        promise.resolve(journeyId)
+        journey = try await JourneyClientFactory().build(payload)
       } catch {
         promise.reject(JourneyErrorMapper.map(error, code: .initError))
+        return
       }
+
+      // Register atomically with the callback resolver setup inside the coordinator so
+      // that a concurrent cleanupAsync() cannot remove the newly registered handle
+      // between the resolver being set and register() being called.
+      let idRef = Ref<String>()
+      await lifecycleCoordinator.enqueue {
+        CoreRuntime.setJourneyCallbackResolver { journeyId in
+          stateStore.callbacks(for: journeyId)
+        }
+        idRef.value = await journeyRegistry.register(JourneyHandle(journey: journey))
+      }
+      guard let journeyId = idRef.value else {
+        promise.reject(JourneyErrorMapper.state(code: .initError, message: "Failed to register Journey instance"))
+        return
+      }
+      promise.resolve(journeyId)
     }
   }
 
@@ -210,7 +216,7 @@ public final class RNPingJourneyCommon: NSObject {
 
       do {
         if !mutations.isEmpty {
-          try JourneyCallbackValueApplier.apply(currentNode, mutations: mutations)
+          try await JourneyCallbackValueApplier.apply(currentNode, mutations: mutations)
         }
       } catch {
         promise.reject(JourneyErrorMapper.map(error, code: .nextError))

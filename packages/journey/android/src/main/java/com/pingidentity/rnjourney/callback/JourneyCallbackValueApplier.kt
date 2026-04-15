@@ -35,6 +35,7 @@ import com.pingidentity.orchestrate.ContinueNode
  * Applies callback input mutations from JS payloads to active Journey callbacks.
  */
 internal object JourneyCallbackValueApplier {
+    internal class MissingIntegrationException(message: String) : IllegalStateException(message)
 
     /**
      * Callback types that require external module integration before values can be applied.
@@ -43,10 +44,10 @@ internal object JourneyCallbackValueApplier {
      */
     private val integrationCallbackRequirements = mapOf(
         "DeviceProfileCallback" to "@ping-identity/rn-device-profile",
+        "FidoRegistrationCallback" to "@ping-identity/rn-fido",
+        "FidoAuthenticationCallback" to "@ping-identity/rn-fido",
         "PingOneProtectInitializeCallback" to "PingOne Protect integration",
         "PingOneProtectEvaluationCallback" to "PingOne Protect integration",
-        "FidoRegistrationCallback" to "FIDO/WebAuthn integration",
-        "FidoAuthenticationCallback" to "FIDO/WebAuthn integration",
         "SelectIdPCallback" to "External IdP integration",
         "IdPCallback" to "External IdP integration",
         "ReCaptchaCallback" to "ReCaptcha integration",
@@ -103,7 +104,7 @@ internal object JourneyCallbackValueApplier {
      * @param continueNode Active continue node.
      * @param mutations Parsed callback mutations.
      */
-    fun apply(continueNode: ContinueNode, mutations: List<CallbackMutation>) {
+    suspend fun apply(continueNode: ContinueNode, mutations: List<CallbackMutation>) {
         val callbacks = continueNode.callbacks.map { it as Any }
         applyToCallbacks(callbacks, mutations)
     }
@@ -114,7 +115,7 @@ internal object JourneyCallbackValueApplier {
      * @param callbacks Active callbacks.
      * @param mutations Parsed callback mutations.
      */
-    fun applyToCallbacks(callbacks: List<Any>, mutations: List<CallbackMutation>) {
+    suspend fun applyToCallbacks(callbacks: List<Any>, mutations: List<CallbackMutation>) {
         val callbacksByType = callbacks.groupBy { it::class.java.simpleName }
         val consumedIndexByType = mutableMapOf<String, Int>()
 
@@ -169,7 +170,7 @@ internal object JourneyCallbackValueApplier {
                     val normalizedType = normalizedCallbackType(mutation.type)
                     val requirement = integrationCallbackRequirements[normalizedType]
                     if (requirement != null) {
-                        throw IllegalStateException(
+                        throw MissingIntegrationException(
                             "Callback type ${mutation.type} requires additional native integration: $requirement"
                         )
                     }

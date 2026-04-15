@@ -9,6 +9,16 @@ pluginManagement { includeBuild("../../node_modules/@react-native/gradle-plugin"
 plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingSampleApp'
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://central.sonatype.com/repository/maven-snapshots/" }
+    }
+}
+
 include ':app'
 includeBuild('../../node_modules/@react-native/gradle-plugin')
 

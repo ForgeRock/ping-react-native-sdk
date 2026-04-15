@@ -10,6 +10,9 @@ import { colors } from './colors';
 
 /**
  * Shared styles for `JourneyRouteScreen`.
+ *
+ * @remarks
+ * Used by route-level containers that wrap Journey sample composition.
  */
 export const journeyRouteScreenStyles = StyleSheet.create({
   screen: {
@@ -24,6 +27,9 @@ export const journeyRouteScreenStyles = StyleSheet.create({
 
 /**
  * Shared styles for `JourneyFullScreen`.
+ *
+ * @remarks
+ * Applied to full-screen callback rendering views used in test/demo flows.
  */
 export const journeyFullScreenStyles = StyleSheet.create({
   section: {
@@ -95,6 +101,9 @@ export const journeyFullScreenStyles = StyleSheet.create({
 
 /**
  * Shared styles for `JourneyStartPanel`.
+ *
+ * @remarks
+ * Used by journey-name suggestion chips and quick-start controls.
  */
 export const journeyStartPanelStyles = StyleSheet.create({
   suggestionPanel: {
@@ -143,6 +152,9 @@ export const journeyStartPanelStyles = StyleSheet.create({
 
 /**
  * Shared styles for `JourneyDebugPanel`.
+ *
+ * @remarks
+ * Includes scrolling payload card layout and debug action controls.
  */
 export const journeyDebugPanelStyles = StyleSheet.create({
   headerRow: {
@@ -186,6 +198,26 @@ export const journeyDebugPanelStyles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     marginBottom: 6,
+    flex: 1,
+  },
+  eventHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  copyButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: colors.surface,
+    marginBottom: 6,
+  },
+  copyButtonText: {
+    color: colors.textDark,
+    fontSize: 11,
+    fontWeight: '600',
   },
   payloadScroll: {
     maxHeight: 120,
@@ -194,6 +226,9 @@ export const journeyDebugPanelStyles = StyleSheet.create({
 
 /**
  * Shared styles for Journey client panel composition.
+ *
+ * @remarks
+ * Covers callback panel, status sections, and action buttons.
  */
 export const journeyClientPanelStyles = StyleSheet.create({
   container: {
@@ -253,6 +288,9 @@ export const journeyClientPanelStyles = StyleSheet.create({
 
 /**
  * Shared style tokens for Journey callback field renderers.
+ *
+ * @remarks
+ * Used by text/password/choice/boolean and unsupported field renderers.
  */
 export const journeyFieldRendererStyles = StyleSheet.create({
   card: {

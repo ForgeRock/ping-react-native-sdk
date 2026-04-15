@@ -24,18 +24,29 @@ export default function JourneyTextField(
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
   const isPasswordField = field.kind === 'password';
+  const isFidoRegistrationField = field.ref.type === 'FidoRegistrationCallback';
   const secureTextEntry = isPasswordField;
+  const label = isFidoRegistrationField
+    ? 'Device Name'
+    : promptText.length > 0
+      ? promptText
+      : field.ref.type;
+  const placeholder = isFidoRegistrationField
+    ? 'Enter device name'
+    : promptText.length > 0
+      ? promptText
+      : 'Enter value';
 
   return (
     <View style={fieldStyles.card}>
       <PingTextInput
-        label={promptText.length > 0 ? promptText : field.ref.type}
+        label={label}
         value={toDisplayString(currentValue)}
         onChangeText={text => setFieldValue(field.id, text)}
         secureTextEntry={secureTextEntry}
         allowPasswordToggle={isPasswordField}
         keyboardType={field.kind === 'number' ? 'numeric' : 'default'}
-        placeholder={promptText.length > 0 ? promptText : 'Enter value'}
+        placeholder={placeholder}
         autoCapitalize="none"
       />
     </View>

@@ -80,8 +80,8 @@ export default function AsyncActionButton(
     variant === 'secondary'
       ? commonStyles.buttonSecondary
       : variant === 'danger'
-      ? commonStyles.buttonDanger
-      : commonStyles.buttonPrimary;
+        ? commonStyles.buttonDanger
+        : commonStyles.buttonPrimary;
   const labelStyle =
     variant === 'secondary'
       ? commonStyles.buttonTextSecondary

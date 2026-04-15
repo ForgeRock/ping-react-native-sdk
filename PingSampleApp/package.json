@@ -1,5 +1,5 @@
 {
-  "name": "PingSampleApp",
+  "name": "rn-sample-app",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "@ping-identity/rn-browser": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
     "@ping-identity/rn-device-profile": "workspace:*",
+    "@ping-identity/rn-fido": "workspace:*",
     "@ping-identity/rn-journey": "workspace:*",
     "@ping-identity/rn-logger": "workspace:*",
     "@ping-identity/rn-oidc": "workspace:*",
@@ -47,7 +48,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "^19.1.0",
     "eslint": "^8.19.0",
-    "prettier": "2.8.8",
+    "prettier": "3.8.1",
     "react-test-renderer": "19.1.0",
     "typescript": "5.0.4"
   },

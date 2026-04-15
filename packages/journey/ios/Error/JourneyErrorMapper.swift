@@ -194,4 +194,3 @@ enum JourneyBridgeError: Error {
     }
   }
 }
-

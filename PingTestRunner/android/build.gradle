@@ -39,3 +39,14 @@ allprojects {
         android.defaultConfig.manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
     }
 }
+
+// The :detox source module uses @ExperimentalStdlibApi APIs without opt-in
+// annotations. Kotlin 2.1 treats missing opt-in as a compile error, so scope
+// the compiler flag to that project only.
+project(':detox') {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            freeCompilerArgs += ['-opt-in=kotlin.ExperimentalStdlibApi']
+        }
+    }
+}

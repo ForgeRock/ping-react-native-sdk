@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-package com.pingsampleapp
+package com.pingidentity.rnsampleapp
 
 import android.content.Intent
 import android.os.Bundle
