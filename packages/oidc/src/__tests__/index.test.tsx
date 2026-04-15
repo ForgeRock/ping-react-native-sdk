@@ -61,16 +61,23 @@ const loadModule = async (nativeModule: NativeModuleMock) => {
   jest.doMock('../NativeRNPingOidc', () => ({
     getNativeModule: () => nativeModule,
   }));
-  jest.doMock('@ping-identity/rn-logger', () => ({
-    logger: jest.fn(() => ({
-      nativeHandle: { id: 'native-none-id' },
-      changeLevel: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-      info: jest.fn(),
-      debug: jest.fn(),
-    })),
-  }));
+  jest.doMock(
+    '@ping-identity/rn-logger',
+    () => ({
+      logger: jest.fn(() => ({
+        nativeHandle: { id: 'native-none-id' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      })),
+    }),
+    // virtual: true bypasses filesystem resolution — rn-logger is not a
+    // dependency of this package, so Jest with --coverage would fail to
+    // resolve it without this flag.
+    { virtual: true },
+  );
   return import('../index');
 };
 

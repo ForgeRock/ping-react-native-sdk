@@ -48,11 +48,17 @@ target 'PingTestRunner' do
   pod 'PingOidc',          :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
 
   # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
+  pod 'RNPingBrowser',
+    :path => '../../node_modules/@ping-identity/rn-browser',
+    :testspecs => ['Tests']
   pod 'RNPingCore',
     :path => '../../packages/core',
     :testspecs => ['Tests']
   pod 'RNPingDeviceId',
     :path => '../../node_modules/@ping-identity/rn-device-id',
+    :testspecs => ['Tests']
+  pod 'RNPingDeviceProfile',
+    :path => '../../node_modules/@ping-identity/rn-device-profile',
     :testspecs => ['Tests']
   pod 'RNPingFido',
     :path => '../../node_modules/@ping-identity/rn-fido',

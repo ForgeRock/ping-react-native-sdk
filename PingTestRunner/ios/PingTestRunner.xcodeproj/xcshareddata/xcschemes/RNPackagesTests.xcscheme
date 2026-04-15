@@ -44,6 +44,17 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "1A720BED53BF8555F0EBA378F4E059D3"
+               BuildableName = "RNPingBrowser-Unit-Tests.xctest"
+               BlueprintName = "RNPingBrowser-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "DC618DE7C128CD4BB43AD31E05733122"
                BuildableName = "RNPingCore-Unit-Tests.xctest"
                BlueprintName = "RNPingCore-Unit-Tests"
@@ -58,6 +69,28 @@
                BlueprintIdentifier = "9211230FB80C7E536E8E29C2085A6AEA"
                BuildableName = "RNPingDeviceId-Unit-Tests.xctest"
                BlueprintName = "RNPingDeviceId-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A82CAB9A317A43541769B170C1156EBB"
+               BuildableName = "RNPingDeviceProfile-Unit-Tests.xctest"
+               BlueprintName = "RNPingDeviceProfile-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "65B35A3FAB663E39EADCCD2CF118EB77"
+               BuildableName = "RNPingJourney-Unit-Tests.xctest"
+               BlueprintName = "RNPingJourney-Unit-Tests"
                ReferencedContainer = "container:Pods/Pods.xcodeproj">
             </BuildableReference>
          </TestableReference>

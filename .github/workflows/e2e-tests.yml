@@ -7,11 +7,15 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    types: [opened, reopened, synchronize]
-    branches: [main]
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   types: [opened, reopened, synchronize]
+  #   branches: [main]
+  workflow_call:
+  # TODO: Once lefthook is set up, this workflow will also be triggered as a
+  # pre-push hook via the gh CLI, so that e2e tests run in GitHub Actions
+  # before the push completes.
 
 # Cancel in-progress runs for the same ref.
 concurrency:
@@ -26,21 +30,35 @@ jobs:
   # ── iOS E2E (macOS required for simulator) ────────────────────────────────
   e2e-ios:
     name: E2E — iOS Simulator
-    runs-on: macos-15
+    runs-on: macos-26-xlarge
     timeout-minutes: 60
     defaults:
       run:
         working-directory: PingTestRunner
 
+    env:
+      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.1.1' }}
+      RUBY_VERSION: '2.6.10'
+      BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js and install dependencies
         uses: ./.github/actions/setup-proj
 
-      - name: Install Ruby gems (CocoaPods)
-        run: bundle install --path vendor/bundle
+      - name: Select Xcode version
+        run: sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
 
       - name: Install CocoaPods dependencies
         run: bundle exec pod install --project-directory=ios
@@ -53,15 +71,15 @@ jobs:
         env:
           # Tier 1 tests always run — no server required.
           # Tier 2 journey/OIDC tests self-skip when these are not set.
-          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
-          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
-          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
-          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
-          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
-          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
-          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
-          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
-          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+          PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
           PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
 
       - name: Upload Detox artifacts on failure
@@ -72,7 +90,13 @@ jobs:
           path: PingTestRunner/artifacts/
 
   # ── Android E2E (emulator on ubuntu-latest) ───────────────────────────────
+  # NOTE: This job will currently fail. The BrowserStack Detox fork we depend on
+  # for cloud device testing is pinned to a Detox version that is incompatible
+  # with React Native 0.80.
+  # TODO: Re-enable and validate once BrowserStack releases an updated version
+  # of their Detox fork with RN 0.80 support.
   e2e-android:
+    if: false
     name: E2E — Android Emulator
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -108,15 +132,15 @@ jobs:
         env:
           # Tier 1 tests always run — no server required.
           # Tier 2 journey/OIDC tests self-skip when these are not set.
-          PING_SERVER_URL:           ${{ secrets.PING_SERVER_URL }}
-          PING_REALM_PATH:           ${{ secrets.PING_REALM_PATH }}
-          PING_COOKIE_NAME:          ${{ secrets.PING_COOKIE_NAME }}
-          PING_JOURNEY_NAME:         ${{ secrets.PING_JOURNEY_NAME }}
-          PING_TEST_USERNAME:        ${{ secrets.PING_TEST_USERNAME }}
-          PING_TEST_PASSWORD:        ${{ secrets.PING_TEST_PASSWORD }}
-          PING_DISCOVERY_ENDPOINT:   ${{ secrets.PING_DISCOVERY_ENDPOINT }}
-          PING_CLIENT_ID:            ${{ secrets.PING_CLIENT_ID }}
-          PING_REDIRECT_URI:         ${{ secrets.PING_REDIRECT_URI }}
+          PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+          PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+          PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+          PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+          PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+          PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+          PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+          PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+          PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
           PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
 
       - name: Upload Detox artifacts on failure

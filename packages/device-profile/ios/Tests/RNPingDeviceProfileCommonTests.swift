@@ -5,10 +5,15 @@
 
 import XCTest
 import RNPingCore
-import RNPingDeviceProfile
+@testable import RNPingDeviceProfile
 
 /// XCTest coverage for the shared iOS device profile bridge logic.
 final class RNPingDeviceProfileCommonTests: XCTestCase {
+
+  override func tearDown() {
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting(nil)
+    super.tearDown()
+  }
 
   func testCollectDeviceProfileResolvesEmptyWhenNoCollectorsProvided() {
     let expectation = expectation(description: "resolver called")
@@ -31,7 +36,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     let expectation = expectation(description: "resolver called")
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["unknown", "ignored"],
+      ["unknown", "ignored", "", "Platform"],
       resolver: { payload in
         XCTAssertEqual(payload.count, 0)
         expectation.fulfill()
@@ -65,10 +70,13 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     let expectation = expectation(description: "resolver called")
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["platform", "unknown"],
+      ["platform", "unknown", "", "HARDWARE"],
       resolver: { payload in
         XCTAssertNotNil(payload["platform"])
         XCTAssertNil(payload["unknown"])
+        XCTAssertNil(payload[""])
+        XCTAssertNil(payload["HARDWARE"])
+        XCTAssertEqual(payload.count, 1)
         expectation.fulfill()
       },
       rejecter: { _, _, _ in
@@ -86,6 +94,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -103,20 +112,18 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     let expectation = expectation(description: "rejecter called")
     let journeyId = "empty-callbacks-journey"
 
-    // Save original resolver
-    let originalResolver = CoreRuntime.journeyCallbackResolver
-    defer { CoreRuntime.journeyCallbackResolver = originalResolver }
-
-    CoreRuntime.journeyCallbackResolver = { id in
+    CoreRuntime.setJourneyCallbackResolver { id in
       if id == journeyId {
         return []
       }
       return nil
     }
+    defer { CoreRuntime.setJourneyCallbackResolver(nil) }
 
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectors: [],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -150,71 +157,19 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     wait(for: [expectation], timeout: 2)
   }
 
-  func testCollectDeviceProfileWithDuplicateCollectors() {
+  func testCollectDeviceProfileDeduplicatesDuplicateCollectors() {
     let expectation = expectation(description: "resolver called")
 
+    // buildCollectors appends one instance per name, so duplicates enter the
+    // pipeline as separate collector instances. Deduplication is enforced by
+    // collectPayload writing into a [String: Any] dictionary keyed on
+    // collector.key — later writes overwrite earlier ones for the same key.
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["platform", "platform", "hardware"],
       resolver: { payload in
-        // Duplicates should still only result in one entry per collector type
         XCTAssertNotNil(payload["platform"])
         XCTAssertNotNil(payload["hardware"])
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
-      }
-    )
-
-    wait(for: [expectation], timeout: 2)
-  }
-
-  func testCollectDeviceProfileIgnoresLocationInExcludedMode() {
-    let expectation = expectation(description: "resolver called")
-
-    // When location is requested but excluded via includeLocation flag,
-    // it should not be collected
-    RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["platform", "location"],
-      resolver: { payload in
-        XCTAssertNotNil(payload["platform"])
-        // Location should be included when using collectDeviceProfile
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
-      }
-    )
-
-    wait(for: [expectation], timeout: 2)
-  }
-
-  func testCollectDeviceProfileWithAllKnownCollectors() {
-    let expectation = expectation(description: "resolver called")
-
-    RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["platform", "hardware", "network", "telephony", "browser", "bluetooth"],
-      resolver: { payload in
-        // Verify all collectors are present (location excluded intentionally)
-        XCTAssertGreaterThanOrEqual(payload.count, 1, "Should have at least one collector")
-        expectation.fulfill()
-      },
-      rejecter: { _, _, _ in
-        XCTFail("rejecter should not be called")
-      }
-    )
-
-    wait(for: [expectation], timeout: 2)
-  }
-
-  func testCollectDeviceProfileWithEmptyStringCollector() {
-    let expectation = expectation(description: "resolver called")
-
-    RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["", "platform"],
-      resolver: { payload in
-        XCTAssertNotNil(payload["platform"])
-        XCTAssertNil(payload[""])
+        XCTAssertEqual(payload.count, 2, "Duplicate collector names must not produce duplicate keys")
         expectation.fulfill()
       },
       rejecter: { _, _, _ in
@@ -225,20 +180,103 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
-  func testCollectDeviceProfileWithCaseSensitiveCollectors() {
+  func testCollectDeviceProfileWithAllStableKnownCollectors() {
     let expectation = expectation(description: "resolver called")
 
+    // Bluetooth and Location are intentionally excluded because CoreBluetooth can remain in
+    // a transient state on simulators long enough to make this unit test
+    // non-deterministic in CI.
     RNPingDeviceProfileCommon.collectDeviceProfile(
-      ["Platform", "HARDWARE", "platform"],
+      ["platform", "hardware", "network", "telephony", "browser"],
       resolver: { payload in
-        // Only lowercase "platform" should match
         XCTAssertNotNil(payload["platform"])
-        XCTAssertNil(payload["Platform"])
-        XCTAssertNil(payload["HARDWARE"])
+        XCTAssertNotNil(payload["hardware"])
+        XCTAssertNotNil(payload["network"])
+        XCTAssertNotNil(payload["telephony"])
+        XCTAssertNotNil(payload["browser"])
+        XCTAssertNil(payload["bluetooth"])
+        XCTAssertNil(payload["location"])
+        XCTAssertEqual(payload.count, 5)
         expectation.fulfill()
       },
       rejecter: { _, _, _ in
         XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 2)
+  }
+
+  func testCollectDeviceProfileResolvesBluetoothPayloadWithInjectedExecutor() {
+    let expectation = expectation(description: "resolver called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["bluetooth"])
+      return ["bluetooth": ["supported": true]]
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["bluetooth"],
+      resolver: { payload in
+        let bluetooth = payload["bluetooth"] as? [String: Any]
+        XCTAssertEqual(payload.count, 1)
+        XCTAssertEqual(bluetooth?["supported"] as? Bool, true)
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in
+        XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCollectDeviceProfileResolvesLocationPayloadWithInjectedExecutor() {
+    let expectation = expectation(description: "resolver called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["location"])
+      return ["location": ["latitude": 49.2827, "longitude": -123.1207]]
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["location"],
+      resolver: { payload in
+        let location = payload["location"] as? [String: Any]
+        XCTAssertEqual(payload.count, 1)
+        XCTAssertEqual(location?["latitude"] as? Double, 49.2827)
+        XCTAssertEqual(location?["longitude"] as? Double, -123.1207)
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in
+        XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCollectDeviceProfileRejectsInjectedCollectorFailure() {
+    let expectation = expectation(description: "rejecter called")
+
+    RNPingDeviceProfileCommon.setCollectPayloadOverrideForTesting { collectors in
+      XCTAssertEqual(collectors.map(\.key), ["location"])
+      throw NSError(
+        domain: "RNPingDeviceProfileTests",
+        code: 99,
+        userInfo: [NSLocalizedDescriptionKey: "Injected collector failure"]
+      )
+    }
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["location"],
+      resolver: { _ in
+        XCTFail("resolver should not be called")
+      },
+      rejecter: { code, message, _ in
+        XCTAssertEqual(code, "DEVICE_PROFILE_COLLECT_ERROR")
+        XCTAssertTrue(message.contains("Injected collector failure"))
+        expectation.fulfill()
       }
     )
 
@@ -251,6 +289,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       "",
       collectors: ["platform"],
+      loggerId: nil,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },

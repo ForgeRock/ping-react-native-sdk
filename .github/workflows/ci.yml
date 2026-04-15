@@ -6,75 +6,125 @@
 #
 name: CI
 on:
-    pull_request:
-        types: [opened, reopened, synchronize, edited]
-        
-    push:
-        branches:
-            - main
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+  push:
+    branches:
+      - main
 
 # Prevent multiple CI runs for the same PR.
 # Cancel any in-progress runs when new commits are pushed.
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-    contents: read
-    
+  contents: read
+
 jobs:
-    # Run ESLint, TypeScript type checking, and Prettier format validation.
-    lint-and-typecheck:
-        uses: ./.github/workflows/lint-and-typecheck.yml
-        with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
-    
-    # Build affected packages to verify compilation succeeds.
-    build-packages-check:
-        needs: lint-and-typecheck
-        uses: ./.github/workflows/build-packages.yml
-        with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
-    
-    # Execute Jest unit tests across affected packages.
-    js-unit-tests:
-        needs: build-packages-check
-        permissions:
-            contents: read
-            checks: write
-        uses: ./.github/workflows/js-unit-tests.yml
-        with:
-            turbo_scm_base: ${{ github.event.pull_request.base.sha }}
-            turbo_scm_head: ${{ github.event.pull_request.head.sha }}
-    
-    # Execute Android unit tests across affected packages.
-    android-unit-tests:
-        needs: js-unit-tests
-        permissions:
-            contents: read
-            checks: write
-        uses: ./.github/workflows/build-and-test-android.yml
+  # Run ESLint, TypeScript type checking, and Prettier format validation.
+  lint-and-typecheck:
+    uses: ./.github/workflows/lint-and-typecheck.yml
+    with:
+      turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-    # Execute iOS unit tests across affected packages.
-    ios-unit-tests:
-        needs: js-unit-tests
-        permissions:
-            contents: read
-            checks: write
-        uses: ./.github/workflows/build-and-test-ios.yml
+  # Build affected packages to verify compilation succeeds.
+  build-packages-check:
+    needs: lint-and-typecheck
+    uses: ./.github/workflows/build-packages.yml
+    with:
+      turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-    # Publish documentation preview to GitHub Pages on every PR for review.
-    # Allows reviewers to preview documentation changes before merging.
-    preview-docs-pr:
-        needs: js-unit-tests
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        permissions:
-            contents: write
-            pull-requests: write
-        uses: ./.github/workflows/preview-docs.yml
-        with:
-            pr_number: ${{ github.event.pull_request.number }}
+  # Execute Jest unit tests across affected packages.
+  js-unit-tests:
+    needs: build-packages-check
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/js-unit-tests.yml
+    with:
+      turbo_scm_base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      turbo_scm_head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+    secrets: inherit
 
-    
+  # Execute Android unit tests across affected packages.
+  android-unit-tests:
+    needs: js-unit-tests
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/build-and-test-android.yml
+    secrets: inherit
+
+  # Execute iOS unit tests across affected packages.
+  ios-unit-tests:
+    needs: js-unit-tests
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/build-and-test-ios.yml
+    secrets: inherit
+
+  # Run Android E2E tests on BrowserStack real devices after Android unit tests pass.
+  # Blocked: BrowserStack cloud driver does not yet support Detox 20.43+.
+  # Remove the `if false` guard once the upstream fix is released.
+  browserstack-android:
+    if: false
+    needs: android-unit-tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/browserstack-e2e-android.yml
+    secrets:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+      PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+      PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+      PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+      PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+      PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+      PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+      PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+      PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
+      PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+
+  # Run iOS E2E tests on BrowserStack real devices after iOS unit tests pass.
+  browserstack-ios:
+    needs: ios-unit-tests
+    permissions:
+      contents: read
+    uses: ./.github/workflows/browserstack-e2e-ios.yml
+    secrets:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+      PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+      PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+      PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+      PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+      PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+      PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+      PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+      PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
+      PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+      CERTIFICATES_FILE_BASE64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
+      CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      BUILD_PROVISION_PROFILE: ${{ secrets.BUILD_PROVISION_PROFILE }}
+      UI_TEST_PROVISION_PROFILE: ${{ secrets.UI_TEST_PROVISION_PROFILE }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+  # Publish documentation preview to GitHub Pages on every PR for review.
+  # Allows reviewers to preview documentation changes before merging.
+  preview-docs-pr:
+    needs: js-unit-tests
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/preview-docs.yml
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
