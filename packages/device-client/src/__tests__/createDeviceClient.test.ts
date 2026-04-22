@@ -158,4 +158,129 @@ describe('createDeviceClient', () => {
       expect.objectContaining({ realm: 'alpha', cookieName: 'custom' }),
     );
   });
+
+  it('forwards delete to the native deleteDevice with the device payload', async () => {
+    const native = mockNative();
+    native.deleteDevice.mockResolvedValue(undefined);
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    const device = { id: 'abc', deviceName: 'iPhone' };
+    await client.oath.delete(device as never);
+
+    expect(native.deleteDevice).toHaveBeenCalledWith(
+      'handle-1',
+      'oath',
+      device,
+    );
+  });
+
+  it('returns an empty array when get payload is not result-shaped', async () => {
+    const native = mockNative();
+    native.get.mockResolvedValue({ unexpected: true });
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    await expect(client.oath.get()).resolves.toEqual([]);
+  });
+
+  it('returns the raw payload when update response lacks a result wrapper', async () => {
+    const native = mockNative();
+    const raw = { id: 'x', deviceName: 'name' };
+    native.update.mockResolvedValue(raw);
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    await expect(client.oath.update(raw as never)).resolves.toEqual(raw);
+  });
+
+  it('resets handlePromise when native create rejects so a retry calls create again', async () => {
+    const native = mockNative();
+    native.create
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce('handle-2');
+    native.get.mockResolvedValue({ result: [] });
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+
+    await expect(client.oath.get()).rejects.toThrow(/boom/);
+    await expect(client.oath.get()).resolves.toEqual([]);
+    expect(native.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('dispose without any prior op does not call native dispose', async () => {
+    const native = mockNative();
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    await client.dispose();
+    expect(native.dispose).not.toHaveBeenCalled();
+    await expect(client.oath.get()).rejects.toThrow(/disposed/);
+  });
+
+  it('second dispose call is a no-op', async () => {
+    const native = mockNative();
+    native.get.mockResolvedValue({ result: [] });
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    await client.oath.get();
+    await client.dispose();
+    await client.dispose();
+    expect(native.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes loggerId from provided logger into native config', async () => {
+    const native = mockNative();
+    native.get.mockResolvedValue({ result: [] });
+    const debugSpy = jest.fn();
+    const logger = {
+      nativeHandle: { id: 'log-42' },
+      changeLevel: () => {},
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      debug: debugSpy,
+    };
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+      logger,
+    });
+    await client.oath.get();
+
+    expect(native.create).toHaveBeenCalledWith(
+      expect.objectContaining({ loggerId: 'log-42' }),
+    );
+    expect(logger.debug).toHaveBeenCalledWith(
+      expect.stringContaining('oath.get'),
+    );
+  });
 });

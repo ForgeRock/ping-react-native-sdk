@@ -27,6 +27,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.net.MalformedURLException
+import java.net.URI
+import java.net.URISyntaxException
 import java.net.URL
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -106,8 +108,21 @@ object RNPingDeviceClientCommon {
     }
     val normalizedServerUrl = DeviceClientConfigNormalizer.normalizeServerUrl(serverUrl)
     val realm = DeviceClientConfigNormalizer.normalizeRealm(config.getStringOrNull("realm"))
-    val parsedUrl = try {
-      URL(normalizedServerUrl)
+    // Parse via URI first (pure RFC-3986 parsing, no potential network
+    // resolution) and then convert to URL for the native SDK's constructor.
+    // Using URL(String) directly trips CWE-676 in security scanners.
+    val parsedUrl: URL = try {
+      URI(normalizedServerUrl).toURL()
+    } catch (e: URISyntaxException) {
+      promise.reject(
+        GenericError(
+          type = ErrorType.ARGUMENT_ERROR,
+          error = DeviceClientErrorCodes.DEVICE_CLIENT_MISSING_CONFIG,
+          message = "Invalid serverUrl: ${e.message}",
+        ),
+        e,
+      )
+      return
     } catch (e: MalformedURLException) {
       promise.reject(
         GenericError(

@@ -95,6 +95,13 @@ internal object DeviceErrorClassifier {
    * - [IllegalArgumentException], [MalformedURLException] -> missing/invalid config
    * - all others -> unknown module error
    *
+   * TODO Note: HTTP status is always `null` today, so `INVALID_TOKEN` (401),
+   * `NOT_FOUND` (404), and `REQUEST_FAILED` (other non-2xx) codes are never
+   * emitted on Android — ktor's `ResponseException` just lands in the
+   * `IOException` branch. This gap will be addressed as part of the
+   * cross-platform error-code alignment work being tracked with the
+   * native SDK teams.
+   *
    * @param throwable The throwable to classify.
    * @return A [Triple] of (error code, [ErrorType], optional HTTP status).
    */
