@@ -95,10 +95,17 @@ yarn sample:run:ios
 ```
 react-native-pingidentity/
 ├── packages/
-│   ├── storage/
-│   ├── oidc/
 │   ├── browser/
-│   └── journey/
+│   ├── core/
+│   ├── device-client/
+│   ├── device-id/
+│   ├── device-profile/
+│   ├── fido/
+│   ├── journey/
+│   ├── logger/
+│   ├── oidc/
+│   ├── storage/
+│   └── types/
 └── PingSampleApp/
 ```
 

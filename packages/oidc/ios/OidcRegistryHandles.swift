@@ -59,13 +59,13 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
 
 /// Handle for storing OIDC web client instances.
 ///
-/// - Note: `@unchecked Sendable` is used because `OidcWeb` is an SDK
+/// - Note: `@unchecked Sendable` is used because `OidcWebClient` is an SDK
 ///   reference type not declared `Sendable`. This wrapper remains immutable.
 final class OidcWebHandle: NativeHandle, @unchecked Sendable {
   let clientId: String
-  let web: OidcWeb
+  let web: OidcWebClient
 
-  init(clientId: String, web: OidcWeb) {
+  init(clientId: String, web: OidcWebClient) {
     self.clientId = clientId
     self.web = web
   }

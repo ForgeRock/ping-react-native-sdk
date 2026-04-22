@@ -57,7 +57,7 @@ final class OidcClientFactoryTests: XCTestCase {
     )
 
     let web = OidcClientFactory.buildWebClient(payload, logger: nil)
-    let config = web.config as? OidcWebConfig
+    let config = web.config as? OidcWebClientConfig
 
     XCTAssertEqual(config?.browserType, .ephemeralAuthSession)
     XCTAssertEqual(config?.browserMode, .logout)
@@ -70,7 +70,7 @@ final class OidcClientFactoryTests: XCTestCase {
     )
 
     let web = OidcClientFactory.buildWebClient(payload, logger: nil)
-    let config = web.config as? OidcWebConfig
+    let config = web.config as? OidcWebClientConfig
 
     XCTAssertEqual(config?.browserType, .authSession)
     XCTAssertEqual(config?.browserMode, .login)

@@ -9,7 +9,7 @@ package com.pingidentity.rnoidc
 
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcClientConfig
-import com.pingidentity.oidc.OidcWeb
+import com.pingidentity.oidc.OidcWebClient
 import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.oidc.module.Oidc
 import com.pingidentity.storage.CacheStrategy
@@ -32,9 +32,9 @@ internal class OidcClientFactory(
    * @param config Parsed JS client payload
    * @return Configured native OIDC web client
    */
-  fun buildWebClient(config: OidcClientPayload): OidcWeb {
+  fun buildWebClient(config: OidcClientPayload): OidcWebClient {
     val resolvedLogger = loggerResolver(config.loggerId)
-    return OidcWeb {
+    return OidcWebClient {
       module(Oidc) {
         resolvedLogger?.let { logger = it }
         config.discoveryEndpoint?.let { discoveryEndpoint = it }

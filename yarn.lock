@@ -3072,6 +3072,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ping-identity/rn-device-client@workspace:*, @ping-identity/rn-device-client@workspace:packages/device-client":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-device-client@workspace:packages/device-client"
+  dependencies:
+    "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-types": "npm:^0.1.0"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-device-id@workspace:*, @ping-identity/rn-device-id@workspace:packages/device-id":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-id@workspace:packages/device-id"
@@ -12251,6 +12266,7 @@ __metadata:
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
     "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-device-profile": "workspace:*"
     "@ping-identity/rn-fido": "workspace:*"
@@ -12293,6 +12309,7 @@ __metadata:
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
     "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-device-profile": "workspace:*"
     "@ping-identity/rn-fido": "workspace:*"

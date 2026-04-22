@@ -70,7 +70,7 @@ public class RNPingDeviceIdImpl: NSObject, @unchecked Sendable {
   @MainActor
   public func getDefaultDeviceId(
     _ resolve: @escaping RCTPromiseResolveBlock,
-    rejecter rejecter: @escaping RCTPromiseRejectBlock
+    rejecter: @escaping RCTPromiseRejectBlock
   ) {
     Task { @MainActor in
       switch Self.defaultIdentifierResult {

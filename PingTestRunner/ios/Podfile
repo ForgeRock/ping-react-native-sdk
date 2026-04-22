@@ -13,10 +13,6 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, '16.0'
 prepare_react_native_project!
 
-# Ping iOS SDK git source — keep in sync with PingSampleApp/ios/Podfile
-ping_ios_sdk_git = 'https://github.com/ForgeRock/ping-ios-sdk.git'
-ping_ios_sdk_branch = 'SDKS-4648-RN-Device'
-
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
@@ -30,22 +26,6 @@ target 'PingTestRunner' do
     :path => config[:reactNativePath],
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
-
-  # Ping iOS SDK pods (mirrors PingSampleApp)
-  pod 'PingBrowser',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingJourney',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingStorage',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingOrchestrate',   :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingLogger',        :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingDeviceId',      :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingDeviceProfile', :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingFido',          :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch, :modular_headers => true
-  pod 'PingDavinciPlugin', :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch, :modular_headers => true
-  pod 'PingJourneyPlugin', :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingNetwork',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingTamperDetector',:git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingCommons',       :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
-  pod 'PingOidc',          :git => ping_ios_sdk_git, :branch => ping_ios_sdk_branch
 
   # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
   pod 'RNPingBrowser',
@@ -62,6 +42,9 @@ target 'PingTestRunner' do
     :testspecs => ['Tests']
   pod 'RNPingFido',
     :path => '../../node_modules/@ping-identity/rn-fido',
+    :testspecs => ['Tests']
+  pod 'RNPingDeviceClient',
+    :path => '../../node_modules/@ping-identity/rn-device-client',
     :testspecs => ['Tests']
   pod 'RNPingJourney',
     :path => '../../node_modules/@ping-identity/rn-journey',
@@ -89,32 +72,5 @@ target 'PingTestRunner' do
       end
     end
 
-    # Workaround: fix missing FOUNDATION_EXPORT for TamperDetectorVersionString
-    tamper_header = File.join(
-      installer.sandbox.root.to_s,
-      'PingTamperDetector',
-      'TamperDetector',
-      'TamperDetector',
-      'TamperDetector.h'
-    )
-    if File.exist?(tamper_header)
-      contents = File.read(tamper_header)
-      if contents.include?('TamperDetectorVersionString') &&
-          !contents.include?('const unsigned char TamperDetectorVersionString')
-        fixed = contents.sub(
-          /TamperDetectorVersionString\s*\z/,
-          'FOUNDATION_EXPORT const unsigned char TamperDetectorVersionString[];'
-        )
-        begin
-          if File.writable?(tamper_header)
-            File.write(tamper_header, fixed)
-          else
-            Pod::UI.puts "warning: Skipping TamperDetector header patch (file not writable)".yellow
-          end
-        rescue StandardError => e
-          Pod::UI.puts "warning: Skipping TamperDetector header patch (#{e.class}: #{e.message})".yellow
-        end
-      end
-    end
   end
 end

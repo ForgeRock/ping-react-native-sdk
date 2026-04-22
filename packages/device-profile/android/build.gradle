@@ -88,10 +88,10 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:device-profile:2.0.0-beta1")
-  implementation("com.pingidentity.sdks:journey-plugin:2.0.0-beta1")
-  implementation("com.pingidentity.sdks:device-root:2.0.0-beta1")
-  implementation("com.pingidentity.sdks:logger:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:device-profile:2.0.0")
+  implementation("com.pingidentity.sdks:journey-plugin:2.0.0")
+  implementation("com.pingidentity.sdks:device-root:2.0.0")
+  implementation("com.pingidentity.sdks:logger:2.0.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
@@ -104,5 +104,5 @@ dependencies {
   testImplementation "junit:junit:4.13.2"
   testImplementation "io.mockk:mockk:1.13.9"
   testImplementation "org.robolectric:robolectric:4.11.1"
-  testImplementation("com.pingidentity.sdks:device-profile:2.0.0-beta1")
+  testImplementation("com.pingidentity.sdks:device-profile:2.0.0")
 }
