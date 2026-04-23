@@ -23,6 +23,8 @@ module.exports = {
     '^@ping-identity/rn-browser$':
       '<rootDir>/../packages/browser/src/index.tsx',
     '^@ping-identity/rn-core$': '<rootDir>/../packages/core/index.js',
+    '^@ping-identity/rn-device-client$':
+      '<rootDir>/../packages/device-client/src/index.tsx',
     '^@ping-identity/rn-device-id$':
       '<rootDir>/../packages/device-id/src/index.tsx',
     '^@ping-identity/rn-device-profile$':
