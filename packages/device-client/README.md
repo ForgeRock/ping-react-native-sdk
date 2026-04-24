@@ -11,9 +11,7 @@ of the MIT license. See the LICENSE file for details.
 
 A foundation package that provides a native-backed bridge for managing a
 user's registered MFA and profile devices (OATH, Push, Bound, WebAuthn,
-Profile) from React Native, wrapping the native
-[PingDeviceClient (iOS)][ios-readme] and
-[device-client (Android)][android-readme] SDKs.
+Profile) from React Native.
 
 ## Table of contents
 
