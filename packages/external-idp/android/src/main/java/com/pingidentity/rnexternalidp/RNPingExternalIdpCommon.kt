@@ -138,6 +138,7 @@ object RNPingExternalIdpCommon {
           return@launch
         }
 
+        // TODO: Add browser fallback here when the Android native SDK supports it for AIC Journey flows.
         val result = withContext(Dispatchers.Main) {
           callback.authorize(parsedRedirectUri)
         }
