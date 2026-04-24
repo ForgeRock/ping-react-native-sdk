@@ -292,6 +292,34 @@ class JourneyCallbackValueApplierTest {
   }
 
   @Test
+  fun applyNormalizesExternalIdpAliasInputsForIntegrationCallbacks() {
+    class IdpCallback
+    class SelectIdpCallback
+
+    val callbacks = listOf(
+      Triple(IdpCallback(), "IdPCallback", "External IdP integration"),
+      Triple(SelectIdpCallback(), "SelectIdPCallback", "External IdP integration")
+    )
+
+    callbacks.forEach { (callback, type, expectedRequirement) ->
+      try {
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+          )
+        }
+      } catch (error: IllegalStateException) {
+        assertTrue(error.message?.contains("additional native integration") == true)
+        assertTrue(error.message?.contains(expectedRequirement) == true)
+        return@forEach
+      }
+
+      throw AssertionError("Expected IllegalStateException for canonicalized $type integration callback")
+    }
+  }
+
+  @Test
   fun applyThrowsForUnsupportedCallback() {
     class UnknownCustomCallback
 

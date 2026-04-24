@@ -20,8 +20,8 @@ enum JourneyCallbackValueApplier {
     "FidoAuthenticationCallback": "@ping-identity/rn-fido",
     "PingOneProtectInitializeCallback": "PingOne Protect integration",
     "PingOneProtectEvaluationCallback": "PingOne Protect integration",
-    "SelectIdPCallback": "External IdP integration",
-    "IdPCallback": "External IdP integration",
+    "SelectIdpCallback": "External IdP integration",
+    "IdpCallback": "External IdP integration",
     "ReCaptchaCallback": "ReCaptcha integration",
     "ReCaptchaEnterpriseCallback": "ReCaptcha Enterprise integration",
     "BindingCallback": "Binding integration",
@@ -293,6 +293,10 @@ enum JourneyCallbackValueApplier {
       return "ValidatedPasswordCallback"
     case "ValidatedCreateUsernameCallback":
       return "ValidatedUsernameCallback"
+    case "IdPCallback":
+      return "IdpCallback"
+    case "SelectIdPCallback":
+      return "SelectIdpCallback"
     default:
       return type
     }

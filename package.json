@@ -49,7 +49,7 @@
     "runner:run:android": "yarn workspace rn-test-runner run android",
     "storage:test": "yarn workspace @ping-identity/rn-storage run test",
     "docs:journey": "typedoc --options typedoc.journey.json",
-    "prettier": "turbo run prettier",
+    "prettier": "prettier --write",
     "typecheck": "turbo run typecheck",
     "postinstall": "lefthook install",
     "release:status": "changeset status",

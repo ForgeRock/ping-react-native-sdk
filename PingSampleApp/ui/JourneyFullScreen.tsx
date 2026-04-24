@@ -61,10 +61,14 @@ const outputOnlyCallbackTypes = new Set<JourneyCallbackType>([
 const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   callbackType.PingOneProtectInitializeCallback,
   callbackType.PingOneProtectEvaluationCallback,
+  // callbackType.SelectIdPCallback is 'SelectIdPCallback' (capital P, ForgeRock JS SDK).
+  // The native SDK surfaces this as 'SelectIdpCallback' (lowercase p). Both are registered.
   callbackType.SelectIdPCallback,
+  nativeExtensionCallbackType.SelectIdpCallback,
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
   nativeExtensionCallbackType.IdPCallback,
+  nativeExtensionCallbackType.IdpCallback,
   nativeExtensionCallbackType.FidoRegistrationCallback,
   nativeExtensionCallbackType.FidoAuthenticationCallback,
   nativeExtensionCallbackType.BindingCallback,

@@ -17,6 +17,8 @@ import JourneyFieldRenderer from '../molecules/renderers/JourneyFieldRenderer';
 import { DEFAULT_AUTO_POLLING_WAIT_MS } from '../../utils/clientPanel';
 import PingTextInput from '../../../components/atoms/PingTextInput';
 
+const IDP_CALLBACK_TYPES = new Set<string>(['IdPCallback', 'IdpCallback']);
+
 /**
  * Props for rendering the active `ContinueNode` callback area.
  */
@@ -56,6 +58,14 @@ export type JourneyContinuePanelProps = {
    * @returns Promise resolved after submit attempt completes.
    */
   onSubmit: () => Promise<void>;
+  /**
+   * Selects an external IdP provider and immediately advances into browser authorization.
+   *
+   * @param fieldId - Normalized SelectIdpCallback field id.
+   * @param provider - Provider identifier selected by the user.
+   * @returns Promise resolved after provider selection handling completes.
+   */
+  onSelectIdpProvider?: (fieldId: string, provider: string) => Promise<void>;
 };
 
 /**
@@ -75,6 +85,7 @@ export default function JourneyContinuePanel(
     onResumeUrlChange,
     onResume,
     onSubmit,
+    onSelectIdpProvider,
   } = props;
   const { fields, values, meta, setValue } = form;
 
@@ -86,11 +97,18 @@ export default function JourneyContinuePanel(
   // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
   // - "manual submit" means at least one callback requires user-provided values.
   const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
+  const hasSelectIdpCallback = fields.some(
+    field => (field.ref.type as string) === 'SelectIdpCallback',
+  );
   const isAutoHandledIntegrationCallback = useCallback(
     (type: JourneyCallbackType): boolean =>
       type === 'DeviceProfileCallback' ||
       type === 'FidoRegistrationCallback' ||
-      type === 'FidoAuthenticationCallback',
+      type === 'FidoAuthenticationCallback' ||
+      IDP_CALLBACK_TYPES.has(type) ||
+      // SelectIdpCallback (native lowercase-p form) is handled by the external-idp integration
+      // in the panel controller — provider selection renders inline and submit is managed there.
+      type === 'SelectIdpCallback',
     [],
   );
   const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
@@ -187,6 +205,7 @@ export default function JourneyContinuePanel(
     !hasBlockingIntegration &&
     !hasUnsupportedCallbacks &&
     !hasDeviceProfileCallback &&
+    !hasSelectIdpCallback &&
     !hasSuspendedCallback &&
     !hasPollingWaitCallback;
   const shouldShowContinueButton =
@@ -210,6 +229,7 @@ export default function JourneyContinuePanel(
           field={field}
           currentValue={values[field.id]}
           setFieldValue={setValue}
+          onSelectIdpProvider={onSelectIdpProvider}
         />
       ))}
 

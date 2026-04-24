@@ -22,6 +22,8 @@ module.exports = {
     // Use $ anchors to prevent subpath imports (e.g. package.json) from being captured.
     '^@ping-identity/rn-browser$':
       '<rootDir>/../packages/browser/src/index.tsx',
+    '^@ping-identity/rn-external-idp$':
+      '<rootDir>/../packages/external-idp/src/index.tsx',
     '^@ping-identity/rn-core$': '<rootDir>/../packages/core/index.js',
     '^@ping-identity/rn-device-client$':
       '<rootDir>/../packages/device-client/src/index.tsx',

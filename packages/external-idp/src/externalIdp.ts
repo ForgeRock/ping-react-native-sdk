@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+
+import {
+  fromNativeAuthorizeResult,
+  getNativeModule,
+  toNativeAuthorizeOptions,
+  toNativeConfig,
+  toNativeSelectOptions,
+} from './NativeRNPingExternalIdp';
+import type { LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  ExternalIdpAuthorizeOptions,
+  ExternalIdpClient,
+  ExternalIdpConfig,
+  ExternalIdpResult,
+  ExternalIdpSelectOptions,
+  JourneyInstance,
+} from './types';
+import type { ExternalIdpClientConfig } from './types/externalIdp.types';
+
+const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+};
+
+/**
+ * Resolve an optional redirect URI and reject values that cannot be used by Auth Tabs.
+ *
+ * @param redirectUri Optional app return URI configured for Auth Tab-capable devices.
+ * @returns Trimmed redirect URI with a scheme, or an empty string to delegate to native defaults.
+ * @throws Error when a non-empty `redirectUri` is missing a URI scheme.
+ */
+function normalizeRedirectUri(redirectUri?: string): string {
+  const resolved = redirectUri?.trim();
+  if (!resolved) {
+    return '';
+  }
+  if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(resolved)) {
+    throw new Error(
+      '[@ping-identity/rn-external-idp] `redirectUri` must include a URI scheme. ' +
+        "Provide the app's registered URL scheme (e.g. 'com.myapp://callback').",
+    );
+  }
+  return resolved;
+}
+
+/**
+ * Resolve the provider identifier selected for a Journey `SelectIdpCallback`.
+ *
+ * @param provider Provider identifier chosen by the user.
+ * @returns Trimmed provider identifier.
+ * @throws Error when `provider` is missing or blank.
+ */
+function normalizeProvider(provider: string): string {
+  const resolved = provider?.trim();
+  if (!resolved) {
+    throw new Error(
+      '[@ping-identity/rn-external-idp] `provider` is required. ' +
+        'Pass the provider identifier selected from the Journey callback.',
+    );
+  }
+  return resolved;
+}
+
+/**
+ * Creates a reusable External IdP client instance for Journey flows.
+ *
+ * @param config Runtime External IdP configuration payload.
+ * @returns An External IdP client bound to the resolved configuration.
+ * @throws Error when a non-empty `redirectUri` is missing a URI scheme.
+ *
+ * @remarks
+ * `redirectUri` is optional and captured once at factory creation time. When omitted,
+ * Android delegates Custom Tab redirects to the native `appRedirectUriScheme` manifest
+ * placeholder; provide it when you need Auth Tab support with a specific app return URI.
+ * Logger integration is optional and uses `logger(...).nativeHandle.id` when provided.
+ */
+export function createExternalIdpClient(
+  config: ExternalIdpConfig,
+): ExternalIdpClient {
+  const redirectUri = normalizeRedirectUri(config.redirectUri);
+
+  const logger = config.logger ?? noopLogger;
+  const resolvedConfig: ExternalIdpClientConfig = {
+    redirectUri,
+    loggerId: logger.nativeHandle?.id?.trim() || undefined,
+  };
+
+  logger.debug(
+    `ExternalIdp createClient config ${JSON.stringify(
+      {
+        hasLogger: Boolean(resolvedConfig.loggerId),
+        redirectUri: resolvedConfig.redirectUri,
+      },
+      null,
+      2,
+    )}`,
+  );
+  logger.info('ExternalIdp createClient success');
+
+  return {
+    /**
+     * Launches the external IdP authorization flow for a Journey-scoped `IdpCallback`.
+     *
+     * The native SDK handles the redirect internally — no JS-side deep-link listener
+     * or `journey.resume(uri)` call is needed. On success, the callback's internal input
+     * state is populated so `journey.next({})` picks up the token.
+     *
+     * @param journey Active Journey instance.
+     * @param options Optional per-call authorize options (index).
+     * @returns A promise that resolves to the authorize result (`token`, `additionalParameters`).
+     * @throws ExternalIdpError when authorization fails.
+     */
+    async authorizeForJourney(
+      journey: JourneyInstance,
+      options: ExternalIdpAuthorizeOptions = {},
+    ): Promise<ExternalIdpResult> {
+      logger.info('ExternalIdp authorizeForJourney requested');
+      try {
+        const journeyId = await journey.getId();
+        const result = await getNativeModule().authorizeForJourney(
+          journeyId,
+          toNativeAuthorizeOptions(options),
+          toNativeConfig(resolvedConfig),
+        );
+        logger.debug('ExternalIdp authorizeForJourney success');
+        return fromNativeAuthorizeResult(result);
+      } catch (error) {
+        logger.error('ExternalIdp authorizeForJourney failed');
+        throw error;
+      }
+    },
+
+    /**
+     * Mutates the native `SelectIdpCallback` state for a Journey-scoped callback.
+     *
+     * Must be called before `journey.next({})` — calling `next()` with a `SelectIdPCallback`
+     * entry directly always throws `MissingIntegrationException` / `missingIntegration` from
+     * `JourneyCallbackValueApplier` on both platforms.
+     *
+     * Note: `SelectIdPCallback` does not involve an OAuth redirect, so `redirectUri` from the
+     * client config is not used by the native implementation for this call. The full config is
+     * still forwarded so that shared fields (e.g. `loggerId`) are available on the native side.
+     *
+     * @param journey Active Journey instance.
+     * @param provider The provider identifier chosen by the user (e.g. `'google'`).
+     * @param options Optional per-call select options (index).
+     * @throws ExternalIdpError when the callback cannot be resolved.
+     */
+    async selectProviderForJourney(
+      journey: JourneyInstance,
+      provider: string,
+      options: ExternalIdpSelectOptions = {},
+    ): Promise<void> {
+      logger.info('ExternalIdp selectProviderForJourney requested');
+      try {
+        const journeyId = await journey.getId();
+        const selectedProvider = normalizeProvider(provider);
+        await getNativeModule().selectProviderForJourney(
+          journeyId,
+          selectedProvider,
+          toNativeSelectOptions(options),
+          toNativeConfig(resolvedConfig),
+        );
+        logger.debug('ExternalIdp selectProviderForJourney success');
+      } catch (error) {
+        logger.error('ExternalIdp selectProviderForJourney failed');
+        throw error;
+      }
+    },
+  };
+}

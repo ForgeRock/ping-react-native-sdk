@@ -230,7 +230,11 @@ enum JourneyNodeMapper {
       return "ValidatedCreateUsernameCallback"
     case let abstractCallback as AbstractCallback:
       if let rawType = abstractCallback.json["type"] as? String, !rawType.isEmpty {
-        return rawType
+        switch rawType {
+        case "IdPCallback": return "IdpCallback"
+        case "SelectIdPCallback": return "SelectIdpCallback"
+        default: return rawType
+        }
       }
       return String(describing: type(of: callback))
     default:

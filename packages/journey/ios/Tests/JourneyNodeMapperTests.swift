@@ -110,8 +110,20 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["value"] as? String, "")
   }
 
-  func testMapCallbackPayloadIncludesConsentFields() async {
-    let callback = await ConsentMappingCallback().initialize(with: callbackPayload(
+
+  func testMapCallbackPayloadExposesExternalIdpCanonicalTypeNames() {
+    class IdpCallback {}
+    class SelectIdpCallback {}
+
+    let idpPayload = JourneyNodeMapper.mapCallbackPayload(IdpCallback())
+    let selectIdpPayload = JourneyNodeMapper.mapCallbackPayload(SelectIdpCallback())
+
+    XCTAssertEqual(idpPayload["type"] as? String, "IdpCallback")
+    XCTAssertEqual(selectIdpPayload["type"] as? String, "SelectIdpCallback")
+  }
+
+  func testMapCallbackPayloadIncludesConsentFields() {
+    let callback = ConsentMappingCallback().initialize(with: callbackPayload(
       type: "ConsentMappingCallback",
       output: [
         ["name": "name", "value": "email-consent"],

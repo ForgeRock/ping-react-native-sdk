@@ -9,6 +9,15 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+#if canImport(FBSDKCoreKit)
+import FBSDKCoreKit
+#endif
+#if canImport(PingExternalIdPFacebook)
+import PingExternalIdPFacebook
+#endif
+#if canImport(PingExternalIdPGoogle)
+import PingExternalIdPGoogle
+#endif
 
 @main
 /// UIApplication delegate that bootstraps the React Native sample app.
@@ -23,6 +32,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+#if canImport(FBSDKCoreKit)
+    ApplicationDelegate.shared.application(
+      application,
+      didFinishLaunchingWithOptions: launchOptions,
+    )
+#endif
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -39,6 +55,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     return true
+  }
+
+  /// Routes incoming URL callbacks to native Google Sign-In when the Google IdP pod is available.
+  func application(
+    _ application: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    var handled = false
+#if canImport(PingExternalIdPFacebook)
+    handled = FacebookHandler.handleOpenURL(application, url: url, options: options)
+#endif
+#if canImport(PingExternalIdPGoogle)
+    handled = GoogleHandler.handleOpenURL(application, url: url, options: options) || handled
+#endif
+    return handled
   }
 }
 

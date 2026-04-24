@@ -184,6 +184,30 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     }
   }
 
+  func testApplyNormalizesExternalIdpAliasInputsForIntegrationCallbacks() async {
+    class IdpCallback {}
+    class SelectIdpCallback {}
+
+    let cases: [(Any, String)] = [
+      (IdpCallback(), "IdPCallback"),
+      (SelectIdpCallback(), "SelectIdPCallback")
+    ]
+
+    for (callback, type) in cases {
+      do {
+        let mutations = [
+          JourneyCallbackValueApplier.CallbackMutation(type: type, value: "token", index: nil)
+        ]
+        try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+        XCTFail("Expected missing integration error for \(type)")
+      } catch let JourneyBridgeError.missingIntegration(message) {
+        XCTAssertTrue(message.contains("External IdP integration"))
+      } catch {
+        XCTFail("Expected missing integration error for \(type), got \(error)")
+      }
+    }
+  }
+
   func testApplyMapsKbaObjectValues() async throws {
     let callback = await KbaCreateCallback().initialize(with: callbackPayload(
       type: "KbaCreateCallback",

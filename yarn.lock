@@ -3117,6 +3117,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ping-identity/rn-external-idp@workspace:*, @ping-identity/rn-external-idp@workspace:packages/external-idp":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-external-idp@workspace:packages/external-idp"
+  dependencies:
+    "@ping-identity/rn-core": "workspace:*"
+    "@ping-identity/rn-types": "workspace:*"
+    "@testing-library/react-native": "npm:^13.3.3"
+    react-native-builder-bob: "npm:^0.40.14"
+    react-test-renderer: "npm:19.1.0"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-fido@workspace:*, @ping-identity/rn-fido@workspace:packages/fido":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-fido@workspace:packages/fido"
@@ -12269,6 +12285,7 @@ __metadata:
     "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-device-profile": "workspace:*"
+    "@ping-identity/rn-external-idp": "workspace:*"
     "@ping-identity/rn-fido": "workspace:*"
     "@ping-identity/rn-journey": "workspace:*"
     "@ping-identity/rn-logger": "workspace:*"

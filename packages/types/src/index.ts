@@ -69,7 +69,26 @@ export type NodeCallback = import('@forgerock/sdk-types').Callback;
  */
 export const nativeExtensionCallbackType = {
   ConsentMappingCallback: 'ConsentMappingCallback',
+  /**
+   * Native type string for the external IdP authorization callback.
+   *
+   * @remarks
+   * Some Journey SDK/server combinations surface the callback as `IdPCallback`
+   * while others surface `IdpCallback`. Both represent the same external IdP
+   * authorization step and should be handled by external-idp integrations.
+   */
   IdPCallback: 'IdPCallback',
+  IdpCallback: 'IdpCallback',
+  /**
+   * Native type string for the external IdP provider-selection callback.
+   *
+   * @remarks
+   * The ForgeRock JS SDK types expose this as `callbackType.SelectIdPCallback`
+   * (`'SelectIdPCallback'`, capital P), but the native Android and iOS external-idp
+   * SDKs register and surface the callback as `'SelectIdpCallback'` (lowercase p).
+   * This entry is the authoritative native form used for callback classification.
+   */
+  SelectIdpCallback: 'SelectIdpCallback',
   FidoRegistrationCallback: 'FidoRegistrationCallback',
   FidoAuthenticationCallback: 'FidoAuthenticationCallback',
   BindingCallback: 'BindingCallback',

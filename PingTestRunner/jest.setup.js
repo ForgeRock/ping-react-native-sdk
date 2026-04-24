@@ -169,6 +169,22 @@ jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
   })),
 }));
 
+// ---------- rn-external-idp ----------
+jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    authorizeForJourney: jest.fn(async () => ({
+      token: 'mock-token',
+      additionalParameters: {},
+    })),
+    selectProviderForJourney: jest.fn(async () => undefined),
+  })),
+  toNativeAuthorizeOptions: jest.fn((options) => options),
+  toNativeSelectOptions: jest.fn((options) => options),
+  toNativeConfig: jest.fn((config) => config),
+  fromNativeAuthorizeResult: jest.fn((result) => result),
+}));
+
 // ---------- rn-storage ----------
 jest.mock('../packages/storage/src/NativeRNPingStorage', () => ({
   __esModule: true,

@@ -40,6 +40,9 @@ target 'PingTestRunner' do
   pod 'RNPingDeviceProfile',
     :path => '../../node_modules/@ping-identity/rn-device-profile',
     :testspecs => ['Tests']
+  pod 'RNPingExternalIdp',
+    :path => '../../node_modules/@ping-identity/rn-external-idp',
+    :testspecs => ['Tests']
   pod 'RNPingFido',
     :path => '../../node_modules/@ping-identity/rn-fido',
     :testspecs => ['Tests']
@@ -71,6 +74,5 @@ target 'PingTestRunner' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
       end
     end
-
   end
 end

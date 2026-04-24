@@ -51,6 +51,5 @@ target 'PingSampleApp' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
       end
     end
-
   end
 end

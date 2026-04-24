@@ -315,7 +315,13 @@ export default function App() {
             >
               {props =>
                 selectedJourneyProfile ? (
-                  <JourneyHelperScreen {...props} />
+                  <JourneyHelperScreen
+                    {...props}
+                    journeyClient={selectedJourneyProfile.journeyClient}
+                    externalIdpRedirectUri={
+                      selectedJourneyProfile.externalIdpRedirectUri
+                    }
+                  />
                 ) : (
                   <ConfigurationRequiredScreen
                     {...props}
