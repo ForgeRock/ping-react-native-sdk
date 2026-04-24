@@ -84,6 +84,8 @@ public class RNPingDeviceClientCommon: NSObject {
     let normalizedServerUrl = DeviceClientConfigNormalizer.normalizeServerUrl(serverUrl)
     let realm = DeviceClientConfigNormalizer.normalizeRealm(config["realm"] as? String)
 
+    // TODO: route JS `loggerId` → `LogManager.logger` (iOS SDK has no per-client
+    //   logger field; same global-singleton pattern as the browser package).
     let deviceConfig = DeviceClientConfig(
       serverUrl: normalizedServerUrl,
       realm: realm,

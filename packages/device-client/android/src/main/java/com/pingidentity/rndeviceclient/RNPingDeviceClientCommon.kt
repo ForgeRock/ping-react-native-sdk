@@ -19,9 +19,12 @@ import com.pingidentity.device.client.OathDevice
 import com.pingidentity.device.client.ProfileDevice
 import com.pingidentity.device.client.PushDevice
 import com.pingidentity.device.client.WebAuthnDevice
+import com.pingidentity.logger.Logger
+import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
+import com.pingidentity.rncore.logger.LoggerHandleContract
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -135,15 +138,32 @@ object RNPingDeviceClientCommon {
       return
     }
 
+    val resolvedLogger = resolveLoggerFromCore(config.getStringOrNull("loggerId"))
     val client = DeviceClient {
       this.ssoTokenString = ssoToken
       this.serverUrl = parsedUrl
       this.realm = realm
       this.cookieName = cookieName
+      if (resolvedLogger != null) {
+        this.logger = resolvedLogger
+      }
     }
     val handleId = UUID.randomUUID().toString()
     registry[handleId] = client
     promise.resolve(handleId)
+  }
+
+  /**
+   * Resolve a native [Logger] from the shared core logger registry using the
+   * opaque handle id emitted by `@ping-identity/rn-logger`.
+   *
+   * @param id Logger handle id from JS, or null when no logger was supplied.
+   * @return Native logger instance, or null when missing / invalid / unsupported.
+   */
+  private fun resolveLoggerFromCore(id: String?): Logger? {
+    if (id.isNullOrBlank()) return null
+    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+    return handle.nativeLogger as? Logger
   }
 
   /**

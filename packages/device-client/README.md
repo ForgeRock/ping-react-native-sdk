@@ -20,6 +20,7 @@ Profile) from React Native, wrapping the native
 - [Install](#install)
 - [Prerequisites](#prerequisites)
 - [Usage](#usage)
+- [Logging (optional)](#logging-optional)
 - [Supported device types](#supported-device-types)
 - [API reference](#api-reference)
 - [Errors](#errors)
@@ -31,6 +32,12 @@ Profile) from React Native, wrapping the native
 ```bash
 yarn add @ping-identity/rn-device-client
 cd ios && pod install
+```
+
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
 ```
 
 ## Prerequisites
@@ -68,14 +75,27 @@ await client.webAuthn.delete(webAuthnDevice);
 
 // Optional: release native resources when you no longer need the client.
 // For app-scoped clients you can skip this — the OS reclaims everything
-// when the process exits. Call `dispose()` only for tenant switches,
-// hot-swap flows, or long-running daemons.
+// when the process exits.
 await client.dispose();
 ```
 
 The returned `DeviceClient` exposes five repositories matching the native
 SDKs 1:1: `oath`, `push`, `bound`, `profile`, `webAuthn`. Each repository
 has `get()`, `update(device)`, and `delete(device)`.
+
+### Logging (optional)
+
+```ts
+import { logger } from '@ping-identity/rn-logger';
+
+const client = createDeviceClient({
+  serverUrl: 'https://openam.example.com/am',
+  ssoToken: session.value,
+  realm: 'alpha',
+  cookieName: '5421aeddf91aa20',
+  logger: logger({ level: 'debug' }),
+});
+```
 
 ### React hook (sample-app example)
 
@@ -158,15 +178,7 @@ Stable error codes:
 
 - iOS minimum deployment target: 16.0.
 - Android minimum SDK: 29.
-- Native `userId` is fetched from `/sessions?_action=getSessionInfo` on the
-  first operation and cached per client instance. Destroying the client
-  clears the cache.
-- The Android SDK includes an `If-Match: *` header on update operations
-  for optimistic concurrency control.
 
 ## License
 
 MIT
-
-[ios-readme]: https://github.com/ForgeRock/ping-ios-sdk/blob/develop/DeviceClient/README.md
-[android-readme]: https://github.com/ForgeRock/ping-android-sdk/blob/develop/foundation/device/device-client/README.md
