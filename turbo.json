@@ -17,7 +17,13 @@
       "dependsOn": ["^build", "^typecheck"]
     },
     "prettier": {
-      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.js",
+        "src/**/*.jsx"
+      ],
       "outputs": [],
       "dependsOn": []
     },
@@ -30,9 +36,15 @@
       "persistent": true
     },
     "lint": {
-      "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.js",
+        "src/**/*.jsx"
+      ],
       "outputs": [],
-      "dependsOn": ["^lint"]
+      "dependsOn": []
     },
     "clean": {
       "cache": false

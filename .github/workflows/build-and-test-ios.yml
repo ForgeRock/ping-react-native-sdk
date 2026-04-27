@@ -106,7 +106,9 @@ jobs:
           sudo mv product/xcresultparser /usr/local/bin/
 
       # Resolve the best available iPhone simulator: prefer iPhone 17, fall back to any iPhone.
-      # Sets DESTINATION and SIMULATOR_NAME in GITHUB_ENV for all subsequent steps.
+      # Uses the device UDID as the destination to avoid OS version string mismatches between
+      # simctl runtime keys (e.g. "iOS-26-4") and xcodebuild's reported OS (e.g. "26.4.1").
+      # Sets DESTINATION and SIMULATOR_UDID in GITHUB_ENV for all subsequent steps.
       - name: Resolve simulator destination
         run: |
           DEVICES_JSON=$(xcrun simctl list devices available --json)
@@ -118,25 +120,27 @@ jobs:
              | select(.name | test("^iPhone"))
              | {
                  os: ($runtime.key | gsub("com.apple.CoreSimulator.SimRuntime.iOS-"; "") | gsub("-"; ".")),
-                 name: .name
+                 name: .name,
+                 udid: .udid
                }]
             | (map(select(.name == "iPhone 17")) | sort_by(.os) | last)
               // (sort_by(.os) | last)
-            | "\(.name)|\(.os)"
+            | "\(.name)|\(.os)|\(.udid)"
           ')
           SIMULATOR_NAME=$(echo "$RESULT" | cut -d'|' -f1)
           OS_VERSION=$(echo "$RESULT" | cut -d'|' -f2)
-          echo "Resolved: $SIMULATOR_NAME ($OS_VERSION)"
-          echo "DESTINATION=platform=iOS Simulator,name=${SIMULATOR_NAME},OS=${OS_VERSION}" >> "$GITHUB_ENV"
-          echo "SIMULATOR_NAME=${SIMULATOR_NAME}" >> "$GITHUB_ENV"
+          SIMULATOR_UDID=$(echo "$RESULT" | cut -d'|' -f3)
+          echo "Resolved: $SIMULATOR_NAME ($OS_VERSION) [$SIMULATOR_UDID]"
+          echo "DESTINATION=platform=iOS Simulator,id=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
+          echo "SIMULATOR_UDID=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
 
       # Reset only the target simulator to reduce state leakage without erasing all devices.
       - name: Prepare target simulator
         run: |
           xcrun simctl shutdown all || true
-          xcrun simctl erase "${{ env.SIMULATOR_NAME }}" || true
-          xcrun simctl boot "${{ env.SIMULATOR_NAME }}" || true
-          xcrun simctl bootstatus "${{ env.SIMULATOR_NAME }}" -b || true
+          xcrun simctl erase "${{ env.SIMULATOR_UDID }}" || true
+          xcrun simctl boot "${{ env.SIMULATOR_UDID }}" || true
+          xcrun simctl bootstatus "${{ env.SIMULATOR_UDID }}" -b || true
 
       # Run iOS unit tests using xcodebuild.
       - name: Run iOS unit tests
