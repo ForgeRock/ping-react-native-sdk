@@ -15,6 +15,9 @@ jest.mock('react-native', () => ({
 import {
   fromNativeAuthorizeResult,
   getNativeModule,
+  toNativeAuthorizeOptions,
+  toNativeConfig,
+  toNativeSelectOptions,
 } from '../NativeRNPingExternalIdp';
 
 describe('getNativeModule', () => {
@@ -110,5 +113,22 @@ describe('external idp native module mapping', () => {
     ).toThrow(
       'Invalid native authorize result: additionalParameters must be an object',
     );
+  });
+});
+
+describe('native cast helpers', () => {
+  it('toNativeAuthorizeOptions passes through the options object', () => {
+    const options = { index: 1 };
+    expect(toNativeAuthorizeOptions(options)).toBe(options);
+  });
+
+  it('toNativeSelectOptions passes through the options object', () => {
+    const options = { index: 2 };
+    expect(toNativeSelectOptions(options)).toBe(options);
+  });
+
+  it('toNativeConfig passes through the config object', () => {
+    const config = { redirectUri: 'com.myapp://callback', loggerId: 'l1' };
+    expect(toNativeConfig(config)).toBe(config);
   });
 });

@@ -263,12 +263,12 @@ class JourneyCallbackValueApplierTest {
 
   @Test
   fun applyThrowsForNativeExtensionIntegrationCallbacks() {
-    class IdPCallback
+    class IdpCallback
     class DeviceBindingCallback
     class DeviceSigningVerifierCallback
 
     val callbacks = listOf(
-      Triple(IdPCallback(), "IdPCallback", "External IdP integration"),
+      Triple(IdpCallback(), "IdPCallback", "External IdP integration"),
       Triple(DeviceBindingCallback(), "DeviceBindingCallback", "Binding integration"),
       Triple(DeviceSigningVerifierCallback(), "DeviceSigningVerifierCallback", "Binding integration")
     )
