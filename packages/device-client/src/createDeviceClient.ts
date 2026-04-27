@@ -178,7 +178,12 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
     async delete(device) {
       logger.debug(`DeviceClient.${kind}.delete requested`);
       const handle = await ensureHandle();
-      await native.deleteDevice(handle, kind, device as unknown as object);
+      const payload = await native.deleteDevice(
+        handle,
+        kind,
+        device as unknown as object,
+      );
+      return extractObject<DeviceOf<K>>(payload);
     },
   });
 

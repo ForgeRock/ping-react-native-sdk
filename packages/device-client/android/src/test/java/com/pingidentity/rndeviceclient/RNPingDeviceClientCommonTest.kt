@@ -59,8 +59,18 @@ class RNPingDeviceClientCommonTest {
   }
 
   @Test
-  fun `normalizeServerUrl returns blank input unchanged`() {
+  fun `normalizeServerUrl returns empty input unchanged`() {
     assertEquals("", DeviceClientConfigNormalizer.normalizeServerUrl(""))
+  }
+
+  @Test
+  fun `normalizeServerUrl normalizes whitespace-only input to empty string`() {
+    assertEquals("", DeviceClientConfigNormalizer.normalizeServerUrl("   "))
+  }
+
+  @Test
+  fun `normalizeServerUrl normalizes slash-only input to empty string`() {
+    assertEquals("", DeviceClientConfigNormalizer.normalizeServerUrl(" / "))
   }
 
   // endregion

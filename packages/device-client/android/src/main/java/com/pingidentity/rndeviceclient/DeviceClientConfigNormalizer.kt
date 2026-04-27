@@ -15,6 +15,8 @@ package com.pingidentity.rndeviceclient
  * JS callers can pass through user-supplied configuration as-is.
  */
 internal object DeviceClientConfigNormalizer {
+  // Keep this package-local for now; promote to `packages/core` once a second package
+  // needs the same normalization behavior.
 
   /** Default realm used when the caller does not provide one. */
   internal const val DEFAULT_REALM = "root"
@@ -22,8 +24,8 @@ internal object DeviceClientConfigNormalizer {
   /** Trims whitespace and strips trailing `/` from the server URL. */
   internal fun normalizeServerUrl(value: String): String {
     val trimmed = value.trim()
-    if (trimmed.isEmpty()) return value
-    return trimmed.trimEnd('/').ifEmpty { trimmed }
+    if (trimmed.isEmpty()) return trimmed
+    return trimmed.trimEnd('/')
   }
 
   /** Trims whitespace and strips a leading `/` from the realm; defaults to [DEFAULT_REALM]. */

@@ -161,7 +161,9 @@ describe('createDeviceClient', () => {
 
   it('forwards delete to the native deleteDevice with the device payload', async () => {
     const native = mockNative();
-    native.deleteDevice.mockResolvedValue(undefined);
+    native.deleteDevice.mockResolvedValue({
+      result: { id: 'abc', deviceName: 'iPhone' },
+    });
 
     const client = createDeviceClient({
       serverUrl: 'https://x',
@@ -177,6 +179,41 @@ describe('createDeviceClient', () => {
       'oath',
       device,
     );
+  });
+
+  it('unwraps delete result when native returns a wrapped payload', async () => {
+    const native = mockNative();
+    native.deleteDevice.mockResolvedValue({
+      result: { id: 'abc', deviceName: 'iPhone' },
+    });
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+    const device = { id: 'abc', deviceName: 'iPhone' };
+
+    await expect(client.oath.delete(device as never)).resolves.toEqual({
+      id: 'abc',
+      deviceName: 'iPhone',
+    });
+  });
+
+  it('returns raw delete payload when response lacks a result wrapper', async () => {
+    const native = mockNative();
+    const raw = { id: 'abc', deviceName: 'iPhone' };
+    native.deleteDevice.mockResolvedValue(raw);
+
+    const client = createDeviceClient({
+      serverUrl: 'https://x',
+      ssoToken: 't',
+      realm: 'root',
+      cookieName: 'c',
+    });
+
+    await expect(client.oath.delete(raw as never)).resolves.toEqual(raw);
   });
 
   it('returns an empty array when get payload is not result-shaped', async () => {

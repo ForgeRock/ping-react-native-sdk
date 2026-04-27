@@ -76,7 +76,8 @@ export interface Spec extends TurboModule {
    * @param handleId - Native handle id.
    * @param deviceType - The {@link DeviceKind} of the device.
    * @param device - Serialized device payload (the `id` field is used for lookup).
-   * @returns A promise resolving to an empty object on success.
+   * @returns A promise resolving to `{ result: Device }` containing the
+   *   deleted device.
    * @throws `DEVICE_CLIENT_NOT_FOUND` when the device does not exist.
    */
   deleteDevice(

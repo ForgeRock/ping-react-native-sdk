@@ -37,7 +37,9 @@ function makeMock(
     create: jest.fn(async () => 'handle-1'),
     get: jest.fn(async () => ({ result: [] })),
     update: jest.fn(async () => ({ result: { id: 'x', deviceName: 'n' } })),
-    deleteDevice: jest.fn(async () => undefined),
+    deleteDevice: jest.fn(async () => ({
+      result: { id: 'x', deviceName: 'n' },
+    })),
     dispose: jest.fn(async () => undefined),
     ...overrides,
   };
@@ -256,12 +258,16 @@ describe('@ping-identity/rn-device-client — integration', () => {
       expect(updated).toMatchObject({ deviceName: 'Ren' });
     });
 
-    it('delete forwards (handle, kind, device) to native.deleteDevice', async () => {
+    it('delete forwards (handle, kind, device) to native.deleteDevice and returns deleted device', async () => {
       const device = { id: 'd1', deviceName: 'iPhone' };
-      const native = makeMock();
+      const native = makeMock({
+        deleteDevice: jest.fn(async () => ({
+          result: { ...device, credentialId: 'cred-123' },
+        })),
+      });
       const mod = await loadDeviceClient(native);
       const client = mod.createDeviceClient(VALID_CONFIG);
-      await client.webAuthn.delete({
+      const deleted = await client.webAuthn.delete({
         ...device,
         credentialId: 'cred-123',
       });
@@ -270,6 +276,7 @@ describe('@ping-identity/rn-device-client — integration', () => {
         'webAuthn',
         expect.objectContaining({ credentialId: 'cred-123' }),
       );
+      expect(deleted).toMatchObject({ id: 'd1', credentialId: 'cred-123' });
     });
 
     it('propagates native rejections unchanged to JS callers', async () => {

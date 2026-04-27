@@ -111,10 +111,10 @@ export interface DeviceRepository<T> {
    * Deletes a device from the server.
    *
    * @param device - The device to delete. The `id` field is used for lookup.
-   * @returns A promise that resolves when the device has been deleted.
+   * @returns A promise resolving to the deleted device.
    * @throws {@link DeviceClientError} when the device does not exist.
    */
-  delete(device: T): Promise<void>;
+  delete(device: T): Promise<T>;
 }
 
 /**

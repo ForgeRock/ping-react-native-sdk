@@ -69,6 +69,12 @@ internal object DeviceErrorClassifier {
    * @param throwable The throwable that caused the failure.
    */
   internal fun rejectThrowable(promise: Promise, throwable: Throwable) {
+    // TODO: CancellationException is currently swallowed here and converted to a bridge
+    //   rejection, which is incorrect — it should be re-thrown so the coroutine framework
+    //   can propagate cancellation, while the promise is still settled to avoid hanging JS
+    //   callers. The right fix is a shared `launchBridge` extension in `rn-core` that owns
+    //   this pattern for all packages (device-profile, fido, journey have the same gap).
+    //   Track as a follow-up ticket before the `launchBridge` core utility is introduced.
     val message = throwable.message ?: "Device client operation failed."
     val (code, type, status) = classify(throwable)
     promise.reject(

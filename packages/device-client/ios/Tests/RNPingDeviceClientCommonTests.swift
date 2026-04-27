@@ -46,8 +46,16 @@ final class RNPingDeviceClientCommonTests: XCTestCase {
     )
   }
 
-  func testNormalizeServerUrlReturnsBlankInputUnchanged() {
+  func testNormalizeServerUrlReturnsEmptyInputUnchanged() {
     XCTAssertEqual(DeviceClientConfigNormalizer.normalizeServerUrl(""), "")
+  }
+
+  func testNormalizeServerUrlNormalizesWhitespaceOnlyInputToEmptyString() {
+    XCTAssertEqual(DeviceClientConfigNormalizer.normalizeServerUrl("   "), "")
+  }
+
+  func testNormalizeServerUrlNormalizesSlashOnlyInputToEmptyString() {
+    XCTAssertEqual(DeviceClientConfigNormalizer.normalizeServerUrl(" / "), "")
   }
 
   // MARK: - normalizeRealm

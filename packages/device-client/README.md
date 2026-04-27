@@ -152,7 +152,7 @@ interface DeviceClient {
 interface DeviceRepository<T> {
   get(): Promise<T[]>;
   update(device: T): Promise<T>;
-  delete(device: T): Promise<void>;
+  delete(device: T): Promise<T>;
 }
 ```
 
@@ -180,3 +180,6 @@ Stable error codes:
 ## License
 
 MIT
+
+<!-- TODO
+Apply any README copyright-notice convention consistently across all package READMEs in a dedicated follow-up. -->

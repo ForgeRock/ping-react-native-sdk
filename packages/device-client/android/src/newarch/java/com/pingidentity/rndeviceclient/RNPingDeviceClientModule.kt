@@ -77,7 +77,7 @@ class RNPingDeviceClientModule(reactContext: ReactApplicationContext) :
    * @param handleId Opaque handle id returned by [create].
    * @param deviceType One of `oath`, `push`, `bound`, `profile`, or `webAuthn`.
    * @param device Device payload identifying the device to delete.
-   * @param promise React Native promise resolved with the deleted device.
+   * @param promise React Native promise resolved with null on success.
    */
   override fun deleteDevice(
     handleId: String,

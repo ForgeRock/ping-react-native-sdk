@@ -205,7 +205,6 @@ export function useDevices(
   // real selector / client changes, not every render. The setState it performs
   // is the whole point (bridge-to-React sync), hence the rule disable.
   useEffect(() => {
-    // eslint-disable-next-line
     fetchDevices();
   }, [fetchDevices]);
 
@@ -221,12 +220,15 @@ export function useDevices(
     async (device: DeviceOf<DeviceKind>, newName: string) => {
       const client = await ensureClient();
       const updated = { ...device, deviceName: newName };
-      await (
-        client[deviceType] as {
-          update: (d: typeof updated) => Promise<unknown>;
-        }
-      ).update(updated);
-      fetchDevices();
+      try {
+        await (
+          client[deviceType] as {
+            update: (d: typeof updated) => Promise<unknown>;
+          }
+        ).update(updated);
+      } finally {
+        await fetchDevices();
+      }
     },
     [ensureClient, deviceType, fetchDevices],
   );
@@ -240,10 +242,15 @@ export function useDevices(
   const remove = useCallback(
     async (device: DeviceOf<DeviceKind>) => {
       const client = await ensureClient();
-      await (
-        client[deviceType] as { delete: (d: typeof device) => Promise<unknown> }
-      ).delete(device);
-      fetchDevices();
+      try {
+        await (
+          client[deviceType] as {
+            delete: (d: typeof device) => Promise<unknown>;
+          }
+        ).delete(device);
+      } finally {
+        await fetchDevices();
+      }
     },
     [ensureClient, deviceType, fetchDevices],
   );

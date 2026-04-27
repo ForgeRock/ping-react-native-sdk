@@ -21,12 +21,12 @@ internal enum DeviceClientConfigNormalizer {
   /// Trims whitespace and strips trailing `/` from the server URL.
   internal static func normalizeServerUrl(_ value: String) -> String {
     let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return value }
+    guard !trimmed.isEmpty else { return trimmed }
     var normalized = trimmed
     while normalized.hasSuffix("/") {
       normalized.removeLast()
     }
-    return normalized.isEmpty ? trimmed : normalized
+    return normalized
   }
 
   /// Trims whitespace and strips a leading `/` from the realm; defaults to ``defaultRealm``.
