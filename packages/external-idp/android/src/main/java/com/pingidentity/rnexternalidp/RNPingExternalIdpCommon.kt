@@ -9,6 +9,7 @@ package com.pingidentity.rnexternalidp
 import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
+import androidx.core.net.toUri
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
@@ -96,19 +97,6 @@ object RNPingExternalIdpCommon {
       )
       return
     }
-    val parsedRedirectUri = try {
-      parseRedirectUri(callConfig.redirectUri)
-    } catch (e: IllegalArgumentException) {
-      logger?.w("External IdP authorizeForJourney rejected because redirect URI was invalid", e)
-      rejectWithError(
-        promise = promise,
-        code = ExternalIdpErrorCodes.CONFIG_ERROR,
-        message = e.localizedMessage ?: "Redirect URI is invalid.",
-        type = ErrorType.ARGUMENT_ERROR,
-        throwable = e
-      )
-      return
-    }
     if (!hasForegroundActivity()) {
       logger?.w(
         "External IdP authorizeForJourney rejected because no foreground activity is available",
@@ -137,10 +125,23 @@ object RNPingExternalIdpCommon {
           )
           return@launch
         }
+        val parsedRedirectUri = try {
+          parseRedirectUri(callConfig.redirectUri, callback.provider)
+        } catch (e: IllegalArgumentException) {
+          logger?.w("External IdP authorizeForJourney rejected because redirect URI was invalid", e)
+          rejectWithError(
+            promise = promise,
+            code = ExternalIdpErrorCodes.CONFIG_ERROR,
+            message = e.localizedMessage ?: "Redirect URI is invalid.",
+            type = ErrorType.ARGUMENT_ERROR,
+            throwable = e
+          )
+          return@launch
+        }
 
         // TODO: Add browser fallback here when the Android native SDK supports it for AIC Journey flows.
         val result = withContext(Dispatchers.Main) {
-          callback.authorize(parsedRedirectUri)
+          parsedRedirectUri?.let { callback.authorize(it) } ?: callback.authorize()
         }
 
         result.fold(
@@ -168,31 +169,28 @@ object RNPingExternalIdpCommon {
             )
           }
         )
-      } catch (e: ClassNotFoundException) {
-        logger?.e("External IdP authorizeForJourney failed because provider SDK is unavailable", e)
-        rejectWithError(
-          promise = promise,
-          code = ExternalIdpErrorCodes.UNSUPPORTED_PROVIDER,
-          message = "Native provider SDK is not available: ${e.message}",
-          throwable = e
-        )
-      } catch (e: NoClassDefFoundError) {
-        logger?.e("External IdP authorizeForJourney failed because provider SDK is unavailable", e)
-        rejectWithError(
-          promise = promise,
-          code = ExternalIdpErrorCodes.UNSUPPORTED_PROVIDER,
-          message = "Native provider SDK is not available: ${e.message}",
-          throwable = e
-        )
       } catch (e: Throwable) {
-        val (code, message) = discriminateIdpError(e)
-        logger?.e("External IdP authorizeForJourney failed with code $code", e)
-        rejectWithError(
-          promise = promise,
-          code = code,
-          message = message,
-          throwable = e
-        )
+        when (e) {
+          is ClassNotFoundException, is NoClassDefFoundError -> {
+            logger?.e("External IdP authorizeForJourney failed because provider SDK is unavailable", e)
+            rejectWithError(
+              promise = promise,
+              code = ExternalIdpErrorCodes.UNSUPPORTED_PROVIDER,
+              message = "Native provider SDK is not available: ${e.message}",
+              throwable = e
+            )
+          }
+          else -> {
+            val (code, message) = discriminateIdpError(e)
+            logger?.e("External IdP authorizeForJourney failed with code $code", e)
+            rejectWithError(
+              promise = promise,
+              code = code,
+              message = message,
+              throwable = e
+            )
+          }
+        }
       }
     }
   }
@@ -302,17 +300,28 @@ object RNPingExternalIdpCommon {
    * Parses and validates the optional redirect URI passed to the native External IdP SDK.
    *
    * @param redirectUri Optional app return URI configured for Auth Tab-capable devices.
-   * @return Parsed Android URI, or an empty URI to delegate to native defaults.
-   * @throws IllegalArgumentException when a non-empty URI is missing a scheme.
+   * @param provider IdP provider resolved from the active Journey callback.
+   * @return Parsed Android URI, or null to delegate to native defaults.
+   * @throws IllegalArgumentException when an Apple redirect URI is missing a scheme.
    */
-  private fun parseRedirectUri(redirectUri: String): Uri {
+  private fun parseRedirectUri(redirectUri: String, provider: String): Uri? {
     val trimmed = redirectUri.trim()
-    if (trimmed.isEmpty()) return Uri.parse("")
-    val uri = Uri.parse(trimmed)
-    require(!uri.scheme.isNullOrBlank()) {
+    if (trimmed.isEmpty()) return null
+    val uri = trimmed.toUri()
+    require(!isAppleProvider(provider) || !uri.scheme.isNullOrBlank()) {
       "Redirect URI must include a URI scheme for external IdP authorization."
     }
     return uri
+  }
+
+  /**
+   * Returns whether the Journey IdP provider requires a redirect URI override.
+   *
+   * @param provider IdP provider resolved from the active Journey callback.
+   * @return True when the provider is Apple, false otherwise.
+   */
+  private fun isAppleProvider(provider: String): Boolean {
+    return provider.contains("apple", ignoreCase = true)
   }
 
   /**

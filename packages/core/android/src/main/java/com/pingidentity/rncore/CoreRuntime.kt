@@ -39,7 +39,8 @@ object CoreRuntime {
 
     /**
      * Resolves callbacks for the provided Journey id via the registered resolver.
-     * TODO: Remove this function once types package is available.
+     * TODO: Revisit this global resolver pattern with a synchronous Journey handle contract resolved
+     * through journeyRegistry; callback access is an in-memory ContinueNode lookup.
      */
     suspend fun resolveJourneyCallbacks(journeyId: String): List<Any>? =
         journeyCallbackResolver?.invoke(journeyId)

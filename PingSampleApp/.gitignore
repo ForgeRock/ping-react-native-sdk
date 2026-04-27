@@ -35,7 +35,6 @@ local.properties
 *.keystore
 !debug.keystore
 *.jks
-!pingsampleapp-debug.jks
 .kotlin/
 
 # node.js

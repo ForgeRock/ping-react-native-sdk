@@ -6,6 +6,7 @@
  */
 package com.pingidentity.rnexternalidp
 
+import android.net.Uri
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableArray
@@ -14,6 +15,7 @@ import com.pingidentity.idp.journey.SelectIdpCallback
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.JourneyCallbackResolver
 import com.pingidentity.rncore.error.ErrorType
+import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.After
@@ -104,10 +106,11 @@ class RNPingExternalIdpTest {
   }
 
   /**
-   * Ensures authorization validates redirect URI schemes before launching native UI.
+   * Ensures non-Apple providers do not reject scheme-less redirect URI values before callback resolution.
    */
   @Test
-  fun authorizeRejectsWhenRedirectUriMissingScheme() {
+  fun authorizeDoesNotRejectSchemeLessRedirectUriBeforeResolvingCallback() {
+    CoreRuntime.journeyCallbackResolver = { emptyList() }
     val promise = TestPromise()
 
     RNPingExternalIdpCommon.authorizeForJourney(
@@ -118,10 +121,43 @@ class RNPingExternalIdpTest {
     )
 
     val error = captureReject(promise)
-    assertEquals(ExternalIdpErrorCodes.CONFIG_ERROR, promise.rejectCode)
-    assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
-    assertEquals(ExternalIdpErrorCodes.CONFIG_ERROR, error.getString("error"))
-    assertTrue(error.getString("message")?.contains("URI scheme") == true)
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, promise.rejectCode)
+    assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, error.getString("error"))
+    assertTrue(error.getString("message")?.contains("No active IdP callback") == true)
+  }
+
+  /**
+   * Ensures non-Apple providers accept native social-login redirect values without URI schemes.
+   */
+  @Test
+  fun parseRedirectUriAcceptsSchemeLessRedirectUriForGoogle() {
+    val uri = parseRedirectUri("callback-without-scheme", "google")
+
+    assertEquals("callback-without-scheme", uri?.toString())
+  }
+
+  /**
+   * Ensures Apple redirect overrides still require URI schemes.
+   */
+  @Test
+  fun parseRedirectUriRejectsSchemeLessRedirectUriForApple() {
+    val error = runCatching {
+      parseRedirectUri("callback-without-scheme", "apple")
+    }.exceptionOrNull()
+
+    assertTrue(error is IllegalArgumentException)
+    assertTrue(error?.message?.contains("URI scheme") == true)
+  }
+
+  /**
+   * Ensures missing redirect values delegate to the native SDK defaults.
+   */
+  @Test
+  fun parseRedirectUriReturnsNullForBlankRedirectUri() {
+    val uri = parseRedirectUri("  ", "google")
+
+    assertNull(uri)
   }
 
   /**
@@ -273,6 +309,23 @@ class RNPingExternalIdpTest {
     method.isAccessible = true
     @Suppress("UNCHECKED_CAST")
     return method.invoke(RNPingExternalIdpCommon, error) as Pair<String, String>
+  }
+
+  /**
+   * Calls the private redirect URI parser for focused provider-specific validation tests.
+   */
+  private fun parseRedirectUri(redirectUri: String, provider: String): Uri? {
+    val method = RNPingExternalIdpCommon::class.java.getDeclaredMethod(
+      "parseRedirectUri",
+      String::class.java,
+      String::class.java
+    )
+    method.isAccessible = true
+    return try {
+      method.invoke(RNPingExternalIdpCommon, redirectUri, provider) as Uri?
+    } catch (e: InvocationTargetException) {
+      throw e.targetException
+    }
   }
 }
 
