@@ -260,7 +260,7 @@ final class JourneyNodeMapperTests: XCTestCase {
   }
 }
 
-private final class TestContinueNode: ContinueNode, @unchecked Sendable {
+private final class TestContinueNode: ContinueNode {
   override func asRequest() -> Request {
     return workflow.config.httpClient.request()
   }

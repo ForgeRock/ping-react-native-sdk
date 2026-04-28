@@ -156,7 +156,7 @@ private func makeIdpClient(
   return try IdpClient(response: HttpResponseStub(body: body))
 }
 
-private final class IdpHandlerSpy: NSObject, @preconcurrency IdpHandler, @unchecked Sendable {
+private final class IdpHandlerSpy: NSObject, IdpHandler, @unchecked Sendable {
   var tokenType: String = "id_token"
   private(set) var receivedRedirectUri: String?
 

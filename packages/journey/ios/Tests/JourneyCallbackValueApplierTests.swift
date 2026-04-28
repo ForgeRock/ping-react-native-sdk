@@ -9,7 +9,6 @@ import XCTest
 import PingJourney
 @testable import RNPingJourney
 
-@MainActor
 final class JourneyCallbackValueApplierTests: XCTestCase {
 
   func testParseInputMapsCallbacksWithOptionalIndex() throws {
@@ -160,6 +159,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     }
   }
 
+  @MainActor
   func testApplyRejectsFidoIntegrationCallbacks() async {
     class FidoRegistrationCallback {}
     class FidoAuthenticationCallback {}
@@ -183,7 +183,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
       }
     }
   }
-
+  @MainActor
   func testApplyNormalizesExternalIdpAliasInputsForIntegrationCallbacks() async {
     class IdpCallback {}
     class SelectIdpCallback {}
