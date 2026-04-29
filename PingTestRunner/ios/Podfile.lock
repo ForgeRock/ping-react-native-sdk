@@ -24,6 +24,10 @@ PODS:
     - PingDeviceId (~> 2.0.0)
     - PingJourneyPlugin (~> 2.0.0)
     - PingTamperDetector (~> 2.0.0)
+  - PingExternalIdP (2.0.0):
+    - PingBrowser (~> 2.0.0)
+    - PingDavinciPlugin (~> 2.0.0)
+    - PingJourneyPlugin (~> 2.0.0)
   - PingFido (2.0.0):
     - PingCommons (~> 2.0.0)
     - PingDavinciPlugin (~> 2.0.0)
@@ -2507,7 +2511,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingExternalIdP (= 1.3.1)
+    - PingExternalIdP (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2538,7 +2542,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingExternalIdP (= 1.3.1)
+    - PingExternalIdP (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3005,6 +3009,7 @@ SPEC REPOS:
     - PingDeviceClient
     - PingDeviceId
     - PingDeviceProfile
+    - PingExternalIdP
     - PingFido
     - PingJourney
     - PingJourneyPlugin
@@ -3194,15 +3199,16 @@ SPEC CHECKSUMS:
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: 914e00b8b67cb8ba184a778c7bbc2e9fe98d37b3
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427
-  fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
-  glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
+  fmt: b85d977e8fe789fd71c77123f9f4920d88c4d170
+  glog: 682871fb30f4a65f657bf357581110656ea90b08
+  hermes-engine: c8443ebca6460d15100b5b29ae584a1a6c9dc18b
   PingBrowser: d1526bdcc6197781d0d54fe7ac16ba09a55a1faa
   PingCommons: 49f2244bda1c41913fa37d9481e969702d658ade
   PingDavinciPlugin: d0d4c5a0e4fdd36608307e755ba435d41470d76f
   PingDeviceClient: 4d2fa2ba2fb427cc4001c43ac3ed80bd994fb4f1
   PingDeviceId: e773280c2bb679f4133c8ef855f189620b331ce3
   PingDeviceProfile: f13a32c11b3d1f08d033900e1792eaef948336af
+  PingExternalIdP: bcf67ba8c880b03dee3f62cefbc4cbb2d774a875
   PingFido: bece1cdf6ade29fa61737dc225069658ae7ac8bb
   PingJourney: ce7632b42878317414d0ace3b47f0c47fc1fdc9b
   PingJourneyPlugin: f3ae6d2db6164d72a2feaa40e128557879e8658c
@@ -3212,7 +3218,7 @@ SPEC CHECKSUMS:
   PingOrchestrate: 21d780ed7eeb3c366ae43785017b2700478db783
   PingStorage: 7e3bc6966fbf7587523e56a8a7b0f5d85ea3bd94
   PingTamperDetector: b5e4b7aa325a11f2de1f3df9bdd8cc3391cddf1c
-  RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
+  RCT-Folly: fb64616e25cfac1c3d10bfd784d68926325ae67f
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
   RCTTypeSafety: d877728097547d0a37786cc9130c43ad71739ac3
@@ -3283,6 +3289,7 @@ SPEC CHECKSUMS:
   RNPingDeviceClient: 6b89f63032ed087e0af22b73312e73a5800cb0ce
   RNPingDeviceId: e0d02655613f8e6151496538ce46040f44c414cb
   RNPingDeviceProfile: d41184083542e19e85e20ec9938c98f6511931b5
+  RNPingExternalIdp: 664978f9d40fdcd80af22fb2da1e2b0ec0059371
   RNPingFido: 22c9c9f44842fb4e42b8c9c193583314ddd8e61f
   RNPingJourney: b85d5fef5498aedda4019108230a39a6135935cb
   RNPingLogger: 85893024c3d861ac0e01d35f91860e5bdd3cd904
@@ -3291,6 +3298,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 0327c337ed996029f447fbf08d561ed44d6c5833
+PODFILE CHECKSUM: e7517dfaf5acab2cc1ac4a65996f275f38ac70e9
 
 COCOAPODS: 1.15.2
