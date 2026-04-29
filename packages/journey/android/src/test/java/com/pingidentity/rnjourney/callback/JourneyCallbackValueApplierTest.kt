@@ -268,7 +268,7 @@ class JourneyCallbackValueApplierTest {
     class DeviceSigningVerifierCallback
 
     val callbacks = listOf(
-      Triple(IdpCallback(), "IdPCallback", "External IdP integration"),
+      Triple(IdpCallback(), "IdPCallback", "@ping-identity/rn-external-idp"),
       Triple(DeviceBindingCallback(), "DeviceBindingCallback", "Binding integration"),
       Triple(DeviceSigningVerifierCallback(), "DeviceSigningVerifierCallback", "Binding integration")
     )
@@ -297,8 +297,8 @@ class JourneyCallbackValueApplierTest {
     class SelectIdpCallback
 
     val callbacks = listOf(
-      Triple(IdpCallback(), "IdPCallback", "External IdP integration"),
-      Triple(SelectIdpCallback(), "SelectIdPCallback", "External IdP integration")
+      Triple(IdpCallback(), "IdPCallback", "@ping-identity/rn-external-idp"),
+      Triple(SelectIdpCallback(), "SelectIdPCallback", "@ping-identity/rn-external-idp")
     )
 
     callbacks.forEach { (callback, type, expectedRequirement) ->

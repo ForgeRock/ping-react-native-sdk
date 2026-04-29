@@ -30,6 +30,7 @@ import com.pingidentity.rncore.utils.JsonBridgeMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
@@ -44,8 +45,20 @@ object RNPingExternalIdpCommon {
   private const val REDIRECT_URI_KEY = "redirectUri"
   private const val INDEX_KEY = "index"
 
+  /** Indicates whether shared runtime wiring has been initialized. */
+  private var configured = false
+
   /** Coroutine scope for executing External IdP operations asynchronously on the IO dispatcher. */
-  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  private var scope: CoroutineScope = createScope()
+
+  /**
+   * Creates an IO-backed coroutine scope used for native bridge operations.
+   *
+   * @return Fresh coroutine scope with supervisor semantics.
+   */
+  private fun createScope(): CoroutineScope {
+    return CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  }
 
   /**
    * Per-call External IdP runtime configuration.
@@ -66,8 +79,29 @@ object RNPingExternalIdpCommon {
    * Configure application context required by Ping native SDKs.
    */
   @JvmStatic
+  @Synchronized
   fun configure(reactContext: ReactApplicationContext) {
     ContextProvider.init(reactContext.applicationContext)
+    if (!configured) {
+      scope = createScope()
+      configured = true
+    }
+  }
+
+  /**
+   * Release shared runtime state. Cancels in-flight coroutines so a React context
+   * teardown (dev reload, catalyst restart) does not leak captured Promises,
+   * activity references, or Journey callbacks.
+   */
+  @JvmStatic
+  @Synchronized
+  fun cleanup() {
+    if (!configured) {
+      return
+    }
+    scope.cancel()
+    scope = createScope()
+    configured = false
   }
 
   /**
@@ -216,7 +250,8 @@ object RNPingExternalIdpCommon {
     config: ReadableMap,
     promise: Promise
   ) {
-    val logger = resolveCallLogger(config)
+    val callConfig = parseCallConfig(config)
+    val logger = resolveLoggerFromCore(callConfig.loggerId)
     if (journeyId.isBlank()) {
       logger?.w("External IdP select provider rejected because journey id was empty", null)
       rejectWithError(
@@ -325,16 +360,6 @@ object RNPingExternalIdpCommon {
   }
 
   /**
-   * Resolves the configured per-call logger.
-   *
-   * @param config Per-call configuration payload.
-   * @return Native logger resolved from Core, or null when no valid logger is configured.
-   */
-  private fun resolveCallLogger(config: ReadableMap): Logger? {
-    return resolveLoggerFromCore(parseCallConfig(config).loggerId)
-  }
-
-  /**
    * Parses per-call configuration payload.
    *
    * @param config Per-call configuration payload.
@@ -359,14 +384,14 @@ object RNPingExternalIdpCommon {
   }
 
   /**
-   * Resolve a native logger from the shared Core logger registry.
+   * Resolves a native logger from the shared Core logger registry.
    *
-   * @param id Logger handle identifier from JS.
+   * @param loggerId Logger handle identifier from JS.
    * @return Native logger instance, or null when missing/invalid.
    */
-  private fun resolveLoggerFromCore(id: String?): Logger? {
-    if (id.isNullOrBlank()) return null
-    val handle = CoreRuntime.loggerRegistry.resolve(id) as? LoggerHandleContract ?: return null
+  private fun resolveLoggerFromCore(loggerId: String?): Logger? {
+    if (loggerId.isNullOrBlank()) return null
+    val handle = CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract ?: return null
     return handle.nativeLogger as? Logger
   }
 

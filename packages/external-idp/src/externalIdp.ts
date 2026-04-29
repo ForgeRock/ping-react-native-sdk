@@ -107,6 +107,21 @@ export function createExternalIdpClient(
   );
   logger.info('ExternalIdp createClient success');
 
+  async function withLogging<T>(
+    operation: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    logger.info(`ExternalIdp ${operation} requested`);
+    try {
+      const result = await fn();
+      logger.debug(`ExternalIdp ${operation} success`);
+      return result;
+    } catch (error) {
+      logger.error(`ExternalIdp ${operation} failed`);
+      throw error;
+    }
+  }
+
   return {
     /**
      * Launches the external IdP authorization flow for a Journey-scoped `IdpCallback`.
@@ -120,24 +135,19 @@ export function createExternalIdpClient(
      * @returns A promise that resolves to the authorize result (`token`, `additionalParameters`).
      * @throws ExternalIdpError when authorization fails.
      */
-    async authorizeForJourney(
+    authorizeForJourney(
       journey: JourneyInstance,
       options: ExternalIdpAuthorizeOptions = {},
     ): Promise<ExternalIdpResult> {
-      logger.info('ExternalIdp authorizeForJourney requested');
-      try {
+      return withLogging('authorizeForJourney', async () => {
         const journeyId = await journey.getId();
         const result = await getNativeModule().authorizeForJourney(
           journeyId,
           toNativeAuthorizeOptions(options),
           toNativeConfig(resolvedConfig),
         );
-        logger.debug('ExternalIdp authorizeForJourney success');
         return fromNativeAuthorizeResult(result);
-      } catch (error) {
-        logger.error('ExternalIdp authorizeForJourney failed');
-        throw error;
-      }
+      });
     },
 
     /**
@@ -156,13 +166,12 @@ export function createExternalIdpClient(
      * @param options Optional per-call select options (index).
      * @throws ExternalIdpError when the callback cannot be resolved.
      */
-    async selectProviderForJourney(
+    selectProviderForJourney(
       journey: JourneyInstance,
       provider: string,
       options: ExternalIdpSelectOptions = {},
     ): Promise<void> {
-      logger.info('ExternalIdp selectProviderForJourney requested');
-      try {
+      return withLogging('selectProviderForJourney', async () => {
         const journeyId = await journey.getId();
         const selectedProvider = normalizeProvider(provider);
         await getNativeModule().selectProviderForJourney(
@@ -171,11 +180,7 @@ export function createExternalIdpClient(
           toNativeSelectOptions(options),
           toNativeConfig(resolvedConfig),
         );
-        logger.debug('ExternalIdp selectProviderForJourney success');
-      } catch (error) {
-        logger.error('ExternalIdp selectProviderForJourney failed');
-        throw error;
-      }
+      });
     },
   };
 }

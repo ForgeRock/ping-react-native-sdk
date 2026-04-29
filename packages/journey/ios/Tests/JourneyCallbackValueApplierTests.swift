@@ -201,7 +201,7 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
         try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
         XCTFail("Expected missing integration error for \(type)")
       } catch let JourneyBridgeError.missingIntegration(message) {
-        XCTAssertTrue(message.contains("External IdP integration"))
+        XCTAssertTrue(message.contains("@ping-identity/rn-external-idp"))
       } catch {
         XCTFail("Expected missing integration error for \(type), got \(error)")
       }

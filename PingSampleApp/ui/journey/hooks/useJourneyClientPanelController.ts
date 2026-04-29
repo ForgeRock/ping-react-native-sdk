@@ -20,6 +20,7 @@ import { createFidoClient } from '@ping-identity/rn-fido';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { open as openBrowser } from '@ping-identity/rn-browser';
 import { collectDeviceProfile } from '@ping-identity/rn-device-profile';
+import { logger } from '@ping-identity/rn-logger';
 import {
   resolveContinueNodeAutomationPolicy,
   resolvePollingWaitMs,
@@ -350,13 +351,15 @@ export function useJourneyClientPanelController(
   >(null);
   const defaultSystemDeviceNameRef = useRef<string | null>(null);
   const fido = useMemo(() => createFidoClient({}), []);
+  const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdpRedirectUriRef = useRef(externalIdpRedirectUri);
   const externalIdp = useMemo(
     () =>
       createExternalIdpClient({
         redirectUri: externalIdpRedirectUriRef.current,
+        logger: externalIdpLogger,
       }),
-    [],
+    [externalIdpLogger],
   );
   const [node, actions] = useJourney();
   const { start, next, resume, user, logoutUser, loading, error } = actions;

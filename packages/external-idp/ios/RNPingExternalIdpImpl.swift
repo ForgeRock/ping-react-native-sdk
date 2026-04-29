@@ -10,7 +10,7 @@ import React
 
 /// Swift entry point for the External IdP native module.
 @objcMembers
-public class RNPingExternalIdpImpl: NSObject, @unchecked Sendable {
+public final class RNPingExternalIdpImpl: NSObject, Sendable {
 
   /// Shared singleton instance.
   @objc public static let shared = RNPingExternalIdpImpl()

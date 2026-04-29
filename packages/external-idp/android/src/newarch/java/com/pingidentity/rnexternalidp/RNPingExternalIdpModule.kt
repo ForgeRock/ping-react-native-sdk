@@ -28,6 +28,14 @@ class RNPingExternalIdpModule(reactContext: ReactApplicationContext) :
   override fun getName(): String = NAME
 
   /**
+   * Clean up common runtime state when the module is invalidated.
+   */
+  override fun invalidate() {
+    RNPingExternalIdpCommon.cleanup()
+    super.invalidate()
+  }
+
+  /**
    * Launches the external IdP authorization flow for an active Journey IdpCallback.
    */
   override fun authorizeForJourney(

@@ -18,6 +18,12 @@ import com.pingidentity.rncore.error.ErrorType
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -291,11 +297,56 @@ class RNPingExternalIdpTest {
   }
 
   /**
+   * Ensures cleanup cancels in-flight coroutines launched on the shared scope so that
+   * a React context teardown does not leak captured Promises or activity references.
+   */
+  @Test
+  fun cleanupCancelsInFlightCoroutinesAndRecreatesScope() {
+    val originalScope = readScope()
+    val started = CompletableDeferred<Unit>()
+    val job: Job = originalScope.launch {
+      started.complete(Unit)
+      awaitCancellation()
+    }
+    runBlocking { started.await() }
+
+    invokeCleanup()
+
+    runBlocking { job.join() }
+    assertTrue(job.isCancelled)
+    assertTrue(originalScope.coroutineContext[Job]?.isCancelled == true)
+
+    val newScope = readScope()
+    assertTrue(newScope !== originalScope)
+    assertTrue(newScope.coroutineContext[Job]?.isActive == true)
+  }
+
+  /**
    * Waits for a promise rejection and returns its shared error payload.
    */
   private fun captureReject(promise: TestPromise): WritableMap {
     assertTrue(promise.await())
     return promise.rejectUserInfo ?: JavaOnlyMap()
+  }
+
+  /**
+   * Reflectively reads the private shared coroutine scope.
+   */
+  private fun readScope(): CoroutineScope {
+    val field = RNPingExternalIdpCommon::class.java.getDeclaredField("scope")
+    field.isAccessible = true
+    return field.get(RNPingExternalIdpCommon) as CoroutineScope
+  }
+
+  /**
+   * Reflectively flips the private configured flag and invokes cleanup so the test
+   * does not need to call configure() (which requires a ReactApplicationContext).
+   */
+  private fun invokeCleanup() {
+    val configuredField = RNPingExternalIdpCommon::class.java.getDeclaredField("configured")
+    configuredField.isAccessible = true
+    configuredField.setBoolean(RNPingExternalIdpCommon, true)
+    RNPingExternalIdpCommon.cleanup()
   }
 
   /**

@@ -84,11 +84,17 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
+  // TODO: apply this __DEV__ guard to the other Native* modules
+  // (logger, oidc, journey, fido, storage, browser, device-profile, device-id)
+  // so the registered module list is never embedded in production error telemetry.
+  const availableModules = __DEV__
+    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
+    : '';
+
   throw new Error(
     '[@ping-identity/rn-external-idp] Native module RNPingExternalIdp not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

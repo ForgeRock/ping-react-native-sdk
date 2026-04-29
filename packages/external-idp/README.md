@@ -41,6 +41,12 @@ yarn add @ping-identity/rn-external-idp
 cd ios && pod install
 ```
 
+Optional integration packages:
+
+```bash
+yarn add @ping-identity/rn-logger
+```
+
 ---
 
 ## Android native configuration
@@ -238,6 +244,9 @@ If `CFBundleURLTypes` already exists, add the Facebook Login entry to the existi
 
 ```ts
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
+import { logger } from '@ping-identity/rn-logger';
+
+const jsLogger = logger({ level: 'debug' });
 
 const externalIdp = createExternalIdpClient({
   // Required app return URI for Auth Tab-capable devices.
@@ -245,12 +254,31 @@ const externalIdp = createExternalIdpClient({
   // When omitted, Android falls back to the appRedirectUriScheme manifest placeholder.
   redirectUri: 'com.myapp://callback',
 
-  // Optional — pass a logger instance from @ping-identity/rn-logger
-  // logger,
+  // Optional - pass a logger instance from @ping-identity/rn-logger.
+  logger: jsLogger,
 });
 ```
 
 The client is reusable — create it once (e.g. with `useMemo`) and share it across callbacks in a flow.
+
+### Logging integration (optional)
+
+If you install the logger package, pass a JS logger instance created via
+`@ping-identity/rn-logger`.
+If the logger package is not installed/configured, do not pass logger values in External IDP config.
+JavaScript-side External IDP logs use this logger on both platforms.
+
+```ts
+import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
+import { logger } from '@ping-identity/rn-logger';
+
+const jsLogger = logger({ level: 'debug' });
+
+const externalIdp = createExternalIdpClient({
+  redirectUri: 'com.myapp://callback',
+  logger: jsLogger,
+});
+```
 
 ### 2. Handle `IdpCallback` — authorize with an external provider
 
@@ -318,7 +346,6 @@ import type {
   ExternalIdpAuthorizeOptions,
   ExternalIdpSelectOptions,
   ExternalIdpResult,
-  JourneyInstance,
 } from '@ping-identity/rn-external-idp';
 
 function createExternalIdpClient(config: ExternalIdpConfig): ExternalIdpClient;
