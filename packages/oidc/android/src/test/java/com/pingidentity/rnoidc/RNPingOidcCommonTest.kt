@@ -16,7 +16,7 @@ import com.pingidentity.browser.BrowserCanceledException
 import com.pingidentity.oidc.OidcClient
 import com.pingidentity.oidc.OidcError
 import com.pingidentity.oidc.OidcUser
-import com.pingidentity.oidc.OidcWeb
+import com.pingidentity.oidc.OidcWebClient
 import com.pingidentity.oidc.Token
 import com.pingidentity.oidc.User
 import com.pingidentity.utils.Result
@@ -199,7 +199,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun authorize_successResolvesSuccess() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.authorize(any()) } returns kotlin.Result.success(mockk())
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -215,7 +215,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun authorize_canceledExceptionResolvesCancel() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.authorize(any()) } throws BrowserCanceledException()
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -231,7 +231,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun authorize_failureResolvesCancelWhenCanceled() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.authorize(any()) } returns kotlin.Result.failure(BrowserCanceledException())
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -247,7 +247,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun authorize_failureRejects() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.authorize(any()) } returns kotlin.Result.failure(IllegalStateException("failed"))
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -261,7 +261,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun hasUser_returnsFalseWhenMissing() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns null
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -275,7 +275,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun hasUser_returnsTrueWhenPresent() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns mockk()
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -289,7 +289,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun token_rejectsWhenUserMissing() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns null
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -309,7 +309,7 @@ class RNPingOidcCommonTest {
     coEvery { user.userinfo(true) } returns Result.Success(
       JsonObject(mapOf("email" to JsonPrimitive("user@example.com")))
     )
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns user
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -323,7 +323,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun revoke_rejectsWhenUserMissing() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns null
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -339,7 +339,7 @@ class RNPingOidcCommonTest {
 
   @Test
   fun logout_rejectsWhenUserMissing() = scope.runTest {
-    val web = mockk<OidcWeb>()
+    val web = mockk<OidcWebClient>()
     coEvery { web.user() } returns null
     val webId = registerWebHandle("client-1", web)
     val promise = TestPromise()
@@ -384,7 +384,7 @@ class RNPingOidcCommonTest {
     return CoreRuntime.oidcClientRegistry.register(handle)
   }
 
-  private fun registerWebHandle(clientId: String, web: OidcWeb): String {
+  private fun registerWebHandle(clientId: String, web: OidcWebClient): String {
     val handle = newWebHandle(clientId, web)
     return CoreRuntime.oidcWebClientRegistry.register(handle)
   }
@@ -404,9 +404,9 @@ class RNPingOidcCommonTest {
     return ctor.newInstance(payload, client, user) as NativeHandle
   }
 
-  private fun newWebHandle(clientId: String, web: OidcWeb): NativeHandle {
+  private fun newWebHandle(clientId: String, web: OidcWebClient): NativeHandle {
     val clazz = Class.forName("com.pingidentity.rnoidc.RNPingOidcCommon\$OidcWebHandle")
-    val ctor = clazz.getDeclaredConstructor(String::class.java, OidcWeb::class.java)
+    val ctor = clazz.getDeclaredConstructor(String::class.java, OidcWebClient::class.java)
     ctor.isAccessible = true
     return ctor.newInstance(clientId, web) as NativeHandle
   }

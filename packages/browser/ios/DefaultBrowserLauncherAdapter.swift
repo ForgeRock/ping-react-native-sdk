@@ -10,11 +10,15 @@
 
 import Foundation
 import PingBrowser
+import PingLogger
 
 /// Default adapter that delegates to the Ping BrowserLauncher singleton.
 public struct DefaultBrowserLauncherAdapter: BrowserLaunching {
   public init() {}
 
+  // TODO: Accept a `logger:` parameter so the JS-resolved logger can be
+  // forwarded to BrowserLauncher.launch() instead of the global LogManager
+  // singleton. Requires extending the BrowserLaunching protocol too.
   public func launch(
     url: URL,
     customParams: [String: String]?,
@@ -27,7 +31,8 @@ public struct DefaultBrowserLauncherAdapter: BrowserLaunching {
       customParams: customParams,
       browserType: browserType,
       browserMode: browserMode,
-      callbackURLScheme: callbackURLScheme
+      callbackURLScheme: callbackURLScheme,
+      logger: LogManager.logger
     )
   }
 

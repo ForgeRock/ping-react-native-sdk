@@ -135,17 +135,11 @@ public class RNPingBrowserCommon: NSObject {
     }
 
     Task { @MainActor in
-      // TODO: When PingBrowser exposes `BrowserLauncher.logger` as public, switch to per-call logger wiring.
-      // Example future implementation:
-      // if let loggerId = options["loggerId"] as? String,
-      //    RNPingLoggerImpl.shared.applyLogger(loggerId) {
-      //   BrowserLauncher.logger = LogManager.logger
-      // } else {
-      //   BrowserLauncher.logger = LogManager.none
-      // }
-      // TODO: Apply loggerId once Browser can support non-global logger wiring.
-      // Intentionally disabled for now to avoid SDK-wide logger side effects.
-      // _ = RNPingLoggerImpl.shared.applyLogger(loggerId)
+      // TODO: Pass the JS-provided logger through to BrowserLauncher.launch().
+      // The installed PingBrowser accepts a `logger:` parameter on launch() —
+      // resolve the JS loggerId via CoreRuntime.loggerRegistry and forward it
+      // through BrowserLaunching + DefaultBrowserLauncherAdapter. Android
+      // already does this correctly.
 
       do {
         let result = try await browserLauncher.launch(

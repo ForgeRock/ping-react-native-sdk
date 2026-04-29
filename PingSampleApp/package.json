@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@ping-identity/rn-browser": "workspace:*",
+    "@ping-identity/rn-device-client": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
     "@ping-identity/rn-device-profile": "workspace:*",
     "@ping-identity/rn-fido": "workspace:*",

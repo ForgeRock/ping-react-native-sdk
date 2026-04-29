@@ -89,8 +89,8 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:browser:2.0.0-beta1")
-  implementation("com.pingidentity.sdks:logger:2.0.0-beta1")
+  implementation("com.pingidentity.sdks:browser:2.0.0")
+  implementation("com.pingidentity.sdks:logger:2.0.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))
   testImplementation "junit:junit:4.13.2"

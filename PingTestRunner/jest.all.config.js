@@ -25,6 +25,7 @@ module.exports = {
   projects: [
     // ── Package unit test suites ──────────────────────────────────────────
     '<rootDir>/../packages/browser/jest.config.js',
+    '<rootDir>/../packages/device-client/jest.config.js',
     '<rootDir>/../packages/device-id/jest.config.js',
     '<rootDir>/../packages/device-profile/jest.config.js',
     '<rootDir>/../packages/journey/jest.config.js',

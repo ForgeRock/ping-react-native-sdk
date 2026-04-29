@@ -12,8 +12,8 @@ import PingOrchestrate
 
 final class JourneyNodeMapperTests: XCTestCase {
 
-  func testMapNodePayloadContinueIncludesCallbacksAndInput() {
-    let callback = NameCallback().initialize(with: callbackPayload(
+  func testMapNodePayloadContinueIncludesCallbacksAndInput() async {
+    let callback = await NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
       output: [["name": "prompt", "value": "User Name"]],
       input: [["name": "IDToken1", "value": ""]]
@@ -87,8 +87,8 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(input?["tokenId"] as? String, "abc")
   }
 
-  func testMapCallbackPayloadIncludesValidatedAliasTypeAndFields() {
-    let callback = ValidatedPasswordCallback().initialize(with: callbackPayload(
+  func testMapCallbackPayloadIncludesValidatedAliasTypeAndFields() async {
+    let callback = await ValidatedPasswordCallback().initialize(with: callbackPayload(
       type: "ValidatedCreatePasswordCallback",
       output: [
         ["name": "prompt", "value": "Password"],
@@ -110,8 +110,8 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["value"] as? String, "")
   }
 
-  func testMapCallbackPayloadIncludesConsentFields() {
-    let callback = ConsentMappingCallback().initialize(with: callbackPayload(
+  func testMapCallbackPayloadIncludesConsentFields() async {
+    let callback = await ConsentMappingCallback().initialize(with: callbackPayload(
       type: "ConsentMappingCallback",
       output: [
         ["name": "name", "value": "email-consent"],
@@ -133,8 +133,8 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["fields"] as? [String], ["mail"])
   }
 
-  func testMapCallbackReturnsBridgeDictionary() {
-    let callback = NameCallback().initialize(with: callbackPayload(
+  func testMapCallbackReturnsBridgeDictionary() async {
+    let callback = await NameCallback().initialize(with: callbackPayload(
       type: "NameCallback",
       output: [["name": "prompt", "value": "User Name"]],
       input: [["name": "IDToken1", "value": "demo-user"]]

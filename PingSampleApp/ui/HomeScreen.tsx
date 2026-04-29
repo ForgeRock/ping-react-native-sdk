@@ -92,7 +92,7 @@ export default function HomeScreen({
       title: 'Device Management',
       subtitle: 'Manage registered devices',
       icon: 'device-hub',
-      comingSoon: true,
+      screen: 'Devices',
     },
     {
       title: 'Logout',
@@ -172,6 +172,7 @@ export default function HomeScreen({
     <View style={commonStyles.homeContainer}>
       <View style={commonStyles.homeHeader}>
         <Image
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           source={require('../assets/ping-logo.jpg')}
           style={commonStyles.homeHeaderLogo}
         />

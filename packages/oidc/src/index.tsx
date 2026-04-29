@@ -58,6 +58,10 @@ const sanitizeTokens = (
  * @returns OIDC client handle that wraps the native instance.
  * @throws Error when required configuration is missing or invalid.
  */
+// TODO(DX): Expose `dispose()` on OidcClient/OidcWebClient to deregister from
+//   CoreRuntime.oidcClientRegistry / oidcWebClientRegistry. Other client-based
+//   packages (journey, device-client have dispose()) follow this
+//   pattern; OIDC is the outlier. Handles currently live until app kill.
 export function createOidcClient(config: OidcClientConfig): OidcClient {
   if (!config.discoveryEndpoint && !config.openId) {
     throw new Error(

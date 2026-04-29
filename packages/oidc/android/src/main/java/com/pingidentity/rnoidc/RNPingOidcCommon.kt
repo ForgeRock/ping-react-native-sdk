@@ -16,8 +16,10 @@ import com.pingidentity.android.ContextProvider
 import com.pingidentity.browser.BrowserCanceledException
 import com.pingidentity.logger.Logger
 import com.pingidentity.oidc.OidcClient
-import com.pingidentity.oidc.OidcWeb
+import com.pingidentity.oidc.OidcError
+import com.pingidentity.oidc.OidcWebClient
 import com.pingidentity.oidc.OidcUser
+import com.pingidentity.oidc.Token
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.oidc.OidcClientConfigHandle
 import com.pingidentity.rncore.oidc.OidcOpenIdConfig
@@ -27,12 +29,14 @@ import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.utils.Result
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Shared Android implementation for the Ping OIDC React Native module.
@@ -146,11 +150,11 @@ object RNPingOidcCommon {
    * Handle for a configured web client.
    *
    * @property clientId The parent OIDC client id
-   * @property web The native OidcWeb instance
+   * @property web The native OidcWebClient instance
    */
   private data class OidcWebHandle(
     val clientId: String,
-    val web: OidcWeb
+    val web: OidcWebClient
   ) : NativeHandle
 
   /**
@@ -233,9 +237,9 @@ object RNPingOidcCommon {
     scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.token()) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<Token> ->
             promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
             promise.reject(error)
           }
@@ -268,9 +272,9 @@ object RNPingOidcCommon {
     scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.refresh()) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<Token> ->
             promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
             promise.reject(error)
           }
@@ -304,9 +308,9 @@ object RNPingOidcCommon {
     scope.launch(Dispatchers.IO) {
       try {
         when (val result = handle.user.userinfo(cache)) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<JsonObject> ->
             promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
             promise.reject(error)
           }
@@ -496,9 +500,9 @@ object RNPingOidcCommon {
         }
 
         when (val result = user.token()) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<Token> ->
             promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
             promise.reject(error)
           }
@@ -542,9 +546,9 @@ object RNPingOidcCommon {
         }
 
         when (val result = user.refresh()) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<Token> ->
             promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
             promise.reject(error)
           }
@@ -589,9 +593,9 @@ object RNPingOidcCommon {
         }
 
         when (val result = user.userinfo(cache)) {
-          is com.pingidentity.utils.Result.Success ->
+          is Result.Success<JsonObject> ->
             promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
-          is com.pingidentity.utils.Result.Failure -> {
+          is Result.Failure<OidcError> -> {
             val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
             promise.reject(error)
           }

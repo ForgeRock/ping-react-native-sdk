@@ -656,4 +656,173 @@ export const commonStyles = StyleSheet.create({
     color: colors.success,
     marginVertical: 6,
   },
+
+  // ===== Device Management Screen Styles =====
+  deviceContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  deviceContentContainer: {
+    padding: 8,
+  },
+  deviceFilterCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    elevation: 4,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  deviceFilterTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  deviceRadioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  deviceRadioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.gray,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deviceRadioOuterSelected: {
+    borderColor: colors.primary,
+  },
+  deviceRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  deviceRadioLabel: {
+    fontSize: 15,
+    color: colors.textDark,
+    marginLeft: 8,
+  },
+  deviceListCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 12,
+    elevation: 4,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  deviceListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deviceListTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textDark,
+    flex: 1,
+  },
+  deviceRefreshButton: {
+    padding: 4,
+  },
+  deviceLoadingContainer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  deviceErrorText: {
+    color: colors.error,
+    fontSize: 14,
+    padding: 16,
+  },
+  deviceEmptyText: {
+    color: colors.gray,
+    fontSize: 14,
+    padding: 16,
+  },
+  deviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  deviceRowName: {
+    fontSize: 15,
+    color: colors.textDark,
+    flex: 1,
+  },
+  deviceIconButton: {
+    padding: 8,
+  },
+  deviceSeparator: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginHorizontal: 4,
+  },
+  deviceModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deviceModalCard: {
+    width: '85%',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 20,
+  },
+  deviceModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textDark,
+    marginBottom: 8,
+  },
+  deviceModalCurrentName: {
+    fontSize: 14,
+    color: colors.gray,
+    marginBottom: 12,
+  },
+  deviceModalInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 10,
+    fontSize: 15,
+    color: colors.textDark,
+  },
+  deviceModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+    gap: 12,
+  },
+  deviceModalButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 4,
+  },
+  deviceModalButtonText: {
+    fontSize: 14,
+    color: colors.textDark,
+  },
+  deviceModalButtonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  deviceModalButtonPrimaryText: {
+    fontSize: 14,
+    color: colors.surface,
+    fontWeight: '600',
+  },
+  deviceModalButtonDisabled: {
+    opacity: 0.5,
+  },
 });

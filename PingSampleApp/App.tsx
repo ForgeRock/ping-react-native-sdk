@@ -20,6 +20,7 @@ import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
+import DevicesScreen from './ui/DevicesScreen';
 import UserProfileScreen from './ui/UserProfileScreen';
 import TokenScreen from './ui/TokenScreen';
 import LogoutScreen from './ui/LogoutScreen';
@@ -57,6 +58,7 @@ export type RootStackParamList = {
   Logger: undefined;
   Oidc: undefined;
   DeviceProfile: undefined;
+  Devices: undefined;
   UserProfile: undefined;
   Token: undefined;
   Logout: undefined;
@@ -366,6 +368,11 @@ export default function App() {
               name="DeviceProfile"
               component={DeviceProfileScreen}
               options={{ title: 'Device Profile' }}
+            />
+            <Stack.Screen
+              name="Devices"
+              component={DevicesScreen}
+              options={{ title: 'Device Management' }}
             />
             <Stack.Screen
               name="UserProfile"

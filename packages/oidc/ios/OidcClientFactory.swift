@@ -71,8 +71,8 @@ enum OidcClientFactory {
     _ payload: OidcClientPayload,
     logger: Logger?,
     queueKey: DispatchSpecificKey<Void>? = nil
-  ) -> OidcWeb {
-    return OidcWeb.createOidcWeb { config in
+  ) -> OidcWebClient {
+    return OidcWebClient.createOidcWebClient { config in
       if let logger {
         config.logger = logger
       }

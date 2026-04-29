@@ -66,6 +66,17 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "A1D7AA010B0DBED59E728BDBA695F013"
+               BuildableName = "RNPingDeviceClient-Unit-Tests.xctest"
+               BlueprintName = "RNPingDeviceClient-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "9211230FB80C7E536E8E29C2085A6AEA"
                BuildableName = "RNPingDeviceId-Unit-Tests.xctest"
                BlueprintName = "RNPingDeviceId-Unit-Tests"
@@ -80,6 +91,17 @@
                BlueprintIdentifier = "A82CAB9A317A43541769B170C1156EBB"
                BuildableName = "RNPingDeviceProfile-Unit-Tests.xctest"
                BlueprintName = "RNPingDeviceProfile-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "21A2D2C5254766D4D80E2E762686C448"
+               BuildableName = "RNPingFido-Unit-Tests.xctest"
+               BlueprintName = "RNPingFido-Unit-Tests"
                ReferencedContainer = "container:Pods/Pods.xcodeproj">
             </BuildableReference>
          </TestableReference>
