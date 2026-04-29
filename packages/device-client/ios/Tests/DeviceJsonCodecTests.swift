@@ -72,7 +72,7 @@ final class DeviceJsonCodecTests: XCTestCase {
       "createdDate": 1_700_000_000_000,
       "lastAccessDate": 1_700_000_100_000,
     ]
-    let decoded: OathDevice = try DeviceJsonCodec.decode(source, kind: "oath")
+    let decoded: OathDevice = try DeviceJsonCodec.decode(source, kind: DeviceType.oath)
     XCTAssertEqual(decoded.id, "oath-1")
     XCTAssertEqual(decoded.deviceName, "iPhone")
   }
@@ -87,7 +87,7 @@ final class DeviceJsonCodecTests: XCTestCase {
       "metadata": [:],
       "lastSelectedDate": 1_700_000_000_000,
     ]
-    let decoded: ProfileDevice = try DeviceJsonCodec.decode(source, kind: "profile")
+    let decoded: ProfileDevice = try DeviceJsonCodec.decode(source, kind: DeviceType.profile)
     XCTAssertEqual(decoded.id, "profile-1")
     XCTAssertEqual(decoded.deviceName, "Samsung")
   }
@@ -119,13 +119,13 @@ final class DeviceJsonCodecTests: XCTestCase {
 
   func testDecodeGenericShape() throws {
     let source: NSDictionary = ["name": "Alice", "value": 7]
-    let decoded: Simple = try DeviceJsonCodec.decode(source, kind: "oath")
+    let decoded: Simple = try DeviceJsonCodec.decode(source, kind: DeviceType.oath)
     XCTAssertEqual(decoded, Simple(name: "Alice", value: 7))
   }
 
   func testDecodeThrowsOnShapeMismatch() {
     struct RequiresName: Decodable { let name: String }
     let source: NSDictionary = ["unexpected": true]
-    XCTAssertThrowsError(try (DeviceJsonCodec.decode(source, kind: "oath") as RequiresName))
+    XCTAssertThrowsError(try (DeviceJsonCodec.decode(source, kind: DeviceType.oath) as RequiresName))
   }
 }

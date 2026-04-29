@@ -36,7 +36,7 @@ internal enum DeviceJsonCodec {
   ///
   /// - Parameters:
   ///   - dict: Raw dictionary received from the JS bridge (JS-friendly shape).
-  ///   - kind: Device kind string (`"oath"`, `"push"`, `"bound"`, `"profile"`, `"webAuthn"`).
+  ///   - kind: Device kind string (`DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, `DeviceType.webAuthn`).
   /// - Returns: A decoded instance of `T`.
   /// - Throws: `DecodingError` if the dictionary shape does not match `T`.
   internal static func decode<T: Decodable>(_ dict: NSDictionary, kind: String) throws -> T {
@@ -97,7 +97,7 @@ internal enum DeviceJsonCodec {
   ///
   /// Inverse of the remap applied in ``encode(_:)``:
   /// - `id` → `_id` (always)
-  /// - `deviceName` → `alias` (only when `kind == "profile"`)
+  /// - `deviceName` → `alias` (only when `kind == DeviceType.profile`)
   ///
   /// - Parameters:
   ///   - dict: Input dictionary in JS-friendly shape.
@@ -108,7 +108,7 @@ internal enum DeviceJsonCodec {
     if let v = result.removeValue(forKey: "id") {
       result["_id"] = v
     }
-    if kind == "profile", let v = result.removeValue(forKey: "deviceName") {
+    if kind == DeviceType.profile, let v = result.removeValue(forKey: "deviceName") {
       result["alias"] = v
     }
     return result

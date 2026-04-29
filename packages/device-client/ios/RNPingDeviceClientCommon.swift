@@ -107,7 +107,7 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - handleId: Opaque handle returned by ``create(_:resolver:rejecter:)``.
-  ///   - deviceType: One of `"oath"`, `"push"`, `"bound"`, `"profile"`, or `"webAuthn"`.
+  ///   - deviceType: One of `DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, or `DeviceType.webAuthn`.
   ///   - resolver: Promise resolver — receives the result dictionary.
   ///   - rejecter: Promise rejecter — receives a `GenericError` on failure.
   @objc
@@ -134,7 +134,7 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - handleId: Opaque handle returned by ``create(_:resolver:rejecter:)``.
-  ///   - deviceType: One of `"oath"`, `"push"`, `"bound"`, `"profile"`, or `"webAuthn"`.
+  ///   - deviceType: One of `DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, or `DeviceType.webAuthn`.
   ///   - device: JS device payload to decode and send.
   ///   - resolver: Promise resolver — receives the updated device dictionary.
   ///   - rejecter: Promise rejecter — receives a `GenericError` on failure.
@@ -169,7 +169,7 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - handleId: Opaque handle returned by ``create(_:resolver:rejecter:)``.
-  ///   - deviceType: One of `"oath"`, `"push"`, `"bound"`, `"profile"`, or `"webAuthn"`.
+  ///   - deviceType: One of `DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, or `DeviceType.webAuthn`.
   ///   - device: JS device payload identifying the device to delete.
   ///   - resolver: Promise resolver — receives the deleted device dictionary.
   ///   - rejecter: Promise rejecter — receives a `GenericError` on failure.
@@ -227,35 +227,26 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - client: The `DeviceClient` instance looked up from the registry.
-  ///   - deviceType: Device type key (`"oath"`, `"push"`, `"bound"`, `"profile"`, `"webAuthn"`).
+  ///   - deviceType: Device type key (`DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, `DeviceType.webAuthn`).
   ///   - handlers: Promise bridge that resolves with an `NSDictionary` or rejects with a `GenericError`.
   private static func performGet(
     client: DeviceClient,
     deviceType: String,
     handlers: PromiseBridge<NSDictionary>
   ) async {
-    do {
-      switch deviceType {
-      case "oath":
-        let result = await client.oath.get()
-        try handleGet(result: result, handlers: handlers)
-      case "push":
-        let result = await client.push.get()
-        try handleGet(result: result, handlers: handlers)
-      case "bound":
-        let result = await client.bound.get()
-        try handleGet(result: result, handlers: handlers)
-      case "profile":
-        let result = await client.profile.get()
-        try handleGet(result: result, handlers: handlers)
-      case "webAuthn":
-        let result = await client.webAuthn.get()
-        try handleGet(result: result, handlers: handlers)
-      default:
-        handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
-      }
-    } catch {
-      handlers.reject(DeviceErrorMapper.mapError(error))
+    switch deviceType {
+    case DeviceType.oath:
+      await performFetch(operation: { await client.oath.get() }, handlers: handlers)
+    case DeviceType.push:
+      await performFetch(operation: { await client.push.get() }, handlers: handlers)
+    case DeviceType.bound:
+      await performFetch(operation: { await client.bound.get() }, handlers: handlers)
+    case DeviceType.profile:
+      await performFetch(operation: { await client.profile.get() }, handlers: handlers)
+    case DeviceType.webAuthn:
+      await performFetch(operation: { await client.webAuthn.get() }, handlers: handlers)
+    default:
+      handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
     }
   }
 
@@ -266,7 +257,7 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - client: The `DeviceClient` instance looked up from the registry.
-  ///   - deviceType: Device type key (`"oath"`, `"push"`, `"bound"`, `"profile"`, `"webAuthn"`).
+  ///   - deviceType: Device type key (`DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, `DeviceType.webAuthn`).
   ///   - device: Raw JS dictionary to decode into a typed device model.
   ///   - handlers: Promise bridge that resolves with an `NSDictionary` or rejects with a `GenericError`.
   private static func performUpdate(
@@ -275,33 +266,49 @@ public class RNPingDeviceClientCommon: NSObject {
     device: NSDictionary,
     handlers: PromiseBridge<NSDictionary>
   ) async {
-    do {
-      switch deviceType {
-      case "oath":
-        let typed: OathDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.oath.update(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "push":
-        let typed: PushDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.push.update(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "bound":
-        let typed: BoundDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.bound.update(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "profile":
-        let typed: ProfileDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.profile.update(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "webAuthn":
-        let typed: WebAuthnDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.webAuthn.update(typed)
-        try handleSingle(result: result, handlers: handlers)
-      default:
-        handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
-      }
-    } catch {
-      handlers.reject(DeviceErrorMapper.mapError(error))
+    switch deviceType {
+    case DeviceType.oath:
+      await performMutation(
+        OathDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.oath.update($0) }
+      )
+    case DeviceType.push:
+      await performMutation(
+        PushDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.push.update($0) }
+      )
+    case DeviceType.bound:
+      await performMutation(
+        BoundDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.bound.update($0) }
+      )
+    case DeviceType.profile:
+      await performMutation(
+        ProfileDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.profile.update($0) }
+      )
+    case DeviceType.webAuthn:
+      await performMutation(
+        WebAuthnDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.webAuthn.update($0) }
+      )
+    default:
+      handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
     }
   }
 
@@ -312,7 +319,7 @@ public class RNPingDeviceClientCommon: NSObject {
   ///
   /// - Parameters:
   ///   - client: The `DeviceClient` instance looked up from the registry.
-  ///   - deviceType: Device type key (`"oath"`, `"push"`, `"bound"`, `"profile"`, `"webAuthn"`).
+  ///   - deviceType: Device type key (`DeviceType.oath`, `DeviceType.push`, `DeviceType.bound`, `DeviceType.profile`, `DeviceType.webAuthn`).
   ///   - device: Raw JS dictionary to decode into a typed device model.
   ///   - handlers: Promise bridge that resolves with an `NSDictionary` or rejects with a `GenericError`.
   private static func performDelete(
@@ -321,31 +328,87 @@ public class RNPingDeviceClientCommon: NSObject {
     device: NSDictionary,
     handlers: PromiseBridge<NSDictionary>
   ) async {
+    switch deviceType {
+    case DeviceType.oath:
+      await performMutation(
+        OathDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.oath.delete($0) }
+      )
+    case DeviceType.push:
+      await performMutation(
+        PushDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.push.delete($0) }
+      )
+    case DeviceType.bound:
+      await performMutation(
+        BoundDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.bound.delete($0) }
+      )
+    case DeviceType.profile:
+      await performMutation(
+        ProfileDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.profile.delete($0) }
+      )
+    case DeviceType.webAuthn:
+      await performMutation(
+        WebAuthnDevice.self,
+        device: device,
+        kind: deviceType,
+        handlers: handlers,
+        operation: { await client.webAuthn.delete($0) }
+      )
+    default:
+      handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
+    }
+  }
+
+  /// Runs a typed fetch operation and forwards the native result to ``handleGet(result:handlers:)``.
+  ///
+  /// - Parameters:
+  ///   - operation: Async fetch operation for a specific device repository.
+  ///   - handlers: Promise bridge to resolve or reject.
+  private static func performFetch<T: Device & Encodable>(
+    operation: () async -> Result<[T], DeviceError>,
+    handlers: PromiseBridge<NSDictionary>
+  ) async {
     do {
-      switch deviceType {
-      case "oath":
-        let typed: OathDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.oath.delete(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "push":
-        let typed: PushDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.push.delete(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "bound":
-        let typed: BoundDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.bound.delete(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "profile":
-        let typed: ProfileDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.profile.delete(typed)
-        try handleSingle(result: result, handlers: handlers)
-      case "webAuthn":
-        let typed: WebAuthnDevice = try DeviceJsonCodec.decode(device, kind: deviceType)
-        let result = await client.webAuthn.delete(typed)
-        try handleSingle(result: result, handlers: handlers)
-      default:
-        handlers.reject(DeviceErrorMapper.invalidDeviceType(deviceType))
-      }
+      let result = await operation()
+      try handleGet(result: result, handlers: handlers)
+    } catch {
+      handlers.reject(DeviceErrorMapper.mapError(error))
+    }
+  }
+
+  /// Decodes a typed device, runs a mutation operation, and forwards the result to ``handleSingle(result:handlers:)``.
+  ///
+  /// - Parameters:
+  ///   - device: Raw JS dictionary to decode.
+  ///   - kind: Device kind discriminator used during decode key remapping.
+  ///   - handlers: Promise bridge to resolve or reject.
+  ///   - operation: Async mutation operation for the typed device.
+  private static func performMutation<T: Device & Encodable & Decodable>(
+    _: T.Type,
+    device: NSDictionary,
+    kind: String,
+    handlers: PromiseBridge<NSDictionary>,
+    operation: (T) async -> Result<T, DeviceError>
+  ) async {
+    do {
+      let typed: T = try DeviceJsonCodec.decode(device, kind: kind)
+      let result = await operation(typed)
+      try handleSingle(result: result, handlers: handlers)
     } catch {
       handlers.reject(DeviceErrorMapper.mapError(error))
     }

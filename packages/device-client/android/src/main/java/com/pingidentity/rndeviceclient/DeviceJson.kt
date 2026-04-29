@@ -39,7 +39,7 @@ internal object DeviceJson {
    * Required fields are validated via [requireString] and [requireLong]; missing
    * values throw [IllegalArgumentException].
    *
-   * @param kind One of `oath`, `push`, `bound`, `profile`, or `webAuthn`.
+   * @param kind One of [DeviceType.OATH], [DeviceType.PUSH], [DeviceType.BOUND], [DeviceType.PROFILE], or [DeviceType.WEB_AUTHN].
    * @param map React Native [ReadableMap] containing the JS device payload.
    * @return A concrete [Device] subclass matching the given [kind].
    * @throws IllegalArgumentException If [kind] is unsupported or a required field is missing.
@@ -48,21 +48,21 @@ internal object DeviceJson {
     val id = requireString(map, "id")
     val deviceName = requireString(map, "deviceName")
     return when (kind) {
-      "oath" -> OathDevice(
+      DeviceType.OATH -> OathDevice(
         id = id,
         deviceName = deviceName,
         uuid = requireString(map, "uuid"),
         createdDate = requireLong(map, "createdDate"),
         lastAccessDate = requireLong(map, "lastAccessDate"),
       )
-      "push" -> PushDevice(
+      DeviceType.PUSH -> PushDevice(
         id = id,
         deviceName = deviceName,
         uuid = requireString(map, "uuid"),
         createdDate = requireLong(map, "createdDate"),
         lastAccessDate = requireLong(map, "lastAccessDate"),
       )
-      "bound" -> BoundDevice(
+      DeviceType.BOUND -> BoundDevice(
         id = id,
         deviceName = deviceName,
         deviceId = requireString(map, "deviceId"),
@@ -70,7 +70,7 @@ internal object DeviceJson {
         createdDate = requireLong(map, "createdDate"),
         lastAccessDate = requireLong(map, "lastAccessDate"),
       )
-      "webAuthn" -> WebAuthnDevice(
+      DeviceType.WEB_AUTHN -> WebAuthnDevice(
         id = id,
         deviceName = deviceName,
         uuid = requireString(map, "uuid"),
@@ -78,7 +78,7 @@ internal object DeviceJson {
         createdDate = requireLong(map, "createdDate"),
         lastAccessDate = requireLong(map, "lastAccessDate"),
       )
-      "profile" -> ProfileDevice(
+      DeviceType.PROFILE -> ProfileDevice(
         id = id,
         deviceName = deviceName,
         identifier = requireString(map, "identifier"),

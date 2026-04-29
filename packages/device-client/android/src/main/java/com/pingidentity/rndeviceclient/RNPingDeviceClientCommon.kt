@@ -173,7 +173,7 @@ object RNPingDeviceClientCommon {
    * promise resolves with a map containing a `result` array of encoded devices.
    *
    * @param handleId Opaque handle id returned by [create].
-   * @param deviceType One of `oath`, `push`, `bound`, `profile`, or `webAuthn`.
+   * @param deviceType One of [DeviceType.OATH], [DeviceType.PUSH], [DeviceType.BOUND], [DeviceType.PROFILE], or [DeviceType.WEB_AUTHN].
    * @param promise React Native promise resolved with the device list or rejected on error.
    */
   @JvmStatic
@@ -187,11 +187,11 @@ object RNPingDeviceClientCommon {
         //   while iOS uses bare names (`oath`, `push`, ...). Pick one convention.
         // TODO-PARITY: Android uses `.devices()` while iOS uses `.get()`. Pick one convention.
         val result = when (deviceType) {
-          "oath" -> client.oathDevice.devices()
-          "push" -> client.pushDevice.devices()
-          "bound" -> client.boundDevice.devices()
-          "profile" -> client.profileDevice.devices()
-          "webAuthn" -> client.webAuthnDevice.devices()
+          DeviceType.OATH -> client.oathDevice.devices()
+          DeviceType.PUSH -> client.pushDevice.devices()
+          DeviceType.BOUND -> client.boundDevice.devices()
+          DeviceType.PROFILE -> client.profileDevice.devices()
+          DeviceType.WEB_AUTHN -> client.webAuthnDevice.devices()
           else -> {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
           }
@@ -218,7 +218,7 @@ object RNPingDeviceClientCommon {
    * [DeviceRepository.update] method.
    *
    * @param handleId Opaque handle id returned by [create].
-   * @param deviceType One of `oath`, `push`, `bound`, `profile`, or `webAuthn`.
+   * @param deviceType One of [DeviceType.OATH], [DeviceType.PUSH], [DeviceType.BOUND], [DeviceType.PROFILE], or [DeviceType.WEB_AUTHN].
    * @param device React Native [ReadableMap] containing the updated device fields.
    * @param promise React Native promise resolved with the updated device or rejected on error.
    */
@@ -236,11 +236,11 @@ object RNPingDeviceClientCommon {
       try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
         val result = when (deviceType) {
-          "oath" -> client.oathDevice.updateAs<OathDevice>(decoded)
-          "push" -> client.pushDevice.updateAs<PushDevice>(decoded)
-          "bound" -> client.boundDevice.updateAs<BoundDevice>(decoded)
-          "profile" -> client.profileDevice.updateAs<ProfileDevice>(decoded)
-          "webAuthn" -> client.webAuthnDevice.updateAs<WebAuthnDevice>(decoded)
+          DeviceType.OATH -> client.oathDevice.updateAs<OathDevice>(decoded)
+          DeviceType.PUSH -> client.pushDevice.updateAs<PushDevice>(decoded)
+          DeviceType.BOUND -> client.boundDevice.updateAs<BoundDevice>(decoded)
+          DeviceType.PROFILE -> client.profileDevice.updateAs<ProfileDevice>(decoded)
+          DeviceType.WEB_AUTHN -> client.webAuthnDevice.updateAs<WebAuthnDevice>(decoded)
           else -> {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
           }
@@ -267,7 +267,7 @@ object RNPingDeviceClientCommon {
    * [DeviceRepository.delete] method.
    *
    * @param handleId Opaque handle id returned by [create].
-   * @param deviceType One of `oath`, `push`, `bound`, `profile`, or `webAuthn`.
+   * @param deviceType One of [DeviceType.OATH], [DeviceType.PUSH], [DeviceType.BOUND], [DeviceType.PROFILE], or [DeviceType.WEB_AUTHN].
    * @param device React Native [ReadableMap] identifying the device to delete.
    * @param promise React Native promise resolved with the deleted device or rejected on error.
    */
@@ -285,11 +285,11 @@ object RNPingDeviceClientCommon {
       try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
         val result = when (deviceType) {
-          "oath" -> client.oathDevice.deleteAs<OathDevice>(decoded)
-          "push" -> client.pushDevice.deleteAs<PushDevice>(decoded)
-          "bound" -> client.boundDevice.deleteAs<BoundDevice>(decoded)
-          "profile" -> client.profileDevice.deleteAs<ProfileDevice>(decoded)
-          "webAuthn" -> client.webAuthnDevice.deleteAs<WebAuthnDevice>(decoded)
+          DeviceType.OATH -> client.oathDevice.deleteAs<OathDevice>(decoded)
+          DeviceType.PUSH -> client.pushDevice.deleteAs<PushDevice>(decoded)
+          DeviceType.BOUND -> client.boundDevice.deleteAs<BoundDevice>(decoded)
+          DeviceType.PROFILE -> client.profileDevice.deleteAs<ProfileDevice>(decoded)
+          DeviceType.WEB_AUTHN -> client.webAuthnDevice.deleteAs<WebAuthnDevice>(decoded)
           else -> {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
           }
