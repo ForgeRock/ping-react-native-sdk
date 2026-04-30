@@ -38,6 +38,12 @@ type JourneyMock = {
 };
 
 type EventHandlers = Record<string, ((...args: unknown[]) => void) | undefined>;
+type TestUserKey = {
+  id: string;
+  userId: string;
+  username: string;
+  authenticationType: string;
+};
 
 function makeMock(
   overrides: Partial<NativeBindingMock> = {},
@@ -491,7 +497,7 @@ describe('@ping-identity/rn-binding — integration', () => {
       const mock = makeMock();
       const { mod } = await loadBinding(mock);
       const client = mod.createBindingClient({
-        ui: { userKeySelector: async (keys) => keys[0] },
+        ui: { userKeySelector: async (keys: TestUserKey[]) => keys[0] },
       });
 
       await client.signForJourney(makeJourney(), {});
@@ -643,7 +649,7 @@ describe('@ping-identity/rn-binding — integration', () => {
       const { mod, emittedHandlers } = await loadBinding(mock);
 
       mod.createBindingClient({
-        ui: { userKeySelector: async (keys) => keys[0] },
+        ui: { userKeySelector: async (keys: TestUserKey[]) => keys[0] },
       });
 
       expect(emittedHandlers['RNPingBinding_UserKeyRequired']).toBeDefined();
@@ -702,10 +708,10 @@ describe('@ping-identity/rn-binding — integration', () => {
         .spyOn(require('react-native').DeviceEventEmitter, 'addListener');
 
       mod.createBindingClient({
-        ui: { userKeySelector: async (keys) => keys[0] },
+        ui: { userKeySelector: async (keys: TestUserKey[]) => keys[0] },
       });
       mod.createBindingClient({
-        ui: { userKeySelector: async (keys) => keys[0] },
+        ui: { userKeySelector: async (keys: TestUserKey[]) => keys[0] },
       });
 
       const selectorListenerCalls = addListenerMock.mock.calls.filter(
