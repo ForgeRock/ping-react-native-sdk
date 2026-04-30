@@ -26,6 +26,9 @@ object RNPingStorageCommon {
 
   /** Registry for OIDC storage configurations */
   private val oidcConfigRegistry = StorageConfigRegistry(CoreRuntime.oidcStorageConfigRegistry)
+  /** Registry for binding user-key storage configurations */
+  private val bindingUserKeyConfigRegistry =
+    StorageConfigRegistry(CoreRuntime.bindingUserKeyStorageConfigRegistry)
 
   /**
    * Register session storage with the provided configuration.
@@ -66,6 +69,20 @@ object RNPingStorageCommon {
       // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       val storageConfig = buildStorageConfig(map)
       oidcConfigRegistry.register(storageConfig)
+    } catch (e: Exception) {
+      throw e
+    }
+  }
+
+  /**
+   * Register binding user-key storage with the provided configuration.
+   */
+  @JvmStatic
+  fun registerBindingUserKeyStorage(config: ReadableMap): String {
+    return try {
+      val map = config.toHashMap()
+      val storageConfig = buildStorageConfig(map)
+      bindingUserKeyConfigRegistry.register(storageConfig)
     } catch (e: Exception) {
       throw e
     }
@@ -115,6 +132,19 @@ object RNPingStorageCommon {
   fun configureOidcStorage(id: String): WritableMap {
     return try {
       val resolvedConfig = oidcConfigRegistry.resolve(id)
+      encodeConfig(resolvedConfig)
+    } catch (e: Exception) {
+      throw e
+    }
+  }
+
+  /**
+   * Resolve and encode a registered binding user-key storage configuration by id.
+   */
+  @JvmStatic
+  fun configureBindingUserKeyStorage(id: String): WritableMap {
+    return try {
+      val resolvedConfig = bindingUserKeyConfigRegistry.resolve(id)
       encodeConfig(resolvedConfig)
     } catch (e: Exception) {
       throw e

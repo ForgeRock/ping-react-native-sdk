@@ -74,6 +74,7 @@ declare const sessionStorageHandleBrand: unique symbol;
  * @internal
  */
 declare const oidcStorageHandleBrand: unique symbol;
+declare const bindingUserKeyStorageHandleBrand: unique symbol;
 
 /**
  * Shared opaque handle returned by session storage configuration helpers.
@@ -113,4 +114,24 @@ export type OidcStorageHandle = Readonly<{
    * @internal
    */
   [oidcStorageHandleBrand]: true;
+}>;
+
+/**
+ * Shared opaque handle returned by binding user-key storage configuration helpers.
+ */
+export type BindingUserKeyStorageHandle = Readonly<{
+  /**
+   * Native identifier for a registered binding user-key storage configuration.
+   */
+  id: string;
+  /**
+   * Runtime discriminator for binding user-key storage handles.
+   */
+  kind: 'binding_user_key_storage';
+  /**
+   * Compile-time brand to keep this handle opaque.
+   *
+   * @internal
+   */
+  [bindingUserKeyStorageHandleBrand]: true;
 }>;

@@ -34,6 +34,9 @@ target 'PingTestRunner' do
   pod 'RNPingCore',
     :path => '../../packages/core',
     :testspecs => ['Tests']
+  pod 'RNPingBinding',
+    :path => '../../node_modules/@ping-identity/rn-binding',
+    :testspecs => ['Tests']
   pod 'RNPingDeviceId',
     :path => '../../node_modules/@ping-identity/rn-device-id',
     :testspecs => ['Tests']

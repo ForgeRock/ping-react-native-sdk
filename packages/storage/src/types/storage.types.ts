@@ -8,6 +8,7 @@ import type { BaseStorageConfig } from '../NativeRNPingStorage';
 import { CacheStrategy } from '../NativeRNPingStorage';
 import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
 import type {
+  BindingUserKeyStorageHandle,
   OidcStorageHandle,
   SessionStorageHandle,
 } from '@ping-identity/rn-types';
@@ -84,6 +85,14 @@ export type SessionStorage = BaseStorageConfig & SessionStorageHandle;
  *
  */
 export type OidcStorage = BaseStorageConfig & OidcStorageHandle;
+
+/**
+ * Storage configuration type for binding user key metadata.
+ *
+ * Opaque handle returned by {@link configureBindingUserKeyStorage}.
+ */
+export type BindingUserKeyStorage = BaseStorageConfig &
+  BindingUserKeyStorageHandle;
 
 /**
  * Public storage configuration accepted by storage registration helpers.

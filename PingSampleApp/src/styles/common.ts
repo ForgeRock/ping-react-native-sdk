@@ -317,18 +317,6 @@ export const commonStyles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 28,
   },
-  configSelectedLabel: {
-    color: colors.textDark,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  configSelectedValue: {
-    color: colors.primary,
-    fontSize: 26,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
   configSection: {
     marginBottom: 14,
   },
@@ -759,6 +747,11 @@ export const commonStyles = StyleSheet.create({
     fontSize: 15,
     color: colors.textDark,
     flex: 1,
+  },
+  deviceRowSubtitle: {
+    fontSize: 12,
+    color: colors.gray,
+    marginTop: 2,
   },
   deviceIconButton: {
     padding: 8,

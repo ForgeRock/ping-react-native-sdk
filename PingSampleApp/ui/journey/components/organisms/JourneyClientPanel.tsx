@@ -17,6 +17,8 @@ import { useJourneyClientPanelController } from '../../hooks/useJourneyClientPan
 import { SHOW_JOURNEY_DEBUG_PANEL } from '../../utils/clientPanel';
 import JourneyContinuePanel from './JourneyContinuePanel';
 import JourneyDebugPanel from './JourneyDebugPanel';
+import JourneyBindingPinModal from './JourneyBindingPinModal';
+import JourneyBindingUserKeyModal from './JourneyBindingUserKeyModal';
 
 /**
  * Props for a self-contained Journey panel bound to a single Journey client.
@@ -85,10 +87,14 @@ export default function JourneyClientPanel(
     showCallbackScreen,
     showSuccessScreen,
     externalIdpBrowserError,
+    pinRequest,
+    userKeyRequest,
   } = useJourneyClientPanelController(props);
 
   return (
     <View style={styles.container}>
+      <JourneyBindingUserKeyModal request={userKeyRequest} />
+      <JourneyBindingPinModal request={pinRequest} />
       <View style={commonStyles.card}>
         {showCallbackScreen ? (
           <JourneyContinuePanel

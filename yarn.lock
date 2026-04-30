@@ -3048,6 +3048,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ping-identity/rn-binding@workspace:*, @ping-identity/rn-binding@workspace:packages/binding":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-binding@workspace:packages/binding"
+  dependencies:
+    "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-types": "npm:^0.1.0"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-browser@workspace:*, @ping-identity/rn-browser@workspace:packages/browser":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
@@ -12281,6 +12296,7 @@ __metadata:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-binding": "workspace:*"
     "@ping-identity/rn-browser": "workspace:*"
     "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
@@ -12325,6 +12341,7 @@ __metadata:
     "@babel/core": "npm:^7.25.2"
     "@babel/preset-env": "npm:^7.25.3"
     "@babel/runtime": "npm:^7.25.0"
+    "@ping-identity/rn-binding": "workspace:*"
     "@ping-identity/rn-browser": "workspace:*"
     "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"

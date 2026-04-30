@@ -35,6 +35,9 @@ function JourneyFieldRenderer(
   const isIdPCallback = IDP_CALLBACK_TYPES.has(field.ref.type as string);
   const isSelectIdpCallback =
     (field.ref.type as string) === SELECT_IDP_CALLBACK_TYPE;
+  const isDeviceBindingCallback = field.ref.type === 'DeviceBindingCallback';
+  const isDeviceSigningVerifierCallback =
+    field.ref.type === 'DeviceSigningVerifierCallback';
 
   if (field.ref.type === 'HiddenValueCallback') {
     return null;
@@ -45,6 +48,14 @@ function JourneyFieldRenderer(
   }
 
   if (isFidoRegistrationCallback) {
+    return <JourneyTextField {...props} />;
+  }
+
+  if (isDeviceSigningVerifierCallback) {
+    return null;
+  }
+
+  if (isDeviceBindingCallback) {
     return <JourneyTextField {...props} />;
   }
 

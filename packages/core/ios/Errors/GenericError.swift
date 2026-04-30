@@ -13,6 +13,7 @@ import Foundation
 public enum ErrorType: String {
   case argumentError = "argument_error"
   case authError = "auth_error"
+  case bindingError = "binding_error"
   case davinciError = "davinci_error"
   case fidoError = "fido_error"
   case exchangeError = "exchange_error"

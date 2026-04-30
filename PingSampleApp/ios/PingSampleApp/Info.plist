@@ -72,6 +72,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>This app uses Face ID to authenticate you for secure device binding and signing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location while you use the app to improve sign-in security, detect suspicious activity, and enable location-based authentication when required.</string>
 	<key>RCTNewArchEnabled</key>

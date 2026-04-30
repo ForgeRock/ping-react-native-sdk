@@ -127,6 +127,12 @@ export default function HomeScreen({
       icon: 'phone-android',
       screen: 'DeviceProfile',
     },
+    {
+      title: 'Binding Keys',
+      subtitle: 'Manage stored binding keys',
+      icon: 'key',
+      screen: 'BindingKeys',
+    },
   ];
 
   const renderMenuItem = (item: HomeScreenMenuItem): React.ReactElement => {

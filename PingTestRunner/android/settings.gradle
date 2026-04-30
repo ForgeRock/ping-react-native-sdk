@@ -27,6 +27,8 @@ dependencyResolutionManagement {
 include ':app'
 includeBuild('../../node_modules/@react-native/gradle-plugin')
 
+include(":ping-identity_rn-binding")
+project(":ping-identity_rn-binding").projectDir = file("../../packages/binding/android")
 include(":ping-identity_rn-browser")
 project(":ping-identity_rn-browser").projectDir = file("../../packages/browser/android")
 include(":ping-identity_rn-core")

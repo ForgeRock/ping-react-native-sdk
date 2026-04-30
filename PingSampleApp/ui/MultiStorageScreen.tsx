@@ -11,6 +11,7 @@ import {
   getTokenStorages,
   configureOidcStorageInfo,
   configureSessionStorageInfo,
+  configureBindingUserKeyStorageInfo,
 } from '../src/tokenStorages';
 import PayloadViewer from './components/atoms/PayloadViewer';
 
@@ -20,6 +21,9 @@ export default function MultiStorageScreen() {
   );
   const [sessionStorage, setSessionStorage] = useState(
     () => getTokenStorages().sessionStorage,
+  );
+  const [bindingUserKeyStorage, setBindingUserKeyStorage] = useState(
+    () => getTokenStorages().bindingUserKeyStorage,
   );
 
   return (
@@ -69,6 +73,36 @@ export default function MultiStorageScreen() {
             <PayloadViewer
               payload={`Config: ${JSON.stringify(
                 sessionStorage.config,
+                null,
+                2,
+              )}`}
+            />
+          </View>
+        )}
+      </View>
+
+      {/* BINDING USER KEY STORAGE CARD */}
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.journeySectionTitle}>
+          Binding User Key Storage
+        </Text>
+
+        {!bindingUserKeyStorage ? (
+          <TouchableOpacity
+            style={commonStyles.buttonPrimary}
+            onPress={() => {
+              setBindingUserKeyStorage(configureBindingUserKeyStorageInfo());
+            }}
+          >
+            <Text style={commonStyles.buttonText}>
+              Configure Binding User Key Storage
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View>
+            <PayloadViewer
+              payload={`Config: ${JSON.stringify(
+                bindingUserKeyStorage.config,
                 null,
                 2,
               )}`}

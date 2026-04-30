@@ -19,6 +19,7 @@ import com.facebook.react.bridge.WritableMap
 enum class ErrorType(val rawValue: String) {
     ARGUMENT_ERROR("argument_error"),
     AUTH_ERROR("auth_error"),
+    BINDING_ERROR("binding_error"),
     DAVINCI_ERROR("davinci_error"),
     FIDO_ERROR("fido_error"),
     EXCHANGE_ERROR("exchange_error"),

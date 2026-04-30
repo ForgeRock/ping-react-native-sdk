@@ -54,6 +54,11 @@ class RNPingStorageClassicModule(
         return RNPingStorageCommon.registerOidcStorage(config)
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun registerBindingUserKeyStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerBindingUserKeyStorage(config)
+    }
+
     /**
      * Resolve session storage configuration by id (synchronous blocking method).
      *
@@ -74,5 +79,10 @@ class RNPingStorageClassicModule(
     @ReactMethod(isBlockingSynchronousMethod = true)
     fun configureOidcStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureOidcStorage(id)
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun configureBindingUserKeyStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configureBindingUserKeyStorage(id)
     }
 }

@@ -24,6 +24,7 @@ import DevicesScreen from './ui/DevicesScreen';
 import UserProfileScreen from './ui/UserProfileScreen';
 import TokenScreen from './ui/TokenScreen';
 import LogoutScreen from './ui/LogoutScreen';
+import BindingKeysScreen from './ui/BindingKeysScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
 import { sampleAppClientProfiles } from './src/clients';
@@ -62,6 +63,7 @@ export type RootStackParamList = {
   UserProfile: undefined;
   Token: undefined;
   Logout: undefined;
+  BindingKeys: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -394,6 +396,11 @@ export default function App() {
               name="Logout"
               component={LogoutScreen}
               options={{ title: 'Logout' }}
+            />
+            <Stack.Screen
+              name="BindingKeys"
+              component={BindingKeysScreen}
+              options={{ title: 'Binding Keys' }}
             />
           </Stack.Navigator>
         </NavigationContainer>

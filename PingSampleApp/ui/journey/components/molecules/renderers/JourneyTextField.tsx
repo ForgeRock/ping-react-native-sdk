@@ -24,14 +24,16 @@ export default function JourneyTextField(
   const { field, currentValue, setFieldValue } = props;
   const promptText = resolvePromptText(field.prompt, field.message);
   const isPasswordField = field.kind === 'password';
-  const isFidoRegistrationField = field.ref.type === 'FidoRegistrationCallback';
+  const isDeviceNameField =
+    field.ref.type === 'FidoRegistrationCallback' ||
+    field.ref.type === 'DeviceBindingCallback';
   const secureTextEntry = isPasswordField;
-  const label = isFidoRegistrationField
+  const label = isDeviceNameField
     ? 'Device Name'
     : promptText.length > 0
       ? promptText
       : field.ref.type;
-  const placeholder = isFidoRegistrationField
+  const placeholder = isDeviceNameField
     ? 'Enter device name'
     : promptText.length > 0
       ? promptText

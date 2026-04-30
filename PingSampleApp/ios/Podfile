@@ -34,6 +34,8 @@ target 'PingSampleApp' do
   :path => '../../node_modules/@ping-identity/rn-journey'
   pod 'RNPingOidc',
   :path => '../../node_modules/@ping-identity/rn-oidc'
+  pod 'RNPingBinding',
+  :path => '../../node_modules/@ping-identity/rn-binding'
   pod 'RNPingDeviceClient',
   :path => '../../node_modules/@ping-identity/rn-device-client'
   pod 'PingExternalIdPApple', '2.0.0'

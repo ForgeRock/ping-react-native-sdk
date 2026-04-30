@@ -31,6 +31,27 @@ jest.mock('react-native', () => ({
   },
 }));
 
+// ---------- rn-binding ----------
+jest.mock('../packages/binding/src/NativeRNPingBinding', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    bindForJourney: jest.fn(async () => ({ type: 'success' })),
+    signForJourney: jest.fn(async () => ({ type: 'success' })),
+    resolvePin: jest.fn(),
+    cancelPin: jest.fn(),
+    selectUserKey: jest.fn(),
+    cancelUserKey: jest.fn(),
+    getAllKeys: jest.fn(async () => []),
+    deleteKey: jest.fn(async () => null),
+    deleteAllKeys: jest.fn(async () => null),
+  })),
+  toNativeBindOptions: jest.fn((options) => options),
+  toNativeSignOptions: jest.fn((options) => options),
+  toNativeConfigOptions: jest.fn((config) => config),
+  fromNativeJourneyResult: jest.fn((result) => result),
+  fromNativeUserKeys: jest.fn((result) => result),
+}));
+
 // ---------- rn-browser ----------
 jest.mock('../packages/browser/src/NativeRNPingBrowser', () => ({
   __esModule: true,

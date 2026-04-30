@@ -112,7 +112,9 @@ export default function JourneyContinuePanel(
       type === nativeExtensionCallbackType.IdpCallback ||
       // SelectIdpCallback (native lowercase-p form) is handled by the external-idp integration
       // in the panel controller — provider selection renders inline and submit is managed there.
-      type === nativeExtensionCallbackType.SelectIdpCallback,
+      type === nativeExtensionCallbackType.SelectIdpCallback ||
+      type === 'DeviceBindingCallback' ||
+      type === 'DeviceSigningVerifierCallback',
     [],
   );
   const hasSuspendedCallback = callbackTypes.has(
@@ -208,6 +210,20 @@ export default function JourneyContinuePanel(
     [form.issues, isAutoHandledIntegrationCallback],
   );
   const hasUnacceptedRequiredAgreements = meta.hasRequiredConsentMissing;
+  // True when every field is silently handled by a registered integration
+  // (FIDO authentication, device signing verifier) — the auto-forwarder
+  // owns submission, so a Continue button would be redundant.
+  // FIDO registration and device binding render a device-name text field
+  // the user can edit, so they always keep the Continue button.
+  const isAutoForwardedByIntegration =
+    fields.length > 0 &&
+    fields.every(
+      field =>
+        field.executionMode === 'integration_required' &&
+        isAutoHandledIntegrationCallback(field.ref.type) &&
+        field.ref.type !== 'FidoRegistrationCallback' &&
+        field.ref.type !== 'DeviceBindingCallback',
+    );
   const canAutoAdvanceWithContinueButton =
     !hasManualSubmit &&
     !hasBlockingIntegration &&
@@ -215,7 +231,8 @@ export default function JourneyContinuePanel(
     !hasDeviceProfileCallback &&
     !hasSelectIdpCallback &&
     !hasSuspendedCallback &&
-    !hasPollingWaitCallback;
+    !hasPollingWaitCallback &&
+    !isAutoForwardedByIntegration;
   const shouldShowContinueButton =
     hasManualSubmit || canAutoAdvanceWithContinueButton;
   const submitDisabled =

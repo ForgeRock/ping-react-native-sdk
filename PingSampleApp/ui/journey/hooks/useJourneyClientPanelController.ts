@@ -16,6 +16,11 @@ import {
   type JourneyNode,
   type JourneyStartOptions,
 } from '@ping-identity/rn-journey';
+import {
+  createBindingClient,
+  type BindingPrompt,
+  type UserKeyOption,
+} from '@ping-identity/rn-binding';
 import { createFidoClient } from '@ping-identity/rn-fido';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { open as openBrowser } from '@ping-identity/rn-browser';
@@ -25,12 +30,16 @@ import {
   resolveContinueNodeAutomationPolicy,
   resolvePollingWaitMs,
 } from '../utils/clientPanel';
+import { bindingIntegration } from '../integrations/bindingIntegration';
+import { fidoIntegration } from '../integrations/fidoIntegration';
 import { useJourneySessionController } from './useJourneySessionController';
 import { useJourneyResumeController } from './useJourneyResumeController';
 import { useJourneyDebugEntries } from './useJourneyDebugEntries';
 import { useJourneyAutomationEffects } from './useJourneyAutomationEffects';
 import { useJourneyDebugEffects } from './useJourneyDebugEffects';
 import { useJourneyAutoStartEffect } from './useJourneyAutoStartEffect';
+import { useJourneyAutoForwarder } from './useJourneyAutoForwarder';
+import { useJourneyIntegrationRunner } from './useJourneyIntegrationRunner';
 
 const SELECT_IDP_CALLBACK_TYPE: string = 'SelectIdpCallback';
 const REDIRECT_CALLBACK_TYPE: string = 'RedirectCallback';
@@ -148,14 +157,22 @@ export type UseJourneyClientPanelControllerResult = {
    * the journey hook's `error` state.
    */
   externalIdpBrowserError: string | null;
-};
-
-type FidoIntegrationExecutionOptions = {
-  continueOnAuthenticationCancel?: boolean;
-};
-
-type FidoIntegrationExecutionResult = {
-  authenticationCancelled: boolean;
+  /**
+   * Active PIN collection request, or null when no PIN prompt is needed.
+   */
+  pinRequest: {
+    prompt: BindingPrompt;
+    onSubmit: (pin: string) => void;
+    onCancel: () => void;
+  } | null;
+  /**
+   * Active user key selection request, or null when no key picker is needed.
+   */
+  userKeyRequest: {
+    userKeys: UserKeyOption[];
+    onSelect: (key: UserKeyOption) => void;
+    onCancel: () => void;
+  } | null;
 };
 
 type ExternalIdpIntegrationExecutionOptions = {
@@ -174,15 +191,18 @@ function trimStringValue(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
+/**
+ * Extracts a string at the given keys from an object literal, trimmed.
+ */
 function readRecordField(
   record: Record<string, unknown>,
   keys: string[],
 ): string | null {
   for (const key of keys) {
-    const value = trimStringValue(record[key]);
-    if (value) {
-      return value;
-    }
+    const value = record[key];
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (trimmed.length > 0) return trimmed;
   }
   return null;
 }
@@ -272,28 +292,17 @@ function buildNativeIntegrationSubmitInput(
   };
 }
 
+/**
+ * Extracts a fallback device name from a device profile payload.
+ */
 function resolveDeviceNameFromDeviceProfile(profile: unknown): string | null {
-  if (!profile || typeof profile !== 'object') {
-    return null;
-  }
-
-  const root = profile as Record<string, unknown>;
-  const platform = root.platform;
-  if (!platform || typeof platform !== 'object') {
-    return null;
-  }
-
-  const platformRecord = platform as Record<string, unknown>;
-  return readRecordField(platformRecord, ['model', 'modelName']);
-}
-
-function isFidoAuthenticationCancelledError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-
-  const code = (error as { code?: unknown }).code;
-  return code === 'FIDO_AUTHENTICATE_CANCELLED';
+  if (!profile || typeof profile !== 'object') return null;
+  const platform = (profile as Record<string, unknown>).platform;
+  if (!platform || typeof platform !== 'object') return null;
+  return readRecordField(platform as Record<string, unknown>, [
+    'model',
+    'modelName',
+  ]);
 }
 
 function isExternalIdpAuthorizationCancelledError(error: unknown): boolean {
@@ -331,8 +340,6 @@ function resolveActionErrorMessage(error: unknown): string {
 export function useJourneyClientPanelController(
   options: UseJourneyClientPanelControllerOptions,
 ): UseJourneyClientPanelControllerResult {
-  // TODO(DX): This controller currently owns lifecycle, FIDO integration, submit shaping,
-  // and automation behavior. Split into focused hooks to reduce file-level complexity.
   const {
     journeyClient,
     initialJourneyName,
@@ -350,6 +357,55 @@ export function useJourneyClientPanelController(
     string | null
   >(null);
   const defaultSystemDeviceNameRef = useRef<string | null>(null);
+  const [pinRequest, setPinRequest] = useState<{
+    prompt: BindingPrompt;
+    onSubmit: (pin: string) => void;
+    onCancel: () => void;
+  } | null>(null);
+
+  const [userKeyRequest, setUserKeyRequest] = useState<{
+    userKeys: UserKeyOption[];
+    onSelect: (key: UserKeyOption) => void;
+    onCancel: () => void;
+  } | null>(null);
+
+  const binding = useMemo(
+    () =>
+      createBindingClient({
+        ui: {
+          // TODO(binding): Replace sample collectors with app-owned UX wiring in production.
+          pinCollector: (prompt: BindingPrompt) =>
+            new Promise((resolve, reject) => {
+              setPinRequest({
+                prompt,
+                onSubmit: (pin: string) => {
+                  setPinRequest(null);
+                  resolve(pin);
+                },
+                onCancel: () => {
+                  setPinRequest(null);
+                  reject(new Error('cancelled'));
+                },
+              });
+            }),
+          userKeySelector: (keys: UserKeyOption[]) =>
+            new Promise((resolve, reject) => {
+              setUserKeyRequest({
+                userKeys: keys,
+                onSelect: (key: UserKeyOption) => {
+                  setUserKeyRequest(null);
+                  resolve(key);
+                },
+                onCancel: () => {
+                  setUserKeyRequest(null);
+                  reject(new Error('cancelled'));
+                },
+              });
+            }),
+        },
+      }),
+    [],
+  );
   const fido = useMemo(() => createFidoClient({}), []);
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdpRedirectUriRef = useRef(externalIdpRedirectUri);
@@ -362,8 +418,13 @@ export function useJourneyClientPanelController(
     [externalIdpLogger],
   );
   const [node, actions] = useJourney();
-  const { start, next, resume, user, logoutUser, loading, error } = actions;
+  const { start, next, resume, user, logoutUser, dispose, loading, error } =
+    actions;
   const form = useJourneyForm(node);
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     setJourneyName(initialJourneyName ?? '');
@@ -374,12 +435,6 @@ export function useJourneyClientPanelController(
     form.getFieldsByType('DeviceProfileCallback').length > 0;
   const hasPollingWaitCallback =
     form.getFieldsByType('PollingWaitCallback').length > 0;
-  const hasFidoRegistrationCallback =
-    form.getFieldsByType('FidoRegistrationCallback').length > 0;
-  const hasFidoAuthenticationCallback =
-    form.getFieldsByType('FidoAuthenticationCallback').length > 0;
-  const hasFidoCallback =
-    hasFidoRegistrationCallback || hasFidoAuthenticationCallback;
   const hasIdPCallback = form.fields.some(field =>
     IDP_CALLBACK_TYPES.has(field.ref.type as string),
   );
@@ -396,10 +451,7 @@ export function useJourneyClientPanelController(
 
   // Stable signature used to dedupe automation for logically identical ContinueNodes.
   const continueNodeKey = useMemo<string>(() => {
-    if (!isContinueNode || form.fields.length === 0) {
-      return '';
-    }
-
+    if (!isContinueNode || form.fields.length === 0) return '';
     return form.fields
       .map(field => `${field.ref.type}:${field.ref.typeIndex}:${field.id}`)
       .join('|');
@@ -407,10 +459,7 @@ export function useJourneyClientPanelController(
 
   // Narrow key that scopes device-profile automation to relevant callback instances.
   const deviceProfileRequestKey = useMemo<string>(() => {
-    if (!isContinueNode || !hasDeviceProfileCallback) {
-      return '';
-    }
-
+    if (!isContinueNode || !hasDeviceProfileCallback) return '';
     return `${continueNodeKey}:${form.fields
       .filter(field => field.ref.type === 'DeviceProfileCallback')
       .map(field => `${field.ref.typeIndex}`)
@@ -455,7 +504,6 @@ export function useJourneyClientPanelController(
 
   const { debugEntries, appendDebug, clearDebugEntries } =
     useJourneyDebugEntries();
-  const lastAutoFidoAuthNodeKeyRef = useRef<string | null>(null);
   const lastAutoIdpAuthNodeKeyRef = useRef<string | null>(null);
   const lastHandledRedirectUrlRef = useRef<string | null>(null);
   const hasCompletedExternalIdpRedirectRef = useRef<boolean>(false);
@@ -471,56 +519,77 @@ export function useJourneyClientPanelController(
       if (defaultSystemDeviceNameRef.current) {
         return defaultSystemDeviceNameRef.current;
       }
-
       try {
         const profile = await collectDeviceProfile(['platform']);
         const resolved = resolveDeviceNameFromDeviceProfile(profile);
         if (resolved) {
           defaultSystemDeviceNameRef.current = resolved;
-          appendDebug('Resolved default device name from platform profile', {
-            defaultDeviceName: resolved,
-          });
           return resolved;
         }
-      } catch (cause) {
-        appendDebug(
-          'Failed to resolve platform profile for default device name',
-          { cause },
-        );
+      } catch (resolveError) {
+        appendDebug('Default device name fallback used', {
+          reason: 'platform profile unavailable',
+          error:
+            resolveError instanceof Error
+              ? resolveError.message
+              : String(resolveError),
+        });
       }
-
       defaultSystemDeviceNameRef.current = 'Device';
       return defaultSystemDeviceNameRef.current;
     }, [appendDebug]);
 
+  const readDeviceNameInput = useCallback(
+    (fieldId: string): string | undefined => {
+      const value = formRef.current.values[fieldId];
+      return typeof value === 'string' ? value : undefined;
+    },
+    [],
+  );
+
+  const integrations = useMemo(
+    () => [
+      fidoIntegration(fido, {
+        readDeviceNameInput,
+        resolveDefaultDeviceName: resolveDefaultSystemDeviceName,
+        continueOnAuthenticationCancel: true,
+      }),
+      bindingIntegration(binding, {
+        readDeviceNameInput,
+        resolveDefaultDeviceName: resolveDefaultSystemDeviceName,
+      }),
+    ],
+    [binding, fido, readDeviceNameInput, resolveDefaultSystemDeviceName],
+  );
+
+  const runner = useJourneyIntegrationRunner({
+    journeyClient,
+    integrations,
+    appendDebug,
+  });
+
+  // Pre-fill device-name text fields (FIDO registration, device binding)
+  // using the platform profile so users see a sensible default.
   useEffect(() => {
-    if (!isContinueNode || !hasFidoRegistrationCallback) {
-      return;
-    }
-
-    const registrationFields = form.fields.filter(
-      field => field.ref.type === 'FidoRegistrationCallback',
+    if (!isContinueNode) return;
+    const deviceNameFields = form.fields.filter(
+      field =>
+        field.ref.type === 'FidoRegistrationCallback' ||
+        field.ref.type === 'DeviceBindingCallback',
     );
-    if (registrationFields.length === 0) {
-      return;
-    }
+    if (deviceNameFields.length === 0) return;
 
-    const emptyRegistrationFields = registrationFields.filter(field => {
+    const emptyFields = deviceNameFields.filter(field => {
       const value = form.values[field.id];
       return typeof value !== 'string' || value.trim().length === 0;
     });
-    if (emptyRegistrationFields.length === 0) {
-      return;
-    }
+    if (emptyFields.length === 0) return;
 
     let cancelled = false;
     void (async () => {
       const defaultDeviceName = await resolveDefaultSystemDeviceName();
-      if (cancelled || defaultDeviceName.trim().length === 0) {
-        return;
-      }
-
-      for (const field of emptyRegistrationFields) {
+      if (cancelled || defaultDeviceName.trim().length === 0) return;
+      for (const field of emptyFields) {
         const currentValue = form.values[field.id];
         if (
           typeof currentValue === 'string' &&
@@ -531,7 +600,6 @@ export function useJourneyClientPanelController(
         form.setValue(field.id, defaultDeviceName);
       }
     })();
-
     return () => {
       cancelled = true;
     };
@@ -539,156 +607,22 @@ export function useJourneyClientPanelController(
     form,
     form.fields,
     form.values,
-    hasFidoRegistrationCallback,
     isContinueNode,
     resolveDefaultSystemDeviceName,
   ]);
 
-  const runFidoIntegrations = useCallback(
-    async (
-      executionOptions: FidoIntegrationExecutionOptions = {},
-    ): Promise<FidoIntegrationExecutionResult> => {
-      const { continueOnAuthenticationCancel = false } = executionOptions;
-      let authenticationCancelled = false;
-
-      if (!isContinueNode || !hasFidoCallback) {
-        return { authenticationCancelled };
-      }
-
-      const fidoFields = form.fields.filter(
-        field =>
-          field.ref.type === 'FidoRegistrationCallback' ||
-          field.ref.type === 'FidoAuthenticationCallback',
-      );
-
-      for (const field of fidoFields) {
-        if (field.ref.type === 'FidoRegistrationCallback') {
-          const raw = form.values[field.id];
-          const inputDeviceName = typeof raw === 'string' ? raw.trim() : '';
-          const deviceName =
-            inputDeviceName.length > 0
-              ? inputDeviceName
-              : await resolveDefaultSystemDeviceName();
-          appendDebug('Journey FIDO registration requested', {
-            index: field.ref.typeIndex,
-            hasDeviceName: deviceName.length > 0,
-            usedDefaultSystemDeviceName: inputDeviceName.length === 0,
-          });
-          await fido.registerForJourney(journeyClient, {
-            index: field.ref.typeIndex,
-            deviceName,
-          });
-          continue;
-        }
-
-        appendDebug('Journey FIDO authentication requested', {
-          index: field.ref.typeIndex,
-        });
-        try {
-          await fido.authenticateForJourney(journeyClient, {
-            index: field.ref.typeIndex,
-          });
-        } catch (cause) {
-          if (
-            continueOnAuthenticationCancel &&
-            isFidoAuthenticationCancelledError(cause)
-          ) {
-            authenticationCancelled = true;
-            appendDebug('Journey FIDO authentication cancelled', {
-              index: field.ref.typeIndex,
-              behavior: 'continue_to_next',
-            });
-            continue;
-          }
-          throw cause;
-        }
-      }
-      return { authenticationCancelled };
-    },
-    [
-      appendDebug,
-      form.fields,
-      form.values,
-      hasFidoCallback,
-      isContinueNode,
-      journeyClient,
-      fido,
-      resolveDefaultSystemDeviceName,
-    ],
-  );
-
-  useEffect(() => {
-    if (!isContinueNode) {
-      lastAutoFidoAuthNodeKeyRef.current = null;
-      return;
-    }
-
-    const hasNonFidoIntegrationIssue = form.issues.some(
-      issue =>
-        issue.code === 'INTEGRATION_REQUIRED' &&
-        issue.callbackType !== 'FidoRegistrationCallback' &&
-        issue.callbackType !== 'FidoAuthenticationCallback',
-    );
-    const hasManualInput = form.fields.some(field => field.requiresUserInput);
-    const canAutoRunFidoAuthOnly =
-      !loading &&
-      hasFidoAuthenticationCallback &&
-      !hasFidoRegistrationCallback &&
-      !hasManualInput &&
-      !hasNonFidoIntegrationIssue &&
-      !hasDeviceProfileCallback &&
-      !hasPollingWaitCallback &&
-      !hasSuspendedCallback &&
-      !form.meta.hasUnsupported &&
-      continueNodeKey.length > 0;
-
-    if (!canAutoRunFidoAuthOnly) {
-      return;
-    }
-
-    if (lastAutoFidoAuthNodeKeyRef.current === continueNodeKey) {
-      return;
-    }
-    lastAutoFidoAuthNodeKeyRef.current = continueNodeKey;
-
-    void (async () => {
-      try {
-        appendDebug('Journey auto FIDO authentication requested', {
-          mode: 'auth-only continue node',
-          continueNodeKey,
-        });
-        const fidoResult = await runFidoIntegrations({
-          continueOnAuthenticationCancel: true,
-        });
-        if (fidoResult.authenticationCancelled) {
-          appendDebug(
-            'Journey auto-continue after cancelled FIDO authentication',
-            {
-              continueNodeKey,
-            },
-          );
-        }
-        await next({});
-      } catch {
-        // Error is reflected by the Journey hook state and debug effect.
-      }
-    })();
-  }, [
-    appendDebug,
+  useJourneyAutoForwarder({
+    node,
+    form,
+    loading,
     continueNodeKey,
-    form.fields,
-    form.issues,
-    form.meta.hasUnsupported,
     hasDeviceProfileCallback,
-    hasFidoAuthenticationCallback,
-    hasFidoRegistrationCallback,
     hasPollingWaitCallback,
     hasSuspendedCallback,
-    isContinueNode,
-    loading,
+    runner,
     next,
-    runFidoIntegrations,
-  ]);
+    appendDebug,
+  });
 
   const handleRedirectCallback = useCallback(
     async (targetNode: JourneyNode | null): Promise<boolean> => {
@@ -1016,17 +950,7 @@ export function useJourneyClientPanelController(
     hasCompletedExternalIdpRedirectRef.current = false;
     lastHandledRedirectUrlRef.current = null;
     const trimmedJourneyName = journeyName.trim();
-    if (!trimmedJourneyName) {
-      appendDebug('Journey start skipped', {
-        reason: 'Journey name is empty',
-      });
-      return false;
-    }
-
-    appendDebug('Journey start requested', {
-      journeyName: trimmedJourneyName,
-      startOptions,
-    });
+    if (!trimmedJourneyName) return false;
 
     try {
       await start(trimmedJourneyName, startOptions);
@@ -1036,7 +960,7 @@ export function useJourneyClientPanelController(
     } catch {
       return false;
     }
-  }, [appendDebug, form, journeyName, setResumeUrl, start, startOptions]);
+  }, [form, journeyName, setResumeUrl, start, startOptions]);
 
   useJourneyAutoStartEffect({
     autoStartOnMount,
@@ -1046,32 +970,20 @@ export function useJourneyClientPanelController(
     node,
     journeyName,
     onStart,
+    dispose,
   });
 
   const onSubmit = useCallback(async (): Promise<void> => {
-    const nativeIntegrationCallbackTypes = new Set([
-      'FidoRegistrationCallback',
-      'FidoAuthenticationCallback',
-      'IdPCallback',
-      'IdpCallback',
-      SELECT_IDP_CALLBACK_TYPE,
-    ]);
-    const blockingIssues = form.issues.filter(issue => {
-      if (
-        issue.code === 'UNSUPPORTED_CALLBACK' &&
-        issue.callbackType === SELECT_IDP_CALLBACK_TYPE
-      ) {
-        return false;
-      }
-      if (issue.code !== 'INTEGRATION_REQUIRED') {
-        return true;
-      }
-      return !nativeIntegrationCallbackTypes.has(issue.callbackType ?? '');
-    });
-
-    if (blockingIssues.length > 0) {
-      appendDebug('Journey submit blocked', {
-        issues: blockingIssues,
+    if (runner.hasUnhandledIntegrationIssue(form)) {
+      appendDebug('Submit blocked: unhandled integration callback', {
+        callbackTypes: form.issues
+          .filter(
+            issue =>
+              issue.code === 'INTEGRATION_REQUIRED' &&
+              (!issue.callbackType ||
+                !runner.handledCallbackTypes.has(issue.callbackType)),
+          )
+          .map(issue => issue.callbackType),
       });
       return;
     }
@@ -1085,62 +997,60 @@ export function useJourneyClientPanelController(
     });
     setExternalIdpBrowserError(null);
 
+    // Match the native sample pattern: on integration failure, the native
+    // SDK has already set `clientError` on the callback payload. Submit
+    // anyway so AM's journey tree routes to the configured failure edge.
     try {
-      const fidoResult = await runFidoIntegrations({
-        continueOnAuthenticationCancel: true,
+      await runner.runIntegrations(form);
+    } catch (runError) {
+      appendDebug('Integration failed; submitting to let server route', {
+        error: runError instanceof Error ? runError.message : String(runError),
       });
-      if (fidoResult.authenticationCancelled) {
+    }
+
+    try {
+      const idpResult = await runExternalIdpIntegrations({
+        continueOnAuthorizationCancel: true,
+      });
+      if (idpResult.authorizationCancelled) {
         appendDebug(
-          'Journey submit continues after cancelled FIDO authentication',
+          'Journey submit continues after cancelled external IdP authorization',
         );
       }
-
-      try {
-        const idpResult = await runExternalIdpIntegrations({
-          continueOnAuthorizationCancel: true,
-        });
-        if (idpResult.authorizationCancelled) {
-          appendDebug(
-            'Journey submit continues after cancelled external IdP authorization',
-          );
-        }
-      } catch (idpCause) {
-        setExternalIdpBrowserError(resolveActionErrorMessage(idpCause));
-        appendDebug('Journey external IdP authorization failed', {
-          cause: idpCause,
-        });
-        return;
-      }
-
-      const callbacks = form.input.callbacks ?? [];
-      const submitInput = buildNativeIntegrationSubmitInput(
-        form.input,
-        hasFidoCallback || hasExternalIdpCallback,
-      );
-
-      appendDebug('Journey submit payload prepared', {
-        originalCallbackCount: callbacks.length,
-        submitCallbackCount: submitInput.callbacks?.length ?? 0,
-        filteredForFido: hasFidoCallback,
-        filteredForExternalIdp: hasExternalIdpCallback,
+    } catch (idpCause) {
+      setExternalIdpBrowserError(resolveActionErrorMessage(idpCause));
+      appendDebug('Journey external IdP authorization failed', {
+        cause: idpCause,
       });
+      return;
+    }
+
+    try {
+      const hasHandled =
+        runner.hasHandledCallback(form) || hasExternalIdpCallback;
+      const submitInput: JourneyNextInput = hasHandled
+        ? buildNativeIntegrationSubmitInput(
+            { callbacks: runner.filterCallbacksForSubmit(form.input.callbacks) },
+            hasExternalIdpCallback,
+          )
+        : form.input;
+
       const nextNode = await next(submitInput);
       const handledRedirect = await handleRedirectCallback(nextNode);
       if (!handledRedirect) {
         hasCompletedExternalIdpRedirectRef.current = false;
       }
     } catch {
-      // Error is reflected by the Journey hook state and debug effect.
+      // Error surfaces via Journey hook state and useJourneyDebugEffects.
     }
   }, [
     appendDebug,
     form,
-    hasFidoCallback,
     hasExternalIdpCallback,
     handleRedirectCallback,
     next,
-    runFidoIntegrations,
     runExternalIdpIntegrations,
+    runner,
   ]);
 
   const onLogout = useCallback(async (): Promise<void> => {
@@ -1178,5 +1088,7 @@ export function useJourneyClientPanelController(
     showCallbackScreen,
     showSuccessScreen,
     externalIdpBrowserError,
+    pinRequest,
+    userKeyRequest,
   };
 }

@@ -9,6 +9,7 @@ yarn-error.log
 # Builds
 android/.gradle/
 android/build/
+**/android/build/
 ios/build/
 ios/Pods/
 ios/DerivedData/
