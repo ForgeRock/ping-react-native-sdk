@@ -19,6 +19,7 @@ enum BindingErrorCode: String {
   case uiUnavailable = "BINDING_UI_UNAVAILABLE"
   case callbackNotFound = "BINDING_CALLBACK_NOT_FOUND"
   case invalidConfig = "BINDING_INVALID_CONFIG"
+  case keyReadError = "BINDING_KEY_READ_ERROR"
   case keyDeleteError = "BINDING_KEY_DELETE_ERROR"
   case keyInvalidated = "BINDING_KEY_INVALIDATED"
   case authFailed = "BINDING_AUTH_FAILED"

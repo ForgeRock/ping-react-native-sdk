@@ -100,6 +100,10 @@ internal suspend fun bridgePinCollector(
   reactContext: java.lang.ref.WeakReference<com.facebook.react.bridge.ReactApplicationContext>?,
   prompt: Prompt
 ): CharArray {
+  val emitter = reactContext?.get()
+    ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+    ?: throw RuntimeException("React context unavailable — cannot collect PIN")
+
   val requestId = UUID.randomUUID().toString()
   val deferred = CompletableDeferred<CharArray?>()
   pendingPinRequests[requestId] = deferred
@@ -110,9 +114,7 @@ internal suspend fun bridgePinCollector(
     putString("subtitle", prompt.subtitle)
     putString("description", prompt.description)
   }
-  reactContext?.get()
-    ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-    ?.emit(PIN_REQUIRED_EVENT, params)
+  emitter.emit(PIN_REQUIRED_EVENT, params)
 
   val result = withTimeoutOrNull(PIN_TIMEOUT_MS) { deferred.await() }
     ?: run {
@@ -135,6 +137,10 @@ internal suspend fun bridgeUserKeySelector(
   reactContext: java.lang.ref.WeakReference<com.facebook.react.bridge.ReactApplicationContext>?,
   keys: List<UserKey>
 ): UserKey {
+  val emitter = reactContext?.get()
+    ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+    ?: throw RuntimeException("React context unavailable — cannot select user key")
+
   val requestId = UUID.randomUUID().toString()
   val deferred = CompletableDeferred<String?>()
   pendingUserKeyRequests[requestId] = deferred
@@ -153,9 +159,7 @@ internal suspend fun bridgeUserKeySelector(
     putString("requestId", requestId)
     putArray("userKeys", keyArray)
   }
-  reactContext?.get()
-    ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
-    ?.emit(USER_KEY_REQUIRED_EVENT, params)
+  emitter.emit(USER_KEY_REQUIRED_EVENT, params)
 
   val selectedId = withTimeoutOrNull(USER_KEY_TIMEOUT_MS) { deferred.await() }
     ?: run {

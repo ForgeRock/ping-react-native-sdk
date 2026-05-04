@@ -362,17 +362,14 @@ describe('@ping-identity/rn-binding — integration', () => {
       );
     });
 
-    it('forwards allowDeviceCredentialFallback (iOS sign-only) to native', async () => {
+    it('forwards biometric options to native', async () => {
       const mock = makeMock();
       const { mod } = await loadBinding(mock);
       const client = mod.createBindingClient();
 
       await client.signForJourney(makeJourney(), {
         biometric: {
-          ios: {
-            allowDeviceCredentialFallback: true,
-            keyTag: 'com.example.bio',
-          },
+          android: { strongBoxPreferred: true },
         },
       });
 
@@ -380,26 +377,8 @@ describe('@ping-identity/rn-binding — integration', () => {
         expect.any(String),
         expect.objectContaining({
           biometric: expect.objectContaining({
-            ios: expect.objectContaining({
-              allowDeviceCredentialFallback: true,
-            }),
+            android: expect.objectContaining({ strongBoxPreferred: true }),
           }),
-        }),
-        expect.any(Object),
-      );
-    });
-
-    it('forwards jwt timeout to native', async () => {
-      const mock = makeMock();
-      const { mod } = await loadBinding(mock);
-      const client = mod.createBindingClient();
-
-      await client.signForJourney(makeJourney(), { jwt: { timeout: 60 } });
-
-      expect(mock.signForJourney).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          jwt: expect.objectContaining({ timeout: 60 }),
         }),
         expect.any(Object),
       );

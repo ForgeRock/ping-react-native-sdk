@@ -305,6 +305,8 @@ export type BindingError = GenericError;
  *
  * @remarks
  * Keep these in sync with native error constants.
+ *
+ * TODO(SDKS-semver): See packages/binding/TODOS.md for the full semver widening plan.
  */
 export type BindingErrorCode =
   | 'BINDING_ERROR'
@@ -316,6 +318,7 @@ export type BindingErrorCode =
   | 'BINDING_UI_UNAVAILABLE'
   | 'BINDING_CALLBACK_NOT_FOUND'
   | 'BINDING_INVALID_CONFIG'
+  | 'BINDING_KEY_READ_ERROR'
   | 'BINDING_KEY_DELETE_ERROR'
   | 'BINDING_KEY_INVALIDATED'
   | 'BINDING_AUTH_FAILED';

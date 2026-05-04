@@ -258,7 +258,7 @@ final class RNPingBindingCommonTests: XCTestCase {
     XCTAssertNil(parsed?["promptDescription"] as? String)
   }
 
-  // MARK: - biometric options (iOS — keyTag + allowDeviceCredentialFallback)
+  // MARK: - biometric options (iOS — keyTag)
 
   func testParseBiometricOptionsParsesKeyTag() {
     let options: NSDictionary = [
@@ -291,13 +291,11 @@ final class RNPingBindingCommonTests: XCTestCase {
       "biometric": [
         "ios": [
           "keyTag": 1,
-          "allowDeviceCredentialFallback": "bad",
         ],
       ],
     ]
     let parsed = RNPingBindingCommon._test_parseBiometricOptions(options)
     XCTAssertNil(parsed?["keyTag"] as? String)
-    XCTAssertNil(parsed?["allowDeviceCredentialFallback"] as? Bool)
   }
 
   // MARK: - jwt options
@@ -370,6 +368,10 @@ final class RNPingBindingCommonTests: XCTestCase {
   }
 
   // MARK: - Error code contracts
+
+  func testErrorCodeKeyReadErrorIsCorrect() {
+    XCTAssertEqual(BindingErrorCode.keyReadError.rawValue, "BINDING_KEY_READ_ERROR")
+  }
 
   func testErrorCodeKeyInvalidatedIsCorrect() {
     XCTAssertEqual(BindingErrorCode.keyInvalidated.rawValue, "BINDING_KEY_INVALIDATED")

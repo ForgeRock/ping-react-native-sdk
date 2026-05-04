@@ -12,21 +12,49 @@ import PingLogger
 import React
 import RNPingCore
 
+/// Actor that owns all pending PIN and user-key completion handlers.
+/// Replaces the previous NSLock + nonisolated(unsafe) static vars pattern.
+actor BindingEventStore {
+  static let shared = BindingEventStore()
+
+  private var pendingPinRequests: [String: @Sendable (String?) -> Void] = [:]
+  private var pendingUserKeyRequests: [String: @Sendable (String?) -> Void] = [:]
+
+  func storePinCompletion(requestId: String, completion: @escaping @Sendable (String?) -> Void) {
+    pendingPinRequests[requestId] = completion
+  }
+
+  func resolvePin(requestId: String, pin: String) {
+    pendingPinRequests.removeValue(forKey: requestId)?(pin)
+  }
+
+  func cancelPin(requestId: String) {
+    pendingPinRequests.removeValue(forKey: requestId)?(nil)
+  }
+
+  func storeUserKeyCompletion(requestId: String, completion: @escaping @Sendable (String?) -> Void) {
+    pendingUserKeyRequests[requestId] = completion
+  }
+
+  func resolveUserKey(requestId: String, keyId: String) {
+    pendingUserKeyRequests.removeValue(forKey: requestId)?(keyId)
+  }
+
+  func cancelUserKey(requestId: String) {
+    pendingUserKeyRequests.removeValue(forKey: requestId)?(nil)
+  }
+}
+
 /// Shared device binding and signing-verifier execution logic for React Native iOS bridges.
 ///
 /// Delegates to focused extension files:
-/// - `BindingEventBridge.swift`  — bridge collectors, event emission, PIN/key lifecycle
+/// - `BindingEventBridge.swift`  — bridge collectors and event emission
 /// - `BindingOptionParser.swift` — option/config parsing and DeviceBindingConfig application
 /// - `BindingErrorMapper.swift`  — error code resolution and journey result payload
+///
+/// PIN and user-key completion state is owned by `BindingEventStore` (actor).
 @objcMembers
 public class RNPingBindingCommon: NSObject {
-
-  // MARK: - Event bridge state
-
-  private static let lock = NSLock()
-  // nonisolated(unsafe): manually guarded by `lock`.
-  nonisolated(unsafe) private static var pendingPinRequests: [String: (String?) -> Void] = [:]
-  nonisolated(unsafe) private static var pendingUserKeyRequests: [String: (String?) -> Void] = [:]
 
   /// Posts a `RNPingBinding_NativeEmit` notification that the ObjC emitter gate forwards to
   /// `RCTDeviceEventEmitter`, making it available to JS `DeviceEventEmitter` on both architectures.
@@ -42,53 +70,28 @@ public class RNPingBindingCommon: NSObject {
     )
   }
 
-  /// Stores a PIN completion handler under `requestId` so it can be fulfilled by `resolvePin` or `cancelPin`.
-  static func storePinCompletion(requestId: String, completion: @escaping (String?) -> Void) {
-    lock.lock(); defer { lock.unlock() }
-    pendingPinRequests[requestId] = completion
-  }
-
   /// Fulfils the pending PIN request identified by `requestId` with the provided `pin`.
   /// Called from the JS-facing ObjC bridge when the user confirms a PIN.
   @objc public static func resolvePin(requestId: String, pin: String) {
-    lock.lock()
-    let completion = pendingPinRequests.removeValue(forKey: requestId)
-    lock.unlock()
-    completion?(pin)
+    Task { await BindingEventStore.shared.resolvePin(requestId: requestId, pin: pin) }
   }
 
   /// Cancels the pending PIN request identified by `requestId` (completes with `nil`).
   /// Called from the JS-facing ObjC bridge when the user dismisses the PIN dialog.
   @objc public static func cancelPin(requestId: String) {
-    lock.lock()
-    let completion = pendingPinRequests.removeValue(forKey: requestId)
-    lock.unlock()
-    completion?(nil)
-  }
-
-  /// Stores a user-key selection completion handler under `requestId` so it can be fulfilled by
-  /// `resolveUserKey` or `cancelUserKey`.
-  static func storeUserKeyCompletion(requestId: String, completion: @escaping (String?) -> Void) {
-    lock.lock(); defer { lock.unlock() }
-    pendingUserKeyRequests[requestId] = completion
+    Task { await BindingEventStore.shared.cancelPin(requestId: requestId) }
   }
 
   /// Fulfils the pending user-key selection request identified by `requestId` with `keyId`.
   /// Called from the JS-facing ObjC bridge when the user selects a key.
   @objc public static func resolveUserKey(requestId: String, keyId: String) {
-    lock.lock()
-    let completion = pendingUserKeyRequests.removeValue(forKey: requestId)
-    lock.unlock()
-    completion?(keyId)
+    Task { await BindingEventStore.shared.resolveUserKey(requestId: requestId, keyId: keyId) }
   }
 
   /// Cancels the pending user-key selection request identified by `requestId` (completes with `nil`).
   /// Called from the JS-facing ObjC bridge when the user dismisses the key selector.
   @objc public static func cancelUserKey(requestId: String) {
-    lock.lock()
-    let completion = pendingUserKeyRequests.removeValue(forKey: requestId)
-    lock.unlock()
-    completion?(nil)
+    Task { await BindingEventStore.shared.cancelUserKey(requestId: requestId) }
   }
 
   // MARK: - Journey operations
@@ -282,7 +285,7 @@ public class RNPingBindingCommon: NSObject {
   ///
   /// - Parameters:
   ///   - resolver: Promise resolver called with the array on success.
-  ///   - rejecter: Promise rejecter called with `BINDING_KEY_DELETE_ERROR` on failure.
+  ///   - rejecter: Promise rejecter called with `BINDING_KEY_READ_ERROR` on failure.
   @objc
   public static func getAllKeys(
     resolver: @escaping RCTPromiseResolveBlock,
@@ -298,7 +301,7 @@ public class RNPingBindingCommon: NSObject {
         handlers.resolve(result)
       } catch {
         handlers.reject(
-          GenericError(type: .bindingError, error: BindingErrorCode.keyDeleteError.rawValue, message: error.localizedDescription),
+          GenericError(type: .bindingError, error: BindingErrorCode.keyReadError.rawValue, message: error.localizedDescription),
           underlying: error as NSError
         )
       }
@@ -328,7 +331,7 @@ public class RNPingBindingCommon: NSObject {
           handlers.reject(GenericError(
             type: .stateError,
             error: BindingErrorCode.keyDeleteError.rawValue,
-            message: "No binding key found for userId=\(userId) keyId=\(keyId)."
+            message: "No binding key found."
           ))
           return
         }

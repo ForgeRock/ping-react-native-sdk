@@ -2,9 +2,16 @@
   "compilerOptions": {
     "jsx": "react",
     "paths": {
+      "@ping-identity/rn-binding": ["../packages/binding/src/index"],
       "@ping-identity/rn-browser": ["../packages/browser/src/index"],
+      "@ping-identity/rn-device-client": [
+        "../packages/device-client/src/index"
+      ],
       "@ping-identity/rn-device-id": ["../packages/device-id/src/index"],
-      "@ping-identity/rn-device-profile": ["../packages/device-profile/src/index"],
+      "@ping-identity/rn-device-profile": [
+        "../packages/device-profile/src/index"
+      ],
+      "@ping-identity/rn-fido": ["../packages/fido/src/index"],
       "@ping-identity/rn-journey": ["../packages/journey/src/index"],
       "@ping-identity/rn-logger": ["../packages/logger/src/index"],
       "@ping-identity/rn-oidc": ["../packages/oidc/src/index"],
@@ -13,5 +20,11 @@
     }
   },
   "extends": "@react-native/typescript-config",
-  "include": ["App.tsx", "index.js", "__tests__/**/*", "e2e/**/*", "scenarios/**/*"]
+  "include": [
+    "App.tsx",
+    "index.js",
+    "__tests__/**/*",
+    "e2e/**/*",
+    "scenarios/**/*"
+  ]
 }

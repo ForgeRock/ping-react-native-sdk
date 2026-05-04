@@ -6,12 +6,14 @@
  */
 package com.pingidentity.rnbinding
 
+import androidx.biometric.BiometricPrompt
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
 import com.facebook.soloader.SoLoader
 import com.facebook.soloader.nativeloader.NativeLoader
 import com.facebook.soloader.nativeloader.SystemDelegate
+import com.pingidentity.device.binding.authenticator.exception.BiometricAuthenticationException
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -115,6 +117,14 @@ class RNPingBindingTest {
   }
 
   /**
+   * Ensures BINDING_KEY_READ_ERROR is the correct stable value.
+   */
+  @Test
+  fun errorCodeKeyReadErrorIsCorrect() {
+    assertEquals("BINDING_KEY_READ_ERROR", BindingErrorCodes.BINDING_KEY_READ_ERROR)
+  }
+
+  /**
    * Ensures BINDING_KEY_DELETE_ERROR is the correct stable value.
    */
   @Test
@@ -136,6 +146,58 @@ class RNPingBindingTest {
   @Test
   fun errorCodeAuthFailedIsCorrect() {
     assertEquals("BINDING_AUTH_FAILED", BindingErrorCodes.BINDING_AUTH_FAILED)
+  }
+
+  /**
+   * BiometricAuthenticationException (non-cancellation) maps to BINDING_AUTH_FAILED.
+   * KeyPermanentlyInvalidatedException is caught separately before this branch is reached.
+   */
+  @Test
+  fun biometricAuthExceptionMapsToAuthFailed() {
+    val error = BiometricAuthenticationException(
+      BiometricPrompt.ERROR_HW_UNAVAILABLE,
+      "Hardware unavailable"
+    )
+    assertEquals(
+      BindingErrorCodes.BINDING_AUTH_FAILED,
+      resolveBindingErrorCode(error, BindingErrorCodes.BINDING_SIGN_ERROR)
+    )
+  }
+
+  /**
+   * BiometricAuthenticationException with user-cancel codes maps to BINDING_CANCELLED.
+   */
+  @Test
+  fun biometricAuthExceptionWithUserCancelMapsToBindingCancelled() {
+    listOf(
+      BiometricPrompt.ERROR_USER_CANCELED,
+      BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+      BiometricPrompt.ERROR_CANCELED,
+      BiometricPrompt.ERROR_TIMEOUT,
+    ).forEach { code ->
+      val error = BiometricAuthenticationException(code, "Cancelled")
+      assertEquals(
+        "Expected BINDING_CANCELLED for errorCode=$code",
+        BindingErrorCodes.BINDING_CANCELLED,
+        resolveBindingErrorCode(error, BindingErrorCodes.BINDING_SIGN_ERROR)
+      )
+    }
+  }
+
+  /**
+   * BiometricAuthenticationException with any other error code (e.g. lockout)
+   * maps to BINDING_AUTH_FAILED — the key is intact and the operation can be retried.
+   */
+  @Test
+  fun biometricAuthExceptionWithLockoutCodeMapsToAuthFailed() {
+    val error = BiometricAuthenticationException(
+      BiometricPrompt.ERROR_LOCKOUT,
+      "Too many attempts"
+    )
+    assertEquals(
+      BindingErrorCodes.BINDING_AUTH_FAILED,
+      resolveBindingErrorCode(error, BindingErrorCodes.BINDING_SIGN_ERROR)
+    )
   }
 
   // MARK: - Common behavior
@@ -624,7 +686,6 @@ class RNPingBindingTest {
   fun parseBindingOptionsIgnoresIosOnlyBiometricKeys() {
     val ios = JavaOnlyMap().apply {
       putString("keyTag", "bio-key")
-      putBoolean("allowDeviceCredentialFallback", true)
     }
     val biometric = JavaOnlyMap().apply { putMap("ios", ios) }
     val options = JavaOnlyMap().apply { putMap("biometric", biometric) }

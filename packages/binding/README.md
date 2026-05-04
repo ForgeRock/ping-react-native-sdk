@@ -189,8 +189,7 @@ On both platforms, deleting a key removes:
 
 - The **key metadata** record (username, userId, authenticationType) stored in encrypted
   SharedPreferences (Android) or Keychain (iOS).
-- The **cryptographic key material** (RSA private/public key pair) stored in Android Keystore
-  or iOS Secure Enclave.
+- The **cryptographic key material** stored in Android Keystore or iOS Secure Enclave.
 
 Deleting a key locally does **not** remove the device registration record from the server.
 If you need to deregister the device server-side, use the `device-client` package first, then
@@ -374,7 +373,7 @@ The client holds only stateful, shared concerns. Per-operation options are passe
 | `claims`           | `Record<string, unknown>`    | `{}`      | Custom claims added to the signed JWT payload.                               |
 | `signingAlgorithm` | `string`                     | `"RS512"` | JWS algorithm for the signed JWT proof. Android only; iOS always uses ES256. |
 | `appPin`           | `BindingAppPinConfig`        | —         | App PIN authenticator options.                                               |
-| `biometric`        | `BindingBiometricSignConfig` | —         | Biometric authenticator options (includes `allowDeviceCredentialFallback`).  |
+| `biometric`        | `BindingBiometricSignConfig` | —         | Biometric authenticator options.                                             |
 | `jwt`              | `BindingJwtConfig`           | —         | JWT proof timing options.                                                    |
 
 Reserved claim names (`sub`, `exp`, `iat`, `nbf`, `iss`, `challenge`) cannot be used in `claims`.
@@ -415,24 +414,24 @@ Rejected promises use `GenericError` shape (`BindingError`).
 
 Stable error codes:
 
-| Code                         | Description                                                                                                                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BINDING_ERROR`              | Unexpected error.                                                                                                                                                             |
-| `BINDING_BIND_ERROR`         | Bind operation failed.                                                                                                                                                        |
-| `BINDING_SIGN_ERROR`         | Sign operation failed.                                                                                                                                                        |
-| `BINDING_CANCELLED`          | User cancelled the authentication prompt, or the operation timed out.                                                                                                         |
-| `BINDING_UNSUPPORTED_DEVICE` | Device lacks the hardware or OS capabilities required for binding.                                                                                                            |
-| `BINDING_NOT_REGISTERED`     | No local key found for this user — device must be re-bound.                                                                                                                   |
-| `BINDING_KEY_INVALIDATED`    | The cryptographic key is no longer usable and the user must re-bind. Android surfaces this directly; iOS sign-time key usability failures are normalized to this code.        |
-| `BINDING_AUTH_FAILED`        | Biometric or PIN authentication failed (wrong fingerprint, wrong PIN, or biometric lockout). The operation can be retried or the user directed to an alternative auth method. |
-| `BINDING_UI_UNAVAILABLE`     | No foreground Activity (Android) or UIWindowScene (iOS) available.                                                                                                            |
-| `BINDING_CALLBACK_NOT_FOUND` | No matching Journey callback found for the given journey id and index.                                                                                                        |
-| `BINDING_INVALID_CONFIG`     | Reserved claim names were used in `claims`, or another configuration error.                                                                                                   |
-| `BINDING_KEY_DELETE_ERROR`   | `deleteKey` could not find the specified key in local storage.                                                                                                                |
+| Code                         | Description                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BINDING_ERROR`              | Unexpected error.                                                                                                                                                              |
+| `BINDING_BIND_ERROR`         | Bind operation failed.                                                                                                                                                         |
+| `BINDING_SIGN_ERROR`         | Sign operation failed.                                                                                                                                                         |
+| `BINDING_CANCELLED`          | User cancelled the authentication prompt, or the operation timed out.                                                                                                          |
+| `BINDING_UNSUPPORTED_DEVICE` | Device lacks the hardware or OS capabilities required for binding.                                                                                                             |
+| `BINDING_NOT_REGISTERED`     | No local key found for this user on this device — device must be bound first.                                                                                                  |
+| `BINDING_KEY_INVALIDATED`    | The signing key on this device is no longer usable — typically caused by a biometric enrollment change. The user must re-bind; their account and other devices are unaffected. |
+| `BINDING_AUTH_FAILED`        | Authentication failed — wrong fingerprint, wrong PIN, or biometric lockout. The key is intact and the operation can be retried.                                                |
+| `BINDING_UI_UNAVAILABLE`     | No foreground Activity (Android) or UIWindowScene (iOS) available.                                                                                                             |
+| `BINDING_CALLBACK_NOT_FOUND` | No matching Journey callback found for the given journey id and index.                                                                                                         |
+| `BINDING_INVALID_CONFIG`     | Reserved claim names were used in `claims`, or another configuration error.                                                                                                    |
+| `BINDING_KEY_DELETE_ERROR`   | `deleteKey` could not find the specified key in local storage.                                                                                                                 |
 
 ### Handling key invalidation
 
-`BINDING_KEY_INVALIDATED` indicates the local key is no longer usable. The recommended recovery path is to call `deleteKey` to clean up the local entry and direct the user through binding again:
+`BINDING_KEY_INVALIDATED` and `BINDING_NOT_REGISTERED` both mean the key on this device is gone — the user must re-bind. The user's account and any keys bound on other devices are unaffected.
 
 ```ts
 try {
@@ -442,6 +441,7 @@ try {
     err.code === 'BINDING_KEY_INVALIDATED' ||
     err.code === 'BINDING_NOT_REGISTERED'
   ) {
+    // Key is gone on this device — clean up and re-bind.
     const keys = await getAllKeys();
     const stale = keys.find((k) => k.userId === currentUserId);
     if (stale) await deleteKey(stale);

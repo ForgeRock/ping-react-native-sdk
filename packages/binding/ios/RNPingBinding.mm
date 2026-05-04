@@ -68,14 +68,6 @@ RCT_EXPORT_MODULE()
 }
 
 /**
- Returns the shared Swift implementation instance.
- */
-- (RNPingBindingImpl *)swiftImpl
-{
-  return [RNPingBindingImpl shared];
-}
-
-/**
  Executes a Journey-scoped DeviceBindingCallback.
  */
 - (void)bindForJourney:(NSString *)journeyId
@@ -85,12 +77,12 @@ RCT_EXPORT_MODULE()
                 reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] bindForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+    [RNPingBindingImpl bindForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] bindForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+    [RNPingBindingImpl bindForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -104,39 +96,39 @@ RCT_EXPORT_MODULE()
                 reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] signForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+    [RNPingBindingImpl signForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] signForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+    [RNPingBindingImpl signForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 
 - (void)resolvePin:(NSString *)requestId pin:(NSString *)pin
 {
-  [[self swiftImpl] resolvePin:requestId pin:pin];
+  [RNPingBindingImpl resolvePin:requestId pin:pin];
 }
 
 - (void)cancelPin:(NSString *)requestId
 {
-  [[self swiftImpl] cancelPin:requestId];
+  [RNPingBindingImpl cancelPin:requestId];
 }
 
 - (void)selectUserKey:(NSString *)requestId keyId:(NSString *)keyId
 {
-  [[self swiftImpl] selectUserKey:requestId keyId:keyId];
+  [RNPingBindingImpl selectUserKey:requestId keyId:keyId];
 }
 
 - (void)cancelUserKey:(NSString *)requestId
 {
-  [[self swiftImpl] cancelUserKey:requestId];
+  [RNPingBindingImpl cancelUserKey:requestId];
 }
 
 - (void)getAllKeys:(RCTPromiseResolveBlock)resolve
             reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] getAllKeys:resolve rejecter:reject];
+  [RNPingBindingImpl getAllKeys:resolve rejecter:reject];
 }
 
 - (void)deleteKey:(NSString *)userId
@@ -144,13 +136,13 @@ RCT_EXPORT_MODULE()
           resolve:(RCTPromiseResolveBlock)resolve
            reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] deleteKey:userId keyId:keyId resolve:resolve rejecter:reject];
+  [RNPingBindingImpl deleteKey:userId keyId:keyId resolve:resolve rejecter:reject];
 }
 
 - (void)deleteAllKeys:(RCTPromiseResolveBlock)resolve
                reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] deleteAllKeys:resolve rejecter:reject];
+  [RNPingBindingImpl deleteAllKeys:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

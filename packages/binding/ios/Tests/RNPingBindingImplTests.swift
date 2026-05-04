@@ -11,26 +11,6 @@ import XCTest
 @MainActor
 final class RNPingBindingImplTests: XCTestCase {
 
-  private var impl: RNPingBindingImpl!
-
-  override func setUp() async throws {
-    try await super.setUp()
-    impl = RNPingBindingImpl.shared
-  }
-
-  override func tearDown() async throws {
-    impl = nil
-    try await super.tearDown()
-  }
-
-  // MARK: - Singleton Tests
-
-  func testSharedReturnsSameInstance() {
-    let a = RNPingBindingImpl.shared
-    let b = RNPingBindingImpl.shared
-    XCTAssertTrue(a === b)
-  }
-
   // MARK: - Bind Journey Tests
 
   func testBindForJourneyRejectsWithCallbackNotFoundWhenJourneyIdEmpty() async {
@@ -65,7 +45,7 @@ final class RNPingBindingImplTests: XCTestCase {
     options: NSDictionary
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      impl.bindForJourney(journeyId, options: options, config: [:]) { _ in
+      RNPingBindingImpl.bindForJourney(journeyId, options: options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -79,7 +59,7 @@ final class RNPingBindingImplTests: XCTestCase {
     options: NSDictionary
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      impl.signForJourney(journeyId, options: options, config: [:]) { _ in
+      RNPingBindingImpl.signForJourney(journeyId, options: options, config: [:]) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))

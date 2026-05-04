@@ -8,6 +8,9 @@ import Foundation
 import PingBinding
 import React
 
+private let pinTimeoutSeconds: UInt64 = 60
+private let userKeyTimeoutSeconds: UInt64 = 60
+
 /// JS event emitted when a PIN is needed for app-pin authentication.
 let pinRequiredEvent = "RNPingBinding_PinRequired"
 
@@ -24,13 +27,18 @@ let nativeEmitNotification = Notification.Name("RNPingBinding_NativeEmit")
 class BridgePinCollector: PinCollector {
   func collectPin(prompt: Prompt, completion: @escaping @Sendable (String?) -> Void) {
     let requestId = UUID().uuidString
-    RNPingBindingCommon.storePinCompletion(requestId: requestId, completion: completion)
-    RNPingBindingCommon.emitEvent(pinRequiredEvent, body: [
-      "requestId": requestId,
-      "title": prompt.title,
-      "subtitle": prompt.subtitle,
-      "description": prompt.description,
-    ])
+    Task {
+      await BindingEventStore.shared.storePinCompletion(requestId: requestId, completion: completion)
+      RNPingBindingCommon.emitEvent(pinRequiredEvent, body: [
+        "requestId": requestId,
+        "title": prompt.title,
+        "subtitle": prompt.subtitle,
+        "description": prompt.description,
+      ])
+      try? await Task.sleep(nanoseconds: pinTimeoutSeconds * 1_000_000_000)
+      // cancelPin is a no-op if JS already resolved the request.
+      await BindingEventStore.shared.cancelPin(requestId: requestId)
+    }
   }
 }
 
@@ -42,24 +50,29 @@ struct BridgeUserKeySelector: UserKeySelector {
   func selectKey(userKeys: [UserKey], prompt: Prompt) async -> UserKey? {
     let requestId = UUID().uuidString
     return await withCheckedContinuation { continuation in
-      RNPingBindingCommon.storeUserKeyCompletion(requestId: requestId) { selectedId in
-        guard let selectedId else {
-          continuation.resume(returning: nil)
-          return
+      Task {
+        await BindingEventStore.shared.storeUserKeyCompletion(requestId: requestId) { selectedId in
+          guard let selectedId else {
+            continuation.resume(returning: nil)
+            return
+          }
+          continuation.resume(returning: userKeys.first { $0.id == selectedId })
         }
-        continuation.resume(returning: userKeys.first { $0.id == selectedId })
+        RNPingBindingCommon.emitEvent(userKeyRequiredEvent, body: [
+          "requestId": requestId,
+          "userKeys": userKeys.map { key in
+            [
+              "id": key.id,
+              "userId": key.userId,
+              "username": key.username,
+              "authenticationType": key.authType.rawValue,
+            ]
+          },
+        ])
+        try? await Task.sleep(nanoseconds: userKeyTimeoutSeconds * 1_000_000_000)
+        // cancelUserKey is a no-op if JS already resolved the request.
+        await BindingEventStore.shared.cancelUserKey(requestId: requestId)
       }
-      RNPingBindingCommon.emitEvent(userKeyRequiredEvent, body: [
-        "requestId": requestId,
-        "userKeys": userKeys.map { key in
-          [
-            "id": key.id,
-            "userId": key.userId,
-            "username": key.username,
-            "authenticationType": key.authType.rawValue,
-          ]
-        },
-      ])
     }
   }
 }

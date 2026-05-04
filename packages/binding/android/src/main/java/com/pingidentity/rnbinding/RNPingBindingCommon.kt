@@ -36,6 +36,8 @@ import java.lang.ref.WeakReference
  */
 object RNPingBindingCommon {
 
+  // Dispatchers.Main is required because bind/sign operations need an Activity context
+  // (foreground check, biometric prompt) which must be accessed on the UI thread.
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
   private var reactContext: WeakReference<ReactApplicationContext>? = null
@@ -243,7 +245,7 @@ object RNPingBindingCommon {
         val key = storage.findAll().firstOrNull { it.id == keyId && it.userId == userId }
         if (key == null) {
           rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
-            "No binding key found for userId=$userId keyId=$keyId.", ErrorType.STATE_ERROR)
+            "No binding key found.", ErrorType.STATE_ERROR)
           return@launch
         }
         deleteKeyMaterial(key)
@@ -262,11 +264,19 @@ object RNPingBindingCommon {
     scope.launch {
       try {
         val storage = UserKeysStorage()
+        val errors = mutableListOf<String>()
         storage.findAll().forEach { key ->
-          deleteKeyMaterial(key)
-          storage.delete(key)
+          runCatching {
+            deleteKeyMaterial(key)
+            storage.delete(key)
+          }.onFailure { errors.add(it.localizedMessage ?: "Failed to delete key.") }
         }
-        promise.resolve(null)
+        if (errors.isEmpty()) {
+          promise.resolve(null)
+        } else {
+          rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
+            errors.joinToString("; "))
+        }
       } catch (error: Throwable) {
         rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
           error.localizedMessage ?: "Failed to delete all binding keys.", throwable = error)
