@@ -71,8 +71,7 @@ device, or you need to recover from a corrupted binding state.</p>
 <ul>
 <li>The <strong>key metadata</strong> record (username, userId, authenticationType) stored in encrypted
 SharedPreferences (Android) or Keychain (iOS).</li>
-<li>The <strong>cryptographic key material</strong> (RSA private/public key pair) stored in Android Keystore
-or iOS Secure Enclave.</li>
+<li>The <strong>cryptographic key material</strong> stored in Android Keystore or iOS Secure Enclave.</li>
 </ul>
 <p>Deleting a key locally does <strong>not</strong> remove the device registration record from the server.
 If you need to deregister the device server-side, use the <code>device-client</code> package first, then
@@ -216,7 +215,7 @@ silently ignored on the other platform.</p>
 <td><code>biometric</code></td>
 <td><code>BindingBiometricSignConfig</code></td>
 <td>—</td>
-<td>Biometric authenticator options (includes <code>allowDeviceCredentialFallback</code>).</td>
+<td>Biometric authenticator options.</td>
 </tr>
 <tr>
 <td><code>jwt</code></td>
@@ -389,15 +388,15 @@ silently ignored on the other platform.</p>
 </tr>
 <tr>
 <td><code>BINDING_NOT_REGISTERED</code></td>
-<td>No local key found for this user — device must be re-bound.</td>
+<td>No local key found for this user on this device — device must be bound first.</td>
 </tr>
 <tr>
 <td><code>BINDING_KEY_INVALIDATED</code></td>
-<td>The cryptographic key is no longer usable and the user must re-bind. Android surfaces this directly; iOS sign-time key usability failures are normalized to this code.</td>
+<td>The signing key on this device is no longer usable — typically caused by a biometric enrollment change. The user must re-bind; their account and other devices are unaffected.</td>
 </tr>
 <tr>
 <td><code>BINDING_AUTH_FAILED</code></td>
-<td>Biometric or PIN authentication failed (wrong fingerprint, wrong PIN, or biometric lockout). The operation can be retried or the user directed to an alternative auth method.</td>
+<td>Authentication failed — wrong fingerprint, wrong PIN, or biometric lockout. The key is intact and the operation can be retried.</td>
 </tr>
 <tr>
 <td><code>BINDING_UI_UNAVAILABLE</code></td>
@@ -418,8 +417,8 @@ silently ignored on the other platform.</p>
 </tbody>
 </table>
 <h3 id="handling-key-invalidation" class="tsd-anchor-link">Handling key invalidation<a href="#handling-key-invalidation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<p><code>BINDING_KEY_INVALIDATED</code> indicates the local key is no longer usable. The recommended recovery path is to call <code>deleteKey</code> to clean up the local entry and direct the user through binding again:</p>
-<pre><code class="ts"><span class="hl-4">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">binding</span><span class="hl-1">.</span><span class="hl-0">signForJourney</span><span class="hl-1">(</span><span class="hl-3">journey</span><span class="hl-1">);</span><br/><span class="hl-1">} </span><span class="hl-4">catch</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><br/><span class="hl-1">    </span><span class="hl-3">err</span><span class="hl-1">.</span><span class="hl-3">code</span><span class="hl-1"> === </span><span class="hl-2">&#39;BINDING_KEY_INVALIDATED&#39;</span><span class="hl-1"> ||</span><br/><span class="hl-1">    </span><span class="hl-3">err</span><span class="hl-1">.</span><span class="hl-3">code</span><span class="hl-1"> === </span><span class="hl-2">&#39;BINDING_NOT_REGISTERED&#39;</span><br/><span class="hl-1">  ) {</span><br/><span class="hl-1">    </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">keys</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">getAllKeys</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">stale</span><span class="hl-1"> = </span><span class="hl-3">keys</span><span class="hl-1">.</span><span class="hl-0">find</span><span class="hl-1">((</span><span class="hl-3">k</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-3">k</span><span class="hl-1">.</span><span class="hl-3">userId</span><span class="hl-1"> === </span><span class="hl-3">currentUserId</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">stale</span><span class="hl-1">) </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">deleteKey</span><span class="hl-1">(</span><span class="hl-3">stale</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-9">// redirect user to bind flow</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
+<p><code>BINDING_KEY_INVALIDATED</code> and <code>BINDING_NOT_REGISTERED</code> both mean the key on this device is gone — the user must re-bind. The user's account and any keys bound on other devices are unaffected.</p>
+<pre><code class="ts"><span class="hl-4">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">binding</span><span class="hl-1">.</span><span class="hl-0">signForJourney</span><span class="hl-1">(</span><span class="hl-3">journey</span><span class="hl-1">);</span><br/><span class="hl-1">} </span><span class="hl-4">catch</span><span class="hl-1"> (</span><span class="hl-3">err</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><br/><span class="hl-1">    </span><span class="hl-3">err</span><span class="hl-1">.</span><span class="hl-3">code</span><span class="hl-1"> === </span><span class="hl-2">&#39;BINDING_KEY_INVALIDATED&#39;</span><span class="hl-1"> ||</span><br/><span class="hl-1">    </span><span class="hl-3">err</span><span class="hl-1">.</span><span class="hl-3">code</span><span class="hl-1"> === </span><span class="hl-2">&#39;BINDING_NOT_REGISTERED&#39;</span><br/><span class="hl-1">  ) {</span><br/><span class="hl-1">    </span><span class="hl-9">// Key is gone on this device — clean up and re-bind.</span><br/><span class="hl-1">    </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">keys</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">getAllKeys</span><span class="hl-1">();</span><br/><span class="hl-1">    </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">stale</span><span class="hl-1"> = </span><span class="hl-3">keys</span><span class="hl-1">.</span><span class="hl-0">find</span><span class="hl-1">((</span><span class="hl-3">k</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> </span><span class="hl-3">k</span><span class="hl-1">.</span><span class="hl-3">userId</span><span class="hl-1"> === </span><span class="hl-3">currentUserId</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">stale</span><span class="hl-1">) </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">deleteKey</span><span class="hl-1">(</span><span class="hl-3">stale</span><span class="hl-1">);</span><br/><span class="hl-1">    </span><span class="hl-9">// redirect user to bind flow</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span>
 </code><button type="button">Copy</button></pre>
 
 <h2 id="platform-notes" class="tsd-anchor-link">Platform notes<a href="#platform-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
