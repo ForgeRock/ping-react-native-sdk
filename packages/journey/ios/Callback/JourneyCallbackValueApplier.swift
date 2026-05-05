@@ -24,9 +24,8 @@ enum JourneyCallbackValueApplier {
     "IdpCallback": "@ping-identity/rn-external-idp",
     "ReCaptchaCallback": "ReCaptcha integration",
     "ReCaptchaEnterpriseCallback": "ReCaptcha Enterprise integration",
-    "BindingCallback": "Binding integration",
-    "DeviceBindingCallback": "Binding integration",
-    "DeviceSigningVerifierCallback": "Binding integration"
+    "DeviceBindingCallback": "@ping-identity/rn-binding",
+    "DeviceSigningVerifierCallback": "@ping-identity/rn-binding"
   ]
 
   /// Callback types that are output-only and cannot be mutated via `next()`.
