@@ -110,6 +110,17 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4A81BB019D3092197A121B8E1BB72BE4"
+               BuildableName = "RNPingExternalIdp-Unit-Tests.xctest"
+               BlueprintName = "RNPingExternalIdp-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "65B35A3FAB663E39EADCCD2CF118EB77"
                BuildableName = "RNPingJourney-Unit-Tests.xctest"
                BlueprintName = "RNPingJourney-Unit-Tests"

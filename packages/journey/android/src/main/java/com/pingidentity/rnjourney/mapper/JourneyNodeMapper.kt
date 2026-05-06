@@ -118,7 +118,11 @@ internal object JourneyNodeMapper {
         return when (callback) {
             is ValidatedPasswordCallback -> "ValidatedCreatePasswordCallback"
             is ValidatedUsernameCallback -> "ValidatedCreateUsernameCallback"
-            else -> callback::class.java.simpleName
+            else -> when (callback::class.java.simpleName) {
+                "IdPCallback" -> "IdpCallback"
+                "SelectIdPCallback" -> "SelectIdpCallback"
+                else -> callback::class.java.simpleName
+            }
         }
     }
 

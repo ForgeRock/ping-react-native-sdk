@@ -35,6 +35,10 @@ export type JourneyClientPanelProps = {
    */
   startOptions?: JourneyStartOptions;
   /**
+   * App return URI used by external IdP browser authorization.
+   */
+  externalIdpRedirectUri: string;
+  /**
    * Optional initial journey name used to prefill start input state.
    */
   initialJourneyName?: string;
@@ -75,10 +79,12 @@ export default function JourneyClientPanel(
     setResumeUrl,
     onResume,
     onSubmit,
+    onSelectIdpProvider,
     onLogout,
     onContinueAfterSuccess,
     showCallbackScreen,
     showSuccessScreen,
+    externalIdpBrowserError,
   } = useJourneyClientPanelController(props);
 
   return (
@@ -93,6 +99,7 @@ export default function JourneyClientPanel(
             onResumeUrlChange={setResumeUrl}
             onResume={onResume}
             onSubmit={onSubmit}
+            onSelectIdpProvider={onSelectIdpProvider}
           />
         ) : null}
 
@@ -137,6 +144,10 @@ export default function JourneyClientPanel(
           <Text style={commonStyles.textError}>
             {typeof error.message === 'string' ? error.message : String(error)}
           </Text>
+        ) : null}
+
+        {externalIdpBrowserError ? (
+          <Text style={commonStyles.textError}>{externalIdpBrowserError}</Text>
         ) : null}
 
         {!showCallbackScreen &&

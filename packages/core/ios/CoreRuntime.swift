@@ -70,7 +70,9 @@ public enum CoreRuntime {
     }
 
     /// Convenience helper for resolving callbacks via the registered resolver.
-    /// TODO: Remove once journey module matures and types package is available.
+    /// TODO: Replace this global resolver with a synchronous Journey handle contract resolved
+    /// through `journeyRegistry`; callback access is an in-memory ContinueNode lookup.
+    /// Resolving the handle from the actor-isolated registry may still require `async`.
     public static func resolveJourneyCallbacks(
         _ journeyId: String
     ) async -> [Any]? {

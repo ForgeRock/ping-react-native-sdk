@@ -263,12 +263,12 @@ class JourneyCallbackValueApplierTest {
 
   @Test
   fun applyThrowsForNativeExtensionIntegrationCallbacks() {
-    class IdPCallback
+    class IdpCallback
     class DeviceBindingCallback
     class DeviceSigningVerifierCallback
 
     val callbacks = listOf(
-      Triple(IdPCallback(), "IdPCallback", "External IdP integration"),
+      Triple(IdpCallback(), "IdPCallback", "@ping-identity/rn-external-idp"),
       Triple(DeviceBindingCallback(), "DeviceBindingCallback", "Binding integration"),
       Triple(DeviceSigningVerifierCallback(), "DeviceSigningVerifierCallback", "Binding integration")
     )
@@ -288,6 +288,34 @@ class JourneyCallbackValueApplierTest {
       }
 
       throw AssertionError("Expected IllegalStateException for $type integration callback")
+    }
+  }
+
+  @Test
+  fun applyNormalizesExternalIdpAliasInputsForIntegrationCallbacks() {
+    class IdpCallback
+    class SelectIdpCallback
+
+    val callbacks = listOf(
+      Triple(IdpCallback(), "IdPCallback", "@ping-identity/rn-external-idp"),
+      Triple(SelectIdpCallback(), "SelectIdPCallback", "@ping-identity/rn-external-idp")
+    )
+
+    callbacks.forEach { (callback, type, expectedRequirement) ->
+      try {
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+          )
+        }
+      } catch (error: IllegalStateException) {
+        assertTrue(error.message?.contains("additional native integration") == true)
+        assertTrue(error.message?.contains(expectedRequirement) == true)
+        return@forEach
+      }
+
+      throw AssertionError("Expected IllegalStateException for canonicalized $type integration callback")
     }
   }
 

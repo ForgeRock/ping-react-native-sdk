@@ -36,6 +36,9 @@ target 'PingSampleApp' do
   :path => '../../node_modules/@ping-identity/rn-oidc'
   pod 'RNPingDeviceClient',
   :path => '../../node_modules/@ping-identity/rn-device-client'
+  pod 'PingExternalIdPApple', '2.0.0'
+  pod 'PingExternalIdPFacebook', '2.0.0'
+  pod 'PingExternalIdPGoogle', '2.0.0'
 
   post_install do |installer|
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
@@ -51,6 +54,5 @@ target 'PingSampleApp' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
       end
     end
-
   end
 end

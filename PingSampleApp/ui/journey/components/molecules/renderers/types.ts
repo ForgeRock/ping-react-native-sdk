@@ -17,4 +17,5 @@ export type JourneyFieldRendererProps = {
   field: JourneyNormalizedField;
   currentValue: JourneyFormValue | undefined;
   setFieldValue: (fieldId: string, value: JourneyFormValue) => void;
+  onSelectIdpProvider?: (fieldId: string, provider: string) => Promise<void>;
 };

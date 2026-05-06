@@ -19,6 +19,7 @@ const deviceProfilePackage = path.resolve(
   __dirname,
   '../packages/device-profile',
 );
+const externalIdpPackage = path.resolve(__dirname, '../packages/external-idp');
 const fidoPackage = path.resolve(__dirname, '../packages/fido');
 const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');
@@ -32,6 +33,7 @@ const config = {
     browserPackage,
     deviceIdPackage,
     deviceProfilePackage,
+    externalIdpPackage,
     fidoPackage,
     storagePackage,
     corePackage,
@@ -53,6 +55,7 @@ const config = {
       '@ping-identity/rn-browser': browserPackage,
       '@ping-identity/rn-device-id': deviceIdPackage,
       '@ping-identity/rn-device-profile': deviceProfilePackage,
+      '@ping-identity/rn-external-idp': externalIdpPackage,
       '@ping-identity/rn-fido': fidoPackage,
       '@ping-identity/rn-storage': storagePackage,
       '@ping-identity/rn-core': corePackage,

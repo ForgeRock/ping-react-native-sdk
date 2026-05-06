@@ -30,10 +30,15 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   nativeExtensionCallbackType.FidoAuthenticationCallback,
   callbackType.PingOneProtectInitializeCallback,
   callbackType.PingOneProtectEvaluationCallback,
+  // callbackType.SelectIdPCallback is 'SelectIdPCallback' (capital P, ForgeRock JS SDK).
+  // The native Android/iOS external-idp SDK surfaces this as 'SelectIdpCallback' (lowercase p).
+  // Both forms are registered here to handle either casing from the server or native layer.
   callbackType.SelectIdPCallback,
+  nativeExtensionCallbackType.SelectIdpCallback,
   callbackType.ReCaptchaCallback,
   callbackType.ReCaptchaEnterpriseCallback,
   nativeExtensionCallbackType.IdPCallback,
+  nativeExtensionCallbackType.IdpCallback,
   nativeExtensionCallbackType.BindingCallback,
   nativeExtensionCallbackType.DeviceBindingCallback,
   nativeExtensionCallbackType.DeviceSigningVerifierCallback,

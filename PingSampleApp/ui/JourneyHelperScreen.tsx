@@ -8,12 +8,21 @@
 import React, { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { JourneyClient } from '@ping-identity/rn-journey';
 import type { RootStackParamList } from '../App';
 import { commonStyles } from '../src/styles/common';
-import { loginClient } from '../src/clients';
 import JourneyClientPanel from './journey/components/organisms/JourneyClientPanel';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'> & {
+  /**
+   * Journey client selected by the sample app configuration.
+   */
+  journeyClient: JourneyClient;
+  /**
+   * App return URI used by external IdP browser authorization.
+   */
+  externalIdpRedirectUri: string;
+};
 
 /**
  * Renders the helper-driven Journey sample screen.
@@ -23,6 +32,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'>;
  */
 export default function JourneyHelperScreen(props: Props): React.ReactElement {
   const initialJourneyName = props.route.params?.journeyName?.trim() ?? '';
+  const { externalIdpRedirectUri, journeyClient } = props;
   const onAuthenticated = useCallback((): void => {
     props.navigation.reset({
       index: 1,
@@ -33,7 +43,8 @@ export default function JourneyHelperScreen(props: Props): React.ReactElement {
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
       <JourneyClientPanel
-        journeyClient={loginClient}
+        journeyClient={journeyClient}
+        externalIdpRedirectUri={externalIdpRedirectUri}
         initialJourneyName={initialJourneyName}
         autoStartOnMount={initialJourneyName.length > 0}
         onAuthenticated={onAuthenticated}

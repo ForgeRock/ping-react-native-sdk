@@ -206,7 +206,9 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
       }
     )
 
-    wait(for: [expectation], timeout: 2)
+    // Five sequential real collectors can exceed 2s under parallel simulator
+    // load in CI — matches the reasoning on testCollectDeviceProfileWithMultipleCollectors.
+    wait(for: [expectation], timeout: 5)
   }
 
   func testCollectDeviceProfileResolvesBluetoothPayloadWithInjectedExecutor() {

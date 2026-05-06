@@ -403,6 +403,18 @@ export const journeyFieldRendererStyles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: colors.selectedOptionBackground,
   },
+  providerButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  providerIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 4,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
   warningCard: {
     borderWidth: 1,
     borderColor: colors.warningBorder,

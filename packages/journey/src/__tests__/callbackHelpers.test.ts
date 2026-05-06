@@ -293,6 +293,28 @@ describe('Journey callback helpers', () => {
     });
   });
 
+  it('classifies external IdP callback casing variants as integration-required', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'IdPCallback', output: [] },
+        { type: 'IdpCallback', output: [] },
+      ],
+    };
+
+    const fields = normalizeCallbacks(node);
+
+    expect(fields).toHaveLength(2);
+    expect(fields[0]).toMatchObject({
+      id: 'IdPCallback:0',
+      executionMode: 'integration_required',
+    });
+    expect(fields[1]).toMatchObject({
+      id: 'IdpCallback:0',
+      executionMode: 'integration_required',
+    });
+  });
+
   it('enforces required consent mapping acceptance and builds boolean payload', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',

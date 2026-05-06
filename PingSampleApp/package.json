@@ -18,6 +18,7 @@
     "@ping-identity/rn-device-client": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
     "@ping-identity/rn-device-profile": "workspace:*",
+    "@ping-identity/rn-external-idp": "workspace:*",
     "@ping-identity/rn-fido": "workspace:*",
     "@ping-identity/rn-journey": "workspace:*",
     "@ping-identity/rn-logger": "workspace:*",

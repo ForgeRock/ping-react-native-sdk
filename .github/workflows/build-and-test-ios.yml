@@ -14,7 +14,7 @@ env:
   WORKSPACE: PingTestRunner/ios/PingTestRunner.xcworkspace
   SCHEME: RNPackagesTests
   CONFIGURATION: Debug
-  DESTINATION: platform=iOS Simulator,name=iPhone 17,OS=26.4
+  # DESTINATION is resolved dynamically at runtime by the "Resolve simulator" step.
   DERIVED_DATA_PATH: DerivedData
   XCODE_VERSION: '26.1.1'
   RUBY_VERSION: '2.6.10'
@@ -105,13 +105,42 @@ jobs:
           chmod +x product/xcresultparser
           sudo mv product/xcresultparser /usr/local/bin/
 
+      # Resolve the best available iPhone simulator: prefer iPhone 17, fall back to any iPhone.
+      # Uses the device UDID as the destination to avoid OS version string mismatches between
+      # simctl runtime keys (e.g. "iOS-26-4") and xcodebuild's reported OS (e.g. "26.4.1").
+      # Sets DESTINATION and SIMULATOR_UDID in GITHUB_ENV for all subsequent steps.
+      - name: Resolve simulator destination
+        run: |
+          DEVICES_JSON=$(xcrun simctl list devices available --json)
+          RESULT=$(echo "$DEVICES_JSON" | jq -r '
+            [.devices | to_entries[]
+             | select(.key | test("iOS"))
+             | . as $runtime
+             | .value[]
+             | select(.name | test("^iPhone"))
+             | {
+                 os: ($runtime.key | gsub("com.apple.CoreSimulator.SimRuntime.iOS-"; "") | gsub("-"; ".")),
+                 name: .name,
+                 udid: .udid
+               }]
+            | (map(select(.name == "iPhone 17")) | sort_by(.os) | last)
+              // (sort_by(.os) | last)
+            | "\(.name)|\(.os)|\(.udid)"
+          ')
+          SIMULATOR_NAME=$(echo "$RESULT" | cut -d'|' -f1)
+          OS_VERSION=$(echo "$RESULT" | cut -d'|' -f2)
+          SIMULATOR_UDID=$(echo "$RESULT" | cut -d'|' -f3)
+          echo "Resolved: $SIMULATOR_NAME ($OS_VERSION) [$SIMULATOR_UDID]"
+          echo "DESTINATION=platform=iOS Simulator,id=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
+          echo "SIMULATOR_UDID=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
+
       # Reset only the target simulator to reduce state leakage without erasing all devices.
       - name: Prepare target simulator
         run: |
           xcrun simctl shutdown all || true
-          xcrun simctl erase "iPhone 17" || true
-          xcrun simctl boot "iPhone 17" || true
-          xcrun simctl bootstatus "iPhone 17" -b || true
+          xcrun simctl erase "${{ env.SIMULATOR_UDID }}" || true
+          xcrun simctl boot "${{ env.SIMULATOR_UDID }}" || true
+          xcrun simctl bootstatus "${{ env.SIMULATOR_UDID }}" -b || true
 
       # Run iOS unit tests using xcodebuild.
       - name: Run iOS unit tests

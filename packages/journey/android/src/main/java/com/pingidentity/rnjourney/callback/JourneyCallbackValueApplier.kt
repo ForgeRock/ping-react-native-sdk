@@ -48,8 +48,8 @@ internal object JourneyCallbackValueApplier {
         "FidoAuthenticationCallback" to "@ping-identity/rn-fido",
         "PingOneProtectInitializeCallback" to "PingOne Protect integration",
         "PingOneProtectEvaluationCallback" to "PingOne Protect integration",
-        "SelectIdPCallback" to "External IdP integration",
-        "IdPCallback" to "External IdP integration",
+        "SelectIdpCallback" to "@ping-identity/rn-external-idp",
+        "IdpCallback" to "@ping-identity/rn-external-idp",
         "ReCaptchaCallback" to "ReCaptcha integration",
         "ReCaptchaEnterpriseCallback" to "ReCaptcha Enterprise integration",
         "BindingCallback" to "Binding integration",
@@ -193,6 +193,8 @@ internal object JourneyCallbackValueApplier {
         return when (type) {
             "ValidatedCreatePasswordCallback" -> "ValidatedPasswordCallback"
             "ValidatedCreateUsernameCallback" -> "ValidatedUsernameCallback"
+            "IdPCallback" -> "IdpCallback"
+            "SelectIdPCallback" -> "SelectIdpCallback"
             else -> type
         }
     }

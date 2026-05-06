@@ -11,6 +11,10 @@ import type {
   JourneyCallbackType,
   JourneyFormResult,
 } from '@ping-identity/rn-journey';
+import {
+  callbackType,
+  nativeExtensionCallbackType,
+} from '@ping-identity/rn-types';
 import { commonStyles } from '../../../../src/styles/common';
 import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import JourneyFieldRenderer from '../molecules/renderers/JourneyFieldRenderer';
@@ -56,6 +60,14 @@ export type JourneyContinuePanelProps = {
    * @returns Promise resolved after submit attempt completes.
    */
   onSubmit: () => Promise<void>;
+  /**
+   * Selects an external IdP provider and immediately advances into browser authorization.
+   *
+   * @param fieldId - Normalized SelectIdpCallback field id.
+   * @param provider - Provider identifier selected by the user.
+   * @returns Promise resolved after provider selection handling completes.
+   */
+  onSelectIdpProvider?: (fieldId: string, provider: string) => Promise<void>;
 };
 
 /**
@@ -75,6 +87,7 @@ export default function JourneyContinuePanel(
     onResumeUrlChange,
     onResume,
     onSubmit,
+    onSelectIdpProvider,
   } = props;
   const { fields, values, meta, setValue } = form;
 
@@ -85,16 +98,29 @@ export default function JourneyContinuePanel(
   // These flags drive integration UX:
   // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
   // - "manual submit" means at least one callback requires user-provided values.
-  const hasDeviceProfileCallback = callbackTypes.has('DeviceProfileCallback');
+  const hasDeviceProfileCallback = callbackTypes.has(
+    callbackType.DeviceProfileCallback,
+  );
+  const hasSelectIdpCallback = fields.some(
+    field => field.ref.type === nativeExtensionCallbackType.SelectIdpCallback,
+  );
   const isAutoHandledIntegrationCallback = useCallback(
     (type: JourneyCallbackType): boolean =>
-      type === 'DeviceProfileCallback' ||
-      type === 'FidoRegistrationCallback' ||
-      type === 'FidoAuthenticationCallback',
+      type === callbackType.DeviceProfileCallback ||
+      type === nativeExtensionCallbackType.FidoRegistrationCallback ||
+      type === nativeExtensionCallbackType.FidoAuthenticationCallback ||
+      type === nativeExtensionCallbackType.IdpCallback ||
+      // SelectIdpCallback (native lowercase-p form) is handled by the external-idp integration
+      // in the panel controller — provider selection renders inline and submit is managed there.
+      type === nativeExtensionCallbackType.SelectIdpCallback,
     [],
   );
-  const hasSuspendedCallback = callbackTypes.has('SuspendedTextOutputCallback');
-  const hasPollingWaitCallback = callbackTypes.has('PollingWaitCallback');
+  const hasSuspendedCallback = callbackTypes.has(
+    callbackType.SuspendedTextOutputCallback,
+  );
+  const hasPollingWaitCallback = callbackTypes.has(
+    callbackType.PollingWaitCallback,
+  );
   const hasManualSubmit = fields.some(field => field.requiresUserInput);
 
   const hasBlockingIntegration = fields.some(
@@ -187,6 +213,7 @@ export default function JourneyContinuePanel(
     !hasBlockingIntegration &&
     !hasUnsupportedCallbacks &&
     !hasDeviceProfileCallback &&
+    !hasSelectIdpCallback &&
     !hasSuspendedCallback &&
     !hasPollingWaitCallback;
   const shouldShowContinueButton =
@@ -210,6 +237,7 @@ export default function JourneyContinuePanel(
           field={field}
           currentValue={values[field.id]}
           setFieldValue={setValue}
+          onSelectIdpProvider={onSelectIdpProvider}
         />
       ))}
 

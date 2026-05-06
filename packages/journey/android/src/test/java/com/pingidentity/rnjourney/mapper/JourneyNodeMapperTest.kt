@@ -129,6 +129,18 @@ class JourneyNodeMapperTest {
     }
 
     @Test
+    fun mapExternalIdpCallbacksUsesCanonicalAliasTypes() {
+        class IdPCallback
+        class SelectIdPCallback
+
+        val idpMap = JourneyNodeMapper.mapCallbackPayload(IdPCallback())
+        val selectIdpMap = JourneyNodeMapper.mapCallbackPayload(SelectIdPCallback())
+
+        assertEquals("IdpCallback", idpMap["type"])
+        assertEquals("SelectIdpCallback", selectIdpMap["type"])
+    }
+
+    @Test
     fun mapBooleanAttributeInputCallbackIncludesAmFields() {
         val callback = BooleanAttributeInputCallback().apply {
             value = true

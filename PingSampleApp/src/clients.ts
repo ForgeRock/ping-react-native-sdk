@@ -322,6 +322,10 @@ export type SampleAppClientProfile = {
    * OIDC client configuration displayed by the OIDC demo panel.
    */
   oidcClientConfig: OidcClientConfig;
+  /**
+   * Redirect URI used by Journey external IdP integrations.
+   */
+  externalIdpRedirectUri: string;
 };
 
 /**
@@ -348,6 +352,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     journeyClient: loginClient,
     oidcClient: sampleOidcWebClient,
     oidcClientConfig: sampleOidcClientConfig,
+    externalIdpRedirectUri: journeyConfig.redirectUri,
   },
   {
     key: 'journey-only',
@@ -358,6 +363,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     journeyClient: journeyOnlyClient,
     oidcClient: sampleOidcWebClient,
     oidcClientConfig: sampleOidcClientConfig,
+    externalIdpRedirectUri: journeyConfig.redirectUri,
   },
   {
     key: 'oidc-forgeblock',
@@ -377,6 +383,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
         browserMode: 'login',
       },
     },
+    externalIdpRedirectUri: journeyConfig.redirectUri,
   },
   {
     key: 'oidc-pingone',
@@ -387,6 +394,7 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     journeyClient: loginClient,
     oidcClient: pingOneOidcWebClient,
     oidcClientConfig: pingOneOidcClientConfig,
+    externalIdpRedirectUri: journeyConfig.redirectUri,
   },
 ];
 
