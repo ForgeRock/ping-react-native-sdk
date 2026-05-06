@@ -20,6 +20,7 @@ run_scheme RNPingCore-Unit-Tests
 run_scheme RNPingDeviceClient-Unit-Tests
 run_scheme RNPingDeviceId-Unit-Tests
 run_scheme RNPingDeviceProfile-Unit-Tests
+run_scheme RNPingExternalIdp-Unit-Tests
 run_scheme RNPingFido-Unit-Tests
 run_scheme RNPingJourney-Unit-Tests
 run_scheme RNPingLogger-Unit-Tests
