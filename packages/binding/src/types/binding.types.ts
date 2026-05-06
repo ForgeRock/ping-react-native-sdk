@@ -5,9 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
-import type { JourneyInstance } from '@ping-identity/rn-types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  GenericError,
+  JourneyInstance,
+  LoggerInstance,
+} from '@ping-identity/rn-types';
 
 /**
  * Prompt text sent from AM for biometric / PIN authentication dialogs.
@@ -98,7 +100,7 @@ export type BindingBiometricIosBindConfig = {
  */
 export type BindingBiometricIosSignConfig = {
   /**
-   * Keychain key tag for the biometric authenticator key (bind only).
+   * Keychain key tag for the biometric authenticator key.
    *
    * @remarks
    * Ignored during sign — the tag stored at bind time is used automatically.

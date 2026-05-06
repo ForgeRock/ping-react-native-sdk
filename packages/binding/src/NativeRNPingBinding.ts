@@ -120,6 +120,9 @@ export type NativeBindingConfig = {
   userKeyStorageId?: string;
 };
 
+// TODO: Cache the resolved module instance — probing on every call is unnecessary since
+// the native module does not change at runtime. Apply the same pattern across all modules.
+// TODO: Add no-duplicate-imports ESLint rule to eslint.config.mjs once all split imports across packages are consolidated.
 /**
  * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
  *

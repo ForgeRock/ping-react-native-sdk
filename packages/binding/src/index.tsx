@@ -38,6 +38,11 @@ type UserKeyRequiredEvent = {
   userKeys: UserKeyOption[];
 };
 
+const PIN_REQUIRED_EVENT = 'RNPingBinding_PinRequired';
+const USER_KEY_REQUIRED_EVENT = 'RNPingBinding_UserKeyRequired';
+
+// TODO: Move collectors inside the client instance and route events by requestId so
+// multiple concurrent clients with different ui callbacks are each handled correctly.
 let _activePinCollector: ((prompt: BindingPrompt) => Promise<string>) | null =
   null;
 let _pinListenerSetup = false;
@@ -51,7 +56,7 @@ function ensurePinListenerSetup(): void {
   if (_pinListenerSetup) return;
   _pinListenerSetup = true;
   DeviceEventEmitter.addListener(
-    'RNPingBinding_PinRequired',
+    PIN_REQUIRED_EVENT,
     async (event: PinRequiredEvent) => {
       const collector = _activePinCollector;
       if (!collector) {
@@ -76,7 +81,7 @@ function ensureUserKeySelectorListenerSetup(): void {
   if (_userKeySelectorListenerSetup) return;
   _userKeySelectorListenerSetup = true;
   DeviceEventEmitter.addListener(
-    'RNPingBinding_UserKeyRequired',
+    USER_KEY_REQUIRED_EVENT,
     async (event: UserKeyRequiredEvent) => {
       const selector = _activeUserKeySelector;
       if (!selector) {

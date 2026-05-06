@@ -40,6 +40,8 @@ object RNPingBindingCommon {
   // (foreground check, biometric prompt) which must be accessed on the UI thread.
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+  private val userKeysStorage: UserKeysStorage by lazy { UserKeysStorage() }
+
   private var reactContext: WeakReference<ReactApplicationContext>? = null
 
   @VisibleForTesting
@@ -217,7 +219,7 @@ object RNPingBindingCommon {
   fun getAllKeys(promise: Promise) {
     scope.launch {
       try {
-        val storage = UserKeysStorage()
+        val storage = userKeysStorage
         val result = com.facebook.react.bridge.Arguments.createArray().apply {
           storage.findAll().forEach { key ->
             pushMap(com.facebook.react.bridge.Arguments.createMap().apply {
@@ -241,7 +243,7 @@ object RNPingBindingCommon {
   fun deleteKey(userId: String, keyId: String, promise: Promise) {
     scope.launch {
       try {
-        val storage = UserKeysStorage()
+        val storage = userKeysStorage
         val key = storage.findAll().firstOrNull { it.id == keyId && it.userId == userId }
         if (key == null) {
           rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
@@ -263,7 +265,7 @@ object RNPingBindingCommon {
   fun deleteAllKeys(promise: Promise) {
     scope.launch {
       try {
-        val storage = UserKeysStorage()
+        val storage = userKeysStorage
         val errors = mutableListOf<String>()
         storage.findAll().forEach { key ->
           runCatching {

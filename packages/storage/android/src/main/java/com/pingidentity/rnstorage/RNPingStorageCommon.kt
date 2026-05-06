@@ -6,7 +6,6 @@
  */
 package com.pingidentity.rnstorage
 
-import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
@@ -42,14 +41,10 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun registerSessionStorage(config: ReadableMap): String {
-    return try {
-      val map = config.toHashMap()
-      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
-      val storageConfig = buildStorageConfig(map)
-      sessionConfigRegistry.register(storageConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val map = config.toHashMap()
+    // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
+    val storageConfig = buildStorageConfig(map)
+    return sessionConfigRegistry.register(storageConfig)
   }
 
   /**
@@ -64,14 +59,10 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun registerOidcStorage(config: ReadableMap): String {
-    return try {
-      val map = config.toHashMap()
-      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
-      val storageConfig = buildStorageConfig(map)
-      oidcConfigRegistry.register(storageConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val map = config.toHashMap()
+    // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
+    val storageConfig = buildStorageConfig(map)
+    return oidcConfigRegistry.register(storageConfig)
   }
 
   /**
@@ -79,13 +70,9 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun registerBindingUserKeyStorage(config: ReadableMap): String {
-    return try {
-      val map = config.toHashMap()
-      val storageConfig = buildStorageConfig(map)
-      bindingUserKeyConfigRegistry.register(storageConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val map = config.toHashMap()
+    val storageConfig = buildStorageConfig(map)
+    return bindingUserKeyConfigRegistry.register(storageConfig)
   }
 
   /**
@@ -117,12 +104,8 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun configureSessionStorage(id: String): WritableMap {
-    return try {
-      val resolvedConfig = sessionConfigRegistry.resolve(id)
-      encodeConfig(resolvedConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val resolvedConfig = sessionConfigRegistry.resolve(id)
+    return encodeConfig(resolvedConfig)
   }
 
   /**
@@ -130,12 +113,8 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun configureOidcStorage(id: String): WritableMap {
-    return try {
-      val resolvedConfig = oidcConfigRegistry.resolve(id)
-      encodeConfig(resolvedConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val resolvedConfig = oidcConfigRegistry.resolve(id)
+    return encodeConfig(resolvedConfig)
   }
 
   /**
@@ -143,12 +122,8 @@ object RNPingStorageCommon {
    */
   @JvmStatic
   fun configureBindingUserKeyStorage(id: String): WritableMap {
-    return try {
-      val resolvedConfig = bindingUserKeyConfigRegistry.resolve(id)
-      encodeConfig(resolvedConfig)
-    } catch (e: Exception) {
-      throw e
-    }
+    val resolvedConfig = bindingUserKeyConfigRegistry.resolve(id)
+    return encodeConfig(resolvedConfig)
   }
 
   /**

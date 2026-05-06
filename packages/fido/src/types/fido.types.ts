@@ -5,9 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
-import type { JourneyInstance } from '@ping-identity/rn-types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  GenericError,
+  JourneyInstance,
+  LoggerInstance,
+} from '@ping-identity/rn-types';
 
 /**
  * JSON-compatible value used by FIDO bridge payloads.
