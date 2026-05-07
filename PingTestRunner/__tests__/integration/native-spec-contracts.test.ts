@@ -22,6 +22,7 @@
  * Pick<> below and to the mock in jest.setup.js.
  */
 
+import type { Spec as BindingSpec } from '../../../packages/binding/src/NativeRNPingBinding';
 import type { Spec as BrowserSpec } from '../../../packages/browser/src/NativeRNPingBrowser';
 import type { Spec as DeviceIdSpec } from '../../../packages/device-id/src/NativeRNPingDeviceId';
 import type { Spec as DeviceProfileSpec } from '../../../packages/device-profile/src/NativeRNPingDeviceProfile';
@@ -30,6 +31,22 @@ import type { Spec as JourneySpec } from '../../../packages/journey/src/NativeRN
 import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPingLogger';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
 import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRNPingStorage';
+
+// ─── rn-binding ─────────────────────────────────────────────────────────────
+// jest.setup.js mocks: bindForJourney, signForJourney, resolvePin, cancelPin,
+//                      selectUserKey, cancelUserKey, getAllKeys, deleteKey, deleteAllKeys
+type _BindingMockedMethods = Pick<
+  BindingSpec,
+  | 'bindForJourney'
+  | 'signForJourney'
+  | 'resolvePin'
+  | 'cancelPin'
+  | 'selectUserKey'
+  | 'cancelUserKey'
+  | 'getAllKeys'
+  | 'deleteKey'
+  | 'deleteAllKeys'
+>;
 
 // ─── rn-browser ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: configure, reset, open

@@ -39,7 +39,6 @@ export default function JourneyHelperScreen(props: Props): React.ReactElement {
       routes: [{ name: 'Home' }, { name: 'UserProfile' }],
     });
   }, [props.navigation]);
-
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
       <JourneyClientPanel

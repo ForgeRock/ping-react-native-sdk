@@ -43,6 +43,9 @@ public enum CoreRuntime {
     /// Registry for OIDC storage configuration (used for OAuth/OIDC tokens)
     public static let oidcStorageConfigRegistry: Registry = SimpleRegistry()
 
+    /// Registry for binding user-key storage configuration
+    public static let bindingUserKeyStorageConfigRegistry: Registry = SimpleRegistry()
+
     /// Registry for logger instances
     public static let loggerRegistry: Registry = SimpleRegistry()
 

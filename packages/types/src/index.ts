@@ -46,9 +46,9 @@ export type {
  * Error category used across native-backed RN modules.
  *
  * @remarks
- * Derived from ForgeRock SDK types to keep error categories in sync.
+ * Derived from ForgeRock SDK types, with RN-native extensions.
  */
-export type ErrorType = GenericError['type'];
+export type ErrorType = GenericError['type'] | 'binding_error';
 
 /**
  * Alias for a Journey node in RN flows.

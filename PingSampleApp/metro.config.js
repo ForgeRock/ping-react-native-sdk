@@ -25,6 +25,11 @@ const storagePackage = path.resolve(__dirname, '../packages/storage');
 const corePackage = path.resolve(__dirname, '../packages/core');
 const loggerPackage = path.resolve(__dirname, '../packages/logger');
 const typesPackage = path.resolve(__dirname, '../packages/types');
+const bindingPackage = path.resolve(__dirname, '../packages/binding');
+const deviceClientPackage = path.resolve(
+  __dirname,
+  '../packages/device-client',
+);
 const workspaceRoot = path.resolve(__dirname, '..');
 
 const config = {
@@ -39,6 +44,8 @@ const config = {
     corePackage,
     loggerPackage,
     typesPackage,
+    bindingPackage,
+    deviceClientPackage,
     workspaceRoot,
   ],
   resolver: {
@@ -61,6 +68,8 @@ const config = {
       '@ping-identity/rn-core': corePackage,
       '@ping-identity/rn-logger': loggerPackage,
       '@ping-identity/rn-types': typesPackage,
+      '@ping-identity/rn-binding': bindingPackage,
+      '@ping-identity/rn-device-client': deviceClientPackage,
     },
   },
 };

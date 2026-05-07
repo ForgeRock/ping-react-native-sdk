@@ -304,6 +304,10 @@ export interface Spec extends TurboModule {
    * ```
    */
   registerOidcStorage(config: NativeStorageConfig): string;
+  /**
+   * Register a binding user-key storage configuration.
+   */
+  registerBindingUserKeyStorage(config: NativeStorageConfig): string;
 
   /**
    * Resolve a session storage configuration by identifier.
@@ -338,6 +342,10 @@ export interface Spec extends TurboModule {
    * ```
    */
   configureOidcStorage(id: string): NativeStorageConfig;
+  /**
+   * Resolve a binding user-key storage configuration by identifier.
+   */
+  configureBindingUserKeyStorage(id: string): NativeStorageConfig;
 }
 
 /**

@@ -7,6 +7,7 @@
 import type { LoggerInstance } from '@ping-identity/rn-types';
 import {
   CacheStrategy,
+  configureBindingUserKeyStorage,
   configureSessionStorage,
   configureOidcStorage,
 } from '../index';
@@ -16,8 +17,10 @@ import type { StorageConfig } from '../index';
 const mockNativeRNPingStorage = {
   registerSessionStorage: jest.fn(),
   registerOidcStorage: jest.fn(),
+  registerBindingUserKeyStorage: jest.fn(),
   configureSessionStorage: jest.fn(),
   configureOidcStorage: jest.fn(),
+  configureBindingUserKeyStorage: jest.fn(),
 };
 
 jest.mock('../NativeRNPingStorage', () => ({
@@ -155,6 +158,106 @@ describe('Storage API', () => {
       expect(() =>
         configureOidcStorage(null as unknown as StorageConfig),
       ).toThrow(/Missing configuration/);
+    });
+
+    it('configureBindingUserKeyStorage returns the config', () => {
+      mockNativeRNPingStorage.registerBindingUserKeyStorage.mockReturnValue(
+        'binding-user-key-id',
+      );
+      mockNativeRNPingStorage.configureBindingUserKeyStorage.mockReturnValue(
+        {},
+      );
+
+      const instance = configureBindingUserKeyStorage({
+        android: {
+          keyAlias: 'binding-user-key',
+        },
+      });
+
+      expect(
+        mockNativeRNPingStorage.registerBindingUserKeyStorage,
+      ).toHaveBeenCalledWith({
+        keyAlias: 'binding-user-key',
+      });
+      expect(
+        mockNativeRNPingStorage.configureBindingUserKeyStorage,
+      ).toHaveBeenCalledWith('binding-user-key-id');
+      expect(instance).toEqual({
+        id: 'binding-user-key-id',
+        kind: 'binding_user_key_storage',
+      });
+    });
+
+    it('configureBindingUserKeyStorage can be created with all config options', () => {
+      const config = {
+        android: {
+          keyAlias: 'binding-user-key',
+          fileName: 'binding-user-key.dat',
+          strongBoxPreferred: true,
+          cacheStrategy: CacheStrategy.CACHE,
+        },
+        ios: {
+          account: 'com.example.binding.user.keys',
+          encryptor: true,
+          cacheable: false,
+        },
+      };
+
+      mockNativeRNPingStorage.registerBindingUserKeyStorage.mockReturnValue(
+        'binding-user-key-id',
+      );
+      mockNativeRNPingStorage.configureBindingUserKeyStorage.mockReturnValue({
+        keyAlias: 'binding-user-key',
+        fileName: 'binding-user-key.dat',
+        strongBoxPreferred: true,
+        cacheStrategy: 'cache',
+        account: 'com.example.binding.user.keys',
+        encryptor: true,
+        cacheable: false,
+      });
+
+      expect(configureBindingUserKeyStorage(config)).toEqual({
+        id: 'binding-user-key-id',
+        kind: 'binding_user_key_storage',
+        ...config,
+      });
+    });
+
+    it('configureBindingUserKeyStorage validates config', () => {
+      expect(() =>
+        configureBindingUserKeyStorage(null as unknown as StorageConfig),
+      ).toThrow(/Missing configuration/);
+    });
+
+    it('configureBindingUserKeyStorage forwards loggerId from logger options', () => {
+      const logger = {
+        nativeHandle: { id: 'native-logger-id' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerBindingUserKeyStorage.mockReturnValue(
+        'binding-user-key-id',
+      );
+      mockNativeRNPingStorage.configureBindingUserKeyStorage.mockReturnValue(
+        {},
+      );
+
+      configureBindingUserKeyStorage(
+        {
+          android: { keyAlias: 'binding-user-key' },
+        },
+        { logger },
+      );
+
+      expect(
+        mockNativeRNPingStorage.registerBindingUserKeyStorage,
+      ).toHaveBeenCalledWith({
+        loggerId: 'native-logger-id',
+        keyAlias: 'binding-user-key',
+      });
     });
 
     it('passes loggerId from logger options', () => {

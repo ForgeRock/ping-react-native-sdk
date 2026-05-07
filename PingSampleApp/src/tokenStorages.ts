@@ -8,6 +8,7 @@ import {
   CacheStrategy,
   configureOidcStorage,
   configureSessionStorage,
+  configureBindingUserKeyStorage,
   type StorageConfig,
 } from '@ping-identity/rn-storage';
 import { logger } from '@ping-identity/rn-logger';
@@ -23,6 +24,7 @@ export type StorageInfo = {
 
 let oidcStorage: StorageInfo | null = null;
 let sessionStorage: StorageInfo | null = null;
+let bindingUserKeyStorage: StorageInfo | null = null;
 const storageLogger = logger({ level: 'debug' });
 
 /**
@@ -84,13 +86,43 @@ export function configureSessionStorageInfo(): StorageInfo {
 }
 
 /**
- * Retrieves the current OIDC and session storage instances.
+ * Configures and returns the binding user-key storage instance.
+ * Uses a singleton pattern - creates the storage on first call and returns the same instance on subsequent calls.
  *
- * @returns An object containing both storage instances (may be null if not yet configured)
+ * @returns The binding user-key storage information containing the resolved configuration
+ */
+export function configureBindingUserKeyStorageInfo(): StorageInfo {
+  if (!bindingUserKeyStorage) {
+    const baseConfig: StorageConfig = {
+      android: {
+        keyAlias: 'ping.binding.userkeys',
+        fileName: 'ping_binding_userkeys',
+        cacheStrategy: CacheStrategy.NO_CACHE,
+      },
+      ios: {
+        account: 'com.pingidentity.device.binding.v1.userkeys',
+        encryptor: true,
+        cacheable: false,
+      },
+    };
+    const resolvedConfig = configureBindingUserKeyStorage(baseConfig, {
+      logger: storageLogger,
+    });
+    bindingUserKeyStorage = { config: resolvedConfig };
+    console.log('Created Binding User Key Storage:', resolvedConfig);
+  }
+  return bindingUserKeyStorage;
+}
+
+/**
+ * Retrieves the current storage instances.
+ *
+ * @returns An object containing all storage instances (may be null if not yet configured)
  */
 export function getTokenStorages(): {
   oidcStorage: StorageInfo | null;
   sessionStorage: StorageInfo | null;
+  bindingUserKeyStorage: StorageInfo | null;
 } {
-  return { oidcStorage, sessionStorage };
+  return { oidcStorage, sessionStorage, bindingUserKeyStorage };
 }

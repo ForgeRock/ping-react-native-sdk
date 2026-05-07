@@ -52,9 +52,8 @@ internal object JourneyCallbackValueApplier {
         "IdpCallback" to "@ping-identity/rn-external-idp",
         "ReCaptchaCallback" to "ReCaptcha integration",
         "ReCaptchaEnterpriseCallback" to "ReCaptcha Enterprise integration",
-        "BindingCallback" to "Binding integration",
-        "DeviceBindingCallback" to "Binding integration",
-        "DeviceSigningVerifierCallback" to "Binding integration"
+        "DeviceBindingCallback" to "@ping-identity/rn-binding",
+        "DeviceSigningVerifierCallback" to "@ping-identity/rn-binding"
     )
 
     /**

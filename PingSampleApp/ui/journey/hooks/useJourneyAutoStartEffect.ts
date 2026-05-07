@@ -40,10 +40,18 @@ export type UseJourneyAutoStartEffectOptions = {
    * Start action returning success indicator.
    */
   onStart: () => Promise<boolean>;
+  /**
+   * Disposes any in-flight Journey session so the next start begins fresh.
+   */
+  dispose: () => Promise<void>;
 };
 
 /**
  * Runs sample-app auto-start behavior when configured and eligible.
+ *
+ * Disposes any stale Journey state (including mid-flow ContinueNodes from a
+ * previous screen visit) before starting, so re-entering the panel always
+ * produces a clean journey.
  *
  * @param options - Auto-start effect options.
  * @returns Void.
@@ -59,34 +67,36 @@ export function useJourneyAutoStartEffect(
     node,
     journeyName,
     onStart,
+    dispose,
   } = options;
   const hasAutoStartedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!autoStartOnMount) {
-      return;
-    }
-    if (hasAutoStartedRef.current) {
-      return;
-    }
-    if (loading || isSessionCheckRunning || hasActiveSession || node) {
-      return;
-    }
-    if (!journeyName.trim()) {
-      return;
-    }
+    if (!autoStartOnMount) return;
+    if (hasAutoStartedRef.current) return;
+    if (loading || isSessionCheckRunning || hasActiveSession) return;
+    if (!journeyName.trim()) return;
 
     hasAutoStartedRef.current = true;
-    const runAutoStart = async (): Promise<void> => {
+    void (async () => {
+      // Clear any stale journey state from a previous screen visit so
+      // re-entering the panel after an error or abandoned mid-flow node
+      // always produces a fresh session.
+      if (node) {
+        try {
+          await dispose();
+        } catch {
+          // Best effort; continue with start regardless.
+        }
+      }
       const didStart = await onStart();
       if (!didStart) {
         hasAutoStartedRef.current = false;
       }
-    };
-
-    void runAutoStart();
+    })();
   }, [
     autoStartOnMount,
+    dispose,
     hasActiveSession,
     isSessionCheckRunning,
     journeyName,

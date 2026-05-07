@@ -94,6 +94,17 @@ public class RNPingStorageCommon: NSObject {
     }
   }
 
+  /// Registers a binding user-key storage configuration.
+  ///
+  /// - Parameter config: Dictionary containing storage configuration (cacheable, account, encryptor)
+  /// - Returns: A unique identifier for the registered storage configuration
+  @objc
+  public static func registerBindingUserKeyStorage(_ config: NSDictionary) -> String {
+    return createQueue.sync {
+      registerConfig(config, registry: CoreRuntime.bindingUserKeyStorageConfigRegistry)
+    }
+  }
+
   /// Retrieves and encodes a previously registered session storage configuration.
   ///
   /// - Parameter id: The unique identifier of the storage configuration to retrieve
@@ -114,6 +125,18 @@ public class RNPingStorageCommon: NSObject {
   public static func configureOidcStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
       let resolvedConfig = resolveConfig(id, registry: CoreRuntime.oidcStorageConfigRegistry)
+      return encodeConfig(resolvedConfig)
+    }
+  }
+
+  /// Retrieves and encodes a previously registered binding user-key storage configuration.
+  ///
+  /// - Parameter id: The unique identifier of the storage configuration to retrieve
+  /// - Returns: A dictionary representation of the storage configuration
+  @objc
+  public static func configureBindingUserKeyStorage(_ id: String) -> NSDictionary {
+    return createQueue.sync {
+      let resolvedConfig = resolveConfig(id, registry: CoreRuntime.bindingUserKeyStorageConfigRegistry)
       return encodeConfig(resolvedConfig)
     }
   }

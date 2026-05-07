@@ -20,6 +20,8 @@ module.exports = {
   moduleNameMapper: {
     // Map workspace packages to source so tests exercise real JS logic.
     // Use $ anchors to prevent subpath imports (e.g. package.json) from being captured.
+    '^@ping-identity/rn-binding$':
+      '<rootDir>/../packages/binding/src/index.tsx',
     '^@ping-identity/rn-browser$':
       '<rootDir>/../packages/browser/src/index.tsx',
     '^@ping-identity/rn-external-idp$':

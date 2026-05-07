@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -60,20 +60,7 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
     onSelectOidcProfile,
   } = props;
 
-  const groupedProfiles = useMemo(
-    () => groupProfilesBySection(profiles),
-    [profiles],
-  );
-
-  const selectedJourneyProfile = useMemo(
-    () => profiles.find(profile => profile.key === selectedJourneyProfileKey),
-    [profiles, selectedJourneyProfileKey],
-  );
-
-  const selectedOidcProfile = useMemo(
-    () => profiles.find(profile => profile.key === selectedOidcProfileKey),
-    [profiles, selectedOidcProfileKey],
-  );
+  const groupedProfiles = groupProfilesBySection(profiles);
 
   return (
     <ScrollView
@@ -81,14 +68,6 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
       contentContainerStyle={commonStyles.configScreenContent}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={commonStyles.configSelectedLabel}>Selected Environment</Text>
-      <Text style={commonStyles.configSelectedValue}>
-        {`Journey: ${selectedJourneyProfile?.name ?? 'None'}`}
-      </Text>
-      <Text style={commonStyles.configSelectedValue}>
-        {`OIDC: ${selectedOidcProfile?.name ?? 'None'}`}
-      </Text>
-
       {[...groupedProfiles.entries()].map(([group, items]) => (
         <View key={group} style={commonStyles.configSection}>
           <Text style={commonStyles.configSectionTitle}>{group}</Text>

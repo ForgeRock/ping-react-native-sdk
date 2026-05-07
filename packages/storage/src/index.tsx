@@ -14,6 +14,7 @@ import { CacheStrategy } from './types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   OidcStorage,
+  BindingUserKeyStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
@@ -22,6 +23,7 @@ import type {
 
 export type {
   OidcStorage,
+  BindingUserKeyStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
@@ -305,6 +307,26 @@ function createOidcStorageHandle(
 }
 
 /**
+ * Creates an opaque binding user-key storage handle from a resolved config payload.
+ *
+ * @param id - Native storage identifier
+ * @param config - Normalized storage configuration
+ * @returns Branded binding user-key storage handle
+ *
+ * @internal
+ */
+function createBindingUserKeyStorageHandle(
+  id: string,
+  config: BaseStorageConfig,
+): BindingUserKeyStorage {
+  return {
+    id,
+    kind: 'binding_user_key_storage',
+    ...config,
+  } as BindingUserKeyStorage;
+}
+
+/**
  * Registers and resolves a session storage handle.
  *
  * This function handles registration internally and returns a normalized
@@ -401,6 +423,40 @@ export function configureOidcStorage(
     return createOidcStorageHandle(storageId, normalizeStorageConfig(result));
   } catch (error) {
     logger.error('Storage configureOidcStorage failed');
+    throw error;
+  }
+}
+
+/**
+ * Registers and resolves a binding user-key storage handle.
+ *
+ * @param config - Storage configuration parameters with platform-specific options
+ * @param options - Optional logger configuration
+ * @returns A branded BindingUserKeyStorage handle with native storage id metadata
+ * @throws {Error} If the configuration is missing or invalid
+ */
+export function configureBindingUserKeyStorage(
+  config: StorageConfig,
+  options?: StorageLoggerOptions,
+): BindingUserKeyStorage {
+  const { logger, loggerId } = resolveLogger(options);
+  logger.debug(`Storage configureBindingUserKeyStorage requested`);
+  validateStorageConfig(config);
+  const NativeRNPingStorage = getNativeModule();
+  try {
+    const storageId = NativeRNPingStorage.registerBindingUserKeyStorage(
+      buildNativeConfig(config, loggerId),
+    );
+    logger.debug(`Storage configureBindingUserKeyStorage registered`);
+    const result =
+      NativeRNPingStorage.configureBindingUserKeyStorage(storageId);
+    logger.info('Storage configureBindingUserKeyStorage success');
+    return createBindingUserKeyStorageHandle(
+      storageId,
+      normalizeStorageConfig(result),
+    );
+  } catch (error) {
+    logger.error('Storage configureBindingUserKeyStorage failed');
     throw error;
   }
 }

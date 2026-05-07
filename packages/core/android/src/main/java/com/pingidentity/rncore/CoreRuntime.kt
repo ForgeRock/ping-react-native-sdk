@@ -23,6 +23,8 @@ object CoreRuntime {
 
     /** Registry for OIDC storage configuration */
     val oidcStorageConfigRegistry: Registry = SimpleRegistry()
+    /** Registry for binding user-key storage configuration */
+    val bindingUserKeyStorageConfigRegistry: Registry = SimpleRegistry()
 
     /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()

@@ -13,8 +13,8 @@
     "test:all:coverage": "jest --config jest.all.config.js --coverage",
     "test:integration": "jest --config jest.config.js",
     "test:integration:coverage": "jest --config jest.config.js --coverage",
-    "test:native:android": "cd android && ./gradlew :ping-identity_rn-browser:test :ping-identity_rn-core:test :ping-identity_rn-device-client:test :ping-identity_rn-device-id:test :ping-identity_rn-device-profile:test :ping-identity_rn-external-idp:test :ping-identity_rn-fido:test :ping-identity_rn-journey:test :ping-identity_rn-logger:test :ping-identity_rn-oidc:test :ping-identity_rn-storage:test",
-    "test:native:ios": "xcodebuild test -workspace ios/PingTestRunner.xcworkspace -scheme RNPackagesTests -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'",
+    "test:native:android": "sh ./scripts/test-native-android.sh",
+    "test:native:ios": "sh ./scripts/test-native-ios.sh",
     "e2e:android:free-detox-port": "sh -c 'port=${DETOX_SERVER_PORT:-8099}; pids=$(lsof -tiTCP:$port -sTCP:LISTEN 2>/dev/null || true); [ -n \"$pids\" ] && kill -9 $pids || true'",
     "e2e:android:kill-emulators": "sh -c 'command -v adb >/dev/null 2>&1 || exit 0; adb devices | awk \"/^emulator-/{print \\$1}\" | while read -r id; do [ -n \"$id\" ] && adb -s \"$id\" emu kill || true; done'",
     "test:e2e:android": "sh -c 'export DETOX_SERVER_PORT=${DETOX_SERVER_PORT:-8100}; export NODE_NO_WARNINGS=1; yarn e2e:android:free-detox-port && yarn e2e:android:kill-emulators && detox test --configuration android.emu --cleanup \"$@\"' --",
@@ -30,6 +30,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@ping-identity/rn-binding": "workspace:*",
     "@ping-identity/rn-browser": "workspace:*",
     "@ping-identity/rn-device-client": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",

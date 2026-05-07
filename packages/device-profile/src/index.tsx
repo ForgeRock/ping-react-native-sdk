@@ -5,9 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { JourneyInstance } from '@ping-identity/rn-types';
+import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
-import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
