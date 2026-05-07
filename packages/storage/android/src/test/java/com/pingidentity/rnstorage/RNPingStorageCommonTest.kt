@@ -60,6 +60,7 @@ class RNPingStorageCommonTest {
         clearAllMocks()
         StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
         StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.oidcStorageConfigRegistry).clear()
+        com.pingidentity.rncore.CoreRuntime.oathStorageConfigRegistry.removeAll()
     }
 
     @Test
@@ -142,6 +143,60 @@ class RNPingStorageCommonTest {
         assertEquals("testKey", configMap.getString("keyAlias"))
         assertEquals(true, configMap.getBoolean("strongBoxPreferred"))
         assertEquals("cache_on_failure", configMap.getString("cacheStrategy"))
+    }
+
+    @Test
+    fun registerOathStorageReturnsDatabaseNameFromDatabaseNameKey() {
+        val config = createMockReadableMap(mapOf("databaseName" to "oath_tokens.db"))
+
+        val id = RNPingStorageCommon.registerOathStorage(config)
+        val configMap = RNPingStorageCommon.configureOathStorage(id)
+
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertNotNull(configMap)
+        assertEquals("oath_tokens.db", configMap.getString("databaseName"))
+    }
+
+    @Test
+    fun registerOathStorageWithNullDatabaseNameReturnsEmptyConfig() {
+        val config = createMockReadableMap(emptyMap())
+
+        val id = RNPingStorageCommon.registerOathStorage(config)
+        val configMap = RNPingStorageCommon.configureOathStorage(id)
+
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertFalse(configMap.hasKey("databaseName"))
+    }
+
+    @Test
+    fun oathHandleImplementsOathStorageConfigHandleContract() {
+        val config = createMockReadableMap(mapOf("databaseName" to "my.db"))
+        val id = RNPingStorageCommon.registerOathStorage(config)
+
+        val handle = com.pingidentity.rncore.CoreRuntime.oathStorageConfigRegistry.resolve(id)
+        assertTrue(
+            "Handle must implement OathStorageConfigHandleContract",
+            handle is com.pingidentity.rncore.storage.OathStorageConfigHandleContract
+        )
+        val contract = handle as com.pingidentity.rncore.storage.OathStorageConfigHandleContract
+        assertEquals("my.db", contract.databaseName)
+    }
+
+    @Test
+    fun oathStorageDoesNotInterfereWithSessionStorage() {
+        val oathConfig = createMockReadableMap(mapOf("databaseName" to "oath.db"))
+        val sessionConfig = createMockReadableMap(emptyMap())
+
+        val oathId = RNPingStorageCommon.registerOathStorage(oathConfig)
+        val sessionId = RNPingStorageCommon.registerSessionStorage(sessionConfig)
+
+        val oathMap = RNPingStorageCommon.configureOathStorage(oathId)
+        val sessionMap = RNPingStorageCommon.configureSessionStorage(sessionId)
+
+        assertEquals("oath.db", oathMap.getString("databaseName"))
+        assertEquals("secure_prefs", sessionMap.getString("fileName"))
     }
 
     private fun createMockReadableMap(data: Map<String, Any?>): ReadableMap {

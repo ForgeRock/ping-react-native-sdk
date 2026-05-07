@@ -57,6 +57,16 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
     }
 
     /**
+     * Register OATH storage configuration.
+     *
+     * @param config Storage configuration containing databaseName
+     * @return Unique ID that can be used to reference this storage configuration
+     */
+    override fun registerOathStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerOathStorage(config)
+    }
+
+    /**
      * Resolve session storage configuration by id.
      *
      * @param id Storage configuration id
@@ -78,5 +88,15 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
 
     override fun configureBindingUserKeyStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureBindingUserKeyStorage(id)
+    }
+
+    /**
+     * Resolve OATH storage configuration by id.
+     *
+     * @param id Storage configuration id
+     * @return Storage configuration map
+     */
+    override fun configureOathStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configureOathStorage(id)
     }
 }

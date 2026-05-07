@@ -58,6 +58,9 @@ target 'PingTestRunner' do
   pod 'RNPingLogger',
     :path => '../../node_modules/@ping-identity/rn-logger',
     :testspecs => ['Tests']
+  pod 'RNPingOath',
+    :path => '../../node_modules/@ping-identity/rn-oath',
+    :testspecs => ['Tests']
   pod 'RNPingOidc',
     :path => '../../node_modules/@ping-identity/rn-oidc',
     :testspecs => ['Tests']

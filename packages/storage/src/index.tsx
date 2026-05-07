@@ -11,7 +11,10 @@ import type {
   NativeStorageConfig,
 } from './NativeRNPingStorage';
 import { CacheStrategy } from './types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  LoggerInstance,
+  OathStorageHandle,
+} from '@ping-identity/rn-types';
 import type {
   OidcStorage,
   BindingUserKeyStorage,
@@ -24,6 +27,7 @@ import type {
 export type {
   OidcStorage,
   BindingUserKeyStorage,
+  OathStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
@@ -327,6 +331,26 @@ function createBindingUserKeyStorageHandle(
 }
 
 /**
+ * Creates an opaque OATH storage handle from a resolved config payload.
+ *
+ * @param id - Native storage identifier
+ * @param config - Normalized storage configuration
+ * @returns Branded OATH storage handle
+ *
+ * @internal
+ */
+function createOathStorageHandle(
+  id: string,
+  config: BaseStorageConfig,
+): OathStorageHandle {
+  return {
+    id,
+    kind: 'oath_storage',
+    ...config,
+  } as unknown as OathStorageHandle;
+}
+
+/**
  * Registers and resolves a session storage handle.
  *
  * This function handles registration internally and returns a normalized
@@ -457,6 +481,74 @@ export function configureBindingUserKeyStorage(
     );
   } catch (error) {
     logger.error('Storage configureBindingUserKeyStorage failed');
+    throw error;
+  }
+}
+
+/**
+ * Registers and resolves an OATH storage handle.
+ *
+ * This function registers an OATH storage configuration with the native layer
+ * and returns a branded handle that can be passed to `createOathClient` as
+ * `OathClientConfig.storage` to override the native SDK default storage backend.
+ *
+ * @param config - Storage configuration parameters with platform-specific options.
+ *   On Android, set `android.fileName` to specify the SQLite database name.
+ *   On iOS, OATH uses dedicated keychain security options — set `iosOath.service`,
+ *   `iosOath.requireBiometrics`, `iosOath.requireDevicePasscode`,
+ *   `iosOath.biometricPrompt`, and/or `iosOath.accessGroup` as needed.
+ * @param options - Optional logger configuration
+ * @returns A branded OathStorageHandle with the registered native storage id
+ * @throws {StorageError} If the configuration is missing or invalid
+ *
+ * @example
+ * ```typescript
+ * import { configureOathStorage } from '@ping-identity/rn-storage';
+ * import { createOathClient } from '@ping-identity/rn-oath';
+ *
+ * const oathStorage = configureOathStorage({
+ *   android: { fileName: 'oath_credentials.db' },
+ *   iosOath: { service: 'com.example.oath', requireBiometrics: true }
+ * });
+ *
+ * const client = await createOathClient({ storage: oathStorage });
+ * ```
+ * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
+ */
+export function configureOathStorage(
+  config: StorageConfig,
+  options?: StorageLoggerOptions,
+): OathStorageHandle {
+  const { logger, loggerId } = resolveLogger(options);
+  logger.debug(`Storage configureOathStorage requested`);
+  validateStorageConfig(config);
+  const NativeRNPingStorage = getNativeModule();
+  try {
+    const nativeConfig: NativeStorageConfig = {
+      ...buildNativeConfig(config, loggerId),
+      ...(config.iosOath?.service
+        ? { oathService: config.iosOath.service }
+        : {}),
+      ...(config.iosOath?.requireBiometrics !== undefined
+        ? { oathRequireBiometrics: config.iosOath.requireBiometrics }
+        : {}),
+      ...(config.iosOath?.requireDevicePasscode !== undefined
+        ? { oathRequireDevicePasscode: config.iosOath.requireDevicePasscode }
+        : {}),
+      ...(config.iosOath?.biometricPrompt
+        ? { oathBiometricPrompt: config.iosOath.biometricPrompt }
+        : {}),
+      ...(config.iosOath?.accessGroup
+        ? { oathAccessGroup: config.iosOath.accessGroup }
+        : {}),
+    };
+    const storageId = NativeRNPingStorage.registerOathStorage(nativeConfig);
+    logger.debug(`Storage configureOathStorage registered`);
+    const result = NativeRNPingStorage.configureOathStorage(storageId);
+    logger.info('Storage configureOathStorage success');
+    return createOathStorageHandle(storageId, normalizeStorageConfig(result));
+  } catch (error) {
+    logger.error('Storage configureOathStorage failed');
     throw error;
   }
 }

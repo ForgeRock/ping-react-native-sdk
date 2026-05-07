@@ -153,6 +153,64 @@ RCT_EXPORT_MODULE()
 }
 
 /**
+ Registers an OATH storage configuration.
+
+ Forwards the five OATH-specific iOS keychain fields from the TurboModule C++ struct
+ to the Swift helper using oath-prefixed keys. The standard `account`, `cacheable`,
+ and `encryptor` fields are not used for OATH storage.
+
+ - Parameter config: OATH storage configuration.
+ - Returns: Unique storage identifier.
+ */
+- (NSString *)registerOathStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
+{
+  NSMutableDictionary *dict = [NSMutableDictionary new];
+
+  NSString *loggerId = config.loggerId();
+  if (loggerId != nil) {
+    dict[@"loggerId"] = loggerId;
+  }
+
+  NSString *oathService = config.oathService();
+  if (oathService != nil) {
+    dict[@"oathService"] = oathService;
+  }
+
+  auto oathRequireBiometrics = config.oathRequireBiometrics();
+  if (oathRequireBiometrics.has_value()) {
+    dict[@"oathRequireBiometrics"] = @(oathRequireBiometrics.value());
+  }
+
+  auto oathRequireDevicePasscode = config.oathRequireDevicePasscode();
+  if (oathRequireDevicePasscode.has_value()) {
+    dict[@"oathRequireDevicePasscode"] = @(oathRequireDevicePasscode.value());
+  }
+
+  NSString *oathBiometricPrompt = config.oathBiometricPrompt();
+  if (oathBiometricPrompt != nil) {
+    dict[@"oathBiometricPrompt"] = oathBiometricPrompt;
+  }
+
+  NSString *oathAccessGroup = config.oathAccessGroup();
+  if (oathAccessGroup != nil) {
+    dict[@"oathAccessGroup"] = oathAccessGroup;
+  }
+
+  return [[self swiftImpl] registerOathStorage:dict];
+}
+
+/**
+ Resolves an OATH storage configuration by id.
+
+ - Parameter storageId: Storage configuration identifier.
+ - Returns: Storage configuration dictionary.
+ */
+- (NSDictionary *)configureOathStorage:(NSString *)storageId
+{
+  return [[self swiftImpl] configureOathStorage:storageId];
+}
+
+/**
  Returns the TurboModule instance.
  
  - Parameter params: TurboModule initialization parameters.

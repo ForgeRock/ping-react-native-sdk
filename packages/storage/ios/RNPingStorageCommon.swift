@@ -51,6 +51,54 @@ public class RNPingStorageCommon: NSObject {
     init(_ config: StorageConfig) { self.config = config }
   }
 
+  // MARK: - Nested Types (OATH)
+
+  /**
+   Configuration for OATH keychain storage registration.
+
+   OATH uses `OathKeychainStorage(service:logger:securityOptions:)` whose
+   parameters (`service`, `requireBiometrics`, `requireDevicePasscode`,
+   `biometricPrompt`, `accessGroup`) are entirely different from the
+   `cacheable`/`account`/`encryptor` fields used by session/OIDC/binding
+   storage. A separate struct prevents field conflation.
+   */
+  struct OathStorageConfig: Codable, Sendable {
+    /// Keychain service identifier for the OATH credential store.
+    let service: String?
+    /// Whether biometric authentication is required to access stored OATH tokens.
+    let requireBiometrics: Bool?
+    /// Whether a device passcode is required to access stored OATH tokens.
+    let requireDevicePasscode: Bool?
+    /// Localized prompt shown to the user during biometric authentication.
+    let biometricPrompt: String?
+    /// Keychain access group for sharing OATH credentials across app extensions.
+    let accessGroup: String?
+  }
+
+  /**
+   A wrapper class for OATH storage configuration that conforms to `OathStorageConfigHandleContract`.
+
+   This allows OATH storage configs to be registered in Core's NativeHandle registry.
+
+   - Note: `@unchecked Sendable` is used because this is a reference type
+     crossing actor boundaries through `Registry`. The wrapped `OathStorageConfig`
+     is immutable (`let`) and `Sendable`, so the handle is effectively immutable.
+     All mutable access is guarded by the caller's `createQueue`.
+   */
+  final class OathStorageConfigHandle: OathStorageConfigHandleContract, @unchecked Sendable {
+    /// The wrapped OATH storage configuration.
+    let config: OathStorageConfig
+    var service: String? { config.service }
+    var requireBiometrics: Bool? { config.requireBiometrics }
+    var requireDevicePasscode: Bool? { config.requireDevicePasscode }
+    var biometricPrompt: String? { config.biometricPrompt }
+    var accessGroup: String? { config.accessGroup }
+
+    /// Creates a new OATH storage config handle.
+    /// - Parameter config: The OATH storage configuration to wrap.
+    init(_ config: OathStorageConfig) { self.config = config }
+  }
+
   // MARK: - Private Properties
 
   /// A dispatch-specific key for identifying the create queue.
@@ -105,6 +153,24 @@ public class RNPingStorageCommon: NSObject {
     }
   }
 
+  /// Registers an OATH storage configuration.
+  ///
+  /// OATH uses a different keychain model from session/OIDC/binding storage, so
+  /// configuration is registered via a dedicated `OathStorageConfigHandle` rather
+  /// than the shared `StorageConfigHandle`.
+  ///
+  /// - Parameter config: Dictionary containing OATH storage configuration.
+  ///   Recognized keys: `service` (String), `requireBiometrics` (Bool),
+  ///   `requireDevicePasscode` (Bool), `biometricPrompt` (String),
+  ///   `accessGroup` (String).
+  /// - Returns: A unique identifier for the registered OATH storage configuration.
+  @objc
+  public static func registerOathStorage(_ config: NSDictionary) -> String {
+    return createQueue.sync {
+      registerOathConfig(config, registry: CoreRuntime.oathStorageConfigRegistry)
+    }
+  }
+
   /// Retrieves and encodes a previously registered session storage configuration.
   ///
   /// - Parameter id: The unique identifier of the storage configuration to retrieve
@@ -138,6 +204,18 @@ public class RNPingStorageCommon: NSObject {
     return createQueue.sync {
       let resolvedConfig = resolveConfig(id, registry: CoreRuntime.bindingUserKeyStorageConfigRegistry)
       return encodeConfig(resolvedConfig)
+    }
+  }
+
+  /// Retrieves and encodes a previously registered OATH storage configuration.
+  ///
+  /// - Parameter id: The unique identifier of the OATH storage configuration to retrieve.
+  /// - Returns: A dictionary representation of the OATH storage configuration.
+  @objc
+  public static func configureOathStorage(_ id: String) -> NSDictionary {
+    return createQueue.sync {
+      let resolvedConfig = resolveOathConfig(id, registry: CoreRuntime.oathStorageConfigRegistry)
+      return encodeOathConfig(resolvedConfig)
     }
   }
 
@@ -205,8 +283,73 @@ public class RNPingStorageCommon: NSObject {
     return resolvedConfig
   }
   
+  // MARK: - Private Methods - OATH Configuration
+
+  /// Registers an OATH storage configuration by converting it to an `OathStorageConfigHandle`
+  /// and storing it in the provided registry.
+  ///
+  /// This method must be called on `createQueue` to prevent blocking critical threads.
+  /// - Parameters:
+  ///   - config: The OATH storage configuration dictionary.
+  ///   - registry: The target registry used to store the configuration handle.
+  /// - Returns: A unique identifier for the registered OATH storage configuration.
+  private static func registerOathConfig(
+    _ config: NSDictionary,
+    registry: Registry
+  ) -> String {
+    precondition(
+      DispatchQueue.getSpecific(key: createQueueKey) != nil,
+      "RNPingStorageCommon.registerOathConfig must be called on createQueue"
+    )
+
+    let oathConfig = buildOathStorageConfig(from: config)
+    let handle = OathStorageConfigHandle(oathConfig)
+    return RegistrySync.registerSync(
+      handle,
+      registry: registry,
+      queueKey: createQueueKey,
+      context: "RNPingStorageCommon.registerOathConfig"
+    )
+  }
+
+  /// Resolves an OATH storage configuration by ID using the provided registry.
+  ///
+  /// This method must be called on `createQueue` to prevent blocking critical threads.
+  /// - Parameters:
+  ///   - id: The unique identifier of the OATH storage configuration to resolve.
+  ///   - registry: The source registry that stores OATH configuration handles.
+  /// - Returns: The resolved OATH storage configuration, or `nil` on failure.
+  /// - Note: Raises an `NSException` when no OATH configuration is registered for the id.
+  private static func resolveOathConfig(
+    _ id: String,
+    registry: Registry
+  ) -> OathStorageConfig? {
+    precondition(
+      DispatchQueue.getSpecific(key: createQueueKey) != nil,
+      "RNPingStorageCommon.resolveOathConfig must be called on createQueue"
+    )
+
+    let resolvedConfig = (
+      RegistrySync.resolveSync(
+        id,
+        registry: registry,
+        queueKey: createQueueKey,
+        context: "RNPingStorageCommon.resolveOathConfig"
+      ) as? OathStorageConfigHandle
+    )?.config
+    guard let resolvedConfig else {
+      NSException(
+        name: .invalidArgumentException,
+        reason: "No OATH storage config registered for id=\(id)",
+        userInfo: nil
+      ).raise()
+      return nil
+    }
+    return resolvedConfig
+  }
+
   // MARK: - Private Helpers
-  
+
   /// Encodes a storage configuration to a dictionary.
   ///
   /// - Parameter config: The storage configuration to encode, or nil
@@ -286,6 +429,64 @@ public class RNPingStorageCommon: NSObject {
     let handle = await CoreRuntime.oidcStorageConfigRegistry.resolve(id)
     let configHandle = handle as? StorageConfigHandle
     return configHandle?.config
+  }
+
+  // MARK: - Private Helpers - OATH
+
+  /// Builds an OATH storage configuration from the provided dictionary.
+  ///
+  /// Reads OATH-specific fields using oath-prefixed keys to avoid conflation with
+  /// the `account`/`cacheable`/`encryptor` fields used by session/OIDC/binding storage.
+  /// The TurboModule bridge (`RNPingStorage.mm`) forwards these keys from the extended
+  /// `NativeStorageConfig`; the classic bridge forwards the raw `NSDictionary` unchanged.
+  ///
+  /// - Parameter config: A dictionary containing OATH storage configuration values.
+  ///   Recognized keys: `oathService` (String), `oathRequireBiometrics` (Bool),
+  ///   `oathRequireDevicePasscode` (Bool), `oathBiometricPrompt` (String),
+  ///   `oathAccessGroup` (String).
+  /// - Returns: A normalized `OathStorageConfig` for later use by the Core SDK.
+  private static func buildOathStorageConfig(from config: NSDictionary) -> OathStorageConfig {
+    let service = config["oathService"] as? String
+    let requireBiometrics = config["oathRequireBiometrics"] as? Bool
+    let requireDevicePasscode = config["oathRequireDevicePasscode"] as? Bool
+    let biometricPrompt = config["oathBiometricPrompt"] as? String
+    let accessGroup = config["oathAccessGroup"] as? String
+
+    return OathStorageConfig(
+      service: service,
+      requireBiometrics: requireBiometrics,
+      requireDevicePasscode: requireDevicePasscode,
+      biometricPrompt: biometricPrompt,
+      accessGroup: accessGroup
+    )
+  }
+
+  /// Encodes an OATH storage configuration to a dictionary for bridge consumption.
+  ///
+  /// - Parameter config: The OATH storage configuration to encode, or `nil`.
+  /// - Returns: A dictionary representation of the config, or an empty dictionary if config is `nil`.
+  private static func encodeOathConfig(_ config: OathStorageConfig?) -> NSDictionary {
+    guard let config else {
+      return [:]
+    }
+
+    var dict: [String: Any] = [:]
+    if let service = config.service {
+      dict["service"] = service
+    }
+    if let requireBiometrics = config.requireBiometrics {
+      dict["requireBiometrics"] = requireBiometrics
+    }
+    if let requireDevicePasscode = config.requireDevicePasscode {
+      dict["requireDevicePasscode"] = requireDevicePasscode
+    }
+    if let biometricPrompt = config.biometricPrompt {
+      dict["biometricPrompt"] = biometricPrompt
+    }
+    if let accessGroup = config.accessGroup {
+      dict["accessGroup"] = accessGroup
+    }
+    return dict as NSDictionary
   }
 
 }

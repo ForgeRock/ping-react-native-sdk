@@ -9,6 +9,7 @@ import { CacheStrategy } from '../NativeRNPingStorage';
 import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
 import type {
   BindingUserKeyStorageHandle,
+  OathStorageHandle,
   OidcStorageHandle,
   SessionStorageHandle,
 } from '@ping-identity/rn-types';
@@ -93,6 +94,18 @@ export type OidcStorage = BaseStorageConfig & OidcStorageHandle;
  */
 export type BindingUserKeyStorage = BaseStorageConfig &
   BindingUserKeyStorageHandle;
+
+/**
+ * Storage configuration type for OATH credential storage.
+ *
+ * Opaque handle returned by {@link configureOathStorage}.
+ *
+ * @remarks
+ * Pass this handle as `OathClientConfig.storage` to override the native SDK
+ * default storage backend. Omitting the field causes the native SDK to use
+ * its default storage provider.
+ */
+export type OathStorage = BaseStorageConfig & OathStorageHandle;
 
 /**
  * Public storage configuration accepted by storage registration helpers.

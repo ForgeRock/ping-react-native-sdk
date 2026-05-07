@@ -81,12 +81,35 @@ public class RNPingStorageImpl: NSObject, @unchecked Sendable {
 
   /**
    Resolves a binding user-key storage configuration by id.
-   
+
    - Parameter id: Storage configuration identifier.
    - Returns: A storage configuration dictionary.
    */
   @objc
   public func configureBindingUserKeyStorage(_ id: String) -> NSDictionary {
     return RNPingStorageCommon.configureBindingUserKeyStorage(id)
+  }
+
+  /**
+   Registers an OATH storage configuration.
+
+   - Parameter config: Configuration dictionary for OATH storage
+     (service, requireBiometrics, requireDevicePasscode, biometricPrompt, accessGroup).
+   - Returns: A unique identifier for the registered configuration.
+   */
+  @objc
+  public func registerOathStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerOathStorage(config)
+  }
+
+  /**
+   Resolves an OATH storage configuration by id.
+
+   - Parameter id: Storage configuration identifier.
+   - Returns: A storage configuration dictionary with OATH keychain fields.
+   */
+  @objc
+  public func configureOathStorage(_ id: String) -> NSDictionary {
+    return RNPingStorageCommon.configureOathStorage(id)
   }
 }

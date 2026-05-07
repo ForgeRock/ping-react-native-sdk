@@ -102,6 +102,21 @@ export default function HomeScreen({
     },
   ];
 
+  const mfaItems: HomeScreenMenuItem[] = [
+    {
+      title: 'QR Scanner',
+      subtitle: 'Scan QR code to register account',
+      icon: 'qr-code-scanner',
+      screen: 'QRScanner',
+    },
+    {
+      title: 'OATH Tokens',
+      subtitle: 'Manage local OATH credentials',
+      icon: 'lock-clock',
+      screen: 'OathTokens',
+    },
+  ];
+
   const developerToolsItems: HomeScreenMenuItem[] = [
     {
       title: 'Browser',
@@ -199,6 +214,9 @@ export default function HomeScreen({
 
           <Text style={commonStyles.homeSectionTitle}>USER MANAGEMENT</Text>
           {userManagementItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>MFA</Text>
+          {mfaItems.map(renderMenuItem)}
 
           <Text style={commonStyles.homeSectionTitle}>DEVELOPER TOOLS</Text>
           {developerToolsItems.map(renderMenuItem)}

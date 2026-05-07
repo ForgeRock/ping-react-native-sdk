@@ -209,6 +209,52 @@ export type BaseStorageConfig = {
      */
     cacheable?: boolean;
   };
+
+  /**
+   * iOS-specific configuration options for OATH keychain storage.
+   *
+   * OATH uses `OathKeychainStorage` whose security model is distinct from the
+   * `account`/`encryptor`/`cacheable` settings used by session/OIDC/binding storage.
+   * All properties within this object are ignored on Android.
+   *
+   * @remarks Only used by {@link configureOathStorage}; ignored by other storage helpers.
+   */
+  iosOath?: {
+    /**
+     * Keychain service name for OATH credential storage.
+     *
+     * **Platform:** iOS only
+     */
+    service?: string;
+
+    /**
+     * Require biometric authentication to access OATH credentials.
+     *
+     * **Platform:** iOS only
+     */
+    requireBiometrics?: boolean;
+
+    /**
+     * Require device passcode to access OATH credentials.
+     *
+     * **Platform:** iOS only
+     */
+    requireDevicePasscode?: boolean;
+
+    /**
+     * Biometric prompt text shown when accessing OATH credentials.
+     *
+     * **Platform:** iOS only
+     */
+    biometricPrompt?: string;
+
+    /**
+     * Keychain access group for OATH credential sharing across app extensions.
+     *
+     * **Platform:** iOS only
+     */
+    accessGroup?: string;
+  };
 };
 
 /**
@@ -251,6 +297,16 @@ export type NativeStorageConfig = {
   encryptor?: boolean;
   /** Optional cache flag for iOS Keychain (iOS only). */
   cacheable?: boolean;
+  /** iOS-only: Keychain service name for OATH credential storage. */
+  oathService?: string;
+  /** iOS-only: Require biometric authentication to access OATH credentials. */
+  oathRequireBiometrics?: boolean;
+  /** iOS-only: Require device passcode to access OATH credentials. */
+  oathRequireDevicePasscode?: boolean;
+  /** iOS-only: Biometric prompt text shown when accessing OATH credentials. */
+  oathBiometricPrompt?: string;
+  /** iOS-only: Keychain access group for OATH credential sharing. */
+  oathAccessGroup?: string;
 };
 
 /**
@@ -346,6 +402,37 @@ export interface Spec extends TurboModule {
    * Resolve a binding user-key storage configuration by identifier.
    */
   configureBindingUserKeyStorage(id: string): NativeStorageConfig;
+
+  /**
+   * Register an OATH storage configuration.
+   *
+   * Creates and stores an OATH storage configuration in native code,
+   * returning a unique identifier for later retrieval.
+   *
+   * @param config - Flattened storage configuration object
+   * @returns A unique identifier string for the registered storage configuration
+   *
+   * @remarks
+   * On Android, only `databaseName` (via `fileName` in the config map) is used;
+   * the handle is registered as an `OathStorageConfigHandle` implementing
+   * `OathStorageConfigHandleContract` directly in `CoreRuntime.oathStorageConfigRegistry`.
+   * On iOS, OATH-specific keychain fields (`oathService`, `oathRequireBiometrics`,
+   * `oathRequireDevicePasscode`, `oathBiometricPrompt`, `oathAccessGroup`) are
+   * forwarded via the extended `NativeStorageConfig`; the standard `account`,
+   * `cacheable`, and `encryptor` fields are not used for OATH storage.
+   */
+  registerOathStorage(config: NativeStorageConfig): string;
+
+  /**
+   * Resolve an OATH storage configuration by identifier.
+   *
+   * Retrieves a previously registered OATH storage configuration
+   * from native code using its unique identifier.
+   *
+   * @param id - Registered storage configuration identifier
+   * @returns A storage configuration object
+   */
+  configureOathStorage(id: string): NativeStorageConfig;
 }
 
 /**
