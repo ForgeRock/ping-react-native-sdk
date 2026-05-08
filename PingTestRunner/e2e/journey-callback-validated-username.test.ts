@@ -20,10 +20,16 @@
  */
 
 import { device, element, by, waitFor } from 'detox';
-import { assertAppReady, hasCallbackTreesEnabled, hasJourneyEnv, E2E_ENV } from './setup';
+import {
+  assertAppReady,
+  hasCallbackTreesEnabled,
+  hasJourneyEnv,
+  E2E_ENV,
+} from './setup';
 
 const TREE = 'ValidatedUsernameCallbackTest';
-const SKIP_REASON = 'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
+const SKIP_REASON =
+  'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
 const NET_TIMEOUT = 30000;
 
 describe('Journey — ValidatedCreateUsernameCallback', () => {
@@ -38,11 +44,19 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
     }
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-ValidatedCreateUsernameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(
+      element(by.id('journey-field-ValidatedCreateUsernameCallback:0')),
+    )
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
     const uniqueUsername = `e2enew${Date.now()}`;
-    await element(by.id('journey-field-ValidatedCreateUsernameCallback:0')).typeText(uniqueUsername);
+    await element(
+      by.id('journey-field-ValidatedCreateUsernameCallback:0'),
+    ).typeText(uniqueUsername);
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   };
 
   beforeAll(async () => {
@@ -68,26 +82,49 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
   });
 
   it('start() surfaces ValidatedCreateUsernameCallback field (step 1)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-ValidatedCreateUsernameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(
+      element(by.id('journey-field-ValidatedCreateUsernameCallback:0')),
+    )
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('submit unique new username → surfaces login form (step 2)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     // Must be unique — reusing testUsername fails the VALID_USERNAME policy
     const uniqueUsername = `e2enew${Date.now()}`;
-    await element(by.id('journey-field-ValidatedCreateUsernameCallback:0')).typeText(uniqueUsername);
+    await element(
+      by.id('journey-field-ValidatedCreateUsernameCallback:0'),
+    ).typeText(uniqueUsername);
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('submit credentials → reaches SuccessNode (live)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await ensureLoginFormVisible();
-    await element(by.id('journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-success')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 });

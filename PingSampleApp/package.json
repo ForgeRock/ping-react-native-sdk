@@ -7,7 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.{js,jsx,ts,tsx}\" \"ui/**/*.{js,jsx,ts,tsx}\" \"__tests__/**/*.{js,jsx,ts,tsx}\" \"*.{js,jsx,ts,tsx}\"",
     "start": "react-native start",
-    "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && bundle install --path vendor/bundle && bundle exec pod install --repo-update --project-directory=ios",
+    "clean-install": "cd android && rm -rf .gradle app/build && cd .. && cd ios && rm -rf Pods build && cd .. && rm -rf build && bundle config set path 'vendor/bundle' && bundle install && bundle exec pod install --repo-update --project-directory=ios",
     "codegen": "npx react-native codegen",
     "reset-cache": "react-native start --reset-cache",
     "prettier": "prettier --check App.tsx index.js babel.config.js jest.config.js metro.config.js package.json app.json tsconfig.json README.md \"__tests__/**/*.{js,jsx,ts,tsx}\" \"src/**/*.{js,jsx,ts,tsx,json}\" \"ui/**/*.{js,jsx,ts,tsx,json}\"",

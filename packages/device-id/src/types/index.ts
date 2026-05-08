@@ -5,4 +5,5 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export type { DeviceIdError, DeviceIdErrorCode } from './deviceId.types';
+export { DeviceIdError } from './deviceId.types';
+export type { DeviceIdErrorCode } from './deviceId.types';

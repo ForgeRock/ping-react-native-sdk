@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { PingError } from '@ping-identity/rn-types';
 import type {
   JourneyFormResult,
   JourneyNextInput,
@@ -113,7 +114,12 @@ export function useJourneyAutoForwarder(
         await runner.runIntegrations(form);
       } catch (error) {
         appendDebug('Integration failed; submitting to let server route', {
-          error: error instanceof Error ? error.message : String(error),
+          error:
+            error instanceof PingError
+              ? `[${error.code}] ${error.message}`
+              : error instanceof Error
+                ? error.message
+                : String(error),
         });
       }
 

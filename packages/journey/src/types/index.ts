@@ -22,9 +22,10 @@ export type * from './form.types';
  */
 export type * from './session.types';
 /**
- * Journey error payload and code contracts.
+ * Journey error class and code contracts.
  */
-export type * from './error.types';
+export { JourneyError } from './error.types';
+export type { JourneyErrorCode } from './error.types';
 /**
  * Journey client imperative API contracts.
  */

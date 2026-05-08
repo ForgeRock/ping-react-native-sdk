@@ -7,13 +7,13 @@
 
 export { createDeviceClient } from './createDeviceClient';
 
+export { DeviceClientError } from './types';
 export type {
   BoundDevice,
   DeviceBase,
   DeviceByKind,
   DeviceClient,
   DeviceClientConfig,
-  DeviceClientError,
   DeviceClientErrorCode,
   DeviceKind,
   DeviceLocation,

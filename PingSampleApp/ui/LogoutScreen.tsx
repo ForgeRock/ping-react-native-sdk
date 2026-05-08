@@ -10,6 +10,7 @@ import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { PingError } from '@ping-identity/rn-types';
 import { commonStyles } from '../src/styles/common';
 import AsyncActionButton from './components/molecules/AsyncActionButton';
 import CardSection from './components/molecules/CardSection';
@@ -65,7 +66,9 @@ export default function LogoutScreen(): React.ReactElement {
       await journeyActions.logoutUser();
     } catch (error) {
       errors.push(
-        error instanceof Error ? error.message : 'Journey logout failed',
+        error instanceof PingError
+          ? `[${error.code}] ${error.message}`
+          : String(error),
       );
     }
 
@@ -73,7 +76,9 @@ export default function LogoutScreen(): React.ReactElement {
       await oidcActions.logout();
     } catch (error) {
       errors.push(
-        error instanceof Error ? error.message : 'OIDC logout failed',
+        error instanceof PingError
+          ? `[${error.code}] ${error.message}`
+          : String(error),
       );
     }
 
@@ -99,7 +104,9 @@ export default function LogoutScreen(): React.ReactElement {
       setStatusMessage('OIDC Web session logged out.');
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : 'OIDC Web logout failed',
+        error instanceof PingError
+          ? `[${error.code}] ${error.message}`
+          : String(error),
       );
     } finally {
       setBusyOidc(false);
@@ -116,7 +123,9 @@ export default function LogoutScreen(): React.ReactElement {
       setStatusMessage('Journey session logged out.');
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : 'Journey logout failed',
+        error instanceof PingError
+          ? `[${error.code}] ${error.message}`
+          : String(error),
       );
     } finally {
       setBusyJourney(false);

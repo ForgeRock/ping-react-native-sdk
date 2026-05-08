@@ -21,6 +21,7 @@ import type {
   ExternalIdpSelectOptions,
   JourneyInstance,
 } from './types';
+import { ExternalIdpError } from './types/externalIdp.types';
 import type { ExternalIdpClientConfig } from './types/externalIdp.types';
 
 const noopLogger: LoggerInstance = {
@@ -45,9 +46,11 @@ function normalizeRedirectUri(redirectUri?: string): string {
     return '';
   }
   if (!/^[A-Za-z][A-Za-z0-9+.-]*:/.test(resolved)) {
-    throw new Error(
+    throw new ExternalIdpError(
       '[@ping-identity/rn-external-idp] `redirectUri` must include a URI scheme. ' +
         "Provide the app's registered URL scheme (e.g. 'com.myapp://callback').",
+      'EXTERNAL_IDP_CONFIG_ERROR',
+      'argument_error',
     );
   }
   return resolved;
@@ -63,9 +66,11 @@ function normalizeRedirectUri(redirectUri?: string): string {
 function normalizeProvider(provider: string): string {
   const resolved = provider?.trim();
   if (!resolved) {
-    throw new Error(
+    throw new ExternalIdpError(
       '[@ping-identity/rn-external-idp] `provider` is required. ' +
         'Pass the provider identifier selected from the Journey callback.',
+      'EXTERNAL_IDP_CONFIG_ERROR',
+      'argument_error',
     );
   }
   return resolved;
@@ -118,7 +123,7 @@ export function createExternalIdpClient(
       return result;
     } catch (error) {
       logger.error(`ExternalIdp ${operation} failed`);
-      throw error;
+      throw ExternalIdpError.from(error);
     }
   }
 

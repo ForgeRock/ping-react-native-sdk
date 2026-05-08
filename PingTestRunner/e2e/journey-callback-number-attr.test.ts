@@ -18,16 +18,24 @@
  */
 
 import { device, element, by, waitFor } from 'detox';
-import { assertAppReady, hasCallbackTreesEnabled, hasJourneyEnv, E2E_ENV } from './setup';
+import {
+  assertAppReady,
+  hasCallbackTreesEnabled,
+  hasJourneyEnv,
+  E2E_ENV,
+} from './setup';
 
 const TREE = 'NumberAttributeInputCallbackTest';
-const SKIP_REASON = 'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
+const SKIP_REASON =
+  'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
 const NET_TIMEOUT = 30000;
 
 describe('Journey — NumberAttributeInputCallback', () => {
   const ensureNumberFieldVisible = async (): Promise<void> => {
     try {
-      await waitFor(element(by.id('journey-field-NumberAttributeInputCallback:0')))
+      await waitFor(
+        element(by.id('journey-field-NumberAttributeInputCallback:0')),
+      )
         .toBeVisible()
         .withTimeout(1500);
       return;
@@ -36,11 +44,21 @@ describe('Journey — NumberAttributeInputCallback', () => {
     }
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
-    await element(by.id('journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-NumberAttributeInputCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(
+      element(by.id('journey-field-NumberAttributeInputCallback:0')),
+    )
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   };
 
   beforeAll(async () => {
@@ -66,24 +84,47 @@ describe('Journey — NumberAttributeInputCallback', () => {
   });
 
   it('start() surfaces login form (step 1)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('submit credentials → surfaces NumberAttributeInputCallback field (step 2)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
-    await element(by.id('journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-NumberAttributeInputCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(
+      element(by.id('journey-field-NumberAttributeInputCallback:0')),
+    )
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('enter a number and submit → reaches SuccessNode (live)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await ensureNumberFieldVisible();
-    await element(by.id('journey-field-NumberAttributeInputCallback:0')).typeText('25');
+    await element(
+      by.id('journey-field-NumberAttributeInputCallback:0'),
+    ).typeText('25');
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-success')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 });

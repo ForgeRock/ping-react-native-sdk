@@ -264,7 +264,6 @@ If you only need OIDC in one screen, you can skip the provider and pass the clie
 const [state, actions] = useOidc(oidcWebClient);
 ```
 
-
 ## Android redirect configuration
 
 Configure the app redirect scheme for Custom Tabs/Auth Tabs. For a redirect URI of
@@ -303,16 +302,18 @@ See the Android App Links documentation for `assetlinks.json` setup.
 
 ## Error handling
 
-All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+All promise rejections throw an `OidcError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
 
 ```ts
-import type { OidcError } from '@ping-identity/rn-oidc';
+import { OidcError } from '@ping-identity/rn-oidc';
 
 try {
   await oidcWebClient.authorize();
-} catch (error) {
-  const oidcError = error as OidcError;
-  console.log(oidcError.type, oidcError.error, oidcError.message);
+} catch (err) {
+  if (err instanceof OidcError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

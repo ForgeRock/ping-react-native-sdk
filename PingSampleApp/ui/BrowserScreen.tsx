@@ -7,8 +7,8 @@
 
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import type { BrowserError } from '@ping-identity/rn-browser';
 import { open } from '@ping-identity/rn-browser';
+import { PingError } from '@ping-identity/rn-types';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 import PingTextInput from './components/atoms/PingTextInput';
@@ -54,10 +54,8 @@ export default function BrowserScreen() {
       );
       setResult(JSON.stringify(response, null, 2));
     } catch (e: unknown) {
-      const errorPayload = e as BrowserError;
-      const errorMessage = errorPayload?.message ?? 'Browser open failed';
-      const errorCode = errorPayload?.error ?? 'BROWSER_OPEN_ERROR';
-      setError(`${errorCode}: ${errorMessage}`);
+      const err = PingError.from(e);
+      setError(`${err.code}: ${err.message}`);
     }
   };
 

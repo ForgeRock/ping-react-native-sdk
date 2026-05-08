@@ -5,11 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type {
-  GenericError,
-  JourneyInstance,
-  LoggerInstance,
-} from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
+import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
 
 /**
  * Prompt text sent from AM for biometric / PIN authentication dialogs.
@@ -295,12 +292,30 @@ export type BindingJourneyResult = {
 };
 
 /**
- * Error payload returned when binding operations fail.
+ * Error thrown when binding operations fail.
  *
- * @remarks
- * Rejections use this shape; success resolves with a JSON-compatible payload.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type BindingError = GenericError;
+export class BindingError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'BindingError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): BindingError {
+    if (raw instanceof BindingError) return raw;
+    const base = PingError.from(raw);
+    const err = new BindingError(
+      base.message,
+      base.code,
+      base.type,
+      base.status,
+    );
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable error codes emitted by the Binding module.

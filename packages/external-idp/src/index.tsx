@@ -6,12 +6,12 @@
  */
 
 export { createExternalIdpClient } from './externalIdp';
+export { ExternalIdpError } from './types';
 
 export type {
   ExternalIdpAuthorizeOptions,
   ExternalIdpClient,
   ExternalIdpConfig,
-  ExternalIdpError,
   ExternalIdpErrorCode,
   ExternalIdpResult,
   ExternalIdpSelectOptions,

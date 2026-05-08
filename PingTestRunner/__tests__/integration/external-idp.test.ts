@@ -215,32 +215,33 @@ describe('@ping-identity/rn-external-idp — integration', () => {
     });
 
     it('propagates a native authorize error to the caller', async () => {
-      const nativeError = {
-        code: 'EXTERNAL_IDP_AUTHORIZE_ERROR',
-        message: 'Authorization failed.',
-      };
       const mock = makeMock({
         authorizeForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'EXTERNAL_IDP_AUTHORIZE_ERROR',
+            message: 'Authorization failed.',
+            type: 'authorize_error',
+          };
         }),
       });
       const mod = await loadExternalIdp(mock);
       const client = mod.createExternalIdpClient({});
       const journey = { getId: jest.fn(async () => 'journey-err') };
 
-      await expect(client.authorizeForJourney(journey)).rejects.toEqual(
-        nativeError,
-      );
+      await expect(client.authorizeForJourney(journey)).rejects.toMatchObject({
+        code: 'EXTERNAL_IDP_AUTHORIZE_ERROR',
+        message: 'Authorization failed.',
+      });
     });
 
     it('propagates a cancellation error to the caller', async () => {
-      const nativeError = {
-        code: 'EXTERNAL_IDP_CANCELLED',
-        message: 'User cancelled.',
-      };
       const mock = makeMock({
         authorizeForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'EXTERNAL_IDP_CANCELLED',
+            message: 'User cancelled.',
+            type: 'cancelled',
+          };
         }),
       });
       const mod = await loadExternalIdp(mock);
@@ -253,13 +254,13 @@ describe('@ping-identity/rn-external-idp — integration', () => {
     });
 
     it('propagates an unsupported provider error to the caller', async () => {
-      const nativeError = {
-        code: 'EXTERNAL_IDP_UNSUPPORTED_PROVIDER',
-        message: 'Provider not supported.',
-      };
       const mock = makeMock({
         authorizeForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'EXTERNAL_IDP_UNSUPPORTED_PROVIDER',
+            message: 'Provider not supported.',
+            type: 'unsupported_error',
+          };
         }),
       });
       const mod = await loadExternalIdp(mock);
@@ -357,13 +358,13 @@ describe('@ping-identity/rn-external-idp — integration', () => {
     });
 
     it('propagates a native callback-not-found error to the caller', async () => {
-      const nativeError = {
-        code: 'EXTERNAL_IDP_CALLBACK_NOT_FOUND',
-        message: 'No SelectIdpCallback found.',
-      };
       const mock = makeMock({
         selectProviderForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'EXTERNAL_IDP_CALLBACK_NOT_FOUND',
+            message: 'No SelectIdpCallback found.',
+            type: 'callback_error',
+          };
         }),
       });
       const mod = await loadExternalIdp(mock);
@@ -372,17 +373,20 @@ describe('@ping-identity/rn-external-idp — integration', () => {
 
       await expect(
         client.selectProviderForJourney(journey, 'google'),
-      ).rejects.toEqual(nativeError);
+      ).rejects.toMatchObject({
+        code: 'EXTERNAL_IDP_CALLBACK_NOT_FOUND',
+        message: 'No SelectIdpCallback found.',
+      });
     });
 
     it('propagates an activity unavailable error to the caller', async () => {
-      const nativeError = {
-        code: 'EXTERNAL_IDP_ACTIVITY_UNAVAILABLE',
-        message: 'No foreground activity.',
-      };
       const mock = makeMock({
         selectProviderForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'EXTERNAL_IDP_ACTIVITY_UNAVAILABLE',
+            message: 'No foreground activity.',
+            type: 'activity_error',
+          };
         }),
       });
       const mod = await loadExternalIdp(mock);

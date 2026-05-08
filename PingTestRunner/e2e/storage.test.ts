@@ -13,6 +13,7 @@
  *   invalid config path                     → throws OR falls back to native defaults
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady } from './setup';
@@ -36,7 +37,9 @@ describe('Storage — bridge verification', () => {
   it('configureSessionStorage returns a handle with kind=session', async () => {
     await element(by.id('storage-session-btn')).tap();
     await detoxExpect(element(by.id('storage-session-result'))).toBeVisible();
-    const attrs = await element(by.id('storage-session-result')).getAttributes();
+    const attrs = await element(
+      by.id('storage-session-result'),
+    ).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(text).toMatch(/^session:.+$/);
   });
@@ -50,19 +53,30 @@ describe('Storage — bridge verification', () => {
   });
 
   it('configureSessionStorage with empty config throws or falls back to defaults', async () => {
-    await waitFor(element(by.id('storage-invalid-btn'))).toBeVisible().withTimeout(3000);
+    await waitFor(element(by.id('storage-invalid-btn')))
+      .toBeVisible()
+      .withTimeout(3000);
     await element(by.id('storage-invalid-btn')).tap();
-    await waitFor(element(by.id('storage-invalid-status'))).toBeVisible().withTimeout(3000);
-    const statusAttrs = await element(by.id('storage-invalid-status')).getAttributes();
-    const statusText = (statusAttrs as any).text ?? (statusAttrs as any).label ?? '';
+    await waitFor(element(by.id('storage-invalid-status')))
+      .toBeVisible()
+      .withTimeout(3000);
+    const statusAttrs = await element(
+      by.id('storage-invalid-status'),
+    ).getAttributes();
+    const statusText =
+      (statusAttrs as any).text ?? (statusAttrs as any).label ?? '';
 
     if (statusText === 'error') {
       await detoxExpect(element(by.id('storage-error'))).toBeVisible();
       return;
     }
 
-    await waitFor(element(by.id('storage-invalid-result'))).toBeVisible().withTimeout(3000);
-    const attrs = await element(by.id('storage-invalid-result')).getAttributes();
+    await waitFor(element(by.id('storage-invalid-result')))
+      .toBeVisible()
+      .withTimeout(3000);
+    const attrs = await element(
+      by.id('storage-invalid-result'),
+    ).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(text).toMatch(/^session:.+$/);
   });

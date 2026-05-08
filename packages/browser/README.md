@@ -87,7 +87,11 @@ The logger must be created via `@ping-identity/rn-logger`.
 If the logger package is not installed/configured, omit the logger option.
 
 ```ts
-import { open, configureBrowser, resetBrowser } from '@ping-identity/rn-browser';
+import {
+  open,
+  configureBrowser,
+  resetBrowser,
+} from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 
 const jsLogger = logger({ level: 'debug' });
@@ -100,7 +104,10 @@ const result = await open(
 );
 
 // Also supported on configureBrowser and resetBrowser
-configureBrowser({ android: { customTabs: { showTitle: true } } }, { logger: jsLogger });
+configureBrowser(
+  { android: { customTabs: { showTitle: true } } },
+  { logger: jsLogger },
+);
 resetBrowser({ logger: jsLogger });
 ```
 
@@ -126,21 +133,22 @@ trusted URLs in your app (for example, enforce an `https` scheme and allow-liste
 
 ### Error handling
 
-Native promise rejections map to the shared `GenericError` contract from
-`@ping-identity/rn-types`. Errors are rejected as exceptions; cancellations are resolved as
-`{ type: 'cancel' }` instead of being rejected.
+Promise rejections throw a `BrowserError` instance, which extends `PingError extends Error`.
+Cancellations resolve as `{ type: 'cancel' }` rather than rejecting.
 
 Error codes:
+
 - `BROWSER_OPEN_ERROR` for validation/launch failures
 
 ```ts
-import type { BrowserError } from '@ping-identity/rn-browser';
+import { BrowserError } from '@ping-identity/rn-browser';
 
 try {
   await open('https://example.com', { callbackUrlScheme: 'com.example.app' });
-} catch (e) {
-  const error = e as BrowserError;
-  // error.type, error.error, error.message, error.code, error.status
+} catch (err) {
+  if (err instanceof BrowserError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

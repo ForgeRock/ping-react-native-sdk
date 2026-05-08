@@ -14,6 +14,7 @@ import type {
   DeviceOf,
   DeviceRepository,
 } from './types';
+import { DeviceClientError } from './types';
 
 /**
  * No-op logger used when the caller does not provide a logger instance.
@@ -103,8 +104,10 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
     !config.realm ||
     !config.cookieName
   ) {
-    throw new Error(
+    throw new DeviceClientError(
       '[@ping-identity/rn-device-client] createDeviceClient requires `serverUrl`, `ssoToken`, `realm`, and `cookieName`.',
+      'DEVICE_CLIENT_MISSING_CONFIG',
+      'argument_error',
     );
   }
 
@@ -135,15 +138,17 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
   const ensureHandle = (): Promise<string> => {
     if (disposed) {
       return Promise.reject(
-        new Error(
+        new DeviceClientError(
           '[@ping-identity/rn-device-client] This client has been disposed.',
+          'DEVICE_CLIENT_HANDLE_NOT_FOUND',
+          'state_error',
         ),
       );
     }
     if (!handlePromise) {
       handlePromise = native.create(nativeConfig).catch((error) => {
         handlePromise = null;
-        throw error;
+        throw DeviceClientError.from(error);
       });
     }
     return handlePromise;

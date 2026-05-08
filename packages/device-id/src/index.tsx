@@ -50,4 +50,5 @@ export async function getDeviceId(): Promise<string> {
   return await getNativeModule().getDefaultDeviceId();
 }
 
-export type { DeviceIdError, DeviceIdErrorCode } from './types';
+export { DeviceIdError } from './types';
+export type { DeviceIdErrorCode } from './types';

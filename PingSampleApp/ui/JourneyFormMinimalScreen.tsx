@@ -8,7 +8,11 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { callbackType } from '@ping-identity/rn-types';
-import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
+import {
+  useJourney,
+  useJourneyForm,
+  JourneyError,
+} from '@ping-identity/rn-journey';
 import { commonStyles } from '../src/styles/common';
 import JourneyFieldRenderer from './journey/components/molecules/renderers/JourneyFieldRenderer';
 import PingTextInput from './components/atoms/PingTextInput';
@@ -85,7 +89,12 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
           style={commonStyles.journeyButtonPrimary}
           onPress={() =>
             startJourney().catch(cause =>
-              Alert.alert('Start failed', String(cause)),
+              Alert.alert(
+                'Start failed',
+                cause instanceof JourneyError
+                  ? `[${cause.code}] ${cause.message}`
+                  : String(cause),
+              ),
             )
           }
           disabled={actions.loading}
@@ -127,7 +136,12 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
                   style={commonStyles.journeyButtonPrimary}
                   onPress={() =>
                     continueJourney().catch(cause =>
-                      Alert.alert('Continue failed', String(cause)),
+                      Alert.alert(
+                        'Continue failed',
+                        cause instanceof JourneyError
+                          ? `[${cause.code}] ${cause.message}`
+                          : String(cause),
+                      ),
                     )
                   }
                   disabled={actions.loading}
@@ -151,7 +165,14 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
               onPress={() =>
                 actions
                   .logoutUser()
-                  .catch(cause => Alert.alert('Logout failed', String(cause)))
+                  .catch(cause =>
+                    Alert.alert(
+                      'Logout failed',
+                      cause instanceof JourneyError
+                        ? `[${cause.code}] ${cause.message}`
+                        : String(cause),
+                    ),
+                  )
               }
             >
               <Text style={commonStyles.buttonText}>Logout</Text>

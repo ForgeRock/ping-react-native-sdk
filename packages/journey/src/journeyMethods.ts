@@ -14,6 +14,7 @@ import type {
   JourneyStartOptions,
   JourneyUserSession,
 } from './types';
+import { JourneyError } from './types/error.types';
 import type { NativeJourneyConfig } from './NativeRNPingJourney';
 
 /**
@@ -25,7 +26,11 @@ import type { NativeJourneyConfig } from './NativeRNPingJourney';
 export async function configureJourney(
   config: NativeJourneyConfig,
 ): Promise<string> {
-  return await NativeRNPingJourney.configureJourney(config);
+  try {
+    return await NativeRNPingJourney.configureJourney(config);
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -41,8 +46,16 @@ export async function startJourney(
   journeyName: string,
   options?: JourneyStartOptions,
 ): Promise<JourneyNode> {
-  const node = await NativeRNPingJourney.start(journeyId, journeyName, options);
-  return node as unknown as JourneyNode;
+  try {
+    const node = await NativeRNPingJourney.start(
+      journeyId,
+      journeyName,
+      options,
+    );
+    return node as unknown as JourneyNode;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -56,8 +69,12 @@ export async function nextNode(
   journeyId: string,
   input: JourneyNextInput = {},
 ): Promise<JourneyNode> {
-  const node = await NativeRNPingJourney.next(journeyId, '', input);
-  return node as unknown as JourneyNode;
+  try {
+    const node = await NativeRNPingJourney.next(journeyId, '', input);
+    return node as unknown as JourneyNode;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -71,8 +88,12 @@ export async function resumeJourney(
   journeyId: string,
   uri: string,
 ): Promise<JourneyNode> {
-  const node = await NativeRNPingJourney.resume(journeyId, uri);
-  return node as unknown as JourneyNode;
+  try {
+    const node = await NativeRNPingJourney.resume(journeyId, uri);
+    return node as unknown as JourneyNode;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -84,8 +105,12 @@ export async function resumeJourney(
 export async function getSession(
   journeyId: string,
 ): Promise<JourneyUserSession | null> {
-  const session = await NativeRNPingJourney.getSession(journeyId);
-  return session ? (session as JourneyUserSession) : null;
+  try {
+    const session = await NativeRNPingJourney.getSession(journeyId);
+    return session ? (session as JourneyUserSession) : null;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -97,8 +122,12 @@ export async function getSession(
 export async function refreshSession(
   journeyId: string,
 ): Promise<JourneyUserSession | null> {
-  const session = await NativeRNPingJourney.refresh(journeyId);
-  return session ? (session as JourneyUserSession) : null;
+  try {
+    const session = await NativeRNPingJourney.refresh(journeyId);
+    return session ? (session as JourneyUserSession) : null;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -108,7 +137,11 @@ export async function refreshSession(
  * @returns `true` when revoke succeeds.
  */
 export async function revokeSession(journeyId: string): Promise<boolean> {
-  return await NativeRNPingJourney.revoke(journeyId);
+  try {
+    return await NativeRNPingJourney.revoke(journeyId);
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -120,8 +153,12 @@ export async function revokeSession(journeyId: string): Promise<boolean> {
 export async function getUserInfo(
   journeyId: string,
 ): Promise<JourneyUserInfo | null> {
-  const userInfo = await NativeRNPingJourney.userinfo(journeyId);
-  return userInfo ? (userInfo as JourneyUserInfo) : null;
+  try {
+    const userInfo = await NativeRNPingJourney.userinfo(journeyId);
+    return userInfo ? (userInfo as JourneyUserInfo) : null;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -133,8 +170,12 @@ export async function getUserInfo(
 export async function getSSOToken(
   journeyId: string,
 ): Promise<JourneySSOToken | null> {
-  const ssoToken = await NativeRNPingJourney.ssoToken(journeyId);
-  return ssoToken ? (ssoToken as JourneySSOToken) : null;
+  try {
+    const ssoToken = await NativeRNPingJourney.ssoToken(journeyId);
+    return ssoToken ? (ssoToken as JourneySSOToken) : null;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -144,7 +185,11 @@ export async function getSSOToken(
  * @returns `true` when logout succeeds.
  */
 export async function logout(journeyId: string): Promise<boolean> {
-  return await NativeRNPingJourney.logout(journeyId);
+  try {
+    return await NativeRNPingJourney.logout(journeyId);
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }
 
 /**
@@ -153,5 +198,9 @@ export async function logout(journeyId: string): Promise<boolean> {
  * @param journeyId - Native Journey instance identifier.
  */
 export async function disposeJourney(journeyId: string): Promise<void> {
-  await NativeRNPingJourney.dispose(journeyId);
+  try {
+    await NativeRNPingJourney.dispose(journeyId);
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
 }

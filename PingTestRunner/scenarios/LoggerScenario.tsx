@@ -15,11 +15,7 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Button,
-  Text,
-  View,
-} from 'react-native';
+import { Button, Text, View } from 'react-native';
 import { logger } from '@ping-identity/rn-logger';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
@@ -42,7 +38,9 @@ export default function LoggerScenario(): React.JSX.Element {
   }, []);
 
   const handleLog = useCallback(() => {
-    if (!logRef.current) { return; }
+    if (!logRef.current) {
+      return;
+    }
     try {
       logRef.current.debug('e2e debug message');
       logRef.current.info('e2e info message');
@@ -55,7 +53,9 @@ export default function LoggerScenario(): React.JSX.Element {
   }, []);
 
   const handleChangeLevel = useCallback(() => {
-    if (!logRef.current) { return; }
+    if (!logRef.current) {
+      return;
+    }
     try {
       logRef.current.changeLevel('warn');
       setLevelChanged(true);
@@ -75,10 +75,18 @@ export default function LoggerScenario(): React.JSX.Element {
 
   return (
     <View>
-      <Button testID="logger-create-btn" title="Create Logger" onPress={handleCreate} />
+      <Button
+        testID="logger-create-btn"
+        title="Create Logger"
+        onPress={handleCreate}
+      />
       {ready && <Text testID="logger-ready">Logger ready</Text>}
 
-      <Button testID="logger-log-btn" title="Log All Levels" onPress={handleLog} />
+      <Button
+        testID="logger-log-btn"
+        title="Log All Levels"
+        onPress={handleLog}
+      />
       {logged && <Text testID="logger-logged">Logged</Text>}
 
       <Button
@@ -88,7 +96,11 @@ export default function LoggerScenario(): React.JSX.Element {
       />
       {levelChanged && <Text testID="logger-level-changed">Level changed</Text>}
 
-      <Button testID="logger-none-btn" title="Create None Logger" onPress={handleNone} />
+      <Button
+        testID="logger-none-btn"
+        title="Create None Logger"
+        onPress={handleNone}
+      />
       {noneReady && <Text testID="logger-none-ready">None logger ready</Text>}
 
       {errorMessage !== null && (

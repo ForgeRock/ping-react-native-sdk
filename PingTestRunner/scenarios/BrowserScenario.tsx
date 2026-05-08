@@ -22,10 +22,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { Button, Text, View } from 'react-native';
-import {
-  configureBrowser,
-  resetBrowser,
-} from '@ping-identity/rn-browser';
+import { configureBrowser, resetBrowser } from '@ping-identity/rn-browser';
 
 type ScenarioState = 'idle' | 'done' | 'error';
 
@@ -65,11 +62,7 @@ export default function BrowserScenario(): React.JSX.Element {
         <Text testID="browser-configure-result">Configure OK</Text>
       )}
 
-      <Button
-        testID="browser-reset-btn"
-        title="Reset"
-        onPress={handleReset}
-      />
+      <Button testID="browser-reset-btn" title="Reset" onPress={handleReset} />
       {resetState === 'done' && (
         <Text testID="browser-reset-result">Reset OK</Text>
       )}

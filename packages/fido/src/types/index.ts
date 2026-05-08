@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+export { FidoError } from './fido.types';
 export type {
   FidoAndroidConfig,
   FidoClient,
@@ -12,7 +13,6 @@ export type {
   FidoConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
-  FidoError,
   FidoErrorCode,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,

@@ -5,7 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 /**
  * Supported device profile collectors.
  *
@@ -33,12 +34,30 @@ export type DeviceProfile = {
 };
 
 /**
- * Error payload returned when device profile operations fail.
+ * Error thrown when device profile operations fail.
  *
- * @remarks
- * Rejections use this shape; success resolves with data or `{ type: 'success' }`.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type DeviceProfileError = GenericError;
+export class DeviceProfileError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'DeviceProfileError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): DeviceProfileError {
+    if (raw instanceof DeviceProfileError) return raw;
+    const base = PingError.from(raw);
+    const err = new DeviceProfileError(
+      base.message,
+      base.code,
+      base.type,
+      base.status,
+    );
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable error codes emitted by the Device Profile module.

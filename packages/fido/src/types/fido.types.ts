@@ -5,11 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type {
-  GenericError,
-  JourneyInstance,
-  LoggerInstance,
-} from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
+import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
 
 /**
  * JSON-compatible value used by FIDO bridge payloads.
@@ -182,12 +179,25 @@ export interface FidoClient {
 }
 
 /**
- * Error payload returned when FIDO operations fail.
+ * Error thrown when FIDO operations fail.
  *
- * @remarks
- * Rejections use this shape; success resolves with a JSON-compatible payload.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type FidoError = GenericError;
+export class FidoError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'FidoError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): FidoError {
+    if (raw instanceof FidoError) return raw;
+    const base = PingError.from(raw);
+    const err = new FidoError(base.message, base.code, base.type, base.status);
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable error codes emitted by the FIDO module.

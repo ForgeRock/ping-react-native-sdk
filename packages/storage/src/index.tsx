@@ -10,26 +10,24 @@ import type {
   NativeCacheStrategy,
   NativeStorageConfig,
 } from './NativeRNPingStorage';
-import { CacheStrategy } from './types';
+import { CacheStrategy, StorageError } from './types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   OidcStorage,
   BindingUserKeyStorage,
   SessionStorage,
   StorageConfig,
-  StorageError,
   StorageLoggerOptions,
 } from './types';
 
+export { CacheStrategy, StorageError } from './types';
 export type {
   OidcStorage,
   BindingUserKeyStorage,
   SessionStorage,
   StorageConfig,
-  StorageError,
   StorageLoggerOptions,
 } from './types';
-export { CacheStrategy } from './types';
 
 /**
  * No-op logger used when callers do not provide one.
@@ -111,13 +109,11 @@ function fromNativeCacheStrategy(strategy: NativeCacheStrategy): CacheStrategy {
  */
 function validateStorageConfig(config: StorageConfig) {
   if (!config) {
-    const error: StorageError = {
-      type: 'argument_error',
-      error: 'STORAGE_INVALID_CONFIG',
-      message:
-        '[@ping-identity/rn-storage] Missing configuration: You must provide a valid storage config.',
-    };
-    throw error;
+    throw new StorageError(
+      '[@ping-identity/rn-storage] Missing configuration: You must provide a valid storage config.',
+      'STORAGE_INVALID_CONFIG',
+      'argument_error',
+    );
   }
 }
 
@@ -172,13 +168,11 @@ function validateNormalizedResult(
     nativeResult !== undefined &&
     typeof nativeResult !== 'object'
   ) {
-    const error: StorageError = {
-      type: 'parse_error',
-      error: 'STORAGE_INVALID_RESULT',
-      message:
-        '[@ping-identity/rn-storage] Failed to resolve storage configuration.',
-    };
-    throw error;
+    throw new StorageError(
+      '[@ping-identity/rn-storage] Failed to resolve storage configuration.',
+      'STORAGE_INVALID_RESULT',
+      'parse_error',
+    );
   }
 }
 
@@ -372,7 +366,7 @@ export function configureSessionStorage(
     );
   } catch (error) {
     logger.error('Storage configureSessionStorage failed');
-    throw error;
+    throw StorageError.from(error);
   }
 }
 
@@ -423,7 +417,7 @@ export function configureOidcStorage(
     return createOidcStorageHandle(storageId, normalizeStorageConfig(result));
   } catch (error) {
     logger.error('Storage configureOidcStorage failed');
-    throw error;
+    throw StorageError.from(error);
   }
 }
 
@@ -457,6 +451,6 @@ export function configureBindingUserKeyStorage(
     );
   } catch (error) {
     logger.error('Storage configureBindingUserKeyStorage failed');
-    throw error;
+    throw StorageError.from(error);
   }
 }

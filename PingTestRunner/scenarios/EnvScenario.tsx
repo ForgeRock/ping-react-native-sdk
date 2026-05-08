@@ -73,18 +73,46 @@ export default function EnvScenario(): React.JSX.Element {
           Values shown below are runtime launch arguments passed to the app.
         </Text>
 
-        <EnvRow label="PING_SERVER_URL" value={envValue(args.PING_SERVER_URL)} testID="env-ping-server-url" />
-        <EnvRow label="PING_REALM_PATH" value={envValue(args.PING_REALM_PATH)} testID="env-ping-realm-path" />
-        <EnvRow label="PING_COOKIE_NAME" value={envValue(args.PING_COOKIE_NAME)} testID="env-ping-cookie-name" />
-        <EnvRow label="PING_JOURNEY_NAME" value={envValue(args.PING_JOURNEY_NAME)} testID="env-ping-journey-name" />
+        <EnvRow
+          label="PING_SERVER_URL"
+          value={envValue(args.PING_SERVER_URL)}
+          testID="env-ping-server-url"
+        />
+        <EnvRow
+          label="PING_REALM_PATH"
+          value={envValue(args.PING_REALM_PATH)}
+          testID="env-ping-realm-path"
+        />
+        <EnvRow
+          label="PING_COOKIE_NAME"
+          value={envValue(args.PING_COOKIE_NAME)}
+          testID="env-ping-cookie-name"
+        />
+        <EnvRow
+          label="PING_JOURNEY_NAME"
+          value={envValue(args.PING_JOURNEY_NAME)}
+          testID="env-ping-journey-name"
+        />
         <EnvRow
           label="PING_DISCOVERY_ENDPOINT"
           value={envValue(args.PING_DISCOVERY_ENDPOINT)}
           testID="env-ping-discovery-endpoint"
         />
-        <EnvRow label="PING_CLIENT_ID" value={envValue(args.PING_CLIENT_ID)} testID="env-ping-client-id" />
-        <EnvRow label="PING_REDIRECT_URI" value={envValue(args.PING_REDIRECT_URI)} testID="env-ping-redirect-uri" />
-        <EnvRow label="PING_TEST_USERNAME" value={envValue(args.PING_TEST_USERNAME)} testID="env-ping-test-username" />
+        <EnvRow
+          label="PING_CLIENT_ID"
+          value={envValue(args.PING_CLIENT_ID)}
+          testID="env-ping-client-id"
+        />
+        <EnvRow
+          label="PING_REDIRECT_URI"
+          value={envValue(args.PING_REDIRECT_URI)}
+          testID="env-ping-redirect-uri"
+        />
+        <EnvRow
+          label="PING_TEST_USERNAME"
+          value={envValue(args.PING_TEST_USERNAME)}
+          testID="env-ping-test-username"
+        />
         <EnvRow
           label="PING_TEST_PASSWORD"
           value={password ? maskSecret(password) : '(empty)'}

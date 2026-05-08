@@ -13,10 +13,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { OidcError } from './types';
 import type {
   OidcAuthorizeOptions,
   OidcAuthorizeResult,
-  OidcError,
   OidcErrorCode,
   OidcUser,
   OidcWebClient,
@@ -142,50 +142,11 @@ const OidcContext = createContext<OidcContextValue | null>(null);
 
 const OIDC_STATE_ERROR_CODE: OidcErrorCode = 'OIDC_STATE_ERROR';
 
-const missingOidcClientError: OidcError = {
-  type: 'state_error',
-  error: OIDC_STATE_ERROR_CODE,
-  message:
-    'No OIDC client found. Use useOidc(client) or wrap with <OidcProvider client={...}>.',
-};
-
-/**
- * Coerces unknown thrown values into the shared OIDC error contract.
- *
- * @param value Thrown value from native/JS action execution.
- * @returns Normalized OIDC error object.
- */
-function toOidcError(value: unknown): OidcError {
-  const asRecord =
-    typeof value === 'object' && value !== null
-      ? (value as Record<string, unknown>)
-      : null;
-  const type = asRecord?.type;
-  const error = asRecord?.error;
-  const message = asRecord?.message;
-
-  if (
-    typeof type === 'string' &&
-    typeof error === 'string' &&
-    typeof message === 'string'
-  ) {
-    return {
-      ...asRecord,
-      type,
-      error,
-      message,
-    } as OidcError;
-  }
-
-  if (value instanceof Error) {
-    return {
-      ...missingOidcClientError,
-      message: value.message,
-    };
-  }
-
-  return missingOidcClientError;
-}
+const missingOidcClientError = new OidcError(
+  'No OIDC client found. Use useOidc(client) or wrap with <OidcProvider client={...}>.',
+  OIDC_STATE_ERROR_CODE,
+  'state_error',
+);
 
 const missingOidcWebClient: OidcWebClient = {
   id: 'missing-oidc-client',
@@ -291,7 +252,7 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
         setError(null);
         return await action();
       } catch (err) {
-        const typed = toOidcError(err);
+        const typed = OidcError.from(err);
         setError(typed);
         throw typed;
       } finally {
@@ -345,7 +306,7 @@ function useOidcState(client: OidcWebClient): OidcHookResult {
         }
         return resolvedUser;
       } catch (err) {
-        const typed = toOidcError(err);
+        const typed = OidcError.from(err);
         setError(typed);
         throw typed;
       } finally {

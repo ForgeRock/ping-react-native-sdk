@@ -334,16 +334,18 @@ Journey FIDO callback handling is standardized across Android and iOS with the f
 
 ## Error handling
 
-All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+All promise rejections throw a `JourneyError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
 
 ```ts
-import type { JourneyError } from '@ping-identity/rn-journey';
+import { JourneyError } from '@ping-identity/rn-journey';
 
 try {
   await client.start('Login');
-} catch (error) {
-  const journeyError = error as JourneyError;
-  console.log(journeyError.type, journeyError.error, journeyError.message);
+} catch (err) {
+  if (err instanceof JourneyError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

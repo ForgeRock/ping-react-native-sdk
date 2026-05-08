@@ -5,8 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { PingError } from '@ping-identity/rn-types';
 import type {
-  GenericError,
   IOSBrowserOpenOptions,
   LoggerInstance,
 } from '@ping-identity/rn-types';
@@ -19,14 +19,31 @@ export type BrowserResult =
   | { type: 'cancel' };
 
 /**
- * Error payload returned when browser operations fail.
+ * Error thrown when browser operations fail.
  *
- * Matches the shared native/JS error contract defined in @ping-identity/rn-types.
- *
- * @remarks
- * Rejections use this shape; cancellations resolve as `{ type: 'cancel' }`.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
+ * Cancellations resolve as `{ type: 'cancel' }` rather than rejecting.
  */
-export type BrowserError = GenericError;
+export class BrowserError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'BrowserError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): BrowserError {
+    if (raw instanceof BrowserError) return raw;
+    const base = PingError.from(raw);
+    const err = new BrowserError(
+      base.message,
+      base.code,
+      base.type,
+      base.status,
+    );
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable error codes emitted by the Browser module.

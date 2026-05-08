@@ -368,7 +368,20 @@ interface ExternalIdpClient {
 
 ## Errors
 
-Rejected promises use `GenericError` shape (`ExternalIdpError`).
+All promise rejections throw an `ExternalIdpError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
+
+```ts
+import { ExternalIdpError } from '@ping-identity/rn-external-idp';
+
+try {
+  await externalIdpClient.authorizeForJourney(node, providerId);
+} catch (err) {
+  if (err instanceof ExternalIdpError) {
+    console.log(err.code, err.type, err.message);
+  }
+}
+```
 
 Stable error codes:
 

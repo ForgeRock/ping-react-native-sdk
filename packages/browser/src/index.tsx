@@ -15,6 +15,7 @@ import type {
   BrowserOpenOptions,
   BrowserResult,
 } from './types';
+import { BrowserError } from './types';
 
 /**
  * No-op logger used when callers do not provide one.
@@ -115,13 +116,13 @@ export function open(
     })
     .catch((error) => {
       logger.error('Browser open failed');
-      throw error;
+      throw BrowserError.from(error);
     });
 }
 
+export { BrowserError } from './types';
 export type {
   BrowserConfig,
-  BrowserError,
   BrowserErrorCode,
   BrowserLoggerOptions,
   BrowserOpenOptions,

@@ -26,11 +26,16 @@ type NativeBrowserMock = {
   open: jest.Mock;
 };
 
-function makeMock(overrides: Partial<NativeBrowserMock> = {}): NativeBrowserMock {
+function makeMock(
+  overrides: Partial<NativeBrowserMock> = {},
+): NativeBrowserMock {
   return {
     configure: jest.fn(),
     reset: jest.fn(),
-    open: jest.fn(async () => ({ type: 'success', url: 'com.example://callback' })),
+    open: jest.fn(async () => ({
+      type: 'success',
+      url: 'com.example://callback',
+    })),
     ...overrides,
   };
 }
@@ -41,6 +46,7 @@ async function loadBrowser(nativeMock: NativeBrowserMock) {
     __esModule: true,
     getNativeModule: jest.fn(() => nativeMock),
   }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-browser');
 }
 
@@ -82,7 +88,9 @@ describe('@ping-identity/rn-browser — integration', () => {
       const mock = makeMock();
       const browser = await loadBrowser(mock);
 
-      const result = await browser.open(TEST_URL, { callbackUrlScheme: 'com.example' });
+      const result = await browser.open(TEST_URL, {
+        callbackUrlScheme: 'com.example',
+      });
       expect(result).toBeDefined();
       expect(typeof result.type).toBe('string');
     });
@@ -96,7 +104,7 @@ describe('@ping-identity/rn-browser — integration', () => {
       const browser = await loadBrowser(mock);
 
       await expect(
-        browser.open(TEST_URL, { callbackUrlScheme: 'com.example' })
+        browser.open(TEST_URL, { callbackUrlScheme: 'com.example' }),
       ).rejects.toThrow('Browser unavailable');
     });
   });

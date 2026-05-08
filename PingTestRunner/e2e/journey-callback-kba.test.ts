@@ -21,16 +21,24 @@
  */
 
 import { device, element, by, waitFor } from 'detox';
-import { assertAppReady, hasCallbackTreesEnabled, hasJourneyEnv, E2E_ENV } from './setup';
+import {
+  assertAppReady,
+  hasCallbackTreesEnabled,
+  hasJourneyEnv,
+  E2E_ENV,
+} from './setup';
 
 const TREE = 'KbaCreateCallbackTest';
-const SKIP_REASON = 'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
+const SKIP_REASON =
+  'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
 const NET_TIMEOUT = 30000;
 
 describe('Journey — KbaCreateCallback', () => {
   const ensureKbaCallbackVisible = async (): Promise<void> => {
     try {
-      await waitFor(element(by.id('journey-field-KbaCreateCallback:0-question')))
+      await waitFor(
+        element(by.id('journey-field-KbaCreateCallback:0-question')),
+      )
         .toBeVisible()
         .withTimeout(1500);
       return;
@@ -39,11 +47,19 @@ describe('Journey — KbaCreateCallback', () => {
     }
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
-    await element(by.id('journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-question'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-question')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   };
 
   beforeAll(async () => {
@@ -69,28 +85,57 @@ describe('Journey — KbaCreateCallback', () => {
   });
 
   it('start() surfaces login form (step 1)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(by.id('journey-field-NameCallback:0'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('submit credentials → surfaces KbaCreateCallback fields (step 2)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
-    await element(by.id('journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-question'))).toBeVisible().withTimeout(NET_TIMEOUT);
-    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-answer'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-question')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-field-KbaCreateCallback:0-answer')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 
   it('fill in both KBA questions and answers and submit → reaches SuccessNode (live)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await ensureKbaCallbackVisible();
-    await element(by.id('journey-field-KbaCreateCallback:0-question')).typeText('What is your pet name?');
-    await element(by.id('journey-field-KbaCreateCallback:0-answer')).typeText('e2e-answer-one');
-    await element(by.id('journey-field-KbaCreateCallback:1-question')).typeText('What city were you born in?');
-    await element(by.id('journey-field-KbaCreateCallback:1-answer')).typeText('e2e-answer-two');
+    await element(by.id('journey-field-KbaCreateCallback:0-question')).typeText(
+      'What is your pet name?',
+    );
+    await element(by.id('journey-field-KbaCreateCallback:0-answer')).typeText(
+      'e2e-answer-one',
+    );
+    await element(by.id('journey-field-KbaCreateCallback:1-question')).typeText(
+      'What city were you born in?',
+    );
+    await element(by.id('journey-field-KbaCreateCallback:1-answer')).typeText(
+      'e2e-answer-two',
+    );
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-success')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 });

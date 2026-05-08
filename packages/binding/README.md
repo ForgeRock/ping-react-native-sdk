@@ -206,7 +206,9 @@ try {
     await deleteKey(keys[0]);
   }
 } catch (err) {
-  // err.code === 'BINDING_KEY_DELETE_ERROR'
+  if (err instanceof BindingError) {
+    // err.code === 'BINDING_KEY_DELETE_ERROR'
+  }
 }
 ```
 
@@ -410,7 +412,7 @@ Reserved claim names (`sub`, `exp`, `iat`, `nbf`, `iss`, `challenge`) cannot be 
 
 ## Errors
 
-Rejected promises use `GenericError` shape (`BindingError`).
+Rejected promises throw a `BindingError` instance, which extends `PingError extends Error`. Use `instanceof BindingError` to narrow in catch blocks.
 
 Stable error codes:
 
@@ -434,12 +436,15 @@ Stable error codes:
 `BINDING_KEY_INVALIDATED` and `BINDING_NOT_REGISTERED` both mean the key on this device is gone — the user must re-bind. The user's account and any keys bound on other devices are unaffected.
 
 ```ts
+import { BindingError } from '@ping-identity/rn-binding';
+
 try {
   await binding.signForJourney(journey);
 } catch (err) {
   if (
-    err.code === 'BINDING_KEY_INVALIDATED' ||
-    err.code === 'BINDING_NOT_REGISTERED'
+    err instanceof BindingError &&
+    (err.code === 'BINDING_KEY_INVALIDATED' ||
+      err.code === 'BINDING_NOT_REGISTERED')
   ) {
     // Key is gone on this device — clean up and re-bind.
     const keys = await getAllKeys();

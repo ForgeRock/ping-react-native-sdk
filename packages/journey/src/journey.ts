@@ -21,11 +21,11 @@ import {
 import type {
   JourneyClient,
   JourneyConfig,
-  JourneyError,
   JourneyNextInput,
   JourneyStartOptions,
 } from './types';
 import type { NativeJourneyConfig } from './NativeRNPingJourney';
+import { JourneyError } from './types/error.types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
 type StorageHandleKind = 'session' | 'oidc';
@@ -69,9 +69,11 @@ function resolveStorageHandleId(
     !handle.id.trim() ||
     handle.kind !== expectedKind
   ) {
-    throw new Error(
+    throw new JourneyError(
       `[@ping-identity/rn-journey] Invalid ${modulePath} handle. ` +
         `Use ${configureMethod}(...) from @ping-identity/rn-storage.`,
+      'JOURNEY_CONFIG_ERROR',
+      'argument_error',
     );
   }
 
@@ -87,8 +89,10 @@ function resolveStorageHandleId(
  */
 export function createJourneyClient(config: JourneyConfig): JourneyClient {
   if (!config.serverUrl?.trim()) {
-    throw new Error(
+    throw new JourneyError(
       '[@ping-identity/rn-journey] Missing configuration. Provide a non-empty serverUrl.',
+      'JOURNEY_CONFIG_ERROR',
+      'argument_error',
     );
   }
 
@@ -108,8 +112,7 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
   const oidcConfig = config.modules?.oidc;
   const jsLogger = config.logger ?? noopLogger;
   const rawLoggerId =
-    config.logger?.nativeHandle?.id ??
-    jsLogger.nativeHandle?.id;
+    config.logger?.nativeHandle?.id ?? jsLogger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
   const nativeConfig: NativeJourneyConfig = {
@@ -212,11 +215,11 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
 
     async start(journeyName: string, options?: JourneyStartOptions) {
       if (!journeyName.trim()) {
-        throw {
-          type: 'argument_error',
-          error: 'JOURNEY_START_ERROR',
-          message: 'Journey name must not be empty.',
-        } satisfies JourneyError;
+        throw new JourneyError(
+          'Journey name must not be empty.',
+          'JOURNEY_START_ERROR',
+          'argument_error',
+        );
       }
 
       const id = await ensureConfigured();
@@ -246,11 +249,11 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
 
     async resume(uri: string) {
       if (!uri.trim()) {
-        throw {
-          type: 'argument_error',
-          error: 'JOURNEY_RESUME_ERROR',
-          message: 'Resume URI must not be empty.',
-        } satisfies JourneyError;
+        throw new JourneyError(
+          'Resume URI must not be empty.',
+          'JOURNEY_RESUME_ERROR',
+          'argument_error',
+        );
       }
 
       const id = await ensureConfigured();

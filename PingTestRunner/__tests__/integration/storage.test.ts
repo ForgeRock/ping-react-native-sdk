@@ -16,7 +16,11 @@
  * - Propagates native errors to callers
  */
 
-import { configureSessionStorage, configureOidcStorage, CacheStrategy } from '@ping-identity/rn-storage';
+import {
+  configureSessionStorage,
+  configureOidcStorage,
+  CacheStrategy,
+} from '@ping-identity/rn-storage';
 
 describe('@ping-identity/rn-storage — integration', () => {
   describe('exports', () => {
@@ -40,7 +44,7 @@ describe('@ping-identity/rn-storage — integration', () => {
     it('throws when config is missing/null', () => {
       expect(() =>
         // @ts-expect-error — intentional bad input
-        configureSessionStorage(null)
+        configureSessionStorage(null),
       ).toThrow();
     });
 
@@ -64,7 +68,7 @@ describe('@ping-identity/rn-storage — integration', () => {
       expect(() =>
         configureSessionStorage({
           ios: { account: 'com.example.app' },
-        })
+        }),
       ).not.toThrow();
     });
 
@@ -75,7 +79,7 @@ describe('@ping-identity/rn-storage — integration', () => {
             keyAlias: 'test',
             cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
           },
-        })
+        }),
       ).not.toThrow();
     });
   });
@@ -84,7 +88,7 @@ describe('@ping-identity/rn-storage — integration', () => {
     it('throws when config is missing/null', () => {
       expect(() =>
         // @ts-expect-error — intentional bad input
-        configureOidcStorage(null)
+        configureOidcStorage(null),
       ).toThrow();
     });
 

@@ -22,20 +22,32 @@ type NativeDeviceProfileMock = {
   collectDeviceProfileForJourney: jest.Mock;
 };
 
-function makeMock(overrides: Partial<NativeDeviceProfileMock> = {}): NativeDeviceProfileMock {
+function makeMock(
+  overrides: Partial<NativeDeviceProfileMock> = {},
+): NativeDeviceProfileMock {
   return {
-    collectDeviceProfile: jest.fn(async () => ({ platform: 'android', version: '13' })),
-    collectDeviceProfileForJourney: jest.fn(async () => ({ nodeId: 'node-1', profile: {} })),
+    collectDeviceProfile: jest.fn(async () => ({
+      platform: 'android',
+      version: '13',
+    })),
+    collectDeviceProfileForJourney: jest.fn(async () => ({
+      nodeId: 'node-1',
+      profile: {},
+    })),
     ...overrides,
   };
 }
 
 async function loadDeviceProfile(nativeMock: NativeDeviceProfileMock) {
   jest.resetModules();
-  jest.doMock('../../../packages/device-profile/src/NativeRNPingDeviceProfile', () => ({
-    __esModule: true,
-    getNativeModule: jest.fn(() => nativeMock),
-  }));
+  jest.doMock(
+    '../../../packages/device-profile/src/NativeRNPingDeviceProfile',
+    () => ({
+      __esModule: true,
+      getNativeModule: jest.fn(() => nativeMock),
+    }),
+  );
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-device-profile');
 }
 
@@ -80,7 +92,9 @@ describe('@ping-identity/rn-device-profile — integration', () => {
       });
       const mod = await loadDeviceProfile(mock);
 
-      await expect(mod.collectDeviceProfile([])).rejects.toThrow('Profile collection failed');
+      await expect(mod.collectDeviceProfile([])).rejects.toThrow(
+        'Profile collection failed',
+      );
     });
   });
 });

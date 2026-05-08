@@ -24,4 +24,5 @@ export type {
   DeviceRepository,
 } from './client.types';
 
-export type { DeviceClientError, DeviceClientErrorCode } from './error.types';
+export { DeviceClientError } from './error.types';
+export type { DeviceClientErrorCode } from './error.types';

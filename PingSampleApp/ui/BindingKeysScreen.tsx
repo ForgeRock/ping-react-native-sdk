@@ -21,6 +21,7 @@ import {
   deleteKey,
   deleteAllKeys,
 } from '@ping-identity/rn-binding';
+import { PingError } from '@ping-identity/rn-types';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
 import DeviceListSeparator from './devices/components/atoms/DeviceListSeparator';
@@ -191,8 +192,11 @@ function BindingKeyRow({
 }
 
 function formatError(error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message?: string }).message ?? 'Unknown error');
+  if (error instanceof PingError) {
+    return `[${error.code}] ${error.message}`;
+  }
+  if (error instanceof Error) {
+    return error.message;
   }
   return String(error);
 }

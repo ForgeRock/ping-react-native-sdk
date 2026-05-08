@@ -13,11 +13,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  Button,
-  Text,
-  View,
-} from 'react-native';
+import { Button, Text, View } from 'react-native';
 import { getDeviceId } from '@ping-identity/rn-device-id';
 
 export default function DeviceIdScenario(): React.JSX.Element {
@@ -45,19 +41,19 @@ export default function DeviceIdScenario(): React.JSX.Element {
 
   return (
     <View>
-      <Button testID="device-id-get-btn" title="Get Device ID" onPress={handleGet} />
-      {result !== null && (
-        <Text testID="device-id-result">{result}</Text>
-      )}
+      <Button
+        testID="device-id-get-btn"
+        title="Get Device ID"
+        onPress={handleGet}
+      />
+      {result !== null && <Text testID="device-id-result">{result}</Text>}
 
       <Button
         testID="device-id-get-again-btn"
         title="Get Device ID Again"
         onPress={handleGetAgain}
       />
-      {result2 !== null && (
-        <Text testID="device-id-result-2">{result2}</Text>
-      )}
+      {result2 !== null && <Text testID="device-id-result-2">{result2}</Text>}
 
       {errorMessage !== null && (
         <Text testID="device-id-error">{errorMessage}</Text>

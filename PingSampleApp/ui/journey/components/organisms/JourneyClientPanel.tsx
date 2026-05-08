@@ -148,7 +148,7 @@ export default function JourneyClientPanel(
 
         {error ? (
           <Text style={commonStyles.textError}>
-            {typeof error.message === 'string' ? error.message : String(error)}
+            {`[${error.code}] ${error.message}`}
           </Text>
         ) : null}
 

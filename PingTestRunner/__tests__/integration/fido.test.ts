@@ -234,30 +234,31 @@ describe('@ping-identity/rn-fido — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = {
-        code: 'FIDO_REGISTER_ERROR',
-        message: 'Registration failed.',
-      };
       const mock = makeMock({
         registerCredential: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'FIDO_REGISTER_ERROR',
+            message: 'Registration failed.',
+            type: 'register_error',
+          };
         }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      await expect(fido.register({ challenge: 'abc' })).rejects.toEqual(
-        nativeError,
-      );
+      await expect(fido.register({ challenge: 'abc' })).rejects.toMatchObject({
+        code: 'FIDO_REGISTER_ERROR',
+        message: 'Registration failed.',
+      });
     });
 
     it('propagates window unavailable error', async () => {
-      const nativeError = {
-        code: 'FIDO_WINDOW_UNAVAILABLE',
-        message: 'No active window.',
-      };
       const mock = makeMock({
         registerCredential: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'FIDO_WINDOW_UNAVAILABLE',
+            message: 'No active window.',
+            type: 'window_error',
+          };
         }),
       });
       const mod = await loadFido(mock);
@@ -293,30 +294,33 @@ describe('@ping-identity/rn-fido — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = {
-        code: 'FIDO_AUTHENTICATE_ERROR',
-        message: 'Authentication failed.',
-      };
       const mock = makeMock({
         authenticateCredential: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'FIDO_AUTHENTICATE_ERROR',
+            message: 'Authentication failed.',
+            type: 'authenticate_error',
+          };
         }),
       });
       const mod = await loadFido(mock);
       const fido = mod.createFidoClient();
-      await expect(fido.authenticate({ challenge: 'def' })).rejects.toEqual(
-        nativeError,
-      );
+      await expect(
+        fido.authenticate({ challenge: 'def' }),
+      ).rejects.toMatchObject({
+        code: 'FIDO_AUTHENTICATE_ERROR',
+        message: 'Authentication failed.',
+      });
     });
 
     it('propagates activity unavailable error', async () => {
-      const nativeError = {
-        code: 'FIDO_ACTIVITY_UNAVAILABLE',
-        message: 'No foreground activity.',
-      };
       const mock = makeMock({
         authenticateCredential: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'FIDO_ACTIVITY_UNAVAILABLE',
+            message: 'No foreground activity.',
+            type: 'activity_error',
+          };
         }),
       });
       const mod = await loadFido(mock);
@@ -422,8 +426,9 @@ describe('@ping-identity/rn-fido — integration', () => {
       const nativeFidoMock = makeMock({
         authenticateCredentialForJourney: jest.fn(async () => {
           throw {
-            code: 'FIDO_AUTHENTICATE_CANCELLED',
+            error: 'FIDO_AUTHENTICATE_CANCELLED',
             message: 'Cancelled by user',
+            type: 'cancelled',
           };
         }),
       });

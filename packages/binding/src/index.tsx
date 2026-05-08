@@ -25,6 +25,7 @@ import type {
   BindingJourneySignOptions,
   JourneyInstance,
 } from './types';
+import { BindingError } from './types';
 
 type PinRequiredEvent = {
   requestId: string;
@@ -177,7 +178,7 @@ export function createBindingClient(config: BindingConfig = {}): BindingClient {
         return fromNativeJourneyResult(result);
       } catch (error) {
         logger.error('Binding bindForJourney failed');
-        throw error;
+        throw BindingError.from(error);
       }
     },
 
@@ -212,7 +213,7 @@ export function createBindingClient(config: BindingConfig = {}): BindingClient {
         return fromNativeJourneyResult(result);
       } catch (error) {
         logger.error('Binding signForJourney failed');
-        throw error;
+        throw BindingError.from(error);
       }
     },
   };
@@ -225,8 +226,12 @@ export function createBindingClient(config: BindingConfig = {}): BindingClient {
  * @throws BindingError when the native module is unavailable or the operation fails.
  */
 export async function getAllKeys(): Promise<UserKeyOption[]> {
-  const result = await getNativeModule().getAllKeys();
-  return fromNativeUserKeys(result);
+  try {
+    const result = await getNativeModule().getAllKeys();
+    return fromNativeUserKeys(result);
+  } catch (error) {
+    throw BindingError.from(error);
+  }
 }
 
 /**
@@ -237,7 +242,11 @@ export async function getAllKeys(): Promise<UserKeyOption[]> {
  * @throws BindingError when the key is not found or deletion fails.
  */
 export async function deleteKey(key: UserKeyOption): Promise<void> {
-  await getNativeModule().deleteKey(key.userId, key.id);
+  try {
+    await getNativeModule().deleteKey(key.userId, key.id);
+  } catch (error) {
+    throw BindingError.from(error);
+  }
 }
 
 /**
@@ -247,9 +256,14 @@ export async function deleteKey(key: UserKeyOption): Promise<void> {
  * @throws BindingError when the native module is unavailable or the operation fails.
  */
 export async function deleteAllKeys(): Promise<void> {
-  await getNativeModule().deleteAllKeys();
+  try {
+    await getNativeModule().deleteAllKeys();
+  } catch (error) {
+    throw BindingError.from(error);
+  }
 }
 
+export { BindingError } from './types';
 export type {
   BindingAppPinConfig,
   BindingBiometricAndroidConfig,
@@ -260,7 +274,6 @@ export type {
   BindingClient,
   BindingClientConfig,
   BindingConfig,
-  BindingError,
   BindingErrorCode,
   BindingJourneyBindOptions,
   BindingJourneyResult,

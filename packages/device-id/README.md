@@ -4,6 +4,7 @@ Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
 This software may be modified and distributed under the terms
 of the MIT license. See the LICENSE file for details.
 -->
+
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native Device ID
@@ -69,16 +70,18 @@ function getDeviceId(options?: DeviceIdLoggerOptions): Promise<string>;
 
 ## Error handling
 
-All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+All promise rejections throw a `DeviceIdError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
 
 ```ts
-import type { DeviceIdError } from '@ping-identity/rn-device-id';
+import { DeviceIdError } from '@ping-identity/rn-device-id';
 
 try {
   await getDeviceId();
-} catch (error) {
-  const deviceIdError = error as DeviceIdError;
-  console.log(deviceIdError.type, deviceIdError.error, deviceIdError.message);
+} catch (err) {
+  if (err instanceof DeviceIdError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

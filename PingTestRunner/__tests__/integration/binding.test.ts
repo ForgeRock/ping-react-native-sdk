@@ -279,26 +279,33 @@ describe('@ping-identity/rn-binding — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = {
-        code: 'BINDING_BIND_ERROR',
-        message: 'Bind failed.',
-      };
       const mock = makeMock({
         bindForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'BINDING_BIND_ERROR',
+            message: 'Bind failed.',
+            type: 'bind_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
       const client = mod.createBindingClient();
-      await expect(client.bindForJourney(makeJourney(), {})).rejects.toEqual(
-        nativeError,
-      );
+      await expect(
+        client.bindForJourney(makeJourney(), {}),
+      ).rejects.toMatchObject({
+        code: 'BINDING_BIND_ERROR',
+        message: 'Bind failed.',
+      });
     });
 
     it('propagates BINDING_UI_UNAVAILABLE', async () => {
       const mock = makeMock({
         bindForJourney: jest.fn(async () => {
-          throw { code: 'BINDING_UI_UNAVAILABLE', message: 'No window.' };
+          throw {
+            error: 'BINDING_UI_UNAVAILABLE',
+            message: 'No window.',
+            type: 'ui_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
@@ -398,26 +405,33 @@ describe('@ping-identity/rn-binding — integration', () => {
     });
 
     it('propagates native rejection to the caller', async () => {
-      const nativeError = {
-        code: 'BINDING_SIGN_ERROR',
-        message: 'Sign failed.',
-      };
       const mock = makeMock({
         signForJourney: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'BINDING_SIGN_ERROR',
+            message: 'Sign failed.',
+            type: 'sign_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
       const client = mod.createBindingClient();
-      await expect(client.signForJourney(makeJourney(), {})).rejects.toEqual(
-        nativeError,
-      );
+      await expect(
+        client.signForJourney(makeJourney(), {}),
+      ).rejects.toMatchObject({
+        code: 'BINDING_SIGN_ERROR',
+        message: 'Sign failed.',
+      });
     });
 
     it('propagates BINDING_CANCELLED', async () => {
       const mock = makeMock({
         signForJourney: jest.fn(async () => {
-          throw { code: 'BINDING_CANCELLED', message: 'User cancelled.' };
+          throw {
+            error: 'BINDING_CANCELLED',
+            message: 'User cancelled.',
+            type: 'cancelled',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
@@ -760,14 +774,20 @@ describe('@ping-identity/rn-binding — integration', () => {
     });
 
     it('propagates native rejection', async () => {
-      const nativeError = { code: 'BINDING_ERROR', message: 'Failed.' };
       const mock = makeMock({
         getAllKeys: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'BINDING_ERROR',
+            message: 'Failed.',
+            type: 'binding_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
-      await expect(mod.getAllKeys()).rejects.toEqual(nativeError);
+      await expect(mod.getAllKeys()).rejects.toMatchObject({
+        code: 'BINDING_ERROR',
+        message: 'Failed.',
+      });
     });
   });
 
@@ -790,13 +810,13 @@ describe('@ping-identity/rn-binding — integration', () => {
     });
 
     it('propagates BINDING_KEY_DELETE_ERROR', async () => {
-      const nativeError = {
-        code: 'BINDING_KEY_DELETE_ERROR',
-        message: 'Key not found.',
-      };
       const mock = makeMock({
         deleteKey: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'BINDING_KEY_DELETE_ERROR',
+            message: 'Key not found.',
+            type: 'delete_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
@@ -826,17 +846,20 @@ describe('@ping-identity/rn-binding — integration', () => {
     });
 
     it('propagates native rejection', async () => {
-      const nativeError = {
-        code: 'BINDING_ERROR',
-        message: 'Delete all failed.',
-      };
       const mock = makeMock({
         deleteAllKeys: jest.fn(async () => {
-          throw nativeError;
+          throw {
+            error: 'BINDING_ERROR',
+            message: 'Delete all failed.',
+            type: 'binding_error',
+          };
         }),
       });
       const { mod } = await loadBinding(mock);
-      await expect(mod.deleteAllKeys()).rejects.toEqual(nativeError);
+      await expect(mod.deleteAllKeys()).rejects.toMatchObject({
+        code: 'BINDING_ERROR',
+        message: 'Delete all failed.',
+      });
     });
   });
 });

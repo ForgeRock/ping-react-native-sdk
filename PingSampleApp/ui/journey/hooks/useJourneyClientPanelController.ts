@@ -24,6 +24,7 @@ import {
 import { createFidoClient } from '@ping-identity/rn-fido';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { open as openBrowser } from '@ping-identity/rn-browser';
+import { PingError } from '@ping-identity/rn-types';
 import { collectDeviceProfile } from '@ping-identity/rn-device-profile';
 import { logger } from '@ping-identity/rn-logger';
 import {
@@ -321,13 +322,12 @@ function isExternalIdpAuthorizationCancelledError(error: unknown): boolean {
  * @returns Message suitable for sample-app error display.
  */
 function resolveActionErrorMessage(error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
+  if (error instanceof PingError) {
+    return `[${error.code}] ${error.message}`;
   }
-
+  if (error instanceof Error) {
+    return error.message;
+  }
   return String(error);
 }
 
@@ -530,9 +530,11 @@ export function useJourneyClientPanelController(
         appendDebug('Default device name fallback used', {
           reason: 'platform profile unavailable',
           error:
-            resolveError instanceof Error
-              ? resolveError.message
-              : String(resolveError),
+            resolveError instanceof PingError
+              ? `[${resolveError.code}] ${resolveError.message}`
+              : resolveError instanceof Error
+                ? resolveError.message
+                : String(resolveError),
         });
       }
       defaultSystemDeviceNameRef.current = 'Device';
@@ -697,8 +699,8 @@ export function useJourneyClientPanelController(
       } catch (cause) {
         lastHandledRedirectUrlRef.current = null;
         const message =
-          cause && typeof cause === 'object' && 'message' in cause
-            ? String((cause as { message?: unknown }).message)
+          cause instanceof PingError
+            ? `[${cause.code}] ${cause.message}`
             : 'External IdP browser launch failed.';
         setExternalIdpBrowserError(message);
         appendDebug('Journey external IdP browser redirect failed', {
@@ -1004,7 +1006,12 @@ export function useJourneyClientPanelController(
       await runner.runIntegrations(form);
     } catch (runError) {
       appendDebug('Integration failed; submitting to let server route', {
-        error: runError instanceof Error ? runError.message : String(runError),
+        error:
+          runError instanceof PingError
+            ? `[${runError.code}] ${runError.message}`
+            : runError instanceof Error
+              ? runError.message
+              : String(runError),
       });
     }
 
@@ -1030,7 +1037,9 @@ export function useJourneyClientPanelController(
         runner.hasHandledCallback(form) || hasExternalIdpCallback;
       const submitInput: JourneyNextInput = hasHandled
         ? buildNativeIntegrationSubmitInput(
-            { callbacks: runner.filterCallbacksForSubmit(form.input.callbacks) },
+            {
+              callbacks: runner.filterCallbacksForSubmit(form.input.callbacks),
+            },
             hasExternalIdpCallback,
           )
         : form.input;

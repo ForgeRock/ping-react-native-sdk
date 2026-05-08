@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking } from 'react-native';
+import { JourneyError } from '@ping-identity/rn-journey';
 
 /**
  * Configuration contract for `useJourneyResumeController`.
@@ -70,8 +71,18 @@ export function useJourneyResumeController(
       appendDebug('Journey resumed', { url: trimmedResumeUrl });
       setResumeUrl('');
     } catch (cause) {
-      appendDebug('Journey resume failed', { cause: String(cause) });
-      Alert.alert('Resume failed', String(cause));
+      appendDebug('Journey resume failed', {
+        cause:
+          cause instanceof JourneyError
+            ? `[${cause.code}] ${cause.message}`
+            : String(cause),
+      });
+      Alert.alert(
+        'Resume failed',
+        cause instanceof JourneyError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   }, [appendDebug, resume, resumeUrl]);
 
@@ -99,8 +110,18 @@ export function useJourneyResumeController(
           appendDebug('Journey auto-resume handled', { url: trimmedResumeUrl });
           setResumeUrl('');
         } catch (cause) {
-          appendDebug('Journey auto-resume failed', { cause: String(cause) });
-          Alert.alert('Resume failed', String(cause));
+          appendDebug('Journey auto-resume failed', {
+            cause:
+              cause instanceof JourneyError
+                ? `[${cause.code}] ${cause.message}`
+                : String(cause),
+          });
+          Alert.alert(
+            'Resume failed',
+            cause instanceof JourneyError
+              ? `[${cause.code}] ${cause.message}`
+              : String(cause),
+          );
         }
       };
 

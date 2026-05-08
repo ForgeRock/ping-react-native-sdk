@@ -5,16 +5,33 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 
 /**
- * Journey error payload contract.
+ * Error thrown when Journey operations fail.
  *
- * @remarks
- * Mirrors the shared `GenericError` contract to keep error semantics aligned
- * across all native-backed React Native modules.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type JourneyError = GenericError;
+export class JourneyError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'JourneyError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): JourneyError {
+    if (raw instanceof JourneyError) return raw;
+    const base = PingError.from(raw);
+    const err = new JourneyError(
+      base.message,
+      base.code,
+      base.type,
+      base.status,
+    );
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable Journey error codes surfaced by native and JS guardrails.

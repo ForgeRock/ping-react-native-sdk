@@ -5,8 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { PingError } from '@ping-identity/rn-types';
 import type {
-  GenericError,
   LoggerInstance,
   OidcStorageHandle,
   OidcCoreConfig,
@@ -132,11 +132,25 @@ export type OidcAuthorizeResult =
     };
 
 /**
- * Error payload returned when OIDC operations fail.
+ * Error thrown when OIDC operations fail.
  *
- * Matches the shared native/JS error contract defined in @ping-identity/rn-types.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type OidcError = GenericError;
+export class OidcError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'OidcError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): OidcError {
+    if (raw instanceof OidcError) return raw;
+    const base = PingError.from(raw);
+    const err = new OidcError(base.message, base.code, base.type, base.status);
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
+  }
+}
 
 /**
  * Stable error codes emitted by the OIDC module.

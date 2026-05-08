@@ -67,7 +67,8 @@ const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
 const NO_SESSION = args.PING_NO_SESSION === 'true';
 const CLIENT_ID = args.PING_CLIENT_ID ?? '';
 const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
-const REDIRECT_URI = args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+const REDIRECT_URI =
+  args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
 
 // ─── state type ─────────────────────────────────────────────────────────────
 
@@ -123,11 +124,11 @@ export default function JourneyScenario(): React.JSX.Element {
           message?: string;
           input?: Record<string, unknown>;
         };
-        const message = errorNode.message ?? (
-          typeof errorNode.input?.['message'] === 'string'
+        const message =
+          errorNode.message ??
+          (typeof errorNode.input?.['message'] === 'string'
             ? errorNode.input['message']
-            : null
-        );
+            : null);
         setErrorMessage(message);
         setState('failure');
         return;
@@ -136,7 +137,9 @@ export default function JourneyScenario(): React.JSX.Element {
       // ContinueNode — check for auto-handled callbacks
       const fields = normalizeCallbacks(nextNode);
       const hasDeviceProfile = fields.some(
-        (f) => f.raw && (f.raw as { type?: string }).type === 'DeviceProfileCallback'
+        (f) =>
+          f.raw &&
+          (f.raw as { type?: string }).type === 'DeviceProfileCallback',
       );
 
       if (hasDeviceProfile) {
@@ -145,6 +148,7 @@ export default function JourneyScenario(): React.JSX.Element {
           await collectDeviceProfileForJourney(journeyClient, []);
           const { input } = buildNextInput(nextNode, {});
           const after = await journeyClient.next(input);
+          // eslint-disable-next-line react-hooks/immutability
           await advanceNode(journeyClient, after);
         } catch (e) {
           setErrorMessage(e instanceof Error ? e.message : String(e));
@@ -158,7 +162,7 @@ export default function JourneyScenario(): React.JSX.Element {
       setFormValues({});
       setState('form');
     },
-    []
+    [],
   );
 
   // ── start ──────────────────────────────────────────────────────────────
@@ -169,22 +173,24 @@ export default function JourneyScenario(): React.JSX.Element {
         realm: REALM_PATH,
         cookie: COOKIE_NAME,
         timeout: TIMEOUT ?? 25000,
-        ...(CLIENT_ID && DISCOVERY_ENDPOINT ? {
-          modules: {
-            oidc: {
-              clientId: CLIENT_ID,
-              discoveryEndpoint: DISCOVERY_ENDPOINT,
-              redirectUri: REDIRECT_URI,
-              scopes: ['openid', 'profile'],
-            },
-          },
-        } : {}),
+        ...(CLIENT_ID && DISCOVERY_ENDPOINT
+          ? {
+              modules: {
+                oidc: {
+                  clientId: CLIENT_ID,
+                  discoveryEndpoint: DISCOVERY_ENDPOINT,
+                  redirectUri: REDIRECT_URI,
+                  scopes: ['openid', 'profile'],
+                },
+              },
+            }
+          : {}),
       });
       setClient(journeyClient);
       await journeyClient.init();
       const startNode = await journeyClient.start(
         JOURNEY_NAME,
-        NO_SESSION ? { noSession: true } : { forceAuth: true }
+        NO_SESSION ? { noSession: true } : { forceAuth: true },
       );
       await advanceNode(journeyClient, startNode);
     } catch (e) {
@@ -212,7 +218,9 @@ export default function JourneyScenario(): React.JSX.Element {
 
   // ── post-success actions ───────────────────────────────────────────────
   const handleUserinfo = useCallback(async () => {
-    if (!client) { return; }
+    if (!client) {
+      return;
+    }
     try {
       const info = await client.userinfo();
       setUserinfo(JSON.stringify(info));
@@ -222,7 +230,9 @@ export default function JourneyScenario(): React.JSX.Element {
   }, [client]);
 
   const handleRefresh = useCallback(async () => {
-    if (!client) { return; }
+    if (!client) {
+      return;
+    }
     try {
       await client.refresh();
       setRefreshed(true);
@@ -232,7 +242,9 @@ export default function JourneyScenario(): React.JSX.Element {
   }, [client]);
 
   const handleRevoke = useCallback(async () => {
-    if (!client) { return; }
+    if (!client) {
+      return;
+    }
     try {
       await client.revoke();
     } catch (e) {
@@ -242,7 +254,9 @@ export default function JourneyScenario(): React.JSX.Element {
   }, [client]);
 
   const handleLogout = useCallback(async () => {
-    if (!client) { return; }
+    if (!client) {
+      return;
+    }
     try {
       await client.logoutUser();
     } catch (e) {
@@ -341,7 +355,11 @@ export default function JourneyScenario(): React.JSX.Element {
           />
           {revoked && <Text testID="journey-revoked">Revoked</Text>}
           {/* Allow re-start after revoke */}
-          <Button testID="journey-start-btn" title="Start" onPress={handleStart} />
+          <Button
+            testID="journey-start-btn"
+            title="Start"
+            onPress={handleStart}
+          />
         </View>
       )}
 
@@ -361,7 +379,11 @@ interface CallbackFieldsProps {
   onChange: (values: JourneyFormValues) => void;
 }
 
-function CallbackFields({ node, values, onChange }: CallbackFieldsProps): React.JSX.Element {
+function CallbackFields({
+  node,
+  values,
+  onChange,
+}: CallbackFieldsProps): React.JSX.Element {
   const fields = normalizeCallbacks(node);
   return (
     <View>
@@ -370,7 +392,9 @@ function CallbackFields({ node, values, onChange }: CallbackFieldsProps): React.
           key={field.id}
           field={field}
           value={values[field.id]}
-          onValueChange={(val: JourneyFormValue) => onChange({ ...values, [field.id]: val })}
+          onValueChange={(val: JourneyFormValue) =>
+            onChange({ ...values, [field.id]: val })
+          }
         />
       ))}
     </View>
@@ -385,7 +409,11 @@ interface FieldInputProps {
   onValueChange: (val: JourneyFormValue) => void;
 }
 
-function FieldInput({ field, value, onValueChange }: FieldInputProps): React.JSX.Element | null {
+function FieldInput({
+  field,
+  value,
+  onValueChange,
+}: FieldInputProps): React.JSX.Element | null {
   const testID = `journey-field-${field.id}`;
 
   if (field.kind === 'output') {
@@ -434,24 +462,28 @@ function FieldInput({ field, value, onValueChange }: FieldInputProps): React.JSX
   }
 
   if (field.kind === 'kba') {
-    const kba = (value as { selectedQuestion: string; selectedAnswer: string; allowUserDefinedQuestions: boolean } | null) ?? { selectedQuestion: '', selectedAnswer: '', allowUserDefinedQuestions: false };
+    const kba = (value as {
+      selectedQuestion: string;
+      selectedAnswer: string;
+      allowUserDefinedQuestions: boolean;
+    } | null) ?? {
+      selectedQuestion: '',
+      selectedAnswer: '',
+      allowUserDefinedQuestions: false,
+    };
     return (
       <View testID={testID}>
         <TextInput
           testID={`${testID}-question`}
           placeholder="Question"
           value={kba.selectedQuestion}
-          onChangeText={(t) =>
-            onValueChange({ ...kba, selectedQuestion: t })
-          }
+          onChangeText={(t) => onValueChange({ ...kba, selectedQuestion: t })}
         />
         <TextInput
           testID={`${testID}-answer`}
           placeholder="Answer"
           value={kba.selectedAnswer}
-          onChangeText={(t) =>
-            onValueChange({ ...kba, selectedAnswer: t })
-          }
+          onChangeText={(t) => onValueChange({ ...kba, selectedAnswer: t })}
         />
       </View>
     );

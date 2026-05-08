@@ -62,7 +62,14 @@ describe('@ping-identity/rn-logger — integration', () => {
     it('logger instance satisfies LoggerInstance shape', () => {
       const log = logger({ level: 'debug' });
       // Validate structural contract at runtime
-      const shape: string[] = ['debug', 'info', 'warn', 'error', 'changeLevel', 'nativeHandle'];
+      const shape: string[] = [
+        'debug',
+        'info',
+        'warn',
+        'error',
+        'changeLevel',
+        'nativeHandle',
+      ];
       for (const key of shape) {
         expect(log).toHaveProperty(key);
       }

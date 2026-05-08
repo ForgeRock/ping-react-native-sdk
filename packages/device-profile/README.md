@@ -126,7 +126,7 @@ Availability depends on platform and permissions.
 
 ## Android setup
 
-### Permissions 
+### Permissions
 
 The module respects Android's permission model. Some collectors require
 permissions declared in `AndroidManifest.xml`.
@@ -188,7 +188,10 @@ The logger must be created via `@ping-identity/rn-logger`.
 If the logger package is not installed/configured, omit the logger option.
 
 ```ts
-import { collectDeviceProfile, collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+import {
+  collectDeviceProfile,
+  collectDeviceProfileForJourney,
+} from '@ping-identity/rn-device-profile';
 import { logger } from '@ping-identity/rn-logger';
 
 const jsLogger = logger({ level: 'debug' });
@@ -196,7 +199,9 @@ const jsLogger = logger({ level: 'debug' });
 // Pass as the last argument to any device profile call
 await collectDeviceProfile(['platform', 'hardware'], { logger: jsLogger });
 
-await collectDeviceProfileForJourney(journey, ['platform', 'hardware'], { logger: jsLogger });
+await collectDeviceProfileForJourney(journey, ['platform', 'hardware'], {
+  logger: jsLogger,
+});
 ```
 
 ## Journey integration
@@ -205,10 +210,12 @@ await collectDeviceProfileForJourney(journey, ['platform', 'hardware'], { logger
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 
 try {
-  await collectDeviceProfileForJourney(
-    journey,
-    ['platform', 'hardware', 'network', 'location']
-  );
+  await collectDeviceProfileForJourney(journey, [
+    'platform',
+    'hardware',
+    'network',
+    'location',
+  ]);
   await journey.next();
 } catch (error) {
   console.error('Device profile submission failed', error);
@@ -235,32 +242,30 @@ import type { JourneyInstance } from '@ping-identity/rn-types';
 
 function collectDeviceProfile(
   collectors: DeviceProfileCollector[],
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): Promise<DeviceProfile>;
 
 function collectDeviceProfileForJourney(
   journey: JourneyInstance,
   collectors: DeviceProfileCollector[],
-  options?: DeviceProfileLoggerOptions
+  options?: DeviceProfileLoggerOptions,
 ): Promise<DeviceProfileJourneyResult>;
 ```
 
 ## Error handling
 
-All promise rejections use the shared `GenericError` contract from `@ping-identity/rn-types`.
+All promise rejections throw a `DeviceProfileError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
 
 ```ts
-import type { DeviceProfileError } from '@ping-identity/rn-device-profile';
+import { DeviceProfileError } from '@ping-identity/rn-device-profile';
 
 try {
   await collectDeviceProfile(['platform']);
-} catch (error) {
-  const deviceProfileError = error as DeviceProfileError;
-  console.log(
-    deviceProfileError.type,
-    deviceProfileError.error,
-    deviceProfileError.message
-  );
+} catch (err) {
+  if (err instanceof DeviceProfileError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

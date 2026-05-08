@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import type { OidcClientConfig } from '@ping-identity/rn-oidc';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { OidcError } from '@ping-identity/rn-oidc';
 import { commonStyles } from '../../../../src/styles/common';
 import CardSection from '../../../components/molecules/CardSection';
 import AsyncActionButton from '../../../components/molecules/AsyncActionButton';
@@ -46,7 +47,12 @@ export default function OidcClientPanel(
     try {
       await actions.authorize();
     } catch (cause) {
-      Alert.alert('Authorize failed', String(cause));
+      Alert.alert(
+        'Authorize failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -54,7 +60,12 @@ export default function OidcClientPanel(
     try {
       await actions.restore();
     } catch (cause) {
-      Alert.alert('Restore failed', String(cause));
+      Alert.alert(
+        'Restore failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -62,7 +73,12 @@ export default function OidcClientPanel(
     try {
       await actions.token();
     } catch (cause) {
-      Alert.alert('Token failed', String(cause));
+      Alert.alert(
+        'Token failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -70,7 +86,12 @@ export default function OidcClientPanel(
     try {
       await actions.refresh();
     } catch (cause) {
-      Alert.alert('Refresh failed', String(cause));
+      Alert.alert(
+        'Refresh failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -78,7 +99,12 @@ export default function OidcClientPanel(
     try {
       await actions.userinfo(true);
     } catch (cause) {
-      Alert.alert('User info failed', String(cause));
+      Alert.alert(
+        'User info failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -86,7 +112,12 @@ export default function OidcClientPanel(
     try {
       await actions.revoke();
     } catch (cause) {
-      Alert.alert('Revoke failed', String(cause));
+      Alert.alert(
+        'Revoke failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 
@@ -94,7 +125,12 @@ export default function OidcClientPanel(
     try {
       await actions.logout();
     } catch (cause) {
-      Alert.alert('Logout failed', String(cause));
+      Alert.alert(
+        'Logout failed',
+        cause instanceof OidcError
+          ? `[${cause.code}] ${cause.message}`
+          : String(cause),
+      );
     }
   };
 

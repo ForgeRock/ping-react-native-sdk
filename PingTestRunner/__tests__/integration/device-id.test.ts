@@ -21,7 +21,9 @@ type NativeDeviceIdMock = {
   getDefaultDeviceId: jest.Mock;
 };
 
-function makeMock(overrides: Partial<NativeDeviceIdMock> = {}): NativeDeviceIdMock {
+function makeMock(
+  overrides: Partial<NativeDeviceIdMock> = {},
+): NativeDeviceIdMock {
   return {
     getDefaultDeviceId: jest.fn(async () => 'mock-device-id-123'),
     ...overrides,
@@ -35,6 +37,7 @@ async function loadDeviceId(nativeMock: NativeDeviceIdMock) {
     default: nativeMock,
     getNativeModule: jest.fn(() => nativeMock),
   }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-device-id');
 }
 
@@ -80,7 +83,9 @@ describe('@ping-identity/rn-device-id — integration', () => {
       const mod = await loadDeviceId(mock);
 
       if (typeof mod.getDeviceId === 'function') {
-        await expect(mod.getDeviceId()).rejects.toThrow('Device ID unavailable');
+        await expect(mod.getDeviceId()).rejects.toThrow(
+          'Device ID unavailable',
+        );
       }
     });
   });

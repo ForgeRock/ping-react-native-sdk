@@ -45,15 +45,22 @@ describe('Journey — invalid-credential handling', () => {
   });
 
   it('next() with invalid credentials shows ErrorNode message (live)', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(USERNAME_INPUT)).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(USERNAME_INPUT))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
 
     await element(USERNAME_INPUT).typeText(E2E_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText('wrong_password');
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-failure'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-failure')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
 
     const messageMatchers = [
       by.text('Login Failure'),
@@ -73,12 +80,17 @@ describe('Journey — invalid-credential handling', () => {
     }
 
     if (!matched) {
-      throw new Error('Expected a failure message for invalid credentials, but none matched.');
+      throw new Error(
+        'Expected a failure message for invalid credentials, but none matched.',
+      );
     }
   });
 
   it('revoke() and re-login succeeds after session expiry (live)', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
 
     await device.launchApp({
       newInstance: true,
@@ -93,20 +105,30 @@ describe('Journey — invalid-credential handling', () => {
     await device.disableSynchronization();
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(USERNAME_INPUT)).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(USERNAME_INPUT))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
     await element(USERNAME_INPUT).typeText(E2E_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText(E2E_ENV.testPassword);
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-success')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
 
     await element(by.id('journey-revoke-btn')).tap();
-    await waitFor(element(by.id('journey-revoked'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-revoked')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
 
     await element(by.id('journey-start-btn')).tap();
-    await waitFor(element(USERNAME_INPUT)).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(USERNAME_INPUT))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
     await element(USERNAME_INPUT).typeText(E2E_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText(E2E_ENV.testPassword);
     await element(by.id('journey-submit-btn')).tap();
-    await waitFor(element(by.id('journey-success'))).toBeVisible().withTimeout(NET_TIMEOUT);
+    await waitFor(element(by.id('journey-success')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
   });
 });

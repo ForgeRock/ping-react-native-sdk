@@ -61,6 +61,7 @@ const loadModule = async (nativeModule: NativeJourneyModuleMock) => {
     default: nativeModule,
   }));
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('../index');
 };
 
@@ -97,6 +98,7 @@ describe('Journey JS API', () => {
           storage: {
             id: 'session-storage-id',
             kind: 'session',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
         },
       },
@@ -295,6 +297,7 @@ describe('Journey JS API', () => {
           storage: {
             id: 'oidc-storage-id',
             kind: 'oidc',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } as any,
         },
       },
@@ -320,6 +323,7 @@ describe('Journey JS API', () => {
           session: {
             storage: {
               id: 'session-storage-id',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
           },
         },
@@ -347,6 +351,7 @@ describe('Journey JS API', () => {
             storage: {
               id: 'oidc-storage-id',
               kind: 'session',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
           },
         },
@@ -384,14 +389,14 @@ describe('Journey JS API', () => {
   });
 
   it('throws argument error when start journey name is empty', async () => {
-    const native = createNativeMock();
-    const { createJourneyClient } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(createNativeMock());
     const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
-    await expect(client.start('   ')).rejects.toMatchObject({
-      type: 'argument_error',
-      error: 'JOURNEY_START_ERROR',
-    });
+    const err = await client.start('   ').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('JourneyError');
+    expect((err as { code: string }).code).toBe('JOURNEY_START_ERROR');
+    expect((err as { type: string }).type).toBe('argument_error');
   });
 
   it('calls native next with placeholder node id and input payload', async () => {
@@ -410,14 +415,14 @@ describe('Journey JS API', () => {
   });
 
   it('throws argument error when resume uri is empty', async () => {
-    const native = createNativeMock();
-    const { createJourneyClient } = await loadModule(native);
+    const { createJourneyClient } = await loadModule(createNativeMock());
     const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
-    await expect(client.resume('   ')).rejects.toMatchObject({
-      type: 'argument_error',
-      error: 'JOURNEY_RESUME_ERROR',
-    });
+    const err = await client.resume('   ').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('JourneyError');
+    expect((err as { code: string }).code).toBe('JOURNEY_RESUME_ERROR');
+    expect((err as { type: string }).type).toBe('argument_error');
   });
 
   it('forwards user, refresh, revoke, userinfo, ssoToken, and logout calls to native', async () => {
@@ -475,39 +480,46 @@ describe('Journey JS API', () => {
   });
 
   it('propagates native rejections for session operations', async () => {
-    const expectedError = {
+    const nativeError = {
       type: 'state_error',
       error: 'JOURNEY_STATE_ERROR',
       message: 'native failure',
     };
     const native = createNativeMock({
       getSession: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
       refresh: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
       revoke: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
       userinfo: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
       ssoToken: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
       logout: jest.fn(async () => {
-        throw expectedError;
+        throw nativeError;
       }),
     });
     const { createJourneyClient } = await loadModule(native);
     const client = createJourneyClient({ serverUrl: 'https://example.com' });
 
-    await expect(client.user()).rejects.toEqual(expectedError);
-    await expect(client.refresh()).rejects.toEqual(expectedError);
-    await expect(client.revoke()).rejects.toEqual(expectedError);
-    await expect(client.userinfo()).rejects.toEqual(expectedError);
-    await expect(client.ssoToken()).rejects.toEqual(expectedError);
-    await expect(client.logoutUser()).rejects.toEqual(expectedError);
+    const assertPingError = (err: unknown) => {
+      expect(err).toBeInstanceOf(Error);
+      expect((err as Error).name).toBe('JourneyError');
+      expect((err as { code: string }).code).toBe('JOURNEY_STATE_ERROR');
+      expect((err as Error).message).toBe('native failure');
+    };
+
+    assertPingError(await client.user().catch((e: unknown) => e));
+    assertPingError(await client.refresh().catch((e: unknown) => e));
+    assertPingError(await client.revoke().catch((e: unknown) => e));
+    assertPingError(await client.userinfo().catch((e: unknown) => e));
+    assertPingError(await client.ssoToken().catch((e: unknown) => e));
+    assertPingError(await client.logoutUser().catch((e: unknown) => e));
   });
 });

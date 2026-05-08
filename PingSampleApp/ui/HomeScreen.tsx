@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
 import { getDeviceId } from '@ping-identity/rn-device-id';
+import { PingError } from '@ping-identity/rn-types';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { colors } from '../src/styles/colors';
 import HomeMenuRow, {
@@ -32,6 +33,9 @@ type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
  * @returns Safe display string for the screen.
  */
 function formatDeviceIdError(error: unknown): string {
+  if (error instanceof PingError) {
+    return `[${error.code}] ${error.message}`;
+  }
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message;
   }

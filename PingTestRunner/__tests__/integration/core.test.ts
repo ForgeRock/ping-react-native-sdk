@@ -17,6 +17,7 @@
  *   is loaded
  */
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 describe('@ping-identity/rn-core — integration', () => {
   describe('resolvability', () => {
     it('can be required without throwing', () => {
@@ -61,3 +62,4 @@ describe('@ping-identity/rn-core — integration', () => {
     });
   });
 });
+/* eslint-enable @typescript-eslint/no-require-imports */
