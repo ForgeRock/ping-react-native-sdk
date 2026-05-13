@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import { getNativeModule } from './NativeRNPingDeviceId';
+import { DeviceIdError } from './types';
 
 /**
  * Returns the default secure device identifier as determined by the native platform.
@@ -47,7 +48,11 @@ import { getNativeModule } from './NativeRNPingDeviceId';
  * ```
  */
 export async function getDeviceId(): Promise<string> {
-  return await getNativeModule().getDefaultDeviceId();
+  try {
+    return await getNativeModule().getDefaultDeviceId();
+  } catch (error) {
+    throw DeviceIdError.from(error);
+  }
 }
 
 export { DeviceIdError } from './types';

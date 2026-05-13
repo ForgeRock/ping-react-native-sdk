@@ -166,29 +166,41 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
   ): DeviceRepository<DeviceOf<K>> => ({
     async get() {
       logger.debug(`DeviceClient.${kind}.get requested`);
-      const handle = await ensureHandle();
-      const payload = await native.get(handle, kind);
-      return extractArray<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.get(handle, kind);
+        return extractArray<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
     async update(device) {
       logger.debug(`DeviceClient.${kind}.update requested`);
-      const handle = await ensureHandle();
-      const payload = await native.update(
-        handle,
-        kind,
-        device as unknown as object,
-      );
-      return extractObject<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.update(
+          handle,
+          kind,
+          device as unknown as object,
+        );
+        return extractObject<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
     async delete(device) {
       logger.debug(`DeviceClient.${kind}.delete requested`);
-      const handle = await ensureHandle();
-      const payload = await native.deleteDevice(
-        handle,
-        kind,
-        device as unknown as object,
-      );
-      return extractObject<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.deleteDevice(
+          handle,
+          kind,
+          device as unknown as object,
+        );
+        return extractObject<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
   });
 

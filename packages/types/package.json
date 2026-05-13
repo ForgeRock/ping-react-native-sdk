@@ -14,6 +14,7 @@
   "scripts": {
     "build": "bob build",
     "clean": "rimraf lib",
+    "test": "jest",
     "typecheck": "node -e \"process.exit(0)\"",
     "lint": "node -e \"process.exit(0)\"",
     "prettier": "node -e \"process.exit(0)\""
