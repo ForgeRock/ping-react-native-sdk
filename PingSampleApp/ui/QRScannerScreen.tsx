@@ -21,7 +21,7 @@ import {
 import { CodeScanner } from 'react-native-vision-camera-barcode-scanner';
 import type { Barcode } from 'react-native-vision-camera-barcode-scanner';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { createOathClient, parseMfauthUri } from '@ping-identity/rn-oath';
+import { createOathClient } from '@ping-identity/rn-oath';
 import type { OathClient } from '@ping-identity/rn-oath';
 import type { RootStackParamList } from '../App';
 import { colors } from '../src/styles/colors';
@@ -42,22 +42,14 @@ function formatError(err: unknown): string {
 }
 
 /**
- * Derives an `otpauth://` URI from a raw scanned string.
- *
- * Handles plain `otpauth://` URIs directly and extracts the embedded
- * `otpauth://` URI from `mfauth://` scheme URIs.
+ * Returns the raw URI if it uses a recognised OATH scheme, or `null` otherwise.
  *
  * @param raw - Raw string value decoded from the QR code.
- * @returns The `otpauth://` URI to register, or `null` if the input is not
- *   a recognised OATH scheme.
+ * @returns The URI to register, or `null` if the input is not a recognised OATH scheme.
  */
 function extractOtpUri(raw: string): string | null {
-  if (raw.startsWith('otpauth://')) {
+  if (raw.startsWith('otpauth://') || raw.startsWith('mfauth://')) {
     return raw;
-  }
-  if (raw.startsWith('mfauth://')) {
-    const parsed = parseMfauthUri(raw);
-    return parsed.oathUri ?? null;
   }
   return null;
 }

@@ -6,7 +6,6 @@
  */
 
 export { createOathClient } from './oath';
-export { parseMfauthUri } from './mfauthUri';
 export { configureOathPolicyEvaluator } from './policyEvaluator';
 export type {
   OathClient,

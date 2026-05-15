@@ -16,6 +16,7 @@ Native-backed OATH TOTP and HOTP one-time password management for React Native.
 - [Overview](#overview)
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Supported URI schemes](#supported-uri-schemes)
 - [API reference](#api-reference)
 - [Error handling](#error-handling)
 
@@ -152,12 +153,24 @@ try {
 }
 ```
 
+## Supported URI schemes
+
+`addCredentialFromUri` accepts two URI schemes, both parsed natively by the underlying SDK:
+
+| Scheme            | Type                 | Example                                                                                                          |
+| ----------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `otpauth://totp/` | TOTP (time-based)    | `otpauth://totp/Issuer:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Issuer&algorithm=SHA1&digits=6&period=30` |
+| `otpauth://hotp/` | HOTP (counter-based) | `otpauth://hotp/Issuer:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Issuer&algorithm=SHA1&digits=6&counter=0` |
+| `mfauth://totp/`  | TOTP (Ping alias)    | `mfauth://totp/Issuer:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Issuer&algorithm=SHA1&digits=6&period=30`  |
+| `mfauth://hotp/`  | HOTP (Ping alias)    | `mfauth://hotp/Issuer:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Issuer&algorithm=SHA1&digits=6&counter=0`  |
+
+All schemes carry OATH parameters directly as query components. The `mfauth://` scheme is a Ping-specific alias for `otpauth://` and supports the same `totp` and `hotp` types.
+
 ## API reference
 
 ```ts
 import {
   createOathClient,
-  parseMfauthUri,
   configureOathPolicyEvaluator,
 } from '@ping-identity/rn-oath';
 import type {

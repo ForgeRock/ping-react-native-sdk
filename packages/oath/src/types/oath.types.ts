@@ -355,12 +355,10 @@ export type OathClient = {
    * @throws {@link OathError} when the URI is invalid or a duplicate credential exists.
    *
    * @remarks
-   * Both `otpauth://` and `mfauth://` URIs are accepted directly by this method.
-   * An `mfauth://` URI encodes OATH and Push parameters as query components — pass the
-   * raw `mfauth://` URI here and the native SDK will extract the OATH credential from it.
-   * If you need to also extract the embedded `pushURI` component, call
-   * {@link parseMfauthUri} first to split the URI, then pass the resulting `oathUri`
-   * to this method.
+   * Both `otpauth://` and `mfauth://` URIs are accepted directly by this method and
+   * parsed by the native SDK. The `mfauth://` scheme uses the same query parameters as
+   * `otpauth://` (e.g. `secret`, `algorithm`, `digits`, `period`) — pass the raw URI
+   * and the native SDK will extract the OATH credential.
    */
   addCredentialFromUri(uri: string): Promise<OathCredential>;
 

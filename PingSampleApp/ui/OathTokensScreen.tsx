@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
-import { createOathClient, parseMfauthUri } from '@ping-identity/rn-oath';
+import { createOathClient } from '@ping-identity/rn-oath';
 import type { OathClient, OathCredential } from '@ping-identity/rn-oath';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { commonStyles } from '../src/styles/common';
@@ -134,10 +134,7 @@ export default function OathTokensScreen({
     if (client === null) return;
 
     try {
-      // Handle mfauth:// by extracting the otpauth:// URI from the query params.
-      const parsed = parseMfauthUri(raw);
-      const uri = parsed.oathUri ?? raw;
-      await client.addCredentialFromUri(uri);
+      await client.addCredentialFromUri(raw);
       setUriInput('');
       await loadCredentials();
     } catch (err) {

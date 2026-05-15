@@ -194,7 +194,7 @@ export default function HomeScreen({
       <View style={commonStyles.homeHeader}>
         <Image
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          source={require('../assets/ping-logo.jpg')}
+          source={require('../assets/ping_logo.png')}
           style={commonStyles.homeHeaderLogo}
         />
         <Text style={commonStyles.homeHeaderTitle}>
