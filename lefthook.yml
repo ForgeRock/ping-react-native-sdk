@@ -22,7 +22,7 @@ pre-commit:
 pre-push:
   jobs:
     - name: prettier
-      run: yarn turbo clean && yarn prettier --affected
+      run: yarn prettier --affected --force
 
     - name: lint
       run: yarn lint --affected
