@@ -9,7 +9,7 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native OATH
 
-Native-backed OATH TOTP and HOTP token management for React Native, powered by the Ping Identity native SDK.
+Native-backed OATH TOTP and HOTP one-time password management for React Native.
 
 ## Table of contents
 
@@ -18,11 +18,10 @@ Native-backed OATH TOTP and HOTP token management for React Native, powered by t
 - [Quick start](#quick-start)
 - [API reference](#api-reference)
 - [Error handling](#error-handling)
-- [Platform notes](#platform-notes)
 
 ## Overview
 
-OATH (Open Authentication) is the standard behind time-based (TOTP) and counter-based (HOTP) one-time passwords. This package wraps the native Ping Identity OATH SDK on both iOS and Android, exposing a handle-based client that manages credential storage, lifecycle, and code generation.
+OATH (Open Authentication) is the standard behind time-based (TOTP) and counter-based (HOTP) one-time passwords. This package provides a handle-based client for managing OATH credentials — including registration, storage, lifecycle, and code generation — on both iOS and Android.
 
 Key characteristics:
 
@@ -37,10 +36,11 @@ yarn add @ping-identity/rn-oath
 cd ios && pod install
 ```
 
-Optional logging integration:
+Optional integrations:
 
 ```bash
-yarn add @ping-identity/rn-logger
+yarn add @ping-identity/rn-logger   # JS/native log channel
+yarn add @ping-identity/rn-storage  # custom credential storage backend
 ```
 
 ## Quick start
@@ -90,19 +90,58 @@ try {
 }
 ```
 
+### With policy evaluator
+
+By default the native SDK enforces both `biometricAvailable` and `deviceTampering` policies. Use `configureOathPolicyEvaluator` to customise which policies are enforced.
+
+```ts
+import {
+  createOathClient,
+  configureOathPolicyEvaluator,
+} from '@ping-identity/rn-oath';
+
+const evaluator = configureOathPolicyEvaluator({
+  policies: [{ kind: 'biometricAvailable' }, { kind: 'deviceTampering' }],
+});
+
+const client = await createOathClient({ policyEvaluator: evaluator });
+
+try {
+  const credentials = await client.getCredentials();
+  console.log('Stored credentials:', credentials.length);
+} finally {
+  await client.close();
+}
+```
+
 ### With all configuration options
 
 ```ts
-import { createOathClient } from '@ping-identity/rn-oath';
+import {
+  createOathClient,
+  configureOathPolicyEvaluator,
+} from '@ping-identity/rn-oath';
 import { logger } from '@ping-identity/rn-logger';
+import { configureOathStorage } from '@ping-identity/rn-storage';
 
 const log = logger({ level: 'debug' });
+
+const storage = configureOathStorage({
+  android: { fileName: 'oath', keyAlias: 'oath', strongBoxPreferred: true },
+  ios: { account: 'com.example.oath', encryptor: true },
+});
+
+const evaluator = configureOathPolicyEvaluator({
+  policies: [{ kind: 'biometricAvailable' }],
+});
 
 const client = await createOathClient({
   logger: log,
   timeout: 30, // seconds; omit to use the native default (15 s)
   enableCredentialCache: true,
   encryptionEnabled: true, // iOS-only; silently ignored on Android
+  storage,
+  policyEvaluator: evaluator,
 });
 
 try {
@@ -116,7 +155,11 @@ try {
 ## API reference
 
 ```ts
-import { createOathClient } from '@ping-identity/rn-oath';
+import {
+  createOathClient,
+  parseMfauthUri,
+  configureOathPolicyEvaluator,
+} from '@ping-identity/rn-oath';
 import type {
   OathClient,
   OathClientConfig,
@@ -124,16 +167,35 @@ import type {
   OathCredential,
   OathError,
   OathErrorCode,
+  OathMfaPolicy,
+  OathPolicyEvaluatorConfig,
+  OathPolicyEvaluatorHandle,
+  OathStorageHandle,
 } from '@ping-identity/rn-oath';
 
 function createOathClient(config?: OathClientConfig): Promise<OathClient>;
 
+function configureOathPolicyEvaluator(
+  config: OathPolicyEvaluatorConfig,
+): OathPolicyEvaluatorHandle;
+
 interface OathClientConfig {
   logger?: LoggerInstance; // optional; must be from @ping-identity/rn-logger
-  timeout?: number; // seconds; default: 15 (native SDK default)
+  timeout?: number; // seconds; delegates to native SDK default (15 s) when omitted
   enableCredentialCache?: boolean; // default: false on both platforms
-  encryptionEnabled?: boolean; // iOS-only; default: true on iOS; ignored on Android
+  encryptionEnabled?: boolean; // iOS-only; delegates to native default (true) when omitted; ignored on Android
+  storage?: OathStorageHandle; // optional; handle from configureOathStorage() in @ping-identity/rn-storage
+  policyEvaluator?: OathPolicyEvaluatorHandle; // optional; handle from configureOathPolicyEvaluator()
 }
+
+interface OathPolicyEvaluatorConfig {
+  policies: OathMfaPolicy[]; // non-empty; valid kinds: 'biometricAvailable' | 'deviceTampering'
+  loggerId?: string; // optional native logger id; inherits from OathClientConfig.logger when omitted
+}
+
+type OathMfaPolicy =
+  | { kind: 'biometricAvailable' } // fails when no biometric hardware or no enrolled credentials
+  | { kind: 'deviceTampering' }; // fails when root/jailbreak score meets the server-configured threshold
 
 interface OathClient {
   addCredentialFromUri(uri: string): Promise<OathCredential>;
@@ -144,6 +206,14 @@ interface OathClient {
   generateCode(credentialId: string): Promise<string>;
   generateCodeWithValidity(credentialId: string): Promise<OathCodeInfo>;
   close(): Promise<void>;
+}
+
+interface OathCodeInfo {
+  code: string;
+  timeRemaining: number; // seconds remaining in TOTP window; -1 for HOTP
+  counter: number; // HOTP counter after generation; -1 for TOTP
+  progress: number; // fraction of TOTP period elapsed (0.0–1.0); 0.0 for HOTP
+  totalPeriod: number; // TOTP period in seconds; 0 for HOTP
 }
 ```
 
@@ -163,24 +233,24 @@ try {
 
 ### Error codes
 
-| Code                          | Description                                                                            |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| `OATH_INVALID_URI`            | The provided `otpauth://` URI could not be parsed.                                     |
-| `OATH_INVALID_PARAMETER`      | A method argument has an invalid value.                                                |
-| `OATH_MISSING_PARAMETER`      | A required method argument was not provided.                                           |
-| `OATH_URI_FORMATTING`         | The URI is structurally valid but contains a malformed field.                          |
-| `OATH_CREDENTIAL_NOT_FOUND`   | No credential with the given ID exists in the native store.                            |
-| `OATH_CREDENTIAL_LOCKED`      | The credential is locked by a device policy; code generation is not allowed.           |
-| `OATH_DUPLICATE_CREDENTIAL`   | A credential with the same ID already exists in the native store.                      |
-| `OATH_CODE_GENERATION_FAILED` | The native SDK could not generate a code for this credential.                          |
-| `OATH_POLICY_VIOLATION`       | The operation was blocked by a platform security policy.                               |
-| `OATH_INITIALIZATION_FAILED`  | The native OATH session could not be created during `createOathClient`.                |
-| `OATH_CLEANUP_FAILED`         | Native resources could not be fully released during `close`.                           |
-| `OATH_STORAGE_FAILURE`        | The native credential store encountered an unspecified I/O error.                      |
-| `OATH_STORAGE_CORRUPTED`      | Stored credential data is corrupted and cannot be read.                                |
-| `OATH_STORAGE_ACCESS_DENIED`  | The app does not have permission to access the native credential store.                |
-| `OATH_STATE_ERROR`            | A method was called after `close()`, or the client is in an unexpected internal state. |
-| `OATH_UNKNOWN_ERROR`          | An unexpected error occurred that does not map to a specific code.                     |
+| Code                          | Platform | Description                                                                                                                |
+| ----------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `OATH_INVALID_URI`            | Both     | The provided `otpauth://` URI could not be parsed.                                                                         |
+| `OATH_INVALID_PARAMETER`      | Both     | A method argument has an invalid value.                                                                                    |
+| `OATH_MISSING_PARAMETER`      | iOS only | A required method argument was not provided.                                                                               |
+| `OATH_URI_FORMATTING`         | iOS only | The URI is structurally valid but contains a malformed field.                                                              |
+| `OATH_CREDENTIAL_NOT_FOUND`   | Both     | No credential with the given ID exists in the native store.                                                                |
+| `OATH_CREDENTIAL_LOCKED`      | Both     | The credential is locked by a device policy; code generation is not allowed.                                               |
+| `OATH_DUPLICATE_CREDENTIAL`   | Both     | A credential with the same ID already exists in the native store.                                                          |
+| `OATH_CODE_GENERATION_FAILED` | Both     | The native SDK could not generate a code for this credential.                                                              |
+| `OATH_POLICY_VIOLATION`       | Both     | The operation was blocked by a platform security policy.                                                                   |
+| `OATH_INITIALIZATION_FAILED`  | Both     | The native OATH session could not be created during `createOathClient`.                                                    |
+| `OATH_CLEANUP_FAILED`         | iOS only | Native cleanup failed internally. Not thrown from `close()` — iOS always resolves `close()` regardless of cleanup outcome. |
+| `OATH_STORAGE_FAILURE`        | Both     | The native credential store encountered an unspecified I/O error.                                                          |
+| `OATH_STORAGE_CORRUPTED`      | iOS only | Stored credential data is corrupted and cannot be read.                                                                    |
+| `OATH_STORAGE_ACCESS_DENIED`  | iOS only | The app does not have permission to access the native credential store.                                                    |
+| `OATH_STATE_ERROR`            | Both     | A method was called after `close()`, or the client is in an unexpected internal state.                                     |
+| `OATH_UNKNOWN_ERROR`          | Both     | An unexpected error occurred that does not map to a specific code.                                                         |
 
 ---
 
