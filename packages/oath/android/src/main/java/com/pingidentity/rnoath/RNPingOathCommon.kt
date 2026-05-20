@@ -214,7 +214,12 @@ object RNPingOathCommon {
         }
         val handle = UUID.randomUUID().toString()
         registry[handle] = ClientEntry(client, Mutex())
-        promise.resolve(handle)
+        try {
+          promise.resolve(handle)
+        } catch (t: Throwable) {
+          registry.remove(handle)?.client?.close()
+          throw t
+        }
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_INITIALIZATION_FAILED), e)
       }

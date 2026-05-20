@@ -69,10 +69,10 @@ target 'PingSampleApp' do
           File.write(fmt_base_header, patched)
           Pod::UI.puts 'Patched fmt/base.h: forced FMT_USE_CONSTEVAL=0 to work around Apple Clang consteval bug'
         rescue StandardError => e
-          Pod::UI.puts "warning: Skipping fmt/base.h patch (#{e.class}: #{e.message})".yellow
+          raise "fmt/base.h patch failed (#{e.class}: #{e.message}) – check file permissions and fmt version"
         end
       else
-        Pod::UI.puts 'warning: fmt/base.h patch pattern not matched – verify fmt version'
+        raise "fmt/base.h patch pattern not matched – fmt version may have changed; please update the Podfile patch"
       end
     end
 
