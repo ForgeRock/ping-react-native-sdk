@@ -61,6 +61,9 @@ target 'PingTestRunner' do
   pod 'RNPingOidc',
     :path => '../../node_modules/@ping-identity/rn-oidc',
     :testspecs => ['Tests']
+  pod 'RNPingPush',
+    :path => '../../node_modules/@ping-identity/rn-push',
+    :testspecs => ['Tests']
   pod 'RNPingStorage',
     :path => '../../node_modules/@ping-identity/rn-storage',
     :testspecs => ['Tests']

@@ -135,3 +135,34 @@ export type BindingUserKeyStorageHandle = Readonly<{
    */
   [bindingUserKeyStorageHandleBrand]: true;
 }>;
+
+/**
+ * Compile-time brand key for push MFA storage handles.
+ *
+ * @internal
+ */
+declare const pushStorageHandleBrand: unique symbol;
+
+/**
+ * Shared opaque handle returned by push storage configuration helpers.
+ *
+ * @remarks
+ * Obtained from `configurePushStorage()` in `@ping-identity/rn-storage`.
+ * Pass to `createPushClient({ storage })` to use custom storage for push MFA.
+ */
+export type PushStorageHandle = Readonly<{
+  /**
+   * Native identifier for a registered push storage configuration.
+   */
+  id: string;
+  /**
+   * Runtime discriminator for push storage handles.
+   */
+  kind: 'push_storage';
+  /**
+   * Compile-time brand to keep this handle opaque.
+   *
+   * @internal
+   */
+  [pushStorageHandleBrand]: true;
+}>;

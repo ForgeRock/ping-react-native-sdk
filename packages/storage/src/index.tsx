@@ -15,6 +15,7 @@ import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   OidcStorage,
   BindingUserKeyStorage,
+  PushStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
@@ -24,6 +25,7 @@ import type {
 export type {
   OidcStorage,
   BindingUserKeyStorage,
+  PushStorage,
   SessionStorage,
   StorageConfig,
   StorageError,
@@ -457,6 +459,74 @@ export function configureBindingUserKeyStorage(
     );
   } catch (error) {
     logger.error('Storage configureBindingUserKeyStorage failed');
+    throw error;
+  }
+}
+
+/**
+ * Creates an opaque push storage handle from a resolved config payload.
+ *
+ * @param id - Native storage identifier
+ * @param config - Normalized storage configuration
+ * @returns Branded push storage handle
+ *
+ * @internal
+ */
+function createPushStorageHandle(
+  id: string,
+  config: BaseStorageConfig,
+): PushStorage {
+  return {
+    id,
+    kind: 'push_storage',
+    ...config,
+  } as PushStorage;
+}
+
+/**
+ * Registers and resolves a push MFA storage handle.
+ *
+ * This function handles registration internally and returns a normalized
+ * storage configuration that can be passed to `createPushClient({ storage })`.
+ *
+ * @param config - Storage configuration parameters with platform-specific options
+ * @param options - Optional logger configuration
+ * @returns A branded PushStorage handle with native storage id metadata
+ * @throws {Error} If the configuration is missing or invalid
+ *
+ * @example
+ * ```typescript
+ * import { configurePushStorage } from '@ping-identity/rn-storage';
+ *
+ * const pushStorage = configurePushStorage({
+ *   android: {
+ *     keyAlias: 'push_key'
+ *   }
+ * });
+ *
+ * // Pass to push client
+ * // createPushClient({ storage: pushStorage });
+ * ```
+ * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
+ */
+export function configurePushStorage(
+  config: StorageConfig,
+  options?: StorageLoggerOptions,
+): PushStorage {
+  const { logger, loggerId } = resolveLogger(options);
+  logger.debug(`Storage configurePushStorage requested`);
+  validateStorageConfig(config);
+  const NativeRNPingStorage = getNativeModule();
+  try {
+    const storageId = NativeRNPingStorage.registerPushStorage(
+      buildNativeConfig(config, loggerId),
+    );
+    logger.debug(`Storage configurePushStorage registered`);
+    const result = NativeRNPingStorage.configurePushStorage(storageId);
+    logger.info('Storage configurePushStorage success');
+    return createPushStorageHandle(storageId, normalizeStorageConfig(result));
+  } catch (error) {
+    logger.error('Storage configurePushStorage failed');
     throw error;
   }
 }

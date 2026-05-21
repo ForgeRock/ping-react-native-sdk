@@ -125,7 +125,7 @@ enum OidcClientFactory {
           let config = resolveStorageConfigFromCoreSync(storageId, queueKey: queueKey) else {
       return nil
     }
-    let account = config.account ?? "ACCESS_TOKEN_STORAGE"
+    let account = config.account ?? "com.pingidentity.rnoidc.storage"
     let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {

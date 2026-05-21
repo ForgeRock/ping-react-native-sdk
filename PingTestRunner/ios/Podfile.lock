@@ -28,6 +28,10 @@ PODS:
     - PingDeviceId (~> 2.0.0)
     - PingJourneyPlugin (~> 2.0.0)
     - PingTamperDetector (~> 2.0.0)
+  - PingExternalIdP (2.0.0):
+    - PingBrowser (~> 2.0.0)
+    - PingDavinciPlugin (~> 2.0.0)
+    - PingJourneyPlugin (~> 2.0.0)
   - PingFido (2.0.0):
     - PingCommons (~> 2.0.0)
     - PingDavinciPlugin (~> 2.0.0)
@@ -48,6 +52,9 @@ PODS:
   - PingOrchestrate (2.0.0):
     - PingNetwork (~> 2.0.0)
     - PingStorage (~> 2.0.0)
+  - PingPush (2.0.0):
+    - PingNetwork (~> 2.0.0)
+    - PingTamperDetector (~> 2.0.0)
   - PingStorage (2.0.0)
   - PingTamperDetector (2.0.0):
     - PingCommons (~> 2.0.0)
@@ -2566,6 +2573,68 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingExternalIdp (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingExternalIdP (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingExternalIdp/Tests (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingExternalIdP (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingFido (0.1.0):
     - boost
     - DoubleConversion
@@ -2836,6 +2905,72 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingPush (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger (~> 2.0.0)
+    - PingPush (= 2.0.0)
+    - PingStorage (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingPush/Tests (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger (~> 2.0.0)
+    - PingPush (= 2.0.0)
+    - PingStorage (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -2988,6 +3123,8 @@ DEPENDENCIES:
   - "RNPingDeviceId/Tests (from `../../node_modules/@ping-identity/rn-device-id`)"
   - "RNPingDeviceProfile (from `../../node_modules/@ping-identity/rn-device-profile`)"
   - "RNPingDeviceProfile/Tests (from `../../node_modules/@ping-identity/rn-device-profile`)"
+  - "RNPingExternalIdp (from `../../node_modules/@ping-identity/rn-external-idp`)"
+  - "RNPingExternalIdp/Tests (from `../../node_modules/@ping-identity/rn-external-idp`)"
   - "RNPingFido (from `../../node_modules/@ping-identity/rn-fido`)"
   - "RNPingFido/Tests (from `../../node_modules/@ping-identity/rn-fido`)"
   - "RNPingJourney (from `../../node_modules/@ping-identity/rn-journey`)"
@@ -2996,6 +3133,8 @@ DEPENDENCIES:
   - "RNPingLogger/Tests (from `../../node_modules/@ping-identity/rn-logger`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingOidc/Tests (from `../../node_modules/@ping-identity/rn-oidc`)"
+  - "RNPingPush (from `../../node_modules/@ping-identity/rn-push`)"
+  - "RNPingPush/Tests (from `../../node_modules/@ping-identity/rn-push`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - "RNPingStorage/Tests (from `../../node_modules/@ping-identity/rn-storage`)"
   - SocketRocket (~> 0.7.1)
@@ -3010,6 +3149,7 @@ SPEC REPOS:
     - PingDeviceClient
     - PingDeviceId
     - PingDeviceProfile
+    - PingExternalIdP
     - PingFido
     - PingJourney
     - PingJourneyPlugin
@@ -3017,6 +3157,7 @@ SPEC REPOS:
     - PingNetwork
     - PingOidc
     - PingOrchestrate
+    - PingPush
     - PingStorage
     - PingTamperDetector
     - SocketRocket
@@ -3181,6 +3322,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-device-id"
   RNPingDeviceProfile:
     :path: "../../node_modules/@ping-identity/rn-device-profile"
+  RNPingExternalIdp:
+    :path: "../../node_modules/@ping-identity/rn-external-idp"
   RNPingFido:
     :path: "../../node_modules/@ping-identity/rn-fido"
   RNPingJourney:
@@ -3189,6 +3332,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-logger"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
+  RNPingPush:
+    :path: "../../node_modules/@ping-identity/rn-push"
   RNPingStorage:
     :path: "../../node_modules/@ping-identity/rn-storage"
   Yoga:
@@ -3209,6 +3354,7 @@ SPEC CHECKSUMS:
   PingDeviceClient: 4d2fa2ba2fb427cc4001c43ac3ed80bd994fb4f1
   PingDeviceId: e773280c2bb679f4133c8ef855f189620b331ce3
   PingDeviceProfile: f13a32c11b3d1f08d033900e1792eaef948336af
+  PingExternalIdP: bcf67ba8c880b03dee3f62cefbc4cbb2d774a875
   PingFido: bece1cdf6ade29fa61737dc225069658ae7ac8bb
   PingJourney: ce7632b42878317414d0ace3b47f0c47fc1fdc9b
   PingJourneyPlugin: f3ae6d2db6164d72a2feaa40e128557879e8658c
@@ -3216,6 +3362,7 @@ SPEC CHECKSUMS:
   PingNetwork: b8fde435c5d30ee4024aa7d7f1c95a1e0eafc2e8
   PingOidc: eda685279cfaba6d42ca474a953306448987e760
   PingOrchestrate: 21d780ed7eeb3c366ae43785017b2700478db783
+  PingPush: 71aed837ffd7bed5a75f9f08a05431c232094957
   PingStorage: 7e3bc6966fbf7587523e56a8a7b0f5d85ea3bd94
   PingTamperDetector: b5e4b7aa325a11f2de1f3df9bdd8cc3391cddf1c
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
@@ -3290,14 +3437,16 @@ SPEC CHECKSUMS:
   RNPingDeviceClient: e86d6659b300f635083ad52b8ebd9d817748317e
   RNPingDeviceId: 749972b765977fb851c2f0e38e6c9b0ae5597a16
   RNPingDeviceProfile: 4a648db7bbb70e16ee087922e4a4dec784c797d6
+  RNPingExternalIdp: 5a24fd9f1bbe4321446fb9ab874dbb6116bd7fc2
   RNPingFido: df9b70b5e15e05585d619b17760850f584cee46e
   RNPingJourney: 0e9434f795c06f106700c7d72441f0aa775ef4a9
   RNPingLogger: 1b986af0c44ede99e751bfd94e57fc7103ac1dd9
   RNPingOidc: 3c9fc646ba44ff90fbf452c6dc5e59adf851bcc9
+  RNPingPush: 1e7ce5dd1cb07d196a188f2da233f688acfeb474
   RNPingStorage: b5bba3f13a1d480de28b4ea99901f7fac14fe2cb
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: df9436301b06c2c79969681da37ffc2a689898b6
+PODFILE CHECKSUM: 47bed5c322f39d524d3b1c63bfe3533fd6d585d0
 
 COCOAPODS: 1.16.2

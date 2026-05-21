@@ -30,6 +30,7 @@ const deviceClientPackage = path.resolve(
   __dirname,
   '../packages/device-client',
 );
+const pushPackage = path.resolve(__dirname, '../packages/push');
 const workspaceRoot = path.resolve(__dirname, '..');
 
 const config = {
@@ -46,6 +47,7 @@ const config = {
     typesPackage,
     bindingPackage,
     deviceClientPackage,
+    pushPackage,
     workspaceRoot,
   ],
   resolver: {
@@ -70,6 +72,18 @@ const config = {
       '@ping-identity/rn-types': typesPackage,
       '@ping-identity/rn-binding': bindingPackage,
       '@ping-identity/rn-device-client': deviceClientPackage,
+      '@ping-identity/rn-push': pushPackage,
+    },
+    resolveRequest: (context, moduleName, platform) => {
+      // vision-camera's package.json points `source` at src/index (unbuilt TS).
+      // Force Metro to use the compiled `main` field instead.
+      if (moduleName === 'react-native-vision-camera') {
+        return {
+          filePath: require.resolve('react-native-vision-camera'),
+          type: 'sourceFile',
+        };
+      }
+      return context.resolveRequest(context, moduleName, platform);
     },
   },
 };

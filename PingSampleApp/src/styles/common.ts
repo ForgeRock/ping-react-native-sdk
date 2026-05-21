@@ -645,6 +645,93 @@ export const commonStyles = StyleSheet.create({
     marginVertical: 6,
   },
 
+  // ===== Screen / Section =====
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: colors.textDark,
+  },
+  linkText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  dangerText: {
+    color: colors.error,
+    fontSize: 14,
+    fontWeight: '600' as const,
+  },
+  metaLabel: {
+    fontSize: 12,
+    color: colors.gray,
+    marginBottom: 2,
+  },
+  metaValue: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+  },
+
+  // ===== Segmented Control =====
+  segmentWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  segment: {
+    flexDirection: 'row' as const,
+    backgroundColor: colors.border,
+    borderRadius: 8,
+    padding: 2,
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center' as const,
+    borderRadius: 6,
+  },
+  segmentTabActive: {
+    backgroundColor: colors.white,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: colors.gray,
+  },
+  segmentTextActive: {
+    color: colors.textDark,
+    fontWeight: '600' as const,
+  },
+
+  // ===== Empty State =====
+  emptyState: {
+    alignItems: 'center' as const,
+    paddingVertical: 48,
+    gap: 12,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    opacity: 0.4,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: colors.textDark,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: colors.gray,
+    textAlign: 'center' as const,
+    paddingHorizontal: 24,
+  },
+
   // ===== Device Management Screen Styles =====
   deviceContainer: {
     flex: 1,

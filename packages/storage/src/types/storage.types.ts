@@ -10,6 +10,7 @@ import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
 import type {
   BindingUserKeyStorageHandle,
   OidcStorageHandle,
+  PushStorageHandle,
   SessionStorageHandle,
 } from '@ping-identity/rn-types';
 
@@ -93,6 +94,40 @@ export type OidcStorage = BaseStorageConfig & OidcStorageHandle;
  */
 export type BindingUserKeyStorage = BaseStorageConfig &
   BindingUserKeyStorageHandle;
+
+/**
+ * Storage configuration type for push MFA storage.
+ *
+ * Opaque handle returned by {@link configurePushStorage}.
+ *
+ * Used by native-backed modules to resolve a previously registered
+ * push storage configuration. Pass to `createPushClient({ storage })`
+ * to use custom storage for push MFA instead of the platform default.
+ *
+ * @remarks
+ * Includes a `kind` discriminator and compile-time brand so callers cannot
+ * accidentally pass a plain config object or a different storage handle
+ * where a push storage handle is required.
+ *
+ * @see {@link BaseStorageConfig} for configuration input options
+ * @see {@link configurePushStorage} to register and resolve a configuration
+ *
+ * @example
+ * Basic usage:
+ * ```typescript
+ * import { configurePushStorage } from '@ping-identity/rn-storage';
+ *
+ * const pushStorage: PushStorage = configurePushStorage({
+ *   android: {
+ *     keyAlias: 'push_key'
+ *   }
+ * });
+ *
+ * // Pass to push client
+ * // createPushClient({ storage: pushStorage });
+ * ```
+ */
+export type PushStorage = BaseStorageConfig & PushStorageHandle;
 
 /**
  * Public storage configuration accepted by storage registration helpers.

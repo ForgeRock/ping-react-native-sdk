@@ -20,4 +20,5 @@ cd "$(dirname "$0")/../android"
   :ping-identity_rn-journey:test \
   :ping-identity_rn-logger:test \
   :ping-identity_rn-oidc:test \
+  :ping-identity_rn-push:test \
   :ping-identity_rn-storage:test

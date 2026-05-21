@@ -48,13 +48,24 @@ public class RNPingStorageImpl: NSObject, @unchecked Sendable {
 
   /**
    Registers a binding user-key storage configuration.
-   
+
    - Parameter config: Configuration dictionary for the storage.
    - Returns: A unique identifier for the registered configuration.
    */
   @objc
   public func registerBindingUserKeyStorage(_ config: NSDictionary) -> String {
     return RNPingStorageCommon.registerBindingUserKeyStorage(config)
+  }
+
+  /**
+   Registers a push MFA storage configuration.
+
+   - Parameter config: Configuration dictionary for the storage.
+   - Returns: A unique identifier for the registered configuration.
+   */
+  @objc
+  public func registerPushStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerPushStorage(config)
   }
 
   /**
@@ -81,12 +92,23 @@ public class RNPingStorageImpl: NSObject, @unchecked Sendable {
 
   /**
    Resolves a binding user-key storage configuration by id.
-   
+
    - Parameter id: Storage configuration identifier.
    - Returns: A storage configuration dictionary.
    */
   @objc
   public func configureBindingUserKeyStorage(_ id: String) -> NSDictionary {
     return RNPingStorageCommon.configureBindingUserKeyStorage(id)
+  }
+
+  /**
+   Resolves a push MFA storage configuration by id.
+
+   - Parameter id: Storage configuration identifier.
+   - Returns: A storage configuration dictionary.
+   */
+  @objc
+  public func configurePushStorage(_ id: String) -> NSDictionary {
+    return RNPingStorageCommon.configurePushStorage(id)
   }
 }

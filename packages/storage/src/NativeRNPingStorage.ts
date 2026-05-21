@@ -346,6 +346,14 @@ export interface Spec extends TurboModule {
    * Resolve a binding user-key storage configuration by identifier.
    */
   configureBindingUserKeyStorage(id: string): NativeStorageConfig;
+  /**
+   * Register a push MFA storage configuration.
+   */
+  registerPushStorage(config: NativeStorageConfig): string;
+  /**
+   * Resolve a push MFA storage configuration by identifier.
+   */
+  configurePushStorage(id: string): NativeStorageConfig;
 }
 
 /**

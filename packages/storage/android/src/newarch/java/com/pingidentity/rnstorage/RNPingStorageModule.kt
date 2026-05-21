@@ -56,6 +56,10 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
         return RNPingStorageCommon.registerBindingUserKeyStorage(config)
     }
 
+    override fun registerPushStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerPushStorage(config)
+    }
+
     /**
      * Resolve session storage configuration by id.
      *
@@ -78,5 +82,9 @@ class RNPingStorageModule(reactContext: ReactApplicationContext) :
 
     override fun configureBindingUserKeyStorage(id: String): WritableMap {
         return RNPingStorageCommon.configureBindingUserKeyStorage(id)
+    }
+
+    override fun configurePushStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configurePushStorage(id)
     }
 }

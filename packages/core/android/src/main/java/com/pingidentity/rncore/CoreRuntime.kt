@@ -26,6 +26,9 @@ object CoreRuntime {
     /** Registry for binding user-key storage configuration */
     val bindingUserKeyStorageConfigRegistry: Registry = SimpleRegistry()
 
+    /** Registry for push MFA storage configuration */
+    val pushStorageConfigRegistry: Registry = SimpleRegistry()
+
     /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()
     /** Registry for OIDC client configurations */
@@ -46,6 +49,4 @@ object CoreRuntime {
      */
     suspend fun resolveJourneyCallbacks(journeyId: String): List<Any>? =
         journeyCallbackResolver?.invoke(journeyId)
-
-    // val mfaRegistry: Registry = SimpleRegistry()
 }

@@ -3210,7 +3210,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
+"@ping-identity/rn-push@workspace:*, @ping-identity/rn-push@workspace:packages/push":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-push@workspace:packages/push"
+  dependencies:
+    "@ping-identity/rn-core": "npm:^0.1.0"
+    "@ping-identity/rn-storage": "npm:^0.1.0"
+    "@ping-identity/rn-types": "npm:^0.1.0"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
+"@ping-identity/rn-storage@npm:^0.1.0, @ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-storage@workspace:packages/storage"
   dependencies:
@@ -11819,6 +11835,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-native-biometrics@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "react-native-biometrics@npm:3.0.1"
+  peerDependencies:
+    react-native: ">=0.60.0"
+  checksum: 10c0/00528eda02528ccd28705f6245b5460bb46b93d44f435a2974c5e56d30a79d21b6b8e5c6c8c46a4a21220af08458214086b6372dfe48f75e82f42069871b0e6d
+  languageName: node
+  linkType: hard
+
 "react-native-builder-bob@npm:^0.40.14":
   version: 0.40.15
   resolution: "react-native-builder-bob@npm:0.40.15"
@@ -11920,6 +11945,26 @@ __metadata:
     fa6-upgrade: bin/fa6-upgrade.sh
     generate-icon: bin/generate-icon.js
   checksum: 10c0/247804affcf74906062ed088d755c3d4632e3f2b62c38226ccb05e2a8dc42414c2378040a4acb474704bed09cd06cb285770c765ffff67fb2d3b896cd46e76ca
+  languageName: node
+  linkType: hard
+
+"react-native-vision-camera@npm:^4.7.0":
+  version: 4.7.3
+  resolution: "react-native-vision-camera@npm:4.7.3"
+  peerDependencies:
+    "@shopify/react-native-skia": "*"
+    react: "*"
+    react-native: "*"
+    react-native-reanimated: "*"
+    react-native-worklets-core: "*"
+  peerDependenciesMeta:
+    "@shopify/react-native-skia":
+      optional: true
+    react-native-reanimated:
+      optional: true
+    react-native-worklets-core:
+      optional: true
+  checksum: 10c0/46001037f4f9a85e75c023e5082b137c179fd520741e088009d217f0a6eaf3a819b9784ae68aced95fa70c3345346c79dd2ee70bc04cfd811c7eefeda675cab2
   languageName: node
   linkType: hard
 
@@ -12306,6 +12351,7 @@ __metadata:
     "@ping-identity/rn-journey": "workspace:*"
     "@ping-identity/rn-logger": "workspace:*"
     "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-push": "workspace:*"
     "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"
@@ -12325,10 +12371,12 @@ __metadata:
     prettier: "npm:3.8.1"
     react: "npm:19.1.0"
     react-native: "npm:0.80.1"
+    react-native-biometrics: "npm:^3.0.1"
     react-native-config: "npm:^1.5.9"
     react-native-safe-area-context: "npm:^5.6.1"
     react-native-screens: "npm:^4.16.0"
     react-native-vector-icons: "npm:^10.3.0"
+    react-native-vision-camera: "npm:^4.7.0"
     react-test-renderer: "npm:19.1.0"
     typescript: "npm:5.0.4"
   languageName: unknown
@@ -12351,6 +12399,7 @@ __metadata:
     "@ping-identity/rn-journey": "workspace:*"
     "@ping-identity/rn-logger": "workspace:*"
     "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-push": "workspace:*"
     "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"

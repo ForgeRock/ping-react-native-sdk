@@ -102,6 +102,21 @@ export default function HomeScreen({
     },
   ];
 
+  const mfaItems: HomeScreenMenuItem[] = [
+    {
+      title: 'Push',
+      subtitle: 'Manage push authentication accounts',
+      icon: 'notifications',
+      screen: 'Push',
+    },
+    {
+      title: 'Push Notifications',
+      subtitle: 'View and respond to push requests',
+      icon: 'notifications-active',
+      screen: 'PushNotifications',
+    },
+  ];
+
   const developerToolsItems: HomeScreenMenuItem[] = [
     {
       title: 'Browser',
@@ -199,6 +214,9 @@ export default function HomeScreen({
 
           <Text style={commonStyles.homeSectionTitle}>USER MANAGEMENT</Text>
           {userManagementItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>MFA</Text>
+          {mfaItems.map(renderMenuItem)}
 
           <Text style={commonStyles.homeSectionTitle}>DEVELOPER TOOLS</Text>
           {developerToolsItems.map(renderMenuItem)}

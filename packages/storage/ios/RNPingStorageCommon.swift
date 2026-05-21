@@ -105,6 +105,17 @@ public class RNPingStorageCommon: NSObject {
     }
   }
 
+  /// Registers a push MFA storage configuration.
+  ///
+  /// - Parameter config: Dictionary containing storage configuration (cacheable, account, encryptor)
+  /// - Returns: A unique identifier for the registered storage configuration
+  @objc
+  public static func registerPushStorage(_ config: NSDictionary) -> String {
+    return createQueue.sync {
+      registerConfig(config, registry: CoreRuntime.pushStorageConfigRegistry)
+    }
+  }
+
   /// Retrieves and encodes a previously registered session storage configuration.
   ///
   /// - Parameter id: The unique identifier of the storage configuration to retrieve
@@ -137,6 +148,18 @@ public class RNPingStorageCommon: NSObject {
   public static func configureBindingUserKeyStorage(_ id: String) -> NSDictionary {
     return createQueue.sync {
       let resolvedConfig = resolveConfig(id, registry: CoreRuntime.bindingUserKeyStorageConfigRegistry)
+      return encodeConfig(resolvedConfig)
+    }
+  }
+
+  /// Retrieves and encodes a previously registered push MFA storage configuration.
+  ///
+  /// - Parameter id: The unique identifier of the storage configuration to retrieve
+  /// - Returns: A dictionary representation of the storage configuration
+  @objc
+  public static func configurePushStorage(_ id: String) -> NSDictionary {
+    return createQueue.sync {
+      let resolvedConfig = resolveConfig(id, registry: CoreRuntime.pushStorageConfigRegistry)
       return encodeConfig(resolvedConfig)
     }
   }
@@ -238,7 +261,7 @@ public class RNPingStorageCommon: NSObject {
    */
   private static func buildStorageConfig(from config: NSDictionary) -> StorageConfig {
     let cacheable = config["cacheable"] as? Bool
-    let account = config["account"] as? String ?? "com.pingidentity.rnsampleapp.keyalias"
+    let account = config["account"] as? String ?? "com.pingidentity.rnstorage.storage"
     let encryptor = config["encryptor"] as? Bool ?? true
 
     return StorageConfig(

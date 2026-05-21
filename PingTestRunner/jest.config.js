@@ -38,6 +38,7 @@ module.exports = {
       '<rootDir>/../packages/journey/src/index.tsx',
     '^@ping-identity/rn-logger$': '<rootDir>/../packages/logger/src/index.tsx',
     '^@ping-identity/rn-oidc$': '<rootDir>/../packages/oidc/src/index.tsx',
+    '^@ping-identity/rn-push$': '<rootDir>/../packages/push/src/index.tsx',
     '^@ping-identity/rn-storage$':
       '<rootDir>/../packages/storage/src/index.tsx',
     '^@ping-identity/rn-types$': '<rootDir>/../packages/types/src/index.ts',

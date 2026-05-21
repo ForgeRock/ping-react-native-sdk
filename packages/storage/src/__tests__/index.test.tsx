@@ -8,6 +8,7 @@ import type { LoggerInstance } from '@ping-identity/rn-types';
 import {
   CacheStrategy,
   configureBindingUserKeyStorage,
+  configurePushStorage,
   configureSessionStorage,
   configureOidcStorage,
 } from '../index';
@@ -18,9 +19,11 @@ const mockNativeRNPingStorage = {
   registerSessionStorage: jest.fn(),
   registerOidcStorage: jest.fn(),
   registerBindingUserKeyStorage: jest.fn(),
+  registerPushStorage: jest.fn(),
   configureSessionStorage: jest.fn(),
   configureOidcStorage: jest.fn(),
   configureBindingUserKeyStorage: jest.fn(),
+  configurePushStorage: jest.fn(),
 };
 
 jest.mock('../NativeRNPingStorage', () => ({
@@ -227,6 +230,101 @@ describe('Storage API', () => {
       expect(() =>
         configureBindingUserKeyStorage(null as unknown as StorageConfig),
       ).toThrow(/Missing configuration/);
+    });
+
+    it('configurePushStorage returns the config', () => {
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      const instance = configurePushStorage({
+        android: {
+          keyAlias: 'push_key',
+        },
+      });
+
+      expect(mockNativeRNPingStorage.registerPushStorage).toHaveBeenCalledWith({
+        keyAlias: 'push_key',
+      });
+      expect(mockNativeRNPingStorage.configurePushStorage).toHaveBeenCalledWith(
+        'push-id',
+      );
+      expect(instance).toEqual({ id: 'push-id', kind: 'push_storage' });
+    });
+
+    it('configurePushStorage can be created with all config options', () => {
+      const config = {
+        android: {
+          keyAlias: 'push_key',
+          fileName: 'push.dat',
+          strongBoxPreferred: true,
+          cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        },
+        ios: {
+          account: 'com.example.push',
+          encryptor: true,
+          cacheable: false,
+        },
+      };
+
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({
+        keyAlias: 'push_key',
+        fileName: 'push.dat',
+        strongBoxPreferred: true,
+        cacheStrategy: 'cache_on_failure',
+        account: 'com.example.push',
+        encryptor: true,
+        cacheable: false,
+      });
+
+      expect(configurePushStorage(config)).toEqual({
+        id: 'push-id',
+        kind: 'push_storage',
+        ...config,
+      });
+    });
+
+    it('configurePushStorage validates config', () => {
+      expect(() =>
+        configurePushStorage(null as unknown as StorageConfig),
+      ).toThrow(/Missing configuration/);
+    });
+
+    it('configurePushStorage forwards loggerId from logger options', () => {
+      const logger = {
+        nativeHandle: { id: 'native-logger-id' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      configurePushStorage(
+        {
+          android: { keyAlias: 'push_key' },
+        },
+        { logger },
+      );
+
+      expect(mockNativeRNPingStorage.registerPushStorage).toHaveBeenCalledWith({
+        loggerId: 'native-logger-id',
+        keyAlias: 'push_key',
+      });
+    });
+
+    it('configurePushStorage kind is push_storage', () => {
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      const result = configurePushStorage({
+        android: { keyAlias: 'push_key' },
+      });
+
+      expect(result.kind).toBe('push_storage');
+      expect(result.id).toBe('push-id');
     });
 
     it('configureBindingUserKeyStorage forwards loggerId from logger options', () => {

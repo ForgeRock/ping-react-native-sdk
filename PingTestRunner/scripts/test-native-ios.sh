@@ -25,4 +25,5 @@ run_scheme RNPingFido-Unit-Tests
 run_scheme RNPingJourney-Unit-Tests
 run_scheme RNPingLogger-Unit-Tests
 run_scheme RNPingOidc-Unit-Tests
+run_scheme RNPingPush-Unit-Tests
 run_scheme RNPingStorage-Unit-Tests

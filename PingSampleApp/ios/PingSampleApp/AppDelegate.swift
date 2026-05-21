@@ -9,6 +9,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import RNPingPush
 #if canImport(FBSDKCoreKit)
 import FBSDKCoreKit
 #endif
@@ -21,8 +22,12 @@ import PingExternalIdPGoogle
 
 @main
 /// UIApplication delegate that bootstraps the React Native sample app.
-class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
+///
+/// **Push SDK integration point (Scenario A):** Inherits `RNPingPushApplicationDelegate` instead of
+/// `UIResponder`. The superclass implements `didRegisterForRemoteNotificationsWithDeviceToken` and
+/// `didReceiveRemoteNotification` to forward APNs events to the Ping Push SDK automatically.
+/// If you already have your own `AppDelegate` superclass, see Scenario B/C in the Push SDK README.
+class AppDelegate: RNPingPushApplicationDelegate {
 
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
@@ -54,6 +59,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
+    // Push SDK integration point: requests APNs permission and registers the device for
+    // remote notifications. Token and message delivery are handled by the superclass.
+    requestPushAuthorization(application: application)
+
     return true
   }
 
@@ -73,6 +82,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     return handled
   }
 }
+
 
 /// React Native factory delegate that resolves JS bundle locations.
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

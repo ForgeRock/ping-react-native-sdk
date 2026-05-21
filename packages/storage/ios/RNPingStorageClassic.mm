@@ -38,6 +38,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerBindingUserKeyStorage:(NSDictiona
   return storageId;
 }
 
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerPushStorage:(NSDictionary *)config)
+{
+  NSString *storageId = [RNPingStorageCommon registerPushStorage:config];
+
+  return storageId;
+}
+
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureSessionStorage:(NSString *)storageId)
 {
   NSDictionary *config = [RNPingStorageCommon configureSessionStorage:storageId];
@@ -55,6 +62,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOidcStorage:(NSString *)storageI
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureBindingUserKeyStorage:(NSString *)storageId)
 {
   NSDictionary *config = [RNPingStorageCommon configureBindingUserKeyStorage:storageId];
+
+  return config;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configurePushStorage:(NSString *)storageId)
+{
+  NSDictionary *config = [RNPingStorageCommon configurePushStorage:storageId];
 
   return config;
 }
