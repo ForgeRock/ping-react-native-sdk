@@ -21,7 +21,7 @@ import {
   deleteKey,
   deleteAllKeys,
 } from '@ping-identity/rn-binding';
-import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
 import DeviceListSeparator from './devices/components/atoms/DeviceListSeparator';
@@ -189,14 +189,4 @@ function BindingKeyRow({
       </Pressable>
     </View>
   );
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof PingError) {
-    return `[${error.code}] ${error.message}`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
 }

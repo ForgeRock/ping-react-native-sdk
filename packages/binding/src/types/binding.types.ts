@@ -304,16 +304,7 @@ export class BindingError extends PingError {
   }
 
   static from(raw: unknown): BindingError {
-    if (raw instanceof BindingError) return raw;
-    const base = PingError.from(raw);
-    const err = new BindingError(
-      base.message,
-      base.code,
-      base.type,
-      base.status,
-    );
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, BindingError);
   }
 }
 

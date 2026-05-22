@@ -46,16 +46,7 @@ export class DeviceProfileError extends PingError {
   }
 
   static from(raw: unknown): DeviceProfileError {
-    if (raw instanceof DeviceProfileError) return raw;
-    const base = PingError.from(raw);
-    const err = new DeviceProfileError(
-      base.message,
-      base.code,
-      base.type,
-      base.status,
-    );
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, DeviceProfileError);
   }
 }
 

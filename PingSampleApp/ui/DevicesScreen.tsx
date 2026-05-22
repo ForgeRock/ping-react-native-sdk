@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DeviceKind, DeviceOf } from '@ping-identity/rn-device-client';
-import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { useDevices } from '../src/hooks/useDevices';
 import { commonStyles } from '../src/styles/common';
 import type { RootStackParamList } from '../App';
@@ -144,14 +144,4 @@ export default function DevicesScreen({
       />
     </ScrollView>
   );
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof PingError) {
-    return `[${error.code}] ${error.message}`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
 }

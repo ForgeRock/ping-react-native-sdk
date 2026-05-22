@@ -101,4 +101,46 @@ describe('PingError', () => {
       expect(err.status).toBeUndefined();
     });
   });
+
+  describe('PingError.fromAs', () => {
+    class TestError extends PingError {
+      constructor(m: string, c: string, t: string, s?: number) {
+        super(m, c, t, s);
+        this.name = 'TestError';
+        Object.setPrototypeOf(this, new.target.prototype);
+      }
+    }
+
+    it('returns the same instance when already the target subclass', () => {
+      const original = new TestError('msg', 'CODE', 'type');
+      expect(PingError.fromAs(original, TestError)).toBe(original);
+    });
+
+    it('wraps a plain object into the target subclass', () => {
+      const raw = {
+        error: 'TEST_CODE',
+        type: 'test_type',
+        message: 'test msg',
+      };
+      const err = PingError.fromAs(raw, TestError);
+      expect(err).toBeInstanceOf(TestError);
+      expect(err).toBeInstanceOf(PingError);
+      expect(err.code).toBe('TEST_CODE');
+      expect(err.message).toBe('test msg');
+    });
+
+    it('preserves the stack when wrapping a plain Error', () => {
+      const original = new Error('boom');
+      const err = PingError.fromAs(original, TestError);
+      expect(err).toBeInstanceOf(TestError);
+      expect(err.stack).toBe(original.stack);
+    });
+
+    it('does not re-wrap a PingError base instance as a subclass', () => {
+      const base = new PingError('msg', 'CODE', 'type');
+      const err = PingError.fromAs(base, TestError);
+      expect(err).toBeInstanceOf(TestError);
+      expect(err.code).toBe('CODE');
+    });
+  });
 });

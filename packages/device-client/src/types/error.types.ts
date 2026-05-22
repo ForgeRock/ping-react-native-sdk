@@ -31,16 +31,7 @@ export class DeviceClientError extends PingError {
   }
 
   static from(raw: unknown): DeviceClientError {
-    if (raw instanceof DeviceClientError) return raw;
-    const base = PingError.from(raw);
-    const err = new DeviceClientError(
-      base.message,
-      base.code,
-      base.type,
-      base.status,
-    );
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, DeviceClientError);
   }
 }
 

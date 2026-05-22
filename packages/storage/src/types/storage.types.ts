@@ -113,16 +113,7 @@ export class StorageError extends PingError {
   }
 
   static from(raw: unknown): StorageError {
-    if (raw instanceof StorageError) return raw;
-    const base = PingError.from(raw);
-    const err = new StorageError(
-      base.message,
-      base.code,
-      base.type,
-      base.status,
-    );
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, StorageError);
   }
 }
 

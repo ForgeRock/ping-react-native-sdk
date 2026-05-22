@@ -10,6 +10,7 @@ import { ScrollView, View } from 'react-native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
 import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import TokenJourneyPanel from './token/components/organisms/TokenJourneyPanel';
@@ -88,11 +89,7 @@ export default function TokenScreen(): React.ReactElement {
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(
-          error instanceof PingError
-            ? `[${error.code}] ${error.message}`
-            : String(error),
-        );
+        setActiveTabOutput(formatError(error));
       }
     } finally {
       setLoading(false);
@@ -135,11 +132,7 @@ export default function TokenScreen(): React.ReactElement {
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(
-          error instanceof PingError
-            ? `[${error.code}] ${error.message}`
-            : String(error),
-        );
+        setActiveTabOutput(formatError(error));
       }
     } finally {
       setLoading(false);
@@ -183,11 +176,7 @@ export default function TokenScreen(): React.ReactElement {
         setActiveTabOutput(getEmptyMessage('Journey'));
       }
     } catch (error) {
-      setActiveTabOutput(
-        error instanceof PingError
-          ? `[${error.code}] ${error.message}`
-          : String(error),
-      );
+      setActiveTabOutput(formatError(error));
     } finally {
       setLoading(false);
     }

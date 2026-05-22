@@ -18,7 +18,7 @@ import {
   type DeviceProfile,
   type DeviceProfileCollector,
 } from '@ping-identity/rn-device-profile';
-import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
@@ -81,11 +81,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
       });
       setProfile(collectedProfile);
     } catch (err: unknown) {
-      if (err instanceof PingError) {
-        setErrorMessage(`[${err.code}] ${err.message}`);
-      } else {
-        setErrorMessage(String(err));
-      }
+      setErrorMessage(formatError(err));
     } finally {
       setIsCollecting(false);
     }

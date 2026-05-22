@@ -191,11 +191,7 @@ export class FidoError extends PingError {
   }
 
   static from(raw: unknown): FidoError {
-    if (raw instanceof FidoError) return raw;
-    const base = PingError.from(raw);
-    const err = new FidoError(base.message, base.code, base.type, base.status);
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, FidoError);
   }
 }
 

@@ -32,16 +32,7 @@ export class BrowserError extends PingError {
   }
 
   static from(raw: unknown): BrowserError {
-    if (raw instanceof BrowserError) return raw;
-    const base = PingError.from(raw);
-    const err = new BrowserError(
-      base.message,
-      base.code,
-      base.type,
-      base.status,
-    );
-    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
-    return err;
+    return PingError.fromAs(raw, BrowserError);
   }
 }
 

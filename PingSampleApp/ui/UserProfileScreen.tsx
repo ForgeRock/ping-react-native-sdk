@@ -11,7 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useJourney, type JourneyUserSession } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
-import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
@@ -65,11 +65,7 @@ export default function UserProfileScreen({
         setJourneySession(null);
       }
     } catch (error) {
-      const message =
-        error instanceof PingError
-          ? `[${error.code}] ${error.message}`
-          : String(error);
-      setJourneyError(message);
+      setJourneyError(formatError(error));
       setJourneySession(null);
     } finally {
       setJourneyLoading(false);
@@ -155,12 +151,7 @@ export default function UserProfileScreen({
                 await oidcActions.authorize();
                 await oidcActions.userinfo(true);
               } catch (cause) {
-                Alert.alert(
-                  'OIDC start failed',
-                  cause instanceof PingError
-                    ? `[${cause.code}] ${cause.message}`
-                    : String(cause),
-                );
+                Alert.alert('OIDC start failed', formatError(cause));
               }
             }}
           />

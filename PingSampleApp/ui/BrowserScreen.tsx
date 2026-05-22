@@ -8,7 +8,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { open } from '@ping-identity/rn-browser';
-import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 import PingTextInput from './components/atoms/PingTextInput';
@@ -54,8 +54,7 @@ export default function BrowserScreen() {
       );
       setResult(JSON.stringify(response, null, 2));
     } catch (e: unknown) {
-      const err = PingError.from(e);
-      setError(`${err.code}: ${err.message}`);
+      setError(formatError(e));
     }
   };
 
