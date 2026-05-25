@@ -38,6 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.Date
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
@@ -318,13 +319,26 @@ object RNPingOathCommon {
   }
 
   /**
-   * Persist an updated credential.
+   * Persist an updated credential, preserving the stored secret.
+   *
+   * The JS map is decoded to extract the credential `id` and the two mutable display
+   * fields (`displayIssuer`, `displayAccountName`). The stored credential is then fetched
+   * from the native client — which carries the real `secret` already written to the
+   * database — and only its mutable display fields are overwritten before being forwarded
+   * to `client.saveCredential`. This mirrors the iOS implementation in
+   * `RNPingOathCommon.swift` and ensures the secret is never lost on a round-trip from JS.
+   *
+   * Both `getCredential` and `saveCredential` run inside a single [ClientEntry.mutex] lock
+   * so the read-modify-write is atomic with respect to other bridge calls on the same client.
    *
    * @param handle The UUID handle returned by [create].
-   * @param credential The credential fields as a JS map. Must include `issuer` and `accountName`.
-   *   The `secret` field is never sent by JS callers; [decodeCredential] falls back to an empty
-   *   string because the credential's secret is already stored natively.
-   * @param promise Bridge promise resolved with the saved credential map or rejected with [GenericError].
+   * @param credential The credential fields as a JS map. Must include `id`, `issuer`, and
+   *   `accountName`. `displayIssuer` and `displayAccountName` carry the user-edited values.
+   *   The `secret` field is never sent by JS callers and is ignored entirely — the stored
+   *   credential's secret is used instead.
+   * @param promise Bridge promise resolved with the saved credential map or rejected with
+   *   [GenericError] (including [OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND] when the
+   *   credential does not exist in storage).
    */
   fun saveCredential(handle: String, credential: ReadableMap, promise: Promise) {
     val entry = registry[handle] ?: return promise.reject(
@@ -336,11 +350,27 @@ object RNPingOathCommon {
     )
     scope.launch {
       try {
-        val oathCredential = decodeCredential(credential)
+        val decoded = decodeCredential(credential)
         val saved = entry.mutex.withLock {
-          entry.client.saveCredential(oathCredential).getOrThrow()
+          val stored = entry.client.getCredential(decoded.id).getOrThrow()
+          stored?.let {
+            val patched = it.copy(
+              displayIssuer = decoded.displayIssuer,
+              displayAccountName = decoded.displayAccountName
+            )
+            entry.client.saveCredential(patched).getOrThrow()
+          } ?: run {
+            promise.reject(
+              GenericError(
+                type = ErrorType.STATE_ERROR,
+                error = OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND,
+                message = "Credential not found: ${decoded.id}"
+              )
+            )
+            return@withLock null
+          }
         }
-        promise.resolve(encodeCredential(saved))
+        saved?.let { promise.resolve(encodeCredential(it)) }
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND), e)
       }
@@ -569,11 +599,14 @@ object RNPingOathCommon {
    * Decode an [OathCredential] from a [ReadableMap] received from the React Native bridge.
    *
    * @remarks
-   * All public credential fields are decoded from the map. The `secret` field is intentionally
-   * omitted — it is the only field not decoded, because the credential's secret is already
-   * stored natively by the time this is called and must never travel across the bridge.
+   * All public credential fields are decoded from the map. The `secret` field is the **only**
+   * intentionally omitted field — the credential's secret is already stored natively by the time
+   * this is called and must never travel across the bridge. All other fields, including `createdAt`,
+   * are decoded to preserve round-trip fidelity.
    * The `algorithm` field is decoded from its uppercase string name (e.g. `"SHA256"`) using
    * [OathAlgorithm.valueOf]; missing or unrecognised values default to [OathAlgorithm.SHA1].
+   * The `createdAt` field is decoded from milliseconds since epoch (as sent by [encodeCredential]);
+   * when absent it defaults to `Date()` (now), consistent with [OathCredential]'s own default.
    *
    * @param map The bridge map containing credential fields.
    * @return A reconstructed [OathCredential].
@@ -600,6 +633,7 @@ object RNPingOathCommon {
     val isLocked = if (map.hasKey("isLocked")) map.getBoolean("isLocked") else false
     val policies = if (map.hasKey("policies")) map.getString("policies") else null
     val lockingPolicy = if (map.hasKey("lockingPolicy")) map.getString("lockingPolicy") else null
+    val createdAt = if (map.hasKey("createdAt")) Date(map.getDouble("createdAt").toLong()) else Date()
 
     return OathCredential(
       id = id,
@@ -619,7 +653,8 @@ object RNPingOathCommon {
       backgroundColor = backgroundColor,
       isLocked = isLocked,
       policies = policies,
-      lockingPolicy = lockingPolicy
+      lockingPolicy = lockingPolicy,
+      createdAt = createdAt
     )
   }
 }

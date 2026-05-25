@@ -75,13 +75,6 @@ final class OathErrorMapperTests: XCTestCase {
     XCTAssertEqual(mapped.message, "bad algo")
   }
 
-  func test_mapOathError_uriFormatting() {
-    let mapped = OathErrorMapper.mapError(OathError.uriFormatting("format error"))
-    XCTAssertEqual(mapped.type, .argumentError)
-    XCTAssertEqual(mapped.error, OathErrorCodes.uriFormatting.rawValue)
-    XCTAssertEqual(mapped.message, "format error")
-  }
-
   func test_mapOathError_codeGenerationFailed() {
     let underlying = NSError(domain: "Test", code: 0)
     let mapped = OathErrorMapper.mapError(OathError.codeGenerationFailed("gen failed", underlying))

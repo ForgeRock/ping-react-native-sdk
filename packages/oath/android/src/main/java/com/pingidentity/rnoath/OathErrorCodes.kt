@@ -12,12 +12,12 @@ package com.pingidentity.rnoath
  * @remarks
  * Keep these in sync with JS `OathErrorCode` and iOS `OathErrorCodes`.
  *
- * Five codes present on iOS are intentionally absent here:
- * `OATH_MISSING_PARAMETER`, `OATH_URI_FORMATTING`, `OATH_CLEANUP_FAILED`,
- * `OATH_STORAGE_CORRUPTED`, and `OATH_STORAGE_ACCESS_DENIED`. The Android
- * MFA commons library has no equivalent exception types for these conditions,
- * so Android cannot emit them. The TypeScript `OathErrorCode` union includes
- * all codes from both platforms by design.
+ * Four codes present on iOS are intentionally absent here:
+ * `OATH_MISSING_PARAMETER`, `OATH_CLEANUP_FAILED`, `OATH_STORAGE_CORRUPTED`,
+ * and `OATH_STORAGE_ACCESS_DENIED`. The Android MFA commons library has no
+ * equivalent exception types for these conditions, so Android cannot emit them.
+ * The TypeScript `OathErrorCode` union includes all codes from both platforms
+ * by design.
  */
 object OathErrorCodes {
   const val OATH_INVALID_URI = "OATH_INVALID_URI"

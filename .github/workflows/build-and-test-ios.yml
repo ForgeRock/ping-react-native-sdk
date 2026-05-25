@@ -83,9 +83,29 @@ jobs:
         working-directory: ${{ env.IOS_DIRECTORY }}
         run: bundle exec pod install --repo-update
 
+      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator platform
+      # component, causing xcodebuild to fail with "iOS X is not installed" even though simctl lists a UDID.
+      # This step prefers the pinned version but falls back to the newest installed Xcode that has at least
+      # one available iOS runtime, so the simulator destination resolved in the next step is always usable.
+      - name: Resolve Xcode version
+        run: |
+          PINNED="/Applications/Xcode_${{ env.XCODE_VERSION }}.app"
+          SELECTED=""
+          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app" ] || continue
+            runtime_count=$(DEVELOPER_DIR="$app/Contents/Developer" xcrun simctl list runtimes 2>/dev/null \
+              | grep -i "iOS" | grep -v "unavailable" | wc -l | tr -d ' ')
+            if [ "$runtime_count" -gt 0 ]; then
+              SELECTED="$app"
+              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
+              break
+            fi
+          done
+          [ -n "$SELECTED" ] || { echo "No Xcode with iOS simulator runtimes found"; exit 1; }
+
       # Select Xcode version
       - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app && /usr/bin/xcodebuild -version
+        run: sudo xcode-select -s "${{ env.XCODE_RESOLVED_PATH }}" && /usr/bin/xcodebuild -version
 
       # Clang module caches are sensitive to SDK header mtimes on the runner image.
       # This must run AFTER Xcode is selected so the active SDK is finalised.

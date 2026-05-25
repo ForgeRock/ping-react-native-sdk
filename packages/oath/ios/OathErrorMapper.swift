@@ -99,12 +99,6 @@ internal enum OathErrorMapper {
         error: OathErrorCodes.invalidParameter.rawValue,
         message: message
       )
-    case .uriFormatting(let message):
-      return GenericError(
-        type: .argumentError,
-        error: OathErrorCodes.uriFormatting.rawValue,
-        message: message
-      )
     case .codeGenerationFailed(let message, _):
       return GenericError(
         type: .internalError,

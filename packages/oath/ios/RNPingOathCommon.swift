@@ -46,14 +46,26 @@ public class RNPingOathCommon: NSObject {
 
   // MARK: - Registry management
 
-  /// Removes all `OathClient` instances from the handle registry.
+  /// Closes all live `OathClient` instances and removes them from the handle registry.
   ///
-  /// Call this during module teardown to release all held native resources.
+  /// Each client's `close()` is called before the registry is cleared so that any
+  /// in-memory caches, native observers, or other resources held by future SDK versions
+  /// are released explicitly, mirroring the Android implementation which cancels its
+  /// coroutine scope before clearing the registry.
+  ///
+  /// Call this during module teardown (from `invalidate()` in both the TurboModule and
+  /// classic bridge implementations).
   @objc
   public static func cleanup() {
     registryLock.lock()
+    let clients = Array(registry.values)
     registry.removeAll()
     registryLock.unlock()
+    Task {
+      for client in clients {
+        try? await client.close()
+      }
+    }
   }
 
   // MARK: - Public entry points

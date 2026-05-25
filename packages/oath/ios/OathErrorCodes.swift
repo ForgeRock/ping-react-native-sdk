@@ -25,8 +25,6 @@ internal enum OathErrorCodes: String {
   case missingParameter = "OATH_MISSING_PARAMETER"
   /// A provided parameter has an invalid value.
   case invalidParameter = "OATH_INVALID_PARAMETER"
-  /// The URI could not be formatted or parsed correctly.
-  case uriFormatting = "OATH_URI_FORMATTING"
   /// OATH code generation failed for the credential.
   case codeGenerationFailed = "OATH_CODE_GENERATION_FAILED"
   /// The operation violates an OATH policy constraint.

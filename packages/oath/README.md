@@ -251,7 +251,6 @@ try {
 | `OATH_INVALID_URI`            | Both     | The provided `otpauth://` URI could not be parsed.                                                                         |
 | `OATH_INVALID_PARAMETER`      | Both     | A method argument has an invalid value.                                                                                    |
 | `OATH_MISSING_PARAMETER`      | iOS only | A required method argument was not provided.                                                                               |
-| `OATH_URI_FORMATTING`         | iOS only | The URI is structurally valid but contains a malformed field.                                                              |
 | `OATH_CREDENTIAL_NOT_FOUND`   | Both     | No credential with the given ID exists in the native store.                                                                |
 | `OATH_CREDENTIAL_LOCKED`      | Both     | The credential is locked by a device policy; code generation is not allowed.                                               |
 | `OATH_DUPLICATE_CREDENTIAL`   | Both     | A credential with the same ID already exists in the native store.                                                          |

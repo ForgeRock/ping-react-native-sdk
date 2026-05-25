@@ -250,9 +250,10 @@ class RNPingOathCommonTest {
   // ---------------------------------------------------------------------------
 
   @Test
-  fun saveCredential_withPoliciesAndLockingPolicy_decodesFieldsIntoCredential() {
-    // Step 1: create a native client backed by a relaxed mock so saveCredential()
-    // can be intercepted without SQLite initialisation.
+  fun saveCredential_onlyUpdatesDisplayFields() {
+    // Verifies the fetch-then-patch pattern: only displayIssuer and displayAccountName
+    // are overwritten; all other fields (including secret, policies, lockingPolicy) are
+    // preserved from the stored credential returned by getCredential().
     val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
     mockkObject(OathClient.Companion)
     coEvery { OathClient.Companion.invoke(any()) } returns mockClient
@@ -264,17 +265,33 @@ class RNPingOathCommonTest {
     assertNotNull("create() must resolve with a handle string", handle)
     unmockkObject(OathClient.Companion)
 
-    // Step 2: capture the OathCredential argument passed to the native client.
+    // Stored credential already has a real secret and server-managed fields.
+    val credentialId = "test-id-123"
+    val storedCredential = OathCredential(
+      id = credentialId,
+      issuer = "Ping",
+      displayIssuer = "OldDisplayIssuer",
+      accountName = "user@example.com",
+      displayAccountName = "OldDisplayAccountName",
+      oathType = com.pingidentity.mfa.oath.OathType.TOTP,
+      secret = "REAL_SECRET",
+      policies = "biometricAvailable",
+      lockingPolicy = "deviceTampering",
+      isLocked = false
+    )
+    coEvery { mockClient.getCredential(credentialId) } returns Result.success(storedCredential)
+
     val credentialSlot = slot<OathCredential>()
     val savedCredential = io.mockk.mockk<OathCredential>(relaxed = true)
     coEvery { mockClient.saveCredential(capture(credentialSlot)) } returns Result.success(savedCredential)
 
-    // Step 3: build a bridge map that includes policies + lockingPolicy.
+    // JS map carries updated display fields and the credential id; never carries secret.
     val credMap = JavaOnlyMap().apply {
+      putString("id", credentialId)
       putString("issuer", "Ping")
       putString("accountName", "user@example.com")
-      putString("policies", "biometricAvailable")
-      putString("lockingPolicy", "deviceTampering")
+      putString("displayIssuer", "NewDisplayIssuer")
+      putString("displayAccountName", "NewDisplayAccountName")
     }
 
     val savePromise = TestPromise()
@@ -282,23 +299,20 @@ class RNPingOathCommonTest {
     scope.advanceUntilIdle()
     savePromise.await()
 
-    // Step 4: assert the decoded credential carries the two fields.
     assertTrue("saveCredential slot must have been captured", credentialSlot.isCaptured)
-    assertEquals(
-      "policies must survive decodeCredential round-trip",
-      "biometricAvailable",
-      credentialSlot.captured.policies
-    )
-    assertEquals(
-      "lockingPolicy must survive decodeCredential round-trip",
-      "deviceTampering",
-      credentialSlot.captured.lockingPolicy
-    )
+    val patched = credentialSlot.captured
+    assertEquals("displayIssuer must be updated from JS map", "NewDisplayIssuer", patched.displayIssuer)
+    assertEquals("displayAccountName must be updated from JS map", "NewDisplayAccountName", patched.displayAccountName)
+    // Secret and server-managed fields must be preserved from the stored credential.
+    assertEquals("secret must not be overwritten", "REAL_SECRET", patched.secret)
+    assertEquals("policies must be preserved from stored credential", "biometricAvailable", patched.policies)
+    assertEquals("lockingPolicy must be preserved from stored credential", "deviceTampering", patched.lockingPolicy)
   }
 
   @Test
-  fun saveCredential_withNullPoliciesAndLockingPolicy_decodesNullFields() {
-    // Verifies that when the map keys are absent the decoded fields remain null.
+  fun saveCredential_credentialNotFound_rejectsWithCredentialNotFoundError() {
+    // Verifies that when getCredential() returns null the promise is rejected
+    // with OATH_CREDENTIAL_NOT_FOUND rather than proceeding with an empty-secret save.
     val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
     mockkObject(OathClient.Companion)
     coEvery { OathClient.Companion.invoke(any()) } returns mockClient
@@ -310,14 +324,12 @@ class RNPingOathCommonTest {
     assertNotNull(handle)
     unmockkObject(OathClient.Companion)
 
-    val credentialSlot = slot<OathCredential>()
-    val savedCredential = io.mockk.mockk<OathCredential>(relaxed = true)
-    coEvery { mockClient.saveCredential(capture(credentialSlot)) } returns Result.success(savedCredential)
+    coEvery { mockClient.getCredential(any()) } returns Result.success(null)
 
     val credMap = JavaOnlyMap().apply {
+      putString("id", "nonexistent-id")
       putString("issuer", "Ping")
       putString("accountName", "user@example.com")
-      // policies and lockingPolicy intentionally absent
     }
 
     val savePromise = TestPromise()
@@ -325,16 +337,11 @@ class RNPingOathCommonTest {
     scope.advanceUntilIdle()
     savePromise.await()
 
-    assertTrue("saveCredential slot must have been captured", credentialSlot.isCaptured)
+    assertNotNull("promise must be rejected", savePromise.rejectUserInfo)
     assertEquals(
-      "policies must be null when absent from bridge map",
-      null,
-      credentialSlot.captured.policies
-    )
-    assertEquals(
-      "lockingPolicy must be null when absent from bridge map",
-      null,
-      credentialSlot.captured.lockingPolicy
+      "error code must be OATH_CREDENTIAL_NOT_FOUND",
+      OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND,
+      savePromise.rejectUserInfo!!.getString("error")
     )
   }
 
@@ -514,11 +521,15 @@ class RNPingOathCommonTest {
   }
 
   @Test
-  fun configureOathPolicyEvaluator_unknownId_returnEmptyPolicies() {
-    val result = RNPingOathCommon.configureOathPolicyEvaluator("nonexistent-id")
-    val policies = result.getArray("policies")
-    assertNotNull(policies)
-    assertEquals(0, policies!!.size())
+  fun configureOathPolicyEvaluator_unknownId_throwsIllegalStateException() {
+    // An unresolvable id is a caller mistake and must throw immediately rather than
+    // silently returning an empty map — consistent with RNPingStorageCommon.configureOathStorage.
+    try {
+      RNPingOathCommon.configureOathPolicyEvaluator("nonexistent-id")
+      assertTrue("Expected IllegalStateException to be thrown", false)
+    } catch (e: IllegalStateException) {
+      // expected
+    }
   }
 
   // ---------------------------------------------------------------------------

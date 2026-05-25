@@ -86,6 +86,10 @@ internal object OathErrorMapper {
       message = e.message
     )
     is IllegalArgumentException -> {
+      // TODO: Replace message-sniffing with a typed exception check once the Android SDK
+      //  introduces a dedicated InvalidUriException (or equivalent) in
+      //  com.pingidentity.mfa.commons.exception — see <TICKET>. iOS achieves this via
+      //  the typed OathError.invalidUri case; parity requires an SDK-level change.
       val isUriError = e.message?.contains("uri", ignoreCase = true) == true
       if (isUriError) {
         GenericError(
