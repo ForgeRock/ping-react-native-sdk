@@ -175,6 +175,7 @@ jobs:
         # Convert coverage data to Cobertura format for reporting
       - name: Generate coverage report (Cobertura)
         if: always()
+        continue-on-error: true
         run: xcresultparser -o cobertura TestResults.xcresult > coverage.xml
 
         # Upload coverage report to Codecov
