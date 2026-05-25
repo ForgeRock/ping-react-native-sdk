@@ -1,0 +1,274 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="../"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>push/README | ping-identity</title><meta name="description" content="Documentation for ping-identity"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/icons.js" id="tsd-icons-script"></script><script async src="../assets/search.js" id="tsd-search-script"></script><script async src="../assets/navigation.js" id="tsd-nav-script"></script><script async src="../assets/hierarchy.js" id="tsd-hierarchy-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="../index.html" class="title">ping-identity</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><ul class="tsd-breadcrumb" aria-label="Breadcrumb"><li><a href="" aria-current="page">push/README</a></li></ul></div><div class="tsd-panel tsd-typography"><!--
+Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+
+This software may be modified and distributed under the terms
+of the MIT license. See the LICENSE file for details.
+-->
+<p><a href="https://github.com/ForgeRock/ping-react-native-sdk"><img src="https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg" alt="Ping Identity"></a></p>
+<h1 id="ping-identity-react-native-push" class="tsd-anchor-link">Ping Identity React Native Push<a href="#ping-identity-react-native-push" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Push MFA for React Native — enrollment, credential management, notification processing, and approve/deny/challenge/biometric responses.</p>
+<h2 id="table-of-contents" class="tsd-anchor-link">Table of contents<a href="#table-of-contents" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#native-setup">Native setup</a>
+<ul>
+<li><a href="#scenario-a--using-a-react-native-js-push-library">Scenario A — Using a React Native JS push library</a></li>
+<li><a href="#scenario-b--already-using-another-native-push-provider">Scenario B — Already using another native push provider</a></li>
+</ul>
+</li>
+<li><a href="#how-to-use-the-sdk">How to use the SDK</a>
+<ul>
+<li><a href="#react-hook--recommended">React hook — recommended</a></li>
+<li><a href="#pushclient-method-reference">PushClient method reference</a></li>
+</ul>
+</li>
+<li><a href="#logging-integration-optional">Logging integration</a></li>
+<li><a href="#push-storage-optional">Push storage</a></li>
+<li><a href="#customisation">Customisation</a></li>
+<li><a href="#error-handling">Error handling</a></li>
+<li><a href="#license">License</a></li>
+</ul>
+<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="bash"><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@ping-identity/rn-push</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">ios</span><span class="hl-1"> &amp;&amp; </span><span class="hl-0">pod</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Optional integration packages:</p>
+<pre><code class="bash"><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@ping-identity/rn-logger</span><br/><span class="hl-0">yarn</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@ping-identity/rn-storage</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>FCM peer dependency (Android)</strong> — add to your app's <code>build.gradle</code>:</p>
+<pre><code class="gradle">dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
+    implementation 'com.google.firebase:firebase-messaging'
+}
+</code><button type="button">Copy</button></pre>
+
+<p><strong>APNs setup (iOS)</strong> — enable Push Notifications capability in Xcode and add the APNs key in your Apple Developer portal.</p>
+<h2 id="native-setup" class="tsd-anchor-link">Native setup<a href="#native-setup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>The SDK needs to receive the platform push token and incoming messages from your existing push infrastructure. Choose the scenario that matches your app.</p>
+<h3 id="scenario-a-using-a-react-native-js-push-library" class="tsd-anchor-link">Scenario A — Using a React Native JS push library<a href="#scenario-a-using-a-react-native-js-push-library" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>No native code changes needed. Wire up token and message delivery from your JS push library to the SDK. The examples below use <code>@react-native-firebase/messaging</code> — adapt to your library as needed.</p>
+<p>Ping sends <strong>data-only messages</strong> (no <code>notification</code> field), which means background handlers fire correctly even when the app is killed.</p>
+<p><strong><code>index.js</code> — background/quit handler, registered at the top level before <code>AppRegistry</code>:</strong></p>
+<pre><code class="ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">createPushClient</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-3">yourPushLibrary</span><span class="hl-1">.</span><span class="hl-0">setBackgroundMessageHandler</span><span class="hl-1">(</span><span class="hl-5">async</span><span class="hl-1"> (</span><span class="hl-3">message</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">pushClient</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">createPushClient</span><span class="hl-1">();</span><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">notification</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">pushClient</span><span class="hl-1">.</span><span class="hl-0">processNotification</span><span class="hl-1">(</span><span class="hl-3">message</span><span class="hl-1">.</span><span class="hl-3">data</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">notification</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-9">// Post a tray notification using your library&#39;s display API</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>App setup — token wiring, foreground handler, and cold-start tap:</strong></p>
+<pre><code class="ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">PushProvider</span><span class="hl-1">, </span><span class="hl-3">usePush</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-9">// Seed the token on startup and keep it fresh</span><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">token</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">yourPushLibrary</span><span class="hl-1">.</span><span class="hl-0">getToken</span><span class="hl-1">();</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">pushClient</span><span class="hl-1">.</span><span class="hl-0">setDeviceToken</span><span class="hl-1">(</span><span class="hl-3">token</span><span class="hl-1">);</span><br/><span class="hl-3">yourPushLibrary</span><span class="hl-1">.</span><span class="hl-0">onTokenRefresh</span><span class="hl-1">((</span><span class="hl-3">token</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">void</span><span class="hl-1"> </span><span class="hl-3">pushClient</span><span class="hl-1">.</span><span class="hl-0">setDeviceToken</span><span class="hl-1">(</span><span class="hl-3">token</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">// Foreground messages</span><br/><span class="hl-3">yourPushLibrary</span><span class="hl-1">.</span><span class="hl-0">onMessage</span><span class="hl-1">(</span><span class="hl-5">async</span><span class="hl-1"> (</span><span class="hl-3">message</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-9">// Use processNotification() if your library gives you a key-value data map.</span><br/><span class="hl-1">  </span><span class="hl-9">// Use processNotificationFromMessage() if it gives you a raw string payload.</span><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">notification</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">pushClient</span><span class="hl-1">.</span><span class="hl-0">processNotification</span><span class="hl-1">(</span><span class="hl-3">message</span><span class="hl-1">.</span><span class="hl-3">data</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">notification</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-9">/* show approve/deny UI */</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-9">// Cold-start tap: app was killed and user tapped the tray notification.</span><br/><span class="hl-3">yourPushLibrary</span><span class="hl-1">.</span><span class="hl-0">getInitialNotification</span><span class="hl-1">().</span><span class="hl-0">then</span><span class="hl-1">(</span><span class="hl-5">async</span><span class="hl-1"> (</span><span class="hl-3">message</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">message</span><span class="hl-1">) </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">pushClient</span><span class="hl-1">.</span><span class="hl-0">processNotification</span><span class="hl-1">(</span><span class="hl-3">message</span><span class="hl-1">.</span><span class="hl-3">data</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Then use <code>PushProvider</code> and <code>usePush</code> as normal — see <a href="#how-to-use-the-sdk">How to use the SDK</a>.</p>
+<h3 id="scenario-b-already-using-another-native-push-provider" class="tsd-anchor-link">Scenario B — Already using another native push provider<a href="#scenario-b-already-using-another-native-push-provider" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><strong>Android</strong> — add two lines to your existing <code>FirebaseMessagingService</code>:</p>
+<pre><code class="kotlin"><span class="hl-5">override</span><span class="hl-1"> </span><span class="hl-5">fun</span><span class="hl-1"> </span><span class="hl-0">onNewToken</span><span class="hl-1">(token: </span><span class="hl-8">String</span><span class="hl-1">) {</span><br/><span class="hl-1">    existingSdk.</span><span class="hl-0">updateToken</span><span class="hl-1">(token)</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">emitTokenEvent</span><span class="hl-1">(token) </span><span class="hl-9">// ← add</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-5">override</span><span class="hl-1"> </span><span class="hl-5">fun</span><span class="hl-1"> </span><span class="hl-0">onMessageReceived</span><span class="hl-1">(remoteMessage: </span><span class="hl-8">RemoteMessage</span><span class="hl-1">) {</span><br/><span class="hl-1">    existingSdk.</span><span class="hl-0">handleMessage</span><span class="hl-1">(remoteMessage)</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">emitMessageEvent</span><span class="hl-1">(remoteMessage.</span><span class="hl-5">data</span><span class="hl-1">) </span><span class="hl-9">// ← add</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>iOS</strong> — add to your existing <code>AppDelegate</code>. Set <code>UNUserNotificationCenter.current().delegate = self</code> in <code>didFinishLaunchingWithOptions</code> if not already set, then add:</p>
+<pre><code class="swift"><span class="hl-5">func</span><span class="hl-1"> </span><span class="hl-0">application</span><span class="hl-1">(</span><span class="hl-0">_</span><span class="hl-1"> </span><span class="hl-3">application</span><span class="hl-1">: UIApplication,</span><br/><span class="hl-1">    </span><span class="hl-0">didRegisterForRemoteNotificationsWithDeviceToken</span><span class="hl-1"> </span><span class="hl-3">deviceToken</span><span class="hl-1">: Data) {</span><br/><span class="hl-1">    existingSdk.</span><span class="hl-0">register</span><span class="hl-1">(deviceToken)</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">forwardToken</span><span class="hl-1">(deviceToken) </span><span class="hl-9">// ← add</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-5">func</span><span class="hl-1"> </span><span class="hl-0">application</span><span class="hl-1">(</span><span class="hl-0">_</span><span class="hl-1"> </span><span class="hl-3">application</span><span class="hl-1">: UIApplication,</span><br/><span class="hl-1">    </span><span class="hl-0">didReceiveRemoteNotification</span><span class="hl-1"> </span><span class="hl-3">userInfo</span><span class="hl-1">: [</span><span class="hl-8">AnyHashable</span><span class="hl-1">: </span><span class="hl-8">Any</span><span class="hl-1">],</span><br/><span class="hl-1">    </span><span class="hl-0">fetchCompletionHandler</span><span class="hl-1"> </span><span class="hl-3">completionHandler</span><span class="hl-1">: </span><span class="hl-5">@escaping</span><span class="hl-1"> (UIBackgroundFetchResult) -&gt; </span><span class="hl-8">Void</span><span class="hl-1">) {</span><br/><span class="hl-1">    existingSdk.</span><span class="hl-0">handleNotification</span><span class="hl-1">(userInfo)</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">forwardNotification</span><span class="hl-1">(userInfo) </span><span class="hl-9">// ← add</span><br/><span class="hl-1">    </span><span class="hl-0">completionHandler</span><span class="hl-1">(.</span><span class="hl-3">newData</span><span class="hl-1">)</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-9">// Show banner when foregrounded</span><br/><span class="hl-5">func</span><span class="hl-1"> </span><span class="hl-0">userNotificationCenter</span><span class="hl-1">(</span><span class="hl-0">_</span><span class="hl-1"> </span><span class="hl-3">center</span><span class="hl-1">: UNUserNotificationCenter, // ← add if not present</span><br/><span class="hl-1">    </span><span class="hl-0">willPresent</span><span class="hl-1"> </span><span class="hl-3">notification</span><span class="hl-1">: UNNotification,</span><br/><span class="hl-1">    </span><span class="hl-0">withCompletionHandler</span><span class="hl-1"> </span><span class="hl-3">completionHandler</span><span class="hl-1">: </span><span class="hl-5">@escaping</span><span class="hl-1"> (UNNotificationPresentationOptions) -&gt; </span><span class="hl-8">Void</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-0">completionHandler</span><span class="hl-1">([.</span><span class="hl-3">banner</span><span class="hl-1">, .</span><span class="hl-3">sound</span><span class="hl-1">, .</span><span class="hl-3">badge</span><span class="hl-1">])</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-9">// Forward banner taps to the Ping Push SDK</span><br/><span class="hl-5">func</span><span class="hl-1"> </span><span class="hl-0">userNotificationCenter</span><span class="hl-1">(</span><span class="hl-0">_</span><span class="hl-1"> </span><span class="hl-3">center</span><span class="hl-1">: UNUserNotificationCenter, // ← add if not present</span><br/><span class="hl-1">    </span><span class="hl-0">didReceive</span><span class="hl-1"> </span><span class="hl-3">response</span><span class="hl-1">: UNNotificationResponse,</span><br/><span class="hl-1">    </span><span class="hl-0">withCompletionHandler</span><span class="hl-1"> </span><span class="hl-3">completionHandler</span><span class="hl-1">: </span><span class="hl-5">@escaping</span><span class="hl-1"> () -&gt; </span><span class="hl-8">Void</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-5">let</span><span class="hl-1"> userInfo = response.</span><span class="hl-3">notification</span><span class="hl-1">.</span><span class="hl-3">request</span><span class="hl-1">.</span><span class="hl-3">content</span><span class="hl-1">.</span><span class="hl-3">userInfo</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">forwardNotification</span><span class="hl-1">(userInfo) </span><span class="hl-9">// ← add</span><br/><span class="hl-1">    </span><span class="hl-0">completionHandler</span><span class="hl-1">()</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Android — tray notification text</strong></p>
+<p>If you want to post a tray notification when the app is backgrounded, use <code>RNPingPushBridge.extractNotificationText</code> to decode the message body from the JWT without reimplementing the logic yourself:</p>
+<pre><code class="kotlin"><span class="hl-5">override</span><span class="hl-1"> </span><span class="hl-5">fun</span><span class="hl-1"> </span><span class="hl-0">onMessageReceived</span><span class="hl-1">(remoteMessage: </span><span class="hl-8">RemoteMessage</span><span class="hl-1">) {</span><br/><span class="hl-1">    existingSdk.</span><span class="hl-0">handleMessage</span><span class="hl-1">(remoteMessage)</span><br/><span class="hl-1">    RNPingPushBridge.</span><span class="hl-0">emitMessageEvent</span><span class="hl-1">(remoteMessage.</span><span class="hl-5">data</span><span class="hl-1">)</span><br/><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (!</span><span class="hl-0">isAppInForeground</span><span class="hl-1">()) {</span><br/><span class="hl-1">        </span><span class="hl-5">val</span><span class="hl-1"> (title, body) = RNPingPushBridge.</span><span class="hl-0">extractNotificationText</span><span class="hl-1">(</span><br/><span class="hl-1">            remoteMessage.</span><span class="hl-5">data</span><span class="hl-1">,</span><br/><span class="hl-1">            </span><span class="hl-0">getString</span><span class="hl-1">(R.string.my_notification_title),</span><br/><span class="hl-1">            </span><span class="hl-0">getString</span><span class="hl-1">(R.string.my_notification_body),</span><br/><span class="hl-1">        )</span><br/><span class="hl-1">        </span><span class="hl-9">// post your tray notification using title and body</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<h2 id="how-to-use-the-sdk" class="tsd-anchor-link">How to use the SDK<a href="#how-to-use-the-sdk" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="react-hook-recommended" class="tsd-anchor-link">React hook — recommended<a href="#react-hook-recommended" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p><code>usePush</code> and <code>PushProvider</code> handle the full client lifecycle — creation, data fetching, token subscription, and cleanup.</p>
+<p><strong>Wrap your navigator once:</strong></p>
+<pre><code class="tsx"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">PushProvider</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-4">default</span><span class="hl-1"> </span><span class="hl-5">function</span><span class="hl-1"> </span><span class="hl-0">App</span><span class="hl-1">() {</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> (</span><br/><span class="hl-1">    </span><span class="hl-11">&lt;</span><span class="hl-8">PushProvider</span><span class="hl-1"> </span><span class="hl-13">config</span><span class="hl-1">=</span><span class="hl-5">{</span><span class="hl-15">{ </span><span class="hl-3">timeoutMs:</span><span class="hl-15"> </span><span class="hl-7">20000</span><span class="hl-15"> }</span><span class="hl-5">}</span><span class="hl-11">&gt;</span><br/><span class="hl-1">      </span><span class="hl-11">&lt;</span><span class="hl-8">NavigationContainer</span><span class="hl-11">&gt;</span><span class="hl-5">{</span><span class="hl-9">/* screens */</span><span class="hl-5">}</span><span class="hl-11">&lt;/</span><span class="hl-8">NavigationContainer</span><span class="hl-11">&gt;</span><br/><span class="hl-1">    </span><span class="hl-11">&lt;/</span><span class="hl-8">PushProvider</span><span class="hl-11">&gt;</span><br/><span class="hl-1">  );</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Use in any descendant screen:</strong></p>
+<pre><code class="tsx"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">usePush</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-4">export</span><span class="hl-1"> </span><span class="hl-4">default</span><span class="hl-1"> </span><span class="hl-5">function</span><span class="hl-1"> </span><span class="hl-0">PushScreen</span><span class="hl-1">() {</span><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> [</span><span class="hl-6">data</span><span class="hl-1">, { </span><span class="hl-6">loading</span><span class="hl-1">, </span><span class="hl-6">error</span><span class="hl-1">, </span><span class="hl-6">refresh</span><span class="hl-1"> }] = </span><span class="hl-0">usePush</span><span class="hl-1">();</span><br/><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">loading</span><span class="hl-1">) </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-11">&lt;</span><span class="hl-8">ActivityIndicator</span><span class="hl-1"> </span><span class="hl-11">/&gt;</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">error</span><span class="hl-1">) </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-11">&lt;</span><span class="hl-8">Text</span><span class="hl-11">&gt;</span><span class="hl-5">{</span><span class="hl-3">error</span><span class="hl-15">.</span><span class="hl-3">message</span><span class="hl-5">}</span><span class="hl-11">&lt;/</span><span class="hl-8">Text</span><span class="hl-11">&gt;</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (!</span><span class="hl-3">data</span><span class="hl-1">) </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-5">null</span><span class="hl-1">;</span><br/><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> { </span><span class="hl-6">client</span><span class="hl-1">, </span><span class="hl-6">credentials</span><span class="hl-1">, </span><span class="hl-6">pendingNotifications</span><span class="hl-1">, </span><span class="hl-6">allNotifications</span><span class="hl-1"> } = </span><span class="hl-3">data</span><span class="hl-1">;</span><br/><br/><span class="hl-1">  </span><span class="hl-9">// Enroll</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">addCredentialFromUri</span><span class="hl-1">(</span><span class="hl-3">uri</span><span class="hl-1">);</span><br/><br/><span class="hl-1">  </span><span class="hl-9">// Approve / deny</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">approveNotification</span><span class="hl-1">(</span><span class="hl-3">notification</span><span class="hl-1">.</span><span class="hl-3">id</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">denyNotification</span><span class="hl-1">(</span><span class="hl-3">notification</span><span class="hl-1">.</span><span class="hl-3">id</span><span class="hl-1">);</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">approveChallengeNotification</span><span class="hl-1">(</span><span class="hl-3">notification</span><span class="hl-1">.</span><span class="hl-3">id</span><span class="hl-1">, </span><span class="hl-3">selectedNumber</span><span class="hl-1">);</span><br/><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">refresh</span><span class="hl-1">(); </span><span class="hl-9">// re-fetch after any mutation</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Listen for incoming notifications:</strong></p>
+<pre><code class="tsx"><span class="hl-0">useEffect</span><span class="hl-1">(() </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (!</span><span class="hl-3">data</span><span class="hl-1">) </span><span class="hl-4">return</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> </span><span class="hl-3">data</span><span class="hl-1">.</span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">onNotification</span><span class="hl-1">((</span><span class="hl-3">notification</span><span class="hl-1">) </span><span class="hl-5">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-3">notification</span><span class="hl-1">) {</span><br/><span class="hl-1">      </span><span class="hl-9">/* show approval UI */</span><br/><span class="hl-1">    }</span><br/><span class="hl-1">  });</span><br/><span class="hl-1">}, [</span><span class="hl-3">data</span><span class="hl-1">]);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="pushclient-method-reference" class="tsd-anchor-link">PushClient method reference<a href="#pushclient-method-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>All methods return a <code>Promise</code> and reject with <code>PushError</code> on failure.</p>
+<p><strong>Credentials</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>addCredentialFromUri(uri)</code></td>
+<td>Enroll from a <code>pushauth://</code> URI. Returns the new <code>PushCredential</code>.</td>
+</tr>
+<tr>
+<td><code>getCredentials()</code></td>
+<td>Return all enrolled <code>PushCredential[]</code>.</td>
+</tr>
+<tr>
+<td><code>getCredential(id)</code></td>
+<td>Return a single <code>PushCredential</code> by id.</td>
+</tr>
+<tr>
+<td><code>deleteCredential(id)</code></td>
+<td>Remove an enrolled account.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Notifications</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getPendingNotifications()</code></td>
+<td>Return <code>PushNotification[]</code> awaiting a response.</td>
+</tr>
+<tr>
+<td><code>getAllNotifications()</code></td>
+<td>Return the full notification history.</td>
+</tr>
+<tr>
+<td><code>getNotification(id)</code></td>
+<td>Return a single notification by id.</td>
+</tr>
+<tr>
+<td><code>approveNotification(id)</code></td>
+<td>Approve a <code>default</code>-type notification.</td>
+</tr>
+<tr>
+<td><code>denyNotification(id)</code></td>
+<td>Deny any notification.</td>
+</tr>
+<tr>
+<td><code>approveChallengeNotification(id, answer)</code></td>
+<td>Approve a <code>challenge</code>-type notification with the selected number. Use <code>getNumbersChallenge(notification)</code> to parse the options.</td>
+</tr>
+<tr>
+<td><code>approveBiometricNotification(id, method)</code></td>
+<td>Approve a <code>biometric</code>-type notification after the biometric prompt.</td>
+</tr>
+<tr>
+<td><code>cleanupNotifications(credentialId?)</code></td>
+<td>Run the configured cleanup strategy; optionally scoped to one credential. Returns the count removed.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Token and lifecycle</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getDeviceToken()</code></td>
+<td>Return the current FCM/APNs token, or <code>null</code> if not yet registered.</td>
+</tr>
+<tr>
+<td><code>refreshToken()</code></td>
+<td>(Android only) Request a new FCM token from the OS.</td>
+</tr>
+<tr>
+<td><code>onNotification(callback)</code></td>
+<td>Subscribe to incoming push messages. Returns an unsubscribe function.</td>
+</tr>
+<tr>
+<td><code>onTokenRegistered(callback)</code></td>
+<td>Subscribe to device token updates. Returns an unsubscribe function.</td>
+</tr>
+<tr>
+<td><code>close()</code></td>
+<td>Release native resources and remove all subscriptions.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Helpers</strong></p>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getNumbersChallenge(notification)</code></td>
+<td>Parse the comma-separated <code>numbersChallenge</code> field into <code>number[]</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="logging-integration-optional" class="tsd-anchor-link">Logging integration (optional)<a href="#logging-integration-optional" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">createPushClient</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">logger</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-logger&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">createPushClient</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">logger:</span><span class="hl-1"> </span><span class="hl-0">logger</span><span class="hl-1">({ </span><span class="hl-3">level:</span><span class="hl-1"> </span><span class="hl-2">&#39;debug&#39;</span><span class="hl-1"> }),</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="push-storage-optional" class="tsd-anchor-link">Push storage (optional)<a href="#push-storage-optional" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>By default, push credentials and notifications are stored in a platform-default location. Pass a custom storage handle (created by <code>configurePushStorage</code> from <code>@ping-identity/rn-storage</code>) to isolate storage per app or configuration.</p>
+<pre><code class="ts"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">createPushClient</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-push&#39;</span><span class="hl-1">;</span><br/><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-3">configurePushStorage</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-storage&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">client</span><span class="hl-1"> = </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-0">createPushClient</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-3">storage:</span><span class="hl-1"> </span><span class="hl-0">configurePushStorage</span><span class="hl-1">({</span><br/><span class="hl-1">    </span><span class="hl-3">android:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">keyAlias:</span><span class="hl-1"> </span><span class="hl-2">&#39;push_key&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">fileName:</span><span class="hl-1"> </span><span class="hl-2">&#39;push_db&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">strongBoxPreferred:</span><span class="hl-1"> </span><span class="hl-5">true</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">    </span><span class="hl-3">ios:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">account:</span><span class="hl-1"> </span><span class="hl-2">&#39;com.example.push&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">encryptor:</span><span class="hl-1"> </span><span class="hl-5">true</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">  }),</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="customisation" class="tsd-anchor-link">Customisation<a href="#customisation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="android-tray-notifications" class="tsd-anchor-link">Android tray notifications<a href="#android-tray-notifications" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Tray notification text, channel name, colour, and icon are defined in your app's own resource
+files — the SDK does not ship default strings or colors for these. See <code>PushMessagingService</code> in
+the sample app for a working example.</p>
+<hr>
+<h2 id="error-handling" class="tsd-anchor-link">Error handling<a href="#error-handling" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>All methods reject with <code>PushError</code>, which extends the shared <code>GenericError</code> from <code>@ping-identity/rn-types</code>.</p>
+<pre><code class="ts"><span class="hl-4">try</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-3">client</span><span class="hl-1">.</span><span class="hl-0">addCredentialFromUri</span><span class="hl-1">(</span><span class="hl-3">uri</span><span class="hl-1">);</span><br/><span class="hl-1">} </span><span class="hl-4">catch</span><span class="hl-1"> (</span><span class="hl-3">error</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-5">const</span><span class="hl-1"> </span><span class="hl-6">e</span><span class="hl-1"> = </span><span class="hl-3">error</span><span class="hl-1"> </span><span class="hl-4">as</span><span class="hl-1"> </span><span class="hl-8">PushError</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-3">e</span><span class="hl-1">.</span><span class="hl-3">type</span><span class="hl-1">, </span><span class="hl-3">e</span><span class="hl-1">.</span><span class="hl-3">error</span><span class="hl-1">, </span><span class="hl-3">e</span><span class="hl-1">.</span><span class="hl-3">message</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'invalid_uri'</code></td>
+<td>Not a valid <code>pushauth://</code> URI.</td>
+</tr>
+<tr>
+<td><code>'duplicate_credential'</code></td>
+<td>A credential with the same identifier already exists.</td>
+</tr>
+<tr>
+<td><code>'registration_failed'</code></td>
+<td>Device registration with the push service failed.</td>
+</tr>
+<tr>
+<td><code>'notification_not_found'</code></td>
+<td>Notification does not exist or has expired.</td>
+</tr>
+<tr>
+<td><code>'device_token_not_set'</code></td>
+<td>No device token registered.</td>
+</tr>
+<tr>
+<td><code>'network_failure'</code></td>
+<td>Network error communicating with the push service.</td>
+</tr>
+<tr>
+<td><code>'storage_failure'</code></td>
+<td>Credential or notification storage operation failed.</td>
+</tr>
+<tr>
+<td><code>'not_initialized'</code></td>
+<td>Client was not initialized before calling a method.</td>
+</tr>
+</tbody>
+</table>
+<p>See <code>PushErrorCode</code> in the package types for the full list.</p>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>MIT</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#ping-identity-react-native-push"><span>Ping <wbr/>Identity <wbr/>React <wbr/>Native <wbr/>Push</span></a><ul><li><a href="#table-of-contents"><span>Table of contents</span></a></li><li><a href="#installation"><span>Installation</span></a></li><li><a href="#native-setup"><span>Native setup</span></a></li><li><ul><li><a href="#scenario-a-using-a-react-native-js-push-library"><span>Scenario <wbr/>A — <wbr/>Using a <wbr/>React <wbr/>Native <wbr/>JS push library</span></a></li><li><a href="#scenario-b-already-using-another-native-push-provider"><span>Scenario <wbr/>B — <wbr/>Already using another native push provider</span></a></li></ul></li><li><a href="#how-to-use-the-sdk"><span>How to use the <wbr/>SDK</span></a></li><li><ul><li><a href="#react-hook-recommended"><span>React hook — recommended</span></a></li><li><a href="#pushclient-method-reference"><span>Push<wbr/>Client method reference</span></a></li></ul></li><li><a href="#logging-integration-optional"><span>Logging integration (optional)</span></a></li><li><a href="#push-storage-optional"><span>Push storage (optional)</span></a></li><li><a href="#customisation"><span>Customisation</span></a></li><li><ul><li><a href="#android-tray-notifications"><span>Android tray notifications</span></a></li></ul></li><li><a href="#error-handling"><span>Error handling</span></a></li><li><a href="#license"><span>License</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="../modules.html">ping-identity</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
