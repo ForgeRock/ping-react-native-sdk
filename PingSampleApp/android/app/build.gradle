@@ -89,21 +89,25 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.pingidentity.samples.pingsampleapp"
+    namespace "com.pingidentity.rnsampleapp"
     defaultConfig {
-        applicationId "com.pingidentity.samples.pingsampleapp"
+        applicationId "com.pingidentity.rnsampleapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         manifestPlaceholders["appRedirectUriScheme"] = "org.forgerock.demo"
+        def facebookAppId = project.env.get("FACEBOOK_APP_ID") ?: ""
+        resValue "string", "facebook_app_id", project.env.get("FACEBOOK_APP_ID") ?: ""
+        resValue "string", "fb_login_protocol_scheme", project.env.get("FACEBOOK_LOGIN_PROTOCOL_SCHEME") ?: ""
+        resValue "string", "facebook_client_token", project.env.get("FACEBOOK_CLIENT_TOKEN") ?: ""
     }
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
+            storeFile file('pingsampleapp-debug.jks')
+            storePassword project.findProperty("KEYSTORE_PASSWORD")
             keyAlias 'androiddebugkey'
-            keyPassword 'android'
+            keyPassword project.findProperty("KEY_PASSWORD")
         }
     }
     buildTypes {
@@ -118,13 +122,28 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
 }
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // Align with ping-android-sdk sample app for non-discoverable FIDO2 credential support.
+    implementation("com.google.android.gms:play-services-fido:21.2.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+
+    // Enables Google Sign-In support for external identity provider flows.
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // Enables Facebook Login support for external identity provider flows.
+    implementation("com.facebook.android:facebook-login:18.0.3")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

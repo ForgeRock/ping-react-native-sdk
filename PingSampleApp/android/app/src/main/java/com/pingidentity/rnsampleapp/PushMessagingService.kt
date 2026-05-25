@@ -61,7 +61,7 @@ class PushMessagingService : FirebaseMessagingService() {
     }
 
     private fun postSystemNotification(data: Map<String, String>) {
-        val payload = data.entries.joinToString(",") { (k, v) -> "$k=$v" }
+        val payload = org.json.JSONObject(data).toString()
         val notificationId = payload.hashCode()
 
         val launcherIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {

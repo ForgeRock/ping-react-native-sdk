@@ -26,6 +26,9 @@ import type {
   PushNotification,
 } from './types';
 
+type NotifCb = (n: PushNotification | null) => void;
+type TokenCb = (token: string) => void;
+
 // Cache the APNs/FCM token at module-load time so it is never lost even if
 // createPushClient() is called after the token event has already fired.
 let _moduleLoadToken: string | null = null;
@@ -41,11 +44,14 @@ DeviceEventEmitter.addListener(
 // Cache push messages that arrive while the app is open but before createPushClient()
 // is called (e.g. user is on a different screen). Native only queues messages when the
 // React context isn't ready yet (cold start), so these two queues never overlap.
+// Cap at 100 to prevent unbounded growth if createPushClient is never called.
 const _jsPendingMessages: Record<string, string>[] = [];
 DeviceEventEmitter.addListener(
   PushEvents.PUSH_MESSAGE_RECEIVED,
   (data: Record<string, string>) => {
-    _jsPendingMessages.push(data);
+    if (_jsPendingMessages.length < 100) {
+      _jsPendingMessages.push(data);
+    }
   },
 );
 
@@ -151,9 +157,7 @@ export async function createPushClient(
       });
   }
 
-  type NotifCb = (n: PushNotification | null) => void;
   const notifCallbacks = new Set<NotifCb>();
-  type TokenCb = (token: string) => void;
   const tokenCallbacks = new Set<TokenCb>();
 
   const tokenEventName =

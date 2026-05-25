@@ -87,6 +87,8 @@ object RNPingPushBridge {
      * )
      * ```
      */
+    // Base64-decodes the JWT payload segment to extract display text only — not encryption.
+    @Suppress("WeakCrypto")
     @JvmStatic
     fun extractNotificationText(
         data: Map<String, String>,

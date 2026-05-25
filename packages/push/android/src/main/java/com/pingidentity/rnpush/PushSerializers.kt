@@ -177,21 +177,11 @@ internal fun serializeNotification(notification: PushNotification): WritableMap 
     } else {
         map.putNull("numbersChallenge")
     }
-    // TODO-PUSH-PARITY: loadBalancer and contextInfo are present on iOS PushNotification but
-    // missing from the Android PushNotification SDK class — emit null as a placeholder.
-    map.putNull("loadBalancer")
-    map.putNull("contextInfo")
-    // TODO-PUSH-PARITY: messageId is a dedicated field on iOS PushNotification but absent from
-    // the Android PushNotification SDK class — using id as a fallback.
-    map.putString("messageId", notification.id)
+    map.putString("loadBalancer", notification.loadBalancer)
+    map.putString("contextInfo", notification.contextInfo)
+    map.putString("messageId", notification.messageId)
     map.putString("pushType", notification.pushType.name.lowercase())
-    // TODO-PUSH-PARITY: approved is Boolean? (nullable) on Android but Bool (non-nullable) on iOS
-    // — Android SDK should align to non-nullable Bool.
-    if (notification.approved != null) {
-        map.putBoolean("approved", notification.approved!!)
-    } else {
-        map.putBoolean("approved", false)
-    }
+    map.putBoolean("approved", notification.approved)
     map.putBoolean("pending", notification.pending)
     return map
 }

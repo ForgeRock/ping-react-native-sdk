@@ -9,7 +9,7 @@ module.exports = {
   assets: ['./assets/fonts'],
   project: {
     android: {
-      packageName: 'com.pingidentity.samples.pingsampleapp',
+      packageName: 'com.pingidentity.rnsampleapp',
     },
   },
 };

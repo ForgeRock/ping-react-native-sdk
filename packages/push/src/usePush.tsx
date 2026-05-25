@@ -172,6 +172,7 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
     if (!hasConfig) return;
 
     let mounted = true;
+    let unsubToken: (() => void) | null = null;
 
     createPushClient(config ?? undefined)
       .then((c) => {
@@ -183,7 +184,7 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
         }
         clientRef.current = c;
 
-        const unsub = c.onTokenRegistered(() => {
+        unsubToken = c.onTokenRegistered(() => {
           void refresh();
         });
 
@@ -216,10 +217,6 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
             setError(err as PushError);
             setLoading(false);
           });
-
-        return () => {
-          unsub();
-        };
       })
       .catch((err) => {
         if (!mounted) return;
@@ -229,6 +226,8 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
 
     return () => {
       mounted = false;
+      unsubToken?.();
+      unsubToken = null;
       // Best-effort cleanup — failure here means the bridge is already torn down or the client
       // was already closed, so there is nothing actionable to surface.
       clientRef.current?.close().catch(() => {});
