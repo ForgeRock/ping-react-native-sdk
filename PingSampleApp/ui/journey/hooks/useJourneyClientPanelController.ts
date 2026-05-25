@@ -1030,7 +1030,9 @@ export function useJourneyClientPanelController(
         runner.hasHandledCallback(form) || hasExternalIdpCallback;
       const submitInput: JourneyNextInput = hasHandled
         ? buildNativeIntegrationSubmitInput(
-            { callbacks: runner.filterCallbacksForSubmit(form.input.callbacks) },
+            {
+              callbacks: runner.filterCallbacksForSubmit(form.input.callbacks),
+            },
             hasExternalIdpCallback,
           )
         : form.input;
