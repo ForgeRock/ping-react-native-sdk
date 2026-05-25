@@ -62,7 +62,7 @@ object RNPingOathCommon {
 
   /** Scope for all async work dispatched by the bridge. */
   private var scopeJob = SupervisorJob()
-  private var scope = CoroutineScope(scopeJob + Dispatchers.IO)
+  private var scope = CoroutineScope(scopeJob + Dispatchers.Default)
 
   /**
    * A registry entry holding a native OATH client and its associated serialisation mutex.
@@ -96,7 +96,7 @@ object RNPingOathCommon {
   fun cleanup() {
     scopeJob.cancel()
     scopeJob = SupervisorJob()
-    scope = CoroutineScope(scopeJob + Dispatchers.IO)
+    scope = CoroutineScope(scopeJob + Dispatchers.Default)
     registry.clear()
   }
 
@@ -508,22 +508,24 @@ object RNPingOathCommon {
    *
    * @param id The registry id returned by [registerOathPolicyEvaluator].
    * @return A map with `policies` (array of kind strings) and optionally `loggerId`.
+   * @throws IllegalStateException if no policy evaluator is registered for [id].
    */
   @JvmStatic
   fun configureOathPolicyEvaluator(id: String): WritableMap {
+    // Throw instead of returning an empty map — an unresolvable id is a caller mistake and
+    // should surface immediately, consistent with RNPingStorageCommon.configureOathStorage.
     val handle = CoreRuntime.oathPolicyEvaluatorRegistry.resolve(id) as? OathPolicyEvaluatorConfigHandleContract
+      ?: error("No OATH policy evaluator registered for id")
     val map = Arguments.createMap()
     val policiesArray = Arguments.createArray()
-    if (handle != null) {
-      for (policy in handle.policies) {
-        val kind = when (policy) {
-          is OathPolicyDescriptor.BiometricAvailable -> "biometricAvailable"
-          is OathPolicyDescriptor.DeviceTampering -> "deviceTampering"
-        }
-        policiesArray.pushString(kind)
+    for (policy in handle.policies) {
+      val kind = when (policy) {
+        is OathPolicyDescriptor.BiometricAvailable -> "biometricAvailable"
+        is OathPolicyDescriptor.DeviceTampering -> "deviceTampering"
       }
-      handle.loggerId?.let { map.putString("loggerId", it) }
+      policiesArray.pushString(kind)
     }
+    handle.loggerId?.let { map.putString("loggerId", it) }
     map.putArray("policies", policiesArray)
     return map
   }
@@ -547,18 +549,18 @@ object RNPingOathCommon {
     map.putString("accountName", c.accountName)
     map.putString("displayAccountName", c.displayAccountName)
     map.putString("type", c.oathType.name) // .name → uppercase TOTP/HOTP
-    if (c.userId != null) map.putString("userId", c.userId) else map.putNull("userId")
-    if (c.resourceId != null) map.putString("resourceId", c.resourceId) else map.putNull("resourceId")
+    c.userId?.let { map.putString("userId", it) } ?: map.putNull("userId")
+    c.resourceId?.let { map.putString("resourceId", it) } ?: map.putNull("resourceId")
     map.putInt("digits", c.digits)
     map.putInt("period", c.period)
     map.putDouble("counter", c.counter.toDouble()) // counter is Long; use Double for JS compatibility
-    if (c.imageURL != null) map.putString("imageURL", c.imageURL) else map.putNull("imageURL")
-    if (c.backgroundColor != null) map.putString("backgroundColor", c.backgroundColor) else map.putNull("backgroundColor")
+    c.imageURL?.let { map.putString("imageURL", it) } ?: map.putNull("imageURL")
+    c.backgroundColor?.let { map.putString("backgroundColor", it) } ?: map.putNull("backgroundColor")
     map.putBoolean("isLocked", c.isLocked)
     map.putString("algorithm", c.oathAlgorithm.name) // .name → uppercase "SHA1"/"SHA256"/"SHA512"
     map.putDouble("createdAt", c.createdAt.time.toDouble()) // ms since epoch; Double for JS compatibility
-    if (c.policies != null) map.putString("policies", c.policies) else map.putNull("policies")
-    if (c.lockingPolicy != null) map.putString("lockingPolicy", c.lockingPolicy) else map.putNull("lockingPolicy")
+    c.policies?.let { map.putString("policies", it) } ?: map.putNull("policies")
+    c.lockingPolicy?.let { map.putString("lockingPolicy", it) } ?: map.putNull("lockingPolicy")
     // DO NOT include: secret
     return map
   }
@@ -567,8 +569,9 @@ object RNPingOathCommon {
    * Decode an [OathCredential] from a [ReadableMap] received from the React Native bridge.
    *
    * @remarks
-   * The `secret` field is never sent by JS callers; an empty string is used as a fallback
-   * because the credential's secret is already stored natively by the time this is called.
+   * All public credential fields are decoded from the map. The `secret` field is intentionally
+   * omitted — it is the only field not decoded, because the credential's secret is already
+   * stored natively by the time this is called and must never travel across the bridge.
    * The `algorithm` field is decoded from its uppercase string name (e.g. `"SHA256"`) using
    * [OathAlgorithm.valueOf]; missing or unrecognised values default to [OathAlgorithm.SHA1].
    *
@@ -595,6 +598,8 @@ object RNPingOathCommon {
     val imageURL = if (map.hasKey("imageURL")) map.getString("imageURL") else null
     val backgroundColor = if (map.hasKey("backgroundColor")) map.getString("backgroundColor") else null
     val isLocked = if (map.hasKey("isLocked")) map.getBoolean("isLocked") else false
+    val policies = if (map.hasKey("policies")) map.getString("policies") else null
+    val lockingPolicy = if (map.hasKey("lockingPolicy")) map.getString("lockingPolicy") else null
 
     return OathCredential(
       id = id,
@@ -612,7 +617,9 @@ object RNPingOathCommon {
       counter = counter,
       imageURL = imageURL,
       backgroundColor = backgroundColor,
-      isLocked = isLocked
+      isLocked = isLocked,
+      policies = policies,
+      lockingPolicy = lockingPolicy
     )
   }
 }

@@ -16,6 +16,7 @@ import com.pingidentity.mfa.commons.policy.DeviceTamperingPolicy
 import com.pingidentity.mfa.commons.policy.MfaPolicyEvaluator
 import com.pingidentity.mfa.oath.OathClient
 import com.pingidentity.mfa.oath.OathConfiguration
+import com.pingidentity.mfa.oath.OathCredential
 import com.pingidentity.mfa.oath.storage.OathStorage
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.storage.OathStorageConfigHandleContract
@@ -25,6 +26,7 @@ import io.mockk.coEvery
 import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -237,6 +239,103 @@ class RNPingOathCommonTest {
 
     val info = promise.rejectUserInfo ?: JavaOnlyMap()
     assertEquals(OathErrorCodes.OATH_STATE_ERROR, info.getString("error"))
+  }
+
+  // ---------------------------------------------------------------------------
+  // decodeCredential field coverage: policies + lockingPolicy round-trip
+  //
+  // When JS reads a credential, mutates it, and calls saveCredential() the
+  // bridge map includes `policies` and `lockingPolicy`. Before this fix those
+  // fields were silently dropped; after the fix they must survive the round-trip.
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun saveCredential_withPoliciesAndLockingPolicy_decodesFieldsIntoCredential() {
+    // Step 1: create a native client backed by a relaxed mock so saveCredential()
+    // can be intercepted without SQLite initialisation.
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    mockkObject(OathClient.Companion)
+    coEvery { OathClient.Companion.invoke(any()) } returns mockClient
+
+    val createPromise = TestPromise()
+    RNPingOathCommon.create(JavaOnlyMap(), createPromise)
+    createPromise.await()
+    val handle = createPromise.resolvedValue as? String
+    assertNotNull("create() must resolve with a handle string", handle)
+    unmockkObject(OathClient.Companion)
+
+    // Step 2: capture the OathCredential argument passed to the native client.
+    val credentialSlot = slot<OathCredential>()
+    val savedCredential = io.mockk.mockk<OathCredential>(relaxed = true)
+    coEvery { mockClient.saveCredential(capture(credentialSlot)) } returns Result.success(savedCredential)
+
+    // Step 3: build a bridge map that includes policies + lockingPolicy.
+    val credMap = JavaOnlyMap().apply {
+      putString("issuer", "Ping")
+      putString("accountName", "user@example.com")
+      putString("policies", "biometricAvailable")
+      putString("lockingPolicy", "deviceTampering")
+    }
+
+    val savePromise = TestPromise()
+    RNPingOathCommon.saveCredential(handle!!, credMap, savePromise)
+    scope.advanceUntilIdle()
+    savePromise.await()
+
+    // Step 4: assert the decoded credential carries the two fields.
+    assertTrue("saveCredential slot must have been captured", credentialSlot.isCaptured)
+    assertEquals(
+      "policies must survive decodeCredential round-trip",
+      "biometricAvailable",
+      credentialSlot.captured.policies
+    )
+    assertEquals(
+      "lockingPolicy must survive decodeCredential round-trip",
+      "deviceTampering",
+      credentialSlot.captured.lockingPolicy
+    )
+  }
+
+  @Test
+  fun saveCredential_withNullPoliciesAndLockingPolicy_decodesNullFields() {
+    // Verifies that when the map keys are absent the decoded fields remain null.
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    mockkObject(OathClient.Companion)
+    coEvery { OathClient.Companion.invoke(any()) } returns mockClient
+
+    val createPromise = TestPromise()
+    RNPingOathCommon.create(JavaOnlyMap(), createPromise)
+    createPromise.await()
+    val handle = createPromise.resolvedValue as? String
+    assertNotNull(handle)
+    unmockkObject(OathClient.Companion)
+
+    val credentialSlot = slot<OathCredential>()
+    val savedCredential = io.mockk.mockk<OathCredential>(relaxed = true)
+    coEvery { mockClient.saveCredential(capture(credentialSlot)) } returns Result.success(savedCredential)
+
+    val credMap = JavaOnlyMap().apply {
+      putString("issuer", "Ping")
+      putString("accountName", "user@example.com")
+      // policies and lockingPolicy intentionally absent
+    }
+
+    val savePromise = TestPromise()
+    RNPingOathCommon.saveCredential(handle!!, credMap, savePromise)
+    scope.advanceUntilIdle()
+    savePromise.await()
+
+    assertTrue("saveCredential slot must have been captured", credentialSlot.isCaptured)
+    assertEquals(
+      "policies must be null when absent from bridge map",
+      null,
+      credentialSlot.captured.policies
+    )
+    assertEquals(
+      "lockingPolicy must be null when absent from bridge map",
+      null,
+      credentialSlot.captured.lockingPolicy
+    )
   }
 
   @Test

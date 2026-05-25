@@ -10,20 +10,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.rncore.CoreRuntime
-import com.pingidentity.rncore.registry.NativeHandle
-import com.pingidentity.rncore.storage.OathStorageConfigHandleContract
-
-/**
- * Native handle for OATH storage configuration.
- *
- * Implements [OathStorageConfigHandleContract] so that the OATH native SDK can cast
- * handles resolved from [CoreRuntime.oathStorageConfigRegistry] to the correct type.
- * [StorageConfigHandle] implements [StorageConfigHandleContract] only, so registering
- * OATH config through [StorageConfigRegistry] would cause a silent null on the cast.
- *
- * @property databaseName SQLite database filename for the OATH credential store.
- */
-class OathStorageConfigHandle(override val databaseName: String?) : NativeHandle, OathStorageConfigHandleContract
 
 /**
  * Common storage configuration logic shared between Classic and New Architecture modules.
