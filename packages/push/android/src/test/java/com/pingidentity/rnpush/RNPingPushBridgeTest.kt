@@ -15,14 +15,14 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Unit tests for [RNPingPushMessagingService.extractNotificationText].
+ * Unit tests for [RNPingPushBridge.extractNotificationText].
  *
- * The companion function is pure (no Android context) so these run without
+ * The function is pure (no Android context) so these run without
  * a real device or emulator.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
-class RNPingPushMessagingServiceTest {
+class RNPingPushBridgeTest {
 
     private val defaultTitle = "Authentication Request"
     private val defaultBody = "You have a new authentication request"
@@ -34,7 +34,7 @@ class RNPingPushMessagingServiceTest {
     }
 
     private fun extract(data: Map<String, String>) =
-        RNPingPushMessagingService.extractNotificationText(data, defaultTitle, defaultBody)
+        RNPingPushBridge.extractNotificationText(data, defaultTitle, defaultBody)
 
     // ── Guard checks ──────────────────────────────────────────────────────────
 

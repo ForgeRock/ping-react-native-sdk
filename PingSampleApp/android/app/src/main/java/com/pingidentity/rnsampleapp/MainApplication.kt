@@ -8,7 +8,6 @@
 package com.pingidentity.rnsampleapp
 
 import android.app.Application
-import com.pingidentity.rnpush.RNPingPushMessagingService
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -55,7 +54,6 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     FirebaseApp.initializeApp(this)
-    RNPingPushMessagingService.ensureNotificationChannel(this)
     loadReactNative(this)
   }
 }

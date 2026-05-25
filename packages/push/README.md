@@ -15,16 +15,14 @@ Push MFA for React Native — enrollment, credential management, notification pr
 
 - [Installation](#installation)
 - [Native setup](#native-setup)
-  - [Scenario A — No existing push integration](#scenario-a--no-existing-push-integration)
+  - [Scenario A — Using a React Native JS push library](#scenario-a--using-a-react-native-js-push-library)
+  - [Scenario B — Already using another native push provider](#scenario-b--already-using-another-native-push-provider)
 - [How to use the SDK](#how-to-use-the-sdk)
   - [React hook — recommended](#react-hook--recommended)
   - [PushClient method reference](#pushclient-method-reference)
 - [Logging integration](#logging-integration-optional)
 - [Push storage](#push-storage-optional)
 - [Customisation](#customisation)
-- [Advanced configuration](#advanced-configuration)
-  - [Scenario B — Using a React Native JS push library](#scenario-b--using-a-react-native-js-push-library)
-  - [Scenario C — Already using another native push provider](#scenario-c--already-using-another-native-push-provider)
 - [Error handling](#error-handling)
 - [License](#license)
 
@@ -55,52 +53,129 @@ dependencies {
 
 ## Native setup
 
-The SDK needs to receive the platform push token and incoming messages. If you already have push infrastructure in your app, see [Advanced configuration](#advanced-configuration).
+The SDK needs to receive the platform push token and incoming messages from your existing push infrastructure. Choose the scenario that matches your app.
 
-### Scenario A — No existing push integration
+### Scenario A — Using a React Native JS push library
 
-**Android** — declare the service in `AndroidManifest.xml` and initialise in `Application.onCreate()`:
+No native code changes needed. Wire up token and message delivery from your JS push library to the SDK. The examples below use `@react-native-firebase/messaging` — adapt to your library as needed.
 
-```xml
-<service android:name="com.pingidentity.rnpush.RNPingPushMessagingService"
-         android:exported="false">
-  <intent-filter>
-    <action android:name="com.google.firebase.MESSAGING_EVENT" />
-  </intent-filter>
-</service>
+Ping sends **data-only messages** (no `notification` field), which means background handlers fire correctly even when the app is killed.
+
+**`index.js` — background/quit handler, registered at the top level before `AppRegistry`:**
+
+```ts
+import { createPushClient } from '@ping-identity/rn-push';
+
+yourPushLibrary.setBackgroundMessageHandler(async (message) => {
+  const pushClient = await createPushClient();
+  const notification = await pushClient.processNotification(message.data);
+  if (notification) {
+    // Post a tray notification using your library's display API
+  }
+});
 ```
+
+**App setup — token wiring, foreground handler, and cold-start tap:**
+
+```ts
+import { PushProvider, usePush } from '@ping-identity/rn-push';
+
+// Seed the token on startup and keep it fresh
+const token = await yourPushLibrary.getToken();
+await pushClient.setDeviceToken(token);
+yourPushLibrary.onTokenRefresh((token) => {
+  void pushClient.setDeviceToken(token);
+});
+
+// Foreground messages
+yourPushLibrary.onMessage(async (message) => {
+  // Use processNotification() if your library gives you a key-value data map.
+  // Use processNotificationFromMessage() if it gives you a raw string payload.
+  const notification = await pushClient.processNotification(message.data);
+  if (notification) {
+    /* show approve/deny UI */
+  }
+});
+
+// Cold-start tap: app was killed and user tapped the tray notification.
+yourPushLibrary.getInitialNotification().then(async (message) => {
+  if (message) await pushClient.processNotification(message.data);
+});
+```
+
+Then use `PushProvider` and `usePush` as normal — see [How to use the SDK](#how-to-use-the-sdk).
+
+### Scenario B — Already using another native push provider
+
+**Android** — add two lines to your existing `FirebaseMessagingService`:
 
 ```kotlin
-import com.google.firebase.FirebaseApp
-import com.pingidentity.rnpush.RNPingPushMessagingService
+override fun onNewToken(token: String) {
+    existingSdk.updateToken(token)
+    RNPingPushBridge.emitTokenEvent(token) // ← add
+}
 
-override fun onCreate() {
-    super.onCreate()
-    FirebaseApp.initializeApp(this)
-    RNPingPushMessagingService.ensureNotificationChannel(this)
-    // ... rest of your Application.onCreate() ...
+override fun onMessageReceived(remoteMessage: RemoteMessage) {
+    existingSdk.handleMessage(remoteMessage)
+    RNPingPushBridge.emitMessageEvent(remoteMessage.data) // ← add
 }
 ```
 
-**iOS** — extend `RNPingPushApplicationDelegate` and call `requestPushAuthorization`:
+**iOS** — add to your existing `AppDelegate`. Set `UNUserNotificationCenter.current().delegate = self` in `didFinishLaunchingWithOptions` if not already set, then add:
 
 ```swift
-import UIKit
-import React_RCTAppDelegate  // or your existing React Native import
-import RNPingPush
+func application(_ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    existingSdk.register(deviceToken)
+    RNPingPushBridge.forwardToken(deviceToken) // ← add
+}
 
-@main
-class AppDelegate: RNPingPushApplicationDelegate {
-  func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-  ) -> Bool {
-    // ... React Native factory setup ...
-    requestPushAuthorization(application: application)
-    return true
-  }
+func application(_ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+    existingSdk.handleNotification(userInfo)
+    RNPingPushBridge.forwardNotification(userInfo) // ← add
+    completionHandler(.newData)
+}
+
+// Show banner when foregrounded
+func userNotificationCenter(_ center: UNUserNotificationCenter, // ← add if not present
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    completionHandler([.banner, .sound, .badge])
+}
+
+// Forward banner taps to the Ping Push SDK
+func userNotificationCenter(_ center: UNUserNotificationCenter, // ← add if not present
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void) {
+    let userInfo = response.notification.request.content.userInfo
+    RNPingPushBridge.forwardNotification(userInfo) // ← add
+    completionHandler()
 }
 ```
+
+**Android — tray notification text**
+
+If you want to post a tray notification when the app is backgrounded, use `RNPingPushBridge.extractNotificationText` to decode the message body from the JWT without reimplementing the logic yourself:
+
+```kotlin
+override fun onMessageReceived(remoteMessage: RemoteMessage) {
+    existingSdk.handleMessage(remoteMessage)
+    RNPingPushBridge.emitMessageEvent(remoteMessage.data)
+
+    if (!isAppInForeground()) {
+        val (title, body) = RNPingPushBridge.extractNotificationText(
+            remoteMessage.data,
+            getString(R.string.my_notification_title),
+            getString(R.string.my_notification_body),
+        )
+        // post your tray notification using title and body
+    }
+}
+```
+
+---
 
 ## How to use the SDK
 
@@ -241,176 +316,9 @@ const client = await createPushClient({
 
 ### Android tray notifications
 
-Override any of these resources in your app to match your branding:
-
-| Resource                        | Type     | Default                                        | Notes                                                       |
-| ------------------------------- | -------- | ---------------------------------------------- | ----------------------------------------------------------- |
-| `ping_push_notification_title`  | string   | `"Authentication Request"`                     | Tray notification title                                     |
-| `ping_push_notification_body`   | string   | `"You have a new authentication request"`      | Fallback body; replaced by server message text when present |
-| `ping_push_channel_name`        | string   | `"Push Authentication"`                        | Shown in Android Settings                                   |
-| `ping_push_channel_description` | string   | `"Ping Identity push authentication requests"` | Shown in Android Settings                                   |
-| `ping_push_notification_color`  | color    | `#4B6CF5`                                      | Notification icon accent color                              |
-| `ping_push_notification_icon`   | drawable | System info icon                               | Monochrome (white-on-transparent) vector or PNG             |
-
-### iOS foreground presentation
-
-If you are using `RNPingPushApplicationDelegate` (basic setup), set `foregroundPresentationOptions` in `didFinishLaunchingWithOptions` to control banner/sound/badge when the app is foregrounded. Default is `[.banner, .sound, .badge]`:
-
-```swift
-foregroundPresentationOptions = [.sound]  // or [] to suppress entirely
-requestPushAuthorization(application: application)
-```
-
-For per-notification control, override `userNotificationCenter(_:willPresent:withCompletionHandler:)` directly.
-
----
-
-## Advanced configuration
-
-Use these scenarios if you already have push infrastructure in your app and need to integrate alongside it.
-
-### Scenario B — Using a React Native JS push library
-
-No native code changes needed. The examples below use `@react-native-firebase/messaging` and `@notifee/react-native` — adapt to your library as needed.
-
-Ping sends **data-only FCM messages** (no `notification` field), which means the Firebase background handler fires correctly on Android even when the app is killed.
-
-**`index.js` — background/quit handler, registered at the top level before `AppRegistry`:**
-
-```ts
-import messaging from '@react-native-firebase/messaging';
-import notifee, { AndroidImportance } from '@notifee/react-native';
-import { createPushClient } from '@ping-identity/rn-push';
-
-messaging().setBackgroundMessageHandler(async (remoteMessage) => {
-  const pushClient = await createPushClient();
-  const notification = await pushClient.processNotification(remoteMessage.data);
-  if (notification) {
-    // Post a tray notification — no notification field in the FCM payload means
-    // nothing is shown automatically, so we post one here via Notifee.
-    const channelId = await notifee.createChannel({
-      id: 'ping_push',
-      name: 'Authentication',
-      importance: AndroidImportance.HIGH,
-    });
-    await notifee.displayNotification({
-      title: 'Authentication Request',
-      body: notification.messageText ?? 'You have a new authentication request',
-      android: { channelId, pressAction: { id: 'default' } },
-    });
-  }
-});
-```
-
-**App setup — token wiring, foreground handler, and cold-start tap:**
-
-```ts
-const pushClient = await createPushClient();
-
-// Seed the token on startup and keep it fresh
-const token = await messaging().getToken();
-await pushClient.setDeviceToken(token);
-messaging().onTokenRefresh((token) => {
-  void pushClient.setDeviceToken(token);
-});
-
-// Foreground messages
-messaging().onMessage(async (remoteMessage) => {
-  // Use processNotification() if your library gives you a key-value data map.
-  // Use processNotificationFromMessage() if it gives you a raw string payload.
-  const notification = await pushClient.processNotification(remoteMessage.data);
-  if (notification) {
-    /* show approve/deny UI */
-  }
-});
-
-// Cold-start tap: app was killed and user tapped the tray notification.
-messaging()
-  .getInitialNotification()
-  .then(async (remoteMessage) => {
-    if (remoteMessage) {
-      await pushClient.processNotification(remoteMessage.data);
-    }
-  });
-```
-
-### Scenario C — Already using another native push provider
-
-**Android** — add two lines to your existing `FirebaseMessagingService`:
-
-```kotlin
-override fun onNewToken(token: String) {
-    existingSdk.updateToken(token)
-    RNPingPushCommon.emitEvent(RNPingPushEvents.FCM_TOKEN_RECEIVED, token) // ← add
-}
-
-override fun onMessageReceived(remoteMessage: RemoteMessage) {
-    existingSdk.handleMessage(remoteMessage)
-    val params = Arguments.createMap()
-    remoteMessage.data.forEach { (k, v) -> params.putString(k, v) }
-    RNPingPushCommon.emitEvent(RNPingPushEvents.PUSH_MESSAGE_RECEIVED, params) // ← add
-}
-```
-
-**iOS** — add to your existing `AppDelegate`. Set `UNUserNotificationCenter.current().delegate = self` in `didFinishLaunchingWithOptions` if not already set, then add:
-
-```swift
-func application(_ application: UIApplication,
-    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-    existingSdk.register(deviceToken)
-    // APNs delivers the token as raw Data — convert to hex string before forwarding
-    let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-    NotificationCenter.default.post(name: .pingAPNsToken, object: nil, userInfo: ["token": token]) // ← add
-}
-
-func application(_ application: UIApplication,
-    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-    existingSdk.handleNotification(userInfo)
-    NotificationCenter.default.post(name: .pingRemoteNotification, object: nil,
-        userInfo: userInfo as? [String: Any] ?? [:]) // ← add
-    completionHandler(.newData)
-}
-
-// Show banner when foregrounded
-func userNotificationCenter(_ center: UNUserNotificationCenter, // ← add if not present
-    willPresent notification: UNNotification,
-    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-    completionHandler([.banner, .sound, .badge])
-}
-
-// Forward banner taps to the Ping Push SDK
-func userNotificationCenter(_ center: UNUserNotificationCenter, // ← add if not present
-    didReceive response: UNNotificationResponse,
-    withCompletionHandler completionHandler: @escaping () -> Void) {
-    let userInfo = response.notification.request.content.userInfo
-    NotificationCenter.default.post(name: .pingRemoteNotification, object: nil,
-        userInfo: userInfo as? [String: Any] ?? [:])
-    completionHandler()
-}
-```
-
-**Android — tray notification text**
-
-If you want to post a tray notification when the app is backgrounded, use `RNPingPushMessagingService.extractNotificationText` to decode the message body from the JWT without reimplementing the logic yourself:
-
-```kotlin
-override fun onMessageReceived(remoteMessage: RemoteMessage) {
-    existingSdk.handleMessage(remoteMessage)
-    val params = Arguments.createMap()
-    remoteMessage.data.forEach { (k, v) -> params.putString(k, v) }
-    RNPingPushCommon.emitEvent(RNPingPushEvents.PUSH_MESSAGE_RECEIVED, params)
-
-    if (!isAppInForeground()) {
-        val (title, body) = RNPingPushMessagingService.extractNotificationText(
-            remoteMessage.data,
-            getString(R.string.ping_push_notification_title),
-            getString(R.string.ping_push_notification_body),
-        )
-        // post your tray notification using title and body
-    }
-}
-```
+Tray notification text, channel name, colour, and icon are defined in your app's own resource
+files — the SDK does not ship default strings or colors for these. See `PushMessagingService` in
+the sample app for a working example.
 
 ---
 

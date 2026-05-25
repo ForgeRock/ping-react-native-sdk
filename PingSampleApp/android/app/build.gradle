@@ -89,9 +89,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.pingidentity.rnsampleapp"
+    namespace "com.pingidentity.samples.pingsampleapp"
     defaultConfig {
-        applicationId "com.pingidentity.rnsampleapp"
+        applicationId "com.pingidentity.samples.pingsampleapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

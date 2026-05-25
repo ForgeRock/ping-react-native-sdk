@@ -65,13 +65,8 @@
             <data android:scheme="@string/fb_login_protocol_scheme" />
         </intent-filter>
       </activity>
-      <!--
-        Push SDK integration point (Scenario A): RNPingPushMessagingService handles FCM token
-        refresh and incoming push messages automatically. Remove this if you have your own
-        FirebaseMessagingService and use Scenario B/C from the Push SDK README instead.
-      -->
       <service
-        android:name="com.pingidentity.rnpush.RNPingPushMessagingService"
+        android:name=".PushMessagingService"
         android:exported="false">
         <intent-filter>
           <action android:name="com.google.firebase.MESSAGING_EVENT" />

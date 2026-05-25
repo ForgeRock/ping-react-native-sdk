@@ -164,21 +164,21 @@ object RNPingPushCommon {
      */
     @JvmStatic
     fun consumePendingMessages(promise: Promise) {
-        // Cold-start path: payload was embedded in the tray-notification Intent by
-        // RNPingPushMessagingService. Android delivers it OS-side when the user taps —
-        // nothing is written to disk. Read once and clear the flag so it isn't replayed.
+        // Cold-start path: payload was embedded in the tray-notification Intent by the app's
+        // FirebaseMessagingService. Android delivers it OS-side when the user taps — nothing
+        // is written to disk. Read once and clear the flag so it isn't replayed.
         val intentMessages = mutableListOf<Map<String, String>>()
         reactContextRef?.get()?.currentActivity?.intent?.let { intent ->
-            if (intent.getBooleanExtra(RNPingPushMessagingService.EXTRA_PUSH_COLD_START, false)) {
-                intent.getStringExtra(RNPingPushMessagingService.EXTRA_PUSH_PAYLOAD)?.let { json ->
+            if (intent.getBooleanExtra(RNPingPushBridge.EXTRA_PUSH_COLD_START, false)) {
+                intent.getStringExtra(RNPingPushBridge.EXTRA_PUSH_PAYLOAD)?.let { json ->
                     runCatching {
                         val obj = JSONObject(json)
                         obj.keys().asSequence().associateWith { obj.getString(it) }
                     }.getOrNull()?.let { intentMessages.add(it) }
                 }
                 // Clear so consumePendingMessages is idempotent on repeated calls.
-                intent.removeExtra(RNPingPushMessagingService.EXTRA_PUSH_COLD_START)
-                intent.removeExtra(RNPingPushMessagingService.EXTRA_PUSH_PAYLOAD)
+                intent.removeExtra(RNPingPushBridge.EXTRA_PUSH_COLD_START)
+                intent.removeExtra(RNPingPushBridge.EXTRA_PUSH_PAYLOAD)
             }
         }
 
@@ -202,8 +202,9 @@ object RNPingPushCommon {
      * [EVENT_FCM_TOKEN_RECEIVED] event so JS can register it with the push service
      * without waiting for the next [onNewToken] callback.
      *
-     * Non-cancellation failures are silently swallowed — [RNPingPushMessagingService.onNewToken]
-     * is the authoritative delivery path; this is a best-effort optimisation for first launch.
+     * Non-cancellation failures are silently swallowed — [RNPingPushBridge.emitTokenEvent]
+     * (called from the app's FCM service) is the authoritative delivery path; this is a
+     * best-effort optimisation for first launch.
      * [kotlinx.coroutines.CancellationException] is rethrown so scope cancellation propagates correctly.
      *
      * @param ctx The active [ReactApplicationContext] — passed through to [emitEvent].
