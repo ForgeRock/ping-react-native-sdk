@@ -11835,15 +11835,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-biometrics@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "react-native-biometrics@npm:3.0.1"
-  peerDependencies:
-    react-native: ">=0.60.0"
-  checksum: 10c0/00528eda02528ccd28705f6245b5460bb46b93d44f435a2974c5e56d30a79d21b6b8e5c6c8c46a4a21220af08458214086b6372dfe48f75e82f42069871b0e6d
-  languageName: node
-  linkType: hard
-
 "react-native-builder-bob@npm:^0.40.14":
   version: 0.40.15
   resolution: "react-native-builder-bob@npm:0.40.15"
@@ -12371,7 +12362,6 @@ __metadata:
     prettier: "npm:3.8.1"
     react: "npm:19.1.0"
     react-native: "npm:0.80.1"
-    react-native-biometrics: "npm:^3.0.1"
     react-native-config: "npm:^1.5.9"
     react-native-safe-area-context: "npm:^5.6.1"
     react-native-screens: "npm:^4.16.0"
