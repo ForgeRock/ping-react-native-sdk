@@ -71,8 +71,13 @@ target 'PingSampleApp' do
         rescue StandardError => e
           raise "fmt/base.h patch failed (#{e.class}: #{e.message}) – check file permissions and fmt version"
         end
+      # gsub found nothing to replace. Two cases: file is already patched (safe, skip),
+      # or fmt upgraded and the patterns no longer match (dangerous, raise so it gets fixed).
+      # Distinguishing factor: if FMT_USE_CONSTEVAL 1 is still present, the patch failed silently.
+      elsif contents.include?('FMT_USE_CONSTEVAL 1')
+        raise "fmt/base.h patch pattern not matched but FMT_USE_CONSTEVAL=1 still present – fmt version may have changed; please update the Podfile patch"
       else
-        raise "fmt/base.h patch pattern not matched – fmt version may have changed; please update the Podfile patch"
+        Pod::UI.puts 'fmt/base.h already patched, skipping'
       end
     end
 
