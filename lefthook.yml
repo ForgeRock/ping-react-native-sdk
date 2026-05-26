@@ -21,6 +21,9 @@ pre-commit:
 
 pre-push:
   jobs:
+    - name: prettier
+      run: yarn prettier --affected --force
+
     - name: lint
       run: yarn lint --affected
 

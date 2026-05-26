@@ -76,6 +76,27 @@ object RNPingStorageCommon {
   }
 
   /**
+   * Register OATH storage with the provided configuration.
+   *
+   * OATH on Android uses `SQLOathStorage(SQLiteStorageConfig)` whose only
+   * user-configurable parameter is `databaseName`. An [OathStorageConfigHandle]
+   * is registered directly into [CoreRuntime.oathStorageConfigRegistry] so that
+   * the OATH native SDK can cast the resolved handle to
+   * [OathStorageConfigHandleContract] and read [databaseName] without a silent
+   * null caused by a contract mismatch.
+   *
+   * @param config Configuration map. Recognized key: `databaseName` (String).
+   * @return Unique ID for the registered storage configuration.
+   */
+  @JvmStatic
+  fun registerOathStorage(config: ReadableMap): String {
+    val map = config.toHashMap()
+    val databaseName = map["databaseName"] as? String
+    val handle = OathStorageConfigHandle(databaseName)
+    return CoreRuntime.oathStorageConfigRegistry.register(handle)
+  }
+
+  /**
    * Build a storage configuration based on the provided configuration map.
    *
    * @param config Configuration map containing optional storage settings:
@@ -124,6 +145,26 @@ object RNPingStorageCommon {
   fun configureBindingUserKeyStorage(id: String): WritableMap {
     val resolvedConfig = bindingUserKeyConfigRegistry.resolve(id)
     return encodeConfig(resolvedConfig)
+  }
+
+  /**
+   * Resolve and encode a registered OATH storage configuration by id.
+   *
+   * Resolves an [OathStorageConfigHandle] directly from
+   * [CoreRuntime.oathStorageConfigRegistry] and encodes its [databaseName]
+   * field under the key `"databaseName"`.
+   *
+   * @param id The unique ID previously returned by [registerOathStorage].
+   * @return A WritableMap containing the encoded OATH storage configuration.
+   * @throws IllegalStateException if no OATH storage config is registered for [id].
+   */
+  @JvmStatic
+  fun configureOathStorage(id: String): WritableMap {
+    val handle = CoreRuntime.oathStorageConfigRegistry.resolve(id) as? OathStorageConfigHandle
+      ?: error("No OATH storage config registered for id=$id")
+    val map = Arguments.createMap()
+    handle.databaseName?.let { map.putString("databaseName", it) }
+    return map
   }
 
   /**

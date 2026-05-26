@@ -25,6 +25,8 @@ import UserProfileScreen from './ui/UserProfileScreen';
 import TokenScreen from './ui/TokenScreen';
 import LogoutScreen from './ui/LogoutScreen';
 import BindingKeysScreen from './ui/BindingKeysScreen';
+import OathTokensScreen from './ui/OathTokensScreen';
+import QRScannerScreen from './ui/QRScannerScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
 import { sampleAppClientProfiles } from './src/clients';
@@ -64,6 +66,8 @@ export type RootStackParamList = {
   Token: undefined;
   Logout: undefined;
   BindingKeys: undefined;
+  OathTokens: undefined;
+  QRScanner: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -401,6 +405,16 @@ export default function App() {
               name="BindingKeys"
               component={BindingKeysScreen}
               options={{ title: 'Binding Keys' }}
+            />
+            <Stack.Screen
+              name="OathTokens"
+              component={OathTokensScreen}
+              options={{ title: 'OATH Tokens' }}
+            />
+            <Stack.Screen
+              name="QRScanner"
+              component={QRScannerScreen}
+              options={{ title: 'QR Scanner' }}
             />
           </Stack.Navigator>
         </NavigationContainer>

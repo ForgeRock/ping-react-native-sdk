@@ -37,6 +37,7 @@ module.exports = {
     '^@ping-identity/rn-journey$':
       '<rootDir>/../packages/journey/src/index.tsx',
     '^@ping-identity/rn-logger$': '<rootDir>/../packages/logger/src/index.tsx',
+    '^@ping-identity/rn-oath$': '<rootDir>/../packages/oath/src/index.tsx',
     '^@ping-identity/rn-oidc$': '<rootDir>/../packages/oidc/src/index.tsx',
     '^@ping-identity/rn-storage$':
       '<rootDir>/../packages/storage/src/index.tsx',

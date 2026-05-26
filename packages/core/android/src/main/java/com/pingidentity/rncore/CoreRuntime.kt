@@ -25,6 +25,10 @@ object CoreRuntime {
     val oidcStorageConfigRegistry: Registry = SimpleRegistry()
     /** Registry for binding user-key storage configuration */
     val bindingUserKeyStorageConfigRegistry: Registry = SimpleRegistry()
+    /** Registry for OATH storage configuration */
+    val oathStorageConfigRegistry: Registry = SimpleRegistry()
+    /** Registry for OATH policy evaluator configuration */
+    val oathPolicyEvaluatorRegistry: Registry = SimpleRegistry()
 
     /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()
