@@ -55,6 +55,7 @@ DeviceEventEmitter.addListener(
   },
 );
 
+// TODO: noopLogger is duplicated across all SDK packages — extract to @ping-identity/rn-types
 const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
   changeLevel: () => {},
@@ -114,6 +115,9 @@ export async function createPushClient(
   );
   logger.info('Push createClient success');
 
+  const notifCallbacks = new Set<NotifCb>();
+  const tokenCallbacks = new Set<TokenCb>();
+
   // Ensure the device token is registered before returning the client.
   // Android: always fetch directly from Firebase — bypasses the DeviceEventEmitter
   //   path that can silently drop the token on real devices before the bridge is ready.
@@ -156,9 +160,6 @@ export async function createPushClient(
         logger.warn(`Push setDeviceToken (cached) failed: ${err}`);
       });
   }
-
-  const notifCallbacks = new Set<NotifCb>();
-  const tokenCallbacks = new Set<TokenCb>();
 
   const tokenEventName =
     Platform.OS === 'ios'
@@ -756,6 +757,14 @@ export async function createPushClient(
       }
     },
 
+    /**
+     * Forces an immediate refresh of the FCM/APNs device token and registers it with the push service.
+     *
+     * Useful when the token may have rotated since the client was created. Fires all
+     * {@link onTokenRegistered} callbacks with the new token on success.
+     *
+     * @returns A promise resolving to the refreshed token string, or `null` if unavailable.
+     */
     async refreshToken(): Promise<string | null> {
       logger.debug('Push refreshToken requested');
       try {
@@ -778,6 +787,12 @@ export async function createPushClient(
       }
     },
 
+    /**
+     * Subscribes to device token registration events.
+     *
+     * @param cb - Callback invoked with the new token string each time a token is registered or rotated.
+     * @returns An unsubscribe function — call it to stop receiving events.
+     */
     onTokenRegistered(cb: TokenCb): () => void {
       tokenCallbacks.add(cb);
       return () => {
@@ -785,6 +800,13 @@ export async function createPushClient(
       };
     },
 
+    /**
+     * Subscribes to incoming push notification events.
+     *
+     * @param cb - Callback invoked with the processed {@link PushNotification}, or `null` if the
+     *   notification could not be parsed.
+     * @returns An unsubscribe function — call it to stop receiving events.
+     */
     onNotification(cb: NotifCb): () => void {
       notifCallbacks.add(cb);
       return () => {

@@ -75,6 +75,11 @@ RCT_EXPORT_MODULE()
 - (void)setCallableJSModules:(RCTCallableJSModules *)callableJSModules
 {
   _callableJSModules = callableJSModules;
+  // Drain instance-level pending token (arrived after init but before JS was ready).
+  if (!_pendingAPNsToken) {
+    // Drain static-level pending token (arrived before the module was even instantiated).
+    _pendingAPNsToken = [RNPingPushCommon consumePendingToken];
+  }
   if (_pendingAPNsToken && _callableJSModules) {
     NSString *token = _pendingAPNsToken;
     _pendingAPNsToken = nil;

@@ -71,14 +71,6 @@ object RNPingPushCommon {
     // ─── Lifecycle ───────────────────────────────────────────────────────────
 
     /**
-     * Initialises [ContextProvider] with the application context from [reactContext].
-     *
-     * Must be called once before any bridge method is invoked, typically from the
-     * module constructor.
-     *
-     * @param reactContext The React Native application context.
-     */
-    /**
      * Wires the singleton to the active React Native context.
      *
      * Must be called once before any bridge method is invoked, typically from the
@@ -461,8 +453,8 @@ object RNPingPushCommon {
         }
         scope.launch {
             try {
-                val dataMap: Map<String, Any> = messageData.toHashMap()
-                    .mapValues { it.value ?: "" }
+                val dataMap: Map<String, String> = messageData.toHashMap()
+                    .mapValues { it.value?.toString() ?: "" }
                 val notification = client.processNotification(dataMap).getOrThrow()
                 val result = Arguments.createMap()
                 if (notification != null) {

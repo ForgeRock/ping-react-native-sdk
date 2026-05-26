@@ -22,9 +22,12 @@ public class RNPingPushCommon: NSObject {
 
   // MARK: - Private State
 
-  // pendingMessages is written from AppDelegate (synchronous, outside any Task), so it cannot
-  // use the actor pattern. NSLock is the correct primitive here.
+  private static let defaultKeychainService = "com.pingidentity.rnpush.storage"
+
+  // pendingMessages and pendingAPNsToken are written from AppDelegate (synchronous, outside any
+  // Task), so they cannot use the actor pattern. NSLock is the correct primitive here.
   private nonisolated(unsafe) static var pendingMessages: [[AnyHashable: Any]] = []
+  private nonisolated(unsafe) static var pendingAPNsToken: String? = nil
   private static let messagesLock = NSLock()
 
   // MARK: - Lifecycle
@@ -40,7 +43,30 @@ public class RNPingPushCommon: NSObject {
     }
     messagesLock.lock()
     pendingMessages.removeAll()
+    pendingAPNsToken = nil
     messagesLock.unlock()
+  }
+
+  // MARK: - Pending APNs Token
+
+  /// Stores the APNs token that arrived before the RN module was instantiated.
+  /// Called by `RNPingPushBridge.forwardToken` as a fallback for the race where
+  /// `NotificationCenter` has no observer yet.
+  @objc public static func setPendingToken(_ token: String) {
+    messagesLock.lock()
+    pendingAPNsToken = token
+    messagesLock.unlock()
+  }
+
+  /// Drains and returns the buffered APNs token, or nil if none was stored.
+  /// Called by `RNPingPush.mm` in `setCallableJSModules:` after the NotificationCenter
+  /// observer is registered.
+  @objc public static func consumePendingToken() -> String? {
+    messagesLock.lock()
+    let token = pendingAPNsToken
+    pendingAPNsToken = nil
+    messagesLock.unlock()
+    return token
   }
 
   // MARK: - Pending Messages
@@ -366,7 +392,8 @@ public class RNPingPushCommon: NSObject {
   ) {
     // Cast to [AnyHashable: Any] so we can use processNotification(userInfo:), which handles
     // APNs aps-wrapping automatically (extracts aps["data"] → "message", aps["messageId"], etc.)
-    let userInfoBox = UnsafeSendable(messageData as! [AnyHashable: Any])
+    let userInfo = messageData as? [AnyHashable: Any] ?? [:]
+    let userInfoBox = UnsafeSendable(userInfo)
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     Task {
       guard let client = await getClient(clientId) else {
@@ -715,8 +742,8 @@ public class RNPingPushCommon: NSObject {
     }
     let account = handle.account?.trimmingCharacters(in: .whitespacesAndNewlines)
     let resolvedAccount = (account?.isEmpty == false)
-      ? (account ?? "com.pingidentity.rnpush.storage")
-      : "com.pingidentity.rnpush.storage"
+      ? (account ?? RNPingPushCommon.defaultKeychainService)
+      : RNPingPushCommon.defaultKeychainService
     return PushKeychainStorage(credentialService: resolvedAccount)
   }
 

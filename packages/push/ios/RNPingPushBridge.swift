@@ -37,6 +37,9 @@ public class RNPingPushBridge: NSObject {
     /// Posts to `Notification.Name.pingAPNsToken` on `NotificationCenter.default`.
     public static func forwardToken(_ deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+        // Buffer the token statically so RNPingPush can drain it in setCallableJSModules:
+        // if the NotificationCenter observer hasn't been registered yet (module not yet init'd).
+        RNPingPushCommon.setPendingToken(token)
         NotificationCenter.default.post(
             name: .pingAPNsToken,
             object: nil,

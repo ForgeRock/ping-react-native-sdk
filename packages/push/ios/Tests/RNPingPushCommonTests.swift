@@ -12,6 +12,25 @@ import PingPush
 @MainActor
 final class RNPingPushCommonTests: XCTestCase {
 
+  // MARK: - Pending APNs token
+
+  func testConsumeReturnedTokenAndClearsIt() {
+    RNPingPushCommon.setPendingToken("abc123")
+    XCTAssertEqual(RNPingPushCommon.consumePendingToken(), "abc123")
+    XCTAssertNil(RNPingPushCommon.consumePendingToken(), "second consume must return nil")
+  }
+
+  func testConsumeReturnsNilWhenNoTokenSet() {
+    RNPingPushCommon.cleanup()
+    XCTAssertNil(RNPingPushCommon.consumePendingToken())
+  }
+
+  func testCleanupClearsPendingToken() {
+    RNPingPushCommon.setPendingToken("should-be-cleared")
+    RNPingPushCommon.cleanup()
+    XCTAssertNil(RNPingPushCommon.consumePendingToken())
+  }
+
   // MARK: - initialize
 
   func testInitializeResolvesWithClientHandle() async {

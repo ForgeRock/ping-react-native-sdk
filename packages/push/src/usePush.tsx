@@ -83,7 +83,7 @@ const PushContext = createContext<PushContextValue | null>(null);
 
 const missingPushClientError: PushError = {
   type: 'state_error',
-  error: 'NOT_INITIALIZED',
+  error: 'not_initialized',
   message:
     'No Push client found. Use usePush(config) or wrap your tree with <PushProvider config={...}>.',
 };
@@ -173,6 +173,7 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
 
     let mounted = true;
     let unsubToken: (() => void) | null = null;
+    let unsubNotif: (() => void) | null = null;
 
     createPushClient(config ?? undefined)
       .then((c) => {
@@ -185,6 +186,10 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
         clientRef.current = c;
 
         unsubToken = c.onTokenRegistered(() => {
+          void refresh();
+        });
+
+        unsubNotif = c.onNotification(() => {
           void refresh();
         });
 
@@ -228,6 +233,8 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
       mounted = false;
       unsubToken?.();
       unsubToken = null;
+      unsubNotif?.();
+      unsubNotif = null;
       // Best-effort cleanup — failure here means the bridge is already torn down or the client
       // was already closed, so there is nothing actionable to surface.
       clientRef.current?.close().catch(() => {});
