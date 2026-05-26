@@ -194,7 +194,7 @@ object RNPingPushCommon {
      * [EVENT_FCM_TOKEN_RECEIVED] event so JS can register it with the push service
      * without waiting for the next [onNewToken] callback.
      *
-     * Non-cancellation failures are silently swallowed — [RNPingPushBridge.emitTokenEvent]
+     * Non-cancellation failures are silently swallowed — [RNPingPushBridge.forwardToken]
      * (called from the app's FCM service) is the authoritative delivery path; this is a
      * best-effort optimisation for first launch.
      * [kotlinx.coroutines.CancellationException] is rethrown so scope cancellation propagates correctly.

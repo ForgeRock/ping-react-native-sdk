@@ -41,12 +41,12 @@ class PushMessagingService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        RNPingPushBridge.emitTokenEvent(token)
+        RNPingPushBridge.forwardToken(token)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if (remoteMessage.data.isEmpty()) return
-        RNPingPushBridge.emitMessageEvent(remoteMessage.data)
+        RNPingPushBridge.forwardNotification(remoteMessage.data)
         if (!isAppInForeground()) {
             postSystemNotification(remoteMessage.data)
         }

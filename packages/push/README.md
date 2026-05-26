@@ -112,12 +112,12 @@ Then use `PushProvider` and `usePush` as normal — see [How to use the SDK](#ho
 ```kotlin
 override fun onNewToken(token: String) {
     existingSdk.updateToken(token)
-    RNPingPushBridge.emitTokenEvent(token) // ← add
+    RNPingPushBridge.forwardToken(token) // ← add
 }
 
 override fun onMessageReceived(remoteMessage: RemoteMessage) {
     existingSdk.handleMessage(remoteMessage)
-    RNPingPushBridge.emitMessageEvent(remoteMessage.data) // ← add
+    RNPingPushBridge.forwardNotification(remoteMessage.data) // ← add
 }
 ```
 
@@ -162,7 +162,7 @@ If you want to post a tray notification when the app is backgrounded, use `RNPin
 ```kotlin
 override fun onMessageReceived(remoteMessage: RemoteMessage) {
     existingSdk.handleMessage(remoteMessage)
-    RNPingPushBridge.emitMessageEvent(remoteMessage.data)
+    RNPingPushBridge.forwardNotification(remoteMessage.data)
 
     if (!isAppInForeground()) {
         val (title, body) = RNPingPushBridge.extractNotificationText(

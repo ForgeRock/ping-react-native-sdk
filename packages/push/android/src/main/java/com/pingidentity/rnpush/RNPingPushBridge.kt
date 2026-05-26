@@ -13,11 +13,11 @@ import org.json.JSONObject
 /**
  * Public API for wiring an existing FCM service or JS push library into the Ping Push SDK.
  *
- * **Scenario A** (JS push library): call [emitTokenEvent] and [emitMessageEvent] from your
+ * **Scenario A** (JS push library): call [forwardToken] and [forwardNotification] from your
  * library's native token/message callbacks.
  *
  * **Scenario B** (existing native [com.google.firebase.messaging.FirebaseMessagingService]):
- * call [emitTokenEvent] from `onNewToken` and [emitMessageEvent] from `onMessageReceived`.
+ * call [forwardToken] from `onNewToken` and [forwardNotification] from `onMessageReceived`.
  * Use [extractNotificationText] to decode the server's message body from the JWT payload
  * when posting your own tray notification while the app is backgrounded.
  */
@@ -44,12 +44,12 @@ object RNPingPushBridge {
      * ```kotlin
      * override fun onNewToken(token: String) {
      *     existingSdk.updateToken(token)
-     *     RNPingPushBridge.emitTokenEvent(token) // ← add
+     *     RNPingPushBridge.forwardToken(token) // ← add
      * }
      * ```
      */
     @JvmStatic
-    fun emitTokenEvent(token: String) {
+    fun forwardToken(token: String) {
         RNPingPushCommon.emitEvent(RNPingPushEvents.FCM_TOKEN_RECEIVED, token)
     }
 
@@ -60,12 +60,12 @@ object RNPingPushBridge {
      * ```kotlin
      * override fun onMessageReceived(remoteMessage: RemoteMessage) {
      *     existingSdk.handleMessage(remoteMessage)
-     *     RNPingPushBridge.emitMessageEvent(remoteMessage.data) // ← add
+     *     RNPingPushBridge.forwardNotification(remoteMessage.data) // ← add
      * }
      * ```
      */
     @JvmStatic
-    fun emitMessageEvent(data: Map<String, String>) {
+    fun forwardNotification(data: Map<String, String>) {
         val params = Arguments.createMap()
         data.forEach { (k, v) -> params.putString(k, v) }
         RNPingPushCommon.emitEvent(RNPingPushEvents.PUSH_MESSAGE_RECEIVED, params)
