@@ -46,6 +46,14 @@ public enum CoreRuntime {
     /// Registry for binding user-key storage configuration
     public static let bindingUserKeyStorageConfigRegistry: Registry = SimpleRegistry()
 
+    /// Registry for push MFA storage configuration
+    public static let pushStorageConfigRegistry: Registry = SimpleRegistry()
+    /// Registry for OATH storage configuration
+    public static let oathStorageConfigRegistry: Registry = SimpleRegistry()
+
+    /// Registry for OATH policy evaluator configuration
+    public static let oathPolicyEvaluatorRegistry: Registry = SimpleRegistry()
+
     /// Registry for logger instances
     public static let loggerRegistry: Registry = SimpleRegistry()
 

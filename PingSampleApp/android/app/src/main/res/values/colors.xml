@@ -9,4 +9,5 @@
     <color name="ping_red_light">#C62828</color>
     <color name="ping_red_dark">#A11414</color>
     <color name="ping_white">#FFFFFF</color>
+    <color name="ping_push_notification_color">#4B6CF5</color>
 </resources>

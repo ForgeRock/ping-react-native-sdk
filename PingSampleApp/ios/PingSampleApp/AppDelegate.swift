@@ -9,6 +9,8 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import RNPingPush
+import UserNotifications
 #if canImport(FBSDKCoreKit)
 import FBSDKCoreKit
 #endif
@@ -20,14 +22,24 @@ import PingExternalIdPGoogle
 #endif
 
 @main
-/// UIApplication delegate that bootstraps the React Native sample app.
-class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
+  var window: UIWindow?
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
 
-  /// Configure and launch the React Native runtime.
+  // Capture cold-start payload before the React bridge loads so consumePendingMessages
+  // can drain it when the first PushClient is created.
+  func application(
+    _ application: UIApplication,
+    willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+  ) -> Bool {
+    if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+      RNPingPushCommon.enqueuePendingMessage(userInfo)
+    }
+    return true
+  }
+
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -54,10 +66,58 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       launchOptions: launchOptions
     )
 
+    UNUserNotificationCenter.current().delegate = self
+    UNUserNotificationCenter.current().requestAuthorization(
+      options: [.alert, .sound, .badge]
+    ) { granted, _ in
+      if granted {
+        DispatchQueue.main.async { application.registerForRemoteNotifications() }
+      }
+    }
+
     return true
   }
 
-  /// Routes incoming URL callbacks to native Google Sign-In when the Google IdP pod is available.
+  func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    RNPingPushBridge.forwardToken(deviceToken)
+  }
+
+  func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {}
+
+  func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+  ) {
+    RNPingPushBridge.forwardNotification(userInfo)
+    completionHandler(.newData)
+  }
+
+  // Show banner, sound, and badge even when the app is foregrounded.
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .sound, .badge])
+  }
+
+  // Forward banner taps to the Ping Push SDK.
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    RNPingPushBridge.forwardNotification(response.notification.request.content.userInfo)
+    completionHandler()
+  }
+
   func application(
     _ application: UIApplication,
     open url: URL,
@@ -73,6 +133,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     return handled
   }
 }
+
 
 /// React Native factory delegate that resolves JS bundle locations.
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

@@ -8,6 +8,8 @@ import type { LoggerInstance } from '@ping-identity/rn-types';
 import {
   CacheStrategy,
   configureBindingUserKeyStorage,
+  configurePushStorage,
+  configureOathStorage,
   configureSessionStorage,
   configureOidcStorage,
 } from '../index';
@@ -18,9 +20,13 @@ const mockNativeRNPingStorage = {
   registerSessionStorage: jest.fn(),
   registerOidcStorage: jest.fn(),
   registerBindingUserKeyStorage: jest.fn(),
+  registerPushStorage: jest.fn(),
+  registerOathStorage: jest.fn(),
   configureSessionStorage: jest.fn(),
   configureOidcStorage: jest.fn(),
   configureBindingUserKeyStorage: jest.fn(),
+  configurePushStorage: jest.fn(),
+  configureOathStorage: jest.fn(),
 };
 
 jest.mock('../NativeRNPingStorage', () => ({
@@ -227,6 +233,212 @@ describe('Storage API', () => {
       expect(() =>
         configureBindingUserKeyStorage(null as unknown as StorageConfig),
       ).toThrow(/Missing configuration/);
+    });
+
+    it('configurePushStorage returns the config', () => {
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      const instance = configurePushStorage({
+        android: {
+          keyAlias: 'push_key',
+        },
+      });
+
+      expect(mockNativeRNPingStorage.registerPushStorage).toHaveBeenCalledWith({
+        keyAlias: 'push_key',
+      });
+      expect(mockNativeRNPingStorage.configurePushStorage).toHaveBeenCalledWith(
+        'push-id',
+      );
+      expect(instance).toEqual({ id: 'push-id', kind: 'push_storage' });
+    });
+
+    it('configurePushStorage can be created with all config options', () => {
+      const config = {
+        android: {
+          keyAlias: 'push_key',
+          fileName: 'push.dat',
+          strongBoxPreferred: true,
+          cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+        },
+        ios: {
+          account: 'com.example.push',
+          encryptor: true,
+          cacheable: false,
+        },
+      };
+
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({
+        keyAlias: 'push_key',
+        fileName: 'push.dat',
+        strongBoxPreferred: true,
+        cacheStrategy: 'cache_on_failure',
+        account: 'com.example.push',
+        encryptor: true,
+        cacheable: false,
+      });
+
+      expect(configurePushStorage(config)).toEqual({
+        id: 'push-id',
+        kind: 'push_storage',
+        ...config,
+      });
+    });
+
+    it('configurePushStorage validates config', () => {
+      expect(() =>
+        configurePushStorage(null as unknown as StorageConfig),
+      ).toThrow(/Missing configuration/);
+    });
+
+    it('configurePushStorage forwards loggerId from logger options', () => {
+      const logger = {
+        nativeHandle: { id: 'native-logger-id' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      configurePushStorage(
+        {
+          android: { keyAlias: 'push_key' },
+        },
+        { logger },
+      );
+
+      expect(mockNativeRNPingStorage.registerPushStorage).toHaveBeenCalledWith({
+        loggerId: 'native-logger-id',
+        keyAlias: 'push_key',
+      });
+    });
+
+    it('configurePushStorage kind is push_storage', () => {
+      mockNativeRNPingStorage.registerPushStorage.mockReturnValue('push-id');
+      mockNativeRNPingStorage.configurePushStorage.mockReturnValue({});
+
+      const result = configurePushStorage({
+        android: { keyAlias: 'push_key' },
+      });
+
+      expect(result.kind).toBe('push_storage');
+      expect(result.id).toBe('push-id');
+    });
+
+    it('configureOathStorage returns an OathStorageHandle with kind oath_storage', () => {
+      mockNativeRNPingStorage.registerOathStorage.mockReturnValue('oath-id');
+      mockNativeRNPingStorage.configureOathStorage.mockReturnValue({});
+
+      const handle = configureOathStorage({
+        android: { fileName: 'oath.db' },
+      });
+
+      expect(mockNativeRNPingStorage.registerOathStorage).toHaveBeenCalledWith({
+        fileName: 'oath.db',
+      });
+      expect(mockNativeRNPingStorage.configureOathStorage).toHaveBeenCalledWith(
+        'oath-id',
+      );
+      expect(handle).toMatchObject({ id: 'oath-id', kind: 'oath_storage' });
+    });
+
+    it('configureOathStorage round-trips: registers then resolves the same id', () => {
+      mockNativeRNPingStorage.registerOathStorage.mockReturnValue(
+        'oath-round-trip-id',
+      );
+      mockNativeRNPingStorage.configureOathStorage.mockReturnValue({
+        fileName: 'oath_tokens.db',
+      });
+
+      const handle = configureOathStorage({
+        android: { fileName: 'oath_tokens.db' },
+      });
+
+      expect(mockNativeRNPingStorage.registerOathStorage).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(mockNativeRNPingStorage.configureOathStorage).toHaveBeenCalledWith(
+        'oath-round-trip-id',
+      );
+      expect(handle.id).toBe('oath-round-trip-id');
+      expect(handle.kind).toBe('oath_storage');
+    });
+
+    it('configureOathStorage validates config — throws argument_error on null', () => {
+      expect(() =>
+        configureOathStorage(null as unknown as StorageConfig),
+      ).toThrow(/Missing configuration/);
+    });
+
+    it('configureOathStorage forwards loggerId from logger options', () => {
+      const logger: LoggerInstance = {
+        nativeHandle: { id: 'oath-logger-id' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      mockNativeRNPingStorage.registerOathStorage.mockReturnValue('oath-id');
+      mockNativeRNPingStorage.configureOathStorage.mockReturnValue({});
+
+      configureOathStorage({ android: { fileName: 'oath.db' } }, { logger });
+
+      expect(mockNativeRNPingStorage.registerOathStorage).toHaveBeenCalledWith({
+        loggerId: 'oath-logger-id',
+        fileName: 'oath.db',
+      });
+    });
+
+    it('configureOathStorage forwards iosOath fields as oath-prefixed native keys', () => {
+      mockNativeRNPingStorage.registerOathStorage.mockReturnValue('oath-id');
+      mockNativeRNPingStorage.configureOathStorage.mockReturnValue({});
+
+      configureOathStorage({
+        android: { fileName: 'oath.db' },
+        iosOath: {
+          service: 'com.example.oath',
+          requireBiometrics: true,
+          requireDevicePasscode: false,
+          biometricPrompt: 'Authenticate',
+          accessGroup: 'com.example.shared',
+        },
+      });
+
+      expect(mockNativeRNPingStorage.registerOathStorage).toHaveBeenCalledWith({
+        fileName: 'oath.db',
+        oathService: 'com.example.oath',
+        oathRequireBiometrics: true,
+        oathRequireDevicePasscode: false,
+        oathBiometricPrompt: 'Authenticate',
+        oathAccessGroup: 'com.example.shared',
+      });
+    });
+
+    it('configureOathStorage does not interfere with configureBindingUserKeyStorage', () => {
+      mockNativeRNPingStorage.registerOathStorage.mockReturnValue('oath-id');
+      mockNativeRNPingStorage.configureOathStorage.mockReturnValue({});
+      mockNativeRNPingStorage.registerBindingUserKeyStorage.mockReturnValue(
+        'binding-id',
+      );
+      mockNativeRNPingStorage.configureBindingUserKeyStorage.mockReturnValue(
+        {},
+      );
+
+      const oathHandle = configureOathStorage({ android: { fileName: 'db' } });
+      const bindingHandle = configureBindingUserKeyStorage({
+        android: { keyAlias: 'key' },
+      });
+
+      expect(oathHandle.kind).toBe('oath_storage');
+      expect(bindingHandle.kind).toBe('binding_user_key_storage');
+      expect(oathHandle.id).toBe('oath-id');
+      expect(bindingHandle.id).toBe('binding-id');
     });
 
     it('configureBindingUserKeyStorage forwards loggerId from logger options', () => {

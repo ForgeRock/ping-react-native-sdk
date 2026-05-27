@@ -106,6 +106,33 @@ export default function HomeScreen({
     },
   ];
 
+  const mfaItems: HomeScreenMenuItem[] = [
+    {
+      title: 'QR Scanner',
+      subtitle: 'Scan QR code to register account',
+      icon: 'qr-code-scanner',
+      screen: 'QRScanner',
+    },
+    {
+      title: 'OATH Tokens',
+      subtitle: 'Manage local OATH credentials',
+      icon: 'lock-clock',
+      screen: 'OathTokens',
+    },
+    {
+      title: 'Push',
+      subtitle: 'Manage push authentication accounts',
+      icon: 'notifications',
+      screen: 'Push',
+    },
+    {
+      title: 'Push Notifications',
+      subtitle: 'View and respond to push requests',
+      icon: 'notifications-active',
+      screen: 'PushNotifications',
+    },
+  ];
+
   const developerToolsItems: HomeScreenMenuItem[] = [
     {
       title: 'Browser',
@@ -183,7 +210,7 @@ export default function HomeScreen({
       <View style={commonStyles.homeHeader}>
         <Image
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          source={require('../assets/ping-logo.jpg')}
+          source={require('../assets/ping_logo.png')}
           style={commonStyles.homeHeaderLogo}
         />
         <Text style={commonStyles.homeHeaderTitle}>
@@ -203,6 +230,9 @@ export default function HomeScreen({
 
           <Text style={commonStyles.homeSectionTitle}>USER MANAGEMENT</Text>
           {userManagementItems.map(renderMenuItem)}
+
+          <Text style={commonStyles.homeSectionTitle}>MFA</Text>
+          {mfaItems.map(renderMenuItem)}
 
           <Text style={commonStyles.homeSectionTitle}>DEVELOPER TOOLS</Text>
           {developerToolsItems.map(renderMenuItem)}

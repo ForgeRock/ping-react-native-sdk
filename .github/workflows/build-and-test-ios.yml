@@ -16,7 +16,7 @@ env:
   CONFIGURATION: Debug
   # DESTINATION is resolved dynamically at runtime by the "Resolve simulator" step.
   DERIVED_DATA_PATH: DerivedData
-  XCODE_VERSION: '26.1.1'
+  XCODE_VERSION: '26.4.1'
   RUBY_VERSION: '2.6.10'
   BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
   IOS_DIRECTORY: PingTestRunner/ios
@@ -83,9 +83,40 @@ jobs:
         working-directory: ${{ env.IOS_DIRECTORY }}
         run: bundle exec pod install --repo-update
 
+      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator runtime
+      # component (SDK ≠ runtime — the SDK ships inside Xcode but the runtime is provisioned separately).
+      # This step prefers the pinned version but falls back to the newest installed Xcode whose major.minor
+      # iOS version has a matching pre-provisioned simulator runtime, so the destination is always bootable.
+      - name: Resolve Xcode version
+        run: |
+          PINNED="/Applications/Xcode_${{ env.XCODE_VERSION }}.app"
+          SELECTED=""
+          # Get all available iOS runtime versions (system-wide, not Xcode-scoped).
+          AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
+            | grep -i "iOS" | grep -v "unavailable" \
+            | grep -oE "[0-9]+\.[0-9]+" | sort -u)
+          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app" ] || continue
+            # Derive the iOS SDK version this Xcode ships with (e.g. "26.1" from "iphonesimulator26.1").
+            xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
+              xcodebuild -showsdks 2>/dev/null \
+              | grep -i "iphonesimulator" | grep -oE "[0-9]+\.[0-9]+" | sort -rV | head -1)
+            [ -n "$xcode_ios" ] || continue
+            # Check if a runtime matching this Xcode's major.minor iOS version is provisioned.
+            if echo "$AVAILABLE_RUNTIMES" | grep -qx "$xcode_ios"; then
+              SELECTED="$app"
+              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
+              echo "Resolved Xcode: $app (iOS SDK $xcode_ios, runtime available)"
+              break
+            else
+              echo "Skipping $app: iOS $xcode_ios SDK present but runtime not provisioned (available: $(echo $AVAILABLE_RUNTIMES | tr '\n' ' '))"
+            fi
+          done
+          [ -n "$SELECTED" ] || { echo "No Xcode with a matching provisioned iOS simulator runtime found"; exit 1; }
+
       # Select Xcode version
       - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app && /usr/bin/xcodebuild -version
+        run: sudo xcode-select -s "${{ env.XCODE_RESOLVED_PATH }}" && /usr/bin/xcodebuild -version
 
       # Clang module caches are sensitive to SDK header mtimes on the runner image.
       # This must run AFTER Xcode is selected so the active SDK is finalised.
@@ -175,6 +206,7 @@ jobs:
         # Convert coverage data to Cobertura format for reporting
       - name: Generate coverage report (Cobertura)
         if: always()
+        continue-on-error: true
         run: xcresultparser -o cobertura TestResults.xcresult > coverage.xml
 
         # Upload coverage report to Codecov

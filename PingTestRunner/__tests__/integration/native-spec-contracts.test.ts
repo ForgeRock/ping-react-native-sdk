@@ -29,6 +29,7 @@ import type { Spec as DeviceProfileSpec } from '../../../packages/device-profile
 import type { Spec as FidoSpec } from '../../../packages/fido/src/NativeRNPingFido';
 import type { Spec as JourneySpec } from '../../../packages/journey/src/NativeRNPingJourney';
 import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPingLogger';
+import type { Spec as OathSpec } from '../../../packages/oath/src/NativeRNPingOath';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
 import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRNPingStorage';
 
@@ -91,6 +92,23 @@ type _JourneyMockedMethods = Pick<
 // ─── rn-logger ──────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerLogger, syncLogger
 type _LoggerMockedMethods = Pick<LoggerSpec, 'registerLogger' | 'syncLogger'>;
+
+// ─── rn-oath ────────────────────────────────────────────────────────────────
+// jest.setup.js mocks: create, addCredentialFromUri, getCredential, getCredentials,
+//                      saveCredential, deleteCredential, generateCode,
+//                      generateCodeWithValidity, close
+type _OathMockedMethods = Pick<
+  OathSpec,
+  | 'create'
+  | 'addCredentialFromUri'
+  | 'getCredential'
+  | 'getCredentials'
+  | 'saveCredential'
+  | 'deleteCredential'
+  | 'generateCode'
+  | 'generateCodeWithValidity'
+  | 'close'
+>;
 
 // ─── rn-oidc ────────────────────────────────────────────────────────────────
 // jest.setup.js mocks: createClient, createWebClient, clientToken,
