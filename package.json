@@ -55,7 +55,7 @@
     "postinstall": "lefthook install",
     "release:status": "changeset status",
     "release:version": "changeset version",
-    "release:publish": "yarn packages:build && changeset publish",
+    "release:publish": "yarn packages:build && changeset publish --no-git-tag",
     "release:check-lockstep": "node scripts/check-lockstep.mjs"
   },
   "workspaces": {

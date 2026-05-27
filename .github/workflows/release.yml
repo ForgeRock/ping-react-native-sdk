@@ -74,7 +74,6 @@ jobs:
           git push
 
       - name: Build and publish
-        # changeset publish: publishes packages not yet at current version, creates git tags
         # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
         run: yarn packages:build && yarn changeset publish --no-git-tag
         env:
