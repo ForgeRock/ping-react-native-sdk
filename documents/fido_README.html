@@ -77,7 +77,7 @@ This indicates app code must run FIDO integration explicitly.</p>
 </code><button type="button">Copy</button></pre>
 
 <h2 id="errors" class="tsd-anchor-link">Errors<a href="#errors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
-<p>Rejected promises use <code>GenericError</code> shape (<code>FidoError</code>).</p>
+<p>Rejected promises throw a <code>FidoError</code> instance, which extends <code>PingError extends Error</code>. Use <code>instanceof FidoError</code> to narrow in catch blocks.</p>
 <p>Stable error codes:</p>
 <ul>
 <li><code>FIDO_ERROR</code></li>
