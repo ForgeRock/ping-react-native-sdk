@@ -251,7 +251,7 @@ final class JourneyClientFactory {
     ) else {
       throw JourneyBridgeError.argument("No OIDC storage config registered for id=\(storageId)")
     }
-    let account = config.account ?? "ACCESS_TOKEN_STORAGE"
+    let account = config.account ?? "com.pingidentity.rnjourney.storage"
     let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {
@@ -281,7 +281,7 @@ final class JourneyClientFactory {
     ) else {
       throw JourneyBridgeError.argument("No session storage config registered for id=\(storageId)")
     }
-    let account = config.account ?? "com.pingidentity.rnsampleapp.keyalias"
+    let account = config.account ?? "com.pingidentity.rnjourney.storage"
     let encryptorEnabled = config.encryptor ?? true
     let encryptor: Encryptor = {
       if encryptorEnabled, let secured = SecuredKeyEncryptor() {

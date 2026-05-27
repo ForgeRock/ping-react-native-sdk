@@ -123,7 +123,11 @@ export default function JourneyContinuePanel(
   const hasPollingWaitCallback = callbackTypes.has(
     callbackType.PollingWaitCallback,
   );
-  const hasManualSubmit = fields.some(field => field.requiresUserInput);
+  const hasManualSubmit = fields.some(
+    field =>
+      field.requiresUserInput &&
+      !(hasPollingWaitCallback && field.ref.type === 'ConfirmationCallback'),
+  );
 
   const hasBlockingIntegration = fields.some(
     field =>

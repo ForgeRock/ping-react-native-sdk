@@ -60,6 +60,8 @@ class RNPingStorageCommonTest {
         clearAllMocks()
         StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.sessionStorageConfigRegistry).clear()
         StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.oidcStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.bindingUserKeyStorageConfigRegistry).clear()
+        StorageConfigRegistry(com.pingidentity.rncore.CoreRuntime.pushStorageConfigRegistry).clear()
         com.pingidentity.rncore.CoreRuntime.oathStorageConfigRegistry.removeAll()
     }
 
@@ -73,7 +75,7 @@ class RNPingStorageCommonTest {
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
         assertNotNull(configMap)
-        assertEquals("defaultKey", configMap.getString("keyAlias"))
+        assertEquals("com.pingidentity.rnstorage.storage", configMap.getString("keyAlias"))
         assertEquals("secure_prefs", configMap.getString("fileName"))
         assertFalse(configMap.hasKey("strongBoxPreferred"))
         assertFalse(configMap.hasKey("cacheStrategy"))
@@ -89,7 +91,7 @@ class RNPingStorageCommonTest {
         assertNotNull(id)
         assertTrue(id.isNotEmpty())
         assertNotNull(configMap)
-        assertEquals("defaultKey", configMap.getString("keyAlias"))
+        assertEquals("com.pingidentity.rnstorage.storage", configMap.getString("keyAlias"))
         assertEquals("secure_prefs", configMap.getString("fileName"))
         assertFalse(configMap.hasKey("strongBoxPreferred"))
         assertFalse(configMap.hasKey("cacheStrategy"))
@@ -143,6 +145,83 @@ class RNPingStorageCommonTest {
         assertEquals("testKey", configMap.getString("keyAlias"))
         assertEquals(true, configMap.getBoolean("strongBoxPreferred"))
         assertEquals("cache_on_failure", configMap.getString("cacheStrategy"))
+    }
+
+    @Test
+    fun registerBindingUserKeyStorageWithDefaultsReturnsConfig() {
+        val config = createMockReadableMap(emptyMap())
+
+        val id = RNPingStorageCommon.registerBindingUserKeyStorage(config)
+        val configMap = RNPingStorageCommon.configureBindingUserKeyStorage(id)
+
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertNotNull(configMap)
+        assertEquals("secure_prefs", configMap.getString("fileName"))
+    }
+
+    @Test
+    fun registerBindingUserKeyStorageWithCustomValuesRoundTrips() {
+        val config = createMockReadableMap(
+            mapOf(
+                "fileName" to "binding_store",
+                "keyAlias" to "bindingKey",
+                "strongBoxPreferred" to true,
+            )
+        )
+
+        val id = RNPingStorageCommon.registerBindingUserKeyStorage(config)
+        val configMap = RNPingStorageCommon.configureBindingUserKeyStorage(id)
+
+        assertEquals("binding_store", configMap.getString("fileName"))
+        assertEquals("bindingKey", configMap.getString("keyAlias"))
+        assertEquals(true, configMap.getBoolean("strongBoxPreferred"))
+    }
+
+    @Test
+    fun registerPushStorageWithDefaultsReturnsConfig() {
+        val config = createMockReadableMap(emptyMap())
+
+        val id = RNPingStorageCommon.registerPushStorage(config)
+        val configMap = RNPingStorageCommon.configurePushStorage(id)
+
+        assertNotNull(id)
+        assertTrue(id.isNotEmpty())
+        assertNotNull(configMap)
+        assertEquals("secure_prefs", configMap.getString("fileName"))
+    }
+
+    @Test
+    fun registerPushStorageWithCustomValuesRoundTrips() {
+        val config = createMockReadableMap(
+            mapOf(
+                "fileName" to "push_store",
+                "keyAlias" to "pushKey",
+                "cacheStrategy" to "cache_on_failure",
+            )
+        )
+
+        val id = RNPingStorageCommon.registerPushStorage(config)
+        val configMap = RNPingStorageCommon.configurePushStorage(id)
+
+        assertEquals("push_store", configMap.getString("fileName"))
+        assertEquals("pushKey", configMap.getString("keyAlias"))
+        assertEquals("cache_on_failure", configMap.getString("cacheStrategy"))
+    }
+
+    @Test
+    fun bindingUserKeyAndPushStorageRegistriesAreIndependent() {
+        val bindingConfig = createMockReadableMap(mapOf("fileName" to "binding_store"))
+        val pushConfig = createMockReadableMap(mapOf("fileName" to "push_store"))
+
+        val bindingId = RNPingStorageCommon.registerBindingUserKeyStorage(bindingConfig)
+        val pushId = RNPingStorageCommon.registerPushStorage(pushConfig)
+        val bindingMap = RNPingStorageCommon.configureBindingUserKeyStorage(bindingId)
+        val pushMap = RNPingStorageCommon.configurePushStorage(pushId)
+
+        assertEquals("binding_store", bindingMap.getString("fileName"))
+        assertEquals("push_store", pushMap.getString("fileName"))
+        assertNotEquals(bindingId, pushId)
     }
 
     @Test

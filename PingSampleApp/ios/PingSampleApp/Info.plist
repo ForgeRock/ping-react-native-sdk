@@ -73,13 +73,17 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app uses the camera to scan QR codes for OATH token registration.</string>
+	<string>This app uses the camera to scan QR codes for OATH token registration and push credential enrollment..</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app uses Face ID to authenticate you for secure device binding and signing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location while you use the app to improve sign-in security, detect suspicious activity, and enable location-based authentication when required.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FontAwesome.ttf</string>

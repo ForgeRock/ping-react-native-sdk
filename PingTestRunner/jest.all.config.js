@@ -32,6 +32,7 @@ module.exports = {
     '<rootDir>/../packages/journey/jest.config.js',
     '<rootDir>/../packages/logger/jest.config.js',
     '<rootDir>/../packages/oidc/jest.config.js',
+    '<rootDir>/../packages/push/jest.config.js',
     '<rootDir>/../packages/storage/jest.config.js',
 
     // ── PingTestRunner integration tests ─────────────────────────────────

@@ -155,6 +155,48 @@ final class JourneyClientFactoryTests: XCTestCase {
     XCTAssertNotNil(journey)
   }
 
+  func testBuildSessionStorageWithNilAccountUsesDefault() async throws {
+    let sessionStorageId = await CoreRuntime.sessionStorageConfigRegistry.register(
+      StorageHandleStub(cacheable: nil, account: nil, encryptor: nil)
+    )
+
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil, realm: nil, cookie: nil, clientId: nil,
+      discoveryEndpoint: nil, redirectUri: nil, scopes: [],
+      openId: nil, acrValues: nil, signOutRedirectUri: nil,
+      state: nil, nonce: nil, uiLocales: nil, refreshThreshold: nil,
+      loginHint: nil, display: nil, prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: sessionStorageId,
+      oidcStorageId: nil, loggerId: nil, oidcClientId: nil
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+    XCTAssertNotNil(journey, "build should succeed when account is nil — default 'com.pingidentity.rnjourney.storage' is used")
+  }
+
+  func testBuildOidcStorageWithNilAccountUsesDefault() async throws {
+    let oidcStorageId = await CoreRuntime.oidcStorageConfigRegistry.register(
+      StorageHandleStub(cacheable: nil, account: nil, encryptor: nil)
+    )
+
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil, realm: nil, cookie: nil, clientId: nil,
+      discoveryEndpoint: nil, redirectUri: nil, scopes: [],
+      openId: nil, acrValues: nil, signOutRedirectUri: nil,
+      state: nil, nonce: nil, uiLocales: nil, refreshThreshold: nil,
+      loginHint: nil, display: nil, prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: oidcStorageId, loggerId: nil, oidcClientId: nil
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+    XCTAssertNotNil(journey, "build should succeed when account is nil — default 'com.pingidentity.rnjourney.storage' is used")
+  }
+
   func testBuildRejectsUnknownSessionStorageId() async {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",

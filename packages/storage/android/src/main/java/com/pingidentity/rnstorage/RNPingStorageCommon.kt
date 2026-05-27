@@ -29,6 +29,10 @@ object RNPingStorageCommon {
   private val bindingUserKeyConfigRegistry =
     StorageConfigRegistry(CoreRuntime.bindingUserKeyStorageConfigRegistry)
 
+  /** Registry for push MFA storage configurations */
+  private val pushConfigRegistry =
+    StorageConfigRegistry(CoreRuntime.pushStorageConfigRegistry)
+
   /**
    * Register session storage with the provided configuration.
    *
@@ -76,6 +80,16 @@ object RNPingStorageCommon {
   }
 
   /**
+   * Register push MFA storage with the provided configuration.
+   */
+  @JvmStatic
+  fun registerPushStorage(config: ReadableMap): String {
+    val map = config.toHashMap()
+    val storageConfig = buildStorageConfig(map)
+    return pushConfigRegistry.register(storageConfig)
+  }
+
+  /**
    * Register OATH storage with the provided configuration.
    *
    * OATH on Android uses `SQLOathStorage(SQLiteStorageConfig)` whose only
@@ -101,7 +115,7 @@ object RNPingStorageCommon {
    *
    * @param config Configuration map containing optional storage settings:
    *   - fileName: File name for persistent storage (default: "secure_prefs")
-   *   - keyAlias: Encryption key alias for Android Keystore (default: "defaultKey")
+   *   - keyAlias: Encryption key alias for Android Keystore (default: "com.pingidentity.rnstorage.storage")
    *   - strongBoxPreferred: Whether to prefer StrongBox-backed keys (default: null)
    *   - cacheStrategy: Cache strategy string (NO_CACHE, CACHE, or CACHE_ON_FAILURE)
    * @return Normalized [StorageConfig] instance with all configuration values
@@ -109,7 +123,7 @@ object RNPingStorageCommon {
   private fun buildStorageConfig(config: Map<String, Any?>): StorageConfig {
 
     val fileName = config["fileName"] as? String ?: "secure_prefs"
-    val keyAlias = (config["keyAlias"] as? String) ?: "defaultKey"
+    val keyAlias = (config["keyAlias"] as? String) ?: "com.pingidentity.rnstorage.storage"
     val strongBoxPreferred = config["strongBoxPreferred"] as? Boolean
     val cacheStrategy = config["cacheStrategy"] as? String
     return StorageConfig(
@@ -144,6 +158,15 @@ object RNPingStorageCommon {
   @JvmStatic
   fun configureBindingUserKeyStorage(id: String): WritableMap {
     val resolvedConfig = bindingUserKeyConfigRegistry.resolve(id)
+    return encodeConfig(resolvedConfig)
+  }
+
+  /**
+   * Resolve and encode a registered push MFA storage configuration by id.
+   */
+  @JvmStatic
+  fun configurePushStorage(id: String): WritableMap {
+    val resolvedConfig = pushConfigRegistry.resolve(id)
     return encodeConfig(resolvedConfig)
   }
 

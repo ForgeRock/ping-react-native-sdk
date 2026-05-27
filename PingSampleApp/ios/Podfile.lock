@@ -194,6 +194,9 @@ PODS:
   - PingOrchestrate (2.0.0):
     - PingNetwork (~> 2.0.0)
     - PingStorage (~> 2.0.0)
+  - PingPush (2.0.0):
+    - PingNetwork (~> 2.0.0)
+    - PingTamperDetector (~> 2.0.0)
   - PingStorage (2.0.0)
   - PingTamperDetector (2.0.0):
     - PingCommons (~> 2.0.0)
@@ -2844,6 +2847,39 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingPush (0.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger (~> 2.0.0)
+    - PingPush (= 2.0.0)
+    - PingStorage (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingStorage (0.1.0):
     - boost
     - DoubleConversion
@@ -3185,6 +3221,7 @@ DEPENDENCIES:
   - "RNPingLogger (from `../../node_modules/@ping-identity/rn-logger`)"
   - "RNPingOath (from `../../node_modules/@ping-identity/rn-oath`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
+  - "RNPingPush (from `../../node_modules/@ping-identity/rn-push`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - RNSVG (from `../../node_modules/react-native-svg`)
@@ -3233,6 +3270,7 @@ SPEC REPOS:
     - PingOath
     - PingOidc
     - PingOrchestrate
+    - PingPush
     - PingStorage
     - PingTamperDetector
     - PromisesObjC
@@ -3416,6 +3454,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-oath"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
+  RNPingPush:
+    :path: "../../node_modules/@ping-identity/rn-push"
   RNPingStorage:
     :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
@@ -3478,6 +3518,7 @@ SPEC CHECKSUMS:
   PingOath: e401ec4a9bc3edad14ca1c205c1420b7636fbf80
   PingOidc: eda685279cfaba6d42ca474a953306448987e760
   PingOrchestrate: 21d780ed7eeb3c366ae43785017b2700478db783
+  PingPush: 71aed837ffd7bed5a75f9f08a05431c232094957
   PingStorage: 7e3bc6966fbf7587523e56a8a7b0f5d85ea3bd94
   PingTamperDetector: b5e4b7aa325a11f2de1f3df9bdd8cc3391cddf1c
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
@@ -3560,6 +3601,7 @@ SPEC CHECKSUMS:
   RNPingLogger: 85893024c3d861ac0e01d35f91860e5bdd3cd904
   RNPingOath: f800f54371fa0ee2a849d29fcefdb54eb01eac90
   RNPingOidc: d17f951f9ca06652fd97caaaf7aaced99e4ad9e8
+  RNPingPush: 214ca695aa3779c722fb12ef64cd18fba6fd415b
   RNPingStorage: e4f9709832992edd2c49e7885d300aca7cacd68e
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNSVG: e8fb86f41fccd7b67c4480bb9e179e0ad5785b80
@@ -3569,6 +3611,6 @@ SPEC CHECKSUMS:
   VisionCameraBarcodeScanner: 0b6fe2e3c52ca68a0dbd5d25719c7523c68d807f
   Yoga: 703055a9f39562521cdb8657162dfd80f8c174c3
 
-PODFILE CHECKSUM: 81460a7502cefe9e1b61fd316a221e6cf19bef06
+PODFILE CHECKSUM: 83df8013c84a3febb48d5c5092b148ef9136e104
 
 COCOAPODS: 1.15.2

@@ -30,6 +30,9 @@ object CoreRuntime {
     /** Registry for OATH policy evaluator configuration */
     val oathPolicyEvaluatorRegistry: Registry = SimpleRegistry()
 
+    /** Registry for push MFA storage configuration */
+    val pushStorageConfigRegistry: Registry = SimpleRegistry()
+
     /** Registry for logger instances */
     val loggerRegistry: Registry = SimpleRegistry()
     /** Registry for OIDC client configurations */
@@ -50,6 +53,4 @@ object CoreRuntime {
      */
     suspend fun resolveJourneyCallbacks(journeyId: String): List<Any>? =
         journeyCallbackResolver?.invoke(journeyId)
-
-    // val mfaRegistry: Registry = SimpleRegistry()
 }

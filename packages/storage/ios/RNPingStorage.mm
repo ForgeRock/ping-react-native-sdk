@@ -123,6 +123,31 @@ RCT_EXPORT_MODULE()
 }
 
 /**
+ Registers a push MFA storage configuration.
+ */
+- (NSString *)registerPushStorage:(JS::NativeRNPingStorage::NativeStorageConfig &)config
+{
+  NSMutableDictionary *dict = [NSMutableDictionary new];
+  NSString *loggerId = config.loggerId();
+  if (loggerId != nil) {
+    dict[@"loggerId"] = loggerId;
+  }
+  NSString *account = config.account();
+  if (account != nil) {
+    dict[@"account"] = account;
+  }
+  auto encryptor = config.encryptor();
+  if (encryptor.has_value()) {
+    dict[@"encryptor"] = @(encryptor.value());
+  }
+  auto cacheable = config.cacheable();
+  if (cacheable.has_value()) {
+    dict[@"cacheable"] = @(cacheable.value());
+  }
+  return [[self swiftImpl] registerPushStorage:dict];
+}
+
+/**
  Resolves a session storage configuration by id.
  
  - Parameter storageId: Storage configuration identifier.
@@ -150,6 +175,14 @@ RCT_EXPORT_MODULE()
 - (NSDictionary *)configureBindingUserKeyStorage:(NSString *)storageId
 {
   return [[self swiftImpl] configureBindingUserKeyStorage:storageId];
+}
+
+/**
+ Resolves a push MFA storage configuration by id.
+ */
+- (NSDictionary *)configurePushStorage:(NSString *)storageId
+{
+  return [[self swiftImpl] configurePushStorage:storageId];
 }
 
 /**

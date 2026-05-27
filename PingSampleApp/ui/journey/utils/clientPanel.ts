@@ -304,7 +304,13 @@ export function resolveContinueNodeAutomationPolicy(
     pollingWaitMs,
   } = input;
 
-  const hasBlockingUserInput = fields.some(field => field.requiresUserInput);
+  // When polling is active, ConfirmationCallback is a cancel escape hatch — not a
+  // blocking user choice. Exclude it from the blocking check so auto-poll proceeds.
+  const hasBlockingUserInput = fields.some(
+    field =>
+      field.requiresUserInput &&
+      !(hasPollingWaitCallback && field.ref.type === 'ConfirmationCallback'),
+  );
   const hasAutoCapableCallback = fields.some(
     field => field.executionMode === 'auto_capable',
   );

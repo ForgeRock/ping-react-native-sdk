@@ -115,6 +115,18 @@ export default function HomeScreen({
       icon: 'lock-clock',
       screen: 'OathTokens',
     },
+    {
+      title: 'Push',
+      subtitle: 'Manage push authentication accounts',
+      icon: 'notifications',
+      screen: 'Push',
+    },
+    {
+      title: 'Push Notifications',
+      subtitle: 'View and respond to push requests',
+      icon: 'notifications-active',
+      screen: 'PushNotifications',
+    },
   ];
 
   const developerToolsItems: HomeScreenMenuItem[] = [
