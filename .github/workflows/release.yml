@@ -4,6 +4,26 @@
 # This software may be modified and distributed under the terms
 # of the MIT license. See the LICENSE file for details.
 #
+# Release Workflow
+# ----------------
+# Triggered manually via GitHub Actions UI (Actions → Release → Run workflow).
+# Select the branch to release from (e.g. release/1.0.0-beta).
+#
+# Steps:
+#   1. Checks out the repo using the built-in GITHUB_TOKEN.
+#   2. Installs Node 22 and yarn dependencies.
+#   3. Sets git identity to github-actions[bot].
+#   4. Reads changeset files and bumps all package.json versions + generates CHANGELOGs.
+#   5. Verifies all packages are at the same version (lockstep check).
+#   6. Commits the version bump and pushes it back to the branch.
+#   7. Builds all packages and publishes them to npm via OIDC (no token required).
+#   8. Creates a single repo-level version tag (e.g. v1.0.0-beta.0) and pushes it.
+#
+# Prerequisites:
+#   - npm Trusted Publishing must be configured for each @ping-identity/* package on npmjs.com,
+#     pointing to this repo and this workflow file.
+#   - The branch must not have required status checks that block GITHUB_TOKEN pushes.
+#
 name: Release
 
 on:
@@ -11,7 +31,7 @@ on:
 
 permissions:
   contents: write
-  id-token: write  # required for npm provenance signing
+  id-token: write # required for npm provenance signing
 
 jobs:
   release:
@@ -20,15 +40,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # PAT required — GITHUB_TOKEN cannot push to a branch protected by required status checks.
-          # Required scopes: contents:write (to push version bump commit and tags).
-          # Do NOT grant repo-wide admin or workflow scopes — contents:write is sufficient.
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -43,7 +60,7 @@ jobs:
         run: yarn release:version
         env:
           # changelog-github uses GITHUB_TOKEN to resolve PR links and author info in CHANGELOG.md
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check lockstep
         run: yarn release:check-lockstep
@@ -59,11 +76,13 @@ jobs:
       - name: Build and publish
         # changeset publish: publishes packages not yet at current version, creates git tags
         # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
-        run: yarn release:publish
+        run: yarn packages:build && yarn changeset publish --no-git-tag
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
-      - name: Push tags
-        # Tags are created by changeset publish — push them after publish succeeds
-        run: git push --follow-tags
+      - name: Tag release
+        # All packages version in lockstep — create a single repo-level tag
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
