@@ -166,3 +166,76 @@ export type PushStorageHandle = Readonly<{
    */
   [pushStorageHandleBrand]: true;
 }>;
+
+/**
+ * Compile-time brand key for OATH storage handles.
+ *
+ * @internal
+ */
+declare const oathStorageHandleBrand: unique symbol;
+
+/**
+ * Shared opaque handle returned by OATH storage configuration helpers.
+ *
+ * @remarks
+ * This handle is brand-distinct from all other storage handles — assigning an
+ * `OathStorageHandle` to a `BindingUserKeyStorageHandle` (or vice-versa) is a
+ * compile-time error, even though both carry an `id` and a `kind` field.
+ *
+ * Pass this handle as `OathClientConfig.storage` to override the native SDK
+ * default storage backend. Omitting the field causes the native SDK to use its
+ * default storage.
+ */
+export type OathStorageHandle = Readonly<{
+  /**
+   * Native identifier for a registered OATH storage configuration.
+   */
+  id: string;
+  /**
+   * Runtime discriminator for OATH storage handles.
+   */
+  kind: 'oath_storage';
+  /**
+   * Compile-time brand to keep this handle opaque.
+   *
+   * @internal
+   */
+  [oathStorageHandleBrand]: true;
+}>;
+
+/**
+ * Compile-time brand key for OATH policy evaluator handles.
+ *
+ * @internal
+ */
+declare const oathPolicyEvaluatorHandleBrand: unique symbol;
+
+/**
+ * Shared opaque handle returned by {@link configureOathPolicyEvaluator}.
+ *
+ * @remarks
+ * This handle is brand-distinct from all other handle types — assigning an
+ * `OathPolicyEvaluatorHandle` to an `OathStorageHandle` (or any other handle)
+ * is a compile-time error, even though both carry an `id` and a `kind` field.
+ *
+ * Pass this handle as `OathClientConfig.policyEvaluator` to override the
+ * native SDK default policy evaluator. Omitting the field causes the native
+ * SDK to use its default evaluator (both `biometricAvailable` and
+ * `deviceTampering` policies enabled).
+ */
+export type OathPolicyEvaluatorHandle = Readonly<{
+  /**
+   * Native identifier for a registered OATH policy evaluator configuration.
+   */
+  id: string;
+  /**
+   * Runtime discriminator for OATH policy evaluator handles.
+   */
+  kind: 'oath_policy_evaluator';
+  /**
+   * Compile-time brand to keep this handle opaque.
+   *
+   * @internal
+   */
+  [oathPolicyEvaluatorHandleBrand]: true;
+}>;

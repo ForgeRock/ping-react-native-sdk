@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:425224784438:android:56870e9c9484be9b816697",
         "android_client_info": {
-          "package_name": "com.pingidentity.samples.pingsampleapp"
+          "package_name": "com.pingidentity.rnsampleapp"
         }
       },
       "oauth_client": [],

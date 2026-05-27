@@ -28,6 +28,8 @@ import BindingKeysScreen from './ui/BindingKeysScreen';
 import PushScreen from './ui/push/PushScreen';
 import PushNotificationsScreen from './ui/push/PushNotificationsScreen';
 import { PushNotificationProvider } from './ui/push/PushNotificationProvider';
+import OathTokensScreen from './ui/OathTokensScreen';
+import QRScannerScreen from './ui/QRScannerScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
 import { sampleAppClientProfiles } from './src/clients';
@@ -69,6 +71,8 @@ export type RootStackParamList = {
   BindingKeys: undefined;
   Push: undefined;
   PushNotifications: undefined;
+  OathTokens: undefined;
+  QRScanner: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -417,6 +421,16 @@ export default function App() {
                 name="PushNotifications"
                 component={PushNotificationsScreen}
                 options={{ title: 'Push Notifications' }}
+              />
+              <Stack.Screen
+                name="OathTokens"
+                component={OathTokensScreen}
+                options={{ title: 'OATH Tokens' }}
+              />
+              <Stack.Screen
+                name="QRScanner"
+                component={QRScannerScreen}
+                options={{ title: 'QR Scanner' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

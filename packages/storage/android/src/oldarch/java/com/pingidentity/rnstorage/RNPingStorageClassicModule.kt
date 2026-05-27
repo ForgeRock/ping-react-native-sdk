@@ -65,6 +65,17 @@ class RNPingStorageClassicModule(
     }
 
     /**
+     * Register OATH storage configuration (synchronous blocking method).
+     *
+     * @param config Storage configuration containing databaseName
+     * @return Unique ID that can be used to reference this storage configuration
+     */
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun registerOathStorage(config: ReadableMap): String {
+        return RNPingStorageCommon.registerOathStorage(config)
+    }
+
+    /**
      * Resolve session storage configuration by id (synchronous blocking method).
      *
      * @param id Storage configuration id
@@ -94,5 +105,16 @@ class RNPingStorageClassicModule(
     @ReactMethod(isBlockingSynchronousMethod = true)
     fun configurePushStorage(id: String): WritableMap {
         return RNPingStorageCommon.configurePushStorage(id)
+    }
+
+    /**
+     * Resolve OATH storage configuration by id (synchronous blocking method).
+     *
+     * @param id Storage configuration id
+     * @return Storage configuration map
+     */
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun configureOathStorage(id: String): WritableMap {
+        return RNPingStorageCommon.configureOathStorage(id)
     }
 }

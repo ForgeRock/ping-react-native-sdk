@@ -39,6 +39,7 @@
     "@ping-identity/rn-fido": "workspace:*",
     "@ping-identity/rn-journey": "workspace:*",
     "@ping-identity/rn-logger": "workspace:*",
+    "@ping-identity/rn-oath": "workspace:*",
     "@ping-identity/rn-oidc": "workspace:*",
     "@ping-identity/rn-push": "workspace:*",
     "@ping-identity/rn-storage": "workspace:*",

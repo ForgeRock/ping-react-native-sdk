@@ -73,7 +73,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera access is required to scan QR codes for push credential enrollment.</string>
+	<string>This app uses the camera to scan QR codes for OATH token registration and push credential enrollment..</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>This app uses Face ID to authenticate you for secure device binding and signing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

@@ -72,4 +72,18 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configurePushStorage:(NSString *)storageI
 
   return config;
 }
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(registerOathStorage:(NSDictionary *)config)
+{
+  NSString *storageId = [RNPingStorageCommon registerOathStorage:config];
+
+  return storageId;
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(configureOathStorage:(NSString *)storageId)
+{
+  NSDictionary *config = [RNPingStorageCommon configureOathStorage:storageId];
+
+  return config;
+}
 @end

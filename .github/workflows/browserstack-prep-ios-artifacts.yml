@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.1.1' }}
+      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.4.1' }}
       RUBY_VERSION: '2.6.10'
       BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
       PING_TEST_RUNNER_DIR: PingTestRunner
@@ -52,11 +52,36 @@ jobs:
       - name: Setup project dependencies
         uses: ./.github/actions/setup-proj
 
-      - name: Select Xcode version
-        run: sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
+      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator runtime
+      # component (SDK ≠ runtime — the SDK ships inside Xcode but the runtime is provisioned separately).
+      # This step prefers the pinned version but falls back to the newest installed Xcode whose major.minor
+      # iOS version has a matching pre-provisioned simulator runtime, so the archive destination is always valid.
+      - name: Resolve Xcode version
+        run: |
+          PINNED="/Applications/Xcode_${XCODE_VERSION}.app"
+          SELECTED=""
+          AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
+            | grep -i "iOS" | grep -v "unavailable" \
+            | grep -oE "[0-9]+\.[0-9]+" | sort -u)
+          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+            [ -d "$app" ] || continue
+            xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
+              xcodebuild -showsdks 2>/dev/null \
+              | grep -i "iphonesimulator" | grep -oE "[0-9]+\.[0-9]+" | sort -rV | head -1)
+            [ -n "$xcode_ios" ] || continue
+            if echo "$AVAILABLE_RUNTIMES" | grep -qx "$xcode_ios"; then
+              SELECTED="$app"
+              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
+              echo "Resolved Xcode: $app (iOS SDK $xcode_ios, runtime available)"
+              break
+            else
+              echo "Skipping $app: iOS $xcode_ios SDK present but runtime not provisioned (available: $(echo $AVAILABLE_RUNTIMES | tr '\n' ' '))"
+            fi
+          done
+          [ -n "$SELECTED" ] || { echo "No Xcode with a matching provisioned iOS simulator runtime found"; exit 1; }
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Select Xcode version
+        run: sudo xcode-select -s "$XCODE_RESOLVED_PATH" && /usr/bin/xcodebuild -version
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1

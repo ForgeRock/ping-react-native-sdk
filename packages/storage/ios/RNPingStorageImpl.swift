@@ -111,4 +111,27 @@ public class RNPingStorageImpl: NSObject, @unchecked Sendable {
   public func configurePushStorage(_ id: String) -> NSDictionary {
     return RNPingStorageCommon.configurePushStorage(id)
   }
+
+  /**
+   Registers an OATH storage configuration.
+
+   - Parameter config: Configuration dictionary for OATH storage
+     (service, requireBiometrics, requireDevicePasscode, biometricPrompt, accessGroup).
+   - Returns: A unique identifier for the registered configuration.
+   */
+  @objc
+  public func registerOathStorage(_ config: NSDictionary) -> String {
+    return RNPingStorageCommon.registerOathStorage(config)
+  }
+
+  /**
+   Resolves an OATH storage configuration by id.
+
+   - Parameter id: Storage configuration identifier.
+   - Returns: A storage configuration dictionary with OATH keychain fields.
+   */
+  @objc
+  public func configureOathStorage(_ id: String) -> NSDictionary {
+    return RNPingStorageCommon.configureOathStorage(id)
+  }
 }
