@@ -14,12 +14,12 @@ export type {
   PushProviderProps,
 } from './usePush';
 
+export { PushError } from './types';
 export type {
   PushClient,
   PushClientConfig,
   PushConfig,
   PushCredential,
-  PushError,
   PushErrorCode,
   PushNotification,
   PushNotificationCleanupConfig,

@@ -5,11 +5,9 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type {
-  GenericError,
-  OathPolicyEvaluatorHandle,
-} from '@ping-identity/rn-types';
+import type { OathPolicyEvaluatorHandle } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingOath';
+import { OathError } from './types';
 import type { OathMfaPolicy, OathPolicyEvaluatorConfig } from './types';
 
 // MfaPolicy parity check — verified against ping-android-sdk@c939521 / ping-ios-sdk@2d6e3eb
@@ -24,7 +22,7 @@ const VALID_POLICY_KINDS = new Set<OathMfaPolicy['kind']>([
  *
  * @param config - Policy evaluator configuration specifying the policies to enforce.
  * @returns A branded {@link OathPolicyEvaluatorHandle} containing the native registry id.
- * @throws {@link GenericError} with `type: 'argument_error'` when `policies` is empty
+ * @throws {@link OathError} with `type: 'argument_error'` when `policies` is empty
  *   or contains an unrecognised kind.
  *
  * @remarks
@@ -72,21 +70,20 @@ export function configureOathPolicyEvaluator(
     !Array.isArray(config.policies) ||
     config.policies.length === 0
   ) {
-    throw {
-      type: 'argument_error',
-      error: 'OATH_INVALID_PARAMETER',
-      message:
-        '[@ping-identity/rn-oath] configureOathPolicyEvaluator: policies must be a non-empty array.',
-    } satisfies GenericError;
+    throw new OathError(
+      '[@ping-identity/rn-oath] configureOathPolicyEvaluator: policies must be a non-empty array.',
+      'OATH_INVALID_PARAMETER',
+      'argument_error',
+    );
   }
 
   for (const policy of config.policies) {
     if (!VALID_POLICY_KINDS.has(policy.kind)) {
-      throw {
-        type: 'argument_error',
-        error: 'OATH_INVALID_PARAMETER',
-        message: `[@ping-identity/rn-oath] configureOathPolicyEvaluator: unknown policy kind "${policy.kind}". Valid kinds: ${[...VALID_POLICY_KINDS].join(', ')}.`,
-      } satisfies GenericError;
+      throw new OathError(
+        `[@ping-identity/rn-oath] configureOathPolicyEvaluator: unknown policy kind "${policy.kind}". Valid kinds: ${[...VALID_POLICY_KINDS].join(', ')}.`,
+        'OATH_INVALID_PARAMETER',
+        'argument_error',
+      );
     }
   }
 

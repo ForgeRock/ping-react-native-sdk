@@ -7,6 +7,7 @@
 
 import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
+import { DeviceProfileError } from './types';
 import type {
   DeviceProfile,
   DeviceProfileCollector,
@@ -70,7 +71,7 @@ export async function collectDeviceProfile(
     return profile;
   } catch (error) {
     logger.error('Device profile collect failed');
-    throw error;
+    throw DeviceProfileError.from(error);
   }
 }
 
@@ -115,7 +116,7 @@ export async function collectDeviceProfileForJourney(
     logger.debug('Device profile journey getId success');
   } catch (error) {
     logger.error('Device profile failed while resolving Journey');
-    throw error;
+    throw DeviceProfileError.from(error);
   }
 
   const nativeModule = getNativeModule();
@@ -130,9 +131,17 @@ export async function collectDeviceProfileForJourney(
     return result;
   } catch (error) {
     logger.error('Device profile metadata collection for Journey failed');
-    throw error;
+    throw DeviceProfileError.from(error);
   }
 }
 
-export type * from './types';
+export { DeviceProfileError } from './types';
+export type {
+  DeviceProfileCollector,
+  DeviceProfile,
+  DeviceProfileErrorCode,
+  DeviceProfileJourneyResult,
+  DeviceProfileLoggerOptions,
+  DeviceProfileCallbackInputValue,
+} from './types';
 export type { JourneyInstance } from '@ping-identity/rn-types';

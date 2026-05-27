@@ -26,6 +26,7 @@ import {
   callbackType,
   nativeExtensionCallbackType,
 } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import { journeyFullScreenStyles as styles } from '../src/styles/journeyStyles';
 import PingTextInput from './components/atoms/PingTextInput';
@@ -370,7 +371,7 @@ export default function JourneyFullScreen(): React.ReactElement {
       setIssues([]);
       await start(targetJourney);
     } catch (cause) {
-      Alert.alert('start() failed', String(cause));
+      Alert.alert('start() failed', formatError(cause));
     }
   }, [journeyName, start]);
 
@@ -385,7 +386,7 @@ export default function JourneyFullScreen(): React.ReactElement {
       await resume(targetResumeUrl);
       setResumeUrl('');
     } catch (cause) {
-      Alert.alert('resume() failed', String(cause));
+      Alert.alert('resume() failed', formatError(cause));
     }
   }, [resume, resumeUrl]);
 
@@ -399,7 +400,7 @@ export default function JourneyFullScreen(): React.ReactElement {
     try {
       await next(plan.input);
     } catch (cause) {
-      Alert.alert('next() failed', String(cause));
+      Alert.alert('next() failed', formatError(cause));
     }
   }, [indexedCallbacks, next, values]);
 
@@ -410,7 +411,7 @@ export default function JourneyFullScreen(): React.ReactElement {
       setValues({});
       setIssues([]);
     } catch (cause) {
-      Alert.alert('logoutUser() failed', String(cause));
+      Alert.alert('logoutUser() failed', formatError(cause));
     }
   }, [logoutUser]);
 
@@ -663,7 +664,7 @@ export default function JourneyFullScreen(): React.ReactElement {
 
         {error ? (
           <View style={styles.section}>
-            <Text style={styles.errorText}>Error: {error.message}</Text>
+            <Text style={styles.errorText}>{formatError(error)}</Text>
           </View>
         ) : null}
       </View>

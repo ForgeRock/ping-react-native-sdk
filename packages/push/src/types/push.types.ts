@@ -12,5 +12,6 @@ export type {
   PushType,
 } from './notification.types';
 export type { PushClientConfig, PushConfig } from './config.types';
-export type { PushError, PushErrorCode } from './error.types';
+export { PushError } from './error.types';
+export type { PushErrorCode } from './error.types';
 export type { PushClient } from './client.types';

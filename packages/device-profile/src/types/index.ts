@@ -5,4 +5,12 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export * from './deviceProfile.types';
+export { DeviceProfileError } from './deviceProfile.types';
+export type {
+  DeviceProfileCollector,
+  DeviceProfile,
+  DeviceProfileErrorCode,
+  DeviceProfileJourneyResult,
+  DeviceProfileLoggerOptions,
+  DeviceProfileCallbackInputValue,
+} from './deviceProfile.types';

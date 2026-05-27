@@ -30,6 +30,10 @@ export type {
   JourneyProviderProps,
 } from './useJourney';
 /**
+ * Journey error class.
+ */
+export { JourneyError } from './types/error.types';
+/**
  * All Journey public type contracts.
  */
 export type * from './types';

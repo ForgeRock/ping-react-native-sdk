@@ -10,6 +10,9 @@ module.exports = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(?:@ping-identity/rn-types|@forgerock/sdk-types|react-native|@react-native|@react-native-community)/)',
+  ],
   reporters: [
     'default',
     [

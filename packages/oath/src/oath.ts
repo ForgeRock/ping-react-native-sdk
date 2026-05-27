@@ -6,8 +6,9 @@
  */
 
 import { Platform } from 'react-native';
-import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingOath';
+import { OathError } from './types';
 import type {
   OathClient,
   OathClientConfig,
@@ -28,15 +29,15 @@ const noopLogger: LoggerInstance = {
  * Assert that the client has not been closed.
  *
  * @param closed - Current closed state of the client.
- * @throws {@link GenericError} with `type: 'state_error'` when the client is closed.
+ * @throws {@link OathError} with `type: 'state_error'` when the client is closed.
  */
 function assertOpen(closed: boolean): void {
   if (closed) {
-    throw {
-      type: 'state_error',
-      error: 'OATH_STATE_ERROR',
-      message: '[@ping-identity/rn-oath] Client is closed.',
-    } satisfies GenericError;
+    throw new OathError(
+      '[@ping-identity/rn-oath] Client is closed.',
+      'OATH_STATE_ERROR',
+      'state_error',
+    );
   }
 }
 
@@ -51,7 +52,7 @@ function assertOpen(closed: boolean): void {
  *
  * @param config - Optional OATH client configuration.
  * @returns A promise that resolves to an {@link OathClient} handle.
- * @throws {@link GenericError} when the native OATH module fails to initialise.
+ * @throws {@link OathError} when the native OATH module fails to initialise.
  *
  * @example
  * Basic usage:
@@ -83,11 +84,11 @@ export async function createOathClient(
   if (timeout !== undefined && timeout < 0) {
     // Validate before calling native — see code-standards.md: "Validate inputs
     // before calling native; throw argument_error for caller mistakes."
-    throw {
-      type: 'argument_error',
-      error: 'OATH_INVALID_PARAMETER',
-      message: `timeout must be >= 0 (received ${timeout}).`,
-    } satisfies GenericError;
+    throw new OathError(
+      `timeout must be >= 0 (received ${timeout}).`,
+      'OATH_INVALID_PARAMETER',
+      'argument_error',
+    );
   }
   const enableCredentialCache = config?.enableCredentialCache;
   // encryptionEnabled is iOS-only. Drop it in JS so Android never sees the key
@@ -111,7 +112,7 @@ export async function createOathClient(
     });
   } catch (error) {
     jsLogger.error('OATH createOathClient failed');
-    throw error;
+    throw OathError.from(error);
   }
 
   jsLogger.info('OATH createOathClient success');
@@ -131,7 +132,7 @@ export async function createOathClient(
         return result as OathCredential;
       } catch (error) {
         jsLogger.error('OATH addCredentialFromUri failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -149,7 +150,7 @@ export async function createOathClient(
         return result as OathCredential | null;
       } catch (error) {
         jsLogger.error('OATH getCredential failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -162,7 +163,7 @@ export async function createOathClient(
         return result as OathCredential[];
       } catch (error) {
         jsLogger.error('OATH getCredentials failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -174,25 +175,25 @@ export async function createOathClient(
       // digits must be 6 or 8 (RFC 4226/6238); period must be > 0 for TOTP;
       // counter must be >= 0 for HOTP.
       if (credential.digits !== 6 && credential.digits !== 8) {
-        throw {
-          type: 'argument_error',
-          error: 'OATH_INVALID_PARAMETER',
-          message: `[@ping-identity/rn-oath] saveCredential: digits must be 6 or 8 (received ${credential.digits}).`,
-        } satisfies GenericError;
+        throw new OathError(
+          `[@ping-identity/rn-oath] saveCredential: digits must be 6 or 8 (received ${credential.digits}).`,
+          'OATH_INVALID_PARAMETER',
+          'argument_error',
+        );
       }
       if (credential.type === 'TOTP' && credential.period <= 0) {
-        throw {
-          type: 'argument_error',
-          error: 'OATH_INVALID_PARAMETER',
-          message: `[@ping-identity/rn-oath] saveCredential: period must be > 0 for TOTP (received ${credential.period}).`,
-        } satisfies GenericError;
+        throw new OathError(
+          `[@ping-identity/rn-oath] saveCredential: period must be > 0 for TOTP (received ${credential.period}).`,
+          'OATH_INVALID_PARAMETER',
+          'argument_error',
+        );
       }
       if (credential.type === 'HOTP' && credential.counter < 0) {
-        throw {
-          type: 'argument_error',
-          error: 'OATH_INVALID_PARAMETER',
-          message: `[@ping-identity/rn-oath] saveCredential: counter must be >= 0 for HOTP (received ${credential.counter}).`,
-        } satisfies GenericError;
+        throw new OathError(
+          `[@ping-identity/rn-oath] saveCredential: counter must be >= 0 for HOTP (received ${credential.counter}).`,
+          'OATH_INVALID_PARAMETER',
+          'argument_error',
+        );
       }
       jsLogger.debug('OATH saveCredential requested');
       try {
@@ -204,7 +205,7 @@ export async function createOathClient(
         return result as OathCredential;
       } catch (error) {
         jsLogger.error('OATH saveCredential failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -220,7 +221,7 @@ export async function createOathClient(
         return result;
       } catch (error) {
         jsLogger.error('OATH deleteCredential failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -236,7 +237,7 @@ export async function createOathClient(
         return result;
       } catch (error) {
         jsLogger.error('OATH generateCode failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -254,7 +255,7 @@ export async function createOathClient(
         return result as OathCodeInfo;
       } catch (error) {
         jsLogger.error('OATH generateCodeWithValidity failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
 
@@ -267,7 +268,7 @@ export async function createOathClient(
         jsLogger.info('OATH close success');
       } catch (error) {
         jsLogger.error('OATH close failed');
-        throw error;
+        throw OathError.from(error);
       }
     },
   };

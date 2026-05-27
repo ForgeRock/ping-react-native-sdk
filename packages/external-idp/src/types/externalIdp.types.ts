@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 import type { JourneyInstance } from '@ping-identity/rn-types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
@@ -120,12 +120,21 @@ export type ExternalIdpClient = {
 };
 
 /**
- * Error payload returned when external IdP operations fail.
+ * Error thrown when external IdP operations fail.
  *
- * @remarks
- * Rejections use this shape; success resolves with `ExternalIdpResult` or void.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type ExternalIdpError = GenericError;
+export class ExternalIdpError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'ExternalIdpError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): ExternalIdpError {
+    return PingError.fromAs(raw, ExternalIdpError);
+  }
+}
 
 /**
  * Stable error codes emitted by the external IdP module.

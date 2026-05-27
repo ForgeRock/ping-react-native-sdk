@@ -14,6 +14,7 @@ import type {
   OidcUser,
   OidcWebClient,
 } from './types';
+import { OidcError } from './types';
 import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
 export { OidcProvider, useOidc } from './useOidc';
 export type {
@@ -64,8 +65,10 @@ const sanitizeTokens = (
 //   pattern; OIDC is the outlier. Handles currently live until app kill.
 export function createOidcClient(config: OidcClientConfig): OidcClient {
   if (!config.discoveryEndpoint && !config.openId) {
-    throw new Error(
+    throw new OidcError(
       '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.',
+      'OIDC_STATE_ERROR',
+      'state_error',
     );
   }
   // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
@@ -98,7 +101,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         jsLogger.error('OIDC client token failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     refresh: async () => {
@@ -108,7 +111,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         jsLogger.error('OIDC client refresh failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     userinfo: async (cache?: boolean) => {
@@ -121,7 +124,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
         return await getNativeModule().clientUserinfo(clientId, cache ?? false);
       } catch (error) {
         jsLogger.error('OIDC client userinfo failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     revoke: async () => {
@@ -130,7 +133,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
         return await getNativeModule().clientRevoke(clientId);
       } catch (error) {
         jsLogger.error('OIDC client revoke failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     endSession: async () => {
@@ -139,7 +142,7 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
         return await getNativeModule().clientEndSession(clientId);
       } catch (error) {
         jsLogger.error('OIDC client endSession failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
   };
@@ -166,9 +169,11 @@ function resolveStorageId(
     !handle.id.trim() ||
     handle.kind !== 'oidc'
   ) {
-    throw new Error(
+    throw new OidcError(
       '[@ping-identity/rn-oidc] Invalid storage handle. ' +
         'Use configureOidcStorage(...) from @ping-identity/rn-storage.',
+      'OIDC_STATE_ERROR',
+      'state_error',
     );
   }
   return handle.id;
@@ -194,7 +199,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC user token failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     refresh: async () => {
@@ -204,7 +209,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return sanitizeTokens(tokens as Tokens & { tokenExpiry?: number });
       } catch (error) {
         loggerInstance.error('OIDC user refresh failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     userinfo: async (cache?: boolean) => {
@@ -217,7 +222,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().userinfo(webClientId, cache ?? false);
       } catch (error) {
         loggerInstance.error('OIDC user userinfo failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     revoke: async () => {
@@ -226,7 +231,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().revoke(webClientId);
       } catch (error) {
         loggerInstance.error('OIDC user revoke failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     logout: async () => {
@@ -235,7 +240,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().logout(webClientId);
       } catch (error) {
         loggerInstance.error('OIDC user logout failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
   };
@@ -253,7 +258,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         return await getNativeModule().authorize(webClientId, options ?? {});
       } catch (error) {
         loggerInstance.error('OIDC authorize failed');
-        throw error;
+        throw OidcError.from(error);
       }
     },
     user: async () => {
@@ -263,7 +268,7 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
         hasUser = await getNativeModule().hasUser(webClientId);
       } catch (error) {
         loggerInstance.error('OIDC hasUser failed');
-        throw error;
+        throw OidcError.from(error);
       }
       if (hasUser) {
         loggerInstance.debug('OIDC hasUser true');
@@ -275,13 +280,13 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
   };
 }
 
+export { OidcError } from './types';
 export type {
   OidcAuthorizeOptions,
   OidcAuthorizeResult,
   OidcClient,
   OidcClientConfig,
   OidcOpenIdConfiguration,
-  OidcError,
   OidcErrorCode,
   OidcUser,
   OidcWebClient,

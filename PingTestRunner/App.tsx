@@ -30,12 +30,18 @@ import { LaunchArguments } from 'react-native-launch-arguments';
 // evaluated when actually needed, keeping the default bundle small.
 const JourneyScenario = React.lazy(() => import('./scenarios/JourneyScenario'));
 const OidcScenario = React.lazy(() => import('./scenarios/OidcScenario'));
-const DeviceIdScenario = React.lazy(() => import('./scenarios/DeviceIdScenario'));
-const DeviceProfileScenario = React.lazy(() => import('./scenarios/DeviceProfileScenario'));
+const DeviceIdScenario = React.lazy(
+  () => import('./scenarios/DeviceIdScenario'),
+);
+const DeviceProfileScenario = React.lazy(
+  () => import('./scenarios/DeviceProfileScenario'),
+);
 const StorageScenario = React.lazy(() => import('./scenarios/StorageScenario'));
 const LoggerScenario = React.lazy(() => import('./scenarios/LoggerScenario'));
 const BrowserScenario = React.lazy(() => import('./scenarios/BrowserScenario'));
-const UseJourneyScenario = React.lazy(() => import('./scenarios/UseJourneyScenario'));
+const UseJourneyScenario = React.lazy(
+  () => import('./scenarios/UseJourneyScenario'),
+);
 const UseOidcScenario = React.lazy(() => import('./scenarios/UseOidcScenario'));
 const EnvScenario = React.lazy(() => import('./scenarios/EnvScenario'));
 
@@ -43,9 +49,10 @@ interface LaunchArgs {
   PING_TEST_SCENARIO?: string;
 }
 
-const SCENARIO_TOP_PADDING = Platform.OS === 'android'
-  ? Math.max((StatusBar.currentHeight ?? 0) + 8, 40)
-  : 16;
+const SCENARIO_TOP_PADDING =
+  Platform.OS === 'android'
+    ? Math.max((StatusBar.currentHeight ?? 0) + 8, 40)
+    : 16;
 
 function ScenarioContent(): React.JSX.Element {
   const { PING_TEST_SCENARIO } = LaunchArguments.value<LaunchArgs>();

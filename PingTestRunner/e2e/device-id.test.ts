@@ -16,6 +16,7 @@
  *   testIdFormat         → 64-char hex string (SHA-256)
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { device, element, by, expect as detoxExpect } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady } from './setup';

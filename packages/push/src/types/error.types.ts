@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 
 /**
  * Stable error codes emitted by the Push module.
@@ -78,4 +78,14 @@ export type PushErrorCode =
  * }
  * ```
  */
-export type PushError = GenericError;
+export class PushError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'PushError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): PushError {
+    return PingError.fromAs(raw, PushError);
+  }
+}

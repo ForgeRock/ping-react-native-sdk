@@ -9,7 +9,9 @@ import {
   getAllKeys,
   deleteKey,
   deleteAllKeys,
+  BindingError,
 } from '../index';
+import { PingError } from '@ping-identity/rn-types';
 
 jest.mock('react-native', () => ({
   DeviceEventEmitter: {
@@ -149,7 +151,11 @@ describe('Binding API', () => {
   });
 
   it('bindForJourney rejects when native rejects', async () => {
-    const nativeError = new Error('BINDING_UI_UNAVAILABLE');
+    const nativeError = {
+      error: 'BINDING_UI_UNAVAILABLE',
+      type: 'binding_error',
+      message: 'UI unavailable',
+    };
     const bindNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       bindForJourney: bindNative,
@@ -157,9 +163,11 @@ describe('Binding API', () => {
     const journey = { getId: jest.fn().mockResolvedValue('journey-123') };
     const client = createBindingClient();
 
-    await expect(client.bindForJourney(journey)).rejects.toThrow(
-      'BINDING_UI_UNAVAILABLE',
-    );
+    const err = await client.bindForJourney(journey).catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(PingError);
+    expect(err).toBeInstanceOf(BindingError);
+    expect(err.code).toBe('BINDING_UI_UNAVAILABLE');
   });
 
   it('signForJourney forwards all per-call options to native', async () => {
@@ -214,7 +222,11 @@ describe('Binding API', () => {
   });
 
   it('signForJourney rejects when native rejects', async () => {
-    const nativeError = new Error('BINDING_NOT_REGISTERED');
+    const nativeError = {
+      error: 'BINDING_NOT_REGISTERED',
+      type: 'binding_error',
+      message: 'not registered',
+    };
     const signNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       signForJourney: signNative,
@@ -222,9 +234,9 @@ describe('Binding API', () => {
     const journey = { getId: jest.fn().mockResolvedValue('journey-123') };
     const client = createBindingClient();
 
-    await expect(client.signForJourney(journey)).rejects.toThrow(
-      'BINDING_NOT_REGISTERED',
-    );
+    const err = await client.signForJourney(journey).catch((e) => e);
+    expect(err).toBeInstanceOf(BindingError);
+    expect(err.code).toBe('BINDING_NOT_REGISTERED');
   });
 
   it('normalizes blank logger id to undefined', async () => {
@@ -279,7 +291,11 @@ describe('Binding API', () => {
   });
 
   it('logs operation failure before rethrowing', async () => {
-    const nativeError = new Error('BINDING_BIND_ERROR');
+    const nativeError = {
+      error: 'BINDING_BIND_ERROR',
+      type: 'binding_error',
+      message: 'bind failed',
+    };
     const bindNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       bindForJourney: bindNative,
@@ -295,9 +311,9 @@ describe('Binding API', () => {
 
     const journey = { getId: jest.fn().mockResolvedValue('journey-123') };
     const client = createBindingClient({ logger });
-    await expect(client.bindForJourney(journey)).rejects.toThrow(
-      'BINDING_BIND_ERROR',
-    );
+    const err = await client.bindForJourney(journey).catch((e) => e);
+    expect(err).toBeInstanceOf(BindingError);
+    expect(err.code).toBe('BINDING_BIND_ERROR');
     expect(logger.error).toHaveBeenCalledWith('Binding bindForJourney failed');
   });
 
@@ -384,12 +400,18 @@ describe('Binding API', () => {
     });
 
     it('rejects when native rejects', async () => {
-      const nativeError = new Error('BINDING_ERROR');
+      const nativeError = {
+        error: 'BINDING_ERROR',
+        type: 'binding_error',
+        message: 'error',
+      };
       (getNativeModule as jest.Mock).mockReturnValue({
         getAllKeys: jest.fn().mockRejectedValue(nativeError),
       });
 
-      await expect(getAllKeys()).rejects.toThrow('BINDING_ERROR');
+      const err = await getAllKeys().catch((e) => e);
+      expect(err).toBeInstanceOf(BindingError);
+      expect(err.code).toBe('BINDING_ERROR');
     });
   });
 
@@ -411,19 +433,23 @@ describe('Binding API', () => {
     });
 
     it('rejects when native rejects', async () => {
-      const nativeError = new Error('BINDING_KEY_DELETE_ERROR');
+      const nativeError = {
+        error: 'BINDING_KEY_DELETE_ERROR',
+        type: 'binding_error',
+        message: 'delete error',
+      };
       (getNativeModule as jest.Mock).mockReturnValue({
         deleteKey: jest.fn().mockRejectedValue(nativeError),
       });
 
-      await expect(
-        deleteKey({
-          id: 'kid-1',
-          userId: 'user-1',
-          username: 'alice',
-          authenticationType: 'BIOMETRIC_ONLY',
-        }),
-      ).rejects.toThrow('BINDING_KEY_DELETE_ERROR');
+      const err = await deleteKey({
+        id: 'kid-1',
+        userId: 'user-1',
+        username: 'alice',
+        authenticationType: 'BIOMETRIC_ONLY',
+      }).catch((e) => e);
+      expect(err).toBeInstanceOf(BindingError);
+      expect(err.code).toBe('BINDING_KEY_DELETE_ERROR');
     });
   });
 
@@ -440,12 +466,18 @@ describe('Binding API', () => {
     });
 
     it('rejects when native rejects', async () => {
-      const nativeError = new Error('BINDING_KEY_DELETE_ERROR');
+      const nativeError = {
+        error: 'BINDING_KEY_DELETE_ERROR',
+        type: 'binding_error',
+        message: 'delete all error',
+      };
       (getNativeModule as jest.Mock).mockReturnValue({
         deleteAllKeys: jest.fn().mockRejectedValue(nativeError),
       });
 
-      await expect(deleteAllKeys()).rejects.toThrow('BINDING_KEY_DELETE_ERROR');
+      const err = await deleteAllKeys().catch((e) => e);
+      expect(err).toBeInstanceOf(BindingError);
+      expect(err.code).toBe('BINDING_KEY_DELETE_ERROR');
     });
   });
 });

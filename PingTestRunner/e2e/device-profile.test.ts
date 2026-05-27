@@ -14,6 +14,7 @@
  *   error propagation                              → native error shown in UI
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady } from './setup';
@@ -36,7 +37,9 @@ describe('Device Profile — bridge verification', () => {
 
   it('collectDeviceProfile([]) returns a non-null object with profile data', async () => {
     await element(by.id('device-profile-collect-empty-btn')).tap();
-    await waitFor(element(by.id('device-profile-result'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('device-profile-result')))
+      .toBeVisible()
+      .withTimeout(5000);
     await detoxExpect(element(by.id('device-profile-error'))).not.toBeVisible();
     const attrs = await element(by.id('device-profile-result')).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';
@@ -47,7 +50,9 @@ describe('Device Profile — bridge verification', () => {
 
   it('collectDeviceProfile([platform, hardware]) returns profile with platform and hardware keys', async () => {
     await element(by.id('device-profile-collect-named-btn')).tap();
-    await waitFor(element(by.id('device-profile-result'))).toBeVisible().withTimeout(5000);
+    await waitFor(element(by.id('device-profile-result')))
+      .toBeVisible()
+      .withTimeout(5000);
     await detoxExpect(element(by.id('device-profile-error'))).not.toBeVisible();
     const attrs = await element(by.id('device-profile-result')).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';

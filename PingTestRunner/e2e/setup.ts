@@ -23,7 +23,7 @@ const e2eEnv = path.resolve(__dirname, '..', '.env');
 if (fs.existsSync(e2eEnv)) dotenv.config({ path: e2eEnv });
 
 export async function launchApp(
-  launchArgs: Record<string, string> = {}
+  launchArgs: Record<string, string> = {},
 ): Promise<void> {
   await device.launchApp({
     newInstance: true,
@@ -32,7 +32,7 @@ export async function launchApp(
 }
 
 export async function relaunchApp(
-  launchArgs: Record<string, string> = {}
+  launchArgs: Record<string, string> = {},
 ): Promise<void> {
   await device.launchApp({
     newInstance: true,
@@ -52,15 +52,16 @@ export async function assertAppReady(): Promise<void> {
  * (see .env.example) or inject them as CI secrets.
  */
 export const E2E_ENV = {
-  serverUrl:         process.env['PING_SERVER_URL']          ?? '',
-  realmPath:         process.env['PING_REALM_PATH']          ?? 'alpha',
-  cookieName:        process.env['PING_COOKIE_NAME']         ?? 'iPlanetDirectoryPro',
-  journeyName:       process.env['PING_JOURNEY_NAME']        ?? 'Login',
-  discoveryEndpoint: process.env['PING_DISCOVERY_ENDPOINT']  ?? '',
-  clientId:          process.env['PING_CLIENT_ID']           ?? '',
-  redirectUri:       process.env['PING_REDIRECT_URI']        ?? 'org.forgerock.demo://oauth2redirect',
-  testUsername:      process.env['PING_TEST_USERNAME']       ?? '',
-  testPassword:      process.env['PING_TEST_PASSWORD']       ?? '',
+  serverUrl: process.env['PING_SERVER_URL'] ?? '',
+  realmPath: process.env['PING_REALM_PATH'] ?? 'alpha',
+  cookieName: process.env['PING_COOKIE_NAME'] ?? 'iPlanetDirectoryPro',
+  journeyName: process.env['PING_JOURNEY_NAME'] ?? 'Login',
+  discoveryEndpoint: process.env['PING_DISCOVERY_ENDPOINT'] ?? '',
+  clientId: process.env['PING_CLIENT_ID'] ?? '',
+  redirectUri:
+    process.env['PING_REDIRECT_URI'] ?? 'org.forgerock.demo://oauth2redirect',
+  testUsername: process.env['PING_TEST_USERNAME'] ?? '',
+  testPassword: process.env['PING_TEST_PASSWORD'] ?? '',
 };
 
 /**
@@ -80,11 +81,7 @@ export function hasLiveAuthEnv(): boolean {
  * Returns true when journey-only env vars are set (no OIDC config required).
  */
 export function hasJourneyEnv(): boolean {
-  return !!(
-    E2E_ENV.serverUrl &&
-    E2E_ENV.testUsername &&
-    E2E_ENV.testPassword
-  );
+  return !!(E2E_ENV.serverUrl && E2E_ENV.testUsername && E2E_ENV.testPassword);
 }
 
 /**

@@ -7,12 +7,9 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-  useCodeScanner,
-} from 'react-native-vision-camera';
+import { useCameraPermission } from 'react-native-vision-camera';
+import { CodeScanner } from 'react-native-vision-camera-barcode-scanner';
+import type { Barcode } from 'react-native-vision-camera-barcode-scanner';
 import type { PushClient } from '@ping-identity/rn-push';
 import { commonStyles } from '../../src/styles/common';
 import { colors } from '../../src/styles/colors';
@@ -36,32 +33,31 @@ export default function QrScannerScreen({
   onSuccess,
   onCancel,
 }: Props) {
-  const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   const [scanning, setScanning] = useState(true);
   const processingRef = useRef(false);
 
   useEffect(() => {
     if (!hasPermission) {
-      requestPermission();
+      void requestPermission();
     }
   }, [hasPermission, requestPermission]);
 
-  const codeScanner = useCodeScanner({
-    codeTypes: ['qr'],
-    onCodeScanned: useCallback(
-      async codes => {
-        const uri = codes[0]?.value;
-        if (!uri || !scanning || processingRef.current) return;
-        if (!uri.startsWith('pushauth://')) return;
+  const handleBarcodeScanned = useCallback(
+    (barcodes: Barcode[]) => {
+      const uri = barcodes[0]?.rawValue;
+      if (!uri || !scanning || processingRef.current) return;
+      if (!uri.startsWith('pushauth://')) return;
 
-        processingRef.current = true;
-        setScanning(false);
+      processingRef.current = true;
+      setScanning(false);
 
-        try {
-          await pushClient.addCredentialFromUri(uri);
+      pushClient
+        .addCredentialFromUri(uri)
+        .then(() => {
           onSuccess();
-        } catch (err) {
+        })
+        .catch((err: unknown) => {
           const message = err instanceof Error ? err.message : String(err);
           Alert.alert('Enrollment Failed', message, [
             {
@@ -73,11 +69,14 @@ export default function QrScannerScreen({
             },
             { text: 'Cancel', onPress: onCancel },
           ]);
-        }
-      },
-      [pushClient, scanning, onSuccess, onCancel],
-    ),
-  });
+        });
+    },
+    [pushClient, scanning, onSuccess, onCancel],
+  );
+
+  const handleScanError = useCallback((error: Error) => {
+    console.error('QrScannerScreen: scan error', error);
+  }, []);
 
   if (!hasPermission) {
     return (
@@ -101,27 +100,15 @@ export default function QrScannerScreen({
     );
   }
 
-  if (!device) {
-    return (
-      <View style={commonStyles.container}>
-        <Text style={commonStyles.textError}>No camera available.</Text>
-        <TouchableOpacity
-          style={commonStyles.buttonSecondary}
-          onPress={onCancel}
-        >
-          <Text style={commonStyles.buttonTextSecondary}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.cameraContainer}>
-      <Camera
+      {/* CodeScanner manages its own Camera internally */}
+      <CodeScanner
         style={StyleSheet.absoluteFill}
-        device={device}
         isActive={scanning}
-        codeScanner={codeScanner}
+        barcodeFormats={['qr-code']}
+        onBarcodeScanned={handleBarcodeScanned}
+        onError={handleScanError}
       />
       <View style={styles.overlay}>
         <Text style={styles.instructions}>

@@ -5,12 +5,12 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+export { PushError } from './push.types';
 export type {
   PushClient,
   PushClientConfig,
   PushConfig,
   PushCredential,
-  PushError,
   PushErrorCode,
   PushNotification,
   PushNotificationCleanupConfig,

@@ -14,11 +14,11 @@ import React, {
   useState,
 } from 'react';
 import { createPushClient } from './push';
+import { PushError } from './types';
 import type {
   PushClient,
   PushConfig,
   PushCredential,
-  PushError,
   PushNotification,
 } from './types';
 
@@ -81,12 +81,11 @@ type PushContextValue = PushResult;
 
 const PushContext = createContext<PushContextValue | null>(null);
 
-const missingPushClientError: PushError = {
-  type: 'state_error',
-  error: 'not_initialized',
-  message:
-    'No Push client found. Use usePush(config) or wrap your tree with <PushProvider config={...}>.',
-};
+const missingPushClientError = new PushError(
+  'No Push client found. Use usePush(config) or wrap your tree with <PushProvider config={...}>.',
+  'not_initialized',
+  'state_error',
+);
 
 /**
  * Props for {@link PushProvider}.
@@ -161,7 +160,7 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
         allNotifications,
       });
     } catch (err) {
-      setError(err as PushError);
+      setError(PushError.from(err));
       setData(null);
     } finally {
       setLoading(false);
@@ -219,13 +218,13 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
           )
           .catch((err) => {
             if (!mounted) return;
-            setError(err as PushError);
+            setError(PushError.from(err));
             setLoading(false);
           });
       })
       .catch((err) => {
         if (!mounted) return;
-        setError(err as PushError);
+        setError(PushError.from(err));
         setLoading(false);
       });
 

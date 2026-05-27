@@ -158,8 +158,7 @@ interface DeviceRepository<T> {
 
 ## Errors
 
-Rejected promises use the shared `GenericError` shape (exported as
-`DeviceClientError`).
+Rejected promises throw a `DeviceClientError` instance, which extends `PingError extends Error`. Use `instanceof DeviceClientError` to narrow in catch blocks.
 
 Stable error codes:
 

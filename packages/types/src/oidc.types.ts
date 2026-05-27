@@ -48,7 +48,11 @@ export type IOSBrowserOpenOptions = {
   /**
    * Browser type for iOS.
    */
-  browserType?: 'authSession' | 'ephemeralAuthSession' | 'nativeBrowserApp' | 'sfViewController';
+  browserType?:
+    | 'authSession'
+    | 'ephemeralAuthSession'
+    | 'nativeBrowserApp'
+    | 'sfViewController';
 
   /**
    * Browser mode (reserved; currently informational).

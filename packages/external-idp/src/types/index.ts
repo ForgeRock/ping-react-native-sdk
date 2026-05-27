@@ -5,11 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+export { ExternalIdpError } from './externalIdp.types';
 export type {
   ExternalIdpAuthorizeOptions,
   ExternalIdpClient,
   ExternalIdpConfig,
-  ExternalIdpError,
   ExternalIdpErrorCode,
   ExternalIdpResult,
   ExternalIdpSelectOptions,

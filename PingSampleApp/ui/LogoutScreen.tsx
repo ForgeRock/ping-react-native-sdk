@@ -10,6 +10,7 @@ import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import AsyncActionButton from './components/molecules/AsyncActionButton';
 import CardSection from './components/molecules/CardSection';
@@ -64,17 +65,13 @@ export default function LogoutScreen(): React.ReactElement {
     try {
       await journeyActions.logoutUser();
     } catch (error) {
-      errors.push(
-        error instanceof Error ? error.message : 'Journey logout failed',
-      );
+      errors.push(formatError(error));
     }
 
     try {
       await oidcActions.logout();
     } catch (error) {
-      errors.push(
-        error instanceof Error ? error.message : 'OIDC logout failed',
-      );
+      errors.push(formatError(error));
     }
 
     await refreshSessionState();
@@ -98,9 +95,7 @@ export default function LogoutScreen(): React.ReactElement {
       await oidcActions.logout();
       setStatusMessage('OIDC Web session logged out.');
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'OIDC Web logout failed',
-      );
+      setErrorMessage(formatError(error));
     } finally {
       setBusyOidc(false);
       await refreshSessionState();
@@ -115,9 +110,7 @@ export default function LogoutScreen(): React.ReactElement {
       await journeyActions.logoutUser();
       setStatusMessage('Journey session logged out.');
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Journey logout failed',
-      );
+      setErrorMessage(formatError(error));
     } finally {
       setBusyJourney(false);
       await refreshSessionState();

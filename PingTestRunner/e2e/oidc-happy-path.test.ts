@@ -19,7 +19,7 @@
  *   5. logout() marks session as logged out
  */
 
-import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
+import { device, element, by, expect as detoxExpect } from 'detox';
 import { assertAppReady } from './setup';
 
 describe('OIDC — happy path', () => {

@@ -5,15 +5,24 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 
 /**
- * Error payload returned when device ID operations fail.
+ * Error thrown when device ID operations fail.
  *
- * @remarks
- * Rejections use this shape; success resolves with the device ID string.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type DeviceIdError = GenericError;
+export class DeviceIdError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'DeviceIdError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): DeviceIdError {
+    return PingError.fromAs(raw, DeviceIdError);
+  }
+}
 
 /**
  * Stable error codes emitted by the Device ID module.

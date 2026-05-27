@@ -4,7 +4,8 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import { createFidoClient } from '../index';
+import { createFidoClient, FidoError } from '../index';
+import { PingError } from '@ping-identity/rn-types';
 
 jest.mock('../NativeRNPingFido', () => ({
   __esModule: true,
@@ -82,16 +83,23 @@ describe('FIDO API', () => {
   });
 
   it('register rejects when native rejects', async () => {
-    const nativeError = new Error('FIDO_WINDOW_UNAVAILABLE');
+    const nativeError = {
+      error: 'FIDO_WINDOW_UNAVAILABLE',
+      type: 'fido_error',
+      message: 'window unavailable',
+    };
     const registerNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
     });
     const client = createFidoClient();
 
-    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
-      'FIDO_WINDOW_UNAVAILABLE',
-    );
+    const err = await client.register({ challenge: 'abc' }).catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(PingError);
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_WINDOW_UNAVAILABLE');
+    expect(err.message).toBe('window unavailable');
   });
 
   it('authenticate forwards to native', async () => {
@@ -125,16 +133,20 @@ describe('FIDO API', () => {
   });
 
   it('authenticate rejects when native rejects', async () => {
-    const nativeError = new Error('FIDO_ACTIVITY_UNAVAILABLE');
+    const nativeError = {
+      error: 'FIDO_ACTIVITY_UNAVAILABLE',
+      type: 'fido_error',
+      message: 'activity unavailable',
+    };
     const authenticateNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       authenticateCredential: authenticateNative,
     });
     const client = createFidoClient();
 
-    await expect(client.authenticate({ challenge: 'abc' })).rejects.toThrow(
-      'FIDO_ACTIVITY_UNAVAILABLE',
-    );
+    const err = await client.authenticate({ challenge: 'abc' }).catch((e) => e);
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_ACTIVITY_UNAVAILABLE');
   });
 
   it('registerForJourney resolves journey id and forwards to native', async () => {
@@ -287,7 +299,11 @@ describe('FIDO API', () => {
   });
 
   it('logs operation failure before rethrowing', async () => {
-    const nativeError = new Error('FIDO_REGISTER_ERROR');
+    const nativeError = {
+      error: 'FIDO_REGISTER_ERROR',
+      type: 'fido_error',
+      message: 'register failed',
+    };
     const registerNative = jest.fn().mockRejectedValue(nativeError);
     (getNativeModule as jest.Mock).mockReturnValue({
       registerCredential: registerNative,
@@ -302,9 +318,9 @@ describe('FIDO API', () => {
     };
 
     const client = createFidoClient({ logger });
-    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
-      'FIDO_REGISTER_ERROR',
-    );
+    const err = await client.register({ challenge: 'abc' }).catch((e) => e);
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_REGISTER_ERROR');
     expect(logger.error).toHaveBeenCalledWith('FIDO register failed');
   });
 });

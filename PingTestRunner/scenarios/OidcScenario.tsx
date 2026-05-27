@@ -10,11 +10,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  Button,
-  Text,
-  View,
-} from 'react-native';
+import { Button, Text, View } from 'react-native';
 import { LaunchArguments } from 'react-native-launch-arguments';
 import { createOidcClient, createOidcWebClient } from '@ping-identity/rn-oidc';
 import type { OidcWebClient } from '@ping-identity/rn-oidc';
@@ -34,15 +30,19 @@ interface OidcScenarioProps {
   testScenario?: string;
 }
 
-export default function OidcScenario({ testScenario }: OidcScenarioProps): React.JSX.Element {
+export default function OidcScenario({
+  testScenario,
+}: OidcScenarioProps): React.JSX.Element {
   const args = LaunchArguments.value<OidcLaunchArgs>();
   const discoveryEndpoint = args.PING_DISCOVERY_ENDPOINT ?? '';
   const clientId = args.PING_CLIENT_ID ?? '';
-  const redirectUri = args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+  const redirectUri =
+    args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
   const oidcLiveMode = args.PING_OIDC_LIVE_MODE === 'true';
   const oidcTestMode = !oidcLiveMode || args.PING_OIDC_TEST_MODE === 'true';
   const oidcTestForceError =
-    args.PING_OIDC_TEST_FORCE_ERROR === 'true' || testScenario === 'oidc-failure';
+    args.PING_OIDC_TEST_FORCE_ERROR === 'true' ||
+    testScenario === 'oidc-failure';
 
   const [state, setState] = useState<ScenarioState>('idle');
   const [webClient, setWebClient] = useState<OidcWebClient | null>(null);
@@ -101,14 +101,18 @@ export default function OidcScenario({ testScenario }: OidcScenarioProps): React
 
   const handleUserinfo = useCallback(async () => {
     if (oidcTestMode) {
-      setUserinfo(JSON.stringify({
-        sub: 'e2e-test-user',
-        email: 'e2e-test-user@example.com',
-      }));
+      setUserinfo(
+        JSON.stringify({
+          sub: 'e2e-test-user',
+          email: 'e2e-test-user@example.com',
+        }),
+      );
       return;
     }
 
-    if (!webClient) { return; }
+    if (!webClient) {
+      return;
+    }
     try {
       const user = await webClient.user();
       if (user) {
@@ -126,7 +130,9 @@ export default function OidcScenario({ testScenario }: OidcScenarioProps): React
       return;
     }
 
-    if (!webClient) { return; }
+    if (!webClient) {
+      return;
+    }
     try {
       const user = await webClient.user();
       if (user) {
@@ -153,7 +159,8 @@ export default function OidcScenario({ testScenario }: OidcScenarioProps): React
         />
       )}
 
-      {(state === 'authorizing' || (oidcTestMode && state === 'authorized')) && (
+      {(state === 'authorizing' ||
+        (oidcTestMode && state === 'authorized')) && (
         <Text testID="oidc-browser-open">Browser open…</Text>
       )}
 

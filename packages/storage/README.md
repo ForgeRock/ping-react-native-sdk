@@ -4,6 +4,7 @@ Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
 This software may be modified and distributed under the terms
 of the MIT license. See the LICENSE file for details.
 -->
+
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native Storage
@@ -79,6 +80,7 @@ const oidcStorage: OidcStorage = configureOidcStorage({
 ```
 
 Notes:
+
 - `configureSessionStorage` / `configureOidcStorage` return opaque storage handles.
   Handle objects include `id` and `kind` and can be passed into native-backed modules.
 - Android uses encrypted storage by default; `android.keyAlias` and other
@@ -160,11 +162,11 @@ const journeyClient = createJourneyClient({
 
 ## Error handling
 
-Storage operations reject or throw using the shared `GenericError` contract from
-`@ping-identity/rn-types`.
+Storage operations reject or throw a `StorageError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the error type:
 
 ```ts
-import type { StorageError } from '@ping-identity/rn-storage';
+import { StorageError } from '@ping-identity/rn-storage';
 
 try {
   const sessionStorage = configureSessionStorage({
@@ -173,9 +175,10 @@ try {
       fileName: 'ping_session_store',
     },
   });
-} catch (error) {
-  const storageError = error as StorageError;
-  console.log(storageError.type, storageError.error, storageError.message);
+} catch (err) {
+  if (err instanceof StorageError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

@@ -7,6 +7,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Alert } from 'react-native';
+import { PingError } from '@ping-identity/rn-types';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
 import type {
   JourneyClient,
@@ -183,7 +184,12 @@ export function useJourneyAutomationEffects(
           await next({});
         }
       } catch (cause) {
-        Alert.alert('Device profile failed', String(cause));
+        Alert.alert(
+          'Device profile failed',
+          cause instanceof PingError
+            ? `[${cause.code}] ${cause.message}`
+            : String(cause),
+        );
       }
     };
 

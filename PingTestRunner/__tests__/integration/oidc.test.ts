@@ -40,9 +40,11 @@ describe('@ping-identity/rn-oidc — integration', () => {
   describe('createOidcClient()', () => {
     it('throws when discoveryEndpoint and openId are both missing', () => {
       expect(() =>
-        createOidcClient({ clientId: 'c', redirectUri: 'r' } as Parameters<typeof createOidcClient>[0])
+        createOidcClient({ clientId: 'c', redirectUri: 'r' } as Parameters<
+          typeof createOidcClient
+        >[0]),
       ).toThrow(
-        '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.'
+        '[@ping-identity/rn-oidc] Missing configuration. Provide discoveryEndpoint or openId.',
       );
     });
 
@@ -141,7 +143,11 @@ describe('@ping-identity/rn-oidc — integration', () => {
         })),
       }));
 
-      const { createOidcClient: c, createOidcWebClient: wc } = require('@ping-identity/rn-oidc');
+      const {
+        createOidcClient: c,
+        createOidcWebClient: wc,
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+      } = require('@ping-identity/rn-oidc');
       const testClient = c(VALID_CONFIG);
       const testWebClient = wc(testClient);
       const user = await testWebClient.user();
@@ -156,7 +162,7 @@ describe('@ping-identity/rn-oidc — integration', () => {
           ...VALID_CONFIG,
           // @ts-expect-error — intentional bad input
           storage: { id: '', kind: 'session' },
-        })
+        }),
       ).toThrow('[@ping-identity/rn-oidc] Invalid storage handle');
     });
 
@@ -166,7 +172,7 @@ describe('@ping-identity/rn-oidc — integration', () => {
           ...VALID_CONFIG,
           // @ts-expect-error — intentional bad input
           storage: { id: 'some-id', kind: 'session' },
-        })
+        }),
       ).toThrow('[@ping-identity/rn-oidc] Invalid storage handle');
     });
   });

@@ -59,7 +59,10 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('start() surfaces login form via useJourneyForm fields', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-start-btn')).tap();
     await waitFor(element(by.id('use-journey-field-NameCallback:0')))
       .toBeVisible()
@@ -70,9 +73,16 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('next() with valid credentials reaches SuccessNode', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
-    await element(by.id('use-journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('use-journey-field-PasswordCallback:0')).typeText(E2E_ENV.testPassword);
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
+    await element(by.id('use-journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('use-journey-field-PasswordCallback:0')).typeText(
+      E2E_ENV.testPassword,
+    );
     await element(by.id('use-journey-submit-btn')).tap();
     await waitFor(element(by.id('use-journey-success')))
       .toBeVisible()
@@ -80,14 +90,20 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('token is available after success', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await waitFor(element(by.id('use-journey-token-result')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
   });
 
   it('userinfo() returns a payload via hook actions', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-userinfo-btn')).tap();
     await waitFor(element(by.id('use-journey-userinfo-result')))
       .toBeVisible()
@@ -95,7 +111,10 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('refresh() updates token via hook actions', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-refresh-btn')).tap();
     await waitFor(element(by.id('use-journey-refreshed')))
       .toBeVisible()
@@ -103,7 +122,10 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('revoke() completes via hook actions', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-revoke-btn')).tap();
     await waitFor(element(by.id('use-journey-revoked')))
       .toBeVisible()
@@ -111,7 +133,10 @@ describe('useJourney + useJourneyForm — hook state transitions', () => {
   });
 
   it('logoutUser() completes via hook actions', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-logout-btn')).tap();
     await waitFor(element(by.id('use-journey-logged-out')))
       .toBeVisible()
@@ -137,13 +162,20 @@ describe('useJourney — FailureNode on wrong credentials', () => {
   });
 
   it('next() with wrong password reaches FailureNode', async () => {
-    if (!hasJourneyEnv()) { console.warn(SKIP_REASON); return; }
+    if (!hasJourneyEnv()) {
+      console.warn(SKIP_REASON);
+      return;
+    }
     await element(by.id('use-journey-start-btn')).tap();
     await waitFor(element(by.id('use-journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
-    await element(by.id('use-journey-field-NameCallback:0')).typeText(E2E_ENV.testUsername);
-    await element(by.id('use-journey-field-PasswordCallback:0')).typeText('wrong_password');
+    await element(by.id('use-journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('use-journey-field-PasswordCallback:0')).typeText(
+      'wrong_password',
+    );
     await element(by.id('use-journey-submit-btn')).tap();
     await waitFor(element(by.id('use-journey-failure')))
       .toBeVisible()

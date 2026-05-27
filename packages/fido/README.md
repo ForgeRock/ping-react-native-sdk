@@ -218,7 +218,7 @@ interface FidoClient {
 
 ## Errors
 
-Rejected promises use `GenericError` shape (`FidoError`).
+Rejected promises throw a `FidoError` instance, which extends `PingError extends Error`. Use `instanceof FidoError` to narrow in catch blocks.
 
 Stable error codes:
 

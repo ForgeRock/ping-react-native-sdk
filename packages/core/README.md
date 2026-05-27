@@ -104,6 +104,7 @@ let error = GenericError(
 )
 reject(error, rejecter: rejecter)
 ```
+
 ## License
 
 MIT

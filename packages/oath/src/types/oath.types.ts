@@ -5,8 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { PingError } from '@ping-identity/rn-types';
 import type {
-  GenericError,
   LoggerInstance,
   OathPolicyEvaluatorHandle,
   OathStorageHandle,
@@ -434,7 +434,17 @@ export type OathClient = {
  * @remarks
  * Matches the shared native/JS error contract defined in `@ping-identity/rn-types`.
  */
-export type OathError = GenericError;
+export class OathError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'OathError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): OathError {
+    return PingError.fromAs(raw, OathError);
+  }
+}
 
 /**
  * Stable error codes emitted by the OATH module.

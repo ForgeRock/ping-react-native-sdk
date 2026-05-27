@@ -17,8 +17,8 @@ import {
   collectDeviceProfile,
   type DeviceProfile,
   type DeviceProfileCollector,
-  type DeviceProfileError,
 } from '@ping-identity/rn-device-profile';
+import { formatError } from './utils/formatError';
 import { logger } from '@ping-identity/rn-logger';
 import { commonStyles } from '../src/styles/common';
 import { colors } from '../src/styles/colors';
@@ -81,16 +81,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
       });
       setProfile(collectedProfile);
     } catch (err: unknown) {
-      const errorPayload = err as DeviceProfileError;
-      const errorDetails = {
-        type: errorPayload?.type ?? 'unknown_error',
-        error: errorPayload?.error ?? 'DEVICE_PROFILE_COLLECT_ERROR',
-        message:
-          errorPayload?.message ?? 'Failed to collect device profile payload.',
-        code: errorPayload?.code,
-        status: errorPayload?.status,
-      };
-      setErrorMessage(JSON.stringify(errorDetails, null, 2));
+      setErrorMessage(formatError(err));
     } finally {
       setIsCollecting(false);
     }

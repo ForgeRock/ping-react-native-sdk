@@ -14,6 +14,7 @@ import type {
   DeviceOf,
   DeviceRepository,
 } from './types';
+import { DeviceClientError } from './types';
 
 /**
  * No-op logger used when the caller does not provide a logger instance.
@@ -103,8 +104,10 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
     !config.realm ||
     !config.cookieName
   ) {
-    throw new Error(
+    throw new DeviceClientError(
       '[@ping-identity/rn-device-client] createDeviceClient requires `serverUrl`, `ssoToken`, `realm`, and `cookieName`.',
+      'DEVICE_CLIENT_MISSING_CONFIG',
+      'argument_error',
     );
   }
 
@@ -135,15 +138,17 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
   const ensureHandle = (): Promise<string> => {
     if (disposed) {
       return Promise.reject(
-        new Error(
+        new DeviceClientError(
           '[@ping-identity/rn-device-client] This client has been disposed.',
+          'DEVICE_CLIENT_HANDLE_NOT_FOUND',
+          'state_error',
         ),
       );
     }
     if (!handlePromise) {
       handlePromise = native.create(nativeConfig).catch((error) => {
         handlePromise = null;
-        throw error;
+        throw DeviceClientError.from(error);
       });
     }
     return handlePromise;
@@ -161,29 +166,41 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
   ): DeviceRepository<DeviceOf<K>> => ({
     async get() {
       logger.debug(`DeviceClient.${kind}.get requested`);
-      const handle = await ensureHandle();
-      const payload = await native.get(handle, kind);
-      return extractArray<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.get(handle, kind);
+        return extractArray<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
     async update(device) {
       logger.debug(`DeviceClient.${kind}.update requested`);
-      const handle = await ensureHandle();
-      const payload = await native.update(
-        handle,
-        kind,
-        device as unknown as object,
-      );
-      return extractObject<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.update(
+          handle,
+          kind,
+          device as unknown as object,
+        );
+        return extractObject<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
     async delete(device) {
       logger.debug(`DeviceClient.${kind}.delete requested`);
-      const handle = await ensureHandle();
-      const payload = await native.deleteDevice(
-        handle,
-        kind,
-        device as unknown as object,
-      );
-      return extractObject<DeviceOf<K>>(payload);
+      try {
+        const handle = await ensureHandle();
+        const payload = await native.deleteDevice(
+          handle,
+          kind,
+          device as unknown as object,
+        );
+        return extractObject<DeviceOf<K>>(payload);
+      } catch (error) {
+        throw DeviceClientError.from(error);
+      }
     },
   });
 

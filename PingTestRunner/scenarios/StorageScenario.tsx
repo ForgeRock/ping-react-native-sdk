@@ -15,11 +15,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import {
-  Button,
-  Text,
-  View,
-} from 'react-native';
+import { Button, Text, View } from 'react-native';
 import {
   configureSessionStorage,
   configureOidcStorage,
@@ -30,7 +26,9 @@ export default function StorageScenario(): React.JSX.Element {
   const [sessionResult, setSessionResult] = useState<string | null>(null);
   const [oidcResult, setOidcResult] = useState<string | null>(null);
   const [invalidResult, setInvalidResult] = useState<string | null>(null);
-  const [invalidStatus, setInvalidStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [invalidStatus, setInvalidStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSession = useCallback(() => {

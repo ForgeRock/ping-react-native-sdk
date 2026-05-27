@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
+import { JourneyError } from '@ping-identity/rn-journey';
 import type {
   JourneyNodeType,
   JourneyUserSession,
@@ -89,7 +90,12 @@ export function useJourneySessionController(
       } catch (cause) {
         setHasActiveSession(false);
         if (showError) {
-          Alert.alert('Session refresh failed', String(cause));
+          Alert.alert(
+            'Session refresh failed',
+            cause instanceof JourneyError
+              ? `[${cause.code}] ${cause.message}`
+              : String(cause),
+          );
         }
       }
     },

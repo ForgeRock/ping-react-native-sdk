@@ -24,6 +24,8 @@ import {
 import { createFidoClient } from '@ping-identity/rn-fido';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { open as openBrowser } from '@ping-identity/rn-browser';
+import { PingError } from '@ping-identity/rn-types';
+import { formatError } from '../../utils/formatError';
 import { collectDeviceProfile } from '@ping-identity/rn-device-profile';
 import { logger } from '@ping-identity/rn-logger';
 import {
@@ -315,23 +317,6 @@ function isExternalIdpAuthorizationCancelledError(error: unknown): boolean {
 }
 
 /**
- * Resolves a readable action error message from unknown thrown values.
- *
- * @param error Unknown error value caught from a Journey-adjacent integration.
- * @returns Message suitable for sample-app error display.
- */
-function resolveActionErrorMessage(error: unknown): string {
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-  }
-
-  return String(error);
-}
-
-/**
  * Composes Journey sample panel behavior into a single controller hook.
  *
  * @param options - Controller options.
@@ -530,9 +515,11 @@ export function useJourneyClientPanelController(
         appendDebug('Default device name fallback used', {
           reason: 'platform profile unavailable',
           error:
-            resolveError instanceof Error
-              ? resolveError.message
-              : String(resolveError),
+            resolveError instanceof PingError
+              ? `[${resolveError.code}] ${resolveError.message}`
+              : resolveError instanceof Error
+                ? resolveError.message
+                : String(resolveError),
         });
       }
       defaultSystemDeviceNameRef.current = 'Device';
@@ -697,9 +684,11 @@ export function useJourneyClientPanelController(
       } catch (cause) {
         lastHandledRedirectUrlRef.current = null;
         const message =
-          cause && typeof cause === 'object' && 'message' in cause
-            ? String((cause as { message?: unknown }).message)
-            : 'External IdP browser launch failed.';
+          cause instanceof PingError
+            ? `[${cause.code}] ${cause.message}`
+            : cause instanceof Error
+              ? cause.message
+              : 'External IdP browser launch failed.';
         setExternalIdpBrowserError(message);
         appendDebug('Journey external IdP browser redirect failed', {
           redirectUrl,
@@ -845,7 +834,7 @@ export function useJourneyClientPanelController(
         });
         await next(submitInput);
       } catch (cause) {
-        setExternalIdpBrowserError(resolveActionErrorMessage(cause));
+        setExternalIdpBrowserError(formatError(cause));
         appendDebug('Journey auto external IdP authorization failed', {
           continueNodeKey,
           cause,
@@ -907,7 +896,7 @@ export function useJourneyClientPanelController(
         );
         await next({});
       } catch (cause) {
-        setExternalIdpBrowserError(resolveActionErrorMessage(cause));
+        setExternalIdpBrowserError(formatError(cause));
         appendDebug('Journey external IdP provider selection failed', {
           fieldId,
           provider: selectedProvider,
@@ -1004,7 +993,12 @@ export function useJourneyClientPanelController(
       await runner.runIntegrations(form);
     } catch (runError) {
       appendDebug('Integration failed; submitting to let server route', {
-        error: runError instanceof Error ? runError.message : String(runError),
+        error:
+          runError instanceof PingError
+            ? `[${runError.code}] ${runError.message}`
+            : runError instanceof Error
+              ? runError.message
+              : String(runError),
       });
     }
 
@@ -1018,7 +1012,7 @@ export function useJourneyClientPanelController(
         );
       }
     } catch (idpCause) {
-      setExternalIdpBrowserError(resolveActionErrorMessage(idpCause));
+      setExternalIdpBrowserError(formatError(idpCause));
       appendDebug('Journey external IdP authorization failed', {
         cause: idpCause,
       });

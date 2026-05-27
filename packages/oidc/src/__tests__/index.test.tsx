@@ -678,4 +678,32 @@ describe('OIDC JS API', () => {
 
     expect(nativeModule.authorize).toHaveBeenCalledWith('web-id', {});
   });
+
+  it('wraps native rejections as OidcError instances', async () => {
+    const nativeError = {
+      error: 'OIDC_AUTHORIZE_ERROR',
+      type: 'oidc_error',
+      message: 'authorize failed',
+    };
+    const nativeModule = createNativeMock({
+      authorize: jest.fn().mockRejectedValue(nativeError),
+    });
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
+
+    const client = createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    const webClient = createOidcWebClient(client);
+    const err = await webClient.authorize().catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    // OidcError is loaded via jest.resetModules() so instanceof check uses name instead
+    expect(err.name).toBe('OidcError');
+    expect(err.code).toBe('OIDC_AUTHORIZE_ERROR');
+    expect(err.message).toBe('authorize failed');
+  });
 });

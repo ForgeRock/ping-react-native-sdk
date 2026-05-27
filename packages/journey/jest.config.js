@@ -16,7 +16,7 @@ module.exports = {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(?:@forgerock/sdk-types|react-native|@react-native|@react-native-community|@testing-library/react-native)/)',
+    'node_modules/(?!(?:@ping-identity/rn-types|@forgerock/sdk-types|react-native|@react-native|@react-native-community|@testing-library/react-native)/)',
   ],
   reporters: [
     'default',

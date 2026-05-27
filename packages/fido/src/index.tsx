@@ -29,6 +29,7 @@ import type {
   FidoRegistrationResult,
   JourneyInstance,
 } from './types';
+import { FidoError } from './types';
 
 const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
@@ -93,7 +94,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         return fromNativeRegistrationResult(result);
       } catch (error) {
         logger.error('FIDO register failed');
-        throw error;
+        throw FidoError.from(error);
       }
     },
     /**
@@ -116,7 +117,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         return fromNativeAuthenticationResult(result);
       } catch (error) {
         logger.error('FIDO authenticate failed');
-        throw error;
+        throw FidoError.from(error);
       }
     },
     /**
@@ -143,7 +144,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         return fromNativeJourneyResult(result);
       } catch (error) {
         logger.error('FIDO registerForJourney failed');
-        throw error;
+        throw FidoError.from(error);
       }
     },
     /**
@@ -170,12 +171,13 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         return fromNativeJourneyResult(result);
       } catch (error) {
         logger.error('FIDO authenticateForJourney failed');
-        throw error;
+        throw FidoError.from(error);
       }
     },
   };
 }
 
+export { FidoError } from './types';
 export type {
   FidoAndroidConfig,
   FidoClient,
@@ -183,7 +185,6 @@ export type {
   FidoConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
-  FidoError,
   FidoErrorCode,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,

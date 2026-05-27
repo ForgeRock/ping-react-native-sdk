@@ -31,29 +31,37 @@ yarn add @ping-identity/rn-types
 
 ### Error handling
 
-Errors rejected from native modules should conform to this shape (re-exported from
-`@forgerock/sdk-types`):
+All native module rejections are surfaced as `PingError` instances, which extend the standard
+`Error` class and carry structured fields from the native bridge:
 
 ```ts
-export interface GenericError {
-  type: ErrorType;
-  error: string;
-  message?: string;
-  code?: string | number;
-  status?: string | number;
+import { PingError } from '@ping-identity/rn-types';
+
+try {
+  await someOperation();
+} catch (err) {
+  if (err instanceof PingError) {
+    console.log(err.code, err.type, err.message, err.status);
+  }
 }
-```
-
-```ts
-import type { GenericError, ErrorType } from '@ping-identity/rn-types';
 ```
 
 ### Usage in feature modules
 
-Feature modules should re-export or alias the shared error type instead of redefining it:
+Each feature package exports its own subclass of `PingError`, enabling per-package `instanceof`
+narrowing. Use `PingError` as the common base when a single catch handles errors from multiple
+packages:
 
 ```ts
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 
-export type BrowserError = GenericError;
+export class BrowserError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'BrowserError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): BrowserError { ... }
+}
 ```

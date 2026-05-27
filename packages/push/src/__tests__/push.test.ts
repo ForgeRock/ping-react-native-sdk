@@ -40,6 +40,7 @@ jest.mock('../NativeRNPingPush', () => ({
 
 import { createPushClient, getNumbersChallenge } from '../push';
 import { getNativeModule } from '../NativeRNPingPush';
+import { PushError } from '../types';
 import type { PushCredential, PushNotification } from '../types';
 
 // Opaque client handle returned by initialize() in tests.
@@ -690,7 +691,7 @@ describe('PushClient.approveChallengeNotification', () => {
       client.approveChallengeNotification('notif-1', ''),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
       message: 'challengeResponse must not be empty',
     });
     expect(nativeFn).not.toHaveBeenCalled();
@@ -708,7 +709,7 @@ describe('PushClient.approveChallengeNotification', () => {
       client.approveChallengeNotification('notif-1', '   '),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
       message: 'challengeResponse must not be empty',
     });
     expect(nativeFn).not.toHaveBeenCalled();
@@ -769,7 +770,7 @@ describe('PushClient.approveBiometricNotification', () => {
       client.approveBiometricNotification('notif-1', ''),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
       message: 'authenticationMethod must not be empty',
     });
     expect(nativeFn).not.toHaveBeenCalled();
@@ -787,7 +788,7 @@ describe('PushClient.approveBiometricNotification', () => {
       client.approveBiometricNotification('notif-1', '   '),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
       message: 'authenticationMethod must not be empty',
     });
     expect(nativeFn).not.toHaveBeenCalled();
@@ -1260,7 +1261,7 @@ describe('PushClient — error logging', () => {
 describe('PushError shape preservation', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('rethrows native PushError-shaped rejection without modification', async () => {
+  it('wraps native rejection in PushError for addCredentialFromUri', async () => {
     const nativePushError = {
       type: 'push_error',
       error: 'not_initialized',
@@ -1273,16 +1274,18 @@ describe('PushError shape preservation', () => {
 
     const client = await createPushClient();
 
-    await expect(
-      client.addCredentialFromUri('pushauth://test'),
-    ).rejects.toMatchObject({
-      type: 'push_error',
-      error: 'not_initialized',
-      message: 'PushClient is not initialized',
-    });
+    expect.assertions(4);
+    try {
+      await client.addCredentialFromUri('pushauth://test');
+    } catch (err) {
+      expect(err).toBeInstanceOf(PushError);
+      expect((err as PushError).code).toBe('not_initialized');
+      expect((err as PushError).type).toBe('push_error');
+      expect((err as PushError).message).toBe('PushClient is not initialized');
+    }
   });
 
-  it('rethrows native PushError-shaped rejection from getCredentials without modification', async () => {
+  it('wraps native rejection in PushError for getCredentials', async () => {
     const nativePushError = {
       type: 'push_error',
       error: 'storage_error',
@@ -1295,14 +1298,18 @@ describe('PushError shape preservation', () => {
 
     const client = await createPushClient();
 
-    await expect(client.getCredentials()).rejects.toMatchObject({
-      type: 'push_error',
-      error: 'storage_error',
-      message: 'Failed to read credentials',
-    });
+    expect.assertions(4);
+    try {
+      await client.getCredentials();
+    } catch (err) {
+      expect(err).toBeInstanceOf(PushError);
+      expect((err as PushError).code).toBe('storage_error');
+      expect((err as PushError).type).toBe('push_error');
+      expect((err as PushError).message).toBe('Failed to read credentials');
+    }
   });
 
-  it('rethrows native PushError-shaped rejection from approveNotification without modification', async () => {
+  it('wraps native rejection in PushError for approveNotification', async () => {
     const nativePushError = {
       type: 'push_error',
       error: 'network_error',
@@ -1315,10 +1322,14 @@ describe('PushError shape preservation', () => {
 
     const client = await createPushClient();
 
-    await expect(client.approveNotification('notif-1')).rejects.toMatchObject({
-      type: 'push_error',
-      error: 'network_error',
-      message: 'Network request failed',
-    });
+    expect.assertions(4);
+    try {
+      await client.approveNotification('notif-1');
+    } catch (err) {
+      expect(err).toBeInstanceOf(PushError);
+      expect((err as PushError).code).toBe('network_error');
+      expect((err as PushError).type).toBe('push_error');
+      expect((err as PushError).message).toBe('Network request failed');
+    }
   });
 });

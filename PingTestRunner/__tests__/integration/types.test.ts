@@ -17,9 +17,7 @@
  * runtime-observable surface (constants, re-exported values).
  */
 
-import {
-  nativeExtensionCallbackType,
-} from '@ping-identity/rn-types';
+import { nativeExtensionCallbackType } from '@ping-identity/rn-types';
 
 describe('@ping-identity/rn-types — integration', () => {
   describe('nativeExtensionCallbackType', () => {

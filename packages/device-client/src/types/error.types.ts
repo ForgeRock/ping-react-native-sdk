@@ -5,29 +5,35 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { GenericError } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
 
 /**
- * Error payload returned when Device Client operations fail.
+ * Error thrown when Device Client operations fail.
  *
- * @remarks
- * All rejections from {@link DeviceRepository} methods and {@link DeviceClient.destroy}
- * use this shape. The `error` field contains one of the {@link DeviceClientErrorCode}
- * strings for programmatic error handling.
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  *
  * @example
  * ```ts
  * try {
  *   await client.oath.get();
  * } catch (err) {
- *   const dcError = err as DeviceClientError;
- *   if (dcError.error === 'DEVICE_CLIENT_INVALID_TOKEN') {
+ *   if (err instanceof DeviceClientError && err.code === 'DEVICE_CLIENT_INVALID_TOKEN') {
  *     // trigger re-authentication
  *   }
  * }
  * ```
  */
-export type DeviceClientError = GenericError;
+export class DeviceClientError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'DeviceClientError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): DeviceClientError {
+    return PingError.fromAs(raw, DeviceClientError);
+  }
+}
 
 /**
  * Stable error codes emitted by the Device Client module.

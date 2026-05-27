@@ -5,4 +5,13 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export * from './storage.types';
+export { StorageError, CacheStrategy } from './storage.types';
+export type {
+  SessionStorage,
+  OidcStorage,
+  BindingUserKeyStorage,
+  PushStorage,
+  OathStorage,
+  StorageConfig,
+  StorageLoggerOptions,
+} from './storage.types';

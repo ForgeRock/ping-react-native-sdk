@@ -12,9 +12,9 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { JourneyError } from './types/error.types';
 import type {
   JourneyClient,
-  JourneyError,
   JourneyNextInput,
   JourneyNode,
   JourneySSOToken,
@@ -140,12 +140,11 @@ type JourneyContextValue = {
 
 const JourneyContext = createContext<JourneyContextValue | null>(null);
 
-const missingJourneyClientError: JourneyError = {
-  type: 'state_error',
-  error: 'JOURNEY_STATE_ERROR',
-  message:
-    'No Journey client found. Use useJourney(client) or wrap your tree with <JourneyProvider client={...}>.',
-};
+const missingJourneyClientError = new JourneyError(
+  'No Journey client found. Use useJourney(client) or wrap your tree with <JourneyProvider client={...}>.',
+  'JOURNEY_STATE_ERROR',
+  'state_error',
+);
 
 const missingJourneyClient: JourneyClient = {
   async init(): Promise<string> {
@@ -247,7 +246,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setNode(result);
         return result;
       } catch (err) {
-        const typed = err as JourneyError;
+        const typed = JourneyError.from(err);
         setError(typed);
         throw typed;
       } finally {
@@ -260,11 +259,11 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
   const next = useCallback(
     async (input: JourneyNextInput = {}): Promise<JourneyNode> => {
       if (!node) {
-        const stateError: JourneyError = {
-          type: 'state_error',
-          error: 'JOURNEY_STATE_ERROR',
-          message: 'No active Journey node. Call start() or resume() first.',
-        };
+        const stateError = new JourneyError(
+          'No active Journey node. Call start() or resume() first.',
+          'JOURNEY_STATE_ERROR',
+          'state_error',
+        );
         setError(stateError);
         throw stateError;
       }
@@ -276,7 +275,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setNode(nextNode);
         return nextNode;
       } catch (err) {
-        const typed = err as JourneyError;
+        const typed = JourneyError.from(err);
         setError(typed);
         throw typed;
       } finally {
@@ -295,7 +294,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
         setNode(resumedNode);
         return resumedNode;
       } catch (err) {
-        const typed = err as JourneyError;
+        const typed = JourneyError.from(err);
         setError(typed);
         throw typed;
       } finally {

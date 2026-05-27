@@ -6,7 +6,8 @@
  */
 import type { BaseStorageConfig } from '../NativeRNPingStorage';
 import { CacheStrategy } from '../NativeRNPingStorage';
-import type { GenericError, LoggerInstance } from '@ping-identity/rn-types';
+import { PingError } from '@ping-identity/rn-types';
+import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
   BindingUserKeyStorageHandle,
   OathStorageHandle,
@@ -148,9 +149,21 @@ export type OathStorage = BaseStorageConfig & OathStorageHandle;
 export type StorageConfig = BaseStorageConfig;
 
 /**
- * Error payload returned when storage operations fail.
+ * Error thrown when storage operations fail.
+ *
+ * Extends {@link PingError} to allow per-package `instanceof` narrowing.
  */
-export type StorageError = GenericError;
+export class StorageError extends PingError {
+  constructor(message: string, code: string, type: string, status?: number) {
+    super(message, code, type, status);
+    this.name = 'StorageError';
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+
+  static from(raw: unknown): StorageError {
+    return PingError.fromAs(raw, StorageError);
+  }
+}
 
 /**
  * Optional logger configuration for storage native calls.

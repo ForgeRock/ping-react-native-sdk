@@ -324,14 +324,18 @@ the sample app for a working example.
 
 ## Error handling
 
-All methods reject with `PushError`, which extends the shared `GenericError` from `@ping-identity/rn-types`.
+All methods reject with a `PushError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the type:
 
 ```ts
+import { PushError } from '@ping-identity/rn-push';
+
 try {
   await client.addCredentialFromUri(uri);
-} catch (error) {
-  const e = error as PushError;
-  console.log(e.type, e.error, e.message);
+} catch (err) {
+  if (err instanceof PushError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

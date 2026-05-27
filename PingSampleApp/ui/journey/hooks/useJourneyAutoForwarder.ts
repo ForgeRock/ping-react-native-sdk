@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { formatError } from '../../utils/formatError';
 import type {
   JourneyFormResult,
   JourneyNextInput,
@@ -113,7 +114,7 @@ export function useJourneyAutoForwarder(
         await runner.runIntegrations(form);
       } catch (error) {
         appendDebug('Integration failed; submitting to let server route', {
-          error: error instanceof Error ? error.message : String(error),
+          error: formatError(error),
         });
       }
 

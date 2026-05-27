@@ -9,6 +9,8 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { PingError } from '@ping-identity/rn-types';
+import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import TokenJourneyPanel from './token/components/organisms/TokenJourneyPanel';
@@ -81,15 +83,13 @@ export default function TokenScreen(): React.ReactElement {
       setActiveTabOutput(getEmptyMessage('OIDC'));
     } catch (error) {
       if (
-        error instanceof Error &&
+        error instanceof PingError &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(
-          error instanceof Error ? error.message : 'Token retrieval failed',
-        );
+        setActiveTabOutput(formatError(error));
       }
     } finally {
       setLoading(false);
@@ -126,15 +126,13 @@ export default function TokenScreen(): React.ReactElement {
       setActiveTabOutput(getEmptyMessage('OIDC'));
     } catch (error) {
       if (
-        error instanceof Error &&
+        error instanceof PingError &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
         setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
       } else {
-        setActiveTabOutput(
-          error instanceof Error ? error.message : 'Token refresh failed',
-        );
+        setActiveTabOutput(formatError(error));
       }
     } finally {
       setLoading(false);
@@ -178,9 +176,7 @@ export default function TokenScreen(): React.ReactElement {
         setActiveTabOutput(getEmptyMessage('Journey'));
       }
     } catch (error) {
-      setActiveTabOutput(
-        error instanceof Error ? error.message : 'Token revoke failed',
-      );
+      setActiveTabOutput(formatError(error));
     } finally {
       setLoading(false);
     }
