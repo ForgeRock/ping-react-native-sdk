@@ -7,12 +7,12 @@
 
 export { createOathClient } from './oath';
 export { configureOathPolicyEvaluator } from './policyEvaluator';
+export { OathError } from './types';
 export type {
   OathClient,
   OathClientConfig,
   OathCodeInfo,
   OathCredential,
-  OathError,
   OathErrorCode,
   OathMfaPolicy,
   OathPolicyEvaluatorConfig,

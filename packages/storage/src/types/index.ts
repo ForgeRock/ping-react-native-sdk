@@ -10,6 +10,8 @@ export type {
   SessionStorage,
   OidcStorage,
   BindingUserKeyStorage,
+  PushStorage,
+  OathStorage,
   StorageConfig,
   StorageLoggerOptions,
 } from './storage.types';

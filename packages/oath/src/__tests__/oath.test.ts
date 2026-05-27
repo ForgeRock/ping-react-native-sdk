@@ -452,11 +452,13 @@ describe('close', () => {
   let client: Awaited<
     ReturnType<Awaited<ReturnType<typeof loadModule>>['createOathClient']>
   >;
+  let OathError: Awaited<ReturnType<typeof loadModule>>['OathError'];
 
   beforeEach(async () => {
     nativeModule = createNativeMock();
-    const { createOathClient } = await loadModule(nativeModule);
-    client = await createOathClient();
+    const mod = await loadModule(nativeModule);
+    OathError = mod.OathError;
+    client = await mod.createOathClient();
   });
 
   it('calls native close with the handle', async () => {
@@ -468,18 +470,37 @@ describe('close', () => {
   it('subsequent method calls throw OATH_STATE_ERROR after close', async () => {
     await client.close();
 
-    await expect(client.generateCode('cred-1')).rejects.toMatchObject({
-      type: 'state_error',
-      error: 'OATH_STATE_ERROR',
-    });
+    expect.assertions(4);
+    try {
+      await client.generateCode('cred-1');
+    } catch (err) {
+      expect(err).toBeInstanceOf(OathError);
+      expect((err as InstanceType<typeof OathError>).code).toBe(
+        'OATH_STATE_ERROR',
+      );
+      expect((err as InstanceType<typeof OathError>).type).toBe('state_error');
+      expect((err as InstanceType<typeof OathError>).message).toBe(
+        '[@ping-identity/rn-oath] Client is closed.',
+      );
+    }
   });
 
   it('calling close twice throws on the second call', async () => {
     await client.close();
 
-    await expect(client.close()).rejects.toMatchObject({
-      error: 'OATH_STATE_ERROR',
-    });
+    expect.assertions(4);
+    try {
+      await client.close();
+    } catch (err) {
+      expect(err).toBeInstanceOf(OathError);
+      expect((err as InstanceType<typeof OathError>).code).toBe(
+        'OATH_STATE_ERROR',
+      );
+      expect((err as InstanceType<typeof OathError>).type).toBe('state_error');
+      expect((err as InstanceType<typeof OathError>).message).toBe(
+        '[@ping-identity/rn-oath] Client is closed.',
+      );
+    }
   });
 });
 
@@ -511,13 +532,23 @@ describe('createOathClient — config wiring', () => {
 
   it('rejects negative timeout with argument_error', async () => {
     const nativeModule = createNativeMock();
-    const { createOathClient } = await loadModule(nativeModule);
+    const { createOathClient, OathError: OathErr } =
+      await loadModule(nativeModule);
 
-    await expect(createOathClient({ timeout: -1 })).rejects.toMatchObject({
-      type: 'argument_error',
-      error: 'OATH_INVALID_PARAMETER',
-    });
-    expect(nativeModule.create).not.toHaveBeenCalled();
+    expect.assertions(5);
+    try {
+      await createOathClient({ timeout: -1 });
+    } catch (err) {
+      expect(err).toBeInstanceOf(OathErr);
+      expect((err as InstanceType<typeof OathErr>).code).toBe(
+        'OATH_INVALID_PARAMETER',
+      );
+      expect((err as InstanceType<typeof OathErr>).type).toBe('argument_error');
+      expect((err as InstanceType<typeof OathErr>).message).toBe(
+        'timeout must be >= 0 (received -1).',
+      );
+      expect(nativeModule.create).not.toHaveBeenCalled();
+    }
   });
 
   it('forwards enableCredentialCache=true to native create', async () => {

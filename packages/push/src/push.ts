@@ -17,12 +17,12 @@ import {
   getNativeModule,
   toNativePushConfig,
 } from './NativeRNPingPush';
+import { PushError } from './types';
 import type {
   PushClient,
   PushClientConfig,
   PushConfig,
   PushCredential,
-  PushError,
   PushNotification,
 } from './types';
 
@@ -295,7 +295,7 @@ export async function createPushClient(
         return fromNativeCredential(result);
       } catch (error) {
         logger.error('Push addCredentialFromUri failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -328,7 +328,7 @@ export async function createPushClient(
         return fromNativeCredential(result);
       } catch (error) {
         logger.error('Push saveCredential failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -350,7 +350,7 @@ export async function createPushClient(
         return fromNativeCredentialList(result);
       } catch (error) {
         logger.error('Push getCredentials failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -376,7 +376,7 @@ export async function createPushClient(
         return fromNativeWrappedCredential(result);
       } catch (error) {
         logger.error('Push getCredential failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -402,7 +402,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push deleteCredential failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -437,7 +437,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push setDeviceToken failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -459,7 +459,7 @@ export async function createPushClient(
         return fromNativeToken(result);
       } catch (error) {
         logger.error('Push getDeviceToken failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -491,7 +491,7 @@ export async function createPushClient(
         return fromNativeNotification(result);
       } catch (error) {
         logger.error('Push processNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -519,7 +519,7 @@ export async function createPushClient(
         return fromNativeNotification(result);
       } catch (error) {
         logger.error('Push processNotificationFromMessage failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -546,7 +546,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push approveNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -570,11 +570,11 @@ export async function createPushClient(
       logger.debug('Push approveChallengeNotification requested');
       if (!challengeResponse.trim()) {
         logger.error('Push approveChallengeNotification failed');
-        throw {
-          type: 'argument_error',
-          error: 'invalid_parameter_value',
-          message: 'challengeResponse must not be empty',
-        } satisfies PushError;
+        throw new PushError(
+          'challengeResponse must not be empty',
+          'invalid_parameter_value',
+          'argument_error',
+        );
       }
       try {
         const result = await getNativeModule().approveChallengeNotification(
@@ -586,7 +586,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push approveChallengeNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -610,11 +610,11 @@ export async function createPushClient(
       logger.debug('Push approveBiometricNotification requested');
       if (!authenticationMethod.trim()) {
         logger.error('Push approveBiometricNotification failed');
-        throw {
-          type: 'argument_error',
-          error: 'invalid_parameter_value',
-          message: 'authenticationMethod must not be empty',
-        } satisfies PushError;
+        throw new PushError(
+          'authenticationMethod must not be empty',
+          'invalid_parameter_value',
+          'argument_error',
+        );
       }
       try {
         const result = await getNativeModule().approveBiometricNotification(
@@ -626,7 +626,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push approveBiometricNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -652,7 +652,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push denyNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -675,7 +675,7 @@ export async function createPushClient(
         return fromNativeNotificationList(result);
       } catch (error) {
         logger.error('Push getPendingNotifications failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -697,7 +697,7 @@ export async function createPushClient(
         return fromNativeNotificationList(result);
       } catch (error) {
         logger.error('Push getAllNotifications failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -725,7 +725,7 @@ export async function createPushClient(
         return fromNativeNotification(result);
       } catch (error) {
         logger.error('Push getNotification failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -753,7 +753,7 @@ export async function createPushClient(
         return result;
       } catch (error) {
         logger.error('Push cleanupNotifications failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -783,7 +783,7 @@ export async function createPushClient(
         return token;
       } catch (error) {
         logger.error('Push refreshToken failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
 
@@ -836,7 +836,7 @@ export async function createPushClient(
         logger.info('Push close success');
       } catch (error) {
         logger.error('Push close failed');
-        throw error;
+        throw PushError.from(error);
       }
     },
   };

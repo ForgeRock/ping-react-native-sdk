@@ -172,13 +172,13 @@ All schemes carry OATH parameters directly as query components. The `mfauth://` 
 import {
   createOathClient,
   configureOathPolicyEvaluator,
+  OathError,
 } from '@ping-identity/rn-oath';
 import type {
   OathClient,
   OathClientConfig,
   OathCodeInfo,
   OathCredential,
-  OathError,
   OathErrorCode,
   OathMfaPolicy,
   OathPolicyEvaluatorConfig,
@@ -232,15 +232,19 @@ interface OathCodeInfo {
 
 ## Error handling
 
-All rejected promises use the `OathError` shape (alias for `GenericError` from `@ping-identity/rn-types`):
+All rejected promises throw an `OathError` instance, which extends `PingError extends Error`.
+Use `instanceof` to narrow the type:
 
 ```ts
+import { OathError } from '@ping-identity/rn-oath';
+
 try {
   const client = await createOathClient();
   const code = await client.generateCode('my-credential-id');
 } catch (err) {
-  const error = err as OathError;
-  console.error(error.type, error.error, error.message);
+  if (err instanceof OathError) {
+    console.log(err.code, err.type, err.message);
+  }
 }
 ```
 

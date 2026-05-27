@@ -395,7 +395,7 @@ describe('approveChallengeNotification — whitespace variants', () => {
       client.approveChallengeNotification('notif-1', '\t'),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
     });
     expect(nativeFn).not.toHaveBeenCalled();
   });
@@ -413,7 +413,7 @@ describe('approveChallengeNotification — whitespace variants', () => {
       client.approveChallengeNotification('notif-1', '\n'),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
     });
     expect(nativeFn).not.toHaveBeenCalled();
   });
@@ -435,7 +435,7 @@ describe('approveBiometricNotification — whitespace variants', () => {
       client.approveBiometricNotification('notif-1', '\t'),
     ).rejects.toMatchObject({
       type: 'argument_error',
-      error: 'invalid_parameter_value',
+      code: 'invalid_parameter_value',
     });
     expect(nativeFn).not.toHaveBeenCalled();
   });
