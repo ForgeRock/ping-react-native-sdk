@@ -160,7 +160,7 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
         allNotifications,
       });
     } catch (err) {
-      setError(err as PushError);
+      setError(PushError.from(err));
       setData(null);
     } finally {
       setLoading(false);
@@ -218,13 +218,13 @@ function usePushState(config: PushConfig | null | undefined): PushResult {
           )
           .catch((err) => {
             if (!mounted) return;
-            setError(err as PushError);
+            setError(PushError.from(err));
             setLoading(false);
           });
       })
       .catch((err) => {
         if (!mounted) return;
-        setError(err as PushError);
+        setError(PushError.from(err));
         setLoading(false);
       });
 
