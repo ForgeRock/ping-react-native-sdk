@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-types",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Shared TypeScript contracts for Ping Identity React Native SDKs.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",

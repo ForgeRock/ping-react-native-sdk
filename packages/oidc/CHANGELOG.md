@@ -1,5 +1,15 @@
 # @ping-identity/rn-oidc
 
+## 1.0.0-beta.3
+
+### Patch Changes
+
+- fix(core): add RNPingCorePackage for Android autolinking
+
+- Updated dependencies []:
+  - @ping-identity/rn-types@1.0.0-beta.3
+  - @ping-identity/rn-core@1.0.0-beta.3
+
 ## 1.0.0-beta.2
 
 ### Patch Changes

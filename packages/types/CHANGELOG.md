@@ -1,5 +1,11 @@
 # @ping-identity/rn-types
 
+## 1.0.0-beta.3
+
+### Patch Changes
+
+- fix(core): add RNPingCorePackage for Android autolinking
+
 ## 1.0.0-beta.2
 
 ### Patch Changes
