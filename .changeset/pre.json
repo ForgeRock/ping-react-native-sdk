@@ -20,5 +20,5 @@
     "@ping-identity/rn-storage": "0.1.0",
     "@ping-identity/rn-types": "0.1.0"
   },
-  "changesets": []
+  "changesets": ["initial-beta-release"]
 }

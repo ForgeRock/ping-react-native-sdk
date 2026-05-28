@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-push",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.0",
   "description": "The Push Module provides native-backed push MFA capabilities for React Native.",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
@@ -23,9 +23,9 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^0.1.0",
-    "@ping-identity/rn-storage": "^0.1.0",
-    "@ping-identity/rn-types": "^0.1.0"
+    "@ping-identity/rn-core": "^1.0.0-beta.0",
+    "@ping-identity/rn-storage": "^1.0.0-beta.0",
+    "@ping-identity/rn-types": "^1.0.0-beta.0"
   },
   "license": "MIT",
   "peerDependencies": {

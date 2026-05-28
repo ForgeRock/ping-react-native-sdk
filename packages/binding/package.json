@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-binding",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.0",
   "description": "The Binding Module provides native-backed device binding and signing-verifier capabilities for React Native.",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
@@ -23,8 +23,8 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^0.1.0",
-    "@ping-identity/rn-types": "^0.1.0"
+    "@ping-identity/rn-core": "^1.0.0-beta.0",
+    "@ping-identity/rn-types": "^1.0.0-beta.0"
   },
   "license": "MIT",
   "peerDependencies": {

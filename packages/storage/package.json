@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-storage",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.0",
   "description": "The Storage module provides a structured framework for secure persistent data storage.",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
