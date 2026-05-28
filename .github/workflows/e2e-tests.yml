@@ -115,13 +115,7 @@ jobs:
           path: PingTestRunner/artifacts/
 
   # ── Android E2E (emulator on ubuntu-latest) ───────────────────────────────
-  # NOTE: This job will currently fail. The BrowserStack Detox fork we depend on
-  # for cloud device testing is pinned to a Detox version that is incompatible
-  # with React Native 0.80.
-  # TODO: Re-enable and validate once BrowserStack releases an updated version
-  # of their Detox fork with RN 0.80 support.
   e2e-android:
-    if: false
     name: E2E — Android Emulator
     runs-on: ubuntu-latest
     timeout-minutes: 60
