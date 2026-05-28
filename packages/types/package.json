@@ -5,6 +5,10 @@
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
   "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
