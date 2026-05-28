@@ -68,12 +68,13 @@ jobs:
       - name: Check lockstep
         run: yarn release:check-lockstep
 
+      - name: Update lockfile after version bump
+        run: yarn install
+
       - name: Commit and push version bump
         run: |
-          # Stage only the files changeset version touches — avoids accidentally
-          # committing build artifacts or install-state changes from yarn install.
           npx prettier --write packages/*/CHANGELOG.md .changeset/pre.json
-          git add packages/*/package.json packages/*/CHANGELOG.md .changeset
+          git add packages/*/package.json packages/*/CHANGELOG.md .changeset yarn.lock
           git diff --cached --quiet && echo "Nothing to commit, skipping" || (git commit -m "chore: version packages" && git push)
 
       - name: Build and publish

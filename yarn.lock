@@ -3052,8 +3052,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-binding@workspace:packages/binding"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-core": "npm:^1.0.0-beta.0"
+    "@ping-identity/rn-types": "npm:^1.0.0-beta.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
@@ -3078,7 +3078,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-core@npm:^0.1.0, @ping-identity/rn-core@workspace:*, @ping-identity/rn-core@workspace:packages/core":
+"@ping-identity/rn-core@npm:^1.0.0-beta.0, @ping-identity/rn-core@workspace:*, @ping-identity/rn-core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-core@workspace:packages/core"
   peerDependencies:
@@ -3091,8 +3091,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-client@workspace:packages/device-client"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-core": "npm:^1.0.0-beta.0"
+    "@ping-identity/rn-types": "npm:^1.0.0-beta.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
@@ -3152,8 +3152,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-fido@workspace:packages/fido"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-core": "npm:^1.0.0-beta.0"
+    "@ping-identity/rn-types": "npm:^1.0.0-beta.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
@@ -3229,9 +3229,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-push@workspace:packages/push"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-storage": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-core": "npm:^1.0.0-beta.0"
+    "@ping-identity/rn-storage": "npm:^1.0.0-beta.0"
+    "@ping-identity/rn-types": "npm:^1.0.0-beta.0"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
@@ -3241,7 +3241,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-storage@npm:^0.1.0, @ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
+"@ping-identity/rn-storage@npm:^1.0.0-beta.0, @ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-storage@workspace:packages/storage"
   dependencies:
@@ -3256,7 +3256,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-types@npm:^0.1.0, @ping-identity/rn-types@workspace:*, @ping-identity/rn-types@workspace:packages/types":
+"@ping-identity/rn-types@npm:^1.0.0-beta.0, @ping-identity/rn-types@workspace:*, @ping-identity/rn-types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-types@workspace:packages/types"
   dependencies:
