@@ -1,0 +1,24 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "rn-sample-app": "0.0.1",
+    "rn-test-runner": "0.0.1",
+    "@ping-identity/rn-binding": "0.1.0",
+    "@ping-identity/rn-browser": "0.1.0",
+    "@ping-identity/rn-core": "0.1.0",
+    "@ping-identity/rn-device-client": "0.1.0",
+    "@ping-identity/rn-device-id": "0.1.0",
+    "@ping-identity/rn-device-profile": "0.1.0",
+    "@ping-identity/rn-external-idp": "0.1.0",
+    "@ping-identity/rn-fido": "0.1.0",
+    "@ping-identity/rn-journey": "0.1.0",
+    "@ping-identity/rn-logger": "0.1.0",
+    "@ping-identity/rn-oath": "0.1.0",
+    "@ping-identity/rn-oidc": "0.1.0",
+    "@ping-identity/rn-push": "0.1.0",
+    "@ping-identity/rn-storage": "0.1.0",
+    "@ping-identity/rn-types": "0.1.0"
+  },
+  "changesets": []
+}
