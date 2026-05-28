@@ -36,8 +36,14 @@ Supported authentication experiences:
 
 ## Installation
 
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
+
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-external-idp module
 yarn add @ping-identity/rn-external-idp
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 

@@ -32,8 +32,14 @@ Key characteristics:
 
 ## Installation
 
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
+
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-oath module
 yarn add @ping-identity/rn-oath
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-oath",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "React Native OATH support for the Ping SDK.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
@@ -33,7 +33,6 @@
     "android"
   ],
   "dependencies": {
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "devDependencies": {
@@ -42,6 +41,7 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-device-client",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "Native-backed Device management (OATH/Push/Bound/WebAuthn/Profile) bridge for React Native.",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
@@ -27,10 +27,10 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^1.0.0-beta.0",
-    "@ping-identity/rn-types": "^1.0.0-beta.0"
+    "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

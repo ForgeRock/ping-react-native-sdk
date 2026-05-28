@@ -1,5 +1,15 @@
 # @ping-identity/rn-binding
 
+## 1.0.0-beta.1
+
+### Patch Changes
+
+- fix: move rn-core to peerDependencies and fix workspace:\* refs in published packages
+
+- Updated dependencies []:
+  - @ping-identity/rn-types@1.0.0-beta.1
+  - @ping-identity/rn-core@1.0.0-beta.1
+
 ## 1.0.0-beta.0
 
 ### Major Changes

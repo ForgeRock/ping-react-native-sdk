@@ -28,8 +28,14 @@ Push MFA for React Native — enrollment, credential management, notification pr
 
 ## Installation
 
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
+
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-push module
 yarn add @ping-identity/rn-push
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 

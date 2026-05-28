@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-logger",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "Ping Identity Logger TurboModule",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
@@ -28,10 +28,10 @@
   },
   "dependencies": {
     "@forgerock/sdk-logger": "^1.3.0",
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

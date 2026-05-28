@@ -15,9 +15,12 @@
 #   3. Sets git identity to github-actions[bot].
 #   4. Reads changeset files and bumps all package.json versions + generates CHANGELOGs.
 #   5. Verifies all packages are at the same version (lockstep check).
-#   6. Commits the version bump and pushes it back to the branch.
-#   7. Builds all packages and publishes them to npm via OIDC (no token required).
-#   8. Creates a single repo-level version tag (e.g. v1.0.0-beta.0) and pushes it.
+#   6. Updates the lockfile and commits the version bump back to the branch.
+#   7. Replaces workspace:* references with real versions (changeset publish calls npm
+#      directly and bypasses yarn's workspace: rewriting — this script fills that gap).
+#   8. Verifies no workspace:* references remain before publishing.
+#   9. Builds all packages and publishes them to npm via OIDC (no token required).
+#  10. Creates a single repo-level version tag (e.g. v1.0.0-beta.1) and pushes it.
 #
 # Prerequisites:
 #   - npm Trusted Publishing must be configured for each @ping-identity/* package on npmjs.com,
@@ -76,6 +79,12 @@ jobs:
           npx prettier --write packages/*/CHANGELOG.md .changeset/pre.json
           git add packages/*/package.json packages/*/CHANGELOG.md .changeset yarn.lock
           git diff --cached --quiet && echo "Nothing to commit, skipping" || (git commit -m "chore: version packages" && git push)
+
+      - name: Replace workspace refs with real versions
+        run: node scripts/replace-workspace-refs.mjs
+
+      - name: Check no workspace refs remain
+        run: node scripts/check-workspace-refs.mjs
 
       - name: Build and publish
         # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit

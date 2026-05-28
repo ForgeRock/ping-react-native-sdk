@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-external-idp",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "Ping Identity External IDP library for React Native, enabling seamless authentication with external identity providers.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
@@ -28,10 +28,10 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\" README.md babel.config.js jest.config.js eslint.config.mjs"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-fido",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "The FIDO Module provides native-backed FIDO capabilities for React Native.",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
@@ -27,10 +27,10 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@ping-identity/rn-core": "^1.0.0-beta.0",
-    "@ping-identity/rn-types": "^1.0.0-beta.0"
+    "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },
