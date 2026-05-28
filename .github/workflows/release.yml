@@ -70,8 +70,7 @@ jobs:
           # Stage only the files changeset version touches — avoids accidentally
           # committing build artifacts or install-state changes from yarn install.
           git add packages/*/package.json packages/*/CHANGELOG.md .changeset
-          git commit -m "chore: version packages"
-          git push
+          git diff --cached --quiet && echo "Nothing to commit, skipping" || (git commit -m "chore: version packages" && git push)
 
       - name: Build and publish
         # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
