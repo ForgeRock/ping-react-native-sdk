@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-oath",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "React Native OATH support for the Ping SDK.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-core",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Core utilities for Ping Identity React Native modules.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
@@ -25,5 +25,13 @@
     "android",
     "RNPingCore.podspec",
     "index.js"
-  ]
+  ],
+  "codegenConfig": {
+    "name": "RNPingCoreSpec",
+    "type": "modules",
+    "jsSrcsDir": ".",
+    "android": {
+      "javaPackageName": "com.pingidentity.rncore"
+    }
+  }
 }

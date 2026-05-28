@@ -20,5 +20,9 @@
     "@ping-identity/rn-storage": "0.1.0",
     "@ping-identity/rn-types": "0.1.0"
   },
-  "changesets": ["hungry-papayas-learn", "initial-beta-release"]
+  "changesets": [
+    "eighty-banks-feel",
+    "hungry-papayas-learn",
+    "initial-beta-release"
+  ]
 }

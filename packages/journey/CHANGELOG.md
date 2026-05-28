@@ -1,5 +1,15 @@
 # @ping-identity/rn-journey
 
+## 1.0.0-beta.2
+
+### Patch Changes
+
+- fix(core): add codegenConfig to trigger Android autolinking
+
+- Updated dependencies []:
+  - @ping-identity/rn-types@1.0.0-beta.2
+  - @ping-identity/rn-core@1.0.0-beta.2
+
 ## 1.0.0-beta.1
 
 ### Patch Changes
