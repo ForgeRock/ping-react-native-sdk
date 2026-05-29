@@ -32,8 +32,9 @@ for (const dir of packageDirs) {
   }
 }
 
-// Rewrite workspace:* in dependencies and peerDependencies
+// Rewrite workspace: refs in dependencies and peerDependencies
 let totalReplaced = 0;
+const unresolved = [];
 for (const dir of packageDirs) {
   const pkgPath = join(packagesDir, dir, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -42,12 +43,16 @@ for (const dir of packageDirs) {
   for (const section of ['dependencies', 'peerDependencies']) {
     if (!pkg[section]) continue;
     for (const [dep, ver] of Object.entries(pkg[section])) {
-      if (ver === 'workspace:*' && versionMap[dep]) {
+      if (typeof ver === 'string' && ver.startsWith('workspace:')) {
+        if (!versionMap[dep]) {
+          unresolved.push(`${dir}/package.json → ${section}.${dep}: "${ver}"`);
+          continue;
+        }
         pkg[section][dep] = `^${versionMap[dep]}`;
         changed = true;
         totalReplaced++;
         console.log(
-          `  ${dir}/${section}/${dep}: workspace:* → ^${versionMap[dep]}`,
+          `  ${dir}/${section}/${dep}: ${ver} → ^${versionMap[dep]}`,
         );
       }
     }
@@ -58,4 +63,9 @@ for (const dir of packageDirs) {
   }
 }
 
-console.log(`\nReplaced ${totalReplaced} workspace:* reference(s).`);
+if (unresolved.length) {
+  console.error('\nERROR: Unable to resolve workspace refs:\n' + unresolved.join('\n'));
+  process.exit(1);
+}
+
+console.log(`\nReplaced ${totalReplaced} workspace: reference(s).`);

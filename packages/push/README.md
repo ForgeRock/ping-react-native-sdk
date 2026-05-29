@@ -33,6 +33,8 @@ Push MFA for React Native — enrollment, credential management, notification pr
 ```bash
 # Install & setup the core module
 yarn add @ping-identity/rn-core
+# Install the rn-storage module
+yarn add @ping-identity/rn-storage
 # Install the rn-push module
 yarn add @ping-identity/rn-push
 # If you are developing your app using iOS, run this command
@@ -43,7 +45,6 @@ Optional integration packages:
 
 ```bash
 yarn add @ping-identity/rn-logger
-yarn add @ping-identity/rn-storage
 ```
 
 **FCM peer dependency (Android)** — add to your app's `build.gradle`:

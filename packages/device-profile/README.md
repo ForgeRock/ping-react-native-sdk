@@ -50,19 +50,11 @@ yarn add @ping-identity/rn-device-profile
 cd ios && pod install
 ```
 
-If you use CocoaPods, install pods after adding the package:
-
-```sh
-cd ios && pod install
-```
-
 Optional integration packages:
 
 ```bash
 yarn add @ping-identity/rn-logger
 ```
-
-- `@ping-identity/rn-logger`: optional JS/native logger integration.
 
 ### Basic usage (outside Journey)
 

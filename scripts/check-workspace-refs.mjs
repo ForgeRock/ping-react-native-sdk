@@ -28,9 +28,9 @@ for (const dir of packageDirs) {
   for (const section of ['dependencies', 'peerDependencies']) {
     if (!pkg[section]) continue;
     for (const [dep, ver] of Object.entries(pkg[section])) {
-      if (ver === 'workspace:*') {
+      if (typeof ver === 'string' && ver.startsWith('workspace:')) {
         violations.push(
-          `  ${dir}/package.json → ${section}.${dep}: "workspace:*"`,
+          `  ${dir}/package.json → ${section}.${dep}: "${ver}"`,
         );
       }
     }
@@ -39,7 +39,7 @@ for (const dir of packageDirs) {
 
 if (violations.length > 0) {
   console.error(
-    'ERROR: workspace:* references found in packages. Run scripts/replace-workspace-refs.mjs first.\n',
+    'ERROR: workspace: references found in packages. Run scripts/replace-workspace-refs.mjs first.\n',
   );
   violations.forEach((v) => console.error(v));
   process.exit(1);
