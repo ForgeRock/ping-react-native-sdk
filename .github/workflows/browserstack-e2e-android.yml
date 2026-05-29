@@ -145,8 +145,10 @@ jobs:
           cd android && ./gradlew \
             :ping-identity_rn-binding:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-browser:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-client:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-device-id:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-device-profile:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-external-idp:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-fido:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \

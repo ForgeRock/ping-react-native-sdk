@@ -116,7 +116,7 @@ jobs:
           DESTINATIONS=$(xcodebuild -showdestinations \
             -workspace "${{ env.WORKSPACE }}" \
             -scheme "${{ env.SCHEME }}" 2>/dev/null)
-          AVAILABLE=$(echo "$DESTINATIONS" | awk '/Available destinations/,/Ineligible destinations/' | head -n -1)
+          AVAILABLE=$(echo "$DESTINATIONS" | awk '/Available destinations/{flag=1; next} /Ineligible destinations/{flag=0} flag')
           DEST_LINE=$(echo "$AVAILABLE" | grep "platform:iOS Simulator" | grep "name:iPhone 17" | tail -1)
           if [ -z "$DEST_LINE" ]; then
             DEST_LINE=$(echo "$AVAILABLE" | grep "platform:iOS Simulator" | grep "name:iPhone" | tail -1)
