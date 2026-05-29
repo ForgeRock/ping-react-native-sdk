@@ -21,6 +21,8 @@ promise rejections consistent across modules.
 
 ## Integrating the SDK into your project
 
+> **Note:** This module is required by all other Ping Identity React Native SDK packages. Set it up and install it first.
+
 Add the package and let autolinking wire the native code:
 
 ```bash

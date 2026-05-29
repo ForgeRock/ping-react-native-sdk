@@ -13,10 +13,14 @@ This module exposes native-backed Journey clients for Android and iOS.
 
 ## Integrating the SDK into your project
 
-Add the package and let autolinking wire the native code:
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
 
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-journey module
 yarn add @ping-identity/rn-journey
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 

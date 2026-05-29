@@ -1,10 +1,14 @@
 {
   "name": "@ping-identity/rn-browser",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.3",
   "description": "Ping Identity Browser for React Native",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
   "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -24,6 +28,7 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },
@@ -33,7 +38,6 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "react-native-builder-bob": {

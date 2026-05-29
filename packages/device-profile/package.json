@@ -1,10 +1,14 @@
 {
   "name": "@ping-identity/rn-device-profile",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.3",
   "description": "The Device Profile module provides a structured framework for collecting device information.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
   "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -29,10 +33,10 @@
     "android"
   ],
   "dependencies": {
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

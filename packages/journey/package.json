@@ -1,9 +1,13 @@
 {
   "name": "@ping-identity/rn-journey",
-  "version": "0.1.0",
+  "version": "1.0.0-beta.3",
   "description": "Ping Identity Journey for React Native",
   "homepage": "https://www.pingidentity.com/",
   "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
   "main": "lib/module/index.js",
   "types": "lib/typescript/src/index.d.ts",
   "files": [
@@ -20,10 +24,10 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@ping-identity/rn-core": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

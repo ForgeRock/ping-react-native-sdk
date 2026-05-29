@@ -39,13 +39,14 @@ collector support, permissions, and device capabilities.
 
 ### Install
 
-```sh
-npm install @ping-identity/rn-device-profile
-```
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
 
-If you use CocoaPods, install pods after adding the package:
-
-```sh
+```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-device-profile module
+yarn add @ping-identity/rn-device-profile
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 
@@ -54,8 +55,6 @@ Optional integration packages:
 ```bash
 yarn add @ping-identity/rn-logger
 ```
-
-- `@ping-identity/rn-logger`: optional JS/native logger integration.
 
 ### Basic usage (outside Journey)
 

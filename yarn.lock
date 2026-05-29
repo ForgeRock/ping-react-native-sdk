@@ -3052,12 +3052,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-binding@workspace:packages/binding"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3067,18 +3067,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-browser@workspace:packages/browser"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-core@npm:^0.1.0, @ping-identity/rn-core@workspace:*, @ping-identity/rn-core@workspace:packages/core":
+"@ping-identity/rn-core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-core@workspace:packages/core"
   peerDependencies:
@@ -3091,12 +3091,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-client@workspace:packages/device-client"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3106,12 +3106,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-id@workspace:packages/device-id"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3121,12 +3121,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-profile@workspace:packages/device-profile"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3136,13 +3136,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-external-idp@workspace:packages/external-idp"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@testing-library/react-native": "npm:^13.3.3"
     react-native-builder-bob: "npm:^0.40.14"
     react-test-renderer: "npm:19.1.0"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3152,12 +3152,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-fido@workspace:packages/fido"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
+    "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3167,13 +3167,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-journey@workspace:packages/journey"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@testing-library/react-native": "npm:^13.3.3"
     react-native-builder-bob: "npm:^0.40.14"
     react-test-renderer: "npm:19.1.0"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3184,12 +3184,12 @@ __metadata:
   resolution: "@ping-identity/rn-logger@workspace:packages/logger"
   dependencies:
     "@forgerock/sdk-logger": "npm:^1.3.0"
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3199,12 +3199,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-oath@workspace:packages/oath"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3214,12 +3214,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-oidc@workspace:packages/oidc"
   dependencies:
-    "@ping-identity/rn-core": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
@@ -3229,34 +3229,35 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-push@workspace:packages/push"
   dependencies:
-    "@ping-identity/rn-core": "npm:^0.1.0"
-    "@ping-identity/rn-storage": "npm:^0.1.0"
-    "@ping-identity/rn-types": "npm:^0.1.0"
-    jest: "npm:^30.2.0"
-    react-native-builder-bob: "npm:^0.40.14"
-    typescript: "npm:^5.9.2"
-  peerDependencies:
-    react: "*"
-    react-native: "*"
-  languageName: unknown
-  linkType: soft
-
-"@ping-identity/rn-storage@npm:^0.1.0, @ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
-  version: 0.0.0-use.local
-  resolution: "@ping-identity/rn-storage@workspace:packages/storage"
-  dependencies:
-    "@ping-identity/rn-core": "workspace:*"
+    "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     jest: "npm:^30.2.0"
     react-native-builder-bob: "npm:^0.40.14"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
+    "@ping-identity/rn-storage": "workspace:*"
     react: "*"
     react-native: "*"
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-types@npm:^0.1.0, @ping-identity/rn-types@workspace:*, @ping-identity/rn-types@workspace:packages/types":
+"@ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-storage@workspace:packages/storage"
+  dependencies:
+    "@ping-identity/rn-types": "workspace:*"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
+"@ping-identity/rn-types@workspace:*, @ping-identity/rn-types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-types@workspace:packages/types"
   dependencies:

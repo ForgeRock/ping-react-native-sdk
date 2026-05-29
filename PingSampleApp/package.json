@@ -1,6 +1,6 @@
 {
   "name": "rn-sample-app",
-  "version": "0.0.1",
+  "version": "0.0.2-beta.1",
   "private": true,
   "scripts": {
     "android": "react-native run-android",

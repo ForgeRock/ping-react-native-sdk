@@ -12,17 +12,21 @@
 # Steps:
 #   1. Checks out the repo using the built-in GITHUB_TOKEN.
 #   2. Installs Node 22 and yarn dependencies.
-#   3. Sets git identity to github-actions[bot].
-#   4. Reads changeset files and bumps all package.json versions + generates CHANGELOGs.
-#   5. Verifies all packages are at the same version (lockstep check).
-#   6. Commits the version bump and pushes it back to the branch.
-#   7. Builds all packages and publishes them to npm via OIDC (no token required).
-#   8. Creates a single repo-level version tag (e.g. v1.0.0-beta.0) and pushes it.
+#   3. Verifies all packages are at the same version (lockstep check).
+#   4. Replaces workspace:* references with real versions (changeset publish calls npm
+#      directly and bypasses yarn's workspace: rewriting — this script fills that gap).
+#   5. Verifies no workspace:* references remain before publishing.
+#   6. Builds all packages and publishes them to npm via OIDC (no token required).
+#   7. Creates a single repo-level version tag (e.g. v1.0.0-beta.1) and pushes it.
 #
 # Prerequisites:
+#   - Version bump must be done manually before triggering this workflow:
+#       yarn changeset add   # describe the change
+#       yarn release:version # bump versions + generate CHANGELOGs
+#       yarn install         # update lockfile
+#       git add -A && git commit && git push
 #   - npm Trusted Publishing must be configured for each @ping-identity/* package on npmjs.com,
 #     pointing to this repo and this workflow file.
-#   - The branch must not have required status checks that block GITHUB_TOKEN pushes.
 #
 name: Release
 
@@ -48,6 +52,9 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
       - name: Install dependencies
         run: yarn install
 
@@ -56,22 +63,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Version packages
-        run: yarn release:version
-        env:
-          # changelog-github uses GITHUB_TOKEN to resolve PR links and author info in CHANGELOG.md
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check lockstep
         run: yarn release:check-lockstep
 
-      - name: Commit and push version bump
-        run: |
-          # Stage only the files changeset version touches — avoids accidentally
-          # committing build artifacts or install-state changes from yarn install.
-          git add packages/*/package.json packages/*/CHANGELOG.md .changeset
-          git commit -m "chore: version packages"
-          git push
+      - name: Replace workspace refs with real versions
+        run: node scripts/replace-workspace-refs.mjs
+
+      - name: Check no workspace refs remain
+        run: node scripts/check-workspace-refs.mjs
 
       - name: Build and publish
         # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit

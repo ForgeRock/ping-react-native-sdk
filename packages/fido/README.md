@@ -25,8 +25,14 @@ This package provides a native-backed FIDO bridge for React Native.
 
 ## Install
 
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
+
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-fido module
 yarn add @ping-identity/rn-fido
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 

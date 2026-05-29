@@ -21,10 +21,14 @@ storage solutions for the Ping SDKs, serving React Native applications.
 
 ## Integrating the SDK into your project
 
-Add the package and let autolinking wire the native code:
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
 
 ```bash
+# Install & setup the core module
+yarn add @ping-identity/rn-core
+# Install the rn-storage module
 yarn add @ping-identity/rn-storage
+# If you are developing your app using iOS, run this command
 cd ios && pod install
 ```
 
