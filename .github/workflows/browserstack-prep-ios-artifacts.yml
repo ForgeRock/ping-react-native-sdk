@@ -63,7 +63,7 @@ jobs:
           AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
             | grep -i "iOS" | grep -v "unavailable" \
             | grep -oE "[0-9]+\.[0-9]+" | sort -u)
-          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
+          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V); do
             [ -d "$app" ] || continue
             xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
               xcodebuild -showsdks 2>/dev/null \

@@ -105,30 +105,19 @@ jobs:
           chmod +x product/xcresultparser
           sudo mv product/xcresultparser /usr/local/bin/
 
-      # Resolve the best available iPhone simulator using xcodebuild -showdestinations.
-      # This asks Xcode itself which destinations are eligible for the scheme — only simulators
-      # compatible with the active Xcode SDK appear in "Available destinations", so no version
-      # string matching is needed and incompatible runtimes are automatically excluded.
-      # Prefers iPhone 17; falls back to any available iPhone simulator.
+      # Resolve a simulator for Xcode 26.4.1 using xcrun simctl.
+      # xcodebuild -showdestinations only returns placeholders on a fresh CI runner.
+      # Pick the first iPhone from the iOS 26.4 runtime (matches the active Xcode SDK).
       # Sets DESTINATION and SIMULATOR_UDID in GITHUB_ENV for all subsequent steps.
       - name: Resolve simulator destination
         run: |
-          DESTINATIONS=$(xcodebuild -showdestinations \
-            -workspace "${{ env.WORKSPACE }}" \
-            -scheme "${{ env.SCHEME }}" 2>&1)
-          echo "--- xcodebuild -showdestinations output ---"
-          echo "$DESTINATIONS"
+          echo "--- xcrun simctl list devices available ---"
+          xcrun simctl list devices available
           echo "-------------------------------------------"
-          AVAILABLE=$(echo "$DESTINATIONS" | awk '/Available destinations/{flag=1; next} /Ineligible destinations/{flag=0} flag')
-          DEST_LINE=$(echo "$AVAILABLE" | grep "platform:iOS Simulator" | grep "name:iPhone 17" | tail -1)
-          if [ -z "$DEST_LINE" ]; then
-            DEST_LINE=$(echo "$AVAILABLE" | grep "platform:iOS Simulator" | grep "name:iPhone" | tail -1)
-          fi
-          [ -n "$DEST_LINE" ] || { echo "No eligible iPhone simulator found"; exit 1; }
-          SIMULATOR_UDID=$(echo "$DEST_LINE" | grep -oE 'id:[A-F0-9-]+' | cut -d: -f2)
-          SIMULATOR_NAME=$(echo "$DEST_LINE" | grep -oE 'name:[^,}]+' | cut -d: -f2 | xargs)
-          OS_VERSION=$(echo "$DEST_LINE"    | grep -oE 'OS:[^,}]+'    | cut -d: -f2 | xargs)
-          echo "Resolved: $SIMULATOR_NAME ($OS_VERSION) [$SIMULATOR_UDID]"
+          SIMULATOR_UDID=$(xcrun simctl list devices "iOS 26.4" available | grep "iPhone" | grep -oE '[A-F0-9-]{36}' | head -1)
+          [ -n "$SIMULATOR_UDID" ] || { echo "No eligible iPhone simulator found for iOS 26.4"; exit 1; }
+          SIMULATOR_NAME=$(xcrun simctl list devices "iOS 26.4" available | grep "$SIMULATOR_UDID" | sed 's/ *(.*//' | xargs)
+          echo "Resolved: ${SIMULATOR_NAME} (iOS 26.4) [${SIMULATOR_UDID}]"
           echo "DESTINATION=platform=iOS Simulator,id=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
           echo "SIMULATOR_UDID=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
 
