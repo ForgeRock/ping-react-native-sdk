@@ -25,10 +25,11 @@ import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.logger.LoggerHandleContract
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import com.pingidentity.rncore.utils.launchBridge
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
@@ -181,7 +182,7 @@ object RNPingDeviceClientCommon {
     val client = registry[handleId] ?: run {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
-    scope.launch {
+    scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
       try {
         // TODO-PARITY: Android repo properties are suffixed with `Device` (`oathDevice`, `pushDevice`, ...)
         //   while iOS uses bare names (`oath`, `push`, ...). Pick one convention.
@@ -193,7 +194,7 @@ object RNPingDeviceClientCommon {
           DeviceType.PROFILE -> client.profileDevice.devices()
           DeviceType.WEB_AUTHN -> client.webAuthnDevice.devices()
           else -> {
-            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
+            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
         result.fold(
@@ -204,6 +205,8 @@ object RNPingDeviceClientCommon {
           },
           onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
         )
+      } catch (e: CancellationException) {
+        throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
       }
@@ -232,7 +235,7 @@ object RNPingDeviceClientCommon {
     val client = registry[handleId] ?: run {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
-    scope.launch {
+    scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
       try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
         val result = when (deviceType) {
@@ -242,7 +245,7 @@ object RNPingDeviceClientCommon {
           DeviceType.PROFILE -> client.profileDevice.updateAs<ProfileDevice>(decoded)
           DeviceType.WEB_AUTHN -> client.webAuthnDevice.updateAs<WebAuthnDevice>(decoded)
           else -> {
-            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
+            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
         result.fold(
@@ -253,6 +256,8 @@ object RNPingDeviceClientCommon {
           },
           onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
         )
+      } catch (e: CancellationException) {
+        throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
       }
@@ -281,7 +286,7 @@ object RNPingDeviceClientCommon {
     val client = registry[handleId] ?: run {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
-    scope.launch {
+    scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
       try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
         val result = when (deviceType) {
@@ -291,7 +296,7 @@ object RNPingDeviceClientCommon {
           DeviceType.PROFILE -> client.profileDevice.deleteAs<ProfileDevice>(decoded)
           DeviceType.WEB_AUTHN -> client.webAuthnDevice.deleteAs<WebAuthnDevice>(decoded)
           else -> {
-            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launch
+            DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
         result.fold(
@@ -302,6 +307,8 @@ object RNPingDeviceClientCommon {
           },
           onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
         )
+      } catch (e: CancellationException) {
+        throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
       }

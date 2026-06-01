@@ -26,15 +26,14 @@ import com.pingidentity.rncore.oidc.OidcOpenIdConfig
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
-import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.utils.launchBridge
 import com.pingidentity.utils.Result
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 
@@ -234,18 +233,14 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        when (val result = handle.user.token()) {
-          is Result.Success<Token> ->
-            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
-            promise.reject(error)
-          }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_TOKEN_ERROR, Dispatchers.IO) {
+      when (val result = handle.user.token()) {
+        is Result.Success<Token> ->
+          promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_TOKEN_ERROR), e)
       }
     }
   }
@@ -269,18 +264,14 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        when (val result = handle.user.refresh()) {
-          is Result.Success<Token> ->
-            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
-            promise.reject(error)
-          }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_REFRESH_ERROR, Dispatchers.IO) {
+      when (val result = handle.user.refresh()) {
+        is Result.Success<Token> ->
+          promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REFRESH_ERROR), e)
       }
     }
   }
@@ -305,18 +296,14 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        when (val result = handle.user.userinfo(cache)) {
-          is Result.Success<JsonObject> ->
-            promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
-            promise.reject(error)
-          }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_USERINFO_ERROR, Dispatchers.IO) {
+      when (val result = handle.user.userinfo(cache)) {
+        is Result.Success<JsonObject> ->
+          promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_USERINFO_ERROR), e)
       }
     }
   }
@@ -340,13 +327,9 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        handle.user.revoke()
-        promise.resolve(null)
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REVOKE_ERROR), e)
-      }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_REVOKE_ERROR, Dispatchers.IO) {
+      handle.user.revoke()
+      promise.resolve(null)
     }
   }
 
@@ -369,13 +352,9 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val result = handle.client.endSession()
-        promise.resolve(result)
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_LOGOUT_ERROR), e)
-      }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_LOGOUT_ERROR, Dispatchers.IO) {
+      val result = handle.client.endSession()
+      promise.resolve(result)
     }
   }
 
@@ -400,7 +379,7 @@ object RNPingOidcCommon {
     }
 
     val authorizeParams = OidcConfigParser.buildAuthorizeParams(options)
-    scope.launch(Dispatchers.IO) {
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_AUTHORIZE_ERROR, Dispatchers.IO) {
       val result = try {
         withContext(Dispatchers.Main) {
           handle.web.authorize {
@@ -412,17 +391,17 @@ object RNPingOidcCommon {
           val canceled = Arguments.createMap()
           canceled.putString("type", "cancel")
           promise.resolve(canceled)
-          return@launch
+          return@launchBridge
         }
         promise.reject(OidcErrorMapper.mapAuthorizeThrowable(e), e)
-        return@launch
+        return@launchBridge
       }
 
       if (result.isSuccess) {
         val payload = Arguments.createMap()
         payload.putString("type", "success")
         promise.resolve(payload)
-        return@launch
+        return@launchBridge
       }
 
       val error = result.exceptionOrNull()
@@ -430,7 +409,7 @@ object RNPingOidcCommon {
         val canceled = Arguments.createMap()
         canceled.putString("type", "cancel")
         promise.resolve(canceled)
-        return@launch
+        return@launchBridge
       }
 
       val mapped = OidcErrorMapper.mapAuthorizeThrowable(error)
@@ -457,13 +436,9 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        promise.resolve(user != null)
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_HAS_USER_ERROR), e)
-      }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_HAS_USER_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      promise.resolve(user != null)
     }
   }
 
@@ -486,29 +461,25 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        if (user == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_TOKEN_ERROR,
-            message = "No authenticated user is available for this OIDC web client"
-          )
-          promise.reject(error)
-          return@launch
-        }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_TOKEN_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      if (user == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = OidcErrorCodes.OIDC_TOKEN_ERROR,
+          message = "No authenticated user is available for this OIDC web client"
+        )
+        promise.reject(error)
+        return@launchBridge
+      }
 
-        when (val result = user.token()) {
-          is Result.Success<Token> ->
-            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
-            promise.reject(error)
-          }
+      when (val result = user.token()) {
+        is Result.Success<Token> ->
+          promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_TOKEN_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_TOKEN_ERROR), e)
       }
     }
   }
@@ -532,29 +503,25 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        if (user == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_REFRESH_ERROR,
-            message = "No authenticated user is available for this OIDC web client"
-          )
-          promise.reject(error)
-          return@launch
-        }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_REFRESH_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      if (user == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = OidcErrorCodes.OIDC_REFRESH_ERROR,
+          message = "No authenticated user is available for this OIDC web client"
+        )
+        promise.reject(error)
+        return@launchBridge
+      }
 
-        when (val result = user.refresh()) {
-          is Result.Success<Token> ->
-            promise.resolve(OidcResponseMapper.encodeTokens(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
-            promise.reject(error)
-          }
+      when (val result = user.refresh()) {
+        is Result.Success<Token> ->
+          promise.resolve(OidcResponseMapper.encodeTokens(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_REFRESH_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REFRESH_ERROR), e)
       }
     }
   }
@@ -579,29 +546,25 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        if (user == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_USERINFO_ERROR,
-            message = "No authenticated user is available for this OIDC web client"
-          )
-          promise.reject(error)
-          return@launch
-        }
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_USERINFO_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      if (user == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = OidcErrorCodes.OIDC_USERINFO_ERROR,
+          message = "No authenticated user is available for this OIDC web client"
+        )
+        promise.reject(error)
+        return@launchBridge
+      }
 
-        when (val result = user.userinfo(cache)) {
-          is Result.Success<JsonObject> ->
-            promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
-          is Result.Failure<OidcError> -> {
-            val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
-            promise.reject(error)
-          }
+      when (val result = user.userinfo(cache)) {
+        is Result.Success<JsonObject> ->
+          promise.resolve(OidcResponseMapper.encodeUserinfo(result.value))
+        is Result.Failure<OidcError> -> {
+          val error = OidcErrorMapper.mapOidcError(result.value, OidcErrorCodes.OIDC_USERINFO_ERROR)
+          promise.reject(error)
         }
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_USERINFO_ERROR), e)
       }
     }
   }
@@ -625,23 +588,19 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        if (user == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_REVOKE_ERROR,
-            message = "No authenticated user is available for this OIDC web client"
-          )
-          promise.reject(error)
-          return@launch
-        }
-        user.revoke()
-        promise.resolve(null)
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_REVOKE_ERROR), e)
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_REVOKE_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      if (user == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = OidcErrorCodes.OIDC_REVOKE_ERROR,
+          message = "No authenticated user is available for this OIDC web client"
+        )
+        promise.reject(error)
+        return@launchBridge
       }
+      user.revoke()
+      promise.resolve(null)
     }
   }
 
@@ -664,23 +623,19 @@ object RNPingOidcCommon {
       return
     }
 
-    scope.launch(Dispatchers.IO) {
-      try {
-        val user = handle.web.user()
-        if (user == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
-            message = "No authenticated user is available for this OIDC web client"
-          )
-          promise.reject(error)
-          return@launch
-        }
-        user.logout()
-        promise.resolve(null)
-      } catch (e: Exception) {
-        promise.reject(mapThrowableToGenericError(e, OidcErrorCodes.OIDC_LOGOUT_ERROR), e)
+    scope.launchBridge(promise, OidcErrorCodes.OIDC_LOGOUT_ERROR, Dispatchers.IO) {
+      val user = handle.web.user()
+      if (user == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = OidcErrorCodes.OIDC_LOGOUT_ERROR,
+          message = "No authenticated user is available for this OIDC web client"
+        )
+        promise.reject(error)
+        return@launchBridge
       }
+      user.logout()
+      promise.resolve(null)
     }
   }
 

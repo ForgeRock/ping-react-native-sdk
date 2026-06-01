@@ -6,6 +6,8 @@
  */
 package com.pingidentity.rnfido
 
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
@@ -16,7 +18,9 @@ import com.pingidentity.rncore.utils.JsonBridgeMapper
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.unmockkAll
+import io.mockk.mockkStatic
+import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
@@ -40,13 +44,17 @@ class RNPingFidoTest {
   fun setUp() {
     runCatching { SoLoader.init(RuntimeEnvironment.getApplication(), false) }
     runCatching { NativeLoader.init(SystemDelegate()) }
+    mockkStatic(Arguments::class)
+    every { Arguments.createMap() } answers { JavaOnlyMap() }
+    every { Arguments.createArray() } answers { JavaOnlyArray() }
     RNPingFidoCommon.foregroundActivityProvider = { true }
   }
 
   @After
   fun tearDown() {
     RNPingFidoCommon.foregroundActivityProvider = { true }
-    unmockkAll()
+    unmockkStatic(Arguments::class)
+    unmockkObject(JsonBridgeMapper)
   }
 
   // MARK: - Error code contracts
@@ -164,8 +172,8 @@ class RNPingFidoTest {
   }
 
   /**
-   * Ensures registration uses the stable invalid-options fallback message when decode errors
-   * without a detail message.
+   * Ensures registration rejects with the stable error code and descriptive fallback message
+   * when decode errors without a message — preserving the original JS-visible contract.
    */
   @Test
   fun registerRejectsWithInvalidOptionsMessageWhenDecodeFailsWithoutMessage() {
@@ -182,8 +190,8 @@ class RNPingFidoTest {
   }
 
   /**
-   * Ensures authentication uses the stable invalid-options fallback message when decode errors
-   * without a detail message.
+   * Ensures authentication rejects with the stable error code and descriptive fallback message
+   * when decode errors without a message — preserving the original JS-visible contract.
    */
   @Test
   fun authenticateRejectsWithInvalidOptionsMessageWhenDecodeFailsWithoutMessage() {

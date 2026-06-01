@@ -8,12 +8,10 @@ package com.pingidentity.rndeviceid
 
 import com.facebook.react.bridge.Promise
 import com.pingidentity.device.id.DeviceIdentifier
-import com.pingidentity.rncore.error.mapThrowableToGenericError
-import com.pingidentity.rncore.error.reject
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 /**
  * Shared implementation for Device ID operations on Android.
@@ -52,14 +50,9 @@ object RNPingDeviceIdCommon {
     promise: Promise,
     resolver: suspend () -> String
   ) {
-    scope.launch {
-      try {
-        val id = resolver()
-        promise.resolve(id)
-      } catch (e: Exception) {
-        val error = mapThrowableToGenericError(e, DeviceIdErrorCodes.DEVICE_ID_ERROR)
-        promise.reject(error, e)
-      }
+    scope.launchBridge(promise, DeviceIdErrorCodes.DEVICE_ID_ERROR) {
+      val id = resolver()
+      promise.resolve(id)
     }
   }
 

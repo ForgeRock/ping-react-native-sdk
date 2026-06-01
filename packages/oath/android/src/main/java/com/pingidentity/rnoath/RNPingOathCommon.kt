@@ -32,12 +32,13 @@ import com.pingidentity.rncore.policy.OathPolicyDescriptor
 import com.pingidentity.rncore.policy.OathPolicyEvaluatorConfigHandleContract
 import com.pingidentity.rncore.storage.OathStorageConfigHandleContract
 import com.pingidentity.storage.sqlite.SQLiteStorageConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.pingidentity.rncore.utils.launchBridge
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -125,7 +126,7 @@ object RNPingOathCommon {
    * @param promise Bridge promise resolved with a UUID handle string or rejected with [GenericError].
    */
   fun create(config: ReadableMap, promise: Promise) {
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_INITIALIZATION_FAILED, Dispatchers.Default) {
       try {
         val storageId = if (config.hasKey("storageId") && !config.isNull("storageId")) {
           config.getString("storageId")
@@ -141,7 +142,7 @@ object RNPingOathCommon {
                   message = "Unresolvable storageId: $storageId"
                 )
               )
-              return@launch
+              return@launchBridge
             }
           SQLOathStorage(SQLiteStorageConfig().apply { handle.databaseName?.let { databaseName = it } })
         } else null
@@ -170,7 +171,7 @@ object RNPingOathCommon {
                   message = "Unresolvable policyEvaluatorId: $policyEvaluatorId"
                 )
               )
-              return@launch
+              return@launchBridge
             }
           // When the descriptor carries a loggerId, use that logger for the evaluator.
           // Otherwise fall back to the logger resolved from OathClientConfig.loggerId.
@@ -221,6 +222,8 @@ object RNPingOathCommon {
           registry.remove(handle)?.client?.close()
           throw t
         }
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_INITIALIZATION_FAILED), e)
       }
@@ -243,12 +246,14 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_INVALID_URI, Dispatchers.Default) {
       try {
         val credential = entry.mutex.withLock {
           entry.client.addCredentialFromUri(uri).getOrThrow()
         }
         promise.resolve(encodeCredential(credential))
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_INVALID_URI), e)
       }
@@ -271,7 +276,7 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND, Dispatchers.Default) {
       try {
         val credential = entry.mutex.withLock {
           entry.client.getCredential(credentialId).getOrThrow()
@@ -281,6 +286,8 @@ object RNPingOathCommon {
         } else {
           promise.resolve(null)
         }
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND), e)
       }
@@ -302,7 +309,7 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_UNKNOWN_ERROR, Dispatchers.Default) {
       try {
         val credentials = entry.mutex.withLock {
           entry.client.getCredentials().getOrThrow()
@@ -312,6 +319,8 @@ object RNPingOathCommon {
           array.pushMap(encodeCredential(c))
         }
         promise.resolve(array)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_UNKNOWN_ERROR), e)
       }
@@ -348,7 +357,7 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND, Dispatchers.Default) {
       try {
         val decoded = decodeCredential(credential)
         val saved = entry.mutex.withLock {
@@ -371,6 +380,8 @@ object RNPingOathCommon {
           }
         }
         saved?.let { promise.resolve(encodeCredential(it)) }
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND), e)
       }
@@ -392,12 +403,14 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND, Dispatchers.Default) {
       try {
         val deleted = entry.mutex.withLock {
           entry.client.deleteCredential(credentialId).getOrThrow()
         }
         promise.resolve(deleted)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND), e)
       }
@@ -419,12 +432,14 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_CODE_GENERATION_FAILED, Dispatchers.Default) {
       try {
         val code = entry.mutex.withLock {
           entry.client.generateCode(credentialId).getOrThrow()
         }
         promise.resolve(code)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CODE_GENERATION_FAILED), e)
       }
@@ -447,7 +462,7 @@ object RNPingOathCommon {
         message = "No OATH client found for handle $handle"
       )
     )
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_CODE_GENERATION_FAILED, Dispatchers.Default) {
       try {
         val codeInfo = entry.mutex.withLock {
           entry.client.generateCodeWithValidity(credentialId).getOrThrow()
@@ -459,6 +474,8 @@ object RNPingOathCommon {
         map.putDouble("progress", codeInfo.progress)
         map.putInt("totalPeriod", codeInfo.totalPeriod)
         promise.resolve(map)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_CODE_GENERATION_FAILED), e)
       }
@@ -477,10 +494,12 @@ object RNPingOathCommon {
    */
   fun close(handle: String, promise: Promise) {
     val entry = registry.remove(handle) ?: return promise.resolve(null)
-    scope.launch {
+    scope.launchBridge(promise, OathErrorCodes.OATH_STATE_ERROR, Dispatchers.Default) {
       try {
         entry.mutex.withLock { entry.client.close() }
         promise.resolve(null)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         promise.reject(OathErrorMapper.mapThrowable(e, OathErrorCodes.OATH_STATE_ERROR), e)
       }
