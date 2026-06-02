@@ -52,33 +52,38 @@ jobs:
       - name: Setup project dependencies
         uses: ./.github/actions/setup-proj
 
-      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator runtime
-      # component (SDK ≠ runtime — the SDK ships inside Xcode but the runtime is provisioned separately).
-      # This step prefers the pinned version but falls back to the newest installed Xcode whose major.minor
-      # iOS version has a matching pre-provisioned simulator runtime, so the archive destination is always valid.
+      # Xcode version must be pinned to match the iOS SDK used when building XCUITest artifacts for
+      # BrowserStack real-device testing. Building with a newer Xcode (e.g. 26.x iOS SDK) produces
+      # binaries that reference XCTest symbols not present on older iOS real devices (e.g.
+      # _OBJC_CLASS_$_XCTCommandLineToolHelper), causing a dyld crash before any test runs.
+      # The pinned version must target an SDK compatible with the oldest iOS version used in BrowserStack
+      # test runs. These builds target real devices (-sdk iphoneos / generic/platform=iOS) — simulator
+      # runtimes are not relevant here.
       - name: Resolve Xcode version
         run: |
           PINNED="/Applications/Xcode_${XCODE_VERSION}.app"
-          SELECTED=""
-          AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
-            | grep -i "iOS" | grep -v "unavailable" \
-            | grep -oE "[0-9]+\.[0-9]+" | sort -u)
-          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V); do
-            [ -d "$app" ] || continue
-            xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
-              xcodebuild -showsdks 2>/dev/null \
-              | grep -i "iphonesimulator" | grep -oE "[0-9]+\.[0-9]+" | sort -rV | head -1)
-            [ -n "$xcode_ios" ] || continue
-            if echo "$AVAILABLE_RUNTIMES" | grep -qx "$xcode_ios"; then
-              SELECTED="$app"
-              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
-              echo "Resolved Xcode: $app (iOS SDK $xcode_ios, runtime available)"
-              break
+          if [ -d "$PINNED" ]; then
+            echo "XCODE_RESOLVED_PATH=$PINNED" >> "$GITHUB_ENV"
+            echo "Resolved Xcode: $PINNED (pinned version ${XCODE_VERSION})"
+          else
+            echo "::warning::Pinned Xcode ${XCODE_VERSION} not found at $PINNED"
+            AVAILABLE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V)
+            echo "Available Xcode installs:"
+            echo "$AVAILABLE" | sed 's/^/  /'
+            # Pick the next version after the pinned one (ascending order — closest newer version)
+            NEXT=$(echo "$AVAILABLE" \
+              | grep -oE "Xcode_[0-9]+(\.[0-9]+)*" \
+              | sort -V \
+              | awk -F'_' -v pin="${XCODE_VERSION}" '$2 > pin {print; exit}')
+            if [ -n "$NEXT" ]; then
+              RESOLVED="/Applications/${NEXT}.app"
+              echo "XCODE_RESOLVED_PATH=$RESOLVED" >> "$GITHUB_ENV"
+              echo "Falling back to next available version: $RESOLVED"
             else
-              echo "Skipping $app: iOS $xcode_ios SDK present but runtime not provisioned (available: $(echo $AVAILABLE_RUNTIMES | tr '\n' ' '))"
+              echo "::error::Pinned Xcode ${XCODE_VERSION} not found and no newer version is available"
+              exit 1
             fi
-          done
-          [ -n "$SELECTED" ] || { echo "No Xcode with a matching provisioned iOS simulator runtime found"; exit 1; }
+          fi
 
       - name: Select Xcode version
         run: sudo xcode-select -s "$XCODE_RESOLVED_PATH" && /usr/bin/xcodebuild -version
