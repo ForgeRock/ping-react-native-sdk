@@ -58,29 +58,58 @@ jobs:
       # _OBJC_CLASS_$_XCTCommandLineToolHelper), causing a dyld crash before any test runs.
       # The pinned version must target an SDK compatible with the oldest iOS version used in BrowserStack
       # test runs. These builds target real devices (-sdk iphoneos / generic/platform=iOS) — simulator
-      # runtimes are not relevant here.
+      # runtimes are not relevant here and must not be used as a selection gate.
+      #
+      # Root cause of prior failures:
+      # 1. The original step used `xcrun simctl list runtimes` to gate Xcode selection. Because simulator
+      #    runtimes are provisioned independently of Xcode on GitHub-hosted runners, the pinned Xcode was
+      #    rejected whenever its matching simulator runtime was absent — even though this workflow never
+      #    touches a simulator. This caused fallback to a newer Xcode (e.g. 26.4) whose XCTest SDK
+      #    produced device binaries incompatible with iOS 17/18 BrowserStack devices.
+      # 2. Switching to a directory existence check was not sufficient: Xcode can be installed on the
+      #    runner without its device platform component (Platforms/iPhoneOS.platform). When the platform
+      #    is missing, ibtool fails with "iOS X.Y Platform Not Installed" during storyboard compilation
+      #    even though xcodebuild is present and reports a valid version. The fix therefore checks for
+      #    the actual iPhoneOS SDK directory inside the Xcode bundle, which is what ibtool and actool
+      #    require at build time.
       - name: Resolve Xcode version
         run: |
+          # Check whether the iphoneos SDK platform component is installed inside a given Xcode app.
+          has_iphoneos_sdk() {
+            [ -d "$1/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs" ] \
+              && ls "$1/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs"/iPhoneOS*.sdk 2>/dev/null | grep -q .
+          }
+
           PINNED="/Applications/Xcode_${XCODE_VERSION}.app"
-          if [ -d "$PINNED" ]; then
+          if [ -d "$PINNED" ] && has_iphoneos_sdk "$PINNED"; then
             echo "XCODE_RESOLVED_PATH=$PINNED" >> "$GITHUB_ENV"
-            echo "Resolved Xcode: $PINNED (pinned version ${XCODE_VERSION})"
+            echo "Resolved Xcode: $PINNED (pinned version ${XCODE_VERSION}, iphoneos SDK present)"
           else
-            echo "::warning::Pinned Xcode ${XCODE_VERSION} not found at $PINNED"
-            AVAILABLE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V)
-            echo "Available Xcode installs:"
-            echo "$AVAILABLE" | sed 's/^/  /'
-            # Pick the next version after the pinned one (ascending order — closest newer version)
-            NEXT=$(echo "$AVAILABLE" \
-              | grep -oE "Xcode_[0-9]+(\.[0-9]+)*" \
-              | sort -V \
-              | awk -F'_' -v pin="${XCODE_VERSION}" '$2 > pin {print; exit}')
-            if [ -n "$NEXT" ]; then
-              RESOLVED="/Applications/${NEXT}.app"
-              echo "XCODE_RESOLVED_PATH=$RESOLVED" >> "$GITHUB_ENV"
-              echo "Falling back to next available version: $RESOLVED"
+            if [ -d "$PINNED" ]; then
+              echo "::warning::Pinned Xcode ${XCODE_VERSION} found but iphoneos SDK platform not installed"
             else
-              echo "::error::Pinned Xcode ${XCODE_VERSION} not found and no newer version is available"
+              echo "::warning::Pinned Xcode ${XCODE_VERSION} not found at $PINNED"
+            fi
+            echo "Available Xcode installs (with iphoneos SDK):"
+            AVAILABLE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V)
+            for app in $AVAILABLE; do
+              has_iphoneos_sdk "$app" && echo "  $app" || echo "  $app (no iphoneos SDK)"
+            done
+            # Pick the next version after the pinned one that has the iphoneos SDK installed
+            NEXT=""
+            for app in $(echo "$AVAILABLE" | sort -V); do
+              ver=$(echo "$app" | grep -oE "Xcode_[0-9]+(\.[0-9]+)*" | sed 's/Xcode_//')
+              [ -z "$ver" ] && continue
+              if awk -v v="$ver" -v pin="${XCODE_VERSION}" 'BEGIN{exit !(v > pin)}' && has_iphoneos_sdk "$app"; then
+                NEXT="$app"
+                break
+              fi
+            done
+            if [ -n "$NEXT" ]; then
+              echo "XCODE_RESOLVED_PATH=$NEXT" >> "$GITHUB_ENV"
+              echo "Falling back to next available version with iphoneos SDK: $NEXT"
+            else
+              echo "::error::Pinned Xcode ${XCODE_VERSION} unavailable and no newer version with iphoneos SDK found"
               exit 1
             fi
           fi
