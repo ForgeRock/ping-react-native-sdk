@@ -44,11 +44,11 @@ module.exports = {
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
     },
-    // BrowserStack cloud app — URLs are resolved after uploading binaries to BrowserStack.
+    // BrowserStack cloud app — IDs are resolved after uploading binaries to BrowserStack.
     'android.cloud': {
       type: 'android.cloud',
-      app: process.env.BROWSERSTACK_APP_URL,
-      appClient: process.env.BROWSERSTACK_TEST_URL,
+      app: process.env.BROWSERSTACK_APP_ID,
+      appClient: process.env.BROWSERSTACK_TEST_ID,
     },
   },
   devices: {
