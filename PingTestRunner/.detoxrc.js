@@ -42,8 +42,8 @@ module.exports = {
     // BrowserStack cloud app — IDs are resolved after uploading binaries to BrowserStack.
     'android.cloud': {
       type: 'android.cloud',
-      app: process.env.BROWSERSTACK_APP_ID,
-      appClient: process.env.BROWSERSTACK_TEST_ID,
+      app: process.env.BROWSERSTACK_APP_URL,
+      appClient: process.env.BROWSERSTACK_TEST_URL,
     },
   },
   devices: {
