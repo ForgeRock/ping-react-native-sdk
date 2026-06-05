@@ -169,12 +169,12 @@ jobs:
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
             -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app" \
             -F "file=@$APP_APK_PATH")
-          app_url=$(echo "$response" | jq -r '.app_url')
-          if [[ "$app_url" == "null" || -z "$app_url" ]]; then
-            echo "::error::Failed to get app_url from BrowserStack response: $response"
+          app_id=$(echo "$response" | jq -r '.app_id')
+          if [[ "$app_id" == "null" || -z "$app_id" ]]; then
+            echo "::error::Failed to get app_id from BrowserStack response: $response"
             exit 1
           fi
-          echo "app_url=$app_url" >> "$GITHUB_OUTPUT"
+          echo "app_id=$app_id" >> "$GITHUB_OUTPUT"
 
       - name: Upload app client to BrowserStack
         id: upload-test
@@ -183,20 +183,20 @@ jobs:
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
             -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app-client" \
             -F "file=@$TEST_APK_PATH")
-          test_url=$(echo "$response" | jq -r '.app_client_url')
-          if [[ "$test_url" == "null" || -z "$test_url" ]]; then
-            echo "::error::Failed to get app_client_url from BrowserStack response: $response"
+          test_id=$(echo "$response" | jq -r '.app_client_id')
+          if [[ "$test_id" == "null" || -z "$test_id" ]]; then
+            echo "::error::Failed to get app_client_id from BrowserStack response: $response"
             exit 1
           fi
-          echo "test_url=$test_url" >> "$GITHUB_OUTPUT"
+          echo "test_id=$test_id" >> "$GITHUB_OUTPUT"
 
       - name: Run E2E tests on BrowserStack real devices
         id: run-tests
         run: yarn test:runner:bs:android 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
         working-directory: ${{ github.workspace }}
         env:
-          BROWSERSTACK_APP_URL: ${{ steps.upload-app.outputs.app_url }}
-          BROWSERSTACK_TEST_URL: ${{ steps.upload-test.outputs.test_url }}
+          BROWSERSTACK_APP_ID: ${{ steps.upload-app.outputs.app_id }}
+          BROWSERSTACK_TEST_ID: ${{ steps.upload-test.outputs.test_id }}
 
       - name: Prepare test summary report
         if: always()
