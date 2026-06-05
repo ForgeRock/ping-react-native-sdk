@@ -14,15 +14,10 @@ module.exports = {
       video: 'failing',
     },
   },
-  behavior: {
-    cleanup: {
-      shutdownDevice: false,
-    },
-  },
   testRunner: {
     args: {
-      $0: 'jest',
       config: 'e2e/jest.config.js',
+      maxWorkers: process.env.CI ? 1 : undefined,
     },
     jest: {
       setupTimeout: 300000,
