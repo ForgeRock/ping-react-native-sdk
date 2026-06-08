@@ -164,6 +164,10 @@ jobs:
 
       - name: Upload app to BrowserStack
         id: upload-app
+        # Extract app_url (bs://...) — NOT app_id (bare hash). BrowserStack's Detox cloud driver
+        # only accepts app_url / custom_id / shareable_id in the `app` config field; passing the
+        # bare app_id triggers: [BROWSERSTACK_INVALID_APP_PARAMS] The app_url/custom_id/shareable_id
+        # specified in the 'app' params is invalid.
         run: |
           response=$(curl --silent --fail-with-body \
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
@@ -178,6 +182,8 @@ jobs:
 
       - name: Upload app client to BrowserStack
         id: upload-test
+        # Extract app_client_url (bs://...) — NOT app_client_id (bare hash). Same constraint as
+        # the app upload above: the `appClient` config field requires the full bs:// URL.
         run: |
           response=$(curl --silent --fail-with-body \
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
@@ -197,6 +203,24 @@ jobs:
         env:
           BROWSERSTACK_APP_URL: ${{ steps.upload-app.outputs.app_url }}
           BROWSERSTACK_TEST_URL: ${{ steps.upload-test.outputs.test_url }}
+
+      - name: View BrowserStack test results
+        if: always() && steps.run-tests.outcome != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          session_id="$(grep -oP '(?<=session_id=)[^[:space:]]+' /tmp/detox-bs.log | head -1 || true)"
+
+          if [ -z "$session_id" ]; then
+            echo "Session ID not found in Detox logs — visit https://app-automate.browserstack.com/dashboard/v2 to view results."
+            exit 0
+          fi
+
+          echo "Fetching BrowserStack session details for session: $session_id"
+          curl -s \
+            -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/sessions/${session_id}"
 
       - name: Prepare test summary report
         if: always()
