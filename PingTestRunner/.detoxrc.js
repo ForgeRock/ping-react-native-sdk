@@ -17,7 +17,7 @@ module.exports = {
   testRunner: {
     args: {
       config: 'e2e/jest.config.js',
-      maxWorkers: process.env.CI ? 1 : undefined,
+      maxWorkers: process.env.CI ? 2 : undefined,
     },
     jest: {
       setupTimeout: 300000,
