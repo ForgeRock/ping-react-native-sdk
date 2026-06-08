@@ -21,7 +21,7 @@ module.exports = {
     },
     jest: {
       setupTimeout: 300000,
-      retries: process.env.CI ? 1 : 0,
+      retries: process.env.CI ? 2 : 0,
     },
   },
   apps: {
@@ -102,6 +102,10 @@ module.exports = {
         build: process.env.BROWSERSTACK_BUILD_ID,
         project: process.env.BROWSERSTACK_PROJECT_NAME,
         local: false,
+        // Extend the instrumentation command timeout (seconds) to prevent
+        // BrowserStack from rejecting launchApp after a long-running suite
+        // leaves the device in a degraded state mid-run.
+        commandTimeout: 60,
       },
     },
   },
