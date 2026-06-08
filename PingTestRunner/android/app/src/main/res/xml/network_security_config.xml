@@ -12,10 +12,17 @@
   See: https://wix.github.io/Detox/docs/introduction/android#6-create-a-network-security-configuration-file
 -->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">10.0.3.2</domain>
-        <domain includeSubdomains="true">127.0.0.1</domain>
-    </domain-config>
+    <!--
+      base-config (not domain-config) is intentional: Android's NetworkSecurityTrustManager
+      enforces the 3-arg checkServerTrusted(certs, authType, hostname) for ALL HTTPS connections
+      whenever any <domain-config> block is present in this file. The Ping network SDK uses
+      Ktor CIO which calls the 2-arg variant only, causing every server call to throw:
+        "Domain specific configurations require that hostname aware
+         checkServerTrusted(X509Certificate[], String, String) is used"
+      Switching to <base-config> removes the domain-specific enforcement trigger while still
+      permitting cleartext traffic for Detox instrumentation (localhost, emulator host).
+      The AndroidManifest.xml android:usesCleartextTraffic="true" attribute provides an
+      additional belt-and-suspenders guarantee.
+    -->
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
