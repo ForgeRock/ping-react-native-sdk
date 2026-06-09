@@ -17,7 +17,7 @@ env:
   # DESTINATION is resolved dynamically at runtime by the "Resolve simulator" step.
   DERIVED_DATA_PATH: DerivedData
   XCODE_VERSION: '26.4.1'
-  RUBY_VERSION: '2.6.10'
+  RUBY_VERSION: '3.3.6'
   BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
   IOS_DIRECTORY: PingTestRunner/ios
 jobs:
