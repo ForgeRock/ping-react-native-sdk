@@ -102,10 +102,6 @@ module.exports = {
         build: process.env.BROWSERSTACK_BUILD_ID,
         project: process.env.BROWSERSTACK_PROJECT_NAME,
         local: false,
-        // Extend the instrumentation command timeout (seconds) to prevent
-        // BrowserStack from rejecting launchApp after a long-running suite
-        // leaves the device in a degraded state mid-run.
-        commandTimeout: 60,
       },
     },
   },
