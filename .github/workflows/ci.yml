@@ -103,12 +103,39 @@ jobs:
     uses: ./.github/workflows/build-and-test-ios.yml
     secrets: inherit
 
-  # Run Android E2E tests on BrowserStack real devices after Android unit tests pass.
-  browserstack-android:
+  # Build Android APKs and upload as artifacts for BrowserStack E2E runs.
+  browserstack-android-prep:
     needs: android-unit-tests
     permissions:
       contents: read
-    uses: ./.github/workflows/browserstack-e2e-android.yml
+    uses: ./.github/workflows/browserstack-prep-android-artifacts.yml
+
+  # Run Journey E2E tests on BrowserStack real devices (parallel with core).
+  browserstack-android-journey:
+    needs: browserstack-android-prep
+    permissions:
+      contents: read
+    uses: ./.github/workflows/browserstack-e2e-android-journey.yml
+    secrets:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
+      PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
+      PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
+      PING_JOURNEY_NAME: ${{ secrets.PING_JOURNEY_NAME }}
+      PING_TEST_USERNAME: ${{ secrets.PING_TEST_USERNAME }}
+      PING_TEST_PASSWORD: ${{ secrets.PING_TEST_PASSWORD }}
+      PING_DISCOVERY_ENDPOINT: ${{ secrets.PING_DISCOVERY_ENDPOINT }}
+      PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
+      PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
+      PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+
+  # Run Core E2E tests on BrowserStack real devices (parallel with journey).
+  browserstack-android-core:
+    needs: browserstack-android-prep
+    permissions:
+      contents: read
+    uses: ./.github/workflows/browserstack-e2e-android-core.yml
     secrets:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

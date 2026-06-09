@@ -4,7 +4,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license. See the LICENSE file for details.
 #
-name: BrowserStack E2E — Android
+name: BrowserStack E2E — Android Journey
 
 on:
   workflow_call:
@@ -18,7 +18,7 @@ on:
         description: BrowserStack session name used by Detox
         required: false
         type: string
-        default: android-detox-e2e
+        default: android-detox-e2e-journey
     secrets:
       BROWSERSTACK_USERNAME:
         description: BrowserStack account username
@@ -61,23 +61,18 @@ permissions:
   contents: read
 
 jobs:
-  e2e-android-browserstack:
-    name: E2E — Android BrowserStack
+  e2e-android-journey:
+    name: E2E — Android BrowserStack (journey)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: PingTestRunner
         shell: bash
 
     env:
-      # APK paths — defined once, referenced in upload steps
-      APP_APK_PATH: android/app/build/outputs/apk/release/app-release.apk
-      TEST_APK_PATH: android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
-      # BrowserStack credentials available to all steps
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-      # Ping server configuration available to all steps
       PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
       PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
       PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
@@ -101,17 +96,23 @@ jobs:
           npm install -g jest
           npm install -g detox-cli
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Download app APK artifact
+        uses: actions/download-artifact@v4
         with:
-          distribution: temurin
-          java-version: 17
+          name: pingtestrunner-android-bs-app
+          path: PingTestRunner/android/app/build/outputs/apk/release
+
+      - name: Download test APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pingtestrunner-android-bs-test-suite
+          path: PingTestRunner/android/app/build/outputs/apk/androidTest/release
 
       - name: Compute BrowserStack identifiers
         # Naming convention:
         #   Project : rn-<moduleName>-test  → rn-sdk-test
-        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>
-        #   Session : <platform>-<framework>-<test_name>
+        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>-journey
+        #   Session : <platform>-<framework>-journey
         run: |
           set -euo pipefail
           SHORT_SHA="${GITHUB_SHA:0:7}"
@@ -126,53 +127,17 @@ jobs:
               BUILD_PREFIX="run"
               ;;
           esac
-          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}-journey" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_PROJECT_NAME=${{ inputs.browserstack_project_name }}" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_SESSION_NAME=${{ inputs.browserstack_session_name }}" >> "$GITHUB_ENV"
 
-      - name: Build SDK packages
-        # Metro bundles the JS at release build time and resolves the Ping SDK
-        # packages via their compiled lib/ output. Build all packages first so
-        # lib/module/index.js exists for every dependency.
-        run: yarn packages:build
-        working-directory: ${{ github.workspace }}
-
-      - name: Generate codegen artifacts for all SDK modules
-        # React Native New Architecture requires each library's codegen JNI
-        # directories to exist before CMake configures the app. Run codegen
-        # across all included modules so the directories are present.
-        run: |
-          cd android && ./gradlew \
-            :ping-identity_rn-binding:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-browser:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-device-client:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-device-id:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-device-profile:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-external-idp:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-fido:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-oath:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-push:generateCodegenArtifactsFromSchema \
-            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \
-            :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
-
-      - name: Build Release APK and androidTest APK
-        run: yarn build:runner:bs:android
-        working-directory: ${{ github.workspace }}
-
       - name: Upload app to BrowserStack
         id: upload-app
-        # Extract app_url (bs://...) — NOT app_id (bare hash). BrowserStack's Detox cloud driver
-        # only accepts app_url / custom_id / shareable_id in the `app` config field; passing the
-        # bare app_id triggers: [BROWSERSTACK_INVALID_APP_PARAMS] The app_url/custom_id/shareable_id
-        # specified in the 'app' params is invalid.
         run: |
           response=$(curl --silent --fail-with-body \
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
             -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app" \
-            -F "file=@$APP_APK_PATH")
+            -F "file=@android/app/build/outputs/apk/release/app-release.apk")
           app_url=$(echo "$response" | jq -r '.app_url')
           if [[ "$app_url" == "null" || -z "$app_url" ]]; then
             echo "::error::Failed to get app_url from BrowserStack response: $response"
@@ -182,13 +147,11 @@ jobs:
 
       - name: Upload app client to BrowserStack
         id: upload-test
-        # Extract app_client_url (bs://...) — NOT app_client_id (bare hash). Same constraint as
-        # the app upload above: the `appClient` config field requires the full bs:// URL.
         run: |
           response=$(curl --silent --fail-with-body \
             -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
             -X POST "https://api-cloud.browserstack.com/app-automate/detox/v2/android/app-client" \
-            -F "file=@$TEST_APK_PATH")
+            -F "file=@android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk")
           test_url=$(echo "$response" | jq -r '.app_client_url')
           if [[ "$test_url" == "null" || -z "$test_url" ]]; then
             echo "::error::Failed to get app_client_url from BrowserStack response: $response"
@@ -196,9 +159,9 @@ jobs:
           fi
           echo "test_url=$test_url" >> "$GITHUB_OUTPUT"
 
-      - name: Run E2E tests on BrowserStack real devices
+      - name: Run E2E journey tests on BrowserStack real devices
         id: run-tests
-        run: yarn test:runner:bs:android 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
+        run: yarn test:runner:bs:android:journey 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
         working-directory: ${{ github.workspace }}
         env:
           BROWSERSTACK_APP_URL: ${{ steps.upload-app.outputs.app_url }}
@@ -237,7 +200,6 @@ jobs:
             result_label="❌ Failed"
           fi
 
-          # Extract Jest-style test counts written by Detox to stdout
           test_detail=""
           if [ -f /tmp/detox-bs.log ]; then
             suites_line="$(grep -E "^Test Suites:" /tmp/detox-bs.log | tail -1 || true)"
@@ -250,7 +212,7 @@ jobs:
           fi
 
           {
-            echo "## BrowserStack Android Detox Summary"
+            echo "## BrowserStack Android Detox Summary — Journey"
             echo
             echo "- Build ID: \`${build_id}\`"
             echo "- Overall status: ${overall_status}"
