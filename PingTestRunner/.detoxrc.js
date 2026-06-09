@@ -14,6 +14,11 @@ module.exports = {
       video: 'failing',
     },
   },
+  behavior: {
+    cleanup: {
+      shutdownDevice: false,
+    },
+  },
   testRunner: {
     args: {
       config: 'e2e/jest.config.js',
