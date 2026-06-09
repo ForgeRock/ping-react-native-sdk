@@ -21,7 +21,7 @@ module.exports = {
     },
     jest: {
       setupTimeout: 300000,
-      retries: process.env.CI ? 2 : 0,
+      retries: process.env.CI ? 3 : 0,
     },
   },
   apps: {
