@@ -6442,9 +6442,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detox@npm:@browserstack/detox@20.38.0-cloud.1":
-  version: 20.38.0-cloud.1
-  resolution: "@browserstack/detox@npm:20.38.0-cloud.1"
+"detox@npm:@browserstack/detox@20.38.0-cloud.3":
+  version: 20.38.0-cloud.3
+  resolution: "@browserstack/detox@npm:20.38.0-cloud.3"
   dependencies:
     "@wix-pilot/core": "npm:^3.2.2"
     "@wix-pilot/detox": "npm:^1.0.11"
@@ -6490,7 +6490,7 @@ __metadata:
       optional: true
   bin:
     detox: local-cli/cli.js
-  checksum: 10c0/5f59b76c1b9427132b5b3068cdab5950893b1d98d44f7418d0f2563853d618b62b8db53be762bedf73793f15eb5b51fce75cab62e5aa34bb65773494c18683d3
+  checksum: 10c0/e49a2c37146b3e6cbf2221fea32b29ace3dda75d6bcaae6a531b3827a1b8a4f99556dd7b858881d4eace49df0db3249c36aa8d786b076cbb05e323eb25e2f39f
   languageName: node
   linkType: hard
 
@@ -12554,7 +12554,7 @@ __metadata:
     "@testing-library/react-native": "npm:^13.3.3"
     "@types/jest": "npm:^29.5.14"
     "@types/react": "npm:^19.1.0"
-    detox: "npm:@browserstack/detox@20.38.0-cloud.1"
+    detox: "npm:@browserstack/detox@20.38.0-cloud.3"
     dotenv: "npm:^16.4.7"
     eslint: "npm:^8.19.0"
     jest: "npm:^29.7.0"
