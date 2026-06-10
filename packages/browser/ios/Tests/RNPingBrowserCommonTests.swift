@@ -6,6 +6,7 @@
 import XCTest
 import AuthenticationServices
 import PingBrowser
+import PingLogger
 import RNPingBrowser
 import RNPingLogger
 
