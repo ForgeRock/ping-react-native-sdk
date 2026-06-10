@@ -60,9 +60,8 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
-  const availableModules = __DEV__
-    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
-    : '';
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.' +

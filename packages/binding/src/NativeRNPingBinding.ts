@@ -143,9 +143,8 @@ export function getNativeModule(): Spec {
     return _nativeModule;
   }
 
-  const availableModules = __DEV__
-    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
-    : '';
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-binding] Native module RNPingBinding not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.' +
