@@ -69,7 +69,7 @@ module.exports = {
     browserstack: {
       type: 'android.cloud',
       device: {
-        name: process.env.BROWSERSTACK_DEVICE ?? 'Google Pixel 9',
+        name: process.env.BROWSERSTACK_DEVICE ?? 'Google Pixel 9 Pro',
         osVersion: process.env.BROWSERSTACK_OS_VERSION ?? '15.0',
       },
     },

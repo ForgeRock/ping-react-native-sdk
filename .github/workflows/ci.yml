@@ -111,8 +111,13 @@ jobs:
     uses: ./.github/workflows/browserstack-prep-android-artifacts.yml
 
   # Run Foundation Modules E2E tests on BrowserStack real devices.
+  # Intentionally sequenced after core (not parallel): each Android workflow runs 3 matrix
+  # legs and iOS runs 3 devices concurrently. Running core + journey in parallel would peak
+  # at 6 Android + 3 iOS = 9 sessions, exceeding the limit of 6.
+  # Serialising core → journey keeps Android at 3 active sessions at any time, leaving 3
+  # slots for iOS running in parallel — exactly at the limit.
   browserstack-android-journey:
-    needs: browserstack-android-prep
+    needs: browserstack-android-core
     permissions:
       contents: read
     uses: ./.github/workflows/browserstack-e2e-android-journey.yml
