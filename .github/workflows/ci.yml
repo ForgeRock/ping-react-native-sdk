@@ -110,7 +110,7 @@ jobs:
       contents: read
     uses: ./.github/workflows/browserstack-prep-android-artifacts.yml
 
-  # Run Journey E2E tests on BrowserStack real devices (parallel with core).
+  # Run Foundation Modules E2E tests on BrowserStack real devices.
   browserstack-android-journey:
     needs: browserstack-android-prep
     permissions:
@@ -130,7 +130,7 @@ jobs:
       PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
       PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
 
-  # Run Core E2E tests on BrowserStack real devices (parallel with journey).
+  # Run Foundation Modules E2E tests on BrowserStack real devices.
   browserstack-android-core:
     needs: browserstack-android-prep
     permissions:
