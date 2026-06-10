@@ -75,6 +75,10 @@ export interface Spec extends TurboModule {
  * @throws Error when no native module is registered.
  */
 let _nativeModule: Spec | null = null;
+/** @internal — resets the module cache for testing only. */
+export function _resetNativeModuleForTesting(): void {
+  _nativeModule = null;
+}
 export function getNativeModule(): Spec {
   if (_nativeModule) return _nativeModule;
 

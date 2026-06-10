@@ -15,8 +15,6 @@ import AuthenticationServices
 import RNPingCore
 import RNPingLogger
 
-private let createQueueKey = DispatchSpecificKey<Void>()
-
 /// Common iOS implementation for the Ping Browser React Native module.
 @objcMembers
 public class RNPingBrowserCommon: NSObject {
@@ -49,17 +47,11 @@ public class RNPingBrowserCommon: NSObject {
   ///
   /// - Parameter loggerId: Logger handle identifier from JS.
   /// - Returns: Native logger instance, or nil when missing/invalid.
-  private static func resolveLoggerFromCoreSync(_ loggerId: String?) -> Logger? {
+  private static func resolveLogger(_ loggerId: String?) async -> Logger? {
     guard let loggerId, !loggerId.isEmpty else {
       return nil
     }
-
-    guard let handle = RegistrySync.resolveSync(
-      loggerId,
-      registry: CoreRuntime.loggerRegistry,
-      queueKey: createQueueKey,
-      context: "RNPingBrowserCommon.resolveLoggerFromCoreSync"
-    ) as? LoggerHandleContract else {
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
       return nil
     }
     return handle.nativeLogger as? Logger
@@ -157,7 +149,7 @@ public class RNPingBrowserCommon: NSObject {
     }
 
     Task { @MainActor in
-      let nativeLogger = resolveLoggerFromCoreSync(loggerId) ?? LogManager.none
+      let nativeLogger = await resolveLogger(loggerId) ?? LogManager.none
 
       do {
         let result = try await browserLauncher.launch(
