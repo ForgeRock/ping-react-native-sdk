@@ -62,9 +62,26 @@ permissions:
 
 jobs:
   e2e-android-journey:
-    name: E2E — Android BrowserStack (journey)
+    name: E2E — Android BrowserStack (journey) / ${{ matrix.device }} · Android ${{ matrix.os_version }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # The BrowserStack Detox fork accepts a single device per session — `device.name` and
+    # `device.osVersion` are required scalar fields encoded into the WebSocket capabilities
+    # URL at startup. Running against multiple devices therefore requires multiple independent
+    # jobs. The matrix approach is preferred over duplicating named device configs in
+    # .detoxrc.js because .detoxrc.js already reads BROWSERSTACK_DEVICE /
+    # BROWSERSTACK_OS_VERSION at startup, so each matrix leg just sets different env vars
+    # and gets its own isolated BrowserStack session automatically.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: 'Samsung Galaxy S23'
+            os_version: '13.0'
+          - device: 'Google Pixel 8'
+            os_version: '14.0'
+          - device: 'Google Pixel 10'
+            os_version: '16.0'
     defaults:
       run:
         working-directory: PingTestRunner
@@ -73,6 +90,8 @@ jobs:
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      BROWSERSTACK_DEVICE: ${{ matrix.device }}
+      BROWSERSTACK_OS_VERSION: ${{ matrix.os_version }}
       PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
       PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
       PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
