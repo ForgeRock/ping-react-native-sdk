@@ -135,21 +135,28 @@ export interface Spec extends TurboModule {
  * @returns Native OATH module implementation for the current architecture.
  * @throws Error when no native OATH module is registered.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingOath');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingOathClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules = __DEV__
+    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
+    : '';
   throw new Error(
     '[@ping-identity/rn-oath] Native module RNPingOath not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }

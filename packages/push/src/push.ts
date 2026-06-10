@@ -4,7 +4,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license. See the LICENSE file for details.
  */
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 import { DeviceEventEmitter, Platform } from 'react-native';
 import { PushEvents } from './events';
 import {
@@ -54,16 +54,6 @@ DeviceEventEmitter.addListener(
     }
   },
 );
-
-// TODO: noopLogger is duplicated across all SDK packages — extract to @ping-identity/rn-types
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Creates a reusable Push MFA client instance.
@@ -316,10 +306,6 @@ export async function createPushClient(
     async saveCredential(credential: PushCredential): Promise<PushCredential> {
       logger.debug('Push saveCredential requested');
       try {
-        // TODO-REVISIT: sharedSecret excluded from round-trip — the JS credential
-        // object never carries sharedSecret (native-only field). The native side
-        // must look up the credential by id and merge JS-editable fields rather
-        // than accepting a full credential object. See requirements open question §2.
         const result = await getNativeModule().saveCredential(
           clientId,
           credential as unknown as object,

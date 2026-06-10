@@ -685,4 +685,14 @@ object RNPingOidcCommon {
   }
 
   // Intentionally no Activity sync here; Ping SDK manages its own context.
+
+  fun disposeClient(clientId: String, promise: Promise) {
+    clientRegistry.remove(clientId)
+    promise.resolve(null)
+  }
+
+  fun disposeWebClient(webClientId: String, promise: Promise) {
+    webRegistry.remove(webClientId)
+    promise.resolve(null)
+  }
 }

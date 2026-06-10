@@ -215,4 +215,22 @@ public class RNPingOidcImpl: NSObject, @unchecked Sendable {
   ) {
     RNPingOidcCommon.logout(webClientId, resolver: resolver, rejecter: rejecter)
   }
+
+  /// Deregister an OIDC client from CoreRuntime registries.
+  public func disposeClient(
+    _ clientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.disposeClient(clientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Deregister an OIDC web client from CoreRuntime registries.
+  public func disposeWebClient(
+    _ webClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.disposeWebClient(webClientId, resolver: resolver, rejecter: rejecter)
+  }
 }

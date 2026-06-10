@@ -15,7 +15,7 @@ This package provides native-backed device binding and signing-verifier capabili
 
 - [Install](#install)
 - [Journey integration](#journey-integration)
-- [Optional `useJourneyForm` integration](#optional-usejourneyform-integration)
+- [`useJourneyForm` integration](#usejourneyform-integration)
 - [Custom UI collectors](#custom-ui-collectors)
 - [User key storage](#user-key-storage)
 - [Managing stored keys](#managing-stored-keys)
@@ -81,33 +81,39 @@ const binding = createBindingClient({
 });
 ```
 
-## Optional `useJourneyForm` integration
+## `useJourneyForm` integration
 
-When using `useJourneyForm`, binding fields are marked with `executionMode: 'integration_required'`.
-This indicates app code must run binding integration explicitly.
+When using `useJourneyForm`, pass `handledCallbackTypes` so binding fields are excluded from
+blocking submit issues. Run each integration, then submit when `form.canSubmit` is true.
 
 ```ts
-import { useJourneyForm } from '@ping-identity/rn-journey';
+import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { createBindingClient } from '@ping-identity/rn-binding';
+import { nativeExtensionCallbackType } from '@ping-identity/rn-types';
 
-const form = useJourneyForm(node);
+const [node, actions] = useJourney(client);
+const form = useJourneyForm(node, {
+  handledCallbackTypes: new Set([
+    nativeExtensionCallbackType.DeviceBindingCallback,
+    nativeExtensionCallbackType.DeviceSigningVerifierCallback,
+  ]),
+});
 const binding = createBindingClient();
 
 for (const field of form.fields) {
-  if (field.ref.type === 'DeviceBindingCallback') {
-    await binding.bindForJourney(journey, {
-      index: field.ref.typeIndex,
-    });
+  if (field.ref.type === nativeExtensionCallbackType.DeviceBindingCallback) {
+    await binding.bindForJourney(journey, { index: field.ref.typeIndex });
   }
-
-  if (field.ref.type === 'DeviceSigningVerifierCallback') {
-    await binding.signForJourney(journey, {
-      index: field.ref.typeIndex,
-    });
+  if (
+    field.ref.type === nativeExtensionCallbackType.DeviceSigningVerifierCallback
+  ) {
+    await binding.signForJourney(journey, { index: field.ref.typeIndex });
   }
 }
 
-await journey.next({});
+if (form.canSubmit) {
+  await actions.next(form.input);
+}
 ```
 
 ## Custom UI collectors
@@ -492,4 +498,4 @@ The authenticator type is configured on the AM Journey node, not from JavaScript
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

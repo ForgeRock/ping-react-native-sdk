@@ -59,7 +59,8 @@ export class DeviceProfileError extends PingError {
 export type DeviceProfileErrorCode =
   | 'DEVICE_PROFILE_LOCATION_UNAVAILABLE'
   | 'DEVICE_PROFILE_CALLBACK_NOT_FOUND'
-  | 'DEVICE_PROFILE_COLLECT_ERROR';
+  | 'DEVICE_PROFILE_COLLECT_ERROR'
+  | (string & {});
 
 /**
  * Represents a device profile structured for PingOne AIC consumption.

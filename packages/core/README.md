@@ -9,104 +9,17 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native Core
 
-The Ping Identity React Native Core module hosts shared runtime utilities for Ping RN SDKs. It
-provides process-wide registries for native handles, plus native error contracts used to keep
-promise rejections consistent across modules.
+The Core module provides shared runtime infrastructure required by all other Ping Identity React Native SDK packages. It does not expose a consumer API — install it once and the other packages handle the rest.
 
-## Table of contents
+## Installation
 
-- [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
-- [How to Use the SDK](#how-to-use-the-sdk)
-- [License](#license)
-
-## Integrating the SDK into your project
-
-> **Note:** This module is required by all other Ping Identity React Native SDK packages. Set it up and install it first.
-
-Add the package and let autolinking wire the native code:
+All other Ping Identity RN SDK packages depend on this module. Install it first:
 
 ```bash
 yarn add @ping-identity/rn-core
 cd ios && pod install
 ```
 
-## How to Use the SDK
-
-### Register native handles (Android)
-
-Use the shared registry to keep native objects alive and retrievable by id:
-
-```kotlin
-import com.pingidentity.rncore.CoreRuntime
-import com.pingidentity.rncore.registry.NativeHandle
-
-class MyHandle : NativeHandle
-
-val id = CoreRuntime.storageRegistry.register(MyHandle())
-val handle = CoreRuntime.storageRegistry.resolve(id)
-CoreRuntime.storageRegistry.remove(id)
-```
-
-### Register native handles (iOS)
-
-```swift
-import RNPingCore
-
-final class MyHandle: NativeHandle {}
-
-let id = await CoreRuntime.storageRegistry.register(MyHandle())
-let handle = await CoreRuntime.storageRegistry.resolve(id)
-await CoreRuntime.storageRegistry.remove(id)
-```
-
-Note: Android registry calls are synchronous. iOS uses async/await because the registry is
-actor-isolated.
-
-### Clearing registries
-
-Both platforms support clearing all tracked handles:
-
-```kotlin
-CoreRuntime.storageRegistry.removeAll()
-```
-
-```swift
-await CoreRuntime.storageRegistry.removeAll()
-```
-
-### Rejecting promises with shared error contracts
-
-Core defines a shared error payload so native modules can reject with consistent, serializable
-data. The shape mirrors `@ping-identity/rn-types` (type, error, message, code, status).
-
-#### Android
-
-```kotlin
-import com.pingidentity.rncore.error.ErrorType
-import com.pingidentity.rncore.error.GenericError
-import com.pingidentity.rncore.error.reject
-
-val error = GenericError(
-  type = ErrorType.ARGUMENT_ERROR,
-  error = "BROWSER_OPEN_ERROR",
-  message = "Invalid URL"
-)
-promise.reject(error)
-```
-
-#### iOS
-
-```swift
-import RNPingCore
-
-let error = GenericError(
-  type: .argumentError,
-  error: "BROWSER_OPEN_ERROR",
-  message: "Invalid URL"
-)
-reject(error, rejecter: rejecter)
-```
-
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

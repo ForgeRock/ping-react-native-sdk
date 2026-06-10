@@ -178,7 +178,7 @@ export type BaseStorageConfig = {
      *
      * **Platform:** iOS only
      *
-     * @defaultValue 'com.pingidentity.rnsampleapp.keyalias'
+     * @defaultValue `'com.pingidentity.rnstorage.storage'`
      */
     account?: string;
 
@@ -460,11 +460,13 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
+  const availableModules = __DEV__
+    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
+    : '';
   throw new Error(
     '[@ping-identity/rn-storage] Native module RNPingStorage not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

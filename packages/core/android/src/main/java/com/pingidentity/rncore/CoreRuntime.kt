@@ -48,8 +48,10 @@ object CoreRuntime {
 
     /**
      * Resolves callbacks for the provided Journey id via the registered resolver.
-     * TODO: Revisit this global resolver pattern with a synchronous Journey handle contract resolved
-     * through journeyRegistry; callback access is an in-memory ContinueNode lookup.
+     *
+     * Packages that need Journey callbacks (binding, fido, device-profile) cannot depend
+     * on rn-journey directly — this indirection lets Journey inject its lookup at init
+     * time without creating a circular dependency.
      */
     suspend fun resolveJourneyCallbacks(journeyId: String): List<Any>? =
         journeyCallbackResolver?.invoke(journeyId)

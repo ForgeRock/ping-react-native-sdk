@@ -16,7 +16,12 @@ storage solutions for the Ping SDKs, serving React Native applications.
 
 - [Integrating the SDK into your project](#integrating-the-sdk-into-your-project)
 - [How to use the SDK](#how-to-use-the-sdk)
-- [Error handling](#error-model)
+  - [Session and OIDC helpers](#session-and-oidc-helpers)
+  - [Binding user key storage](#binding-user-key-storage)
+  - [Push storage](#push-storage)
+  - [OATH storage](#oath-storage)
+  - [Journey module usage](#journey-module-usage)
+- [Error handling](#error-handling)
 - [License](#license)
 
 ## Integrating the SDK into your project
@@ -93,8 +98,7 @@ Notes:
   and `ios.encryptor` (true uses an Encryptor, false uses NoEncryptor).
 - `android.cacheStrategy` controls how the SDK caches data when native storage
   is unavailable.
-- `StorageLoggerOptions` / `loggerId` are currently bridge-only for storage registration.
-  Native storage logger application is planned and tracked as a TODO in both iOS and Android implementations.
+- `StorageLoggerOptions` is optional. The `logger` field provides JS-side logging only — storage registration is a synchronous in-memory operation with no native log output.
 
 ### StorageConfig type
 
@@ -117,6 +121,81 @@ const oidcStorage: OidcStorage = configureOidcStorage(oidcCfg);
 // Pass the storage handle to modules that accept storage ids.
 // createOidcClient({ storage: oidcStorage, ... });
 ```
+
+### Binding user key storage
+
+Pass to `createBindingClient({ userKeyStorage })` to override the default key store:
+
+```ts
+import { configureBindingUserKeyStorage } from '@ping-identity/rn-storage';
+import { createBindingClient } from '@ping-identity/rn-binding';
+
+const userKeyStorage = configureBindingUserKeyStorage({
+  android: {
+    keyAlias: 'binding.user.key',
+    fileName: 'binding_user_keys',
+  },
+  ios: {
+    account: 'com.example.app.binding',
+    encryptor: true,
+  },
+});
+
+const bindingClient = createBindingClient({ userKeyStorage });
+```
+
+### Push storage
+
+Pass to `createPushClient({ storage })` to override the default push credential store:
+
+```ts
+import { configurePushStorage } from '@ping-identity/rn-storage';
+import { createPushClient } from '@ping-identity/rn-push';
+
+const pushStorage = configurePushStorage({
+  android: {
+    keyAlias: 'push_key',
+    fileName: 'push_credentials',
+  },
+});
+
+const pushClient = createPushClient({ storage: pushStorage });
+```
+
+### OATH storage
+
+Pass to `createOathClient({ storage })` to override the default OATH credential store.
+iOS supports additional OATH-specific keychain options via `iosOath`:
+
+```ts
+import { configureOathStorage } from '@ping-identity/rn-storage';
+import { createOathClient } from '@ping-identity/rn-oath';
+
+const oathStorage = configureOathStorage({
+  android: {
+    fileName: 'oath_credentials.db',
+  },
+  iosOath: {
+    service: 'com.example.app.oath',
+    requireBiometrics: true,
+    requireDevicePasscode: false,
+    biometricPrompt: 'Authenticate to access OATH credentials',
+    accessGroup: 'com.example.shared',
+  },
+});
+
+const client = await createOathClient({ storage: oathStorage });
+```
+
+`iosOath` options:
+
+| Option                  | Type      | Description                                                   |
+| ----------------------- | --------- | ------------------------------------------------------------- |
+| `service`               | `string`  | Keychain service identifier                                   |
+| `requireBiometrics`     | `boolean` | Require biometric authentication to access stored credentials |
+| `requireDevicePasscode` | `boolean` | Require device passcode as a fallback                         |
+| `biometricPrompt`       | `string`  | Prompt string shown during biometric authentication           |
+| `accessGroup`           | `string`  | Keychain access group for sharing across app extensions       |
 
 ### Journey module usage
 
@@ -188,4 +267,4 @@ try {
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

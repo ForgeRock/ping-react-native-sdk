@@ -16,7 +16,8 @@ import type {
  */
 export type BrowserResult =
   | { type: 'success'; url: string }
-  | { type: 'cancel' };
+  | { type: 'cancel' }
+  | { type: string & {}; [key: string]: unknown };
 
 /**
  * Error thrown when browser operations fail.

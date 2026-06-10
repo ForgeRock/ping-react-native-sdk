@@ -17,7 +17,7 @@ This package provides a native-backed FIDO bridge for React Native.
 - [FIDO prerequisites](#fido-prerequisites)
 - [Client-first usage](#client-first-usage)
 - [Journey integration](#journey-integration)
-- [Optional `useJourneyForm` integration](#optional-usejourneyform-integration)
+- [`useJourneyForm` integration](#usejourneyform-integration)
 - [API reference](#api-reference)
 - [Errors](#errors)
 - [Platform notes](#platform-notes)
@@ -157,34 +157,39 @@ if (node.type === 'ContinueNode') {
 }
 ```
 
-## Optional `useJourneyForm` integration
+## `useJourneyForm` integration
 
-When using `useJourneyForm`, FIDO fields are marked with `executionMode: 'integration_required'`.
-This indicates app code must run FIDO integration explicitly.
+When using `useJourneyForm`, pass `handledCallbackTypes` so FIDO fields are excluded from
+blocking submit issues. Run each integration, then submit when `form.canSubmit` is true.
 
 ```ts
-import { useJourneyForm } from '@ping-identity/rn-journey';
+import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { createFidoClient } from '@ping-identity/rn-fido';
+import { nativeExtensionCallbackType } from '@ping-identity/rn-types';
 
-const form = useJourneyForm(node);
+const [node, actions] = useJourney(client);
+const form = useJourneyForm(node, {
+  handledCallbackTypes: new Set([
+    nativeExtensionCallbackType.FidoRegistrationCallback,
+    nativeExtensionCallbackType.FidoAuthenticationCallback,
+  ]),
+});
 const fido = createFidoClient();
 
 for (const field of form.fields) {
-  if (field.ref.type === 'FidoRegistrationCallback') {
-    await fido.registerForJourney(journey, {
-      index: field.ref.typeIndex,
-      deviceName: 'My Device',
-    });
+  if (field.ref.type === nativeExtensionCallbackType.FidoRegistrationCallback) {
+    await fido.registerForJourney(journey, { index: field.ref.typeIndex });
   }
-
-  if (field.ref.type === 'FidoAuthenticationCallback') {
-    await fido.authenticateForJourney(journey, {
-      index: field.ref.typeIndex,
-    });
+  if (
+    field.ref.type === nativeExtensionCallbackType.FidoAuthenticationCallback
+  ) {
+    await fido.authenticateForJourney(journey, { index: field.ref.typeIndex });
   }
 }
 
-await journey.next({});
+if (form.canSubmit) {
+  await actions.next(form.input);
+}
 ```
 
 ## API reference
@@ -253,4 +258,4 @@ Full passkey E2E strategy (including OS-level credential surfaces outside app UI
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

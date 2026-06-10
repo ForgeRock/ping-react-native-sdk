@@ -680,4 +680,42 @@ public class RNPingOidcCommon: NSObject {
     }
   }
 
+  // MARK: - Dispose
+
+  /// Remove an OIDC client from CoreRuntime registries.
+  ///
+  /// - Parameters:
+  ///   - clientId: Identifier returned by `createClient`.
+  ///   - resolver: Called on success.
+  ///   - rejecter: Called on failure.
+  @objc
+  public static func disposeClient(
+    _ clientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    Task {
+      await clientRegistry.remove(clientId)
+      resolver()
+    }
+  }
+
+  /// Remove an OIDC web client from CoreRuntime registries.
+  ///
+  /// - Parameters:
+  ///   - webClientId: Identifier returned by `createWebClient`.
+  ///   - resolver: Called on success.
+  ///   - rejecter: Called on failure.
+  @objc
+  public static func disposeWebClient(
+    _ webClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    Task {
+      await webRegistry.remove(webClientId)
+      resolver()
+    }
+  }
+
 }

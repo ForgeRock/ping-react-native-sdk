@@ -75,6 +75,7 @@ const mockWebClient: OidcWebClient = {
   id: 'hook-test-client',
   authorize: async () => ({ type: 'success' as const }),
   user: async () => mockUser,
+  dispose: async () => {},
 };
 
 const errorMockWebClient: OidcWebClient = {
@@ -83,6 +84,7 @@ const errorMockWebClient: OidcWebClient = {
     throw new Error('Forced test error');
   },
   user: async () => null,
+  dispose: async () => {},
 };
 
 // ─── component ───────────────────────────────────────────────────────────────

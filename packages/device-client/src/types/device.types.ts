@@ -24,7 +24,13 @@
  * const devices = await client[kind].get();
  * ```
  */
-export type DeviceKind = 'oath' | 'push' | 'bound' | 'profile' | 'webAuthn';
+export type DeviceKind =
+  | 'oath'
+  | 'push'
+  | 'bound'
+  | 'profile'
+  | 'webAuthn'
+  | (string & {});
 
 /**
  * Common fields shared by every device kind.
@@ -190,4 +196,4 @@ export interface DeviceByKind {
  * type T = DeviceOf<'bound'>; // BoundDevice
  * ```
  */
-export type DeviceOf<K extends DeviceKind> = DeviceByKind[K];
+export type DeviceOf<K extends keyof DeviceByKind> = DeviceByKind[K];

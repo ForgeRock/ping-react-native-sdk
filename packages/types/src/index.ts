@@ -14,6 +14,7 @@
 export * from '@forgerock/sdk-types';
 
 import type { GenericError } from '@forgerock/sdk-types';
+import type { LoggerInstance } from './handles.types';
 
 /**
  * Explicit exports for core auth flow shapes used across modules.
@@ -102,11 +103,21 @@ export const nativeExtensionCallbackType = {
 export type NativeExtensionCallbackType =
   (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];
 
+import { callbackType } from '@forgerock/sdk-types';
+
 /**
- * TODO(DX): Expose a single Journey callback constant source that merges
- * ForgeRock `callbackType` and `nativeExtensionCallbackType` so consumers do
- * not need to import from two separate constant maps.
+ * All Journey callback type strings — ForgeRock standard callbacks and
+ * Ping native-extension callbacks merged into a single constant map.
+ *
+ * @remarks
+ * Use this instead of importing `callbackType` and `nativeExtensionCallbackType`
+ * separately. Consumers can also import `callbackType` and
+ * `nativeExtensionCallbackType` individually if narrower imports are preferred.
  */
+export const journeyCallbackType = {
+  ...callbackType,
+  ...nativeExtensionCallbackType,
+} as const;
 
 /**
  * Shared OIDC base configuration contracts used across RN modules.
@@ -131,6 +142,19 @@ export type JourneyInstance = {
    * Returns the native Journey instance identifier.
    */
   getId: () => Promise<string>;
+};
+
+/**
+ * No-op logger that satisfies the {@link LoggerInstance} contract without
+ * emitting anything. Used as the default when no logger is provided.
+ */
+export const noopLogger: LoggerInstance = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
 };
 
 /**

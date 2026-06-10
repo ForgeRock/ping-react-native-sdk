@@ -116,21 +116,28 @@ export interface Spec extends TurboModule {
  *   is available. The error message includes the list of available
  *   `NativeModules` keys for debugging.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceClient');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingDeviceClientClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules = __DEV__
+    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
+    : '';
   throw new Error(
     '[@ping-identity/rn-device-client] Native module RNPingDeviceClient not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }

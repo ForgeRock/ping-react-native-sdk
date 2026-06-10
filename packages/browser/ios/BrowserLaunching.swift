@@ -10,6 +10,7 @@
 
 import Foundation
 import PingBrowser
+import PingLogger
 
 /// Abstraction over the Ping Browser launcher for testability.
 @MainActor
@@ -19,7 +20,8 @@ public protocol BrowserLaunching {
     customParams: [String: String]?,
     browserType: BrowserType,
     browserMode: BrowserMode,
-    callbackURLScheme: String
+    callbackURLScheme: String,
+    logger: Logger
   ) async throws -> URL
 
   func reset()

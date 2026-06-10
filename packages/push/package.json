@@ -27,13 +27,11 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
   },
   "dependencies": {
-    "@ping-identity/rn-storage": "workspace:*",
     "@ping-identity/rn-types": "workspace:*"
   },
   "license": "MIT",
   "peerDependencies": {
     "@ping-identity/rn-core": "workspace:*",
-    "@ping-identity/rn-storage": "workspace:*",
     "react": "*",
     "react-native": "*"
   },

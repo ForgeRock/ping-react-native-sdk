@@ -8,7 +8,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
-import type { DeviceKind, DeviceOf } from '@ping-identity/rn-device-client';
+import type { DeviceByKind, DeviceOf } from '@ping-identity/rn-device-client';
 import { commonStyles } from '../../../../src/styles/common';
 import { colors } from '../../../../src/styles/colors';
 
@@ -19,21 +19,21 @@ type DeviceRowProps = {
   /**
    * Device rendered by this row.
    */
-  device: DeviceOf<DeviceKind>;
+  device: DeviceOf<keyof DeviceByKind>;
   /**
    * Called when edit icon is pressed.
    *
    * @param device - Selected device.
    * @returns Void.
    */
-  onEdit: (device: DeviceOf<DeviceKind>) => void;
+  onEdit: (device: DeviceOf<keyof DeviceByKind>) => void;
   /**
    * Called when delete icon is pressed.
    *
    * @param device - Selected device.
    * @returns Void.
    */
-  onDelete: (device: DeviceOf<DeviceKind>) => void;
+  onDelete: (device: DeviceOf<keyof DeviceByKind>) => void;
 };
 
 /**

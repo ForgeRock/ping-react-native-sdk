@@ -295,7 +295,7 @@ Each normalized field includes `executionMode` and `requiresUserInput`.
 | --------------------- | --------------- | ------------------- | ---------------------------------------------------------------------------------------- |
 | `HiddenValueCallback` | `manual`        | `false`             | Hidden payload should pass through submit planning without forcing a visible input step. |
 
-> TODO(test-runner app): add Journey integration and E2E tests (including `SuspendedTextOutputCallback` deep link/email resume flow) once the test-runner app is set up.
+> TODO(test-runner app)(TODO-SEPARATE-TICKET): add Journey integration and E2E tests (including `SuspendedTextOutputCallback` deep link/email resume flow) once the test-runner app is set up.
 
 ### Core callback support
 
@@ -367,3 +367,7 @@ Stable Journey error codes:
 - `JOURNEY_CALLBACK_APPLY_ERROR`
 - `JOURNEY_UNSUPPORTED_CALLBACK_ERROR`
 - `JOURNEY_MISSING_INTEGRATION_ERROR`
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

@@ -72,18 +72,18 @@ public enum CoreRuntime {
     /// Internal resolver store used to avoid shared mutable global state.
     private static let journeyCallbackResolverStore = JourneyCallbackResolverStore()
 
-    /// Registers or clears the resolver that exposes Journey callbacks.
-    /// TODO: Remove once journey module matures and types package is available.
+    /// Registers or clears the resolver that exposes Journey callbacks to other packages.
+    ///
+    /// Packages that need Journey callbacks (binding, fido, device-profile) cannot depend
+    /// on `rn-journey` directly — this indirection lets Journey inject its lookup at init
+    /// time without creating a circular dependency.
     ///
     /// - Parameter resolver: Resolver closure to register, or `nil` to clear.
     public static func setJourneyCallbackResolver(_ resolver: JourneyCallbackResolver?) {
         journeyCallbackResolverStore.set(resolver)
     }
 
-    /// Convenience helper for resolving callbacks via the registered resolver.
-    /// TODO: Replace this global resolver with a synchronous Journey handle contract resolved
-    /// through `journeyRegistry`; callback access is an in-memory ContinueNode lookup.
-    /// Resolving the handle from the actor-isolated registry may still require `async`.
+    /// Resolves Journey callbacks for the given journey instance via the registered resolver.
     public static func resolveJourneyCallbacks(
         _ journeyId: String
     ) async -> [Any]? {

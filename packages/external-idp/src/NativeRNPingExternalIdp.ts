@@ -68,29 +68,31 @@ export interface Spec extends TurboModule {
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
 /**
- * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+ * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ * Result is cached — the native module does not change at runtime.
  *
  * @returns Native module implementation for the current architecture.
  * @throws Error when no native module is registered.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingExternalIdp');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingExternalIdpClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
-  // TODO: apply this __DEV__ guard to the other Native* modules
-  // (logger, oidc, journey, fido, storage, browser, device-profile, device-id)
-  // so the registered module list is never embedded in production error telemetry.
   const availableModules = __DEV__
     ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
     : '';
-
   throw new Error(
     '[@ping-identity/rn-external-idp] Native module RNPingExternalIdp not found.\n' +
       'Ensure the library is linked correctly and the app has been rebuilt.' +

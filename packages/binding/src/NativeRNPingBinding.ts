@@ -120,31 +120,36 @@ export type NativeBindingConfig = {
   userKeyStorageId?: string;
 };
 
-// TODO: Cache the resolved module instance — probing on every call is unnecessary since
-// the native module does not change at runtime. Apply the same pattern across all modules.
-// TODO: Add no-duplicate-imports ESLint rule to eslint.config.mjs once all split imports across packages are consolidated.
 /**
  * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ * Result is cached — the native module does not change at runtime.
  *
  * @returns The resolved native binding module.
  * @throws Error when the native module is unavailable.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingBinding');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingBindingClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules = __DEV__
+    ? '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules))
+    : '';
   throw new Error(
     '[@ping-identity/rn-binding] Native module RNPingBinding not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 
