@@ -26,7 +26,7 @@ module.exports = {
     },
     jest: {
       setupTimeout: 300000,
-      retries: process.env.CI ? 3 : 0,
+      retries: process.env.CI ? 4 : 0,
     },
   },
   apps: {
@@ -107,6 +107,9 @@ module.exports = {
         build: process.env.BROWSERSTACK_BUILD_ID,
         project: process.env.BROWSERSTACK_PROJECT_NAME,
         local: false,
+        // Cold-session launchApp on BrowserStack needs extra time for device-side
+        // instrumentation to initialise before the first call succeeds.
+        commandTimeout: 120,
       },
     },
   },

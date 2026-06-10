@@ -62,7 +62,7 @@ permissions:
 
 jobs:
   e2e-android-core:
-    name: E2E — Android BrowserStack (core)
+    name: E2E — Android BrowserStack (foundation)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
