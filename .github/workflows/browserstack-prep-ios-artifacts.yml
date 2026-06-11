@@ -40,7 +40,7 @@ jobs:
 
     env:
       XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.2' }}
-      RUBY_VERSION: '2.6.10'
+      RUBY_VERSION: '3.3.6'
       BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
       PING_TEST_RUNNER_DIR: PingTestRunner
       PING_TEST_RUNNER_IOS_DIR: PingTestRunner/ios
