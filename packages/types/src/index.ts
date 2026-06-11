@@ -13,6 +13,7 @@
  */
 export * from '@forgerock/sdk-types';
 
+import { callbackType } from '@forgerock/sdk-types';
 import type { GenericError } from '@forgerock/sdk-types';
 import type { LoggerInstance } from './handles.types';
 
@@ -102,8 +103,6 @@ export const nativeExtensionCallbackType = {
  */
 export type NativeExtensionCallbackType =
   (typeof nativeExtensionCallbackType)[keyof typeof nativeExtensionCallbackType];
-
-import { callbackType } from '@forgerock/sdk-types';
 
 /**
  * All Journey callback type strings — ForgeRock standard callbacks and

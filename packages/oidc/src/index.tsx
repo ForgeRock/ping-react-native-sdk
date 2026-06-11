@@ -15,8 +15,18 @@ import type {
   OidcWebClient,
 } from './types';
 import { OidcError } from './types';
-import { noopLogger } from '@ping-identity/rn-types';
 import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
+
+// TODO(SDKS-separate-ticket): noopLogger is duplicated — blocked on Jest ESM transform issue
+// with @forgerock/sdk-types when rn-types is re-imported after jest.resetModules().
+const noopLogger = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+};
 export { OidcProvider, useOidc } from './useOidc';
 export type {
   OidcHookActions,
@@ -275,6 +285,8 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
     },
     dispose: async () => {
       loggerInstance.debug('OIDC web client dispose requested');
+      // loggerRegistry is intentionally not cleaned up here — the logger belongs to the
+      // base OidcClient, not the web client. Call OidcClient.dispose() to release it.
       try {
         await getNativeModule().disposeWebClient(webClientId);
       } catch (error) {

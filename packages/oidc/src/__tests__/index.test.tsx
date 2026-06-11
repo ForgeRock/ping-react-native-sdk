@@ -23,6 +23,8 @@ type NativeModuleMock = {
   userinfo: jest.Mock;
   revoke: jest.Mock;
   logout: jest.Mock;
+  disposeClient: jest.Mock;
+  disposeWebClient: jest.Mock;
 };
 
 const createNativeMock = (
@@ -43,6 +45,8 @@ const createNativeMock = (
     userinfo: jest.fn(async () => ({ sub: 'user' })),
     revoke: jest.fn(async () => undefined),
     logout: jest.fn(async () => undefined),
+    disposeClient: jest.fn(async () => undefined),
+    disposeWebClient: jest.fn(async () => undefined),
     ...overrides,
   };
 };
@@ -705,5 +709,41 @@ describe('OIDC JS API', () => {
     expect(err.name).toBe('OidcError');
     expect(err.code).toBe('OIDC_AUTHORIZE_ERROR');
     expect(err.message).toBe('authorize failed');
+  });
+});
+
+describe('OIDC dispose', () => {
+  it('disposes an OidcClient — calls native disposeClient and removes logger', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    const client = createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    await client.dispose();
+
+    expect(nativeModule.disposeClient).toHaveBeenCalledWith('client-id');
+  });
+
+  it('disposes an OidcWebClient — calls native disposeWebClient', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient, createOidcWebClient } =
+      await loadModule(nativeModule);
+
+    const client = createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+    const webClient = createOidcWebClient(client);
+
+    await webClient.dispose();
+
+    expect(nativeModule.disposeWebClient).toHaveBeenCalledWith('web-id');
   });
 });

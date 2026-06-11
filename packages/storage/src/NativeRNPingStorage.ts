@@ -448,6 +448,10 @@ export interface Spec extends TurboModule {
  *
  * @returns The native RNPingStorage module implementation
  * @throws {Error} If no native module is registered
+ *
+ * @remarks
+ * Not cached — this function is called once at module load via `export default getNativeModule()`,
+ * so module evaluation itself handles the single-call guarantee.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingStorage');

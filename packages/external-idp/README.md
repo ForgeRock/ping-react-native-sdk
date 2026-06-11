@@ -350,10 +350,7 @@ import { nativeExtensionCallbackType } from '@ping-identity/rn-types';
 
 const [node, actions] = useJourney(client);
 const form = useJourneyForm(node, {
-  handledCallbackTypes: new Set([
-    nativeExtensionCallbackType.IdPCallback,
-    nativeExtensionCallbackType.IdpCallback,
-  ]),
+  handledCallbackTypes: new Set([nativeExtensionCallbackType.IdpCallback]),
 });
 
 await externalIdp.authorizeForJourney(journey);

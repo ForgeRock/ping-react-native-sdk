@@ -687,11 +687,13 @@ object RNPingOidcCommon {
   // Intentionally no Activity sync here; Ping SDK manages its own context.
 
   fun disposeClient(clientId: String, promise: Promise) {
+    // SimpleRegistry uses ConcurrentHashMap — remove() is thread-safe without coroutine dispatch.
     clientRegistry.remove(clientId)
     promise.resolve(null)
   }
 
   fun disposeWebClient(webClientId: String, promise: Promise) {
+    // SimpleRegistry uses ConcurrentHashMap — remove() is thread-safe without coroutine dispatch.
     webRegistry.remove(webClientId)
     promise.resolve(null)
   }

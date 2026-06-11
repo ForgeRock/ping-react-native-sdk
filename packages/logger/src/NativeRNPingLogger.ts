@@ -53,6 +53,9 @@ export interface Spec extends TurboModule {
  *
  * @returns The native Logger module implementation.
  * @throws Error if no native module is registered.
+ *
+ * @remarks
+ * Not cached — called once at module load via `export default getNativeModule()`.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('Logger');

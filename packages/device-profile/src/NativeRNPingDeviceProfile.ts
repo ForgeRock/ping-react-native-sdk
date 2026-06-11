@@ -47,7 +47,10 @@ export interface Spec extends TurboModule {
 }
 
 /**
- * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+ * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ *
+ * @remarks
+ * Not cached — called once at module load via `export default getNativeModule()`.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceProfile');

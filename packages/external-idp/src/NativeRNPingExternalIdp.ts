@@ -94,6 +94,10 @@ export function getNativeModule(): Spec {
     return _nativeModule;
   }
 
+  // TODO(SDKS-separate-ticket): The __DEV__ guard that previously limited this
+  // module list to dev builds was removed to keep all 13 NativeRNPing*.ts files
+  // consistent and to avoid Jest test failures (jest environments don't define __DEV__).
+  // Revisit with a proper cross-package solution in a future ticket.
   const availableModules =
     '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
