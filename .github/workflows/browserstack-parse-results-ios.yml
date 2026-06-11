@@ -113,7 +113,7 @@ jobs:
             echo "- Build ID: \`${build_id}\`"
             echo "- Overall status: ${overall_status}"
             echo "- Result: ${result_label}"
-            echo "- BrowserStack dashboard: ${build_url}"
+            echo "- [BrowserStack dashboard](${build_url})"
             echo
             echo "### Device Results"
             echo

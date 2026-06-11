@@ -217,6 +217,6 @@ jobs:
             echo "- Build ID: \`${build_id}\`"
             echo "- Overall status: ${overall_status}"
             echo "- Result: ${result_label}"
-            echo "- BrowserStack dashboard: https://app-automate.browserstack.com/dashboard/v2"
+            echo "- [BrowserStack dashboard](https://app-automate.browserstack.com/dashboard/v2/builds/${build_id})"
             echo -e "$test_detail"
           } >> "$GITHUB_STEP_SUMMARY"

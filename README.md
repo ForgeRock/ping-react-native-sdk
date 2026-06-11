@@ -6,6 +6,8 @@ of the MIT license. See the LICENSE file for details.
 -->
 
 [![Ping Identity][ping-image]][repo-url]
+[![Build Status][build-image]][build-url]
+[![NPM version][npm-image]][npm-url]
 [![License][license-image]][license-url]
 [![Yarn][yarn-image]][yarn-url]
 [![codecov][codecov-image]][codecov-url]
@@ -138,3 +140,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 [yarn-url]: https://yarnpkg.com/
 [codecov-image]: https://codecov.io/gh/ForgeRock/ping-react-native-sdk/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/ForgeRock/ping-react-native-sdk
+[npm-image]: https://img.shields.io/npm/v/@ping-identity/rn-journey.svg?style=flat
+[npm-url]: https://www.npmjs.com/package/@ping-identity/rn-journey
+[build-image]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/build-packages.yml/badge.svg
+[build-url]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/build-packages.yml
