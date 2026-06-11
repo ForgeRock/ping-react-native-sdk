@@ -183,11 +183,11 @@ object RNPingDeviceClientCommon {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
     scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
-      try {
-        // TODO-PARITY: Android repo properties are suffixed with `Device` (`oathDevice`, `pushDevice`, ...)
-        //   while iOS uses bare names (`oath`, `push`, ...). Pick one convention.
-        // TODO-PARITY: Android uses `.devices()` while iOS uses `.get()`. Pick one convention.
-        val result = when (deviceType) {
+      // TODO-PARITY: Android repo properties are suffixed with `Device` (`oathDevice`, `pushDevice`, ...)
+      //   while iOS uses bare names (`oath`, `push`, ...). Pick one convention.
+      // TODO-PARITY: Android uses `.devices()` while iOS uses `.get()`. Pick one convention.
+      val result = try {
+        when (deviceType) {
           DeviceType.OATH -> client.oathDevice.devices()
           DeviceType.PUSH -> client.pushDevice.devices()
           DeviceType.BOUND -> client.boundDevice.devices()
@@ -197,19 +197,25 @@ object RNPingDeviceClientCommon {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
-        result.fold(
-          onSuccess = { list ->
-            val payload = Arguments.createMap()
-            payload.putArray("result", DeviceJson.encodeDevices(list as List<Device>))
-            promise.resolve(payload)
-          },
-          onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
-        )
+      // Must re-throw: without this, CancellationException falls through to the
+      // inner Throwable catch and gets passed to the package-local error mapper,
+      // settling the promise instead of propagating scope cancellation.
       } catch (e: CancellationException) {
         throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
+        return@launchBridge
       }
+      // fold is outside the try/catch so onFailure exceptions propagate to
+      // launchBridge directly rather than being caught and double-rejected.
+      result.fold(
+        onSuccess = { list ->
+          val payload = Arguments.createMap()
+          payload.putArray("result", DeviceJson.encodeDevices(list as List<Device>))
+          promise.resolve(payload)
+        },
+        onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
+      )
     }
   }
 
@@ -236,9 +242,9 @@ object RNPingDeviceClientCommon {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
     scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
-      try {
+      val result = try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
-        val result = when (deviceType) {
+        when (deviceType) {
           DeviceType.OATH -> client.oathDevice.updateAs<OathDevice>(decoded)
           DeviceType.PUSH -> client.pushDevice.updateAs<PushDevice>(decoded)
           DeviceType.BOUND -> client.boundDevice.updateAs<BoundDevice>(decoded)
@@ -248,19 +254,20 @@ object RNPingDeviceClientCommon {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
-        result.fold(
-          onSuccess = { d ->
-            val payload = Arguments.createMap()
-            payload.putMap("result", DeviceJson.encodeDevice(d as Device))
-            promise.resolve(payload)
-          },
-          onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
-        )
       } catch (e: CancellationException) {
         throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
+        return@launchBridge
       }
+      result.fold(
+        onSuccess = { d ->
+          val payload = Arguments.createMap()
+          payload.putMap("result", DeviceJson.encodeDevice(d as Device))
+          promise.resolve(payload)
+        },
+        onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
+      )
     }
   }
 
@@ -287,9 +294,9 @@ object RNPingDeviceClientCommon {
       DeviceErrorClassifier.rejectHandleNotFound(promise); return
     }
     scope.launchBridge(promise, DeviceClientErrorCodes.DEVICE_CLIENT_ERROR) {
-      try {
+      val result = try {
         val decoded = DeviceJson.decodeDevice(deviceType, device)
-        val result = when (deviceType) {
+        when (deviceType) {
           DeviceType.OATH -> client.oathDevice.deleteAs<OathDevice>(decoded)
           DeviceType.PUSH -> client.pushDevice.deleteAs<PushDevice>(decoded)
           DeviceType.BOUND -> client.boundDevice.deleteAs<BoundDevice>(decoded)
@@ -299,19 +306,20 @@ object RNPingDeviceClientCommon {
             DeviceErrorClassifier.rejectInvalidType(promise, deviceType); return@launchBridge
           }
         }
-        result.fold(
-          onSuccess = { d ->
-            val payload = Arguments.createMap()
-            payload.putMap("result", DeviceJson.encodeDevice(d as Device))
-            promise.resolve(payload)
-          },
-          onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
-        )
       } catch (e: CancellationException) {
         throw e
       } catch (t: Throwable) {
         DeviceErrorClassifier.rejectThrowable(promise, t)
+        return@launchBridge
       }
+      result.fold(
+        onSuccess = { d ->
+          val payload = Arguments.createMap()
+          payload.putMap("result", DeviceJson.encodeDevice(d as Device))
+          promise.resolve(payload)
+        },
+        onFailure = { err -> DeviceErrorClassifier.rejectThrowable(promise, err) },
+      )
     }
   }
 

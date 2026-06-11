@@ -25,7 +25,8 @@ import kotlin.coroutines.EmptyCoroutineContext
  * mapped to a [com.pingidentity.rncore.error.GenericError] via
  * [mapThrowableToGenericError] and the promise is rejected with the resulting error.
  *
- * @param promise The React Native promise to settle on success or failure.
+ * @param promise The React Native promise to reject on failure. Success settlement
+ *   (`resolve`) is the caller's responsibility inside [block].
  * @param errorCode The module-specific error code passed to [mapThrowableToGenericError].
  * @param context Additional [CoroutineContext] elements merged into the launch context.
  *   Defaults to [EmptyCoroutineContext] so the receiver scope's dispatcher is preserved.

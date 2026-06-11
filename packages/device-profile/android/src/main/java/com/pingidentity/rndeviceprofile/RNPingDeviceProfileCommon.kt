@@ -7,7 +7,6 @@
 
 package com.pingidentity.rndeviceprofile
 
-import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableArray
@@ -178,6 +177,8 @@ object RNPingDeviceProfileCommon {
             createJourneyResultPayload(type = "success")
           )
         },
+        // The SDK wraps all exceptions in Result.Failure before launchBridge can
+        // intercept them, so we map errors explicitly here rather than rethrowing.
         onFailure = { error ->
           promise.reject(
             mapThrowableToGenericError(

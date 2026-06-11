@@ -13,7 +13,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.google.firebase.messaging.FirebaseMessaging
 import com.pingidentity.android.ContextProvider
-import org.json.JSONObject
+import com.pingidentity.logger.Logger
 import com.pingidentity.mfa.push.NotificationCleanupConfig
 import com.pingidentity.mfa.push.NotificationCleanupConfig.CleanupMode
 import com.pingidentity.mfa.push.PushClient
@@ -24,8 +24,12 @@ import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.utils.launchBridge
 import com.pingidentity.storage.sqlite.passphrase.KeyStorePassphraseProvider
-import com.pingidentity.logger.Logger
+import java.lang.ref.WeakReference
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,11 +37,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import com.pingidentity.rncore.utils.launchBridge
-import java.lang.ref.WeakReference
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.milliseconds
+import org.json.JSONObject
 
 /**
  * Singleton that owns all push MFA business logic for the Android RN bridge.
@@ -57,7 +57,7 @@ object RNPingPushCommon {
     const val EVENT_FCM_TOKEN_RECEIVED = RNPingPushEvents.FCM_TOKEN_RECEIVED
     const val EVENT_PUSH_MESSAGE_RECEIVED = RNPingPushEvents.PUSH_MESSAGE_RECEIVED
 
-    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val registry = ConcurrentHashMap<String, PushClient>()
 
@@ -226,9 +226,18 @@ object RNPingPushCommon {
      */
     @JvmStatic
     fun cleanup() {
+        val clients = registry.values.toList()
+        registry.clear()
+        // Close all clients on a dedicated scope so close() — a suspend function —
+        // can complete cleanly. The main scope is cancelled afterward; a fresh scope
+        // is created so the singleton can be re-used after re-initialisation.
+        val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        cleanupScope.launch {
+            clients.forEach { runCatching { it.close() } }
+            cleanupScope.cancel()
+        }
         scope.cancel()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        registry.clear()
         reactContextRef = null
         synchronized(pendingEvents) { pendingEvents.clear() }
         synchronized(pendingMessages) { pendingMessages.clear() }
@@ -256,6 +265,9 @@ object RNPingPushCommon {
                 val clientId = UUID.randomUUID().toString()
                 registry[clientId] = client
                 promise.resolve(clientId)
+            // Must re-throw: without this, CancellationException falls through to the
+            // inner Throwable catch and gets passed to PushErrorMapper, settling the promise
+            // instead of propagating scope cancellation.
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {

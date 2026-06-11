@@ -222,6 +222,9 @@ object RNPingOathCommon {
           registry.remove(handle)?.client?.close()
           throw t
         }
+      // Must re-throw: without this, CancellationException falls through to the
+      // inner Throwable/Exception catch and gets passed to the package-local error
+      // mapper, settling the promise instead of propagating scope cancellation.
       } catch (e: CancellationException) {
         throw e
       } catch (e: Exception) {

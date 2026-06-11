@@ -7,6 +7,7 @@
 package com.pingidentity.rnbinding
 
 import androidx.annotation.VisibleForTesting
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
@@ -201,9 +202,9 @@ object RNPingBindingCommon {
   fun getAllKeys(promise: Promise) {
     scope.launchBridge(promise, BindingErrorCodes.BINDING_ERROR) {
       val storage = userKeysStorage
-      val result = com.facebook.react.bridge.Arguments.createArray().apply {
+      val result = Arguments.createArray().apply {
         storage.findAll().forEach { key ->
-          pushMap(com.facebook.react.bridge.Arguments.createMap().apply {
+          pushMap(Arguments.createMap().apply {
             putString("id", key.id)
             putString("userId", key.userId)
             putString("username", key.userName)
