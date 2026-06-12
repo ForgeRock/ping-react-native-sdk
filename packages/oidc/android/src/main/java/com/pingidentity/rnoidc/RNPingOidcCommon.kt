@@ -386,8 +386,10 @@ object RNPingOidcCommon {
             authorizeParams.forEach { (key, value) -> this[key] = value }
           }
         }
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
-        if (e is BrowserCanceledException || e is CancellationException) {
+        if (e is BrowserCanceledException) {
           val canceled = Arguments.createMap()
           canceled.putString("type", "cancel")
           promise.resolve(canceled)
@@ -405,7 +407,7 @@ object RNPingOidcCommon {
       }
 
       val error = result.exceptionOrNull()
-      if (error is BrowserCanceledException || error is CancellationException) {
+      if (error is BrowserCanceledException) {
         val canceled = Arguments.createMap()
         canceled.putString("type", "cancel")
         promise.resolve(canceled)

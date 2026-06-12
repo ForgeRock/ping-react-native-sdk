@@ -206,6 +206,8 @@ object RNPingBrowserCommon {
       val result = try {
         val resolvedRedirectUri = redirectUri?.toUri() ?: browserLauncher.redirectUri
         browserLauncher.launch(launchUrl, resolvedRedirectUri)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         Result.failure(e)
       }
@@ -227,7 +229,7 @@ object RNPingBrowserCommon {
       }
 
       val error = result.exceptionOrNull()
-      if (error is BrowserCanceledException || error is CancellationException) {
+      if (error is BrowserCanceledException) {
         val payload = mapFactory()
         payload.putString("type", "cancel")
         promise.resolve(payload)
