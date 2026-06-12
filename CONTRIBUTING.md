@@ -57,9 +57,7 @@ To run the sample app on iOS:
 yarn sample:run:ios
 ```
 
-Make sure your code passes TypeScript and ESLint checks.
-
-TODO: Add project-wide `yarn typecheck` and `yarn lint` scripts, then replace this section with:
+Make sure your code passes TypeScript and ESLint checks:
 
 ```sh
 yarn typecheck
@@ -68,7 +66,9 @@ yarn lint
 
 To fix formatting/lint errors:
 
-TODO: Add and document `yarn lint --fix` once lint setup is available.
+```sh
+yarn lint --fix
+```
 
 Remember to add tests for your change when possible. Run relevant unit tests by:
 
@@ -84,9 +84,9 @@ yarn test:storage
 The root `package.json` contains scripts for common tasks:
 
 - `yarn install`: install workspace dependencies.
-- TODO: Add `yarn typecheck` script for TypeScript checks.
-- TODO: Add `yarn lint` script for ESLint checks.
-- TODO: Add `yarn lint --fix` support as part of lint setup.
+- `yarn typecheck`: run TypeScript checks across all packages.
+- `yarn lint`: run ESLint across all packages.
+- `yarn lint --fix`: auto-fix lint and formatting errors.
 - `yarn packages:build`: build all workspaces in topological order.
 - `yarn sample:run:android`: run the sample app on Android.
 - `yarn sample:run:ios`: run the sample app on iOS.
@@ -146,6 +146,7 @@ The CLI will prompt you to select a bump type (`patch`, `minor`, or `major`) and
 The changeset description becomes the entry in each package's `CHANGELOG.md` on the next release, linked to your PR and commit SHA. CI will fail if no changeset file is present.
 
 **Bump type guidance:**
+
 - `patch` — bug fixes, non-breaking internal changes
 - `minor` — new backwards-compatible features
 - `major` — breaking API changes
@@ -172,6 +173,7 @@ To release, trigger the [Release workflow](../../actions/workflows/release.yml) 
 
 **Why `workflow_dispatch` instead of the Changesets bot?**
 We deliberately chose manual `workflow_dispatch` instead of the Changesets GitHub bot because:
+
 - This is an early-stage SDK where releases should be deliberate, not automatic
 - It avoids a permanently-open "Release PR" that creates pressure to ship before the team is ready
 - One explicit button-push makes the release boundary clear

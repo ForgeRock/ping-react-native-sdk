@@ -12,7 +12,7 @@ import {
   toNativeConfig,
   toNativeSelectOptions,
 } from './NativeRNPingExternalIdp';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 import type {
   ExternalIdpAuthorizeOptions,
   ExternalIdpClient,
@@ -23,15 +23,6 @@ import type {
 } from './types';
 import { ExternalIdpError } from './types/externalIdp.types';
 import type { ExternalIdpClientConfig } from './types/externalIdp.types';
-
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Resolve an optional redirect URI and reject values that cannot be used by Auth Tabs.

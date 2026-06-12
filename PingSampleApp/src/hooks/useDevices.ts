@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useJourney } from '@ping-identity/rn-journey';
 import {
   createDeviceClient,
+  type DeviceByKind,
   type DeviceClient,
   type DeviceKind,
   type DeviceOf,
@@ -31,7 +32,7 @@ type Status = 'idle' | 'loading' | 'ready' | 'error';
  */
 interface UseDevicesState {
   status: Status;
-  devices: DeviceOf<DeviceKind>[];
+  devices: DeviceOf<keyof DeviceByKind>[];
   /** Human-readable error surfaced from the native bridge, or `null` when healthy. */
   error: string | null;
 }
@@ -50,12 +51,15 @@ interface UseDevicesActions {
    * Renames a device on the server and re-fetches the list on success.
    * Re-fetches on failure too so local state matches the server.
    */
-  rename: (device: DeviceOf<DeviceKind>, newName: string) => Promise<void>;
+  rename: (
+    device: DeviceOf<keyof DeviceByKind>,
+    newName: string,
+  ) => Promise<void>;
   /**
    * Deletes a device from the server and re-fetches the list.
    * Re-fetches on failure too so local state matches the server.
    */
-  remove: (device: DeviceOf<DeviceKind>) => Promise<void>;
+  remove: (device: DeviceOf<keyof DeviceByKind>) => Promise<void>;
 }
 
 /**
@@ -175,11 +179,15 @@ export function useDevices(
     setState(s => ({ ...s, status: 'loading', error: null }));
     try {
       const client = await ensureClient();
-      const items = await client[deviceType].get();
+      const items = await (
+        client[deviceType as keyof typeof client] as {
+          get: () => Promise<unknown[]>;
+        }
+      ).get();
       if (mountedRef.current) {
         setState({
           status: 'ready',
-          devices: items as DeviceOf<DeviceKind>[],
+          devices: items as DeviceOf<keyof DeviceByKind>[],
           error: null,
         });
       }
@@ -217,12 +225,12 @@ export function useDevices(
    * stays in sync with the server.
    */
   const rename = useCallback(
-    async (device: DeviceOf<DeviceKind>, newName: string) => {
+    async (device: DeviceOf<keyof DeviceByKind>, newName: string) => {
       const client = await ensureClient();
       const updated = { ...device, deviceName: newName };
       try {
         await (
-          client[deviceType] as {
+          client[deviceType as keyof typeof client] as {
             update: (d: typeof updated) => Promise<unknown>;
           }
         ).update(updated);
@@ -240,11 +248,11 @@ export function useDevices(
    * success and failure paths (the catch is in the consumer).
    */
   const remove = useCallback(
-    async (device: DeviceOf<DeviceKind>) => {
+    async (device: DeviceOf<keyof DeviceByKind>) => {
       const client = await ensureClient();
       try {
         await (
-          client[deviceType] as {
+          client[deviceType as keyof typeof client] as {
             delete: (d: typeof device) => Promise<unknown>;
           }
         ).delete(device);

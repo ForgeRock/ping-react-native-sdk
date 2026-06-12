@@ -84,10 +84,10 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:push:2.0.0")
-  implementation("com.pingidentity.sdks:commons:2.0.0")
-  implementation("com.pingidentity.sdks:android:2.0.0")
-  implementation("com.pingidentity.sdks:logger:2.0.0")
+  implementation("com.pingidentity.sdks:push:2.0.1")
+  implementation("com.pingidentity.sdks:commons:2.0.1")
+  implementation("com.pingidentity.sdks:android:2.0.1")
+  implementation("com.pingidentity.sdks:logger:2.0.1")
   // FCM is a peer dependency — host app adds the version via its own BOM
   implementation("com.google.firebase:firebase-messaging")
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"

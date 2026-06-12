@@ -5,7 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { DeviceKind, DeviceOf } from '@ping-identity/rn-device-client';
+import type {
+  DeviceByKind,
+  DeviceKind,
+  DeviceOf,
+} from '@ping-identity/rn-device-client';
 
 /**
  * Backing session source used by the devices screen.
@@ -51,7 +55,7 @@ export interface DeviceRenameTarget {
   /**
    * Device currently being edited.
    */
-  device: DeviceOf<DeviceKind>;
+  device: DeviceOf<keyof DeviceByKind>;
   /**
    * Current user-entered name draft.
    */

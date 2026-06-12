@@ -24,7 +24,13 @@
  * const devices = await client[kind].get();
  * ```
  */
-export type DeviceKind = 'oath' | 'push' | 'bound' | 'profile' | 'webAuthn';
+export type DeviceKind =
+  | 'oath'
+  | 'push'
+  | 'bound'
+  | 'profile'
+  | 'webAuthn'
+  | (string & {});
 
 /**
  * Common fields shared by every device kind.
@@ -181,13 +187,19 @@ export interface DeviceByKind {
 }
 
 /**
- * Resolves the concrete device type for a given {@link DeviceKind}.
+ * Resolves the concrete device type for a given device kind key.
  *
- * @typeParam K - One of the supported {@link DeviceKind} literals.
+ * @remarks
+ * The constraint is `keyof DeviceByKind` (not `DeviceKind`) because `DeviceKind`
+ * was widened with `| (string & {})` for semver safety. Use a string literal or
+ * `keyof DeviceByKind` directly — `DeviceOf<DeviceKind>` will not compile.
+ *
+ * @typeParam K - A key of {@link DeviceByKind} (e.g. `'oath'`, `'push'`, `'bound'`).
  *
  * @example
  * ```ts
  * type T = DeviceOf<'bound'>; // BoundDevice
+ * type U = DeviceOf<keyof DeviceByKind>; // union of all device types
  * ```
  */
-export type DeviceOf<K extends DeviceKind> = DeviceByKind[K];
+export type DeviceOf<K extends keyof DeviceByKind> = DeviceByKind[K];

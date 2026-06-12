@@ -6,6 +6,7 @@
 import XCTest
 import AuthenticationServices
 import PingBrowser
+import PingLogger
 import RNPingBrowser
 import RNPingLogger
 
@@ -192,6 +193,49 @@ final class RNPingBrowserCommonTests: XCTestCase {
     wait(for: [expectation], timeout: 1)
   }
 
+  func testOpenForwardsResolvedLoggerWhenLoggerIdProvided() {
+    let expectation = expectation(description: "resolver called")
+    let options: NSDictionary = [
+      "callbackUrlScheme": "com.example.app",
+      "loggerId": loggerId ?? ""
+    ]
+    let launcher = FakeBrowserLauncher()
+    launcher.result = .success(URL(string: "com.example.app://callback")!)
+
+    RNPingBrowserCommon._setBrowserLauncherForTesting(launcher)
+    RNPingBrowserCommon.open(
+      testUrl,
+      options: options,
+      resolver: { _ in
+        XCTAssertNotNil(launcher.lastLogger, "resolved logger should be forwarded to launch()")
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in XCTFail("rejecter should not be called") }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testOpenForwardsNoneLoggerWhenNoLoggerIdProvided() {
+    let expectation = expectation(description: "resolver called")
+    let options: NSDictionary = ["callbackUrlScheme": "com.example.app"]
+    let launcher = FakeBrowserLauncher()
+    launcher.result = .success(URL(string: "com.example.app://callback")!)
+
+    RNPingBrowserCommon._setBrowserLauncherForTesting(launcher)
+    RNPingBrowserCommon.open(
+      testUrl,
+      options: options,
+      resolver: { _ in
+        XCTAssertNotNil(launcher.lastLogger, "LogManager.none fallback should still be forwarded to launch()")
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in XCTFail("rejecter should not be called") }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
   func testResetDelegatesToLauncher() {
     let expectation = expectation(description: "reset delegated")
     let launcher = FakeBrowserLauncher()
@@ -213,17 +257,20 @@ private final class FakeBrowserLauncher: BrowserLaunching {
   var lastBrowserType: BrowserType?
   var lastBrowserMode: BrowserMode?
   var lastCallbackScheme: String?
+  var lastLogger: Logger?
 
   func launch(
     url: URL,
     customParams: [String : String]?,
     browserType: BrowserType,
     browserMode: BrowserMode,
-    callbackURLScheme: String
+    callbackURLScheme: String,
+    logger: Logger
   ) async throws -> URL {
     lastBrowserType = browserType
     lastBrowserMode = browserMode
     lastCallbackScheme = callbackURLScheme
+    lastLogger = logger
     return try result.get()
   }
 

@@ -87,8 +87,8 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:oath:2.0.0")
-  implementation("com.pingidentity.sdks:android:2.0.0")
+  implementation("com.pingidentity.sdks:oath:2.0.1")
+  implementation("com.pingidentity.sdks:android:2.0.1")
   implementation(project(":ping-identity_rn-core"))
 
   testImplementation "junit:junit:4.13.2"

@@ -40,7 +40,7 @@ The repository packages use:
 - `compileSdkVersion`: `36`
 - `targetSdkVersion`: `36`
 - `minSdkVersion`: `29`
-- `kotlinVersion`: `2.2.10` (package default)
+- `kotlinVersion`: `2.2.10`
 
 ### iOS deployment target
 

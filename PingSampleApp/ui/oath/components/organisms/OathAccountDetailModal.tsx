@@ -89,11 +89,11 @@ function InfoRow({
  */
 export default function OathAccountDetailModal(
   props: OathAccountDetailModalProps,
-): React.ReactElement {
+): React.ReactElement | null {
   const { visible, credential, codeInfo, onDismiss, onDelete, onRefreshHotp } =
     props;
 
-  if (!credential) return <></>;
+  if (!credential) return null;
 
   const isLocked = credential.isLocked ?? false;
   const isTotp = credential.type === 'TOTP';

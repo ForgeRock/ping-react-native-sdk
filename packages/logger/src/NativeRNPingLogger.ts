@@ -53,6 +53,9 @@ export interface Spec extends TurboModule {
  *
  * @returns The native Logger module implementation.
  * @throws Error if no native module is registered.
+ *
+ * @remarks
+ * Not cached — called once at module load via `export default getNativeModule()`.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('Logger');
@@ -65,11 +68,12 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-logger] Native module Logger not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

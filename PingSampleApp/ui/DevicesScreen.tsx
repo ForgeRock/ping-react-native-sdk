@@ -8,7 +8,11 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { DeviceKind, DeviceOf } from '@ping-identity/rn-device-client';
+import type {
+  DeviceByKind,
+  DeviceKind,
+  DeviceOf,
+} from '@ping-identity/rn-device-client';
 import { formatError } from './utils/formatError';
 import { useDevices } from '../src/hooks/useDevices';
 import { commonStyles } from '../src/styles/common';
@@ -62,7 +66,7 @@ export default function DevicesScreen({
     null,
   );
 
-  const handleDelete = (device: DeviceOf<DeviceKind>) => {
+  const handleDelete = (device: DeviceOf<keyof DeviceByKind>) => {
     actions.remove(device).catch((error: unknown) => {
       console.log(
         '[devices] delete failed — raw error:',
@@ -72,7 +76,7 @@ export default function DevicesScreen({
     });
   };
 
-  const handleOpenEdit = (device: DeviceOf<DeviceKind>) => {
+  const handleOpenEdit = (device: DeviceOf<keyof DeviceByKind>) => {
     setRenameTarget({ kind: selectedType, device, draft: device.deviceName });
   };
 

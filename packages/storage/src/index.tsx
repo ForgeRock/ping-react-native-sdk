@@ -11,6 +11,7 @@ import type {
   NativeStorageConfig,
 } from './NativeRNPingStorage';
 import { CacheStrategy, StorageError } from './types';
+import { noopLogger } from '@ping-identity/rn-types';
 import type {
   LoggerInstance,
   OathStorageHandle,
@@ -34,18 +35,6 @@ export type {
   StorageConfig,
   StorageLoggerOptions,
 } from './types';
-
-/**
- * No-op logger used when callers do not provide one.
- */
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Resolve JS logger instance and native logger identifier for bridge calls.
@@ -354,7 +343,7 @@ function createOathStorageHandle(
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns A branded SessionStorage handle with native storage id metadata
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  *
  * @example
  * ```typescript
@@ -369,7 +358,6 @@ function createOathStorageHandle(
  * // Pass to Journey SDK
  * // initJourney({ sessionStorage, ... });
  * ```
- * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
  */
 export function configureSessionStorage(
   config: StorageConfig,
@@ -404,7 +392,7 @@ export function configureSessionStorage(
  *
  * @param config - Storage configuration parameters with platform-specific options
  * @returns A branded OidcStorage handle with native storage id metadata
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  *
  * @example
  * ```typescript
@@ -423,7 +411,6 @@ export function configureSessionStorage(
  * // Pass to OIDC configuration
  * // configureOidc({ storage: oidcStorage, ... });
  * ```
- * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
  */
 export function configureOidcStorage(
   config: StorageConfig,
@@ -453,7 +440,7 @@ export function configureOidcStorage(
  * @param config - Storage configuration parameters with platform-specific options
  * @param options - Optional logger configuration
  * @returns A branded BindingUserKeyStorage handle with native storage id metadata
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  */
 export function configureBindingUserKeyStorage(
   config: StorageConfig,
@@ -510,7 +497,7 @@ function createPushStorageHandle(
  * @param config - Storage configuration parameters with platform-specific options
  * @param options - Optional logger configuration
  * @returns A branded PushStorage handle with native storage id metadata
- * @throws {Error} If the configuration is missing or invalid
+ * @throws {StorageError} If the configuration is missing or invalid
  *
  * @example
  * ```typescript
@@ -525,7 +512,6 @@ function createPushStorageHandle(
  * // Pass to push client
  * // createPushClient({ storage: pushStorage });
  * ```
- * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
  */
 export function configurePushStorage(
   config: StorageConfig,
@@ -545,7 +531,7 @@ export function configurePushStorage(
     return createPushStorageHandle(storageId, normalizeStorageConfig(result));
   } catch (error) {
     logger.error('Storage configurePushStorage failed');
-    throw error;
+    throw StorageError.from(error);
   }
 }
 
@@ -577,7 +563,6 @@ export function configurePushStorage(
  *
  * const client = await createOathClient({ storage: oathStorage });
  * ```
- * TODO: Analyze implications of turning storage operations async to better handle errors from native bridge calls.
  */
 export function configureOathStorage(
   config: StorageConfig,
@@ -613,6 +598,6 @@ export function configureOathStorage(
     return createOathStorageHandle(storageId, normalizeStorageConfig(result));
   } catch (error) {
     logger.error('Storage configureOathStorage failed');
-    throw error;
+    throw StorageError.from(error);
   }
 }

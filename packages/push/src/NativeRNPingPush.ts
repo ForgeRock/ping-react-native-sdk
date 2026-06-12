@@ -237,30 +237,35 @@ export interface Spec extends TurboModule {
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
-// TODO: Cache the resolved module instance — probing on every call is unnecessary since
-// the native module does not change at runtime. Apply the same pattern across all modules.
 /**
  * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ * Result is cached — the native module does not change at runtime.
  *
  * @returns The resolved native push module.
  * @throws Error when the native module is unavailable.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingPush');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingPushClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-push] Native module RNPingPush not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

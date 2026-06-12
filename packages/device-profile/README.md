@@ -178,8 +178,6 @@ app's `Info.plist` so iOS can prompt the user for permission.
 <string>This app uses your location to complete device profiling.</string>
 ```
 
-TODO: Re-check `@MainActor` usage in Device Profile iOS paths for potential UI-thread bottlenecks.
-
 ## Configure logging (optional)
 
 If you install the logger package, pass a JS logger instance per call via `DeviceProfileLoggerOptions`.
@@ -227,6 +225,26 @@ is active in the current Journey node. The native implementation resolves the
 active callback, applies server-driven configuration, executes the requested
 collectors, submits the resulting metadata automatically, and resolves with a
 result object describing success. Failures reject with a shared `GenericError`.
+
+### With `useJourneyForm`
+
+Pass `handledCallbackTypes` so device profile fields are excluded from blocking submit issues:
+
+```ts
+import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
+import { callbackType } from '@ping-identity/rn-types';
+
+const [node, actions] = useJourney(client);
+const form = useJourneyForm(node, {
+  handledCallbackTypes: new Set([callbackType.DeviceProfileCallback]),
+});
+
+await collectDeviceProfileForJourney(journey, ['platform', 'hardware']);
+
+if (form.canSubmit) {
+  await actions.next(form.input);
+}
+```
 
 ## API reference
 
@@ -276,4 +294,4 @@ Common error codes surfaced via `error` in rejection payloads:
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

@@ -5,29 +5,16 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceClient';
 import type {
+  DeviceByKind,
   DeviceClient,
   DeviceClientConfig,
-  DeviceKind,
   DeviceOf,
   DeviceRepository,
 } from './types';
 import { DeviceClientError } from './types';
-
-/**
- * No-op logger used when the caller does not provide a logger instance.
- * Prevents null-checks on every log call inside repository operations.
- */
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Shape of the wrapper object returned by native bridge calls that
@@ -161,7 +148,7 @@ export function createDeviceClient(config: DeviceClientConfig): DeviceClient {
    * @param kind - The {@link DeviceKind} string.
    * @returns A repository with `get`, `update`, and `delete` methods.
    */
-  const repo = <K extends DeviceKind>(
+  const repo = <K extends keyof DeviceByKind>(
     kind: K,
   ): DeviceRepository<DeviceOf<K>> => ({
     async get() {

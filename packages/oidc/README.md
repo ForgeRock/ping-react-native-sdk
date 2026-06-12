@@ -62,7 +62,7 @@ const oidcClient = createOidcClient({
 });
 ```
 
-> TODO(Android): `tokenExpiry` will be reintroduced once the native Android SDK exposes it.
+> **Note:** `tokenExpiry` is excluded from token responses — the Android SDK does not expose it publicly yet. It will be added once both platforms support it.
 
 ### Configure token storage (optional)
 
@@ -152,8 +152,6 @@ const oidcClient = createOidcClient({
   },
 });
 ```
-
-> TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
 
 ### Create the web-capable client and authorize
 
@@ -333,3 +331,7 @@ Stable OIDC error codes:
 - `OIDC_LOGOUT_ERROR`
 
 `OIDC_STATE_ERROR` is used by JS hook/provider guardrails (for example, missing OIDC client context).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

@@ -6,7 +6,7 @@
  */
 
 import { Platform } from 'react-native';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingOath';
 import { OathError } from './types';
 import type {
@@ -15,15 +15,6 @@ import type {
   OathCodeInfo,
   OathCredential,
 } from './types';
-
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Assert that the client has not been closed.

@@ -129,7 +129,8 @@ export type OidcAuthorizeResult =
     }
   | {
       type: 'cancel';
-    };
+    }
+  | { type: string & {}; [key: string]: unknown };
 
 /**
  * Error thrown when OIDC operations fail.
@@ -162,7 +163,8 @@ export type OidcErrorCode =
   | 'OIDC_REFRESH_ERROR'
   | 'OIDC_USERINFO_ERROR'
   | 'OIDC_REVOKE_ERROR'
-  | 'OIDC_LOGOUT_ERROR';
+  | 'OIDC_LOGOUT_ERROR'
+  | (string & {});
 
 /**
  * Native-backed OIDC client handle.
@@ -201,6 +203,15 @@ export type OidcClient = {
    * @returns Whether the end-session flow completed successfully.
    */
   endSession(): Promise<boolean>;
+
+  /**
+   * Deregister this client from CoreRuntime registries and release associated resources.
+   *
+   * @remarks
+   * Handles accumulate until app kill if `dispose` is not called. Invoke when the
+   * client is no longer needed (e.g. on profile switch or component unmount).
+   */
+  dispose(): Promise<void>;
 };
 
 /**
@@ -268,4 +279,12 @@ export type OidcWebClient = {
    * Resolve the current user handle, if present.
    */
   user(): Promise<OidcUser | null>;
+
+  /**
+   * Deregister this web client from CoreRuntime registries and release associated resources.
+   *
+   * @remarks
+   * Call when the web client is no longer needed to avoid handle accumulation.
+   */
+  dispose(): Promise<void>;
 };

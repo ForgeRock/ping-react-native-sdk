@@ -11,8 +11,10 @@ import React
 /// Swift entry point for the Binding native module.
 ///
 /// Delegates all operations to `RNPingBindingCommon`.
-/// TODO(SDKS-concurrency): Apply the same static-methods + actor pattern to the remaining
+/// TODO(SDKS-concurrency)(TODO-SEPARATE-TICKET): Apply the same static-methods + actor pattern to the remaining
 /// packages. See packages/binding/TODOS.md for the full list.
+/// Note: The remaining packages guard mutable state with NSLock — correct and crash-safe at runtime.
+/// This is a Swift 6 strict-concurrency compliance improvement, not a safety fix. Safe to defer past 1.0.
 @objcMembers
 public class RNPingBindingImpl: NSObject {
 

@@ -89,24 +89,35 @@ export type NativeFidoConfig = {
 };
 
 /**
- * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+ * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ * Result is cached — the native module does not change at runtime.
  */
+let _nativeModule: Spec | null = null;
+/** @internal — resets the module cache for testing only. */
+export function _resetNativeModuleForTesting(): void {
+  _nativeModule = null;
+}
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingFido');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingFidoClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-fido] Native module RNPingFido not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

@@ -95,27 +95,26 @@ export default function JourneyContinuePanel(
     () => new Set(fields.map(field => field.ref.type)),
     [fields],
   );
-  // These flags drive integration UX:
-  // - DeviceProfile/Suspended/Polling callbacks are handled by panel-level effects.
-  // - "manual submit" means at least one callback requires user-provided values.
-  const hasDeviceProfileCallback = callbackTypes.has(
-    callbackType.DeviceProfileCallback,
-  );
-  const hasSelectIdpCallback = fields.some(
-    field => field.ref.type === nativeExtensionCallbackType.SelectIdpCallback,
-  );
+
+  // Callbacks silently handled by registered integrations (auto-forwarded or
+  // panel-level effects) — not surfaced as blocking issues in the UI.
   const isAutoHandledIntegrationCallback = useCallback(
     (type: JourneyCallbackType): boolean =>
       type === callbackType.DeviceProfileCallback ||
       type === nativeExtensionCallbackType.FidoRegistrationCallback ||
       type === nativeExtensionCallbackType.FidoAuthenticationCallback ||
       type === nativeExtensionCallbackType.IdpCallback ||
-      // SelectIdpCallback (native lowercase-p form) is handled by the external-idp integration
-      // in the panel controller — provider selection renders inline and submit is managed there.
       type === nativeExtensionCallbackType.SelectIdpCallback ||
       type === 'DeviceBindingCallback' ||
       type === 'DeviceSigningVerifierCallback',
     [],
+  );
+
+  const hasDeviceProfileCallback = callbackTypes.has(
+    callbackType.DeviceProfileCallback,
+  );
+  const hasSelectIdpCallback = fields.some(
+    field => field.ref.type === nativeExtensionCallbackType.SelectIdpCallback,
   );
   const hasSuspendedCallback = callbackTypes.has(
     callbackType.SuspendedTextOutputCallback,
@@ -129,43 +128,26 @@ export default function JourneyContinuePanel(
       !(hasPollingWaitCallback && field.ref.type === 'ConfirmationCallback'),
   );
 
-  const hasBlockingIntegration = fields.some(
-    field =>
-      (field.executionMode === 'integration_required' &&
-        !isAutoHandledIntegrationCallback(field.ref.type)) ||
-      (field.executionMode === 'auto_capable' &&
-        !isAutoHandledIntegrationCallback(field.ref.type)),
-  );
-  const blockingIntegrationCallbackTypes = useMemo<string[]>(
+  // Derive blocking state and display info from form.issues — single source of truth.
+  const blockingIntegrationCallbackTypes = useMemo<JourneyCallbackType[]>(
     () =>
       Array.from(
         new Set(
-          fields
+          form.issues
             .filter(
-              field =>
-                (field.executionMode === 'integration_required' &&
-                  !isAutoHandledIntegrationCallback(field.ref.type)) ||
-                (field.executionMode === 'auto_capable' &&
-                  !isAutoHandledIntegrationCallback(field.ref.type)),
+              issue =>
+                issue.code === 'INTEGRATION_REQUIRED' &&
+                issue.callbackType != null &&
+                !isAutoHandledIntegrationCallback(issue.callbackType),
             )
-            .map(field => field.ref.type),
+            .map(issue => issue.callbackType as JourneyCallbackType),
         ),
       ),
-    [fields, isAutoHandledIntegrationCallback],
+    [form.issues, isAutoHandledIntegrationCallback],
   );
-  const hasUnsupportedCallbacks = meta.hasUnsupported;
-  const unsupportedCallbackTypes = useMemo<string[]>(
-    () =>
-      Array.from(
-        new Set(
-          fields
-            .filter(field => field.executionMode === 'unsupported')
-            .map(field => field.ref.type),
-        ),
-      ),
-    [fields],
-  );
-  const unsupportedIssueCallbackTypes = useMemo<JourneyCallbackType[]>(
+  const hasBlockingIntegration = blockingIntegrationCallbackTypes.length > 0;
+
+  const unsupportedCallbackTypes = useMemo<JourneyCallbackType[]>(
     () =>
       Array.from(
         new Set(
@@ -180,26 +162,8 @@ export default function JourneyContinuePanel(
       ),
     [form.issues],
   );
-  const integrationIssueCallbackTypes = useMemo<JourneyCallbackType[]>(
-    () =>
-      Array.from(
-        new Set(
-          form.issues
-            .filter(
-              issue =>
-                issue.code === 'INTEGRATION_REQUIRED' &&
-                !!issue.callbackType &&
-                !isAutoHandledIntegrationCallback(issue.callbackType),
-            )
-            .map(issue => issue.callbackType)
-            .filter(
-              (value): value is JourneyCallbackType =>
-                typeof value === 'string' && value.length > 0,
-            ),
-        ),
-      ),
-    [form.issues, isAutoHandledIntegrationCallback],
-  );
+  const hasUnsupportedCallbacks = meta.hasUnsupported;
+
   const blockingIssueMessages = useMemo<string[]>(
     () =>
       form.issues
@@ -207,18 +171,17 @@ export default function JourneyContinuePanel(
           issue =>
             issue.code === 'UNSUPPORTED_CALLBACK' ||
             (issue.code === 'INTEGRATION_REQUIRED' &&
-              !!issue.callbackType &&
+              issue.callbackType != null &&
               !isAutoHandledIntegrationCallback(issue.callbackType)),
         )
         .map(issue => issue.message),
     [form.issues, isAutoHandledIntegrationCallback],
   );
-  const hasUnacceptedRequiredAgreements = meta.hasRequiredConsentMissing;
-  // True when every field is silently handled by a registered integration
-  // (FIDO authentication, device signing verifier) — the auto-forwarder
-  // owns submission, so a Continue button would be redundant.
-  // FIDO registration and device binding render a device-name text field
-  // the user can edit, so they always keep the Continue button.
+
+  // True when every field is silently handled by a registered integration —
+  // the auto-forwarder owns submission, so a Continue button would be redundant.
+  // FIDO registration and device binding render a device-name field so they
+  // always keep the Continue button.
   const isAutoForwardedByIntegration =
     fields.length > 0 &&
     fields.every(
@@ -228,6 +191,7 @@ export default function JourneyContinuePanel(
         field.ref.type !== 'FidoRegistrationCallback' &&
         field.ref.type !== 'DeviceBindingCallback',
     );
+
   const canAutoAdvanceWithContinueButton =
     !hasManualSubmit &&
     !hasBlockingIntegration &&
@@ -237,13 +201,14 @@ export default function JourneyContinuePanel(
     !hasSuspendedCallback &&
     !hasPollingWaitCallback &&
     !isAutoForwardedByIntegration;
+
   const shouldShowContinueButton =
     hasManualSubmit || canAutoAdvanceWithContinueButton;
-  const submitDisabled =
-    loading ||
-    hasUnacceptedRequiredAgreements ||
-    hasBlockingIntegration ||
-    hasUnsupportedCallbacks;
+
+  // form.canSubmit is the single source of truth — true when all fields are
+  // filled and no unhandled integration or unsupported callbacks remain.
+  const submitDisabled = loading || !form.canSubmit;
+
   const pollingWaitSeconds = Math.max(
     1,
     Math.ceil((pollingWaitMs ?? DEFAULT_AUTO_POLLING_WAIT_MS) / 1000),
@@ -271,12 +236,7 @@ export default function JourneyContinuePanel(
           </Text>
           <Text style={styles.blockingNote}>
             Integration-required callbacks:{' '}
-            {[
-              ...new Set([
-                ...blockingIntegrationCallbackTypes,
-                ...integrationIssueCallbackTypes,
-              ]),
-            ].join(', ') || 'Unknown'}
+            {blockingIntegrationCallbackTypes.join(', ') || 'Unknown'}
           </Text>
         </>
       ) : null}
@@ -295,12 +255,7 @@ export default function JourneyContinuePanel(
           </Text>
           <Text style={styles.blockingNote}>
             Unsupported callbacks:{' '}
-            {[
-              ...new Set([
-                ...unsupportedCallbackTypes,
-                ...unsupportedIssueCallbackTypes,
-              ]),
-            ].join(', ') || 'Unknown'}
+            {unsupportedCallbackTypes.join(', ') || 'Unknown'}
           </Text>
         </>
       ) : null}

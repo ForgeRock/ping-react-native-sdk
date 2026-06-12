@@ -46,7 +46,6 @@ object RNPingStorageCommon {
   @JvmStatic
   fun registerSessionStorage(config: ReadableMap): String {
     val map = config.toHashMap()
-    // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
     val storageConfig = buildStorageConfig(map)
     return sessionConfigRegistry.register(storageConfig)
   }
@@ -64,7 +63,6 @@ object RNPingStorageCommon {
   @JvmStatic
   fun registerOidcStorage(config: ReadableMap): String {
     val map = config.toHashMap()
-    // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
     val storageConfig = buildStorageConfig(map)
     return oidcConfigRegistry.register(storageConfig)
   }

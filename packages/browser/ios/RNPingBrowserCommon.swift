@@ -43,6 +43,20 @@ public class RNPingBrowserCommon: NSObject {
   }
 #endif
 
+  /// Resolve a native logger from the shared Core logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or nil when missing/invalid.
+  private static func resolveLogger(_ loggerId: String?) async -> Logger? {
+    guard let loggerId, !loggerId.isEmpty else {
+      return nil
+    }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? Logger
+  }
+
   /// Accepts configuration from JavaScript (currently a no-op on iOS).
   ///
   /// - Parameter config: Optional configuration payload from the JS layer.
@@ -135,11 +149,7 @@ public class RNPingBrowserCommon: NSObject {
     }
 
     Task { @MainActor in
-      // TODO: Pass the JS-provided logger through to BrowserLauncher.launch().
-      // The installed PingBrowser accepts a `logger:` parameter on launch() —
-      // resolve the JS loggerId via CoreRuntime.loggerRegistry and forward it
-      // through BrowserLaunching + DefaultBrowserLauncherAdapter. Android
-      // already does this correctly.
+      let nativeLogger = await resolveLogger(loggerId) ?? LogManager.none
 
       do {
         let result = try await browserLauncher.launch(
@@ -147,7 +157,8 @@ public class RNPingBrowserCommon: NSObject {
           customParams: nil,
           browserType: browserType,
           browserMode: browserMode,
-          callbackURLScheme: callbackScheme
+          callbackURLScheme: callbackScheme,
+          logger: nativeLogger
         )
 
         handlers.resolve([

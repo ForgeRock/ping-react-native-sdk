@@ -156,6 +156,7 @@ const missingOidcWebClient: OidcWebClient = {
   async user() {
     throw missingOidcClientError;
   },
+  async dispose() {},
 };
 
 /**

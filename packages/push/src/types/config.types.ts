@@ -5,8 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { LoggerInstance } from '@ping-identity/rn-types';
-import type { PushStorage } from '@ping-identity/rn-storage';
+import type {
+  LoggerInstance,
+  PushStorageHandle,
+} from '@ping-identity/rn-types';
 import type { PushNotificationCleanupConfig } from './notification.types';
 
 /**
@@ -41,7 +43,7 @@ export type PushConfig = {
    * Obtained from `configurePushStorage()` in `@ping-identity/rn-storage`.
    * When omitted, the native default SQLite/Keychain storage is used.
    */
-  storage?: PushStorage;
+  storage?: PushStorageHandle;
   /**
    * Optional notification cleanup configuration controlling when stored
    * notifications are purged from the local database.

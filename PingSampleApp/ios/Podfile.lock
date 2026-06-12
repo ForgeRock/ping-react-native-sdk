@@ -2465,7 +2465,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingBinding (0.1.0):
+  - RNPingBinding (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2496,7 +2496,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingBrowser (0.1.0):
+  - RNPingBrowser (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2528,7 +2528,7 @@ PODS:
     - RNPingLogger
     - SocketRocket
     - Yoga
-  - RNPingCore (0.1.0):
+  - RNPingCore (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2557,7 +2557,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingDeviceClient (0.1.0):
+  - RNPingDeviceClient (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2588,7 +2588,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceId (0.1.0):
+  - RNPingDeviceId (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2619,7 +2619,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceProfile (0.1.0):
+  - RNPingDeviceProfile (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2650,7 +2650,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingExternalIdp (0.1.0):
+  - RNPingExternalIdp (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2681,7 +2681,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingFido (0.1.0):
+  - RNPingFido (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2712,7 +2712,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingJourney (0.1.0):
+  - RNPingJourney (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2750,7 +2750,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingLogger (0.1.0):
+  - RNPingLogger (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2781,7 +2781,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOath (0.1.0):
+  - RNPingOath (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2812,7 +2812,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOidc (0.1.0):
+  - RNPingOidc (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2847,7 +2847,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingPush (0.1.0):
+  - RNPingPush (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -2880,7 +2880,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingStorage (0.1.0):
+  - RNPingStorage (1.0.0-beta.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -3589,20 +3589,20 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBinding: 64be383c23d1fb0c0899eb650ffb557355111b36
-  RNPingBrowser: 68c92341be9aed38dd5a11ecee37b96bf96a6332
-  RNPingCore: f41b28de7c94d2e2af7fae663531d0d0341d2775
-  RNPingDeviceClient: 6b89f63032ed087e0af22b73312e73a5800cb0ce
-  RNPingDeviceId: e0d02655613f8e6151496538ce46040f44c414cb
-  RNPingDeviceProfile: d41184083542e19e85e20ec9938c98f6511931b5
-  RNPingExternalIdp: 664978f9d40fdcd80af22fb2da1e2b0ec0059371
-  RNPingFido: 22c9c9f44842fb4e42b8c9c193583314ddd8e61f
-  RNPingJourney: b85d5fef5498aedda4019108230a39a6135935cb
-  RNPingLogger: 85893024c3d861ac0e01d35f91860e5bdd3cd904
-  RNPingOath: f800f54371fa0ee2a849d29fcefdb54eb01eac90
-  RNPingOidc: d17f951f9ca06652fd97caaaf7aaced99e4ad9e8
-  RNPingPush: 214ca695aa3779c722fb12ef64cd18fba6fd415b
-  RNPingStorage: e4f9709832992edd2c49e7885d300aca7cacd68e
+  RNPingBinding: 10541621edbb8b6885f069ee6316843498d6cc93
+  RNPingBrowser: 63741144ed5088a03a765a4d7c42be27f18fdd53
+  RNPingCore: fe4e99005afb728904b634a2b29bd9f7df0ed7a2
+  RNPingDeviceClient: b62cdc274eff19c09fce49b7d7b7e1166a81a044
+  RNPingDeviceId: f37f85e0807a5b0e284631c83e28e0dfd4a78712
+  RNPingDeviceProfile: 90e4220f1ec456f8dfaeb9a4214214100302292c
+  RNPingExternalIdp: 7954d281fa3ea15681b5b1c6ce6f8813559e9b48
+  RNPingFido: 350763404cdd05b9fe3dbf73eba926e041d4bf63
+  RNPingJourney: f3823780322f741fceed6eb6c3c20013d85a44a2
+  RNPingLogger: 3bb60c3bc67fe1078a4a4535f98129da4845eebf
+  RNPingOath: f67ef2fedb4ad9727349be6eac5da988196871eb
+  RNPingOidc: 889badee38ae3a2a592edb723d2047f3eea603c7
+  RNPingPush: 1ac8fd7f91b9489ec088e502bb8a7b96fabacc80
+  RNPingStorage: 61024de883275173ac09f95d985f1bb9bef62670
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNSVG: e8fb86f41fccd7b67c4480bb9e179e0ad5785b80
   RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
