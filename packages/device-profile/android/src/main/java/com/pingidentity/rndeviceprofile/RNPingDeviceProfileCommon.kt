@@ -167,6 +167,12 @@ object RNPingDeviceProfileCommon {
       val result = callback.collect {
         logger = resolvedLogger ?: Logger.NONE
         collectors {
+          // This was adding all default collectors including
+          // LocationCollector. addAll() alone would only append — clear() first so
+          // the bridge-supplied list is the complete set, preventing LocationCollector
+          // from running (and requesting the location permission) when the caller did
+          // not include "location" in the collectors array.
+          clear()
           addAll(metadataCollectors)
         }
       }

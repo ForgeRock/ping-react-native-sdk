@@ -1,0 +1,84 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Prepare Android BrowserStack artifacts
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-android-bs-artifacts:
+    name: Prepare Android BrowserStack artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: PingTestRunner
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js and install dependencies
+        uses: ./.github/actions/setup-proj
+
+      - name: Install global Jest and Detox CLI
+        run: |
+          npm install -g jest
+          npm install -g detox-cli
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build SDK packages
+        run: yarn packages:build
+        working-directory: ${{ github.workspace }}
+
+      - name: Generate codegen artifacts for all SDK modules
+        # React Native New Architecture requires each library's codegen JNI
+        # directories to exist before CMake configures the app. Run codegen
+        # across all included modules so the directories are present.
+        run: |
+          cd android && ./gradlew \
+            :ping-identity_rn-binding:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-browser:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-client:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-id:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-device-profile:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-external-idp:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-fido:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-journey:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-oath:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-push:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \
+            :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+
+      - name: Build Release APK and androidTest APK
+        run: yarn build:runner:bs:android
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload app APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pingtestrunner-android-bs-app
+          path: PingTestRunner/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload test APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pingtestrunner-android-bs-test-suite
+          path: PingTestRunner/android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
+          if-no-files-found: error

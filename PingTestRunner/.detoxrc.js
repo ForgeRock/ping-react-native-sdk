@@ -21,11 +21,12 @@ module.exports = {
   },
   testRunner: {
     args: {
-      $0: 'jest',
       config: 'e2e/jest.config.js',
+      _: ['e2e'],
     },
     jest: {
       setupTimeout: 300000,
+      retries: process.env.CI ? 4 : 0,
     },
   },
   apps: {
@@ -40,11 +41,11 @@ module.exports = {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
       testBinaryPath:
-        'android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
+        'android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk',
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
     },
-    // BrowserStack cloud app — URLs are resolved after uploading binaries to BrowserStack.
+    // BrowserStack cloud app — IDs are resolved after uploading binaries to BrowserStack.
     'android.cloud': {
       type: 'android.cloud',
       app: process.env.BROWSERSTACK_APP_URL,
@@ -61,14 +62,14 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_9',
+        avdName: process.env.DETOX_AVD_NAME ?? 'Pixel_10',
       },
     },
     // BrowserStack real device — override via env vars to target a different device.
     browserstack: {
       type: 'android.cloud',
       device: {
-        name: process.env.BROWSERSTACK_DEVICE ?? 'Google Pixel 9',
+        name: process.env.BROWSERSTACK_DEVICE ?? 'Google Pixel 9 Pro',
         osVersion: process.env.BROWSERSTACK_OS_VERSION ?? '15.0',
       },
     },
@@ -106,6 +107,9 @@ module.exports = {
         build: process.env.BROWSERSTACK_BUILD_ID,
         project: process.env.BROWSERSTACK_PROJECT_NAME,
         local: false,
+        // Cold-session launchApp on BrowserStack needs extra time for device-side
+        // instrumentation to initialise before the first call succeeds.
+        commandTimeout: 120,
       },
     },
   },
