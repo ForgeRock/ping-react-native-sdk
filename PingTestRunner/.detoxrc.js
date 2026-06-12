@@ -22,7 +22,7 @@ module.exports = {
   testRunner: {
     args: {
       config: 'e2e/jest.config.js',
-      maxWorkers: process.env.CI ? 1 : undefined,
+      _: ['e2e'],
     },
     jest: {
       setupTimeout: 300000,
@@ -41,7 +41,7 @@ module.exports = {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
       testBinaryPath:
-        'android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk',
+        'android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk',
       build:
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
     },
@@ -62,7 +62,7 @@ module.exports = {
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_9',
+        avdName: process.env.DETOX_AVD_NAME ?? 'Pixel_10',
       },
     },
     // BrowserStack real device — override via env vars to target a different device.
