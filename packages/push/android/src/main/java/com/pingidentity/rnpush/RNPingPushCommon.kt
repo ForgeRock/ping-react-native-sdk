@@ -13,7 +13,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.google.firebase.messaging.FirebaseMessaging
 import com.pingidentity.android.ContextProvider
-import org.json.JSONObject
+import com.pingidentity.logger.Logger
 import com.pingidentity.mfa.push.NotificationCleanupConfig
 import com.pingidentity.mfa.push.NotificationCleanupConfig.CleanupMode
 import com.pingidentity.mfa.push.PushClient
@@ -24,18 +24,20 @@ import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.utils.launchBridge
 import com.pingidentity.storage.sqlite.passphrase.KeyStorePassphraseProvider
-import com.pingidentity.logger.Logger
+import java.lang.ref.WeakReference
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.lang.ref.WeakReference
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.milliseconds
+import org.json.JSONObject
 
 /**
  * Singleton that owns all push MFA business logic for the Android RN bridge.
@@ -55,7 +57,7 @@ object RNPingPushCommon {
     const val EVENT_FCM_TOKEN_RECEIVED = RNPingPushEvents.FCM_TOKEN_RECEIVED
     const val EVENT_PUSH_MESSAGE_RECEIVED = RNPingPushEvents.PUSH_MESSAGE_RECEIVED
 
-    private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val registry = ConcurrentHashMap<String, PushClient>()
 
@@ -224,9 +226,18 @@ object RNPingPushCommon {
      */
     @JvmStatic
     fun cleanup() {
+        val clients = registry.values.toList()
+        registry.clear()
+        // Close all clients on a dedicated scope so close() — a suspend function —
+        // can complete cleanly. The main scope is cancelled afterward; a fresh scope
+        // is created so the singleton can be re-used after re-initialisation.
+        val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        cleanupScope.launch {
+            clients.forEach { runCatching { it.close() } }
+            cleanupScope.cancel()
+        }
         scope.cancel()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        registry.clear()
         reactContextRef = null
         synchronized(pendingEvents) { pendingEvents.clear() }
         synchronized(pendingMessages) { pendingMessages.clear() }
@@ -244,7 +255,7 @@ object RNPingPushCommon {
      */
     @JvmStatic
     fun initialize(config: ReadableMap, promise: Promise) {
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val loggerId = if (config.hasKey("loggerId") && !config.isNull("loggerId")) {
                     config.getString("loggerId")?.trim()?.takeIf { it.isNotEmpty() }
@@ -254,6 +265,11 @@ object RNPingPushCommon {
                 val clientId = UUID.randomUUID().toString()
                 registry[clientId] = client
                 promise.resolve(clientId)
+            // Must re-throw: without this, CancellationException falls through to the
+            // inner Throwable catch and gets passed to PushErrorMapper, settling the promise
+            // instead of propagating scope cancellation.
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -273,10 +289,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val credential = client.addCredentialFromUri(uri).getOrThrow()
                 promise.resolve(serializeCredential(credential))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -296,11 +314,13 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val credential = deserializeCredential(credentialMap)
                 val saved = client.saveCredential(credential).getOrThrow()
                 promise.resolve(serializeCredential(saved))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -319,7 +339,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val credentials = client.getCredentials().getOrThrow()
                 val array = Arguments.createArray()
@@ -327,6 +347,8 @@ object RNPingPushCommon {
                 val result = Arguments.createMap()
                 result.putArray("credentials", array)
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -346,7 +368,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val credential = client.getCredential(credentialId).getOrThrow()
                 val result = Arguments.createMap()
@@ -356,6 +378,8 @@ object RNPingPushCommon {
                     result.putNull("credential")
                 }
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -376,10 +400,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.deleteCredential(credentialId).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -400,10 +426,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.setDeviceToken(token, credentialId).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -422,7 +450,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val token = client.getDeviceToken().getOrThrow()
                 val result = Arguments.createMap()
@@ -432,6 +460,8 @@ object RNPingPushCommon {
                     result.putNull("token")
                 }
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -451,7 +481,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val dataMap: Map<String, String> = messageData.toHashMap()
                     .mapValues { it.value?.toString() ?: "" }
@@ -463,6 +493,8 @@ object RNPingPushCommon {
                     result.putNull("notification")
                 }
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -482,7 +514,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val notification = client.processNotification(message).getOrThrow()
                 val result = Arguments.createMap()
@@ -492,6 +524,8 @@ object RNPingPushCommon {
                     result.putNull("notification")
                 }
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -511,10 +545,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.approveNotification(notificationId).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -535,10 +571,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.approveChallengeNotification(notificationId, challengeResponse).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -559,10 +597,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.approveBiometricNotification(notificationId, authenticationMethod).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -582,10 +622,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val result = client.denyNotification(notificationId).getOrThrow()
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -604,10 +646,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val notifications = client.getPendingNotifications().getOrThrow()
                 promise.resolve(buildNotificationsResult(notifications))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -626,10 +670,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val notifications = client.getAllNotifications().getOrThrow()
                 promise.resolve(buildNotificationsResult(notifications))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -649,7 +695,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val notification = client.getNotification(notificationId).getOrThrow()
                 val result = Arguments.createMap()
@@ -659,6 +705,8 @@ object RNPingPushCommon {
                     result.putNull("notification")
                 }
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -678,10 +726,12 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val count = client.cleanupNotifications(credentialId).getOrThrow()
                 promise.resolve(count)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -704,7 +754,7 @@ object RNPingPushCommon {
             promise.reject(GenericError(type = ErrorType.STATE_ERROR, error = PushErrorCode.NOT_INITIALIZED, message = "Push client not found for id: $clientId"))
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 val token = FirebaseMessaging.getInstance().token.await()
                 client.setDeviceToken(token, null).getOrThrow()
@@ -712,6 +762,8 @@ object RNPingPushCommon {
                 val result = Arguments.createMap()
                 result.putString("token", token)
                 promise.resolve(result)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }
@@ -732,10 +784,12 @@ object RNPingPushCommon {
             promise.resolve(null)
             return
         }
-        scope.launch {
+        scope.launchBridge(promise, PushErrorCode.NETWORK_FAILURE) {
             try {
                 client.close()
                 promise.resolve(null)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Throwable) {
                 reject(e, promise)
             }

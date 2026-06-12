@@ -34,7 +34,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import com.pingidentity.rncore.utils.launchBridge
 
 /**
  * Common utilities for the Ping Browser module.
@@ -188,7 +188,7 @@ object RNPingBrowserCommon {
       null
     }
 
-    scope.launch {
+    scope.launchBridge(promise, BrowserErrorCodes.BROWSER_OPEN_ERROR) {
       val launchUrl = try {
         parseLaunchUrl(url)
       } catch (e: MalformedURLException) {
@@ -200,12 +200,14 @@ object RNPingBrowserCommon {
           ),
           e
         )
-        return@launch
+        return@launchBridge
       }
 
       val result = try {
         val resolvedRedirectUri = redirectUri?.toUri() ?: browserLauncher.redirectUri
         browserLauncher.launch(launchUrl, resolvedRedirectUri)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         Result.failure(e)
       }
@@ -216,22 +218,22 @@ object RNPingBrowserCommon {
           val payload = mapFactory()
           payload.putString("type", "cancel")
           promise.resolve(payload)
-          return@launch
+          return@launchBridge
         }
 
         val payload = mapFactory()
         payload.putString("type", "success")
         payload.putString("url", uri.toString())
         promise.resolve(payload)
-        return@launch
+        return@launchBridge
       }
 
       val error = result.exceptionOrNull()
-      if (error is BrowserCanceledException || error is CancellationException) {
+      if (error is BrowserCanceledException) {
         val payload = mapFactory()
         payload.putString("type", "cancel")
         promise.resolve(payload)
-        return@launch
+        return@launchBridge
       }
 
       // Map native errors to the shared JS contract from RNPingCore.

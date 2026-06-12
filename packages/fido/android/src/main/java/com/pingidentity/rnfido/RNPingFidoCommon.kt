@@ -24,10 +24,10 @@ import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -147,40 +147,33 @@ object RNPingFidoCommon {
     defaultFailureMessage: String,
     operation: suspend (client: FidoClient, input: JsonObject) -> Result<JsonObject>
   ) {
-    scope.launch {
-      try {
-        val input = JsonBridgeMapper.decodeReadableMap(options)
-        val client = createFidoClient(parseCallConfig(config))
-        val result = operation(client, input)
-        result.fold(
-          onSuccess = { payload ->
-            promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
-          },
-          onFailure = { error ->
-            rejectWithError(
-              promise = promise,
-              code = errorCode,
-              message = error.localizedMessage ?: defaultFailureMessage,
-              throwable = error
-            )
-          }
-        )
-      } catch (error: IllegalArgumentException) {
+    scope.launchBridge(promise, errorCode) {
+      val input = try {
+        JsonBridgeMapper.decodeReadableMap(options)
+      } catch (e: IllegalArgumentException) {
         rejectWithError(
           promise = promise,
           code = errorCode,
-          message = error.localizedMessage ?: invalidOptionsMessage,
-          type = ErrorType.ARGUMENT_ERROR,
-          throwable = error
+          message = e.localizedMessage ?: invalidOptionsMessage,
+          throwable = e
         )
-      } catch (error: Throwable) {
-        rejectWithError(
-          promise = promise,
-          code = errorCode,
-          message = error.localizedMessage ?: defaultFailureMessage,
-          throwable = error
-        )
+        return@launchBridge
       }
+      val client = createFidoClient(parseCallConfig(config))
+      val result = operation(client, input)
+      result.fold(
+        onSuccess = { payload ->
+          promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
+        },
+        onFailure = { error ->
+          rejectWithError(
+            promise = promise,
+            code = errorCode,
+            message = error.localizedMessage ?: defaultFailureMessage,
+            throwable = error
+          )
+        }
+      )
     }
   }
 
@@ -217,57 +210,40 @@ object RNPingFidoCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val index = parseCallbackIndex(options)
-        val callback = resolveRegistrationCallback(journeyId, index)
-        if (callback == null) {
+    scope.launchBridge(promise, FidoErrorCodes.FIDO_REGISTER_ERROR) {
+      val index = parseCallbackIndex(options)
+      val callback = resolveRegistrationCallback(journeyId, index)
+      if (callback == null) {
+        rejectWithError(
+          promise = promise,
+          code = FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND,
+          message = "No active FIDO registration callback found for journey $journeyId at index $index.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+
+      val deviceName = parseDeviceName(options)
+      val result = if (deviceName == null) {
+        callback.register()
+      } else {
+        callback.register(deviceName)
+      }
+
+      result.fold(
+        onSuccess = {
+          promise.resolve(createJourneyResultPayload(type = "success"))
+        },
+        onFailure = { error ->
           rejectWithError(
             promise = promise,
-            code = FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND,
-            message = "No active FIDO registration callback found for journey $journeyId at index $index.",
-            type = ErrorType.STATE_ERROR
+            code = FidoErrorCodes.FIDO_REGISTER_ERROR,
+            message = error.localizedMessage
+              ?: "Journey FIDO registration callback execution failed.",
+            throwable = error
           )
-          return@launch
         }
-
-        val deviceName = parseDeviceName(options)
-        val result = if (deviceName == null) {
-          callback.register()
-        } else {
-          callback.register(deviceName)
-        }
-
-        result.fold(
-          onSuccess = {
-            promise.resolve(createJourneyResultPayload(type = "success"))
-          },
-          onFailure = { error ->
-            rejectWithError(
-              promise = promise,
-              code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-              message = error.localizedMessage
-                ?: "Journey FIDO registration callback execution failed.",
-              throwable = error
-            )
-          }
-        )
-      } catch (error: IllegalArgumentException) {
-        rejectWithError(
-          promise = promise,
-          code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-          message = error.localizedMessage ?: "Invalid Journey FIDO registration options payload.",
-          type = ErrorType.ARGUMENT_ERROR,
-          throwable = error
-        )
-      } catch (error: Throwable) {
-        rejectWithError(
-          promise = promise,
-          code = FidoErrorCodes.FIDO_REGISTER_ERROR,
-          message = error.localizedMessage ?: "Journey FIDO registration callback execution failed.",
-          throwable = error
-        )
-      }
+      )
     }
   }
 
@@ -304,51 +280,42 @@ object RNPingFidoCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val index = parseCallbackIndex(options)
-        val callback = resolveAuthenticationCallback(journeyId, index)
-        if (callback == null) {
-          rejectWithError(
-            promise = promise,
-            code = FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND,
-            message = "No active FIDO authentication callback found for journey $journeyId at index $index.",
-            type = ErrorType.STATE_ERROR
-          )
-          return@launch
-        }
-
-        callback.authenticate().fold(
-          onSuccess = {
-            promise.resolve(createJourneyResultPayload(type = "success"))
-          },
-          onFailure = { error ->
-            if (isRecoverableFidoAuthenticationFailure(error)) {
-              rejectWithError(
-                promise = promise,
-                code = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
-                message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
-                throwable = error
-              )
-              return@fold
-            }
-            rejectWithError(
-              promise = promise,
-              code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
-              message = error.localizedMessage
-                ?: "Journey FIDO authentication callback execution failed.",
-              throwable = error
-            )
-          }
-        )
-      } catch (error: Throwable) {
+    scope.launchBridge(promise, FidoErrorCodes.FIDO_AUTHENTICATE_ERROR) {
+      val index = parseCallbackIndex(options)
+      val callback = resolveAuthenticationCallback(journeyId, index)
+      if (callback == null) {
         rejectWithError(
           promise = promise,
-          code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
-          message = error.localizedMessage ?: "Journey FIDO authentication callback execution failed.",
-          throwable = error
+          code = FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND,
+          message = "No active FIDO authentication callback found for journey $journeyId at index $index.",
+          type = ErrorType.STATE_ERROR
         )
+        return@launchBridge
       }
+
+      callback.authenticate().fold(
+        onSuccess = {
+          promise.resolve(createJourneyResultPayload(type = "success"))
+        },
+        onFailure = { error ->
+          if (isRecoverableFidoAuthenticationFailure(error)) {
+            rejectWithError(
+              promise = promise,
+              code = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
+              message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
+              throwable = error
+            )
+            return@fold
+          }
+          rejectWithError(
+            promise = promise,
+            code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
+            message = error.localizedMessage
+              ?: "Journey FIDO authentication callback execution failed.",
+            throwable = error
+          )
+        }
+      )
     }
   }
 

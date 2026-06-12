@@ -27,12 +27,13 @@ import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -144,7 +145,7 @@ object RNPingExternalIdpCommon {
       return
     }
 
-    scope.launch {
+    scope.launchBridge(promise, ExternalIdpErrorCodes.AUTHORIZE_ERROR) {
       try {
         val index = parseCallbackIndex(options)
         logger?.i("External IdP authorizeForJourney requested for callback index $index")
@@ -157,7 +158,7 @@ object RNPingExternalIdpCommon {
             message = "No active IdP callback found for journey $journeyId at index $index.",
             type = ErrorType.STATE_ERROR
           )
-          return@launch
+          return@launchBridge
         }
         val parsedRedirectUri = try {
           parseRedirectUri(callConfig.redirectUri, callback.provider)
@@ -170,7 +171,7 @@ object RNPingExternalIdpCommon {
             type = ErrorType.ARGUMENT_ERROR,
             throwable = e
           )
-          return@launch
+          return@launchBridge
         }
 
         // TODO: Add browser fallback here when the Android native SDK supports it for AIC Journey flows.
@@ -203,6 +204,11 @@ object RNPingExternalIdpCommon {
             )
           }
         )
+      // Must re-throw: without this, CancellationException falls through to the
+      // inner Throwable/Exception catch and gets passed to the package-local error
+      // mapper, settling the promise instead of propagating scope cancellation.
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Throwable) {
         when (e) {
           is ClassNotFoundException, is NoClassDefFoundError -> {
@@ -274,7 +280,7 @@ object RNPingExternalIdpCommon {
       return
     }
 
-    scope.launch {
+    scope.launchBridge(promise, ExternalIdpErrorCodes.CONFIG_ERROR) {
       try {
         val index = parseCallbackIndex(options)
         logger?.i("External IdP select provider requested for callback index $index")
@@ -287,12 +293,14 @@ object RNPingExternalIdpCommon {
             message = "No active SelectIdp callback found for journey $journeyId at index $index.",
             type = ErrorType.STATE_ERROR
           )
-          return@launch
+          return@launchBridge
         }
 
         callback.value = selectedProvider
         logger?.d("External IdP select provider succeeded")
         promise.resolve(null)
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Throwable) {
         logger?.e("External IdP select provider failed", e)
         rejectWithError(

@@ -29,11 +29,11 @@ import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import java.util.concurrent.ConcurrentHashMap
 
@@ -253,17 +253,13 @@ internal object RNPingJourneyCommon {
     val forceAuth = getBooleanOption(options, "forceAuth")
     val noSession = getBooleanOption(options, "noSession")
 
-    scope.launch {
-      try {
-        val node = workflow.start(journeyName) {
-          this.forceAuth = forceAuth
-          this.noSession = noSession
-        }
-        setNodeState(journeyId, node)
-        promise.resolve(JourneyNodeMapper.mapNode(node, resolveJourneyLogger(journeyId)))
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.START), error)
+    scope.launchBridge(promise, JourneyErrorCodes.START) {
+      val node = workflow.start(journeyName) {
+        this.forceAuth = forceAuth
+        this.noSession = noSession
       }
+      setNodeState(journeyId, node)
+      promise.resolve(JourneyNodeMapper.mapNode(node, resolveJourneyLogger(journeyId)))
     }
   }
 
@@ -321,7 +317,7 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
+    scope.launchBridge(promise, JourneyErrorCodes.NEXT) {
       try {
         if (mutations.isNotEmpty()) {
           JourneyCallbackValueApplier.apply(currentNode, mutations)
@@ -356,8 +352,6 @@ internal object RNPingJourneyCommon {
           ),
           error
         )
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.NEXT), error)
       }
     }
   }
@@ -391,14 +385,10 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val resumedNode = workflow.resume(Uri.parse(uri))
-        setNodeState(journeyId, resumedNode)
-        promise.resolve(JourneyNodeMapper.mapNode(resumedNode, resolveJourneyLogger(journeyId)))
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.RESUME), error)
-      }
+    scope.launchBridge(promise, JourneyErrorCodes.RESUME) {
+      val resumedNode = workflow.resume(Uri.parse(uri))
+      setNodeState(journeyId, resumedNode)
+      promise.resolve(JourneyNodeMapper.mapNode(resumedNode, resolveJourneyLogger(journeyId)))
     }
   }
 
@@ -450,32 +440,28 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        if (user == null) {
-          promise.resolve(null)
-          return@launch
-        }
+    scope.launchBridge(promise, JourneyErrorCodes.USER) {
+      val user = workflow.user()
+      if (user == null) {
+        promise.resolve(null)
+        return@launchBridge
+      }
 
-        when (val tokenResult = user.token()) {
-          is Result.Success<*> -> {
-            val token = tokenResult.value as? Token
-              ?: throw IllegalStateException("Invalid token payload type")
-            promise.resolve(mapSessionPayload(user, token))
-          }
-          is Result.Failure<*> -> {
-            promise.reject(
-              GenericError(
-                type = ErrorType.AUTH_ERROR,
-                error = JourneyErrorCodes.USER,
-                message = tokenResult.value.toString()
-              )
-            )
-          }
+      when (val tokenResult = user.token()) {
+        is Result.Success<*> -> {
+          val token = tokenResult.value as? Token
+            ?: throw IllegalStateException("Invalid token payload type")
+          promise.resolve(mapSessionPayload(user, token))
         }
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+        is Result.Failure<*> -> {
+          promise.reject(
+            GenericError(
+              type = ErrorType.AUTH_ERROR,
+              error = JourneyErrorCodes.USER,
+              message = tokenResult.value.toString()
+            )
+          )
+        }
       }
     }
   }
@@ -498,32 +484,28 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        if (user == null) {
-          promise.resolve(null)
-          return@launch
-        }
+    scope.launchBridge(promise, JourneyErrorCodes.USER) {
+      val user = workflow.user()
+      if (user == null) {
+        promise.resolve(null)
+        return@launchBridge
+      }
 
-        when (val tokenResult = user.refresh()) {
-          is Result.Success<*> -> {
-            val token = tokenResult.value as? Token
-              ?: throw IllegalStateException("Invalid token payload type")
-            promise.resolve(mapSessionPayload(user, token))
-          }
-          is Result.Failure<*> -> {
-            promise.reject(
-              GenericError(
-                type = ErrorType.AUTH_ERROR,
-                error = JourneyErrorCodes.USER,
-                message = tokenResult.value.toString()
-              )
-            )
-          }
+      when (val tokenResult = user.refresh()) {
+        is Result.Success<*> -> {
+          val token = tokenResult.value as? Token
+            ?: throw IllegalStateException("Invalid token payload type")
+          promise.resolve(mapSessionPayload(user, token))
         }
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+        is Result.Failure<*> -> {
+          promise.reject(
+            GenericError(
+              type = ErrorType.AUTH_ERROR,
+              error = JourneyErrorCodes.USER,
+              message = tokenResult.value.toString()
+            )
+          )
+        }
       }
     }
   }
@@ -546,14 +528,10 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        user?.revoke()
-        promise.resolve(true)
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
-      }
+    scope.launchBridge(promise, JourneyErrorCodes.USER) {
+      val user = workflow.user()
+      user?.revoke()
+      promise.resolve(true)
     }
   }
 
@@ -575,32 +553,28 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        if (user == null) {
-          promise.resolve(null)
-          return@launch
-        }
+    scope.launchBridge(promise, JourneyErrorCodes.USER) {
+      val user = workflow.user()
+      if (user == null) {
+        promise.resolve(null)
+        return@launchBridge
+      }
 
-        when (val result = user.userinfo(false)) {
-          is Result.Success<*> -> {
-            val userInfo = result.value as? JsonObject
-              ?: throw IllegalStateException("Invalid userinfo payload type")
-            promise.resolve(JsonBridgeMapper.encodeJsonObject(userInfo))
-          }
-          is Result.Failure<*> -> {
-            promise.reject(
-              GenericError(
-                type = ErrorType.AUTH_ERROR,
-                error = JourneyErrorCodes.USER,
-                message = result.value.toString()
-              )
-            )
-          }
+      when (val result = user.userinfo(false)) {
+        is Result.Success<*> -> {
+          val userInfo = result.value as? JsonObject
+            ?: throw IllegalStateException("Invalid userinfo payload type")
+          promise.resolve(JsonBridgeMapper.encodeJsonObject(userInfo))
         }
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+        is Result.Failure<*> -> {
+          promise.reject(
+            GenericError(
+              type = ErrorType.AUTH_ERROR,
+              error = JourneyErrorCodes.USER,
+              message = result.value.toString()
+            )
+          )
+        }
       }
     }
   }
@@ -623,23 +597,19 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        if (user == null) {
-          promise.resolve(null)
-          return@launch
-        }
-
-        val ssoToken = user.session()
-        val resultMap = Arguments.createMap()
-        resultMap.putString("value", ssoToken.value)
-        resultMap.putString("successUrl", ssoToken.successUrl)
-        resultMap.putString("realm", ssoToken.realm)
-        promise.resolve(resultMap)
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.USER), error)
+    scope.launchBridge(promise, JourneyErrorCodes.USER) {
+      val user = workflow.user()
+      if (user == null) {
+        promise.resolve(null)
+        return@launchBridge
       }
+
+      val ssoToken = user.session()
+      val resultMap = Arguments.createMap()
+      resultMap.putString("value", ssoToken.value)
+      resultMap.putString("successUrl", ssoToken.successUrl)
+      resultMap.putString("realm", ssoToken.realm)
+      promise.resolve(resultMap)
     }
   }
 
@@ -661,15 +631,11 @@ internal object RNPingJourneyCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val user = workflow.user()
-        user?.logout()
-        clearNodeState(journeyId)
-        promise.resolve(true)
-      } catch (error: Exception) {
-        promise.reject(JourneyErrorMapper.map(error, JourneyErrorCodes.LOGOUT), error)
-      }
+    scope.launchBridge(promise, JourneyErrorCodes.LOGOUT) {
+      val user = workflow.user()
+      user?.logout()
+      clearNodeState(journeyId)
+      promise.resolve(true)
     }
   }
 

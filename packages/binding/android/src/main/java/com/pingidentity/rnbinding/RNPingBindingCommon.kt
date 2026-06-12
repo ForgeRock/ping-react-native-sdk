@@ -7,6 +7,7 @@
 package com.pingidentity.rnbinding
 
 import androidx.annotation.VisibleForTesting
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
@@ -19,11 +20,11 @@ import com.pingidentity.logger.NONE
 import com.pingidentity.logger.Logger
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 /**
@@ -113,41 +114,32 @@ object RNPingBindingCommon {
         "No foreground activity is available for Journey device binding.")
       return
     }
-    scope.launch {
-      try {
-        val index = parseCallbackIndex(options)
-        val callback = resolveDeviceBindingCallback(journeyId, index)
-        if (callback == null) {
-          rejectWithError(promise, BindingErrorCodes.BINDING_CALLBACK_NOT_FOUND,
-            "No active DeviceBindingCallback found for journey $journeyId at index $index.",
-            ErrorType.STATE_ERROR)
-          return@launch
-        }
-        val jsDeviceName = parseStringOption(options, "deviceName")
-        val jsSigningAlgorithm = parseStringOption(options, "signingAlgorithm")
-        callback.bind {
-          logger = resolvedLogger ?: Logger.NONE
-          jsDeviceName?.let { deviceName = it }
-          jsSigningAlgorithm?.let { signingAlgorithm = it }
-          applyCommonBindingConfig(this, options, callConfig.userKeyStorageId)
-          if (callConfig.hasPinCollector) {
-            appPinConfig { pinCollector { prompt -> bridgePinCollector(reactContext, prompt) } }
-          }
-        }.fold(
-          onSuccess = { promise.resolve(createJourneyResultPayload("success")) },
-          onFailure = { error ->
-            rejectWithError(promise, resolveBindingErrorCode(error, BindingErrorCodes.BINDING_BIND_ERROR),
-              error.localizedMessage ?: "Journey device binding callback execution failed.", throwable = error)
-          }
-        )
-      } catch (error: IllegalArgumentException) {
-        rejectWithError(promise, BindingErrorCodes.BINDING_BIND_ERROR,
-          error.localizedMessage ?: "Invalid Journey device binding options payload.",
-          ErrorType.ARGUMENT_ERROR, error)
-      } catch (error: Throwable) {
-        rejectWithError(promise, BindingErrorCodes.BINDING_BIND_ERROR,
-          error.localizedMessage ?: "Journey device binding callback execution failed.", throwable = error)
+    scope.launchBridge(promise, BindingErrorCodes.BINDING_BIND_ERROR) {
+      val index = parseCallbackIndex(options)
+      val callback = resolveDeviceBindingCallback(journeyId, index)
+      if (callback == null) {
+        rejectWithError(promise, BindingErrorCodes.BINDING_CALLBACK_NOT_FOUND,
+          "No active DeviceBindingCallback found for journey $journeyId at index $index.",
+          ErrorType.STATE_ERROR)
+        return@launchBridge
       }
+      val jsDeviceName = parseStringOption(options, "deviceName")
+      val jsSigningAlgorithm = parseStringOption(options, "signingAlgorithm")
+      callback.bind {
+        logger = resolvedLogger ?: Logger.NONE
+        jsDeviceName?.let { deviceName = it }
+        jsSigningAlgorithm?.let { signingAlgorithm = it }
+        applyCommonBindingConfig(this, options, callConfig.userKeyStorageId)
+        if (callConfig.hasPinCollector) {
+          appPinConfig { pinCollector { prompt -> bridgePinCollector(reactContext, prompt) } }
+        }
+      }.fold(
+        onSuccess = { promise.resolve(createJourneyResultPayload("success")) },
+        onFailure = { error ->
+          rejectWithError(promise, resolveBindingErrorCode(error, BindingErrorCodes.BINDING_BIND_ERROR),
+            error.localizedMessage ?: "Journey device binding callback execution failed.", throwable = error)
+        }
+      )
     }
   }
 
@@ -171,44 +163,35 @@ object RNPingBindingCommon {
         "No foreground activity is available for Journey device signing.")
       return
     }
-    scope.launch {
-      try {
-        val index = parseCallbackIndex(options)
-        val callback = resolveDeviceSigningVerifierCallback(journeyId, index)
-        if (callback == null) {
-          rejectWithError(promise, BindingErrorCodes.BINDING_CALLBACK_NOT_FOUND,
-            "No active DeviceSigningVerifierCallback found for journey $journeyId at index $index.",
-            ErrorType.STATE_ERROR)
-          return@launch
-        }
-        val jsSigningAlgorithm = parseStringOption(options, "signingAlgorithm")
-        val jsClaims = parseClaims(options)
-        callback.sign {
-          logger = resolvedLogger ?: Logger.NONE
-          jsSigningAlgorithm?.let { signingAlgorithm = it }
-          if (jsClaims.isNotEmpty()) { claims { putAll(jsClaims) } }
-          applyCommonBindingConfig(this, options, callConfig.userKeyStorageId)
-          if (callConfig.hasPinCollector) {
-            appPinConfig { pinCollector { prompt -> bridgePinCollector(reactContext, prompt) } }
-          }
-          if (callConfig.hasUserKeySelector) {
-            userKeySelector { keys -> bridgeUserKeySelector(reactContext, keys) }
-          }
-        }.fold(
-          onSuccess = { promise.resolve(createJourneyResultPayload("success")) },
-          onFailure = { error ->
-            rejectWithError(promise, resolveBindingErrorCode(error, BindingErrorCodes.BINDING_SIGN_ERROR),
-              error.localizedMessage ?: "Journey device signing callback execution failed.", throwable = error)
-          }
-        )
-      } catch (error: IllegalArgumentException) {
-        rejectWithError(promise, BindingErrorCodes.BINDING_SIGN_ERROR,
-          error.localizedMessage ?: "Invalid Journey device signing options payload.",
-          ErrorType.ARGUMENT_ERROR, error)
-      } catch (error: Throwable) {
-        rejectWithError(promise, BindingErrorCodes.BINDING_SIGN_ERROR,
-          error.localizedMessage ?: "Journey device signing callback execution failed.", throwable = error)
+    scope.launchBridge(promise, BindingErrorCodes.BINDING_SIGN_ERROR) {
+      val index = parseCallbackIndex(options)
+      val callback = resolveDeviceSigningVerifierCallback(journeyId, index)
+      if (callback == null) {
+        rejectWithError(promise, BindingErrorCodes.BINDING_CALLBACK_NOT_FOUND,
+          "No active DeviceSigningVerifierCallback found for journey $journeyId at index $index.",
+          ErrorType.STATE_ERROR)
+        return@launchBridge
       }
+      val jsSigningAlgorithm = parseStringOption(options, "signingAlgorithm")
+      val jsClaims = parseClaims(options)
+      callback.sign {
+        logger = resolvedLogger ?: Logger.NONE
+        jsSigningAlgorithm?.let { signingAlgorithm = it }
+        if (jsClaims.isNotEmpty()) { claims { putAll(jsClaims) } }
+        applyCommonBindingConfig(this, options, callConfig.userKeyStorageId)
+        if (callConfig.hasPinCollector) {
+          appPinConfig { pinCollector { prompt -> bridgePinCollector(reactContext, prompt) } }
+        }
+        if (callConfig.hasUserKeySelector) {
+          userKeySelector { keys -> bridgeUserKeySelector(reactContext, keys) }
+        }
+      }.fold(
+        onSuccess = { promise.resolve(createJourneyResultPayload("success")) },
+        onFailure = { error ->
+          rejectWithError(promise, resolveBindingErrorCode(error, BindingErrorCodes.BINDING_SIGN_ERROR),
+            error.localizedMessage ?: "Journey device signing callback execution failed.", throwable = error)
+        }
+      )
     }
   }
 
@@ -217,71 +200,56 @@ object RNPingBindingCommon {
   /** Returns all registered device binding keys from [UserKeysStorage] as a JS array. */
   @JvmStatic
   fun getAllKeys(promise: Promise) {
-    scope.launch {
-      try {
-        val storage = userKeysStorage
-        val result = com.facebook.react.bridge.Arguments.createArray().apply {
-          storage.findAll().forEach { key ->
-            pushMap(com.facebook.react.bridge.Arguments.createMap().apply {
-              putString("id", key.id)
-              putString("userId", key.userId)
-              putString("username", key.userName)
-              putString("authenticationType", key.authType.name)
-            })
-          }
+    scope.launchBridge(promise, BindingErrorCodes.BINDING_ERROR) {
+      val storage = userKeysStorage
+      val result = Arguments.createArray().apply {
+        storage.findAll().forEach { key ->
+          pushMap(Arguments.createMap().apply {
+            putString("id", key.id)
+            putString("userId", key.userId)
+            putString("username", key.userName)
+            putString("authenticationType", key.authType.name)
+          })
         }
-        promise.resolve(result)
-      } catch (error: Throwable) {
-        rejectWithError(promise, BindingErrorCodes.BINDING_ERROR,
-          error.localizedMessage ?: "Failed to retrieve binding keys.", throwable = error)
       }
+      promise.resolve(result)
     }
   }
 
   /** Deletes the key identified by [userId] and [keyId], including its KeyStore material. */
   @JvmStatic
   fun deleteKey(userId: String, keyId: String, promise: Promise) {
-    scope.launch {
-      try {
-        val storage = userKeysStorage
-        val key = storage.findAll().firstOrNull { it.id == keyId && it.userId == userId }
-        if (key == null) {
-          rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
-            "No binding key found.", ErrorType.STATE_ERROR)
-          return@launch
-        }
-        deleteKeyMaterial(key)
-        storage.delete(key)
-        promise.resolve(null)
-      } catch (error: Throwable) {
+    scope.launchBridge(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR) {
+      val storage = userKeysStorage
+      val key = storage.findAll().firstOrNull { it.id == keyId && it.userId == userId }
+      if (key == null) {
         rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
-          error.localizedMessage ?: "Failed to delete binding key.", throwable = error)
+          "No binding key found.", ErrorType.STATE_ERROR)
+        return@launchBridge
       }
+      deleteKeyMaterial(key)
+      storage.delete(key)
+      promise.resolve(null)
     }
   }
 
   /** Deletes all registered device binding keys, including their KeyStore material. */
   @JvmStatic
   fun deleteAllKeys(promise: Promise) {
-    scope.launch {
-      try {
-        val storage = userKeysStorage
-        val errors = mutableListOf<String>()
-        storage.findAll().forEach { key ->
-          runCatching {
-            deleteKeyMaterial(key)
-            storage.delete(key)
-          }.onFailure { errors.add(it.localizedMessage ?: "Failed to delete key.") }
-        }
-        if (errors.isEmpty()) {
-          promise.resolve(null)
-        } else {
-          rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
-            errors.joinToString("; "))
-        }
-      } catch (error: Throwable) {
+    scope.launchBridge(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR) {
+      val storage = userKeysStorage
+      val errors = mutableListOf<String>()
+      storage.findAll().forEach { key ->
+        runCatching {
+          deleteKeyMaterial(key)
+          storage.delete(key)
+        }.onFailure { errors.add(it.localizedMessage ?: "Failed to delete key.") }
+      }
+      if (errors.isEmpty()) {
+        promise.resolve(null)
+      } else {
         rejectWithError(promise, BindingErrorCodes.BINDING_KEY_DELETE_ERROR,
-          error.localizedMessage ?: "Failed to delete all binding keys.", throwable = error)
+          errors.joinToString("; "))
       }
     }
   }

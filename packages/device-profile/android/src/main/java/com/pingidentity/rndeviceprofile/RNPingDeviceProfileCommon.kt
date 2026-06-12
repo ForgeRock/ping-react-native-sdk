@@ -7,7 +7,6 @@
 
 package com.pingidentity.rndeviceprofile
 
-import android.util.Log
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableArray
@@ -32,9 +31,10 @@ import com.pingidentity.rncore.error.mapThrowableToGenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import com.pingidentity.rncore.utils.launchBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -43,7 +43,7 @@ import kotlinx.serialization.json.JsonObject
 object RNPingDeviceProfileCommon {
   private const val LOCATION_SERVICES_CLASS =
     "com.google.android.gms.location.LocationServices"
-  private val scope = CoroutineScope(Dispatchers.IO)
+  private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private const val LOCATION_ERROR_MESSAGE =
     "LocationCollector requires Google Play Services Location. Add " +
       "\"com.google.android.gms:play-services-location\" to your app dependencies."
@@ -110,25 +110,18 @@ object RNPingDeviceProfileCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val deviceCollectors = buildCollectors(collectorTypes, includeLocation = true)
-        val jsonElement = if (deviceCollectors.isEmpty()) {
-          JsonObject(emptyMap())
-        } else {
-          deviceCollectors.collect()
-        }
-        val bridgePayload = when (jsonElement) {
-          is JsonObject -> JsonBridgeMapper.encodeJsonObject(jsonElement)
-          else -> JsonBridgeMapper.encodeJsonElement(jsonElement)
-        }
-        promise.resolve(bridgePayload)
-      } catch (e: Throwable) {
-        promise.reject(
-          mapThrowableToGenericError(e, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR),
-          e
-        )
+    scope.launchBridge(promise, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR) {
+      val deviceCollectors = buildCollectors(collectorTypes, includeLocation = true)
+      val jsonElement = if (deviceCollectors.isEmpty()) {
+        JsonObject(emptyMap())
+      } else {
+        deviceCollectors.collect()
       }
+      val bridgePayload = when (jsonElement) {
+        is JsonObject -> JsonBridgeMapper.encodeJsonObject(jsonElement)
+        else -> JsonBridgeMapper.encodeJsonElement(jsonElement)
+      }
+      promise.resolve(bridgePayload)
     }
   }
 
@@ -158,52 +151,44 @@ object RNPingDeviceProfileCommon {
       return
     }
 
-    scope.launch {
-      try {
-        val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
-        val callback = resolveDeviceProfileCallback(journeyId)
-        if (callback == null) {
-          val error = GenericError(
-            type = ErrorType.STATE_ERROR,
-            error = DeviceProfileErrorCodes.DEVICE_PROFILE_CALLBACK_NOT_FOUND,
-            message = "No active Device Profile callback found for journey $journeyId."
-          )
-          promise.reject(error)
-          return@launch
-        }
-
-        val result = callback.collect {
-          logger = resolvedLogger ?: Logger.NONE
-          collectors {
-            addAll(metadataCollectors)
-          }
-        }
-
-        result.fold(
-          onSuccess = {
-            promise.resolve(
-              createJourneyResultPayload(type = "success")
-            )
-          },
-          onFailure = { error ->
-            promise.reject(
-              mapThrowableToGenericError(
-                error,
-                DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
-              ),
-              error
-            )
-          }
+    scope.launchBridge(promise, DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR) {
+      val metadataCollectors = buildCollectors(collectorTypes, includeLocation = false)
+      val callback = resolveDeviceProfileCallback(journeyId)
+      if (callback == null) {
+        val error = GenericError(
+          type = ErrorType.STATE_ERROR,
+          error = DeviceProfileErrorCodes.DEVICE_PROFILE_CALLBACK_NOT_FOUND,
+          message = "No active Device Profile callback found for journey $journeyId."
         )
-      } catch (error: Throwable) {
-        promise.reject(
-          mapThrowableToGenericError(
-            error,
-            DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
-          ),
-          error
-        )
+        promise.reject(error)
+        return@launchBridge
       }
+
+      val result = callback.collect {
+        logger = resolvedLogger ?: Logger.NONE
+        collectors {
+          addAll(metadataCollectors)
+        }
+      }
+
+      result.fold(
+        onSuccess = {
+          promise.resolve(
+            createJourneyResultPayload(type = "success")
+          )
+        },
+        // The SDK wraps all exceptions in Result.Failure before launchBridge can
+        // intercept them, so we map errors explicitly here rather than rethrowing.
+        onFailure = { error ->
+          promise.reject(
+            mapThrowableToGenericError(
+              error,
+              DeviceProfileErrorCodes.DEVICE_PROFILE_COLLECT_ERROR
+            ),
+            error
+          )
+        }
+      )
     }
   }
 
