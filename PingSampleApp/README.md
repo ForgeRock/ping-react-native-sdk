@@ -57,13 +57,14 @@ See `.env.example` for the full list of supported keys including external IdP
 
 ## Step 2: Install dependencies
 
-This project is part of a Yarn workspace. Run `yarn install` from the **repo
-root** (not from `PingSampleApp/`) — this installs both workspace packages and
-the sample app's dependencies in one step:
+This project is part of a Yarn workspace. Run the following from the **repo
+root** (not from `PingSampleApp/`) — this installs all workspace dependencies
+and builds the SDK packages the sample app links against:
 
 ```sh
 # from repo root
 yarn install
+yarn packages:build
 ```
 
 ### iOS — install CocoaPods

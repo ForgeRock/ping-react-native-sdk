@@ -83,40 +83,9 @@ jobs:
         working-directory: ${{ env.IOS_DIRECTORY }}
         run: bundle exec pod install --repo-update
 
-      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator runtime
-      # component (SDK ≠ runtime — the SDK ships inside Xcode but the runtime is provisioned separately).
-      # This step prefers the pinned version but falls back to the newest installed Xcode whose major.minor
-      # iOS version has a matching pre-provisioned simulator runtime, so the destination is always bootable.
-      - name: Resolve Xcode version
-        run: |
-          PINNED="/Applications/Xcode_${{ env.XCODE_VERSION }}.app"
-          SELECTED=""
-          # Get all available iOS runtime versions (system-wide, not Xcode-scoped).
-          AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
-            | grep -i "iOS" | grep -v "unavailable" \
-            | grep -oE "[0-9]+\.[0-9]+" | sort -u)
-          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
-            [ -d "$app" ] || continue
-            # Derive the iOS SDK version this Xcode ships with (e.g. "26.1" from "iphonesimulator26.1").
-            xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
-              xcodebuild -showsdks 2>/dev/null \
-              | grep -i "iphonesimulator" | grep -oE "[0-9]+\.[0-9]+" | sort -rV | head -1)
-            [ -n "$xcode_ios" ] || continue
-            # Check if a runtime matching this Xcode's major.minor iOS version is provisioned.
-            if echo "$AVAILABLE_RUNTIMES" | grep -qx "$xcode_ios"; then
-              SELECTED="$app"
-              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
-              echo "Resolved Xcode: $app (iOS SDK $xcode_ios, runtime available)"
-              break
-            else
-              echo "Skipping $app: iOS $xcode_ios SDK present but runtime not provisioned (available: $(echo $AVAILABLE_RUNTIMES | tr '\n' ' '))"
-            fi
-          done
-          [ -n "$SELECTED" ] || { echo "No Xcode with a matching provisioned iOS simulator runtime found"; exit 1; }
-
       # Select Xcode version
       - name: Select Xcode version
-        run: sudo xcode-select -s "${{ env.XCODE_RESOLVED_PATH }}" && /usr/bin/xcodebuild -version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app && /usr/bin/xcodebuild -version
 
       # Clang module caches are sensitive to SDK header mtimes on the runner image.
       # This must run AFTER Xcode is selected so the active SDK is finalised.
@@ -136,32 +105,19 @@ jobs:
           chmod +x product/xcresultparser
           sudo mv product/xcresultparser /usr/local/bin/
 
-      # Resolve the best available iPhone simulator: prefer iPhone 17, fall back to any iPhone.
-      # Uses the device UDID as the destination to avoid OS version string mismatches between
-      # simctl runtime keys (e.g. "iOS-26-4") and xcodebuild's reported OS (e.g. "26.4.1").
+      # Resolve a simulator for Xcode 26.4.1 using xcrun simctl.
+      # xcodebuild -showdestinations only returns placeholders on a fresh CI runner.
+      # Pick the first iPhone from the iOS 26.4 runtime (matches the active Xcode SDK).
       # Sets DESTINATION and SIMULATOR_UDID in GITHUB_ENV for all subsequent steps.
       - name: Resolve simulator destination
         run: |
-          DEVICES_JSON=$(xcrun simctl list devices available --json)
-          RESULT=$(echo "$DEVICES_JSON" | jq -r '
-            [.devices | to_entries[]
-             | select(.key | test("iOS"))
-             | . as $runtime
-             | .value[]
-             | select(.name | test("^iPhone"))
-             | {
-                 os: ($runtime.key | gsub("com.apple.CoreSimulator.SimRuntime.iOS-"; "") | gsub("-"; ".")),
-                 name: .name,
-                 udid: .udid
-               }]
-            | (map(select(.name == "iPhone 17")) | sort_by(.os) | last)
-              // (sort_by(.os) | last)
-            | "\(.name)|\(.os)|\(.udid)"
-          ')
-          SIMULATOR_NAME=$(echo "$RESULT" | cut -d'|' -f1)
-          OS_VERSION=$(echo "$RESULT" | cut -d'|' -f2)
-          SIMULATOR_UDID=$(echo "$RESULT" | cut -d'|' -f3)
-          echo "Resolved: $SIMULATOR_NAME ($OS_VERSION) [$SIMULATOR_UDID]"
+          echo "--- xcrun simctl list devices available ---"
+          xcrun simctl list devices available
+          echo "-------------------------------------------"
+          SIMULATOR_UDID=$(xcrun simctl list devices "iOS 26.4" available | grep "iPhone" | grep -oE '[A-F0-9-]{36}' | head -1)
+          [ -n "$SIMULATOR_UDID" ] || { echo "No eligible iPhone simulator found for iOS 26.4"; exit 1; }
+          SIMULATOR_NAME=$(xcrun simctl list devices "iOS 26.4" available | grep "$SIMULATOR_UDID" | sed 's/ *(.*//' | xargs)
+          echo "Resolved: ${SIMULATOR_NAME} (iOS 26.4) [${SIMULATOR_UDID}]"
           echo "DESTINATION=platform=iOS Simulator,id=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
           echo "SIMULATOR_UDID=${SIMULATOR_UDID}" >> "$GITHUB_ENV"
 
