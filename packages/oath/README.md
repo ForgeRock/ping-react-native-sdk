@@ -238,18 +238,22 @@ interface OathCodeInfo {
 
 ## Error handling
 
-All rejected promises throw an `OathError` instance, which extends `PingError extends Error`.
+All rejected promises throw an `OathError` instance, which extends `PingError` (from `@ping-identity/rn-types`), which extends `Error`.
 Use `instanceof` to narrow the type:
 
 ```ts
 import { OathError } from '@ping-identity/rn-oath';
+import type { PingError } from '@ping-identity/rn-types'; // base type if needed
 
 try {
   const client = await createOathClient();
   const code = await client.generateCode('my-credential-id');
 } catch (err) {
   if (err instanceof OathError) {
-    console.log(err.code, err.type, err.message);
+    console.log(err.code); // OathErrorCode string — use for programmatic handling
+    console.log(err.type); // error category string from native layer
+    console.log(err.message); // human-readable description
+    console.log(err.status); // HTTP status code if applicable, otherwise undefined
   }
 }
 ```
@@ -276,4 +280,6 @@ try {
 
 ---
 
-© Copyright 2025-2026 Ping Identity Corporation. All Rights Reserved
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

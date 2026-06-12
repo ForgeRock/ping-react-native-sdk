@@ -16,6 +16,17 @@ import type {
 } from './types';
 import { OidcError } from './types';
 import type { LoggerInstance, Tokens } from '@ping-identity/rn-types';
+
+// TODO(SDKS-separate-ticket): noopLogger is duplicated — blocked on Jest ESM transform issue
+// with @forgerock/sdk-types when rn-types is re-imported after jest.resetModules().
+const noopLogger = {
+  nativeHandle: { id: '' },
+  changeLevel: () => {},
+  error: () => {},
+  warn: () => {},
+  info: () => {},
+  debug: () => {},
+};
 export { OidcProvider, useOidc } from './useOidc';
 export type {
   OidcHookActions,
@@ -28,15 +39,6 @@ export type {
  * In-memory registry mapping native client ids to JS logger instances.
  */
 const loggerRegistry = new Map<string, LoggerInstance>();
-
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Strip internal token expiry fields before returning tokens to consumers.
@@ -59,10 +61,6 @@ const sanitizeTokens = (
  * @returns OIDC client handle that wraps the native instance.
  * @throws Error when required configuration is missing or invalid.
  */
-// TODO(DX): Expose `dispose()` on OidcClient/OidcWebClient to deregister from
-//   CoreRuntime.oidcClientRegistry / oidcWebClientRegistry. Other client-based
-//   packages (journey, device-client have dispose()) follow this
-//   pattern; OIDC is the outlier. Handles currently live until app kill.
 export function createOidcClient(config: OidcClientConfig): OidcClient {
   if (!config.discoveryEndpoint && !config.openId) {
     throw new OidcError(
@@ -71,7 +69,6 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       'state_error',
     );
   }
-  // TODO(iOS SDK 2.x): enforce full OpenID override requirements to match the native iOS behavior.
   const jsLogger = config.logger ?? noopLogger;
   const rawLoggerId = jsLogger.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
@@ -143,6 +140,15 @@ export function createOidcClient(config: OidcClientConfig): OidcClient {
       } catch (error) {
         jsLogger.error('OIDC client endSession failed');
         throw OidcError.from(error);
+      }
+    },
+    dispose: async () => {
+      jsLogger.debug('OIDC client dispose requested');
+      loggerRegistry.delete(clientId);
+      try {
+        await getNativeModule().disposeClient(clientId);
+      } catch (error) {
+        jsLogger.warn(`OIDC client dispose failed: ${error}`);
       }
     },
   };
@@ -276,6 +282,16 @@ export function createOidcWebClient(client: OidcClient): OidcWebClient {
       }
       loggerInstance.debug('OIDC hasUser false');
       return null;
+    },
+    dispose: async () => {
+      loggerInstance.debug('OIDC web client dispose requested');
+      // loggerRegistry is intentionally not cleaned up here — the logger belongs to the
+      // base OidcClient, not the web client. Call OidcClient.dispose() to release it.
+      try {
+        await getNativeModule().disposeWebClient(webClientId);
+      } catch (error) {
+        loggerInstance.warn(`OIDC web client dispose failed: ${error}`);
+      }
     },
   };
 }

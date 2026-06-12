@@ -84,15 +84,15 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:device-client:2.0.0")
-  implementation("com.pingidentity.sdks:android:2.0.0")
-  implementation("com.pingidentity.sdks:logger:2.0.0")
+  implementation("com.pingidentity.sdks:device-client:2.0.1")
+  implementation("com.pingidentity.sdks:android:2.0.1")
+  implementation("com.pingidentity.sdks:logger:2.0.1")
   implementation "io.ktor:ktor-client-core:2.3.12"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
-  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))
   testImplementation "junit:junit:4.13.2"
   testImplementation "io.mockk:mockk:1.13.12"
   testImplementation "org.robolectric:robolectric:4.11.1"
-  testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1"
+  testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
 }

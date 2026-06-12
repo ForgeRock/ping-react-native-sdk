@@ -340,6 +340,26 @@ async function handleExternalIdpNode(
 }
 ```
 
+### With `useJourneyForm`
+
+Pass `handledCallbackTypes` so IdP fields are excluded from blocking submit issues:
+
+```ts
+import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
+import { nativeExtensionCallbackType } from '@ping-identity/rn-types';
+
+const [node, actions] = useJourney(client);
+const form = useJourneyForm(node, {
+  handledCallbackTypes: new Set([nativeExtensionCallbackType.IdpCallback]),
+});
+
+await externalIdp.authorizeForJourney(journey);
+
+if (form.canSubmit) {
+  await actions.next(form.input);
+}
+```
+
 ---
 
 ## API reference
@@ -407,4 +427,6 @@ Stable error codes:
 
 ---
 
-© Copyright 2025-2026 Ping Identity Corporation. All Rights Reserved
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

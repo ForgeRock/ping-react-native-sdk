@@ -444,11 +444,15 @@ export function normalizeCallbacks(
  *
  * @param node - Journey node from `useJourney`.
  * @param values - Form values keyed by normalized field id.
+ * @param handledCallbackTypes - Callback types already handled by the app via
+ *   native integration. Matching `integration_required` fields are excluded
+ *   from submit issues so `canSubmit` reflects true readiness.
  * @returns Submit planning result with payload and issues.
  */
 export function buildNextInput(
   node: JourneyNode | null | undefined,
   values: JourneyFormValues,
+  handledCallbackTypes?: ReadonlySet<JourneyCallbackType>,
 ): JourneyBuildNextInputResult {
   if (!node || node.type !== 'ContinueNode') {
     return {
@@ -476,22 +480,26 @@ export function buildNextInput(
     }
 
     if (field.executionMode === 'auto_capable') {
-      issues.push({
-        code: 'INTEGRATION_REQUIRED',
-        message: `Callback "${callbackType}" requires additional integration.`,
-        fieldId: field.id,
-        callbackType,
-      });
+      if (!handledCallbackTypes?.has(callbackType)) {
+        issues.push({
+          code: 'INTEGRATION_REQUIRED',
+          message: `Callback "${callbackType}" requires additional integration.`,
+          fieldId: field.id,
+          callbackType,
+        });
+      }
       return;
     }
 
     if (field.executionMode === 'integration_required') {
-      issues.push({
-        code: 'INTEGRATION_REQUIRED',
-        message: `Callback "${callbackType}" requires additional integration.`,
-        fieldId: field.id,
-        callbackType,
-      });
+      if (!handledCallbackTypes?.has(callbackType)) {
+        issues.push({
+          code: 'INTEGRATION_REQUIRED',
+          message: `Callback "${callbackType}" requires additional integration.`,
+          fieldId: field.id,
+          callbackType,
+        });
+      }
       return;
     }
 

@@ -41,15 +41,14 @@ Pod::Spec.new do |s|
 
   # Native Ping SDK dependency
   s.dependency 'PingBrowser', '2.0.0'
+  s.dependency 'PingLogger', '2.0.0'
   s.dependency 'RNPingCore'
-  # TODO: Remove RNPingLogger once PingBrowser exposes BrowserLauncher.logger as public.
-  # At that point, logger resolution can be wired through CoreRuntime.loggerRegistry
-  # (see RNPingBrowserCommon.swift TODO) and this direct dependency is no longer needed.
   s.dependency 'RNPingLogger'
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
     test_spec.dependency 'PingBrowser', '2.0.0'
+    test_spec.dependency 'PingLogger', '2.0.0'
     test_spec.dependency 'RNPingCore'
     test_spec.dependency 'RNPingLogger'
   end

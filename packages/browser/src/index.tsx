@@ -7,6 +7,7 @@
 
 import { Platform } from 'react-native';
 import { getNativeModule } from './NativeRNPingBrowser';
+import { noopLogger } from '@ping-identity/rn-types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
 import type {
@@ -16,18 +17,6 @@ import type {
   BrowserResult,
 } from './types';
 import { BrowserError } from './types';
-
-/**
- * No-op logger used when callers do not provide one.
- */
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Resolve JS logger instance and native logger identifier for bridge calls.

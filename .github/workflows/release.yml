@@ -84,3 +84,22 @@ jobs:
           VERSION=$(node -p "require('./packages/core/package.json').version")
           git tag "v$VERSION"
           git push origin "v$VERSION"
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          NOTES=$(VERSION="$VERSION" node -e "
+            const fs = require('fs');
+            const v = process.env.VERSION;
+            const log = fs.readFileSync('packages/core/CHANGELOG.md', 'utf8');
+            const sections = log.split(/\n## /);
+            const section = sections.find(s => s.startsWith(v));
+            const content = section ? section.split('\n').slice(1).join('\n').trim() : '';
+            process.stdout.write(content || 'See CHANGELOG.md for details.');
+          ")
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes "$NOTES" \
+            --verify-tag

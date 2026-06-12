@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { noopLogger } from '@ping-identity/rn-types';
 import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
 import { getNativeModule } from './NativeRNPingDeviceProfile';
 import { DeviceProfileError } from './types';
@@ -14,18 +15,6 @@ import type {
   DeviceProfileLoggerOptions,
   DeviceProfileJourneyResult,
 } from './types';
-
-/**
- * No-op logger used when callers do not provide one.
- */
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Resolve JS logger instance and native logger identifier for bridge calls.

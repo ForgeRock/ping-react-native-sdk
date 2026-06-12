@@ -108,6 +108,8 @@ export interface Spec extends TurboModule {
   ): Promise<Record<string, unknown>>;
   revoke(webClientId: string): Promise<void>;
   logout(webClientId: string): Promise<void>;
+  disposeClient(clientId: string): Promise<void>;
+  disposeWebClient(webClientId: string): Promise<void>;
 }
 
 /**
@@ -116,21 +118,27 @@ export interface Spec extends TurboModule {
  * @returns Native module implementation for the current architecture.
  * @throws Error when no native module is registered.
  */
+let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
+  if (_nativeModule) return _nativeModule;
+
   const turbo = TurboModuleRegistry.get<Spec>('RNPingOidc');
   if (turbo) {
-    return turbo;
+    _nativeModule = turbo;
+    return _nativeModule;
   }
 
   const classic = NativeModules.RNPingOidcClassic as Spec | undefined;
   if (classic) {
-    return classic;
+    _nativeModule = classic;
+    return _nativeModule;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-oidc] Native module RNPingOidc not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }

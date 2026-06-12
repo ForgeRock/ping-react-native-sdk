@@ -26,18 +26,9 @@ import type {
 } from './types';
 import type { NativeJourneyConfig } from './NativeRNPingJourney';
 import { JourneyError } from './types/error.types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 
 type StorageHandleKind = 'session' | 'oidc';
-
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Resolves and validates a storage handle id for Journey module config.

@@ -13,6 +13,7 @@ jest.mock('react-native', () => ({
 }));
 
 import {
+  _resetNativeModuleForTesting,
   fromNativeAuthorizeResult,
   getNativeModule,
   toNativeAuthorizeOptions,
@@ -23,6 +24,7 @@ import {
 describe('getNativeModule', () => {
   beforeEach(() => {
     jest.resetModules();
+    _resetNativeModuleForTesting();
     (TurboModuleRegistry.get as jest.Mock).mockReset();
     // Reset NativeModules to empty by default
     Object.keys(NativeModules).forEach((key) => {

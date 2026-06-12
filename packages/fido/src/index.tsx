@@ -15,7 +15,7 @@ import {
   toNativeJourneyRegistrationOptions,
   toNativeRegistrationOptions,
 } from './NativeRNPingFido';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import { noopLogger } from '@ping-identity/rn-types';
 import type {
   FidoClient,
   FidoClientConfig,
@@ -30,15 +30,6 @@ import type {
   JourneyInstance,
 } from './types';
 import { FidoError } from './types';
-
-const noopLogger: LoggerInstance = {
-  nativeHandle: { id: '' },
-  changeLevel: () => {},
-  error: () => {},
-  warn: () => {},
-  info: () => {},
-  debug: () => {},
-};
 
 /**
  * Creates a reusable FIDO client instance.

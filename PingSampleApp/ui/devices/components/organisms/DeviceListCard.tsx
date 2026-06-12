@@ -8,7 +8,11 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
-import type { DeviceKind, DeviceOf } from '@ping-identity/rn-device-client';
+import type {
+  DeviceByKind,
+  DeviceKind,
+  DeviceOf,
+} from '@ping-identity/rn-device-client';
 import { commonStyles } from '../../../../src/styles/common';
 import { colors } from '../../../../src/styles/colors';
 import DeviceListSeparator from '../atoms/DeviceListSeparator';
@@ -30,7 +34,7 @@ type DeviceListCardProps = {
   /**
    * Devices to render.
    */
-  devices: DeviceOf<DeviceKind>[];
+  devices: DeviceOf<keyof DeviceByKind>[];
   /**
    * Current list status.
    */
@@ -49,14 +53,14 @@ type DeviceListCardProps = {
    * @param device - Selected device.
    * @returns Void.
    */
-  onEdit: (device: DeviceOf<DeviceKind>) => void;
+  onEdit: (device: DeviceOf<keyof DeviceByKind>) => void;
   /**
    * Trigger delete flow for a device.
    *
    * @param device - Selected device.
    * @returns Void.
    */
-  onDelete: (device: DeviceOf<DeviceKind>) => void;
+  onDelete: (device: DeviceOf<keyof DeviceByKind>) => void;
 };
 
 /**

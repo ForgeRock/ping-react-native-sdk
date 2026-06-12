@@ -12,10 +12,14 @@ jest.mock('react-native', () => ({
   TurboModuleRegistry: { get: jest.fn() },
 }));
 
-import { getNativeModule } from '../NativeRNPingOath';
+import {
+  _resetNativeModuleForTesting,
+  getNativeModule,
+} from '../NativeRNPingOath';
 
 describe('getNativeModule', () => {
   beforeEach(() => {
+    _resetNativeModuleForTesting();
     (TurboModuleRegistry.get as jest.Mock).mockReset();
     Object.keys(NativeModules).forEach((key) => {
       delete (NativeModules as Record<string, unknown>)[key];

@@ -201,4 +201,14 @@ class RNPingOidcClassicModule(
   fun logout(webClientId: String, promise: Promise) {
     RNPingOidcCommon.logout(webClientId, promise)
   }
+
+  @ReactMethod
+  fun disposeClient(clientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeClient(clientId, promise)
+  }
+
+  @ReactMethod
+  fun disposeWebClient(webClientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeWebClient(webClientId, promise)
+  }
 }

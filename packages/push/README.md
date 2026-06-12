@@ -28,13 +28,11 @@ Push MFA for React Native — enrollment, credential management, notification pr
 
 ## Installation
 
-> **Note:** This module requires that the `@ping-identity/rn-core` and `@ping-identity/rn-storage` modules are already set up and installed.
+> **Note:** This module requires that the `@ping-identity/rn-core` module is already set up and installed.
 
 ```bash
 # Install & setup the core module
 yarn add @ping-identity/rn-core
-# Install the rn-storage module
-yarn add @ping-identity/rn-storage
 # Install the rn-push module
 yarn add @ping-identity/rn-push
 # If you are developing your app using iOS, run this command
@@ -44,7 +42,8 @@ cd ios && pod install
 Optional integration packages:
 
 ```bash
-yarn add @ping-identity/rn-logger
+yarn add @ping-identity/rn-logger   # JS/native log channel
+yarn add @ping-identity/rn-storage  # custom push credential storage backend
 ```
 
 **FCM peer dependency (Android)** — add to your app's `build.gradle`:
@@ -331,17 +330,21 @@ the sample app for a working example.
 
 ## Error handling
 
-All methods reject with a `PushError` instance, which extends `PingError extends Error`.
+All methods reject with a `PushError` instance, which extends `PingError` (from `@ping-identity/rn-types`), which extends `Error`.
 Use `instanceof` to narrow the type:
 
 ```ts
 import { PushError } from '@ping-identity/rn-push';
+import type { PingError } from '@ping-identity/rn-types'; // base type if needed
 
 try {
   await client.addCredentialFromUri(uri);
 } catch (err) {
   if (err instanceof PushError) {
-    console.log(err.code, err.type, err.message);
+    console.log(err.code); // PushErrorCode string — use for programmatic handling
+    console.log(err.type); // error category string from native layer
+    console.log(err.message); // human-readable description
+    console.log(err.status); // HTTP status code if applicable, otherwise undefined
   }
 }
 ```
@@ -361,4 +364,4 @@ See `PushErrorCode` in the package types for the full list.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

@@ -186,6 +186,14 @@ class RNPingOidcModule(reactContext: ReactApplicationContext) :
     RNPingOidcCommon.logout(webClientId, promise)
   }
 
+  override fun disposeClient(clientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeClient(clientId, promise)
+  }
+
+  override fun disposeWebClient(webClientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeWebClient(webClientId, promise)
+  }
+
   companion object {
     /** Name used for React Native module registration. */
     const val NAME = "RNPingOidc"

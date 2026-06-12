@@ -226,6 +226,20 @@ export type JourneyFormMeta = {
 };
 
 /**
+ * Options accepted by {@link useJourneyForm}.
+ */
+export type JourneyFormOptions = {
+  /**
+   * Callback types that the app has already handled via native integration
+   * (for example FIDO, binding, or external IdP). When provided, matching
+   * `integration_required` fields are excluded from submit issues so that
+   * `canSubmit` reflects true readiness rather than blocking on already-handled
+   * integrations.
+   */
+  handledCallbackTypes?: ReadonlySet<JourneyCallbackType>;
+};
+
+/**
  * Updater argument accepted by `setValues` from {@link useJourneyForm}.
  */
 export type JourneyFormValuesUpdater =

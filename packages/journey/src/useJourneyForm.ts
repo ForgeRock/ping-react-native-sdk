@@ -10,6 +10,7 @@ import { buildNextInput, normalizeCallbacks } from './callbackHelpers';
 import type {
   JourneyBuildNextInputResult,
   JourneyFormMeta,
+  JourneyFormOptions,
   JourneyFormResult,
   JourneyFormValue,
   JourneyFormValues,
@@ -161,10 +162,12 @@ function deriveMeta(
  * ```
  *
  * @param node - Current Journey node from `useJourney`.
+ * @param options - Optional form options.
  * @returns Normalized fields, managed values, and submit planning helpers.
  */
 export function useJourneyForm(
   node: JourneyNode | null | undefined,
+  options: JourneyFormOptions = {},
 ): JourneyFormResult {
   const fields = useMemo<JourneyNormalizedField[]>(
     () => getNormalizedFields(node),
@@ -201,8 +204,8 @@ export function useJourneyForm(
   }
 
   const submitPlan = useMemo<JourneyBuildNextInputResult>(
-    () => buildNextInput(node, values),
-    [node, values],
+    () => buildNextInput(node, values, options.handledCallbackTypes),
+    [node, values, options.handledCallbackTypes],
   );
 
   const meta = useMemo<JourneyFormMeta>(

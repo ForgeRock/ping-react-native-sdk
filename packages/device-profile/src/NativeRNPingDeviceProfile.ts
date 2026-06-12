@@ -47,7 +47,10 @@ export interface Spec extends TurboModule {
 }
 
 /**
- * Resolve by probing TurboModule first, then falling back to the classic bridge module.
+ * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
+ *
+ * @remarks
+ * Not cached — called once at module load via `export default getNativeModule()`.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingDeviceProfile');
@@ -60,11 +63,12 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-device-profile] Native module RNPingDeviceProfile not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 

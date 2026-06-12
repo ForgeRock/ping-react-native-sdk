@@ -156,10 +156,6 @@ try {
 }
 ```
 
-## TODO
-
-- Add an iOS test runner target to execute module unit tests.
-
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

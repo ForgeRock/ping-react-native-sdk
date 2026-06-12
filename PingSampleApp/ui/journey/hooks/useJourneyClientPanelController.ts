@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useJourney,
   useJourneyForm,
+  type JourneyCallbackType,
   type JourneyClient,
   type JourneyError,
   type JourneyFormResult,
@@ -46,6 +47,15 @@ import { useJourneyIntegrationRunner } from './useJourneyIntegrationRunner';
 const SELECT_IDP_CALLBACK_TYPE: string = 'SelectIdpCallback';
 const REDIRECT_CALLBACK_TYPE: string = 'RedirectCallback';
 const IDP_CALLBACK_TYPES = new Set<string>(['IdPCallback', 'IdpCallback']);
+
+// Callback types handled by the fido and binding integrations — passed to
+// useJourneyForm so canSubmit is not blocked on integration_required fields.
+const INTEGRATION_HANDLED_CALLBACK_TYPES = new Set<JourneyCallbackType>([
+  'FidoRegistrationCallback',
+  'FidoAuthenticationCallback',
+  'DeviceBindingCallback',
+  'DeviceSigningVerifierCallback',
+]);
 
 /**
  * Options for the Journey client panel controller hook.
@@ -405,7 +415,9 @@ export function useJourneyClientPanelController(
   const [node, actions] = useJourney();
   const { start, next, resume, user, logoutUser, dispose, loading, error } =
     actions;
-  const form = useJourneyForm(node);
+  const form = useJourneyForm(node, {
+    handledCallbackTypes: INTEGRATION_HANDLED_CALLBACK_TYPES,
+  });
   const formRef = useRef(form);
   useEffect(() => {
     formRef.current = form;
@@ -671,10 +683,13 @@ export function useJourneyClientPanelController(
           return true;
         }
 
-        const resumedNode = await resume(browserResult.url);
+        if (browserResult.type !== 'success' || !('url' in browserResult))
+          return true;
+
+        const resumedNode = await resume(browserResult.url as string);
         hasCompletedExternalIdpRedirectRef.current = true;
         appendDebug('Journey external IdP browser resume completed', {
-          url: browserResult.url,
+          url: browserResult.url as string,
           callbackTypes:
             resumedNode.type === 'ContinueNode'
               ? resumedNode.callbacks?.map(callback => callback.type)

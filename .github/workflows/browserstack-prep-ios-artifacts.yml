@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 60
 
     env:
-      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.4.1' }}
+      XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.2' }}
       RUBY_VERSION: '2.6.10'
       BUNDLE_GEMFILE: ${{ github.workspace }}/PingTestRunner/Gemfile
       PING_TEST_RUNNER_DIR: PingTestRunner
@@ -52,33 +52,67 @@ jobs:
       - name: Setup project dependencies
         uses: ./.github/actions/setup-proj
 
-      # Resolve Xcode: the pinned XCODE_VERSION may exist on the runner but lack the iOS simulator runtime
-      # component (SDK ≠ runtime — the SDK ships inside Xcode but the runtime is provisioned separately).
-      # This step prefers the pinned version but falls back to the newest installed Xcode whose major.minor
-      # iOS version has a matching pre-provisioned simulator runtime, so the archive destination is always valid.
+      # Xcode version must be pinned to match the iOS SDK used when building XCUITest artifacts for
+      # BrowserStack real-device testing. Building with a newer Xcode (e.g. 26.x iOS SDK) produces
+      # binaries that reference XCTest symbols not present on older iOS real devices (e.g.
+      # _OBJC_CLASS_$_XCTCommandLineToolHelper), causing a dyld crash before any test runs.
+      # The pinned version must target an SDK compatible with the oldest iOS version used in BrowserStack
+      # test runs. These builds target real devices (-sdk iphoneos / generic/platform=iOS) — simulator
+      # runtimes are not relevant here and must not be used as a selection gate.
+      #
+      # Root cause of prior failures:
+      # 1. The original step used `xcrun simctl list runtimes` to gate Xcode selection. Because simulator
+      #    runtimes are provisioned independently of Xcode on GitHub-hosted runners, the pinned Xcode was
+      #    rejected whenever its matching simulator runtime was absent — even though this workflow never
+      #    touches a simulator. This caused fallback to a newer Xcode (e.g. 26.4) whose XCTest SDK
+      #    produced device binaries incompatible with iOS 17/18 BrowserStack devices.
+      # 2. Switching to a directory existence check was not sufficient: Xcode can be installed on the
+      #    runner without its device platform component (Platforms/iPhoneOS.platform). When the platform
+      #    is missing, ibtool fails with "iOS X.Y Platform Not Installed" during storyboard compilation
+      #    even though xcodebuild is present and reports a valid version. The fix therefore checks for
+      #    the actual iPhoneOS SDK directory inside the Xcode bundle, which is what ibtool and actool
+      #    require at build time.
       - name: Resolve Xcode version
         run: |
+          # Check whether the iphoneos SDK platform component is installed inside a given Xcode app.
+          has_iphoneos_sdk() {
+            [ -d "$1/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs" ] \
+              && ls "$1/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs"/iPhoneOS*.sdk 2>/dev/null | grep -q .
+          }
+
           PINNED="/Applications/Xcode_${XCODE_VERSION}.app"
-          SELECTED=""
-          AVAILABLE_RUNTIMES=$(xcrun simctl list runtimes 2>/dev/null \
-            | grep -i "iOS" | grep -v "unavailable" \
-            | grep -oE "[0-9]+\.[0-9]+" | sort -u)
-          for app in "$PINNED" $(ls -d /Applications/Xcode*.app 2>/dev/null | sort -rV); do
-            [ -d "$app" ] || continue
-            xcode_ios=$(DEVELOPER_DIR="$app/Contents/Developer" \
-              xcodebuild -showsdks 2>/dev/null \
-              | grep -i "iphonesimulator" | grep -oE "[0-9]+\.[0-9]+" | sort -rV | head -1)
-            [ -n "$xcode_ios" ] || continue
-            if echo "$AVAILABLE_RUNTIMES" | grep -qx "$xcode_ios"; then
-              SELECTED="$app"
-              echo "XCODE_RESOLVED_PATH=$app" >> "$GITHUB_ENV"
-              echo "Resolved Xcode: $app (iOS SDK $xcode_ios, runtime available)"
-              break
+          if [ -d "$PINNED" ] && has_iphoneos_sdk "$PINNED"; then
+            echo "XCODE_RESOLVED_PATH=$PINNED" >> "$GITHUB_ENV"
+            echo "Resolved Xcode: $PINNED (pinned version ${XCODE_VERSION}, iphoneos SDK present)"
+          else
+            if [ -d "$PINNED" ]; then
+              echo "::warning::Pinned Xcode ${XCODE_VERSION} found but iphoneos SDK platform not installed"
             else
-              echo "Skipping $app: iOS $xcode_ios SDK present but runtime not provisioned (available: $(echo $AVAILABLE_RUNTIMES | tr '\n' ' '))"
+              echo "::warning::Pinned Xcode ${XCODE_VERSION} not found at $PINNED"
             fi
-          done
-          [ -n "$SELECTED" ] || { echo "No Xcode with a matching provisioned iOS simulator runtime found"; exit 1; }
+            echo "Available Xcode installs (with iphoneos SDK):"
+            AVAILABLE=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V)
+            for app in $AVAILABLE; do
+              has_iphoneos_sdk "$app" && echo "  $app" || echo "  $app (no iphoneos SDK)"
+            done
+            # Pick the next version after the pinned one that has the iphoneos SDK installed
+            NEXT=""
+            for app in $(echo "$AVAILABLE" | sort -V); do
+              ver=$(echo "$app" | grep -oE "Xcode_[0-9]+(\.[0-9]+)*" | sed 's/Xcode_//')
+              [ -z "$ver" ] && continue
+              if awk -v v="$ver" -v pin="${XCODE_VERSION}" 'BEGIN{exit !(v > pin)}' && has_iphoneos_sdk "$app"; then
+                NEXT="$app"
+                break
+              fi
+            done
+            if [ -n "$NEXT" ]; then
+              echo "XCODE_RESOLVED_PATH=$NEXT" >> "$GITHUB_ENV"
+              echo "Falling back to next available version with iphoneos SDK: $NEXT"
+            else
+              echo "::error::Pinned Xcode ${XCODE_VERSION} unavailable and no newer version with iphoneos SDK found"
+              exit 1
+            fi
+          fi
 
       - name: Select Xcode version
         run: sudo xcode-select -s "$XCODE_RESOLVED_PATH" && /usr/bin/xcodebuild -version

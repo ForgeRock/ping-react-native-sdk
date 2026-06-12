@@ -125,7 +125,6 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       registerConfig(config, registry: CoreRuntime.sessionStorageConfigRegistry)
     }
   }
@@ -137,7 +136,6 @@ public class RNPingStorageCommon: NSObject {
   @objc
   public static func registerOidcStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
-      // TODO: Resolve and apply native logger from `loggerId` once storage logger wiring is implemented.
       registerConfig(config, registry: CoreRuntime.oidcStorageConfigRegistry)
     }
   }

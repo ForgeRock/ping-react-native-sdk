@@ -178,7 +178,7 @@ export type BaseStorageConfig = {
      *
      * **Platform:** iOS only
      *
-     * @defaultValue 'com.pingidentity.rnsampleapp.keyalias'
+     * @defaultValue `'com.pingidentity.rnstorage.storage'`
      */
     account?: string;
 
@@ -448,6 +448,10 @@ export interface Spec extends TurboModule {
  *
  * @returns The native RNPingStorage module implementation
  * @throws {Error} If no native module is registered
+ *
+ * @remarks
+ * Not cached — this function is called once at module load via `export default getNativeModule()`,
+ * so module evaluation itself handles the single-call guarantee.
  */
 export function getNativeModule(): Spec {
   const turbo = TurboModuleRegistry.get<Spec>('RNPingStorage');
@@ -460,11 +464,12 @@ export function getNativeModule(): Spec {
     return classic;
   }
 
+  const availableModules =
+    '\nAvailable NativeModules: ' + JSON.stringify(Object.keys(NativeModules));
   throw new Error(
     '[@ping-identity/rn-storage] Native module RNPingStorage not found.\n' +
-      'Ensure the library is linked correctly and the app has been rebuilt.\n' +
-      'Available NativeModules: ' +
-      JSON.stringify(Object.keys(NativeModules)),
+      'Ensure the library is linked correctly and the app has been rebuilt.' +
+      availableModules,
   );
 }
 
