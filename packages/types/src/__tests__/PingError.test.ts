@@ -78,6 +78,51 @@ describe('PingError', () => {
       expect(err.code).toBe('UNKNOWN_ERROR');
     });
 
+    it('reads code from r.code when error and userInfo.error are absent (iOS bridge shape)', () => {
+      const raw = {
+        code: 'BINDING_SIGN_ERROR',
+        domain: 'PingBinding.DeviceBindingStatus',
+        nativeStackIOS: [],
+        userInfo: {},
+      };
+      const err = PingError.from(raw);
+      expect(err.code).toBe('BINDING_SIGN_ERROR');
+    });
+
+    it('reads error/type/message from userInfo when top-level fields are absent (Android bridge shape)', () => {
+      const raw = {
+        name: 'com.pingidentity.device.binding.authenticator.exception.AbortException',
+        code: 'BINDING_CANCELLED',
+        nativeStackAndroid: [],
+        userInfo: {
+          message: 'User cancelled the operation',
+          error: 'BINDING_CANCELLED',
+          type: 'internal_error',
+        },
+      };
+      const err = PingError.from(raw);
+      expect(err.code).toBe('BINDING_CANCELLED');
+      expect(err.type).toBe('internal_error');
+      expect(err.message).toBe('User cancelled the operation');
+    });
+
+    it('prefers top-level fields over userInfo when both are present', () => {
+      const raw = {
+        error: 'TOP_LEVEL_CODE',
+        type: 'top_level_type',
+        message: 'top level message',
+        userInfo: {
+          error: 'USERINFO_CODE',
+          type: 'userinfo_type',
+          message: 'userinfo message',
+        },
+      };
+      const err = PingError.from(raw);
+      expect(err.code).toBe('TOP_LEVEL_CODE');
+      expect(err.type).toBe('top_level_type');
+      expect(err.message).toBe('top level message');
+    });
+
     it('wraps a plain Error preserving its message', () => {
       const original = new Error('FIDO_REGISTER_ERROR');
       const err = PingError.from(original);

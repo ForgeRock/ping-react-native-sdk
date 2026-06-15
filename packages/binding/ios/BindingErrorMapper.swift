@@ -46,6 +46,22 @@ extension RNPingBindingCommon {
         return defaultCode
       }
     }
+    // callback.bind/sign wraps DeviceBindingError into DeviceBindingStatus before
+    // returning the Result — check it before falling through to NSError inspection.
+    if let status = error as? DeviceBindingStatus {
+      switch status {
+      case .unAuthorize, .invalidCustomClaims:
+        return .authFailed
+      case .abort:
+        return .cancelled
+      case .timeout:
+        return .cancelled
+      case .clientNotRegistered:
+        return .notRegistered
+      case .unsupported:
+        return .unsupportedDevice
+      }
+    }
     let nsError = error as NSError
     // OSStatus -25300 surfaces when the Secure Enclave key was
     // invalidated by a biometric enrollment change.

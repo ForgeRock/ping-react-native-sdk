@@ -2504,6 +2504,7 @@ PODS:
     - glog
     - hermes-engine
     - PingBrowser (= 2.0.0)
+    - PingLogger (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3590,7 +3591,7 @@ SPEC CHECKSUMS:
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingBinding: 10541621edbb8b6885f069ee6316843498d6cc93
-  RNPingBrowser: 63741144ed5088a03a765a4d7c42be27f18fdd53
+  RNPingBrowser: 885e16bcc7d628ea833becef1ce3ef8ec9320bfa
   RNPingCore: fe4e99005afb728904b634a2b29bd9f7df0ed7a2
   RNPingDeviceClient: b62cdc274eff19c09fce49b7d7b7e1166a81a044
   RNPingDeviceId: f37f85e0807a5b0e284631c83e28e0dfd4a78712
