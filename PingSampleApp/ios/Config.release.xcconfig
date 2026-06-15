@@ -1,9 +1,2 @@
 #include "Pods/Target Support Files/Pods-PingSampleApp/Pods-PingSampleApp.release.xcconfig"
-
-GOOGLE_IOS_CLIENT_ID=1043559224226-93t50js7chfvihrgtvnb77lac0ojmvbs.apps.googleusercontent.com
-GOOGLE_IOS_REVERSED_CLIENT_ID=com.googleusercontent.apps.1043559224226-93t50js7chfvihrgtvnb77lac0ojmvbs
-FACEBOOK_APP_ID=your-facebook-app-id
-FACEBOOK_CLIENT_TOKEN=your-facebook-client-token
-FACEBOOK_LOGIN_PROTOCOL_SCHEME=fbyour-facebook-app-id
-
 #include? "Config.local.xcconfig"
