@@ -23,6 +23,7 @@ module.exports = {
     args: {
       config: 'e2e/jest.config.js',
     },
+    retries: process.env.CI ? 4 : 0,
     jest: {
       setupTimeout: 300000,
       retries: process.env.CI ? 4 : 0,
