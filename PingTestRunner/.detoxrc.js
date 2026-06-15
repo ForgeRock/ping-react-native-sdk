@@ -22,7 +22,6 @@ module.exports = {
   testRunner: {
     args: {
       config: 'e2e/jest.config.js',
-      _: ['e2e'],
     },
     jest: {
       setupTimeout: 300000,
