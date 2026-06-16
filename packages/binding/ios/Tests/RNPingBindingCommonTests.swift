@@ -475,6 +475,54 @@ final class RNPingBindingCommonTests: XCTestCase {
     XCTAssertEqual(code, "BINDING_SIGN_ERROR")
   }
 
+  func testDeviceBindingStatusUnAuthorizeMapsToAuthFailed() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.unAuthorize,
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_AUTH_FAILED")
+  }
+
+  func testDeviceBindingStatusAbortMapsToCancelled() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.abort,
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_CANCELLED")
+  }
+
+  func testDeviceBindingStatusTimeoutMapsToCancelled() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.timeout,
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_CANCELLED")
+  }
+
+  func testDeviceBindingStatusClientNotRegisteredMapsToNotRegistered() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.clientNotRegistered,
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_NOT_REGISTERED")
+  }
+
+  func testDeviceBindingStatusUnsupportedMapsToUnsupportedDevice() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.unsupported(errorMessage: nil),
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_UNSUPPORTED_DEVICE")
+  }
+
+  func testDeviceBindingStatusInvalidCustomClaimsMapsToAuthFailed() {
+    let code = RNPingBindingCommon._test_resolveBindingErrorCode(
+      DeviceBindingStatus.invalidCustomClaims,
+      defaultCode: "BINDING_SIGN_ERROR"
+    )
+    XCTAssertEqual(code, "BINDING_AUTH_FAILED")
+  }
+
   // MARK: - Key Management
 
   func testGetAllKeysResolvesWithArray() async {

@@ -193,14 +193,41 @@ export class PingError extends Error {
     if (raw instanceof PingError) return raw;
 
     const r = raw as Record<string, unknown>;
+    // React Native wraps native rejections differently per platform:
+    // - Android: GenericError fields (error, type, message) are inside `userInfo`;
+    //   the top-level object also carries `nativeStackAndroid` and `code`.
+    // - iOS: `userInfo` is empty; the error code is in the top-level `code` field
+    //   (the first argument passed to RCTPromiseRejectBlock).
+    // Resolution order: r.error → userInfo.error → r.code → 'UNKNOWN_ERROR'.
+    const u =
+      r?.userInfo && typeof r.userInfo === 'object'
+        ? (r.userInfo as Record<string, unknown>)
+        : null;
     const message =
       typeof r?.message === 'string'
         ? r.message
         : typeof r?.error === 'string'
           ? r.error
-          : String(raw);
-    const code = typeof r?.error === 'string' ? r.error : 'UNKNOWN_ERROR';
-    const type = typeof r?.type === 'string' ? r.type : 'unknown_error';
+          : typeof u?.message === 'string'
+            ? u.message
+            : typeof u?.error === 'string'
+              ? u.error
+              : String(raw);
+    const code =
+      typeof r?.error === 'string'
+        ? r.error
+        : typeof u?.error === 'string'
+          ? u.error
+          : // iOS bridge puts the error code in `r.code` when userInfo is empty
+            typeof r?.code === 'string'
+            ? r.code
+            : 'UNKNOWN_ERROR';
+    const type =
+      typeof r?.type === 'string'
+        ? r.type
+        : typeof u?.type === 'string'
+          ? u.type
+          : 'unknown_error';
     const status = typeof r?.status === 'number' ? r.status : undefined;
 
     const err = new PingError(message, code, type, status);
