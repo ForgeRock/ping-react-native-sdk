@@ -142,5 +142,5 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 [codecov-url]: https://codecov.io/gh/ForgeRock/ping-react-native-sdk
 [npm-image]: https://img.shields.io/npm/v/@ping-identity/rn-journey.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@ping-identity/rn-journey
-[build-image]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/build-packages.yml/badge.svg
-[build-url]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/build-packages.yml
+[build-image]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/ci.yml/badge.svg?branch=main
+[build-url]: https://github.com/ForgeRock/ping-react-native-sdk/actions/workflows/ci.yml
