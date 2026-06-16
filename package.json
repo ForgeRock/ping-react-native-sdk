@@ -88,6 +88,9 @@
     "typedoc": "^0.28",
     "typescript-eslint": "^8.56.0"
   },
+  "resolutions": {
+    "js-yaml": "4.2.0"
+  },
   "engines": {
     "node": ">=20"
   },
