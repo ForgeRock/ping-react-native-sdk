@@ -1,6 +1,7 @@
 {
   "scanSettings": {
-    "configMode": "AUTO",
+    "configMode": "LOCAL",
+    "uaConfigMergeSetting": "APPEND",
     "configExternalURL": "",
     "projectToken": "",
     "baseBranches": []
