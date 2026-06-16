@@ -145,7 +145,7 @@ export type JourneyInstance = {
 
 /**
  * No-op logger that satisfies the {@link LoggerInstance} contract without
- * emitting anything. Used as the default when no logger is provided.
+ * emitting output. Used as the default when no logger is provided.
  */
 export const noopLogger: LoggerInstance = {
   nativeHandle: { id: '' },
