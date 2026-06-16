@@ -31,6 +31,20 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force "androidx.test.core:core:1.6.1"
+            // espresso-core ≤3.6.x calls getDeclaredMethod("getInstance") on
+            // android.hardware.input.InputManager via reflection inside
+            // InputManagerEventInjectionStrategy.initialize(). That no-arg static
+            // method was removed from the Android framework in newer API levels,
+            // causing a NoSuchMethodException crash at DetoxMain.initEspresso() before
+            // any test can run — seen on both the local Pixel_10 (API 37) emulator and
+            // on BrowserStack real devices. espresso-core 3.7.0 replaced the reflection
+            // call with Context.getSystemService(InputManager.class) and is compatible
+            // with all API levels we target. The @browserstack/detox package declares
+            // espresso 3.6.1 transitively, so we force 3.7.0 here to override it.
+            force "androidx.test.espresso:espresso-core:3.7.0"
+            force "androidx.test.espresso:espresso-web:3.7.0"
+            force "androidx.test.espresso:espresso-contrib:3.7.0"
+            force "androidx.test:runner:1.6.2"
         }
     }
     // Provide a default appRedirectUriScheme for library modules that reference

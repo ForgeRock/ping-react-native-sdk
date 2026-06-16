@@ -43,6 +43,8 @@
     "build:runner:bs:ios:ipa": "yarn workspace rn-test-runner build:bs:ios:ipa",
     "build:runner:bs:ios:test-suite": "yarn workspace rn-test-runner build:bs:ios:test-suite",
     "test:runner:bs:android": "yarn workspace rn-test-runner test:bs:android",
+    "test:runner:bs:android:journey": "yarn workspace rn-test-runner test:bs:android:journey",
+    "test:runner:bs:android:core": "yarn workspace rn-test-runner test:bs:android:core",
     "test:runner:e2e:ios": "yarn workspace rn-test-runner test:e2e:ios",
     "test:runner:e2e:android": "yarn workspace rn-test-runner test:e2e:android",
     "runner:clean-install": "yarn workspace rn-test-runner run clean-install",
@@ -85,6 +87,9 @@
     "turbo": "^2.8.10",
     "typedoc": "^0.28",
     "typescript-eslint": "^8.56.0"
+  },
+  "resolutions": {
+    "js-yaml": "4.2.0"
   },
   "engines": {
     "node": ">=20"
