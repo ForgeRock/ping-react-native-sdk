@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-device-profile",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0",
   "description": "The Device Profile module provides a structured framework for collecting device information.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",

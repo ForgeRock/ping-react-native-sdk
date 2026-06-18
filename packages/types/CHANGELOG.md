@@ -1,5 +1,11 @@
 # @ping-identity/rn-types
 
+## 1.0.0
+
+### Major Changes
+
+- Initial stable release of the Ping Identity React Native SDK.
+
 ## 1.0.0-beta.3
 
 ### Patch Changes

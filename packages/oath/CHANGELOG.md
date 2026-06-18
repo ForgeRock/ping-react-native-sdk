@@ -1,5 +1,17 @@
 # @ping-identity/rn-oath
 
+## 1.0.0
+
+### Major Changes
+
+- Initial stable release of the Ping Identity React Native SDK.
+
+### Patch Changes
+
+- Updated dependencies
+  - @ping-identity/rn-core@1.0.0
+  - @ping-identity/rn-types@1.0.0
+
 ## 1.0.0-beta.3
 
 ### Patch Changes
