@@ -14,7 +14,7 @@ Guidance for AI coding agents working in this repository.
 **Ping Identity React Native SDK** — a Yarn monorepo of independent native SDK wrappers (Storage, OIDC, Browser, Journey, FIDO, etc.) exposed as TurboModules.
 
 - Packages live under `packages/*`; native code under `packages/*/android` and `packages/*/ios`
-- Node `>=20 <21`, Yarn 4 required
+- Node `>=20`, Yarn 4 required
 - `PingSampleApp` — reference app demonstrating SDK features (Journey, OIDC, FIDO, device binding, etc.); used for manual testing and development
 - `PingTestRunner` — E2E test harness; hosts Detox scenarios and integration tests
 - Follow existing package patterns before introducing new structures or abstractions
@@ -283,7 +283,7 @@ Use TSDoc `/** */` on all exported functions, types, and interfaces. Required ta
 
 ### Kotlin (KDoc)
 
-Use KDoc `/** */` on all public and internal declarations. Required tags: `@param`, `@return`, `@throws`, `@remarks`.
+Use KDoc `/** */` on all public and internal declarations. Required tags: `@param`, `@return`, `@throws`. Use a plain `// NOTE:` comment for platform nuances or lifecycle notes that would otherwise go in `@remarks`.
 
 ### Swift
 
