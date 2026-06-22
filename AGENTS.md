@@ -55,7 +55,7 @@ Turbo orchestrates builds and tests across workspaces.
 - Keep changes DRY: reuse existing utilities; avoid copy/paste duplicate code
 - Prefer composition over inheritance
 - Use clear, intention-revealing names; avoid abbreviations unless domain-standard
-- Before adding native bridge/parsing helpers, check `packages/core/src/` for available utilities
+- Before adding native bridge/parsing helpers, check `packages/core/android/src/main/` (Kotlin) and `packages/core/ios/` (Swift) for available utilities.
 - Follow security best practices (OWASP); do not introduce insecure shortcuts (disabled TLS checks, hard-coded secrets, plaintext storage)
 - Call out potential security risks explicitly if present
 
@@ -153,7 +153,7 @@ export function getNativeModule(): Spec {
 }
 ```
 
-The wrapper object calls `getNativeModule()` lazily at invocation time, not at import time.
+The wrapper object calls `getNativeModule()` lazily at invocation time, not at import time. Packages that call `getNativeModule()` on every invocation should cache the result in a module-level `_nativeModule` variable to avoid re-probing the registry on each call. Packages that eagerly export the module at load time do not need a cache.
 
 When adding new methods or packages: implement in `*Common`, then expose via both `newarch` and `oldarch`.
 
@@ -229,7 +229,7 @@ All packages target Kotlin 2.2.10.
 
 ### Shared core utilities
 
-- Prefer utilities from `@ping-identity/rn-core` over reimplementing them — check `packages/core/src/` for available helpers before writing new bridge/parsing code
+- Prefer utilities from `@ping-identity/rn-core` over reimplementing them — check `packages/core/android/src/main/` (Kotlin) and `packages/core/ios/` (Swift) for available helpers before writing new bridge/parsing code
 - If a utility is used by more than one package, it belongs in `rn-core` — move it before merging
 
 ### Native SDK verification
@@ -326,10 +326,21 @@ Integration-only changes (no new UI scenario) still require a test in `PingTestR
 
 ## Git Safety
 
-Agents must not run Git commands that stage, commit, or stash changes in this repository.
+Agents must not run any Git command that modifies repository state or remote refs.
 
-Forbidden commands: `git add`, `git commit`, `git stash`
+**Forbidden — local state mutation:**
+`git add`, `git commit`, `git stash`, `git stash pop`, `git reset`, `git restore`, `git checkout --`, `git clean`
 
-Agents may inspect repository state with read-only Git commands: `git status`, `git diff`, `git log`, `git show`, `git branch`.
+**Forbidden — history rewriting:**
+`git rebase`, `git cherry-pick`, `git merge`, `git amend`
 
-If staging, committing, or stashing is needed, stop and ask the user to run the command manually.
+**Forbidden — remote operations:**
+`git push`, `git fetch --prune`, `git remote`
+
+**Forbidden — ref deletion:**
+`git branch -D`, `git tag -d`
+
+**Allowed (read-only):**
+`git status`, `git diff`, `git log`, `git show`, `git branch` (list only), `git stash list` (list only)
+
+If any of the above operations are needed, stop and ask the user to run the command manually.
