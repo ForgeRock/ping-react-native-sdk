@@ -59,7 +59,7 @@ Turbo orchestrates builds and tests across workspaces.
 - Follow security best practices (OWASP); do not introduce insecure shortcuts (disabled TLS checks, hard-coded secrets, plaintext storage)
 - Call out potential security risks explicitly if present
 
-#### Pre-submission checklist
+### Pre-submission checklist
 
 - Verify pattern consistency with existing packages
 - Verify license headers are present on all new source files
@@ -120,7 +120,7 @@ Every native package supports **both** React Native New Architecture (TurboModul
 
 ### Android layout (`packages/<pkg>/android/src/`)
 
-```
+```text
 main/       ← *Common.kt — shared implementation
 newarch/    ← *Module.kt (extends NativeXxxSpec) + *Package.kt
 oldarch/    ← *ClassicModule.kt (extends ReactContextBaseJavaModule) + *Package.kt
@@ -134,7 +134,7 @@ oldarch/    ← *ClassicModule.kt (extends ReactContextBaseJavaModule) + *Packag
 
 ### iOS layout (`packages/<pkg>/ios/`)
 
-```
+```text
 *Common.swift / *Impl.swift    ← shared Swift implementation
 RNPing*.mm                     ← TurboModule (ObjC++): implements getTurboModule:
 RNPing*Classic.mm              ← Classic bridge (ObjC): RCT_EXPORT_MODULE + RCT_EXPORT_METHOD
