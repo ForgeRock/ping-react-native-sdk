@@ -189,6 +189,45 @@ async function loadPush(
   return { mod, emittedHandlers };
 }
 
+async function loadPushWithRealHelpers(
+  nativeMock: NativePushMock,
+  platform: 'ios' | 'android' = 'ios',
+): Promise<{
+  mod: ReturnType<typeof require>;
+  emittedHandlers: EventHandlers;
+}> {
+  jest.resetModules();
+  const emittedHandlers: EventHandlers = {};
+  jest.doMock('react-native', () => ({
+    Platform: {
+      OS: platform,
+      select: (s: Record<string, unknown>) => s[platform] ?? s.default,
+    },
+    NativeModules: {},
+    TurboModuleRegistry: {
+      get: jest.fn(() => null),
+      getEnforcing: jest.fn(() => null),
+    },
+    DeviceEventEmitter: {
+      addListener: jest.fn(
+        (eventName: string, handler: (...args: unknown[]) => void) => {
+          emittedHandlers[eventName] = handler;
+          return { remove: jest.fn() };
+        },
+      ),
+    },
+  }));
+  // Use real fromNative* helpers — only override getNativeModule so the actual
+  // field-reading code (fromNativeWrappedCredential, fromNativeToken, etc.) runs.
+  jest.doMock('../../../packages/push/src/NativeRNPingPush', () => ({
+    ...jest.requireActual('../../../packages/push/src/NativeRNPingPush'),
+    getNativeModule: jest.fn(() => nativeMock),
+  }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('@ping-identity/rn-push');
+  return { mod, emittedHandlers };
+}
+
 describe('@ping-identity/rn-push — integration', () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -362,9 +401,10 @@ describe('@ping-identity/rn-push — integration', () => {
       });
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
-      await expect(client.addCredentialFromUri('bad')).rejects.toEqual(
-        nativeError,
-      );
+      await expect(client.addCredentialFromUri('bad')).rejects.toMatchObject({
+        type: nativeError.type,
+        code: nativeError.error,
+      });
     });
   });
 
@@ -402,7 +442,10 @@ describe('@ping-identity/rn-push — integration', () => {
       });
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
-      await expect(client.getCredentials()).rejects.toEqual(nativeError);
+      await expect(client.getCredentials()).rejects.toMatchObject({
+        type: nativeError.type,
+        code: nativeError.error,
+      });
     });
   });
 
@@ -453,9 +496,10 @@ describe('@ping-identity/rn-push — integration', () => {
       });
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
-      await expect(client.deleteCredential('cred-1')).rejects.toEqual(
-        nativeError,
-      );
+      await expect(client.deleteCredential('cred-1')).rejects.toMatchObject({
+        type: nativeError.type,
+        code: nativeError.error,
+      });
     });
   });
 
@@ -670,8 +714,11 @@ describe('@ping-identity/rn-push — integration', () => {
       });
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
-      await expect(client.approveNotification('notif-1')).rejects.toEqual(
-        nativeError,
+      await expect(client.approveNotification('notif-1')).rejects.toMatchObject(
+        {
+          type: nativeError.type,
+          code: nativeError.error,
+        },
       );
     });
   });
@@ -700,7 +747,7 @@ describe('@ping-identity/rn-push — integration', () => {
         client.approveChallengeNotification('notif-1', '   '),
       ).rejects.toMatchObject({
         type: 'argument_error',
-        error: 'invalid_parameter_value',
+        code: 'invalid_parameter_value',
       });
       expect(mock.approveChallengeNotification).not.toHaveBeenCalled();
     });
@@ -872,7 +919,10 @@ describe('@ping-identity/rn-push — integration', () => {
       });
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
-      await expect(client.close()).rejects.toEqual(nativeError);
+      await expect(client.close()).rejects.toMatchObject({
+        type: nativeError.type,
+        code: nativeError.error,
+      });
     });
   });
 
@@ -919,7 +969,7 @@ describe('@ping-identity/rn-push — integration', () => {
   // ─── error shape preservation ─────────────────────────────────────────────────
 
   describe('PushError shape preservation', () => {
-    it('passes native PushError { type, error, message } through rejection unchanged', async () => {
+    it('wraps native { type, error, message } into PushError with .code', async () => {
       const nativePushError = {
         type: 'state_error',
         error: 'not_initialized',
@@ -934,7 +984,11 @@ describe('@ping-identity/rn-push — integration', () => {
       const client = await mod.createPushClient();
       await expect(
         client.addCredentialFromUri('pushauth://test'),
-      ).rejects.toMatchObject(nativePushError);
+      ).rejects.toMatchObject({
+        type: nativePushError.type,
+        code: nativePushError.error,
+        message: nativePushError.message,
+      });
     });
 
     it('passes network_failure error shape through rejection', async () => {
@@ -951,8 +1005,137 @@ describe('@ping-identity/rn-push — integration', () => {
       const { mod } = await loadPush(mock);
       const client = await mod.createPushClient();
       await expect(client.approveNotification('notif-1')).rejects.toMatchObject(
-        nativeError,
+        {
+          type: nativeError.type,
+          code: nativeError.error,
+          message: nativeError.message,
+        },
       );
+    });
+  });
+
+  // ─── encode/decode — real bridge helpers ────────────────────────────────────
+  //
+  // These tests use jest.requireActual on NativeRNPingPush so the real fromNative*
+  // functions execute rather than identity stubs. This catches any rename of the
+  // bridge wrapper keys (.credential, .credentials, .notification, .notifications,
+  // .token) without requiring a device or simulator.
+
+  describe('encode/decode — real bridge helpers', () => {
+    it('getCredentials() — real fromNativeCredentialList reads .credentials key', async () => {
+      const mock = makeMock({
+        getCredentials: jest.fn(async () => ({
+          credentials: [mockCredential],
+        })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      const result = await client.getCredentials();
+      expect(result).toEqual([mockCredential]);
+    });
+
+    it('getCredentials() — returns [] when .credentials is empty', async () => {
+      const mock = makeMock({
+        getCredentials: jest.fn(async () => ({ credentials: [] })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getCredentials()).toEqual([]);
+    });
+
+    it('getCredential() — real fromNativeWrappedCredential reads .credential key', async () => {
+      const mock = makeMock({
+        getCredential: jest.fn(async () => ({ credential: mockCredential })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getCredential('cred-1')).toEqual(mockCredential);
+    });
+
+    it('getCredential() — returns null when .credential is null', async () => {
+      const mock = makeMock({
+        getCredential: jest.fn(async () => ({ credential: null })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getCredential('missing')).toBeNull();
+    });
+
+    it('getDeviceToken() — real fromNativeToken reads .token key', async () => {
+      const mock = makeMock({
+        getDeviceToken: jest.fn(async () => ({ token: 'real-token-abc' })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getDeviceToken()).toBe('real-token-abc');
+    });
+
+    it('getDeviceToken() — returns null when .token is null', async () => {
+      const mock = makeMock({
+        getDeviceToken: jest.fn(async () => ({ token: null })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getDeviceToken()).toBeNull();
+    });
+
+    it('processNotification() — real fromNativeNotification reads .notification key', async () => {
+      const mock = makeMock({
+        processNotification: jest.fn(async () => ({
+          notification: mockNotification,
+        })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.processNotification({})).toEqual(mockNotification);
+    });
+
+    it('processNotification() — returns null when .notification is null', async () => {
+      const mock = makeMock({
+        processNotification: jest.fn(async () => ({ notification: null })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.processNotification({})).toBeNull();
+    });
+
+    it('getAllNotifications() — real fromNativeNotificationList reads .notifications key', async () => {
+      const mock = makeMock({
+        getAllNotifications: jest.fn(async () => ({
+          notifications: [mockNotification],
+        })),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.getAllNotifications()).toEqual([mockNotification]);
+    });
+
+    it('addCredentialFromUri() — fromNativeCredential is a type cast; result passes through', async () => {
+      const mock = makeMock({
+        addCredentialFromUri: jest.fn(async () => mockCredential),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      expect(await client.addCredentialFromUri('pushauth://enroll')).toEqual(
+        mockCredential,
+      );
+    });
+
+    it('native error type field is preserved on rejection', async () => {
+      const mock = makeMock({
+        getCredentials: jest.fn(async () => {
+          throw {
+            type: 'state_error',
+            error: 'not_initialized',
+            message: 'Not init',
+          };
+        }),
+      });
+      const { mod } = await loadPushWithRealHelpers(mock);
+      const client = await mod.createPushClient();
+      await expect(client.getCredentials()).rejects.toMatchObject({
+        type: 'state_error',
+      });
     });
   });
 

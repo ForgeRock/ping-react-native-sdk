@@ -52,6 +52,22 @@ jest.mock('../packages/binding/src/NativeRNPingBinding', () => ({
   fromNativeUserKeys: jest.fn((result) => result),
 }));
 
+// ---------- rn-device-client ----------
+jest.mock('../packages/device-client/src/NativeRNPingDeviceClient', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    create: jest.fn(async () => 'device-client-handle-mock'),
+    get: jest.fn(async () => ({ result: [] })),
+    update: jest.fn(async () => ({
+      result: { id: 'mock', deviceName: 'Mock' },
+    })),
+    deleteDevice: jest.fn(async () => ({
+      result: { id: 'mock', deviceName: 'Mock' },
+    })),
+    dispose: jest.fn(async () => undefined),
+  })),
+}));
+
 // ---------- rn-browser ----------
 jest.mock('../packages/browser/src/NativeRNPingBrowser', () => ({
   __esModule: true,
@@ -204,6 +220,43 @@ jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({
   toNativeSelectOptions: jest.fn((options) => options),
   toNativeConfig: jest.fn((config) => config),
   fromNativeAuthorizeResult: jest.fn((result) => result),
+}));
+
+// ---------- rn-push ----------
+jest.mock('../packages/push/src/NativeRNPingPush', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    initialize: jest.fn(async () => 'push-client-handle-mock'),
+    addCredentialFromUri: jest.fn(async () => ({})),
+    getCredential: jest.fn(async () => ({ credential: null })),
+    getCredentials: jest.fn(async () => ({ credentials: [] })),
+    saveCredential: jest.fn(async () => ({})),
+    deleteCredential: jest.fn(async () => true),
+    setDeviceToken: jest.fn(async () => true),
+    getDeviceToken: jest.fn(async () => ({ token: null })),
+    processNotification: jest.fn(async () => ({ notification: null })),
+    processNotificationFromMessage: jest.fn(async () => ({
+      notification: null,
+    })),
+    approveNotification: jest.fn(async () => true),
+    approveChallengeNotification: jest.fn(async () => true),
+    approveBiometricNotification: jest.fn(async () => true),
+    denyNotification: jest.fn(async () => true),
+    getPendingNotifications: jest.fn(async () => ({ notifications: [] })),
+    getAllNotifications: jest.fn(async () => ({ notifications: [] })),
+    getNotification: jest.fn(async () => ({ notification: null })),
+    cleanupNotifications: jest.fn(async () => 0),
+    close: jest.fn(async () => undefined),
+    consumePendingMessages: jest.fn(async () => []),
+    refreshToken: jest.fn(async () => ({ token: null })),
+  })),
+  toNativePushConfig: jest.fn((config) => config),
+  fromNativeCredential: jest.fn((result) => result),
+  fromNativeWrappedCredential: jest.fn((w) => w?.credential ?? null),
+  fromNativeNotification: jest.fn((r) => r?.notification ?? null),
+  fromNativeCredentialList: jest.fn((r) => r?.credentials ?? []),
+  fromNativeNotificationList: jest.fn((r) => r?.notifications ?? []),
+  fromNativeToken: jest.fn((w) => w?.token ?? null),
 }));
 
 // ---------- rn-storage ----------

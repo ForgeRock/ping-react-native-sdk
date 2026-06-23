@@ -295,9 +295,7 @@ public class RNPingBindingCommon: NSObject {
     Task {
       do {
         let keys = try await BindingModule.getAllKeys()
-        let result: NSArray = keys.map { key -> [String: Any] in
-          ["id": key.id, "userId": key.userId, "username": key.username, "authenticationType": key.authType.rawValue]
-        } as NSArray
+        let result: NSArray = keys.map { RNPingBindingCommon.serializeUserKey($0) } as NSArray
         handlers.resolve(result)
       } catch {
         handlers.reject(
@@ -306,6 +304,13 @@ public class RNPingBindingCommon: NSObject {
         )
       }
     }
+  }
+
+  /// Converts a `UserKey` into a bridge-safe dictionary for the JS layer.
+  ///
+  /// Extracted from the `getAllKeys` inline closure so tests can assert bridge key names directly.
+  static func serializeUserKey(_ key: UserKey) -> [String: Any] {
+    ["id": key.id, "userId": key.userId, "username": key.username, "authenticationType": key.authType.rawValue]
   }
 
   /// Deletes the device binding key identified by `userId` and `keyId` from the Keychain.

@@ -7,14 +7,28 @@
 package com.pingidentity.rnbinding
 
 import androidx.biometric.BiometricPrompt
+import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.soloader.SoLoader
 import com.facebook.soloader.nativeloader.NativeLoader
 import com.facebook.soloader.nativeloader.SystemDelegate
+import com.pingidentity.device.binding.UserKey
+import com.pingidentity.device.binding.UserKeysStorage
+import com.pingidentity.device.binding.authenticator.DeviceBindingAuthenticationType
 import com.pingidentity.device.binding.authenticator.exception.BiometricAuthenticationException
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertArrayEquals
@@ -30,12 +44,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 
 /**
  * Unit tests for Binding module metadata and bridge behavior.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [29])
+@Config(sdk = [29], shadows = [ShadowBindingArguments::class])
 class RNPingBindingTest {
 
   @Before
@@ -43,11 +60,13 @@ class RNPingBindingTest {
     runCatching { SoLoader.init(RuntimeEnvironment.getApplication(), false) }
     runCatching { NativeLoader.init(SystemDelegate()) }
     RNPingBindingCommon.foregroundActivityProvider = { true }
+    Dispatchers.setMain(UnconfinedTestDispatcher())
   }
 
   @After
   fun tearDown() {
     RNPingBindingCommon.foregroundActivityProvider = { true }
+    Dispatchers.resetMain()
   }
 
   // MARK: - Error code contracts
@@ -741,6 +760,142 @@ class RNPingBindingTest {
     assertNull(parsed.jwtIssueTimeEpochSeconds)
   }
 
+  // MARK: - getAllKeys bridge key contract
+
+  /**
+   * getAllKeys serialises "id" from UserKey.id.
+   * Catches any rename of the bridge key (e.g. "id" → "keyId").
+   */
+  @Test
+  fun getAllKeys_serializesIdField() {
+    val key = UserKey(
+      id = "key-id-1",
+      userId = "user-1",
+      userName = "alice",
+      kid = "kid-1",
+      authType = DeviceBindingAuthenticationType.NONE,
+      createdAt = 0L,
+    )
+    val storage = mockk<UserKeysStorage>()
+    coEvery { storage.findAll() } returns listOf(key)
+    injectUserKeysStorage(storage)
+
+    val promise = TestPromise()
+    RNPingBindingCommon.getAllKeys(promise)
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals(1, array.size())
+    assertEquals("key-id-1", array.getMap(0)?.getString("id"))
+  }
+
+  /**
+   * getAllKeys serialises "userId" from UserKey.userId.
+   */
+  @Test
+  fun getAllKeys_serializesUserIdField() {
+    val key = UserKey(
+      id = "key-id-2",
+      userId = "user-42",
+      userName = "bob",
+      kid = "kid-2",
+      authType = DeviceBindingAuthenticationType.NONE,
+      createdAt = 0L,
+    )
+    val storage = mockk<UserKeysStorage>()
+    coEvery { storage.findAll() } returns listOf(key)
+    injectUserKeysStorage(storage)
+
+    val promise = TestPromise()
+    RNPingBindingCommon.getAllKeys(promise)
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals("user-42", array.getMap(0)?.getString("userId"))
+  }
+
+  /**
+   * getAllKeys serialises bridge key "username" (not "userName").
+   * The SDK field is userName but the bridge key is username — a critical naming discrepancy.
+   */
+  @Test
+  fun getAllKeys_serializesUsernameBridgeKey() {
+    val key = UserKey(
+      id = "key-id-3",
+      userId = "user-3",
+      userName = "charlie",
+      kid = "kid-3",
+      authType = DeviceBindingAuthenticationType.NONE,
+      createdAt = 0L,
+    )
+    val storage = mockk<UserKeysStorage>()
+    coEvery { storage.findAll() } returns listOf(key)
+    injectUserKeysStorage(storage)
+
+    val promise = TestPromise()
+    RNPingBindingCommon.getAllKeys(promise)
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    val map = array.getMap(0)!!
+    assertEquals("charlie", map.getString("username"))
+    // Confirm the old SDK field name is NOT present as a bridge key
+    assertFalse("userName must not appear as a bridge key", map.hasKey("userName"))
+  }
+
+  /**
+   * getAllKeys serialises "authenticationType" as the uppercase enum name from authType.name.
+   */
+  @Test
+  fun getAllKeys_serializesAuthenticationTypeAsUppercaseEnumName() {
+    val key = UserKey(
+      id = "key-id-4",
+      userId = "user-4",
+      userName = "dave",
+      kid = "kid-4",
+      authType = DeviceBindingAuthenticationType.BIOMETRIC_ONLY,
+      createdAt = 0L,
+    )
+    val storage = mockk<UserKeysStorage>()
+    coEvery { storage.findAll() } returns listOf(key)
+    injectUserKeysStorage(storage)
+
+    val promise = TestPromise()
+    RNPingBindingCommon.getAllKeys(promise)
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals("BIOMETRIC_ONLY", array.getMap(0)?.getString("authenticationType"))
+  }
+
+  /**
+   * getAllKeys resolves with an empty array when no keys are stored.
+   */
+  @Test
+  fun getAllKeys_resolvesEmptyArrayWhenNoKeys() {
+    val storage = mockk<UserKeysStorage>()
+    coEvery { storage.findAll() } returns emptyList()
+    injectUserKeysStorage(storage)
+
+    val promise = TestPromise()
+    RNPingBindingCommon.getAllKeys(promise)
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals(0, array.size())
+  }
+
+  private fun injectUserKeysStorage(storage: UserKeysStorage) {
+    val delegateField = RNPingBindingCommon::class.java.getDeclaredField("userKeysStorage\$delegate")
+    delegateField.isAccessible = true
+    val delegate = delegateField.get(RNPingBindingCommon)
+    // SynchronizedLazyImpl stores its computed value in the _value field.
+    // Setting it directly bypasses the lock and forces the lazy to return our mock.
+    val valueField = delegate.javaClass.getDeclaredField("_value")
+    valueField.isAccessible = true
+    valueField.set(delegate, storage)
+  }
+
   private fun invokePrivate(name: String, vararg args: Any?): Any? {
     val candidates = listOf(
       RNPingBindingCommon::class.java,
@@ -852,4 +1007,15 @@ class RNPingBindingTest {
       latch.countDown()
     }
   }
+}
+
+@Implements(className = "com.facebook.react.bridge.Arguments")
+object ShadowBindingArguments {
+  @Implementation
+  @JvmStatic
+  fun createMap(): WritableMap = JavaOnlyMap()
+
+  @Implementation
+  @JvmStatic
+  fun createArray(): WritableArray = JavaOnlyArray()
 }

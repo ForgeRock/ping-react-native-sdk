@@ -213,7 +213,7 @@ describe('@ping-identity/rn-oath — integration', () => {
       await client.close();
       await expect(client.generateCode('cred-1')).rejects.toMatchObject({
         type: 'state_error',
-        error: 'OATH_STATE_ERROR',
+        code: 'OATH_STATE_ERROR',
       });
     });
   });
@@ -337,7 +337,7 @@ describe('configureOathPolicyEvaluator', () => {
     }
     expect(thrown).toMatchObject({
       type: 'argument_error',
-      error: 'OATH_INVALID_PARAMETER',
+      code: 'OATH_INVALID_PARAMETER',
     });
   });
 
@@ -354,7 +354,7 @@ describe('configureOathPolicyEvaluator', () => {
     }
     expect(thrown).toMatchObject({
       type: 'argument_error',
-      error: 'OATH_INVALID_PARAMETER',
+      code: 'OATH_INVALID_PARAMETER',
     });
     expect(native.registerOathPolicyEvaluator).not.toHaveBeenCalled();
   });
