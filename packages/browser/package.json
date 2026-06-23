@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-browser",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0",
   "description": "Ping Identity Browser for React Native",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",

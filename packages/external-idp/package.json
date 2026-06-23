@@ -1,6 +1,6 @@
 {
   "name": "@ping-identity/rn-external-idp",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0",
   "description": "Ping Identity External IDP library for React Native, enabling seamless authentication with external identity providers.",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
