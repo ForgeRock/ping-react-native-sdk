@@ -81,6 +81,25 @@ jest.mock('../packages/browser/src/NativeRNPingBrowser', () => ({
   })),
 }));
 
+// ---------- rn-davinci ----------
+jest.mock('../packages/davinci/src/NativeRNPingDavinci', () => ({
+  __esModule: true,
+  default: {
+    configureDaVinci: jest.fn(async () => 'davinci-id-mock'),
+    start: jest.fn(async () => ({ type: 'ContinueNode', collectors: [] })),
+    next: jest.fn(async () => ({
+      type: 'SuccessNode',
+      session: { value: 'session-mock' },
+    })),
+    getSession: jest.fn(async () => ({ accessToken: 'mock-access-token' })),
+    refresh: jest.fn(async () => ({ accessToken: 'mock-refreshed-token' })),
+    revoke: jest.fn(async () => true),
+    userinfo: jest.fn(async () => ({ sub: 'user-mock' })),
+    logout: jest.fn(async () => undefined),
+    dispose: jest.fn(async () => undefined),
+  },
+}));
+
 // ---------- rn-device-id ----------
 jest.mock('../packages/device-id/src/NativeRNPingDeviceId', () => ({
   __esModule: true,

@@ -7,16 +7,19 @@
 
 import React, { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { useDaVinci } from '@ping-identity/rn-davinci';
 import { PingError } from '@ping-identity/rn-types';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import TokenJourneyPanel from './token/components/organisms/TokenJourneyPanel';
 import TokenOidcPanel from './token/components/organisms/TokenOidcPanel';
+import TokenDaVinciPanel from './token/components/organisms/TokenDaVinciPanel';
 
-const TOKEN_TABS = ['Journey', 'OIDC'] as const;
+const TOKEN_TABS = ['Journey', 'OIDC', 'DaVinci'] as const;
 
 type TokenTab = (typeof TOKEN_TABS)[number];
 
@@ -26,11 +29,16 @@ const getEmptyMessage = (tab: TokenTab): string => {
       return 'No Journey token information is available';
     case 'OIDC':
       return 'No OIDC token information is available';
+    case 'DaVinci':
+      return 'No DaVinci token information is available';
   }
 };
 
 const JOURNEY_AUTH_REQUIRED_MESSAGE =
   'No authenticated Journey token state found. Complete Journey login first, then tap AccessToken.';
+
+const DAVINCI_AUTH_REQUIRED_MESSAGE =
+  'No authenticated DaVinci token state found. Complete DaVinci login first, then tap AccessToken.';
 
 /**
  * Renders token operations by auth source with tabbed navigation.
@@ -44,11 +52,13 @@ export default function TokenScreen(): React.ReactElement {
   >({
     Journey: getEmptyMessage('Journey'),
     OIDC: getEmptyMessage('OIDC'),
+    DaVinci: getEmptyMessage('DaVinci'),
   });
   const [loading, setLoading] = useState<boolean>(false);
 
   const [, journeyActions] = useJourney();
   const [, oidcActions] = useOidc();
+  const davinciActions = useDaVinci();
 
   const setActiveTabOutput = useCallback(
     (value: string): void => {
@@ -80,7 +90,15 @@ export default function TokenScreen(): React.ReactElement {
         return;
       }
 
-      setActiveTabOutput(getEmptyMessage('OIDC'));
+      if (activeTab === 'DaVinci') {
+        const session = await davinciActions.user();
+        if (!session) {
+          setActiveTabOutput(DAVINCI_AUTH_REQUIRED_MESSAGE);
+          return;
+        }
+        setActiveTabOutput(session.accessToken);
+        return;
+      }
     } catch (error) {
       if (
         error instanceof PingError &&
@@ -94,7 +112,21 @@ export default function TokenScreen(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
+  }, [
+    activeTab,
+    davinciActions,
+    journeyActions,
+    oidcActions,
+    setActiveTabOutput,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab === 'DaVinci') {
+        void handleAccessToken();
+      }
+    }, [activeTab, handleAccessToken]),
+  );
 
   const handleClear = useCallback((): void => {
     setActiveTabOutput(getEmptyMessage(activeTab));
@@ -123,7 +155,15 @@ export default function TokenScreen(): React.ReactElement {
         return;
       }
 
-      setActiveTabOutput(getEmptyMessage('OIDC'));
+      if (activeTab === 'DaVinci') {
+        const session = await davinciActions.refresh();
+        if (!session) {
+          setActiveTabOutput(DAVINCI_AUTH_REQUIRED_MESSAGE);
+          return;
+        }
+        setActiveTabOutput(session.refreshToken ?? getEmptyMessage('DaVinci'));
+        return;
+      }
     } catch (error) {
       if (
         error instanceof PingError &&
@@ -137,7 +177,13 @@ export default function TokenScreen(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
+  }, [
+    activeTab,
+    davinciActions,
+    journeyActions,
+    oidcActions,
+    setActiveTabOutput,
+  ]);
 
   const handleRevoke = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -151,6 +197,23 @@ export default function TokenScreen(): React.ReactElement {
               note: revoked
                 ? 'OIDC revoke completed. Re-authenticate to access tokens again.'
                 : 'No active OIDC user to revoke.',
+            },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
+
+      if (activeTab === 'DaVinci') {
+        const revoked = await davinciActions.revoke();
+        setActiveTabOutput(
+          JSON.stringify(
+            {
+              revoked,
+              note: revoked
+                ? 'DaVinci revoke completed. Re-authenticate to access tokens again.'
+                : 'No active DaVinci user to revoke.',
             },
             null,
             2,
@@ -180,7 +243,13 @@ export default function TokenScreen(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, journeyActions, oidcActions, setActiveTabOutput]);
+  }, [
+    activeTab,
+    davinciActions,
+    journeyActions,
+    oidcActions,
+    setActiveTabOutput,
+  ]);
 
   return (
     <View style={commonStyles.userProfileContainer}>
@@ -213,6 +282,21 @@ export default function TokenScreen(): React.ReactElement {
         ) : activeTab === 'OIDC' ? (
           <TokenOidcPanel
             tokenOutput={tokenOutputByTab.OIDC}
+            loading={loading}
+            onAccessToken={() => {
+              void handleAccessToken();
+            }}
+            onRefresh={() => {
+              void handleRefresh();
+            }}
+            onRevoke={() => {
+              void handleRevoke();
+            }}
+            onClear={handleClear}
+          />
+        ) : activeTab === 'DaVinci' ? (
+          <TokenDaVinciPanel
+            tokenOutput={tokenOutputByTab.DaVinci}
             loading={loading}
             onAccessToken={() => {
               void handleAccessToken();

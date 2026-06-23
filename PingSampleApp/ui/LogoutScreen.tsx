@@ -10,6 +10,7 @@ import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { useDaVinci } from '@ping-identity/rn-davinci';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import AsyncActionButton from './components/molecules/AsyncActionButton';
@@ -25,13 +26,16 @@ export default function LogoutScreen(): React.ReactElement {
   const [busyAll, setBusyAll] = useState<boolean>(false);
   const [busyJourney, setBusyJourney] = useState<boolean>(false);
   const [busyOidc, setBusyOidc] = useState<boolean>(false);
+  const [busyDaVinci, setBusyDaVinci] = useState<boolean>(false);
   const [journeyActive, setJourneyActive] = useState<boolean>(false);
   const [oidcActive, setOidcActive] = useState<boolean>(false);
+  const [davinciActive, setDavinciActive] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [, journeyActions] = useJourney();
   const [oidcState, oidcActions] = useOidc();
+  const davinciActions = useDaVinci();
 
   const refreshSessionState = useCallback(async (): Promise<void> => {
     try {
@@ -47,7 +51,14 @@ export default function LogoutScreen(): React.ReactElement {
     } catch {
       setOidcActive(false);
     }
-  }, [journeyActions, oidcActions]);
+
+    try {
+      const davinciSession = await davinciActions.user();
+      setDavinciActive(Boolean(davinciSession));
+    } catch {
+      setDavinciActive(false);
+    }
+  }, [davinciActions, journeyActions, oidcActions]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,6 +85,12 @@ export default function LogoutScreen(): React.ReactElement {
       errors.push(formatError(error));
     }
 
+    try {
+      await davinciActions.logoutUser();
+    } catch (error) {
+      errors.push(formatError(error));
+    }
+
     await refreshSessionState();
     setBusyAll(false);
 
@@ -81,7 +98,7 @@ export default function LogoutScreen(): React.ReactElement {
       setErrorMessage(errors.join('\n'));
       return;
     }
-  }, [journeyActions, oidcActions, refreshSessionState]);
+  }, [davinciActions, journeyActions, oidcActions, refreshSessionState]);
 
   const handleLogoutOidc = useCallback(async (): Promise<void> => {
     setBusyOidc(true);
@@ -117,8 +134,23 @@ export default function LogoutScreen(): React.ReactElement {
     }
   }, [journeyActions, refreshSessionState]);
 
-  const disabled = busyAll || busyJourney || busyOidc;
-  const hasAnySession = journeyActive || oidcActive;
+  const handleLogoutDaVinci = useCallback(async (): Promise<void> => {
+    setBusyDaVinci(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      await davinciActions.logoutUser();
+      setStatusMessage('DaVinci session logged out.');
+    } catch (error) {
+      setErrorMessage(formatError(error));
+    } finally {
+      setBusyDaVinci(false);
+      await refreshSessionState();
+    }
+  }, [davinciActions, refreshSessionState]);
+
+  const disabled = busyAll || busyJourney || busyOidc || busyDaVinci;
+  const hasAnySession = journeyActive || oidcActive || davinciActive;
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
@@ -174,6 +206,23 @@ export default function LogoutScreen(): React.ReactElement {
               void handleLogoutOidc();
             }}
             loading={busyOidc}
+            disabled={disabled}
+          />
+        </CardSection>
+      ) : null}
+
+      {davinciActive ? (
+        <CardSection title="DaVinci Session">
+          <Text style={commonStyles.codeText}>
+            Logout from DaVinci authentication
+          </Text>
+          <Text style={commonStyles.codeText}>Status: Active</Text>
+          <AsyncActionButton
+            label="Logout from DaVinci Session"
+            onPress={() => {
+              void handleLogoutDaVinci();
+            }}
+            loading={busyDaVinci}
             disabled={disabled}
           />
         </CardSection>

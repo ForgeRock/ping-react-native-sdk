@@ -12,6 +12,7 @@ cd "$(dirname "$0")/../android"
   :ping-identity_rn-binding:test \
   :ping-identity_rn-browser:test \
   :ping-identity_rn-core:test \
+  :ping-identity_rn-davinci:test \
   :ping-identity_rn-device-client:test \
   :ping-identity_rn-device-id:test \
   :ping-identity_rn-device-profile:test \
