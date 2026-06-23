@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "rootDir": ".",
+    "paths": {
+      "@ping-identity/rn-davinci": ["./src/index"],
+      "@ping-identity/rn-types": ["../types/lib/typescript/src/index"]
+    }
+  },
+  "exclude": ["lib", "**/__tests__/**"]
+}

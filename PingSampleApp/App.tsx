@@ -30,9 +30,11 @@ import PushNotificationsScreen from './ui/push/PushNotificationsScreen';
 import { PushNotificationProvider } from './ui/push/PushNotificationProvider';
 import OathTokensScreen from './ui/OathTokensScreen';
 import QRScannerScreen from './ui/QRScannerScreen';
+import DaVinciScreen from './ui/DaVinciScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
-import { sampleAppClientProfiles } from './src/clients';
+import { DaVinciProvider } from '@ping-identity/rn-davinci';
+import { sampleAppClientProfiles, sampleDaVinciConfig } from './src/clients';
 import { configureBrowser } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -73,6 +75,7 @@ export type RootStackParamList = {
   PushNotifications: undefined;
   OathTokens: undefined;
   QRScanner: undefined;
+  DaVinci: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -262,179 +265,186 @@ export default function App() {
   }
 
   return (
-    // Journey and OIDC hooks resolve clients from these contexts.
+    // Journey, OIDC and DaVinci hooks resolve clients from these contexts.
     <JourneyProvider client={journeyProviderClient}>
       <OidcProvider client={oidcProviderClient}>
-        <PushNotificationProvider>
-          <NavigationContainer>
-            <Stack.Navigator
-              initialRouteName="Home"
-              screenOptions={{
-                headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
-                headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
-                headerBackButtonDisplayMode: 'minimal',
-              }}
-            >
-              <Stack.Screen
-                name="Home"
-                options={{ title: 'PingIdentity Demo', headerShown: false }}
+        <DaVinciProvider config={sampleDaVinciConfig}>
+          <PushNotificationProvider>
+            <NavigationContainer>
+              <Stack.Navigator
+                initialRouteName="Home"
+                screenOptions={{
+                  headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
+                  headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
+                  headerBackButtonDisplayMode: 'minimal',
+                }}
               >
-                {props => (
-                  <HomeScreen
-                    {...props}
-                    selectedConfigName={selectedConfigName}
-                  />
-                )}
-              </Stack.Screen>
-              <Stack.Screen
-                name="Configuration"
-                options={{ title: 'Configuration' }}
-              >
-                {props => (
-                  <ConfigurationScreen
-                    {...props}
-                    profiles={sampleAppClientProfiles}
-                    selectedJourneyProfileKey={selectedJourneyProfileKey}
-                    selectedOidcProfileKey={selectedOidcProfileKey}
-                    onSelectJourneyProfile={setSelectedJourneyProfileKey}
-                    onSelectOidcProfile={setSelectedOidcProfileKey}
-                  />
-                )}
-              </Stack.Screen>
-              <Stack.Screen
-                name="Storage"
-                component={MultiStorageScreen}
-                options={{ title: 'Storage' }}
-              />
-              <Stack.Screen
-                name="JourneyRoute"
-                options={{ title: 'Journey Configuration' }}
-              >
-                {props =>
-                  selectedJourneyProfile ? (
-                    <JourneyRouteScreen {...props} />
-                  ) : (
-                    <ConfigurationRequiredScreen
+                <Stack.Screen
+                  name="Home"
+                  options={{ title: 'PingIdentity Demo', headerShown: false }}
+                >
+                  {props => (
+                    <HomeScreen
                       {...props}
-                      message="Please select a Journey configuration first."
+                      selectedConfigName={selectedConfigName}
                     />
-                  )
-                }
-              </Stack.Screen>
-              <Stack.Screen
-                name="JourneyHelper"
-                options={{ title: 'Journey Flow' }}
-              >
-                {props =>
-                  selectedJourneyProfile ? (
-                    <JourneyHelperScreen
+                  )}
+                </Stack.Screen>
+                <Stack.Screen
+                  name="Configuration"
+                  options={{ title: 'Configuration' }}
+                >
+                  {props => (
+                    <ConfigurationScreen
                       {...props}
-                      journeyClient={selectedJourneyProfile.journeyClient}
-                      externalIdpRedirectUri={
-                        selectedJourneyProfile.externalIdpRedirectUri
-                      }
+                      profiles={sampleAppClientProfiles}
+                      selectedJourneyProfileKey={selectedJourneyProfileKey}
+                      selectedOidcProfileKey={selectedOidcProfileKey}
+                      onSelectJourneyProfile={setSelectedJourneyProfileKey}
+                      onSelectOidcProfile={setSelectedOidcProfileKey}
                     />
-                  ) : (
-                    <ConfigurationRequiredScreen
-                      {...props}
-                      message="Please select a Journey configuration first."
-                    />
-                  )
-                }
-              </Stack.Screen>
-              <Stack.Screen
-                name="JourneyFull"
-                options={{ title: 'Journey Full (API)' }}
-              >
-                {props =>
-                  selectedJourneyProfile ? (
-                    <JourneyFullScreen />
-                  ) : (
-                    <ConfigurationRequiredScreen
-                      {...props}
-                      message="Please select a Journey configuration first."
-                    />
-                  )
-                }
-              </Stack.Screen>
-              <Stack.Screen
-                name="Browser"
-                component={BrowserScreen}
-                options={{ title: 'Browser Demo' }}
-              />
-              <Stack.Screen
-                name="Logger"
-                component={LoggerScreen}
-                options={{ title: 'Logger Demo' }}
-              />
-              <Stack.Screen name="Oidc" options={{ title: 'OIDC Demo' }}>
-                {props =>
-                  selectedOidcProfile ? (
-                    <OidcScreen
-                      {...props}
-                      clientConfig={selectedOidcProfile.oidcClientConfig}
-                    />
-                  ) : (
-                    <ConfigurationRequiredScreen
-                      {...props}
-                      message="Please select an OIDC configuration first."
-                    />
-                  )
-                }
-              </Stack.Screen>
-              <Stack.Screen
-                name="DeviceProfile"
-                component={DeviceProfileScreen}
-                options={{ title: 'Device Profile' }}
-              />
-              <Stack.Screen
-                name="Devices"
-                component={DevicesScreen}
-                options={{ title: 'Device Management' }}
-              />
-              <Stack.Screen
-                name="UserProfile"
-                component={UserProfileScreen}
-                options={{ title: 'User Profile' }}
-              />
-              <Stack.Screen
-                name="Token"
-                component={TokenScreen}
-                options={{ title: 'Token' }}
-              />
-              <Stack.Screen
-                name="Logout"
-                component={LogoutScreen}
-                options={{ title: 'Logout' }}
-              />
-              <Stack.Screen
-                name="BindingKeys"
-                component={BindingKeysScreen}
-                options={{ title: 'Binding Keys' }}
-              />
-              <Stack.Screen
-                name="Push"
-                component={PushScreen}
-                options={{ title: 'Push Authenticator' }}
-              />
-              <Stack.Screen
-                name="PushNotifications"
-                component={PushNotificationsScreen}
-                options={{ title: 'Push Notifications' }}
-              />
-              <Stack.Screen
-                name="OathTokens"
-                component={OathTokensScreen}
-                options={{ title: 'OATH Tokens' }}
-              />
-              <Stack.Screen
-                name="QRScanner"
-                component={QRScannerScreen}
-                options={{ title: 'QR Scanner' }}
-              />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </PushNotificationProvider>
+                  )}
+                </Stack.Screen>
+                <Stack.Screen
+                  name="Storage"
+                  component={MultiStorageScreen}
+                  options={{ title: 'Storage' }}
+                />
+                <Stack.Screen
+                  name="JourneyRoute"
+                  options={{ title: 'Journey Configuration' }}
+                >
+                  {props =>
+                    selectedJourneyProfile ? (
+                      <JourneyRouteScreen {...props} />
+                    ) : (
+                      <ConfigurationRequiredScreen
+                        {...props}
+                        message="Please select a Journey configuration first."
+                      />
+                    )
+                  }
+                </Stack.Screen>
+                <Stack.Screen
+                  name="JourneyHelper"
+                  options={{ title: 'Journey Flow' }}
+                >
+                  {props =>
+                    selectedJourneyProfile ? (
+                      <JourneyHelperScreen
+                        {...props}
+                        journeyClient={selectedJourneyProfile.journeyClient}
+                        externalIdpRedirectUri={
+                          selectedJourneyProfile.externalIdpRedirectUri
+                        }
+                      />
+                    ) : (
+                      <ConfigurationRequiredScreen
+                        {...props}
+                        message="Please select a Journey configuration first."
+                      />
+                    )
+                  }
+                </Stack.Screen>
+                <Stack.Screen
+                  name="JourneyFull"
+                  options={{ title: 'Journey Full (API)' }}
+                >
+                  {props =>
+                    selectedJourneyProfile ? (
+                      <JourneyFullScreen />
+                    ) : (
+                      <ConfigurationRequiredScreen
+                        {...props}
+                        message="Please select a Journey configuration first."
+                      />
+                    )
+                  }
+                </Stack.Screen>
+                <Stack.Screen
+                  name="Browser"
+                  component={BrowserScreen}
+                  options={{ title: 'Browser Demo' }}
+                />
+                <Stack.Screen
+                  name="Logger"
+                  component={LoggerScreen}
+                  options={{ title: 'Logger Demo' }}
+                />
+                <Stack.Screen name="Oidc" options={{ title: 'OIDC Demo' }}>
+                  {props =>
+                    selectedOidcProfile ? (
+                      <OidcScreen
+                        {...props}
+                        clientConfig={selectedOidcProfile.oidcClientConfig}
+                      />
+                    ) : (
+                      <ConfigurationRequiredScreen
+                        {...props}
+                        message="Please select an OIDC configuration first."
+                      />
+                    )
+                  }
+                </Stack.Screen>
+                <Stack.Screen
+                  name="DeviceProfile"
+                  component={DeviceProfileScreen}
+                  options={{ title: 'Device Profile' }}
+                />
+                <Stack.Screen
+                  name="Devices"
+                  component={DevicesScreen}
+                  options={{ title: 'Device Management' }}
+                />
+                <Stack.Screen
+                  name="UserProfile"
+                  component={UserProfileScreen}
+                  options={{ title: 'User Profile' }}
+                />
+                <Stack.Screen
+                  name="Token"
+                  component={TokenScreen}
+                  options={{ title: 'Token' }}
+                />
+                <Stack.Screen
+                  name="Logout"
+                  component={LogoutScreen}
+                  options={{ title: 'Logout' }}
+                />
+                <Stack.Screen
+                  name="BindingKeys"
+                  component={BindingKeysScreen}
+                  options={{ title: 'Binding Keys' }}
+                />
+                <Stack.Screen
+                  name="Push"
+                  component={PushScreen}
+                  options={{ title: 'Push Authenticator' }}
+                />
+                <Stack.Screen
+                  name="PushNotifications"
+                  component={PushNotificationsScreen}
+                  options={{ title: 'Push Notifications' }}
+                />
+                <Stack.Screen
+                  name="OathTokens"
+                  component={OathTokensScreen}
+                  options={{ title: 'OATH Tokens' }}
+                />
+                <Stack.Screen
+                  name="QRScanner"
+                  component={QRScannerScreen}
+                  options={{ title: 'QR Scanner' }}
+                />
+                <Stack.Screen
+                  name="DaVinci"
+                  component={DaVinciScreen}
+                  options={{ title: 'DaVinci Flow' }}
+                />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </PushNotificationProvider>
+        </DaVinciProvider>
       </OidcProvider>
     </JourneyProvider>
   );

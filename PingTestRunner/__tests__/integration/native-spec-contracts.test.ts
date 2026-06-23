@@ -24,6 +24,7 @@
 
 import type { Spec as BindingSpec } from '../../../packages/binding/src/NativeRNPingBinding';
 import type { Spec as BrowserSpec } from '../../../packages/browser/src/NativeRNPingBrowser';
+import type { Spec as DaVinciSpec } from '../../../packages/davinci/src/NativeRNPingDavinci';
 import type { Spec as DeviceIdSpec } from '../../../packages/device-id/src/NativeRNPingDeviceId';
 import type { Spec as DeviceProfileSpec } from '../../../packages/device-profile/src/NativeRNPingDeviceProfile';
 import type { Spec as FidoSpec } from '../../../packages/fido/src/NativeRNPingFido';
@@ -52,6 +53,22 @@ type _BindingMockedMethods = Pick<
 // ─── rn-browser ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: configure, reset, open
 type _BrowserMockedMethods = Pick<BrowserSpec, 'configure' | 'reset' | 'open'>;
+
+// ─── rn-davinci ─────────────────────────────────────────────────────────────
+// jest.setup.js mocks: configureDaVinci, start, next, getSession, refresh,
+//                      revoke, userinfo, logout, dispose
+type _DaVinciMockedMethods = Pick<
+  DaVinciSpec,
+  | 'configureDaVinci'
+  | 'start'
+  | 'next'
+  | 'getSession'
+  | 'refresh'
+  | 'revoke'
+  | 'userinfo'
+  | 'logout'
+  | 'dispose'
+>;
 
 // ─── rn-device-id ───────────────────────────────────────────────────────────
 // jest.setup.js mocks: getDefaultDeviceId

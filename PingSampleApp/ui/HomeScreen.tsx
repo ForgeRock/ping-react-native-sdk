@@ -63,7 +63,7 @@ export default function HomeScreen({
       title: 'DaVinci Flow',
       subtitle: 'Test Davinci Authentication',
       icon: 'vpn-key',
-      comingSoon: true,
+      screen: 'DaVinci',
     },
     {
       title: 'Journey Flow',

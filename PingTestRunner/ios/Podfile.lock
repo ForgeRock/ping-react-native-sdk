@@ -16,6 +16,9 @@ PODS:
     - PingLogger (~> 2.0.0)
   - PingCommons (2.0.0):
     - PingLogger (~> 2.0.0)
+  - PingDavinci (2.0.0):
+    - PingDavinciPlugin (~> 2.0.0)
+    - PingOidc (~> 2.0.0)
   - PingDavinciPlugin (2.0.0):
     - PingOrchestrate (~> 2.0.0)
   - PingDeviceClient (2.0.0):
@@ -2205,7 +2208,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingBinding (1.0.0-beta.3):
+  - RNPingBinding (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2236,7 +2239,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingBinding/Tests (1.0.0-beta.3):
+  - RNPingBinding/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2267,7 +2270,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingBrowser (1.0.0-beta.3):
+  - RNPingBrowser (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2275,6 +2278,7 @@ PODS:
     - glog
     - hermes-engine
     - PingBrowser (= 2.0.0)
+    - PingLogger (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2299,7 +2303,7 @@ PODS:
     - RNPingLogger
     - SocketRocket
     - Yoga
-  - RNPingBrowser/Tests (1.0.0-beta.3):
+  - RNPingBrowser/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2307,6 +2311,7 @@ PODS:
     - glog
     - hermes-engine
     - PingBrowser (= 2.0.0)
+    - PingLogger (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2331,7 +2336,7 @@ PODS:
     - RNPingLogger
     - SocketRocket
     - Yoga
-  - RNPingCore (1.0.0-beta.3):
+  - RNPingCore (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2360,7 +2365,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingCore/Tests (1.0.0-beta.3):
+  - RNPingCore/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2389,7 +2394,69 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPingDeviceClient (1.0.0-beta.3):
+  - RNPingDavinci (0.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingDavinci (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingDavinci/Tests (0.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingDavinci (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingDeviceClient (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2420,7 +2487,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceClient/Tests (1.0.0-beta.3):
+  - RNPingDeviceClient/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2451,7 +2518,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceId (1.0.0-beta.3):
+  - RNPingDeviceId (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2482,7 +2549,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceId/Tests (1.0.0-beta.3):
+  - RNPingDeviceId/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2513,7 +2580,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceProfile (1.0.0-beta.3):
+  - RNPingDeviceProfile (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2544,7 +2611,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingDeviceProfile/Tests (1.0.0-beta.3):
+  - RNPingDeviceProfile/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2575,7 +2642,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingExternalIdp (1.0.0-beta.3):
+  - RNPingExternalIdp (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2606,7 +2673,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingExternalIdp/Tests (1.0.0-beta.3):
+  - RNPingExternalIdp/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2637,7 +2704,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingFido (1.0.0-beta.3):
+  - RNPingFido (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2668,7 +2735,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingFido/Tests (1.0.0-beta.3):
+  - RNPingFido/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2699,7 +2766,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingJourney (1.0.0-beta.3):
+  - RNPingJourney (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2737,7 +2804,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingJourney/Tests (1.0.0-beta.3):
+  - RNPingJourney/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2775,7 +2842,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingLogger (1.0.0-beta.3):
+  - RNPingLogger (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2806,7 +2873,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingLogger/Tests (1.0.0-beta.3):
+  - RNPingLogger/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2837,7 +2904,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOath (1.0.0-beta.3):
+  - RNPingOath (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2868,7 +2935,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOath/Tests (1.0.0-beta.3):
+  - RNPingOath/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2899,7 +2966,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOidc (1.0.0-beta.3):
+  - RNPingOidc (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2934,7 +3001,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingOidc/Tests (1.0.0-beta.3):
+  - RNPingOidc/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2969,7 +3036,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingPush (1.0.0-beta.3):
+  - RNPingPush (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3002,7 +3069,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingPush/Tests (1.0.0-beta.3):
+  - RNPingPush/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3035,7 +3102,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingStorage (1.0.0-beta.3):
+  - RNPingStorage (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3066,7 +3133,7 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingStorage/Tests (1.0.0-beta.3):
+  - RNPingStorage/Tests (1.0.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3181,6 +3248,8 @@ DEPENDENCIES:
   - "RNPingBrowser/Tests (from `../../node_modules/@ping-identity/rn-browser`)"
   - RNPingCore (from `../../packages/core`)
   - RNPingCore/Tests (from `../../packages/core`)
+  - "RNPingDavinci (from `../../node_modules/@ping-identity/rn-davinci`)"
+  - "RNPingDavinci/Tests (from `../../node_modules/@ping-identity/rn-davinci`)"
   - "RNPingDeviceClient (from `../../node_modules/@ping-identity/rn-device-client`)"
   - "RNPingDeviceClient/Tests (from `../../node_modules/@ping-identity/rn-device-client`)"
   - "RNPingDeviceId (from `../../node_modules/@ping-identity/rn-device-id`)"
@@ -3211,6 +3280,7 @@ SPEC REPOS:
     - PingBinding
     - PingBrowser
     - PingCommons
+    - PingDavinci
     - PingDavinciPlugin
     - PingDeviceClient
     - PingDeviceId
@@ -3383,6 +3453,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-browser"
   RNPingCore:
     :path: "../../packages/core"
+  RNPingDavinci:
+    :path: "../../node_modules/@ping-identity/rn-davinci"
   RNPingDeviceClient:
     :path: "../../node_modules/@ping-identity/rn-device-client"
   RNPingDeviceId:
@@ -3419,6 +3491,7 @@ SPEC CHECKSUMS:
   PingBinding: 46036fcbcd4e3cb6a453f08822493ba451d4c8ab
   PingBrowser: d1526bdcc6197781d0d54fe7ac16ba09a55a1faa
   PingCommons: 49f2244bda1c41913fa37d9481e969702d658ade
+  PingDavinci: 63c1d6830ec1aaf98850ff0708b7b5fb65a55d84
   PingDavinciPlugin: d0d4c5a0e4fdd36608307e755ba435d41470d76f
   PingDeviceClient: 4d2fa2ba2fb427cc4001c43ac3ed80bd994fb4f1
   PingDeviceId: e773280c2bb679f4133c8ef855f189620b331ce3
@@ -3501,23 +3574,24 @@ SPEC CHECKSUMS:
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBinding: 10541621edbb8b6885f069ee6316843498d6cc93
-  RNPingBrowser: 63741144ed5088a03a765a4d7c42be27f18fdd53
-  RNPingCore: fe4e99005afb728904b634a2b29bd9f7df0ed7a2
-  RNPingDeviceClient: b62cdc274eff19c09fce49b7d7b7e1166a81a044
-  RNPingDeviceId: f37f85e0807a5b0e284631c83e28e0dfd4a78712
-  RNPingDeviceProfile: 90e4220f1ec456f8dfaeb9a4214214100302292c
-  RNPingExternalIdp: 7954d281fa3ea15681b5b1c6ce6f8813559e9b48
-  RNPingFido: 350763404cdd05b9fe3dbf73eba926e041d4bf63
-  RNPingJourney: f3823780322f741fceed6eb6c3c20013d85a44a2
-  RNPingLogger: 3bb60c3bc67fe1078a4a4535f98129da4845eebf
-  RNPingOath: f67ef2fedb4ad9727349be6eac5da988196871eb
-  RNPingOidc: 889badee38ae3a2a592edb723d2047f3eea603c7
-  RNPingPush: 1ac8fd7f91b9489ec088e502bb8a7b96fabacc80
-  RNPingStorage: 61024de883275173ac09f95d985f1bb9bef62670
+  RNPingBinding: c9449a4e6b808afc9dcc311a07804559c0c522b4
+  RNPingBrowser: 042c960b67b47a85b0e1de373b76ddb2609487e1
+  RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
+  RNPingDavinci: b37645623c3b3b3b1b0669a56a3d2e7ec231e75d
+  RNPingDeviceClient: bd78e33420a8f5dcd6ab3b21691805743b12079f
+  RNPingDeviceId: 24f49f8d518103367f6bbcbcf54138a424541ba7
+  RNPingDeviceProfile: 4c6b306859c9bc9cdad0aea830d9a8e0227dcc4a
+  RNPingExternalIdp: 372123fab1006f80c184a1f7992a3b335f69eb3c
+  RNPingFido: a67c3cb1fa2ff1930476189e5ebc1bc0a6e84d4a
+  RNPingJourney: 90546edde90b7c30f9b4a526a094e531a92094fe
+  RNPingLogger: db39fa39b31cd5026a7c279cd52996fafac190e1
+  RNPingOath: 2e64a03cd27ac198b21d2e4a4d767eaa31bd2b03
+  RNPingOidc: dceb88744c13a9bdd44a339f244d3a0535bf8232
+  RNPingPush: 898e5dd90a372e2ac9a27f0c622c2f17614fbd26
+  RNPingStorage: 17cf506d51259fa7c64a649d97ed974bd5350b22
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: aa39790ed4f30ff93815069baba79c18d49c70b3
+PODFILE CHECKSUM: 06fe91365819bf22b320c91bdb09a02aa2b3c437
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

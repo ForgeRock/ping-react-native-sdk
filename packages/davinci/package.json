@@ -1,0 +1,75 @@
+{
+  "name": "@ping-identity/rn-davinci",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ping Identity DaVinci orchestration for React Native",
+  "homepage": "https://www.pingidentity.com/",
+  "license": "MIT",
+  "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "*.podspec"
+  ],
+  "scripts": {
+    "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
+    "build": "bob build",
+    "test": "jest --config jest.config.js",
+    "clean": "rimraf lib",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\""
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "android"
+  ],
+  "dependencies": {
+    "@ping-identity/rn-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "react-native-builder-bob": "^0.40.14",
+    "typescript": "^5.9.2"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  },
+  "codegenConfig": {
+    "name": "RNPingDavinciSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pingidentity.rndavinci"
+    }
+  }
+}
