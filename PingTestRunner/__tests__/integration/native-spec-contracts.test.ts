@@ -155,7 +155,7 @@ type _OidcMockedMethods = Pick<
 >;
 
 // ─── rn-push ─────────────────────────────────────────────────────────────────
-// jest.setup.js mocks: all 22 bridge methods
+// jest.setup.js mocks: all 21 bridge methods
 type _PushMockedMethods = Pick<
   PushSpec,
   | 'initialize'

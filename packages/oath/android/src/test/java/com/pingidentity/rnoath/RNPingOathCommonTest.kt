@@ -762,6 +762,7 @@ class RNPingOathCommonTest {
 
     val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
     assertFalse("secret must not be serialized to the bridge", map.hasKey("secret"))
+    assertFalse("secretKey must not be serialized to the bridge", map.hasKey("secretKey"))
   }
 
   @Test
