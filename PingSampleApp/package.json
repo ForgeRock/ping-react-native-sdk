@@ -16,6 +16,7 @@
   "dependencies": {
     "@ping-identity/rn-binding": "workspace:*",
     "@ping-identity/rn-browser": "workspace:*",
+    "@ping-identity/rn-davinci": "workspace:*",
     "@ping-identity/rn-device-client": "workspace:*",
     "@ping-identity/rn-device-id": "workspace:*",
     "@ping-identity/rn-device-profile": "workspace:*",

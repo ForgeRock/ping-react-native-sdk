@@ -16,6 +16,7 @@ import com.pingidentity.rncore.registry.SimpleRegistry
  * Keeps native handles alive across calls from the React Native bridge.
  */
 public typealias JourneyCallbackResolver = suspend (String) -> List<Any>?
+public typealias DaVinciCollectorResolver = suspend (String) -> List<Any>?
 
 object CoreRuntime {
     /** Registry for session storage configuration */
@@ -41,10 +42,16 @@ object CoreRuntime {
     val oidcWebClientRegistry: Registry = SimpleRegistry()
     /** Registry for Journey client instances */
     val journeyRegistry: Registry = SimpleRegistry()
+    /** Registry for DaVinci client instances */
+    val davinciRegistry: Registry = SimpleRegistry()
 
     /** Resolver that exposes Journey callbacks to other packages. */
     @Volatile
     var journeyCallbackResolver: JourneyCallbackResolver? = null
+
+    /** Resolver that exposes DaVinci collectors to other packages. */
+    @Volatile
+    var davinciCollectorResolver: DaVinciCollectorResolver? = null
 
     /**
      * Resolves callbacks for the provided Journey id via the registered resolver.
@@ -55,4 +62,14 @@ object CoreRuntime {
      */
     suspend fun resolveJourneyCallbacks(journeyId: String): List<Any>? =
         journeyCallbackResolver?.invoke(journeyId)
+
+    /**
+     * Resolves collectors for the provided DaVinci id via the registered resolver.
+     *
+     * Plugin packages (external-idp, protect) cannot depend on rn-davinci directly —
+     * this indirection lets DaVinci inject its collector lookup at init time without
+     * creating a circular dependency.
+     */
+    suspend fun resolveDaVinciCollectors(davinciId: String): List<Any>? =
+        davinciCollectorResolver?.invoke(davinciId)
 }

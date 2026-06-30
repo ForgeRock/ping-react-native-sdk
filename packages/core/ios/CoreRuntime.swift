@@ -69,6 +69,9 @@ public enum CoreRuntime {
     /// Registry for Journey client instances.
     public static let journeyRegistry: Registry = SimpleRegistry()
 
+    /// Registry for DaVinci client instances.
+    public static let davinciRegistry: Registry = SimpleRegistry()
+
     /// Internal resolver store used to avoid shared mutable global state.
     private static let journeyCallbackResolverStore = JourneyCallbackResolverStore()
 

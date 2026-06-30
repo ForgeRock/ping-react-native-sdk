@@ -43,7 +43,7 @@
     "build:runner:bs:ios:ipa": "yarn workspace rn-test-runner build:bs:ios:ipa",
     "build:runner:bs:ios:test-suite": "yarn workspace rn-test-runner build:bs:ios:test-suite",
     "test:runner:bs:android": "yarn workspace rn-test-runner test:bs:android",
-    "test:runner:bs:android:journey": "yarn workspace rn-test-runner test:bs:android:journey",
+    "test:runner:bs:android:journey-davinci": "yarn workspace rn-test-runner test:bs:android:journey-davinci",
     "test:runner:bs:android:core": "yarn workspace rn-test-runner test:bs:android:core",
     "test:runner:e2e:ios": "yarn workspace rn-test-runner test:e2e:ios",
     "test:runner:e2e:android": "yarn workspace rn-test-runner test:e2e:android",

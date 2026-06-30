@@ -3038,6 +3038,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ping-identity/rn-davinci@workspace:*, @ping-identity/rn-davinci@workspace:packages/davinci":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-davinci@workspace:packages/davinci"
+  dependencies:
+    "@ping-identity/rn-types": "workspace:*"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-device-client@workspace:*, @ping-identity/rn-device-client@workspace:packages/device-client":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-device-client@workspace:packages/device-client"
@@ -12367,6 +12382,7 @@ __metadata:
     "@babel/runtime": "npm:^7.25.0"
     "@ping-identity/rn-binding": "workspace:*"
     "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-davinci": "workspace:*"
     "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-device-profile": "workspace:*"
@@ -12419,6 +12435,7 @@ __metadata:
     "@babel/runtime": "npm:^7.25.0"
     "@ping-identity/rn-binding": "workspace:*"
     "@ping-identity/rn-browser": "workspace:*"
+    "@ping-identity/rn-davinci": "workspace:*"
     "@ping-identity/rn-device-client": "workspace:*"
     "@ping-identity/rn-device-id": "workspace:*"
     "@ping-identity/rn-device-profile": "workspace:*"

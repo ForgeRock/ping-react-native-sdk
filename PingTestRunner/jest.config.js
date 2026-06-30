@@ -27,6 +27,8 @@ module.exports = {
     '^@ping-identity/rn-external-idp$':
       '<rootDir>/../packages/external-idp/src/index.tsx',
     '^@ping-identity/rn-core$': '<rootDir>/../packages/core/index.js',
+    '^@ping-identity/rn-davinci$':
+      '<rootDir>/../packages/davinci/src/index.tsx',
     '^@ping-identity/rn-device-client$':
       '<rootDir>/../packages/device-client/src/index.tsx',
     '^@ping-identity/rn-device-id$':
