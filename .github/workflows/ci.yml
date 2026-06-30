@@ -118,7 +118,6 @@ jobs:
   # 3 slots for iOS running in parallel — exactly at the limit.
   browserstack-android-journey-davinci:
     needs: browserstack-android-core
-    if: ${{ always() }}
     permissions:
       contents: read
     uses: ./.github/workflows/browserstack-e2e-android-journey.yml
