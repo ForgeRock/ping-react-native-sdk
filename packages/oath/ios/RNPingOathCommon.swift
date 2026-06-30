@@ -70,20 +70,6 @@ public class RNPingOathCommon: NSObject {
 
   // MARK: - Public entry points
 
-  /// Resolves a `PingLogger.Logger` from the shared `CoreRuntime` logger registry.
-  ///
-  /// - Parameter loggerId: Logger handle identifier from JS, or `nil` when no logger
-  ///   was provided.
-  /// - Returns: Native logger instance, or `nil` when `loggerId` is blank or no
-  ///   matching handle is registered.
-  private static func resolveLoggerFromCore(_ loggerId: String?) async -> PingLogger.Logger? {
-    guard let loggerId, !loggerId.isEmpty else { return nil }
-    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
-      return nil
-    }
-    return handle.nativeLogger as? PingLogger.Logger
-  }
-
   /// Creates a new `OathClient` and stores it in the handle registry.
   ///
   /// The returned handle is an opaque UUID string that JS must pass to every
@@ -429,14 +415,7 @@ public class RNPingOathCommon: NSObject {
     Task {
       do {
         let info = try await client.generateCodeWithValidity(credentialId)
-        let result: NSDictionary = [
-          "code": info.code,
-          "timeRemaining": NSNumber(value: info.timeRemaining),
-          "counter": NSNumber(value: Double(info.counter)), // Double-backed to match Android's putDouble encoding
-          "progress": NSNumber(value: info.progress),
-          "totalPeriod": NSNumber(value: info.totalPeriod),
-        ]
-        handlers.resolve(result)
+        handlers.resolve(RNPingOathCommon.encodeCodeInfo(info))
       } catch {
         handlers.reject(OathErrorMapper.mapError(error))
       }
@@ -605,6 +584,22 @@ public class RNPingOathCommon: NSObject {
     )
   }
 
+  // MARK: - Private helpers
+
+  /// Resolves a `PingLogger.Logger` from the shared `CoreRuntime` logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS, or `nil` when no logger
+  ///   was provided.
+  /// - Returns: Native logger instance, or `nil` when `loggerId` is blank or no
+  ///   matching handle is registered.
+  private static func resolveLoggerFromCore(_ loggerId: String?) async -> PingLogger.Logger? {
+    guard let loggerId, !loggerId.isEmpty else { return nil }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? PingLogger.Logger
+  }
+
   // MARK: - Codec helpers
 
   /// Encodes an `OathCredential` into a bridge-safe `NSDictionary`.
@@ -615,7 +610,7 @@ public class RNPingOathCommon: NSObject {
   ///
   /// - Parameter c: The `OathCredential` to encode.
   /// - Returns: An `NSDictionary` suitable for passing through the React Native bridge.
-  private static func encodeCredential(_ c: OathCredential) -> NSDictionary {
+  static func encodeCredential(_ c: OathCredential) -> NSDictionary {
     [
       "id": c.id,
       "issuer": c.issuer,
@@ -635,6 +630,22 @@ public class RNPingOathCommon: NSObject {
       "createdAt": NSNumber(value: c.createdAt.timeIntervalSince1970 * 1000), // ms since epoch
       "policies": c.policies as Any,
       "lockingPolicy": c.lockingPolicy as Any,
+    ]
+  }
+
+  /// Encodes an `OathCodeInfo` into a bridge-safe `NSDictionary`.
+  ///
+  /// `counter` is encoded as `NSNumber(Double)` to match Android's `putDouble` encoding.
+  ///
+  /// - Parameter info: The `OathCodeInfo` to encode.
+  /// - Returns: An `NSDictionary` suitable for passing through the React Native bridge.
+  static func encodeCodeInfo(_ info: OathCodeInfo) -> NSDictionary {
+    [
+      "code": info.code,
+      "timeRemaining": NSNumber(value: info.timeRemaining),
+      "counter": NSNumber(value: Double(info.counter)),
+      "progress": NSNumber(value: info.progress),
+      "totalPeriod": NSNumber(value: info.totalPeriod),
     ]
   }
 

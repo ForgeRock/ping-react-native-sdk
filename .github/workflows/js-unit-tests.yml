@@ -24,8 +24,7 @@ jobs:
   js-unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # TODO: remove continue-on-error after all test failures are fixed.
-    continue-on-error: true
+    continue-on-error: false
     env:
       TURBO_SCM_BASE: ${{ inputs.turbo_scm_base }}
       TURBO_SCM_HEAD: ${{ inputs.turbo_scm_head }}

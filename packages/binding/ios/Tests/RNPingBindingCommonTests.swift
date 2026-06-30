@@ -523,6 +523,40 @@ final class RNPingBindingCommonTests: XCTestCase {
     XCTAssertEqual(code, "BINDING_AUTH_FAILED")
   }
 
+  // MARK: - serializeUserKey field-name contracts
+
+  func testSerializeUserKey_idFieldIsKid() {
+    let key = UserKey(keyTag: "tag", userId: "u1", username: "alice", kid: "kid-123", authType: .biometricOnly)
+    let dict = RNPingBindingCommon.serializeUserKey(key)
+    XCTAssertEqual(dict["id"] as? String, "kid-123")
+  }
+
+  func testSerializeUserKey_userIdField() {
+    let key = UserKey(keyTag: "tag", userId: "user-abc", username: "alice", kid: "kid-1", authType: .biometricOnly)
+    let dict = RNPingBindingCommon.serializeUserKey(key)
+    XCTAssertEqual(dict["userId"] as? String, "user-abc")
+  }
+
+  func testSerializeUserKey_usernameKeyIsLowercase() {
+    // Bridge key must be "username" not "userName"
+    let key = UserKey(keyTag: "tag", userId: "u1", username: "alice", kid: "kid-1", authType: .biometricOnly)
+    let dict = RNPingBindingCommon.serializeUserKey(key)
+    XCTAssertEqual(dict["username"] as? String, "alice")
+    XCTAssertNil(dict["userName"])
+  }
+
+  func testSerializeUserKey_authenticationTypeIsUppercasedRawValue() {
+    let key = UserKey(keyTag: "tag", userId: "u1", username: "alice", kid: "kid-1", authType: .biometricOnly)
+    let dict = RNPingBindingCommon.serializeUserKey(key)
+    XCTAssertEqual(dict["authenticationType"] as? String, "BIOMETRIC_ONLY")
+  }
+
+  func testSerializeUserKey_noExtraFields() {
+    let key = UserKey(keyTag: "tag", userId: "u1", username: "alice", kid: "kid-1", authType: .biometricOnly)
+    let dict = RNPingBindingCommon.serializeUserKey(key)
+    XCTAssertEqual((dict as NSDictionary).count, 4)
+  }
+
   // MARK: - Key Management
 
   func testGetAllKeysResolvesWithArray() async {

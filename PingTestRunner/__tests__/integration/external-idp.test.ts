@@ -58,6 +58,23 @@ async function loadExternalIdp(nativeMock: NativeExternalIdpMock) {
   return require('@ping-identity/rn-external-idp');
 }
 
+async function loadExternalIdpWithRealHelpers(
+  nativeMock: NativeExternalIdpMock,
+) {
+  jest.resetModules();
+  jest.doMock(
+    '../../../packages/external-idp/src/NativeRNPingExternalIdp',
+    () => ({
+      ...jest.requireActual(
+        '../../../packages/external-idp/src/NativeRNPingExternalIdp',
+      ),
+      getNativeModule: jest.fn(() => nativeMock),
+    }),
+  );
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('@ping-identity/rn-external-idp');
+}
+
 describe('@ping-identity/rn-external-idp — integration', () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -270,6 +287,67 @@ describe('@ping-identity/rn-external-idp — integration', () => {
       await expect(client.authorizeForJourney(journey)).rejects.toMatchObject({
         code: 'EXTERNAL_IDP_UNSUPPORTED_PROVIDER',
       });
+    });
+  });
+
+  // ─── fromNativeAuthorizeResult — real field validation ────────────────────
+  //
+  // Uses jest.requireActual so the real fromNativeAuthorizeResult runs instead of
+  // an identity stub. The helper reads .token and validates .additionalParameters,
+  // so a bridge-side field rename is caught here without a device or simulator.
+
+  describe('fromNativeAuthorizeResult — real field validation', () => {
+    it('extracts token from native result', async () => {
+      const mock = makeMock({
+        authorizeForJourney: jest.fn(async () => ({ token: 'tok-1' })),
+      });
+      const mod = await loadExternalIdpWithRealHelpers(mock);
+      const client = mod.createExternalIdpClient({});
+      const journey = { getId: jest.fn(async () => 'j-1') };
+      const result = await client.authorizeForJourney(journey);
+      expect(result.token).toBe('tok-1');
+    });
+
+    it('extracts token and additionalParameters from native result', async () => {
+      const mock = makeMock({
+        authorizeForJourney: jest.fn(async () => ({
+          token: 'tok-2',
+          additionalParameters: { key: 'val' },
+        })),
+      });
+      const mod = await loadExternalIdpWithRealHelpers(mock);
+      const client = mod.createExternalIdpClient({});
+      const journey = { getId: jest.fn(async () => 'j-2') };
+      const result = await client.authorizeForJourney(journey);
+      expect(result.token).toBe('tok-2');
+      expect(result.additionalParameters).toEqual({ key: 'val' });
+    });
+
+    it('throws when native result is missing token', async () => {
+      const mock = makeMock({
+        authorizeForJourney: jest.fn(async () => ({})),
+      });
+      const mod = await loadExternalIdpWithRealHelpers(mock);
+      const client = mod.createExternalIdpClient({});
+      const journey = { getId: jest.fn(async () => 'j-3') };
+      await expect(client.authorizeForJourney(journey)).rejects.toThrow(
+        'token must be a string',
+      );
+    });
+
+    it('throws when additionalParameters contains a non-string value', async () => {
+      const mock = makeMock({
+        authorizeForJourney: jest.fn(async () => ({
+          token: 'tok-4',
+          additionalParameters: { k: 123 },
+        })),
+      });
+      const mod = await loadExternalIdpWithRealHelpers(mock);
+      const client = mod.createExternalIdpClient({});
+      const journey = { getId: jest.fn(async () => 'j-4') };
+      await expect(client.authorizeForJourney(journey)).rejects.toThrow(
+        'additionalParameters.k must be a string',
+      );
     });
   });
 
