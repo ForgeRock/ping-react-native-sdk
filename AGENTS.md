@@ -7,7 +7,9 @@ of the MIT license. See the LICENSE file for details.
 
 # AGENTS.md
 
-Guidance for AI coding agents working in this repository.
+This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Copilot, Gemini, etc.) when working with code in this repository. It follows the open AGENTS.md convention.
+
+> **Note:** CLAUDE.md in this repository is a one-line redirect to AGENTS.md. Edit AGENTS.md only.
 
 ## Project Context
 
@@ -15,7 +17,7 @@ Guidance for AI coding agents working in this repository.
 
 - Packages live under `packages/*`; native code under `packages/*/android` and `packages/*/ios`
 - Node `>=20`, Yarn 4 required
-- `PingSampleApp` — reference app demonstrating SDK features (Journey, OIDC, FIDO, device binding, etc.); used for manual testing and development
+- `PingSampleApp/` — reference app demonstrating SDK features (Journey, OIDC, FIDO, device binding, etc.); used for manual testing and development. Open `PingSampleApp/android` in Android Studio or `PingSampleApp/ios/PingSampleApp.xcworkspace` in Xcode for native IDE work.
 - `PingTestRunner` — E2E test harness; hosts Detox scenarios and integration tests
 - Follow existing package patterns before introducing new structures or abstractions
 
@@ -324,6 +326,17 @@ Integration-only changes (no new UI scenario) still require a test in `PingTestR
 - Do not invent or modify license headers
 - If the correct license header is unclear, stop and ask before proceeding
 
+## Contributing / Branch Strategy
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development workflow. Key rules for agents:
+
+- Branch from `main`; keep PRs focused on one logical change
+- Every PR needs a changeset file — run `yarn changeset` for user-visible changes, or `yarn changeset --empty` for docs/CI-only changes that don't affect published packages
+- PR title format: `<type>(<scope>): <description> (TICKET-ID)` — e.g. `fix(rn-oidc): handle null token (SDKS-1234)`
+  - Types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`
+  - Scope: the affected package short name (e.g. `rn-oidc`, `rn-fido`) or `sample-app`, `e2e`, `docs`
+- CI will fail if no changeset is present — this is enforced by the `ci.yml` workflow
+
 ## Git Safety
 
 Agents must not run any Git command that modifies repository state or remote refs.
@@ -344,3 +357,29 @@ Agents must not run any Git command that modifies repository state or remote ref
 `git status`, `git diff`, `git log`, `git show`, `git branch` (list only), `git stash list` (list only)
 
 If any of the above operations are needed, stop and ask the user to run the command manually.
+
+## CI/CD
+
+All CI workflows live under `.github/workflows/`. `ci.yml` is the top-level PR check — it orchestrates the sub-workflows below via `workflow_call`. When a CI check fails, find the failing job name in the GitHub Actions log and look up the corresponding sub-workflow file.
+
+| Workflow                                  | Trigger                      | Purpose                                                                 |
+| ----------------------------------------- | ---------------------------- | ----------------------------------------------------------------------- |
+| `ci.yml`                                  | PR opened / updated          | Orchestrates all PR checks — delegates to the sub-workflows below       |
+| `lint-and-typecheck.yml`                  | `workflow_call`              | ESLint + TypeScript type checking                                       |
+| `build-packages.yml`                      | `workflow_call`              | Builds all packages via Turbo; checks for changeset file                |
+| `js-unit-tests.yml`                       | `workflow_call`              | Jest unit tests with affected-file detection (`TURBO_SCM_BASE`)         |
+| `build-and-test-android.yml`              | `workflow_call`              | Android build + Robolectric unit tests                                  |
+| `build-and-test-ios.yml`                  | `workflow_call`              | iOS build + XCTest unit tests                                           |
+| `browserstack-prep-android-artifacts.yml` | `workflow_call`              | Assembles Android APKs for BrowserStack upload                          |
+| `browserstack-prep-ios-artifacts.yml`     | `workflow_call`              | Builds iOS `.ipa` for BrowserStack upload                               |
+| `browserstack-e2e-android-journey.yml`    | `workflow_call`              | BrowserStack E2E — Android Journey flows                                |
+| `browserstack-e2e-android-core.yml`       | `workflow_call`              | BrowserStack E2E — Android core SDK flows                               |
+| `browserstack-e2e-ios.yml`                | `workflow_call`              | BrowserStack E2E — iOS flows                                            |
+| `browserstack-parse-results-ios.yml`      | `workflow_call`              | Parses and reports BrowserStack iOS results                             |
+| `e2e-tests.yml`                           | Manual (commented out in CI) | Local Detox E2E — not run automatically; triggered manually when needed |
+| `release.yml`                             | `workflow_dispatch`          | Changeset version bump + npm publish to all `@ping-identity/*` packages |
+| `build-docs.yml`                          | `workflow_call`              | Generates TypeDoc API docs                                              |
+| `preview-docs.yml`                        | PR opened / updated          | Publishes docs preview to GitHub Pages for the PR                       |
+| `publish-docs.yml`                        | Push to `main`               | Publishes final docs to GitHub Pages                                    |
+| `cleanup-docs-preview.yml`                | PR closed                    | Removes the PR docs preview from GitHub Pages                           |
+| `mend-cli-scan.yml`                       | Scheduled                    | Mend (WhiteSource) security and dependency vulnerability scan           |
