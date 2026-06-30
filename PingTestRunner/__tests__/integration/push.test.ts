@@ -130,15 +130,10 @@ function makeMock(overrides: Partial<NativePushMock> = {}): NativePushMock {
   };
 }
 
-async function loadPush(
-  nativeMock: NativePushMock,
-  platform: 'ios' | 'android' = 'ios',
-): Promise<{
-  mod: ReturnType<typeof require>;
-  emittedHandlers: EventHandlers;
-}> {
-  jest.resetModules();
-  const emittedHandlers: EventHandlers = {};
+function mockReactNative(
+  platform: 'ios' | 'android',
+  emittedHandlers: EventHandlers,
+): void {
   jest.doMock('react-native', () => ({
     Platform: {
       OS: platform,
@@ -158,6 +153,18 @@ async function loadPush(
       ),
     },
   }));
+}
+
+async function loadPush(
+  nativeMock: NativePushMock,
+  platform: 'ios' | 'android' = 'ios',
+): Promise<{
+  mod: ReturnType<typeof require>;
+  emittedHandlers: EventHandlers;
+}> {
+  jest.resetModules();
+  const emittedHandlers: EventHandlers = {};
+  mockReactNative(platform, emittedHandlers);
   jest.doMock('../../../packages/push/src/NativeRNPingPush', () => ({
     __esModule: true,
     getNativeModule: jest.fn(() => nativeMock),
@@ -198,25 +205,7 @@ async function loadPushWithRealHelpers(
 }> {
   jest.resetModules();
   const emittedHandlers: EventHandlers = {};
-  jest.doMock('react-native', () => ({
-    Platform: {
-      OS: platform,
-      select: (s: Record<string, unknown>) => s[platform] ?? s.default,
-    },
-    NativeModules: {},
-    TurboModuleRegistry: {
-      get: jest.fn(() => null),
-      getEnforcing: jest.fn(() => null),
-    },
-    DeviceEventEmitter: {
-      addListener: jest.fn(
-        (eventName: string, handler: (...args: unknown[]) => void) => {
-          emittedHandlers[eventName] = handler;
-          return { remove: jest.fn() };
-        },
-      ),
-    },
-  }));
+  mockReactNative(platform, emittedHandlers);
   // Use real fromNative* helpers — only override getNativeModule so the actual
   // field-reading code (fromNativeWrappedCredential, fromNativeToken, etc.) runs.
   jest.doMock('../../../packages/push/src/NativeRNPingPush', () => ({

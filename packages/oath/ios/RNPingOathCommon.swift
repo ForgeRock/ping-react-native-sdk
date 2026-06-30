@@ -70,20 +70,6 @@ public class RNPingOathCommon: NSObject {
 
   // MARK: - Public entry points
 
-  /// Resolves a `PingLogger.Logger` from the shared `CoreRuntime` logger registry.
-  ///
-  /// - Parameter loggerId: Logger handle identifier from JS, or `nil` when no logger
-  ///   was provided.
-  /// - Returns: Native logger instance, or `nil` when `loggerId` is blank or no
-  ///   matching handle is registered.
-  private static func resolveLoggerFromCore(_ loggerId: String?) async -> PingLogger.Logger? {
-    guard let loggerId, !loggerId.isEmpty else { return nil }
-    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
-      return nil
-    }
-    return handle.nativeLogger as? PingLogger.Logger
-  }
-
   /// Creates a new `OathClient` and stores it in the handle registry.
   ///
   /// The returned handle is an opaque UUID string that JS must pass to every
@@ -596,6 +582,22 @@ public class RNPingOathCommon: NSObject {
       error: OathErrorCodes.stateError.rawValue,
       message: "OATH client handle not found. The client may have been closed."
     )
+  }
+
+  // MARK: - Private helpers
+
+  /// Resolves a `PingLogger.Logger` from the shared `CoreRuntime` logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS, or `nil` when no logger
+  ///   was provided.
+  /// - Returns: Native logger instance, or `nil` when `loggerId` is blank or no
+  ///   matching handle is registered.
+  private static func resolveLoggerFromCore(_ loggerId: String?) async -> PingLogger.Logger? {
+    guard let loggerId, !loggerId.isEmpty else { return nil }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? PingLogger.Logger
   }
 
   // MARK: - Codec helpers
