@@ -57,6 +57,7 @@ interface DaVinciLaunchArgs {
   PING_REDIRECT_URI?: string;
   PING_SCOPES?: string;
   PING_TIMEOUT?: string;
+  PING_ACR_VALUES?: string;
 }
 
 const args = LaunchArguments.value<DaVinciLaunchArgs>();
@@ -69,6 +70,7 @@ const SCOPES = (args.PING_SCOPES ?? 'openid profile email')
   .map((s) => s.trim())
   .filter(Boolean);
 const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
+const ACR_VALUES = args.PING_ACR_VALUES ?? undefined;
 
 // ─── state ───────────────────────────────────────────────────────────────────
 
@@ -128,6 +130,7 @@ export default function DaVinciScenario(): React.JSX.Element {
             clientId: CLIENT_ID,
             redirectUri: REDIRECT_URI,
             scopes: SCOPES,
+            ...(ACR_VALUES !== undefined ? { acrValues: ACR_VALUES } : {}),
           },
         },
         ...(TIMEOUT !== undefined ? { timeout: TIMEOUT } : {}),
