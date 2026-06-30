@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+coverage:
+  precision: 2
+  round: down
+  range: '70...100'
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+        informational: false
+        only_pulls: false
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+        only_pulls: false
+
+flags:
+  javascript:
+    paths:
+      - packages/
+    carryforward: true
+  android:
+    paths:
+      - packages/
+    carryforward: true
+  ios:
+    paths:
+      - packages/
+    carryforward: true
+
+comment:
+  layout: 'header, diff, flags, components, files, footer'
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  show_carryforward_flags: true
+
+ignore:
+  - '**/__tests__/**'
+  - '**/__mocks__/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - '**/build/**'
+  - '**/node_modules/**'
+  - 'PingSampleApp/**'
+  - 'PingTestRunner/**'
+  - '**/*.md'
