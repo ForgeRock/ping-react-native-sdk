@@ -63,10 +63,12 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
   override func tearDown() {
     RNPingDavinciCommon.cleanup()
-    Task {
-      await CoreRuntime.loggerRegistry.removeAll()
-    }
     super.tearDown()
+  }
+
+  override func tearDown() async throws {
+    await CoreRuntime.loggerRegistry.removeAll()
+    try await super.tearDown()
   }
 
   // MARK: - configureDaVinci

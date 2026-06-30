@@ -470,7 +470,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         requiresUserInput: true,
         validation: { regex: '^.+$' },
       });
-      const plan = mod.buildNextInput(collectors, { username: 'alice' });
+      const plan = mod.buildNextInput(node, { username: 'alice' });
       expect(plan.canSubmit).toBe(true);
       expect(plan.input.collectors).toEqual([
         { key: 'username', value: 'alice' },
@@ -521,7 +521,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         clearPassword: true,
         passwordPolicy: policy,
       });
-      const plan = mod.buildNextInput(collectors, { password: 's3cret' });
+      const plan = mod.buildNextInput(node, { password: 's3cret' });
       expect(plan.input.collectors).toEqual([
         { key: 'password', value: 's3cret' },
       ]);
@@ -552,8 +552,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = await client.start();
-      const collectors = mod.normalizeCollectors(node.collectors);
-      const plan = mod.buildNextInput(collectors, { username: 'alice' });
+      const plan = mod.buildNextInput(node, { username: 'alice' });
       expect(plan.input.collectors).toEqual([
         { key: 'username', value: 'alice' },
         { key: 'submit', value: 'submit' },
@@ -585,10 +584,10 @@ describe('@ping-identity/rn-davinci — integration', () => {
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = await client.start();
-      const collectors = mod.normalizeCollectors(node.collectors);
       const plan = mod.buildNextInput(
-        collectors,
+        node,
         { username: 'alice' },
+        undefined,
         'forgot',
       );
       expect(plan.input.collectors).toEqual([
@@ -615,7 +614,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         content: 'Welcome back!',
         executionMode: 'output_only',
       });
-      const plan = mod.buildNextInput(collectors, {});
+      const plan = mod.buildNextInput(node, {});
       expect(plan.input.collectors).toEqual([]);
     });
 
@@ -650,7 +649,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
           { label: 'Blue', value: 'blue' },
         ],
       });
-      const plan = mod.buildNextInput(collectors, { colour: 'blue' });
+      const plan = mod.buildNextInput(node, { colour: 'blue' });
       expect(plan.input.collectors).toEqual([{ key: 'colour', value: 'blue' }]);
     });
 
@@ -677,8 +676,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = await client.start();
-      const collectors = mod.normalizeCollectors(node.collectors);
-      const plan = mod.buildNextInput(collectors, {
+      const plan = mod.buildNextInput(node, {
         roles: ['admin', 'user'],
       });
       expect(plan.input.collectors).toEqual([
@@ -713,7 +711,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         defaultCountryCode: 'US',
         validatePhoneNumber: true,
       });
-      const plan = mod.buildNextInput(collectors, {
+      const plan = mod.buildNextInput(node, {
         phone: { countryCode: 'GB', phoneNumber: '+447700900123' },
       });
       expect(plan.input.collectors).toEqual([
@@ -761,7 +759,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         type: 'DEVICE_REGISTRATION',
         devices,
       });
-      const plan = mod.buildNextInput(collectors, { register: 'SMS' });
+      const plan = mod.buildNextInput(node, { register: 'SMS' });
       expect(plan.input.collectors).toEqual([
         { key: 'register', value: 'SMS' },
       ]);
@@ -805,7 +803,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         id: 'device-1',
         description: 'My Pixel',
       };
-      const plan = mod.buildNextInput(collectors, { auth: value });
+      const plan = mod.buildNextInput(node, { auth: value });
       expect(plan.input.collectors).toEqual([{ key: 'auth', value }]);
     });
 
@@ -834,8 +832,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = await client.start();
-      const collectors = mod.normalizeCollectors(node.collectors);
-      const plan = mod.buildNextInput(collectors, { username: 'alice' });
+      const plan = mod.buildNextInput(node, { username: 'alice' });
       expect(plan.canSubmit).toBe(true);
       expect(plan.issues).toEqual([
         expect.objectContaining({

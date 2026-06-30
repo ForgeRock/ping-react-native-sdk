@@ -180,11 +180,13 @@ enum DaVinciCollectorValueApplier {
     switch value {
     case let string as String:
       return string
-    // Bool must be checked before NSNumber — Swift Bool bridges to NSNumber and
-    // NSNumber.stringValue returns "1"/"0" instead of "true"/"false".
-    case let bool as Bool:
-      return bool ? "true" : "false"
     case let number as NSNumber:
+      // CFBooleanGetTypeID() distinguishes an actual Swift/ObjC Bool from a bridged
+      // integer NSNumber — both satisfy `as? Bool` in Swift, so we must check the
+      // CF type first to avoid converting numeric 0/1 to "false"/"true".
+      if CFGetTypeID(number) == CFBooleanGetTypeID() {
+        return number.boolValue ? "true" : "false"
+      }
       return number.stringValue
     default:
       throw DaVinciBridgeError.argument(

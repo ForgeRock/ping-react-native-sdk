@@ -58,6 +58,9 @@ class DaVinciCollectorValueApplierTest {
                 putString("key", key)
                 when (value) {
                     is String -> putString("value", value)
+                    is Boolean -> putBoolean("value", value)
+                    is Int -> putInt("value", value)
+                    is Double -> putDouble("value", value)
                     is List<*> -> {
                         val arr = JavaOnlyArray()
                         value.forEach { arr.pushString(it as String) }
@@ -152,6 +155,39 @@ class DaVinciCollectorValueApplierTest {
         DaVinciCollectorValueApplier.apply(node, inputWithCollectors(key to "selected-option"))
 
         assertEquals("selected-option", collector.value)
+    }
+
+    @Test
+    fun applyTextCollectorCoercesIntegerNumberWithoutTrailingZero() {
+        val collector = TextCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors(key to 5))
+
+        assertEquals("5", collector.value)
+    }
+
+    @Test
+    fun applyTextCollectorCoercesIntegerValuedDoubleWithoutTrailingZero() {
+        val collector = TextCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors(key to 5.0))
+
+        assertEquals("5", collector.value)
+    }
+
+    @Test
+    fun applyTextCollectorPreservesFractionalDouble() {
+        val collector = TextCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors(key to 5.5))
+
+        assertEquals("5.5", collector.value)
     }
 
     @Test

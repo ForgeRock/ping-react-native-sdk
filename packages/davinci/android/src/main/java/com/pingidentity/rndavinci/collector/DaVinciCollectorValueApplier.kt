@@ -148,7 +148,7 @@ internal object DaVinciCollectorValueApplier {
         return when (map.getType(key)) {
             ReadableType.Null -> null
             ReadableType.Boolean -> map.getBoolean(key)
-            ReadableType.Number -> map.getDouble(key)
+            ReadableType.Number -> normalizeBridgeNumber(map.getDouble(key))
             ReadableType.String -> map.getString(key)
             ReadableType.Map -> map.getMap(key)?.toHashMap()
             ReadableType.Array -> {
@@ -156,6 +156,26 @@ internal object DaVinciCollectorValueApplier {
                 (0 until arr.size()).map { i -> arr.getString(i) }
             }
         }
+    }
+
+    /**
+     * Normalises a JS number for string coercion parity with iOS.
+     *
+     * React Native bridges every JS number as a `Double`. An integer-valued double like
+     * `5.0` would stringify to `"5.0"` via `Double.toString`, while iOS `NSNumber.stringValue`
+     * emits `"5"` for the same input. Collapsing integer-valued doubles to `Long` aligns the
+     * two bridges. `NaN` and `+/-Infinity` fail the equality check (NaN is never equal to
+     * anything, and `Long.MAX_VALUE.toDouble()` does not equal `Double.POSITIVE_INFINITY`),
+     * so they fall through to `Double` and stringify as `"NaN"`/`"Infinity"`.
+     *
+     * @param bridgedNumber The JS number bridged as a Kotlin Double.
+     * @return A `Long` when the value is an integer-valued finite double, otherwise the
+     *   original `Double`.
+     */
+    private fun normalizeBridgeNumber(bridgedNumber: Double): Number {
+        val truncatedToLong = bridgedNumber.toLong()
+        val isIntegerValued = bridgedNumber == truncatedToLong.toDouble()
+        return if (isIntegerValued) truncatedToLong else bridgedNumber
     }
 
     private fun asString(value: Any?, fieldName: String): String {

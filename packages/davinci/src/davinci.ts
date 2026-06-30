@@ -149,12 +149,25 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
   };
 
   let davinciId: string | null = null;
+  let configurePromise: Promise<string> | null = null;
 
+  /**
+   * Serialises a log payload to JSON, replacing function values with `undefined`.
+   *
+   * @param payload - Object to serialise.
+   * @returns JSON string representation.
+   */
   const serialize = (payload: Record<string, unknown>): string =>
     JSON.stringify(payload, (_key, value) =>
       typeof value === 'function' ? undefined : value,
     );
 
+  /**
+   * Emits a debug-level log with an optional serialised payload.
+   *
+   * @param message - Log message prefix.
+   * @param payload - Optional payload to append.
+   */
   const logDebug = (
     message: string,
     payload?: Record<string, unknown>,
@@ -166,10 +179,23 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     jsLogger.debug(message);
   };
 
+  /**
+   * Emits an info-level log with a serialised payload.
+   *
+   * @param message - Log message prefix.
+   * @param payload - Payload to append.
+   */
   const logInfo = (message: string, payload: Record<string, unknown>): void => {
     jsLogger.info(`${message} ${serialize(payload)}`);
   };
 
+  /**
+   * Emits an error-level log, appending the error cause to the payload.
+   *
+   * @param message - Log message prefix.
+   * @param error - Caught error.
+   * @param payload - Optional additional context.
+   */
   const logError = (
     message: string,
     error: unknown,
@@ -188,21 +214,37 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
    * @returns Native DaVinci identifier.
    * @throws {DaVinciError} When configuration fails.
    */
-  const ensureConfigured = async (): Promise<string> => {
-    if (!davinciId) {
-      logDebug('DaVinci configure requested');
-      try {
-        davinciId = await configureDaVinci(nativeConfig);
-        logInfo('DaVinci configure succeeded', { davinciId });
-      } catch (error) {
+  const ensureConfigured = (): Promise<string> => {
+    if (davinciId) {
+      return Promise.resolve(davinciId);
+    }
+    if (configurePromise) {
+      return configurePromise;
+    }
+    logDebug('DaVinci configure requested');
+    configurePromise = configureDaVinci(nativeConfig)
+      .then((id) => {
+        davinciId = id;
+        logInfo('DaVinci configure succeeded', { davinciId: id });
+        return id;
+      })
+      .catch((error) => {
         logError('DaVinci configure failed', error);
         throw error;
-      }
-    }
-    return davinciId;
+      })
+      .finally(() => {
+        configurePromise = null;
+      });
+    return configurePromise;
   };
 
   return {
+    /**
+     * Starts the DaVinci flow and returns the first node.
+     *
+     * @returns First flow node.
+     * @throws {DaVinciError} When start fails.
+     */
     async start() {
       const id = await ensureConfigured();
       logDebug('DaVinci start requested', { davinciId: id });
@@ -216,6 +258,13 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Advances the active flow node by applying collector values.
+     *
+     * @param input - Key-indexed collector values to apply before advancing.
+     * @returns Next flow node.
+     * @throws {DaVinciError} When value application or flow progression fails.
+     */
     async next(input: DaVinciNextInput) {
       const id = await ensureConfigured();
       logDebug('DaVinci next requested', { davinciId: id });
@@ -229,6 +278,12 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Resolves the active user session.
+     *
+     * @returns Session payload, or `null` when no active session.
+     * @throws {DaVinciError} When session retrieval fails.
+     */
     async user() {
       const id = await ensureConfigured();
       logDebug('DaVinci user requested', { davinciId: id });
@@ -245,6 +300,12 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Refreshes the active user session tokens.
+     *
+     * @returns Refreshed session payload, or `null` when no active session.
+     * @throws {DaVinciError} When refresh fails.
+     */
     async refresh() {
       const id = await ensureConfigured();
       logDebug('DaVinci refresh requested', { davinciId: id });
@@ -261,6 +322,12 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Revokes the active user access and refresh tokens.
+     *
+     * @returns `true` when revocation completes.
+     * @throws {DaVinciError} When revocation fails.
+     */
     async revoke() {
       const id = await ensureConfigured();
       logDebug('DaVinci revoke requested', { davinciId: id });
@@ -274,6 +341,12 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Resolves userinfo claims for the active session.
+     *
+     * @returns Userinfo payload, or `null` when no active session.
+     * @throws {DaVinciError} When userinfo retrieval fails.
+     */
     async userinfo() {
       const id = await ensureConfigured();
       logDebug('DaVinci userinfo requested', { davinciId: id });
@@ -290,6 +363,11 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Logs out the active user and clears the session.
+     *
+     * @throws {DaVinciError} When logout fails.
+     */
     async logoutUser() {
       const id = await ensureConfigured();
       logDebug('DaVinci logout requested', { davinciId: id });
@@ -302,6 +380,11 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       }
     },
 
+    /**
+     * Disposes the native DaVinci instance and releases runtime state.
+     *
+     * @throws {DaVinciError} When disposal fails.
+     */
     async dispose() {
       if (!davinciId) {
         logDebug('DaVinci dispose skipped (no active davinciId)');

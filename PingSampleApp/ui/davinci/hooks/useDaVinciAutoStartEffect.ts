@@ -44,9 +44,14 @@ export function useDaVinciAutoStartEffect(
 
     hasAutoStartedRef.current = true;
     void (async () => {
-      const didStart = await onStart();
-      if (!didStart) {
+      try {
+        const didStart = await onStart();
+        if (!didStart) {
+          hasAutoStartedRef.current = false;
+        }
+      } catch (error) {
         hasAutoStartedRef.current = false;
+        console.error('[useDaVinciAutoStartEffect] onStart failed:', error);
       }
     })();
   }, [hasActiveSession, isSessionCheckRunning, loading, node, onStart]);

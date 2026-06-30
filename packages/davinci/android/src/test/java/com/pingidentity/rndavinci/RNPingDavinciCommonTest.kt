@@ -495,6 +495,8 @@ private class TestPromise : Promise {
     }
 
     fun await(timeoutMs: Long = 10_000) {
-        latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+            throw AssertionError("Promise did not settle within ${timeoutMs}ms")
+        }
     }
 }

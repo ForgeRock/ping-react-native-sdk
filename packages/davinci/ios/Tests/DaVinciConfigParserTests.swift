@@ -161,7 +161,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.timeout, 10000)
   }
 
-  func testParseReturnsNilTimeoutForUnparseable() throws {
+  func testParseThrowsForUnparseableTimeout() {
     let config: NSDictionary = [
       "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
       "clientId": "my-client",
@@ -169,8 +169,12 @@ final class DaVinciConfigParserTests: XCTestCase {
       "timeout": "not-a-number"
     ]
 
-    let payload = try DaVinciConfigParser.parse(config)
-    XCTAssertNil(payload.timeout)
+    XCTAssertThrowsError(try DaVinciConfigParser.parse(config)) { error in
+      guard case let DaVinciBridgeError.argument(message) = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("timeout"))
+    }
   }
 
   func testParseEmptyScopesForMissingKey() throws {
