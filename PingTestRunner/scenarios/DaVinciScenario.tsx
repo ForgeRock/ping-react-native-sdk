@@ -162,9 +162,13 @@ export default function DaVinciScenario(): React.JSX.Element {
 
   const handleFlow = useCallback(
     async (flowKey: string) => {
-      await handleSubmit({ collectors: [{ key: flowKey, value: flowKey }] });
+      if (!node || node.type !== 'ContinueNode') return;
+      const base = buildPayload(normalizeCollectors(node.collectors), values);
+      await handleSubmit({
+        collectors: [...base.collectors, { key: flowKey, value: flowKey }],
+      });
     },
-    [handleSubmit],
+    [handleSubmit, node, values],
   );
 
   const handleUserinfo = useCallback(async () => {
@@ -191,20 +195,20 @@ export default function DaVinciScenario(): React.JSX.Element {
     if (!client) return;
     try {
       await client.revoke();
+      setRevoked(true);
     } catch (e) {
       setRuntimeError(e instanceof Error ? e.message : String(e));
     }
-    setRevoked(true);
   }, [client]);
 
   const handleLogout = useCallback(async () => {
     if (!client) return;
     try {
       await client.logoutUser();
+      setLoggedOut(true);
     } catch (e) {
       setRuntimeError(e instanceof Error ? e.message : String(e));
     }
-    setLoggedOut(true);
   }, [client]);
 
   return (

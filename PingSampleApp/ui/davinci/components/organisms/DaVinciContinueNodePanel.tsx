@@ -60,7 +60,8 @@ function hasInteractiveSubmit(
     collector =>
       collector.type === 'SUBMIT_BUTTON' ||
       collector.type === 'ACTION' ||
-      collector.type === 'FLOW_BUTTON',
+      collector.type === 'FLOW_BUTTON' ||
+      collector.type === 'FLOW_LINK',
   );
 }
 

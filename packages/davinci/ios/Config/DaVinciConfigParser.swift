@@ -14,7 +14,8 @@ enum DaVinciConfigParser {
   ///
   /// - Parameter config: Bridge payload.
   /// - Returns: Parsed DaVinci client payload.
-  /// - Throws: `DaVinciBridgeError.argument` when required fields are missing or blank.
+  /// - Throws: `DaVinciBridgeError.argument` when required fields are missing, blank, or the
+  ///   `timeout` value is a non-numeric string.
   static func parse(_ config: NSDictionary) throws -> DaVinciClientPayload {
     let discoveryEndpoint: String
     do {
@@ -40,7 +41,7 @@ enum DaVinciConfigParser {
     let scopes = ReadableMapUtils.readStringArray(config["scopes"] as? NSArray)
     let storageId = readOptionalString(config["storageId"])
     let loggerId = readOptionalString(config["loggerId"])
-    let timeout = parseInt64(config["timeout"])
+    let timeout = try requireInt64IfPresent(config["timeout"], key: "timeout")
     let signOutRedirectUri = readOptionalString(config["signOutRedirectUri"])
     let loginHint = readOptionalString(config["loginHint"])
     let nonce = readOptionalString(config["nonce"])
@@ -86,6 +87,26 @@ enum DaVinciConfigParser {
     if let string = value as? String,
        let parsed = Int64(string.trimmingCharacters(in: .whitespacesAndNewlines)) {
       return parsed
+    }
+    return nil
+  }
+
+  /// Parses an optional numeric field, throwing when the value is present but not a valid integer.
+  ///
+  /// - Parameters:
+  ///   - value: Raw bridge value.
+  ///   - key: Field name used in the error message.
+  /// - Returns: Parsed `Int64`, or `nil` when the field is absent.
+  /// - Throws: `DaVinciBridgeError.argument` when the value is a non-numeric string.
+  private static func requireInt64IfPresent(_ value: Any?, key: String) throws -> Int64? {
+    guard let value else { return nil }
+    if let number = value as? NSNumber {
+      return number.int64Value
+    }
+    if let string = value as? String {
+      let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+      if let parsed = Int64(trimmed) { return parsed }
+      throw DaVinciBridgeError.argument("Invalid value for '\(key)': expected a number, got \"\(trimmed)\"")
     }
     return nil
   }

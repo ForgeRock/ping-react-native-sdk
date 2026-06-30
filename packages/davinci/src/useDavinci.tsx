@@ -102,6 +102,9 @@ export type DaVinciHookResult = DaVinciHookActions & {
   node: DaVinciNode | null;
 };
 
+/**
+ * Internal React context value holding the shared DaVinci client and hook result.
+ */
 type DaVinciContextValue = {
   client: DaVinciClient;
   davinci: DaVinciHookResult;

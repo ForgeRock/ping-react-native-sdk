@@ -15,12 +15,10 @@ import PingLogger
 
 final class DaVinciClientFactoryTests: XCTestCase {
 
-  override func tearDown() {
-    super.tearDown()
-    Task {
-      await CoreRuntime.oidcStorageConfigRegistry.removeAll()
-      await CoreRuntime.loggerRegistry.removeAll()
-    }
+  override func tearDown() async throws {
+    await CoreRuntime.oidcStorageConfigRegistry.removeAll()
+    await CoreRuntime.loggerRegistry.removeAll()
+    try await super.tearDown()
   }
 
   func testBuildSucceedsWithRequiredFieldsOnly() async throws {
