@@ -11,11 +11,12 @@
  * Exercises the DaVinci workflow against a live PingOne DaVinci environment
  * when the required environment variables are set:
  *
- *   PING_DISCOVERY_ENDPOINT  — DaVinci OIDC discovery endpoint
- *   PING_CLIENT_ID           — OIDC client id
- *   PING_REDIRECT_URI        — OIDC redirect URI (optional, defaults to org.forgerock.demo://oauth2redirect)
- *   PING_TEST_USERNAME       — DaVinci username collector value
- *   PING_TEST_PASSWORD       — DaVinci password collector value
+ *   PINGONE_DISCOVERY_ENDPOINT  — DaVinci OIDC discovery endpoint
+ *   PINGONE_CLIENT_ID           — OIDC client id
+ *   PINGONE_REDIRECT_URI        — OIDC redirect URI (optional, defaults to org.forgerock.demo://oauth2redirect)
+ *   PINGONE_ACR_VALUES          — ACR values to route to the correct DaVinci flow (optional)
+ *   PINGONE_USERNAME            — DaVinci username collector value
+ *   PINGONE_PASSWORD            — DaVinci password collector value
  *
  * When env vars are absent the live cases self-skip while the launch smoke test
  * still verifies the scenario screen mounts.
@@ -26,7 +27,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
-import { assertAppReady, E2E_ENV } from './setup';
+import { assertAppReady, DAVINCI_ENV } from './setup';
 
 const NET_TIMEOUT = 30000;
 
@@ -40,14 +41,14 @@ const PASSWORD_INPUT = by.id(`davinci-field-${DAVINCI_PASSWORD_KEY}`);
 
 const SKIP_REASON =
   'Live DaVinci env vars not set — skipping DaVinci E2E tests. ' +
-  'Set PING_DISCOVERY_ENDPOINT, PING_CLIENT_ID, PING_TEST_USERNAME, PING_TEST_PASSWORD to enable.';
+  'Set PINGONE_DISCOVERY_ENDPOINT, PINGONE_CLIENT_ID, PINGONE_USERNAME, PINGONE_PASSWORD to enable.';
 
 function hasDaVinciEnv(): boolean {
   return !!(
-    E2E_ENV.discoveryEndpoint &&
-    E2E_ENV.clientId &&
-    E2E_ENV.testUsername &&
-    E2E_ENV.testPassword
+    DAVINCI_ENV.discoveryEndpoint &&
+    DAVINCI_ENV.clientId &&
+    DAVINCI_ENV.testUsername &&
+    DAVINCI_ENV.testPassword
   );
 }
 
@@ -57,12 +58,17 @@ describe('DaVinci — happy path', () => {
       newInstance: true,
       launchArgs: {
         PING_TEST_SCENARIO: 'davinci',
-        ...(E2E_ENV.discoveryEndpoint
-          ? { PING_DISCOVERY_ENDPOINT: E2E_ENV.discoveryEndpoint }
+        ...(DAVINCI_ENV.discoveryEndpoint
+          ? { PING_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint }
           : {}),
-        ...(E2E_ENV.clientId ? { PING_CLIENT_ID: E2E_ENV.clientId } : {}),
-        ...(E2E_ENV.redirectUri
-          ? { PING_REDIRECT_URI: E2E_ENV.redirectUri }
+        ...(DAVINCI_ENV.clientId
+          ? { PING_CLIENT_ID: DAVINCI_ENV.clientId }
+          : {}),
+        ...(DAVINCI_ENV.redirectUri
+          ? { PING_REDIRECT_URI: DAVINCI_ENV.redirectUri }
+          : {}),
+        ...(DAVINCI_ENV.acrValues
+          ? { PING_ACR_VALUES: DAVINCI_ENV.acrValues }
           : {}),
       },
     });
@@ -102,8 +108,8 @@ describe('DaVinci — happy path', () => {
       return;
     }
 
-    await element(USERNAME_INPUT).typeText(E2E_ENV.testUsername);
-    await element(PASSWORD_INPUT).typeText(E2E_ENV.testPassword);
+    await element(USERNAME_INPUT).typeText(DAVINCI_ENV.testUsername);
+    await element(PASSWORD_INPUT).typeText(DAVINCI_ENV.testPassword);
     await element(by.id('davinci-submit-btn')).tap();
     await waitFor(element(by.id('davinci-success')))
       .toBeVisible()
