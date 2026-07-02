@@ -69,6 +69,8 @@ object CoreRuntime {
      * Plugin packages (external-idp, protect) cannot depend on rn-davinci directly —
      * this indirection lets DaVinci inject its collector lookup at init time without
      * creating a circular dependency.
+     *
+     * @param davinciId registered daVinciId whose collectors should be resolved
      */
     suspend fun resolveDaVinciCollectors(davinciId: String): List<Any>? =
         davinciCollectorResolver?.invoke(davinciId)
