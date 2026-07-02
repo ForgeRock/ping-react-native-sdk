@@ -292,7 +292,11 @@ describe('@ping-identity/rn-device-client — integration', () => {
       });
       const mod = await loadDeviceClient(native);
       const client = mod.createDeviceClient(VALID_CONFIG);
-      await expect(client.oath.get()).rejects.toEqual(nativeError);
+      await expect(client.oath.get()).rejects.toMatchObject({
+        code: nativeError.code,
+        message: nativeError.message,
+        status: nativeError.status,
+      });
     });
   });
 

@@ -9,14 +9,19 @@ package com.pingidentity.rnoath
 
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
+import com.facebook.react.bridge.ReadableArray
+import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.mfa.commons.policy.BiometricAvailablePolicy
 import com.pingidentity.mfa.commons.policy.DeviceTamperingPolicy
 import com.pingidentity.mfa.commons.policy.MfaPolicyEvaluator
 import com.pingidentity.mfa.oath.OathClient
+import com.pingidentity.mfa.oath.OathCodeInfo
 import com.pingidentity.mfa.oath.OathConfiguration
 import com.pingidentity.mfa.oath.OathCredential
+import com.pingidentity.mfa.oath.OathAlgorithm
+import com.pingidentity.mfa.oath.OathType
 import com.pingidentity.mfa.oath.storage.OathStorage
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.storage.OathStorageConfigHandleContract
@@ -598,6 +603,220 @@ class RNPingOathCommonTest {
     )
 
     CoreRuntime.oathPolicyEvaluatorRegistry.removeAll()
+  }
+
+  // ---------------------------------------------------------------------------
+  // encodeCredential bridge key contract
+  //
+  // Tests call getCredentials() (which calls the private encodeCredential) via a
+  // mocked OathClient so we can assert the exact WritableMap keys without native
+  // SQLite initialisation. A rename of any key here breaks the JS TypeScript types.
+  // ---------------------------------------------------------------------------
+
+  private fun createHandleWithMockedClient(mockClient: OathClient): String {
+    mockkObject(OathClient.Companion)
+    coEvery { OathClient.Companion.invoke(any()) } returns mockClient
+    val createPromise = TestPromise()
+    RNPingOathCommon.create(JavaOnlyMap(), createPromise)
+    createPromise.await()
+    unmockkObject(OathClient.Companion)
+    return createPromise.resolvedValue as String
+  }
+
+  private fun buildTestCredential(
+    id: String = "cred-enc-1",
+    oathType: OathType = OathType.TOTP,
+    oathAlgorithm: OathAlgorithm = OathAlgorithm.SHA1,
+  ): OathCredential = OathCredential(
+    id = id,
+    userId = null,
+    resourceId = null,
+    issuer = "Ping",
+    displayIssuer = "Ping Identity",
+    accountName = "user@example.com",
+    displayAccountName = "User",
+    oathType = oathType,
+    secret = "SECRET",
+    oathAlgorithm = oathAlgorithm,
+    digits = 6,
+    period = 30,
+    counter = 0L,
+    createdAt = java.util.Date(1_700_000_000_000L),
+    imageURL = null,
+    backgroundColor = null,
+    policies = null,
+    lockingPolicy = null,
+    isLocked = false,
+  )
+
+  @Test
+  fun encodeCredential_serializesIdField() {
+    val credential = buildTestCredential(id = "my-cred-id")
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals("my-cred-id", array.getMap(0)?.getString("id"))
+  }
+
+  @Test
+  fun encodeCredential_serializesIssuerAndDisplayIssuerFields() {
+    val credential = buildTestCredential()
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertEquals("Ping", map.getString("issuer"))
+    assertEquals("Ping Identity", map.getString("displayIssuer"))
+  }
+
+  @Test
+  fun encodeCredential_serializesTypeAsUppercaseEnumName() {
+    val totpCredential = buildTestCredential(oathType = OathType.TOTP)
+    val hotpCredential = buildTestCredential(id = "hotp-1", oathType = OathType.HOTP)
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(totpCredential, hotpCredential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val array = promise.resolvedValue as ReadableArray
+    assertEquals("TOTP", array.getMap(0)?.getString("type"))
+    assertEquals("HOTP", array.getMap(1)?.getString("type"))
+  }
+
+  @Test
+  fun encodeCredential_serializesAlgorithmAsUppercaseEnumName() {
+    val sha256Credential = buildTestCredential(oathAlgorithm = OathAlgorithm.SHA256)
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(sha256Credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertEquals("SHA256", map.getString("algorithm"))
+  }
+
+  @Test
+  fun encodeCredential_serializesCreatedAtAsDoubleMilliseconds() {
+    val credential = buildTestCredential()
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertEquals(1_700_000_000_000.0, map.getDouble("createdAt"), 0.0)
+  }
+
+  @Test
+  fun encodeCredential_serializesIsLockedAsBoolean() {
+    val credential = buildTestCredential()
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertFalse(map.getBoolean("isLocked"))
+  }
+
+  @Test
+  fun encodeCredential_doesNotSerializeSecretField() {
+    val credential = buildTestCredential()
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertFalse("secret must not be serialized to the bridge", map.hasKey("secret"))
+    assertFalse("secretKey must not be serialized to the bridge", map.hasKey("secretKey"))
+  }
+
+  @Test
+  fun encodeCredential_nullableFieldsAreNullWhenAbsent() {
+    val credential = buildTestCredential()
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery { mockClient.getCredentials() } returns Result.success(listOf(credential))
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.getCredentials(handle, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = (promise.resolvedValue as ReadableArray).getMap(0)!!
+    assertTrue(map.isNull("userId"))
+    assertTrue(map.isNull("resourceId"))
+    assertTrue(map.isNull("policies"))
+    assertTrue(map.isNull("lockingPolicy"))
+    assertTrue(map.isNull("imageURL"))
+    assertTrue(map.isNull("backgroundColor"))
+  }
+
+  // ---------------------------------------------------------------------------
+  // generateCodeWithValidity bridge key contract
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun generateCodeWithValidity_serializesAllFiveBridgeKeys() {
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    coEvery {
+      mockClient.generateCodeWithValidity("cred-gv-1")
+    } returns Result.success(
+      OathCodeInfo(
+        code = "123456",
+        timeRemaining = 15,
+        counter = 0L,
+        progress = 0.5,
+        totalPeriod = 30,
+      )
+    )
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val promise = TestPromise()
+    RNPingOathCommon.generateCodeWithValidity(handle, "cred-gv-1", promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val map = promise.resolvedValue as ReadableMap
+    assertEquals("123456", map.getString("code"))
+    assertEquals(15, map.getInt("timeRemaining"))
+    assertEquals(0.0, map.getDouble("counter"), 0.0)
+    assertEquals(0.5, map.getDouble("progress"), 0.001)
+    assertEquals(30, map.getInt("totalPeriod"))
   }
 }
 

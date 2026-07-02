@@ -334,6 +334,128 @@ final class RNPingOathCommonTests: XCTestCase {
     )
   }
 
+  // MARK: - encodeCredential field-name contracts
+
+  private func makeCredential(
+    id: String = "cred-id-1",
+    issuer: String = "Acme",
+    accountName: String = "user@acme.com",
+    oathType: OathType = .totp,
+    oathAlgorithm: OathAlgorithm = .sha256,
+    createdAt: Date = Date(timeIntervalSince1970: 1_700_000),
+    isLocked: Bool = false,
+    userId: String? = nil,
+    resourceId: String? = nil
+  ) -> OathCredential {
+    OathCredential(
+      id: id,
+      userId: userId,
+      resourceId: resourceId,
+      issuer: issuer,
+      accountName: accountName,
+      oathType: oathType,
+      oathAlgorithm: oathAlgorithm,
+      createdAt: createdAt,
+      isLocked: isLocked,
+      secretKey: "secret"
+    )
+  }
+
+  func test_encodeCredential_idField() {
+    let cred = makeCredential(id: "test-id-abc")
+    let dict = RNPingOathCommon.encodeCredential(cred)
+    XCTAssertEqual(dict["id"] as? String, "test-id-abc")
+  }
+
+  func test_encodeCredential_issuerField() {
+    let cred = makeCredential(issuer: "Ping Identity")
+    let dict = RNPingOathCommon.encodeCredential(cred)
+    XCTAssertEqual(dict["issuer"] as? String, "Ping Identity")
+  }
+
+  func test_encodeCredential_displayIssuerField() {
+    let cred = makeCredential(issuer: "Acme")
+    let dict = RNPingOathCommon.encodeCredential(cred)
+    XCTAssertEqual(dict["displayIssuer"] as? String, "Acme")
+  }
+
+  func test_encodeCredential_accountNameField() {
+    let cred = makeCredential(accountName: "bob@example.com")
+    let dict = RNPingOathCommon.encodeCredential(cred)
+    XCTAssertEqual(dict["accountName"] as? String, "bob@example.com")
+  }
+
+  func test_encodeCredential_typeIsUppercased() {
+    let totpCred = makeCredential(oathType: .totp)
+    XCTAssertEqual(RNPingOathCommon.encodeCredential(totpCred)["type"] as? String, "TOTP")
+
+    let hotpCred = makeCredential(oathType: .hotp)
+    XCTAssertEqual(RNPingOathCommon.encodeCredential(hotpCred)["type"] as? String, "HOTP")
+  }
+
+  func test_encodeCredential_algorithmIsAlreadyUppercase() {
+    let cred = makeCredential(oathAlgorithm: .sha256)
+    XCTAssertEqual(RNPingOathCommon.encodeCredential(cred)["algorithm"] as? String, "SHA256")
+  }
+
+  func test_encodeCredential_createdAtIsMillisecondsSinceEpoch() {
+    let epoch = Date(timeIntervalSince1970: 1_700_000)
+    let cred = makeCredential(createdAt: epoch)
+    let ms = RNPingOathCommon.encodeCredential(cred)["createdAt"] as? NSNumber
+    XCTAssertEqual(ms?.doubleValue ?? 0, epoch.timeIntervalSince1970 * 1000, accuracy: 1.0)
+  }
+
+  func test_encodeCredential_isLockedField() {
+    XCTAssertEqual(RNPingOathCommon.encodeCredential(makeCredential(isLocked: false))["isLocked"] as? Bool, false)
+    XCTAssertEqual(RNPingOathCommon.encodeCredential(makeCredential(isLocked: true))["isLocked"] as? Bool, true)
+  }
+
+  func test_encodeCredential_nullableFieldsAreNSNullWhenNil() {
+    let cred = makeCredential(userId: nil, resourceId: nil)
+    let dict = RNPingOathCommon.encodeCredential(cred)
+    XCTAssertTrue(dict["userId"] is NSNull)
+    XCTAssertTrue(dict["resourceId"] is NSNull)
+    XCTAssertTrue(dict["imageURL"] is NSNull)
+    XCTAssertTrue(dict["backgroundColor"] is NSNull)
+    XCTAssertTrue(dict["policies"] is NSNull)
+    XCTAssertTrue(dict["lockingPolicy"] is NSNull)
+  }
+
+  func test_encodeCredential_secretNotPresent() {
+    let dict = RNPingOathCommon.encodeCredential(makeCredential())
+    XCTAssertNil(dict["secret"])
+    XCTAssertNil(dict["secretKey"])
+  }
+
+  // MARK: - encodeCodeInfo field-name contracts
+
+  func test_encodeCodeInfo_codeField() {
+    let info = OathCodeInfo.forTotp(code: "123456", timeRemaining: 15, totalPeriod: 30)
+    XCTAssertEqual(RNPingOathCommon.encodeCodeInfo(info)["code"] as? String, "123456")
+  }
+
+  func test_encodeCodeInfo_timeRemainingField() {
+    let info = OathCodeInfo.forTotp(code: "000000", timeRemaining: 15, totalPeriod: 30)
+    XCTAssertEqual(RNPingOathCommon.encodeCodeInfo(info)["timeRemaining"] as? NSNumber, NSNumber(value: 15))
+  }
+
+  func test_encodeCodeInfo_counterIsDoubleBackedNSNumber() {
+    let info = OathCodeInfo.forHotp(code: "654321", counter: 42)
+    let num = RNPingOathCommon.encodeCodeInfo(info)["counter"] as? NSNumber
+    XCTAssertEqual(num?.doubleValue, 42.0)
+  }
+
+  func test_encodeCodeInfo_progressField() {
+    let info = OathCodeInfo.forTotp(code: "000000", timeRemaining: 15, totalPeriod: 30)
+    let progress = RNPingOathCommon.encodeCodeInfo(info)["progress"] as? NSNumber
+    XCTAssertNotNil(progress)
+  }
+
+  func test_encodeCodeInfo_totalPeriodField() {
+    let info = OathCodeInfo.forTotp(code: "000000", timeRemaining: 15, totalPeriod: 30)
+    XCTAssertEqual(RNPingOathCommon.encodeCodeInfo(info)["totalPeriod"] as? NSNumber, NSNumber(value: 30))
+  }
+
   // MARK: - Policy evaluator producer tests
 
   func test_registerOathPolicyEvaluator_withBothPolicies_returnsDeterministicIdAndRoundTrips() {

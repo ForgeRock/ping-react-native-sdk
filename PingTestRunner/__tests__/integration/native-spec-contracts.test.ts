@@ -24,13 +24,16 @@
 
 import type { Spec as BindingSpec } from '../../../packages/binding/src/NativeRNPingBinding';
 import type { Spec as BrowserSpec } from '../../../packages/browser/src/NativeRNPingBrowser';
+import type { Spec as DeviceClientSpec } from '../../../packages/device-client/src/NativeRNPingDeviceClient';
 import type { Spec as DeviceIdSpec } from '../../../packages/device-id/src/NativeRNPingDeviceId';
 import type { Spec as DeviceProfileSpec } from '../../../packages/device-profile/src/NativeRNPingDeviceProfile';
+import type { Spec as ExternalIdpSpec } from '../../../packages/external-idp/src/NativeRNPingExternalIdp';
 import type { Spec as FidoSpec } from '../../../packages/fido/src/NativeRNPingFido';
 import type { Spec as JourneySpec } from '../../../packages/journey/src/NativeRNPingJourney';
 import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPingLogger';
 import type { Spec as OathSpec } from '../../../packages/oath/src/NativeRNPingOath';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
+import type { Spec as PushSpec } from '../../../packages/push/src/NativeRNPingPush';
 import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRNPingStorage';
 
 // ─── rn-binding ─────────────────────────────────────────────────────────────
@@ -53,6 +56,13 @@ type _BindingMockedMethods = Pick<
 // jest.setup.js mocks: configure, reset, open
 type _BrowserMockedMethods = Pick<BrowserSpec, 'configure' | 'reset' | 'open'>;
 
+// ─── rn-device-client ────────────────────────────────────────────────────────
+// jest.setup.js mocks: create, get, update, deleteDevice, dispose
+type _DeviceClientMockedMethods = Pick<
+  DeviceClientSpec,
+  'create' | 'get' | 'update' | 'deleteDevice' | 'dispose'
+>;
+
 // ─── rn-device-id ───────────────────────────────────────────────────────────
 // jest.setup.js mocks: getDefaultDeviceId
 type _DeviceIdMockedMethods = Pick<DeviceIdSpec, 'getDefaultDeviceId'>;
@@ -64,11 +74,22 @@ type _DeviceProfileMockedMethods = Pick<
   'collectDeviceProfile' | 'collectDeviceProfileForJourney'
 >;
 
+// ─── rn-external-idp ─────────────────────────────────────────────────────────
+// jest.setup.js mocks: authorizeForJourney, selectProviderForJourney
+type _ExternalIdpMockedMethods = Pick<
+  ExternalIdpSpec,
+  'authorizeForJourney' | 'selectProviderForJourney'
+>;
+
 // ─── rn-fido ────────────────────────────────────────────────────────────────
-// jest.setup.js mocks: registerCredential, authenticateCredential
+// jest.setup.js mocks: registerCredential, authenticateCredential,
+//                      registerCredentialForJourney, authenticateCredentialForJourney
 type _FidoMockedMethods = Pick<
   FidoSpec,
-  'registerCredential' | 'authenticateCredential'
+  | 'registerCredential'
+  | 'authenticateCredential'
+  | 'registerCredentialForJourney'
+  | 'authenticateCredentialForJourney'
 >;
 
 // ─── rn-journey ─────────────────────────────────────────────────────────────
@@ -131,6 +152,33 @@ type _OidcMockedMethods = Pick<
   | 'userinfo'
   | 'revoke'
   | 'logout'
+>;
+
+// ─── rn-push ─────────────────────────────────────────────────────────────────
+// jest.setup.js mocks: all 21 bridge methods
+type _PushMockedMethods = Pick<
+  PushSpec,
+  | 'initialize'
+  | 'addCredentialFromUri'
+  | 'getCredential'
+  | 'getCredentials'
+  | 'saveCredential'
+  | 'deleteCredential'
+  | 'setDeviceToken'
+  | 'getDeviceToken'
+  | 'processNotification'
+  | 'processNotificationFromMessage'
+  | 'approveNotification'
+  | 'approveChallengeNotification'
+  | 'approveBiometricNotification'
+  | 'denyNotification'
+  | 'getPendingNotifications'
+  | 'getAllNotifications'
+  | 'getNotification'
+  | 'cleanupNotifications'
+  | 'close'
+  | 'consumePendingMessages'
+  | 'refreshToken'
 >;
 
 // ─── rn-storage ─────────────────────────────────────────────────────────────
