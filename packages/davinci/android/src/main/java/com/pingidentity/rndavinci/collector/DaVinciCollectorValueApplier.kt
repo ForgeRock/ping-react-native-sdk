@@ -61,11 +61,11 @@ internal object DaVinciCollectorValueApplier {
 
         var isFlowTrigger = false
 
-        for (i in 0 until collectorsArray.size()) {
-            val entry = collectorsArray.getMap(i)
-                ?: throw IllegalArgumentException("Invalid collector entry at index $i")
+        for (index in 0 until collectorsArray.size()) {
+            val entry = collectorsArray.getMap(index)
+                ?: throw IllegalArgumentException("Invalid collector entry at index $index")
             val key = entry.getString("key")
-                ?: throw IllegalArgumentException("Missing 'key' in collector entry at index $i")
+                ?: throw IllegalArgumentException("Missing 'key' in collector entry at index $index")
             val value = readDynamicValue(entry, "value")
 
             val collector = collectorsByKey[key]
@@ -152,8 +152,17 @@ internal object DaVinciCollectorValueApplier {
             ReadableType.String -> map.getString(key)
             ReadableType.Map -> map.getMap(key)?.toHashMap()
             ReadableType.Array -> {
-                val arr = map.getArray(key) ?: return null
-                (0 until arr.size()).map { i -> arr.getString(i) }
+                val array = map.getArray(key) ?: return null
+                (0 until array.size()).map { index ->
+                    when (array.getType(index)) {
+                        ReadableType.Null -> null
+                        ReadableType.Boolean -> array.getBoolean(index)
+                        ReadableType.Number -> normalizeBridgeNumber(array.getDouble(index))
+                        ReadableType.String -> array.getString(index)
+                        ReadableType.Map -> array.getMap(index)?.toHashMap()
+                        ReadableType.Array -> array.getArray(index)
+                    }
+                }
             }
         }
     }
@@ -195,11 +204,11 @@ internal object DaVinciCollectorValueApplier {
     }
 
     private fun asStringMap(value: Any?): Map<String, String> {
-        val raw = value as? Map<*, *> ?: return emptyMap()
-        return raw.entries.mapNotNull { (k, v) ->
-            val key = k as? String ?: return@mapNotNull null
-            val str = v?.toString() ?: return@mapNotNull null
-            key to str
+        val rawMap = value as? Map<*, *> ?: return emptyMap()
+        return rawMap.entries.mapNotNull { (rawKey, rawValue) ->
+            val stringKey = rawKey as? String ?: return@mapNotNull null
+            val stringValue = rawValue?.toString() ?: return@mapNotNull null
+            stringKey to stringValue
         }.toMap()
     }
 }

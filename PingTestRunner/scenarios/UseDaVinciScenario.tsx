@@ -101,7 +101,7 @@ export default function UseDaVinciScenario(): React.JSX.Element {
     revoke,
     logoutUser,
   } = useDaVinci(client);
-  const form = useDaVinciForm(node);
+  const form = useDaVinciForm(node, { next });
 
   const [tokenResult, setTokenResult] = useState<string | null>(null);
   const [userinfoResult, setUserinfoResult] = useState<string | null>(null);

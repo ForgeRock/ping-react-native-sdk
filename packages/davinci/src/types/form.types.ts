@@ -213,6 +213,15 @@ export type DaVinciFormOptions = {
    * `canSubmit` reflects true readiness.
    */
   handledCollectorTypes?: ReadonlySet<string>;
+  /**
+   * Optional `next` function from `useDaVinci(client)`.
+   *
+   * @remarks
+   * Required when `useDaVinciForm` is used outside a `<DaVinciProvider>`.
+   * When omitted, `submitFlow` falls back to the provider context's `next`.
+   * If neither is available, `submitFlow` throws a `DaVinciError`.
+   */
+  next?: (input: DaVinciNextInput) => Promise<DaVinciNode>;
 };
 
 /**

@@ -174,9 +174,9 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
 
   const next = useCallback(
     async (input: DaVinciNextInput): Promise<DaVinciNode> => {
-      if (!node) {
+      if (!node || node.type !== 'ContinueNode') {
         const stateError = new DaVinciError(
-          'No active DaVinci node. Call start() first.',
+          'next() can only be called on an active ContinueNode.',
           'DAVINCI_STATE_ERROR',
           'state_error',
         );

@@ -201,17 +201,26 @@ enum DaVinciCollectorValueApplier {
   ///   - value: Dynamic value.
   ///   - key: Collector key (used in error messages).
   /// - Returns: Array of strings.
-  /// - Throws: `DaVinciBridgeError.argument` when value is not an array.
+  /// - Throws: `DaVinciBridgeError.argument` when value is not an array or contains a non-String element.
   private static func asStringList(_ value: Any?, key: String) throws -> [String] {
+    let elements: [Any]
     if let array = value as? [Any] {
-      return array.compactMap { $0 as? String }
+      elements = array
+    } else if let array = value as? NSArray {
+      elements = array as [Any]
+    } else {
+      throw DaVinciBridgeError.argument(
+        "Collector key='\(key)' expects an array of strings"
+      )
     }
-    if let array = value as? NSArray {
-      return array.compactMap { $0 as? String }
+    return try elements.map { element in
+      guard let string = element as? String else {
+        throw DaVinciBridgeError.argument(
+          "Collector key='\(key)' expects an array of strings, got \(type(of: element))"
+        )
+      }
+      return string
     }
-    throw DaVinciBridgeError.argument(
-      "Collector key='\(key)' expects an array of strings"
-    )
   }
 
   /// Construct a `Device` from a string map when the type is absent from the collector's

@@ -104,6 +104,9 @@ export function useDaVinciClientPanelController(
   });
 
   const onSubmit = useCallback((): void => {
+    if (loading) {
+      return;
+    }
     const plan = form.buildInput();
     if (!plan.canSubmit) {
       return;
@@ -111,15 +114,18 @@ export function useDaVinciClientPanelController(
     next(plan.input).catch(() => {
       // `error` is already updated by the hook.
     });
-  }, [form, next]);
+  }, [form, loading, next]);
 
   const onFlowAction = useCallback(
     (flowKey: string): void => {
+      if (loading) {
+        return;
+      }
       form.submitFlow(flowKey).catch(() => {
         // `error` is already updated by the hook.
       });
     },
-    [form],
+    [form, loading],
   );
 
   const onStartAction = useCallback(async (): Promise<void> => {

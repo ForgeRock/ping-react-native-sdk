@@ -61,12 +61,8 @@ final class RNPingDavinciCommonTests: XCTestCase {
     RNPingDavinciCommon.cleanup()
   }
 
-  override func tearDown() {
-    RNPingDavinciCommon.cleanup()
-    super.tearDown()
-  }
-
   override func tearDown() async throws {
+    RNPingDavinciCommon.cleanup()
     await CoreRuntime.loggerRegistry.removeAll()
     try await super.tearDown()
   }
@@ -287,6 +283,94 @@ final class RNPingDavinciCommonTests: XCTestCase {
         rejecter: rejecter
       )
     }
+  }
+
+  // MARK: - getSession (no user)
+
+  func testGetSessionResolvesNilWhenNoUserSignedIn() {
+    let davinciId = configureDaVinciAndWait()
+    let resolveExpectation = expectation(description: "getSession resolve")
+    let rejectExpectation = expectation(description: "getSession reject not called")
+    rejectExpectation.isInverted = true
+
+    RNPingDavinciCommon.getSession(
+      davinciId,
+      resolver: { payload in
+        XCTAssertNil(payload)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 2.0)
+  }
+
+  // MARK: - refresh (no user)
+
+  func testRefreshResolvesNilWhenNoUserSignedIn() {
+    let davinciId = configureDaVinciAndWait()
+    let resolveExpectation = expectation(description: "refresh resolve")
+    let rejectExpectation = expectation(description: "refresh reject not called")
+    rejectExpectation.isInverted = true
+
+    RNPingDavinciCommon.refresh(
+      davinciId,
+      resolver: { payload in
+        XCTAssertNil(payload)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 2.0)
+  }
+
+  // MARK: - revoke (no user)
+
+  func testRevokeResolvesWhenNoUserSignedIn() {
+    let davinciId = configureDaVinciAndWait()
+    let resolveExpectation = expectation(description: "revoke resolve")
+    let rejectExpectation = expectation(description: "revoke reject not called")
+    rejectExpectation.isInverted = true
+
+    RNPingDavinciCommon.revoke(
+      davinciId,
+      resolver: { resolved in
+        XCTAssertTrue(resolved)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 2.0)
+  }
+
+  // MARK: - userinfo (no user)
+
+  func testUserinfoResolvesNilWhenNoUserSignedIn() {
+    let davinciId = configureDaVinciAndWait()
+    let resolveExpectation = expectation(description: "userinfo resolve")
+    let rejectExpectation = expectation(description: "userinfo reject not called")
+    rejectExpectation.isInverted = true
+
+    RNPingDavinciCommon.userinfo(
+      davinciId,
+      resolver: { payload in
+        XCTAssertNil(payload)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 2.0)
   }
 
   // MARK: - dispose

@@ -263,10 +263,11 @@ export function useDaVinciForm(
   const submitFlow = useCallback(
     async (flowKey: string): Promise<DaVinciNode> => {
       const davinciNext =
+        options.next ??
         contextValue?.davinci.next ??
         (() => {
           throw new DaVinciError(
-            'No DaVinci client found. Use useDaVinciForm inside a DaVinciProvider or pass a node from useDaVinci(client).',
+            'No DaVinci client found. Use useDaVinciForm inside a DaVinciProvider or pass next from useDaVinci(client) via options.',
             'DAVINCI_STATE_ERROR',
             'state_error',
           );
@@ -274,7 +275,7 @@ export function useDaVinciForm(
       const plan = buildNextInput(node, values, undefined, flowKey);
       return await davinciNext(plan.input);
     },
-    [contextValue, node, values],
+    [options.next, contextValue, node, values],
   );
 
   return {

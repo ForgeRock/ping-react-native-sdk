@@ -176,6 +176,15 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations))
   }
 
+  func testApplyThrowsForNonStringElementsInMultiSelect() {
+    let collector = makeMultiSelectCollector(key: "codes")
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(key: "codes", value: [1, 2] as [Any])
+    ]
+    XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations))
+  }
+
   // MARK: - apply — PhoneNumberCollector
 
   func testApplyMutatesPhoneNumberCollectorFromDictionary() throws {

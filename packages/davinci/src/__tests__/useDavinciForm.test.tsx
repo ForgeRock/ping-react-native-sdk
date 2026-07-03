@@ -566,3 +566,159 @@ describe('useDaVinciForm — handledCollectorTypes', () => {
     }
   });
 });
+
+describe('useDaVinciForm — submitFlow', () => {
+  const flowNode: ContinueNode = {
+    type: 'ContinueNode',
+    collectors: [
+      {
+        key: 'username',
+        type: 'TEXT',
+        label: 'Username',
+        required: true,
+        value: 'alice',
+      },
+      { key: 'forgot', type: 'FLOW_BUTTON', label: 'Forgot?', required: false },
+      {
+        key: 'register',
+        type: 'FLOW_LINK',
+        label: 'Register',
+        required: false,
+      },
+    ],
+  };
+
+  const successNode: DaVinciNode = {
+    type: 'SuccessNode',
+    session: { value: 'tok' },
+  };
+
+  it('calls options.next with the flow payload and returns the next node', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let result: DaVinciNode | undefined;
+    await act(async () => {
+      result = await requireLatest(latest).submitFlow('forgot');
+    });
+
+    expect(result).toBe(successNode);
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([{ key: 'forgot', value: 'forgot' }]);
+  });
+
+  it('uses the form value for the flow key when one is set', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      requireLatest(latest).setValue('forgot', 'custom-value');
+    });
+
+    await act(async () => {
+      await requireLatest(latest).submitFlow('forgot');
+    });
+
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([
+      { key: 'forgot', value: 'custom-value' },
+    ]);
+  });
+
+  it('works with a FLOW_LINK collector', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await requireLatest(latest).submitFlow('register');
+    });
+
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([
+      { key: 'register', value: 'register' },
+    ]);
+  });
+
+  it('throws DaVinciError when neither options.next nor a provider context is available', async () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let err: unknown;
+    await act(async () => {
+      err = await requireLatest(latest)
+        .submitFlow('forgot')
+        .catch((e: unknown) => e);
+    });
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('DaVinciError');
+    expect((err as { code: string }).code).toBe('DAVINCI_STATE_ERROR');
+  });
+
+  it('propagates rejection from options.next as-is', async () => {
+    const boom = new Error('network failure');
+    const mockNext = jest.fn(async () => {
+      throw boom;
+    });
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let err: unknown;
+    await act(async () => {
+      err = await requireLatest(latest)
+        .submitFlow('forgot')
+        .catch((e: unknown) => e);
+    });
+
+    expect(err).toBe(boom);
+  });
+});

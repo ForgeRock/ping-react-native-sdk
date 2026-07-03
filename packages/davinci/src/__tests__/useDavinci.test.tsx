@@ -147,6 +147,38 @@ describe('useDaVinci', () => {
     expect((err as { code: string }).code).toBe('DAVINCI_STATE_ERROR');
   });
 
+  it('next() rejects when the current node is terminal', async () => {
+    const client = createDaVinciClientMock({
+      start: jest.fn(async () => successNode),
+    });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await requireLatest(latest).start();
+    });
+
+    let err: unknown;
+    await act(async () => {
+      err = await requireLatest(latest)
+        .next({ collectors: [] })
+        .catch((e: unknown) => e);
+    });
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('DaVinciError');
+    expect((err as { code: string }).code).toBe('DAVINCI_STATE_ERROR');
+    expect(client.next).not.toHaveBeenCalled();
+  });
+
   it('next() advances the flow when node is active', async () => {
     const client = createDaVinciClientMock();
     let latest: DaVinciHookResult | null = null;
