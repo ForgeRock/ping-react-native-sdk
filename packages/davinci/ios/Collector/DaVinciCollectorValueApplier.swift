@@ -73,7 +73,8 @@ enum DaVinciCollectorValueApplier {
     mutations: [CollectorMutation]
   ) throws -> ApplyResult {
     let collectorsByKey = Dictionary(
-      uniqueKeysWithValues: continueNode.collectors.map { ($0.id, $0) }
+      continueNode.collectors.map { ($0.id, $0) },
+      uniquingKeysWith: { _, new in new }
     )
 
     var isFlowTrigger = false
@@ -207,7 +208,7 @@ enum DaVinciCollectorValueApplier {
     if let array = value as? [Any] {
       elements = array
     } else if let array = value as? NSArray {
-      elements = array as [Any]
+      elements = Array(array)
     } else {
       throw DaVinciBridgeError.argument(
         "Collector key='\(key)' expects an array of strings"

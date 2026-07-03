@@ -14,8 +14,8 @@ enum DaVinciConfigParser {
   ///
   /// - Parameter config: Bridge payload.
   /// - Returns: Parsed DaVinci client payload.
-  /// - Throws: `DaVinciBridgeError.argument` when required fields are missing, blank, or the
-  ///   `timeout` value is a non-numeric string.
+  /// - Throws: `DaVinciBridgeError.argument` when required fields are missing, blank, or a
+  ///   numeric field (`timeout`, `refreshThreshold`) contains a non-numeric string.
   static func parse(_ config: NSDictionary) throws -> DaVinciClientPayload {
     let discoveryEndpoint: String
     do {
@@ -50,7 +50,7 @@ enum DaVinciConfigParser {
     let display = readOptionalString(config["display"])
     let uiLocales = readOptionalString(config["uiLocales"])
     let acrValues = readOptionalString(config["acrValues"])
-    let refreshThreshold = parseInt64(config["refreshThreshold"])
+    let refreshThreshold = try requireInt64IfPresent(config["refreshThreshold"], key: "refreshThreshold")
     let additionalParameters = ReadableMapUtils.readStringMap(
       config["additionalParameters"] as? NSDictionary
     )
@@ -74,21 +74,6 @@ enum DaVinciConfigParser {
       refreshThreshold: refreshThreshold,
       additionalParameters: additionalParameters
     )
-  }
-
-  /// Reads an optional numeric value as `Int64`.
-  ///
-  /// - Parameter value: Raw bridge value.
-  /// - Returns: Parsed `Int64`, or `nil` when missing/unparseable.
-  private static func parseInt64(_ value: Any?) -> Int64? {
-    if let number = value as? NSNumber {
-      return number.int64Value
-    }
-    if let string = value as? String,
-       let parsed = Int64(string.trimmingCharacters(in: .whitespacesAndNewlines)) {
-      return parsed
-    }
-    return nil
   }
 
   /// Parses an optional numeric field, throwing when the value is present but not a valid integer.

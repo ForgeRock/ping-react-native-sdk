@@ -177,6 +177,34 @@ final class DaVinciConfigParserTests: XCTestCase {
     }
   }
 
+  func testParseReadsRefreshThresholdFromStringFallback() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "refreshThreshold": "120"
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+    XCTAssertEqual(payload.refreshThreshold, 120)
+  }
+
+  func testParseThrowsForUnparseableRefreshThreshold() {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "refreshThreshold": "not-a-number"
+    ]
+
+    XCTAssertThrowsError(try DaVinciConfigParser.parse(config)) { error in
+      guard case let DaVinciBridgeError.argument(message) = error else {
+        return XCTFail("Expected argument error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("refreshThreshold"))
+    }
+  }
+
   func testParseEmptyScopesForMissingKey() throws {
     let config: NSDictionary = [
       "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",

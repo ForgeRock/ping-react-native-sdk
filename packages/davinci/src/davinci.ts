@@ -383,9 +383,24 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     /**
      * Disposes the native DaVinci instance and releases runtime state.
      *
+     * @remarks
+     * If `configure` is still in-flight when `dispose` is called, `dispose`
+     * waits for it to settle so that the native instance that is about to be
+     * created is immediately disposed rather than silently revived.
+     *
      * @throws {DaVinciError} When disposal fails.
      */
     async dispose() {
+      if (configurePromise) {
+        try {
+          await configurePromise;
+        } catch {
+          logDebug(
+            'DaVinci dispose skipped (configure failed, nothing to dispose)',
+          );
+          return;
+        }
+      }
       if (!davinciId) {
         logDebug('DaVinci dispose skipped (no active davinciId)');
         return;

@@ -7,10 +7,13 @@
 
 package com.pingidentity.rndavinci.mapper
 
+import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
+import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
 import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
+import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
@@ -408,5 +411,238 @@ class DaVinciNodeMapperTest {
         val result = DaVinciNodeMapper.mapNodePayload(node)
         val collectors = result.asList("collectors")!!
         assertEquals(0, collectors.size)
+    }
+
+    // ---- PhoneNumberCollector ----
+
+    @Test
+    fun mapPhoneNumberCollectorIncludesBaseAndPhoneFields() {
+        val collector = PhoneNumberCollector().apply {
+            init(buildJsonObject {
+                put("key", "phone")
+                put("type", "PHONE")
+                put("label", "Phone Number")
+                put("defaultCountryCode", "US")
+                put("validatePhoneNumber", true)
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("phone", c["key"])
+        assertEquals("PHONE", c["type"])
+        assertEquals("US", c["defaultCountryCode"])
+        assertEquals(true, c["validatePhoneNumber"])
+        assertTrue(c.containsKey("countryCode"))
+        assertTrue(c.containsKey("phoneNumber"))
+    }
+
+    @Test
+    fun mapPhoneNumberCollectorDefaultCountryCodeFallsBackToEmpty() {
+        val collector = PhoneNumberCollector().apply {
+            init(buildJsonObject {
+                put("key", "phone")
+                put("type", "PHONE")
+                put("label", "Phone")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["defaultCountryCode"])
+        assertEquals(false, c["validatePhoneNumber"])
+    }
+
+    // ---- DeviceRegistrationCollector ----
+
+    @Test
+    fun mapDeviceRegistrationCollectorIncludesDevicesArray() {
+        val collector = DeviceRegistrationCollector().apply {
+            init(buildJsonObject {
+                put("key", "device-reg")
+                put("type", "DEVICE_REGISTRATION")
+                put("label", "Register Device")
+                put("options", buildJsonArray {
+                    add(buildJsonObject {
+                        put("id", "dev-1")
+                        put("type", "TOTP")
+                        put("title", "TOTP App")
+                        put("iconSrc", "https://example.com/icon.png")
+                        put("default", false)
+                    })
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("device-reg", c["key"])
+        assertTrue(c.containsKey("devices"))
+        @Suppress("UNCHECKED_CAST")
+        val devices = c["devices"] as? List<Map<String, Any?>>
+        assertNotNull(devices)
+        assertEquals(1, devices!!.size)
+        assertEquals("dev-1", devices[0]["id"])
+        assertEquals("TOTP", devices[0]["type"])
+        assertEquals("TOTP App", devices[0]["title"])
+    }
+
+    @Test
+    fun mapDeviceRegistrationCollectorEmptyDevicesWhenNoOptions() {
+        val collector = DeviceRegistrationCollector().apply {
+            init(buildJsonObject {
+                put("key", "device-reg")
+                put("type", "DEVICE_REGISTRATION")
+                put("label", "Register Device")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        @Suppress("UNCHECKED_CAST")
+        val devices = c["devices"] as? List<*>
+        assertNotNull(devices)
+        assertEquals(0, devices!!.size)
+    }
+
+    // ---- DeviceAuthenticationCollector ----
+
+    @Test
+    fun mapDeviceAuthenticationCollectorIncludesDevicesArray() {
+        val collector = DeviceAuthenticationCollector().apply {
+            init(buildJsonObject {
+                put("key", "device-auth")
+                put("type", "DEVICE_AUTHENTICATION")
+                put("label", "Authenticate Device")
+                put("options", buildJsonArray {
+                    add(buildJsonObject {
+                        put("id", "dev-2")
+                        put("type", "PUSH")
+                        put("title", "Push Notification")
+                        put("iconSrc", "https://example.com/push.png")
+                        put("default", true)
+                    })
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("device-auth", c["key"])
+        assertTrue(c.containsKey("devices"))
+        @Suppress("UNCHECKED_CAST")
+        val devices = c["devices"] as? List<Map<String, Any?>>
+        assertNotNull(devices)
+        assertEquals(1, devices!!.size)
+        assertEquals("dev-2", devices[0]["id"])
+        assertEquals("PUSH", devices[0]["type"])
+        assertEquals(true, devices[0]["isDefault"])
+    }
+
+    // ---- Password policy extraction ----
+
+    @Test
+    fun mapPasswordCollectorExtractsPasswordPolicyFromFormField() {
+        val collector = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password")
+                put("type", "PASSWORD")
+                put("label", "Password")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "password")
+                            put("type", "PASSWORD")
+                            put("label", "Password")
+                            put("passwordPolicy", buildJsonObject {
+                                put("name", "Standard Policy")
+                                put("minAgeDays", 0)
+                                put("maxAgeDays", 90)
+                                put("maxRepeatedCharacters", 2)
+                                put("minUniqueCharacters", 5)
+                                put("excludesProfileData", false)
+                                put("notSimilarToCurrent", true)
+                                put("excludesCommonlyUsed", true)
+                                put("populationCount", 0)
+                                put("default", true)
+                            })
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertTrue(c.containsKey("passwordPolicy"))
+        @Suppress("UNCHECKED_CAST")
+        val policy = c["passwordPolicy"] as? Map<String, Any?>
+        assertNotNull(policy)
+        assertEquals("Standard Policy", policy!!["name"])
+        assertEquals(90L, policy["maxAgeDays"])
+        assertEquals(true, policy["notSimilarToCurrent"])
+    }
+
+    @Test
+    fun mapPasswordCollectorOmitsPasswordPolicyWhenNotInFormField() {
+        val collector = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password")
+                put("type", "PASSWORD")
+                put("label", "Password")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "password")
+                            put("type", "PASSWORD")
+                            put("label", "Password")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertFalse(c.containsKey("passwordPolicy"))
+    }
+
+    @Test
+    fun mapPasswordCollectorOmitsPasswordPolicyWhenNoFormPresent() {
+        val collector = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password")
+                put("type", "PASSWORD")
+                put("label", "Password")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertFalse(c.containsKey("passwordPolicy"))
     }
 }

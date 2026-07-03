@@ -41,6 +41,17 @@ export async function configureDaVinci(
 export async function startDaVinci(davinciId: string): Promise<DaVinciNode> {
   try {
     const node = await NativeRNPingDavinci.start(davinciId);
+    if (
+      node === null ||
+      typeof node !== 'object' ||
+      typeof (node as { type?: unknown }).type !== 'string'
+    ) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed node payload.',
+        'DAVINCI_START_ERROR',
+        'native_error',
+      );
+    }
     return node as unknown as DaVinciNode;
   } catch (error) {
     throw DaVinciError.from(error);
@@ -61,6 +72,17 @@ export async function nextDaVinci(
 ): Promise<DaVinciNode> {
   try {
     const node = await NativeRNPingDavinci.next(davinciId, input);
+    if (
+      node === null ||
+      typeof node !== 'object' ||
+      typeof (node as { type?: unknown }).type !== 'string'
+    ) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed node payload.',
+        'DAVINCI_NEXT_ERROR',
+        'native_error',
+      );
+    }
     return node as unknown as DaVinciNode;
   } catch (error) {
     throw DaVinciError.from(error);
@@ -79,6 +101,18 @@ export async function getDaVinciSession(
 ): Promise<DaVinciUserSession | null> {
   try {
     const session = await NativeRNPingDavinci.getSession(davinciId);
+    if (
+      session !== null &&
+      session !== undefined &&
+      (typeof session !== 'object' ||
+        typeof (session as { accessToken?: unknown }).accessToken !== 'string')
+    ) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed session payload.',
+        'DAVINCI_SESSION_ERROR',
+        'native_error',
+      );
+    }
     return session ? (session as DaVinciUserSession) : null;
   } catch (error) {
     throw DaVinciError.from(error);
@@ -97,6 +131,18 @@ export async function refreshDaVinciSession(
 ): Promise<DaVinciUserSession | null> {
   try {
     const session = await NativeRNPingDavinci.refresh(davinciId);
+    if (
+      session !== null &&
+      session !== undefined &&
+      (typeof session !== 'object' ||
+        typeof (session as { accessToken?: unknown }).accessToken !== 'string')
+    ) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed session payload.',
+        'DAVINCI_SESSION_ERROR',
+        'native_error',
+      );
+    }
     return session ? (session as DaVinciUserSession) : null;
   } catch (error) {
     throw DaVinciError.from(error);

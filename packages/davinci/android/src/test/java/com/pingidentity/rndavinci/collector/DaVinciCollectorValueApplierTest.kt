@@ -395,6 +395,35 @@ class DaVinciCollectorValueApplierTest {
     }
 
     @Test
+    fun applyPhoneNumberCollectorSetsBothFields() {
+        val collector = PhoneNumberCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(key to deviceMap("countryCode" to "+1", "phoneNumber" to "5550001234"))
+        )
+
+        assertEquals("+1", collector.countryCode)
+        assertEquals("5550001234", collector.phoneNumber)
+    }
+
+    @Test
+    fun applyPhoneNumberCollectorSetsOnlyProvidedFields() {
+        val collector = PhoneNumberCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(key to deviceMap("phoneNumber" to "5550001234"))
+        )
+
+        assertEquals("5550001234", collector.phoneNumber)
+    }
+
+    @Test
     fun applyMultipleCollectorsInSingleInput() {
         val text = TextCollector().apply {
             init(buildJsonObject {

@@ -414,6 +414,52 @@ describe('createDaVinciClient — lazy configure', () => {
     expect(native.dispose).not.toHaveBeenCalled();
     expect(native.configureDaVinci).not.toHaveBeenCalled();
   });
+
+  it('dispose() awaits an in-flight configure and then disposes the native instance', async () => {
+    let resolveConfig!: (id: string) => void;
+    const configureDeferred = new Promise<string>(
+      (res) => (resolveConfig = res),
+    );
+
+    const native = createNativeMock({
+      configureDaVinci: jest.fn(() => configureDeferred),
+    });
+    const { createDaVinciClient } = loadModule(native);
+    const client = createDaVinciClient(VALID_CONFIG);
+
+    const startPromise = client.start();
+    const disposePromise = client.dispose();
+
+    resolveConfig('davinci-id-1');
+
+    await startPromise.catch(() => undefined);
+    await disposePromise;
+
+    expect(native.dispose).toHaveBeenCalledWith('davinci-id-1');
+  });
+
+  it('dispose() skips native dispose when the in-flight configure rejects', async () => {
+    let rejectConfig!: (err: Error) => void;
+    const configureDeferred = new Promise<string>(
+      (_res, rej) => (rejectConfig = rej),
+    );
+
+    const native = createNativeMock({
+      configureDaVinci: jest.fn(() => configureDeferred),
+    });
+    const { createDaVinciClient } = loadModule(native);
+    const client = createDaVinciClient(VALID_CONFIG);
+
+    const startPromise = client.start();
+    const disposePromise = client.dispose();
+
+    rejectConfig(new Error('configure failed'));
+
+    await startPromise.catch(() => undefined);
+    await disposePromise;
+
+    expect(native.dispose).not.toHaveBeenCalled();
+  });
 });
 
 describe('createDaVinciClient — client methods', () => {

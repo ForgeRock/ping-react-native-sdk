@@ -86,7 +86,19 @@ export type DaVinciHookActions = {
    */
   dispose: () => Promise<void>;
 
-  /** Indicates whether a DaVinci action is in progress. */
+  /**
+   * Indicates whether `start` or `next` is in progress.
+   *
+   * @remarks
+   * `loading` and `error` are scoped to the node-rendering state machine — they gate
+   * the form UI between successive `start`/`next` submissions and reflect the state
+   * of the `node` value the component tree renders from.
+   *
+   * Session operations (`user`, `refresh`, `revoke`, `userinfo`, `logoutUser`,
+   * `dispose`) are called imperatively and their callers consume results directly
+   * via the returned `Promise`; there is no shared node state to gate, so callers
+   * that need per-operation loading or error feedback should manage that locally.
+   */
   loading: boolean;
   /** Last hook-level error, if any. */
   error: DaVinciError | null;

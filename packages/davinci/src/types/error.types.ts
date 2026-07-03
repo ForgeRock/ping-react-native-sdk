@@ -50,9 +50,11 @@ export class DaVinciError extends PingError {
  */
 export type DaVinciErrorCode =
   | 'DAVINCI_CONFIG_ERROR' // createDaVinciClient: missing/invalid modules.oidc fields
+  | 'DAVINCI_INIT_ERROR' // native workflow construction failure
   | 'DAVINCI_START_ERROR' // start()
   | 'DAVINCI_NEXT_ERROR' // next(): flow progression failure
   | 'DAVINCI_COLLECTOR_APPLY_ERROR' // next(): collector value application failure
+  | 'DAVINCI_UNSUPPORTED_COLLECTOR_ERROR' // unsupported collector mutation request
   | 'DAVINCI_SESSION_ERROR' // user() / refresh() / revoke() / userinfo()
   | 'DAVINCI_LOGOUT_ERROR' // logoutUser()
   | 'DAVINCI_DISPOSE_ERROR' // dispose()

@@ -13,7 +13,11 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.davinci.collector.PasswordCollector
+import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.network.HttpRequest
+import com.pingidentity.oidc.OidcError
+import com.pingidentity.oidc.Token
+import com.pingidentity.oidc.User
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.Closeable
 import com.pingidentity.orchestrate.ContinueNode
@@ -25,6 +29,9 @@ import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rndavinci.error.DaVinciErrorCodes
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
+import com.pingidentity.storage.Storage
+import com.pingidentity.utils.Result
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.After
@@ -349,6 +356,214 @@ class RNPingDavinciCommonTest {
         RNPingDavinciCommon.configure()
     }
 
+    // ---- getSession / refresh / userinfo Result branches ----
+
+    @Test
+    fun getSession_resolvesWhenUserAbsent() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.getSession(davinciId, promise)
+
+        assertNull(captureResolve(promise))
+    }
+
+    @Test
+    fun getSession_resolvesTokenPayloadOnSuccess() {
+        val workflow = Workflow(WorkflowConfig())
+        workflow.sharedContext["COOKIE_STORAGE"] = FakeCookieStorage()
+        workflow.sharedContext["com.pingidentity.oidc.User"] = FakeDaVinciUser(
+            token = Result.Success(
+                Token(
+                    accessToken = "access-token",
+                    tokenType = "Bearer",
+                    scope = "openid",
+                    expiresIn = 3600L,
+                    refreshToken = "refresh-token",
+                    idToken = "id-token"
+                )
+            ),
+            userinfo = Result.Failure(OidcError.Unknown(Exception("skip")))
+        )
+
+        val davinciId = registerDaVinciHandle(workflow)
+        val promise = TestPromise()
+        RNPingDavinciCommon.getSession(davinciId, promise)
+
+        val payload = captureResolve(promise) as WritableMap
+        assertEquals("access-token", payload.getString("accessToken"))
+        assertEquals("refresh-token", payload.getString("refreshToken"))
+        assertEquals(3600.0, payload.getDouble("expiresIn"), 0.0)
+    }
+
+    @Test
+    fun getSession_rejectsAuthErrorWhenTokenFails() {
+        val workflow = Workflow(WorkflowConfig())
+        workflow.sharedContext["COOKIE_STORAGE"] = FakeCookieStorage()
+        workflow.sharedContext["com.pingidentity.oidc.User"] = FakeDaVinciUser(
+            token = Result.Failure(OidcError.NetworkError(Exception("offline"))),
+            userinfo = Result.Failure(OidcError.Unknown(Exception("unused")))
+        )
+        val davinciId = registerDaVinciHandle(workflow)
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.getSession(davinciId, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.AUTH_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.SESSION, error.getString("error"))
+    }
+
+    @Test
+    fun refresh_resolvesWhenUserAbsent() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.refresh(davinciId, promise)
+
+        assertNull(captureResolve(promise))
+    }
+
+    @Test
+    fun refresh_rejectsAuthErrorWhenRefreshFails() {
+        val workflow = Workflow(WorkflowConfig())
+        workflow.sharedContext["COOKIE_STORAGE"] = FakeCookieStorage()
+        workflow.sharedContext["com.pingidentity.oidc.User"] = FakeDaVinciUser(
+            refresh = Result.Failure(OidcError.NetworkError(Exception("offline"))),
+            userinfo = Result.Failure(OidcError.Unknown(Exception("unused")))
+        )
+        val davinciId = registerDaVinciHandle(workflow)
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.refresh(davinciId, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.AUTH_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.SESSION, error.getString("error"))
+    }
+
+    @Test
+    fun userinfo_resolvesNullWhenUserAbsent() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.userinfo(davinciId, promise)
+
+        assertNull(captureResolve(promise))
+    }
+
+    @Test
+    fun userinfo_rejectsAuthErrorWhenUserinfoFails() {
+        val workflow = Workflow(WorkflowConfig())
+        workflow.sharedContext["COOKIE_STORAGE"] = FakeCookieStorage()
+        workflow.sharedContext["com.pingidentity.oidc.User"] = FakeDaVinciUser(
+            userinfo = Result.Failure(OidcError.NetworkError(Exception("offline")))
+        )
+        val davinciId = registerDaVinciHandle(workflow)
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.userinfo(davinciId, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.AUTH_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.SESSION, error.getString("error"))
+    }
+
+    // ---- revoke / logout success and failure paths ----
+
+    @Test
+    fun revoke_resolvesTrueWhenUserPresent() {
+        val workflow = Workflow(WorkflowConfig())
+        val revoked = AtomicBoolean(false)
+        workflow.sharedContext["COOKIE_STORAGE"] = FakeCookieStorage()
+        workflow.sharedContext["com.pingidentity.oidc.User"] = FakeDaVinciUser(
+            revokeAction = { revoked.set(true) }
+        )
+        val davinciId = registerDaVinciHandle(workflow)
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.revoke(davinciId, promise)
+
+        assertEquals(true, captureResolve(promise))
+        assertTrue("workflow.user().revoke() must be invoked", revoked.get())
+    }
+
+    @Test
+    fun logout_resolvesNullWhenSignOffSucceeds() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = emptyList()))
+
+        val promise = TestPromise()
+        RNPingDavinciCommon.logout(davinciId, promise)
+
+        assertNull(captureResolve(promise))
+    }
+
+    // ---- next() collector-apply error catches ----
+
+    @Test
+    fun next_rejectsArgumentErrorWhenCollectorKeyUnknown() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val password = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password-key")
+                put("type", "PASSWORD")
+                put("label", "Password")
+            })
+        }
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(password)))
+
+        val nextInput = JavaOnlyMap().apply {
+            putArray(
+                "collectors",
+                JavaOnlyArray().apply {
+                    pushMap(
+                        JavaOnlyMap().apply {
+                            putString("key", "unknown-key")
+                            putString("value", "value")
+                        }
+                    )
+                }
+            )
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.next(davinciId, nextInput, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.COLLECTOR_APPLY, error.getString("error"))
+    }
+
+    @Test
+    fun next_rejectsUnsupportedCollectorErrorForUnsupportedType() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val unsupportedKey = "unsupported-key"
+        val unsupported = UnsupportedTestCollector(unsupportedKey)
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(unsupported)))
+
+        val nextInput = JavaOnlyMap().apply {
+            putArray(
+                "collectors",
+                JavaOnlyArray().apply {
+                    pushMap(
+                        JavaOnlyMap().apply {
+                            putString("key", unsupportedKey)
+                            putString("value", "value")
+                        }
+                    )
+                }
+            )
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.next(davinciId, nextInput, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.UNSUPPORTED_COLLECTOR, error.getString("error"))
+    }
+
     // ---- helpers ----
 
     private fun captureResolve(promise: TestPromise): Any? {
@@ -401,6 +616,34 @@ private class ClosableAction(private val closedFlag: AtomicBoolean) : Action, Cl
     override fun close() {
         closedFlag.set(true)
     }
+}
+
+private class FakeDaVinciUser(
+    private val token: Result<Token, OidcError> =
+        Result.Failure(OidcError.Unknown(Exception("unset"))),
+    private val refresh: Result<Token, OidcError> =
+        Result.Failure(OidcError.Unknown(Exception("unset"))),
+    private val userinfo: Result<JsonObject, OidcError> =
+        Result.Failure(OidcError.Unknown(Exception("unset"))),
+    private val revokeAction: () -> Unit = {}
+) : User {
+    override suspend fun token(): Result<Token, OidcError> = token
+    override suspend fun revoke() = revokeAction()
+    override suspend fun refresh(): Result<Token, OidcError> = refresh
+    override suspend fun userinfo(cache: Boolean): Result<JsonObject, OidcError> = userinfo
+    override suspend fun logout() = Unit
+}
+
+private class FakeCookieStorage : Storage<List<String>> {
+    override suspend fun save(item: List<String>) = Unit
+    override suspend fun get(): List<String>? = listOf("session=1")
+    override suspend fun delete() = Unit
+}
+
+private class UnsupportedTestCollector(private val idValue: String) : Collector<Unit> {
+    override fun id(): String = idValue
+    override fun init(input: JsonObject): Collector<Unit> = this
+    override fun payload() = Unit
 }
 
 @Implements(className = "com.facebook.react.bridge.Arguments")

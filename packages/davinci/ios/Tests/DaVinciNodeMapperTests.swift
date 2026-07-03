@@ -171,6 +171,90 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertEqual(first?["value"] as? String, "")
   }
 
+  func testMapPasswordCollectorEmitsClearPasswordTrueByDefault() {
+    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["clearPassword"] as? Bool, true)
+  }
+
+  func testMapPasswordCollectorEmitsClearPasswordFalseWhenSet() {
+    let collector = makePasswordCollector(key: "password")
+    collector.clearPassword = false
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["clearPassword"] as? Bool, false)
+  }
+
+  func testMapPasswordCollectorIncludesPasswordPolicyFromFormField() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            [
+              "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
+              "passwordPolicy": ["name": "strong", "length": ["min": 8, "max": 64]]
+            ]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+    let policy = first?["passwordPolicy"] as? NSDictionary
+
+    XCTAssertNotNil(policy)
+    XCTAssertEqual(policy?["name"] as? String, "strong")
+  }
+
+  func testMapPasswordCollectorOmitsPasswordPolicyWhenAbsentFromFormField() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "password", "type": "PASSWORD", "label": "Password", "required": false]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["passwordPolicy"])
+  }
+
+  func testMapPasswordCollectorOmitsPasswordPolicyOnDecodeError() {
+    // "length" must be a keyed container but receives a String, so JSONDecoder throws
+    // DecodingError.typeMismatch — the catch block returns nil and policy is omitted.
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            [
+              "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
+              "passwordPolicy": ["length": "not-a-dict"]
+            ]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["passwordPolicy"])
+  }
+
   func testMapSubmitCollectorIncludesBaseFields() {
     let node = makeContinueNode(collectors: [
       SubmitCollector(with: ["key": "submit", "type": "SUBMIT_BUTTON", "label": "Submit", "required": false])
