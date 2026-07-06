@@ -2569,6 +2569,11 @@ PODS:
     - glog
     - hermes-engine
     - PingDavinci (= 2.0.0)
+    - PingDavinciPlugin (= 2.0.0)
+    - PingLogger (= 2.0.0)
+    - PingOidc (= 2.0.0)
+    - PingOrchestrate (= 2.0.0)
+    - PingStorage (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3632,7 +3637,7 @@ SPEC CHECKSUMS:
   RNPingBinding: c9449a4e6b808afc9dcc311a07804559c0c522b4
   RNPingBrowser: 042c960b67b47a85b0e1de373b76ddb2609487e1
   RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
-  RNPingDavinci: b37645623c3b3b3b1b0669a56a3d2e7ec231e75d
+  RNPingDavinci: 44860fa051499d949bad798336c15e508a78fb09
   RNPingDeviceClient: bd78e33420a8f5dcd6ab3b21691805743b12079f
   RNPingDeviceId: 24f49f8d518103367f6bbcbcf54138a424541ba7
   RNPingDeviceProfile: 4c6b306859c9bc9cdad0aea830d9a8e0227dcc4a

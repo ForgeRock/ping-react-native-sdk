@@ -699,6 +699,7 @@ describe('computeFormMeta', () => {
     expect(computeFormMeta([integrationCollector])).toEqual({
       hasManual: false,
       hasOutputOnly: false,
+      hasAutoCapable: false,
       hasIntegrationRequired: true,
       hasUnsupported: false,
     });
@@ -708,8 +709,18 @@ describe('computeFormMeta', () => {
     expect(computeFormMeta([])).toEqual({
       hasManual: false,
       hasOutputOnly: false,
+      hasAutoCapable: false,
       hasIntegrationRequired: false,
       hasUnsupported: false,
     });
+  });
+
+  it('hasAutoCapable is always false — no auto_capable execution mode exists in the base package', () => {
+    const collectors = normalizeCollectors([
+      baseField('username', 'TEXT'),
+      { key: 'l', type: 'LABEL', content: 'x' } as DaVinciCollector,
+      baseField('submit', 'SUBMIT_BUTTON'),
+    ]);
+    expect(computeFormMeta(collectors).hasAutoCapable).toBe(false);
   });
 });

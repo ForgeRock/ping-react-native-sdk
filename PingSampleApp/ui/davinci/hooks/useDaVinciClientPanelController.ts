@@ -40,6 +40,10 @@ export type UseDaVinciClientPanelControllerResult = {
    * Submits a flow collector (`SUBMIT_BUTTON`, `ACTION`, `FLOW_BUTTON`,
    * `FLOW_LINK`) by key.
    *
+   * @remarks
+   * Delegates to `form.setValue`, which auto-submits immediately for
+   * `FlowCollector` keys — see {@link useDaVinciForm}'s `setValue` remarks.
+   *
    * @param flowKey - Flow collector key.
    */
   onFlowAction: (flowKey: string) => void;
@@ -121,7 +125,11 @@ export function useDaVinciClientPanelController(
       if (loading) {
         return;
       }
-      form.submitFlow(flowKey).catch(() => {
+      // setValue on a FlowCollector key auto-submits via next() immediately
+      // (see useDaVinciForm's setValue remarks) — exercises the same
+      // auto-submit path a field's onChange would trigger.
+      const pending = form.setValue(flowKey, flowKey);
+      pending?.catch(() => {
         // `error` is already updated by the hook.
       });
     },

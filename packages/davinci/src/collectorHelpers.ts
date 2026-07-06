@@ -45,6 +45,24 @@ const immediateCollectorTypes = new Set<string>([
 ]);
 
 /**
+ * `FlowCollector` type strings — the subset of `immediateCollectorTypes` that
+ * advances the flow via its own key rather than submitting the whole form.
+ *
+ * @remarks
+ * Used by `useDaVinciForm` to detect when `setValue`/`setValueByType` targets
+ * a `FlowCollector` so it can auto-submit via `next()` instead of only
+ * updating form state. Excludes `SUBMIT_BUTTON`, which submits the full form
+ * payload rather than a single bypassing key.
+ *
+ * @internal
+ */
+export const flowCollectorTypes = new Set<string>([
+  'ACTION',
+  'FLOW_BUTTON',
+  'FLOW_LINK',
+]);
+
+/**
  * Collector type strings handled entirely by an external integration package
  * (e.g. `rn-external-idp`, `rn-fido`, `rn-device-client` / Protect).
  *
@@ -509,6 +527,10 @@ export function computeFormMeta(
   return {
     hasManual: collectors.some((c) => c.executionMode === 'manual'),
     hasOutputOnly: collectors.some((c) => c.executionMode === 'output_only'),
+    // No `auto_capable` execution mode exists in the DaVinci 2.0.1 SDKs — see
+    // DaVinciFormMeta.hasAutoCapable remarks. Always false until a future
+    // collector type is registered for that mode.
+    hasAutoCapable: false,
     hasIntegrationRequired: collectors.some(
       (c) => c.executionMode === 'integration_required',
     ),

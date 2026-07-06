@@ -138,6 +138,54 @@ describe('useDaVinciForm — field hydration', () => {
   });
 });
 
+describe('useDaVinciForm — meta', () => {
+  it('hasAutoCapable and hasIntegrationRequired are both false for a base-package node', () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={continueNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).meta.hasAutoCapable).toBe(false);
+    expect(requireLatest(latest).meta.hasIntegrationRequired).toBe(false);
+  });
+
+  it('hasAutoCapable stays false even when other meta flags are true', async () => {
+    integrationRequiredCollectorTypes.add('IDP');
+    try {
+      const node: ContinueNode = {
+        type: 'ContinueNode',
+        collectors: [
+          { key: 'idp', type: 'IDP', label: 'IdP', required: false },
+          { key: 'l', type: 'LABEL', content: 'x' },
+        ] as ContinueNode['collectors'],
+      };
+      let latest: DaVinciFormResult | null = null;
+
+      render(
+        <FormHarness
+          node={node}
+          onResult={(r) => {
+            latest = r;
+          }}
+        />,
+      );
+
+      const meta = requireLatest(latest).meta;
+      expect(meta.hasIntegrationRequired).toBe(true);
+      expect(meta.hasOutputOnly).toBe(true);
+      expect(meta.hasAutoCapable).toBe(false);
+    } finally {
+      integrationRequiredCollectorTypes.delete('IDP');
+    }
+  });
+});
+
 describe('useDaVinciForm — setValue / setValues / clearValue / reset', () => {
   it('setValue updates a single field value', async () => {
     let latest: DaVinciFormResult | null = null;
@@ -618,34 +666,6 @@ describe('useDaVinciForm — submitFlow', () => {
     expect(callArg?.collectors).toEqual([{ key: 'forgot', value: 'forgot' }]);
   });
 
-  it('uses the form value for the flow key when one is set', async () => {
-    const mockNext = jest.fn(async () => successNode);
-    let latest: DaVinciFormResult | null = null;
-
-    render(
-      <FormHarness
-        node={flowNode}
-        options={{ next: mockNext }}
-        onResult={(r) => {
-          latest = r;
-        }}
-      />,
-    );
-
-    await act(async () => {
-      requireLatest(latest).setValue('forgot', 'custom-value');
-    });
-
-    await act(async () => {
-      await requireLatest(latest).submitFlow('forgot');
-    });
-
-    const callArg = mockNext.mock.calls[0]?.[0];
-    expect(callArg?.collectors).toEqual([
-      { key: 'forgot', value: 'custom-value' },
-    ]);
-  });
-
   it('works with a FLOW_LINK collector', async () => {
     const mockNext = jest.fn(async () => successNode);
     let latest: DaVinciFormResult | null = null;
@@ -720,5 +740,206 @@ describe('useDaVinciForm — submitFlow', () => {
     });
 
     expect(err).toBe(boom);
+  });
+});
+
+describe('useDaVinciForm — FlowCollector auto-submit via setValue', () => {
+  const flowNode: ContinueNode = {
+    type: 'ContinueNode',
+    collectors: [
+      {
+        key: 'username',
+        type: 'TEXT',
+        label: 'Username',
+        required: true,
+        value: 'alice',
+      },
+      {
+        key: 'password',
+        type: 'PASSWORD',
+        label: 'Password',
+        required: true,
+        value: '',
+      },
+      { key: 'forgot', type: 'FLOW_BUTTON', label: 'Forgot?', required: false },
+      {
+        key: 'register',
+        type: 'FLOW_LINK',
+        label: 'Register',
+        required: false,
+      },
+    ],
+  };
+
+  const successNode: DaVinciNode = {
+    type: 'SuccessNode',
+    session: { value: 'tok' },
+  };
+
+  it('setValue on a FlowCollector key calls next() immediately with only that key', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await requireLatest(latest).setValue('forgot', 'forgot');
+    });
+
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([{ key: 'forgot', value: 'forgot' }]);
+  });
+
+  it('bypasses other field values set before the FlowCollector', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      requireLatest(latest).setValue('username', 'bob');
+      requireLatest(latest).setValue('password', 'secret');
+    });
+
+    await act(async () => {
+      await requireLatest(latest).setValue('forgot', 'forgot');
+    });
+
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([{ key: 'forgot', value: 'forgot' }]);
+  });
+
+  it('setValueByType on a FLOW_LINK type auto-submits with actionKey', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      requireLatest(latest).setValueByType('FLOW_LINK', 'register');
+    });
+
+    expect(mockNext).toHaveBeenCalledTimes(1);
+    const callArg = mockNext.mock.calls[0]?.[0];
+    expect(callArg?.collectors).toEqual([
+      { key: 'register', value: 'register' },
+    ]);
+  });
+
+  it('does not mutate form values state for the FlowCollector key', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      await requireLatest(latest).setValue('forgot', 'forgot');
+    });
+
+    expect('forgot' in requireLatest(latest).values).toBe(false);
+  });
+
+  it('returns the resolved next node from setValue so callers may await it', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let result: DaVinciNode | undefined;
+    await act(async () => {
+      result = await requireLatest(latest).setValue('forgot', 'forgot');
+    });
+
+    expect(result).toBe(successNode);
+  });
+
+  it('propagates rejection from options.next when setValue auto-submits', async () => {
+    const boom = new Error('network failure');
+    const mockNext = jest.fn(async () => {
+      throw boom;
+    });
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let err: unknown;
+    await act(async () => {
+      err = await requireLatest(latest)
+        ?.setValue('forgot', 'forgot')
+        ?.catch((e: unknown) => e);
+    });
+
+    expect(err).toBe(boom);
+  });
+
+  it('regular manual collectors are unaffected and do not auto-submit', async () => {
+    const mockNext = jest.fn(async () => successNode);
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={flowNode}
+        options={{ next: mockNext }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      requireLatest(latest).setValue('username', 'bob');
+    });
+
+    expect(mockNext).not.toHaveBeenCalled();
+    expect(requireLatest(latest).values['username']).toBe('bob');
   });
 });

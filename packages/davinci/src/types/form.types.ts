@@ -183,6 +183,18 @@ export type DaVinciFormMeta = {
   /** True when at least one `LABEL` (output-only) collector is present. */
   hasOutputOnly: boolean;
   /**
+   * Always `false` in the base DaVinci package.
+   *
+   * @remarks
+   * Stub for parity with {@link JourneyFormMeta.hasAutoCapable}. No collector
+   * type in the DaVinci 2.0.1 iOS/Android SDKs resolves to an `auto_capable`
+   * execution mode (see `resolveExecutionMode` in `collectorHelpers.ts`) — this
+   * flag will be wired to live collector presence by future IdP/Protect
+   * integration stories (SDKS-5128 and follow-ons) once such a collector type
+   * is registered.
+   */
+  hasAutoCapable: boolean;
+  /**
    * True when at least one collector requires an external package integration
    * (e.g. `rn-external-idp` handling an `IdpCollector`).
    */
@@ -261,10 +273,23 @@ export type DaVinciFormResult = {
   /**
    * Sets one collector field value.
    *
+   * @remarks
+   * When `key` identifies a {@link FlowCollector} (`ACTION`, `FLOW_BUTTON`,
+   * `FLOW_LINK`), this immediately calls `next()` with only that key —
+   * bypassing all other field values — instead of updating form state, and
+   * returns the pending navigation `Promise`. Callers that don't need the
+   * result may ignore the return value.
+   *
    * @param key - Collector key.
    * @param value - New field value.
+   * @returns `undefined` for manual collectors; a `Promise` resolving to the
+   *   next flow node when `key` is a {@link FlowCollector}.
+   * @throws {DaVinciError} When a FlowCollector key is set and progression fails.
    */
-  setValue: (key: string, value: DaVinciFormValue) => void;
+  setValue: (
+    key: string,
+    value: DaVinciFormValue,
+  ) => void | Promise<DaVinciNode>;
   /**
    * Merges one or more collector field values.
    *
@@ -320,6 +345,10 @@ export type DaVinciFormResult = {
   /**
    * Sets one field value using collector type string and optional index.
    *
+   * @remarks
+   * Delegates to `setValue` — see its `@remarks` for {@link FlowCollector}
+   * auto-submit behavior.
+   *
    * @param type - Collector type string.
    * @param value - New field value.
    * @param typeIndex - Optional zero-based index within the type group (defaults to 0).
@@ -332,6 +361,11 @@ export type DaVinciFormResult = {
   ) => boolean;
   /**
    * Submits a {@link FlowCollector} by key, bypassing all other field values.
+   *
+   * @remarks
+   * Explicit variant of the auto-submit `setValue` performs when its `key`
+   * is a FlowCollector — useful when the flow key isn't already wired to a
+   * `setValue` call (e.g. a hardcoded "Forgot password?" button).
    *
    * @param flowKey - Flow collector key.
    * @returns Next flow node.
