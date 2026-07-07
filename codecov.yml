@@ -105,3 +105,18 @@ ignore:
   - 'PingSampleApp/**'
   - 'PingTestRunner/**'
   - '**/*.md'
+  # ObjC++ TurboModule/Classic bridge glue (RNPing*.mm, RNPing*Classic.mm) just
+  # dispatches to *Common.swift, which is tested; no test target covers .mm files.
+  - '**/ios/*.mm'
+  # Header declarations only (@interface/@end, FOUNDATION_EXPORT) — no
+  # executable lines for coverage tooling to instrument.
+  - '**/ios/*.h'
+  # RN package-registration boilerplate (getModule()/getReactModuleInfoProvider()
+  # name-string dispatch) — no business logic, requires a live RN bridge to
+  # exercise, not a JVM unit test.
+  - '**/android/src/newarch/**/*Package.kt'
+  - '**/android/src/oldarch/**/*Package.kt'
+  # Build manifests/config — never compiled or instrumented.
+  - '**/*.podspec'
+  - '**/android/build.gradle'
+  - '**/android/src/main/AndroidManifest.xml'
