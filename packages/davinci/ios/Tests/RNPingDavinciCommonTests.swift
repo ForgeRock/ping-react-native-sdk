@@ -165,6 +165,24 @@ final class RNPingDavinciCommonTests: XCTestCase {
     wait(for: [resolveExpectation, rejectExpectation], timeout: 2.0)
   }
 
+  func testConfigureDaVinciRejectsWhenStorageIdUnresolvable() {
+    assertReject(
+      expectedCode: DaVinciErrorCodes.initError.rawValue,
+      expectedType: .argumentError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.configureDaVinci(
+        [
+          "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+          "clientId": "my-client",
+          "redirectUri": "com.example.app://oauth2redirect",
+          "storageId": "missing-storage-handle"
+        ],
+        resolver: { _ in resolver(NSDictionary()) },
+        rejecter: rejecter
+      )
+    }
+  }
+
   // MARK: - start
 
   func testStartRejectsWhenDaVinciMissing() {
@@ -178,6 +196,53 @@ final class RNPingDavinciCommonTests: XCTestCase {
         rejecter: rejecter
       )
     }
+  }
+
+  func testStartResolvesFailureNodePayloadWhenDiscoveryFails() {
+    let davinciId = configureDaVinciAndWait()
+    let resolveExpectation = expectation(description: "start resolve")
+    let rejectExpectation = expectation(description: "start reject not called")
+    rejectExpectation.isInverted = true
+    let capture = StringCaptureBox()
+
+    RNPingDavinciCommon.start(
+      davinciId,
+      resolver: { payload in
+        capture.set(payload["type"] as? String ?? "")
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 5.0)
+    XCTAssertEqual(capture.value, "FailureNode")
+  }
+
+  func testStartResolvesFailureNodePayloadWithConfiguredLogger() async {
+    let loggerId = await CoreRuntime.loggerRegistry.register(
+      TestLoggerHandle(loggerLevel: "STANDARD")
+    )
+    let davinciId = configureDaVinciAndWait(loggerId: loggerId)
+    let resolveExpectation = expectation(description: "start resolve")
+    let rejectExpectation = expectation(description: "start reject not called")
+    rejectExpectation.isInverted = true
+    let capture = StringCaptureBox()
+
+    RNPingDavinciCommon.start(
+      davinciId,
+      resolver: { payload in
+        capture.set(payload["type"] as? String ?? "")
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    await fulfillment(of: [resolveExpectation, rejectExpectation], timeout: 5.0)
+    XCTAssertEqual(capture.value, "FailureNode")
   }
 
   // MARK: - next
@@ -492,18 +557,23 @@ final class RNPingDavinciCommonTests: XCTestCase {
     XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
   }
 
-  private func configureDaVinciAndWait() -> String {
+  private func configureDaVinciAndWait(loggerId: String? = nil) -> String {
     let resolveExpectation = expectation(description: "configure resolve")
     let rejectExpectation = expectation(description: "configure reject not called")
     rejectExpectation.isInverted = true
     let capture = StringCaptureBox()
 
+    var config: [String: Any] = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect"
+    ]
+    if let loggerId {
+      config["loggerId"] = loggerId
+    }
+
     RNPingDavinciCommon.configureDaVinci(
-      [
-        "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
-        "clientId": "my-client",
-        "redirectUri": "com.example.app://oauth2redirect"
-      ],
+      config as NSDictionary,
       resolver: { id in
         capture.set(id)
         Task { @MainActor in resolveExpectation.fulfill() }

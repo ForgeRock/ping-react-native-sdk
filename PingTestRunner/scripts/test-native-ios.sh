@@ -17,6 +17,7 @@ run_scheme() {
 run_scheme RNPingBinding-Unit-Tests
 run_scheme RNPingBrowser-Unit-Tests
 run_scheme RNPingCore-Unit-Tests
+run_scheme RNPingDavinci-Unit-Tests
 run_scheme RNPingDeviceClient-Unit-Tests
 run_scheme RNPingDeviceId-Unit-Tests
 run_scheme RNPingDeviceProfile-Unit-Tests

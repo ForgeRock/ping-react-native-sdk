@@ -25,6 +25,52 @@ coverage:
         if_ci_failed: error
         only_pulls: false
 
+component_management:
+  default_rules:
+    statuses:
+      - type: patch
+        target: 80%
+        threshold: 1%
+  individual_components:
+    # Bridge glue (*Common.swift/.kt, newarch/oldarch dispatch, TurboModule specs) drives
+    # network/session calls through live native SDKs (PingOrchestrate/PingOidc). Several
+    # branches there are only reachable with an authenticated session, which needs an
+    # HTTP-mocking harness this repo doesn't have yet — so patch coverage is reported but
+    # does not block merge.
+    - component_id: bridge-glue
+      name: 'Bridge glue'
+      paths:
+        - '**/ios/*Common.swift'
+        - '**/ios/newarch/**'
+        - '**/ios/oldarch/**'
+        - '**/android/src/newarch/**'
+        - '**/android/src/oldarch/**'
+        - '**/src/NativeRNPing*.ts'
+      statuses:
+        - type: patch
+          target: 60%
+          threshold: 1%
+          informational: true
+    # Mappers, error classes, config parsers, and factories are pure logic with no native
+    # I/O — fully unit-testable today, so they're held to a higher bar than the repo default.
+    - component_id: pure-logic
+      name: 'Pure logic'
+      paths:
+        - '**/ios/Mapper/**'
+        - '**/ios/Error/**'
+        - '**/ios/Config/**'
+        - '**/ios/Factory/**'
+        - '**/ios/Collector/**'
+        - '**/android/**/mapper/**'
+        - '**/android/**/error/**'
+        - '**/android/**/config/**'
+        - '**/android/**/factory/**'
+        - '**/android/**/collector/**'
+      statuses:
+        - type: patch
+          target: 80%
+          threshold: 1%
+
 flags:
   javascript:
     paths:
