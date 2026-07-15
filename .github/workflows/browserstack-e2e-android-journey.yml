@@ -4,7 +4,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license. See the LICENSE file for details.
 #
-name: BrowserStack E2E — Android Journey
+name: BrowserStack E2E — Android Journey & DaVinci
 
 on:
   workflow_call:
@@ -18,7 +18,7 @@ on:
         description: BrowserStack session name used by Detox
         required: false
         type: string
-        default: android-detox-e2e-journey
+        default: android-detox-e2e-journey-davinci
     secrets:
       BROWSERSTACK_USERNAME:
         description: BrowserStack account username
@@ -56,13 +56,31 @@ on:
       PING_CALLBACK_TREES_ENABLED:
         description: Flag enabling callback tree coverage in BrowserStack E2E tests
         required: false
+      PINGONE_DISCOVERY_ENDPOINT:
+        description: PingOne DaVinci OIDC discovery endpoint
+        required: false
+      PINGONE_CLIENT_ID:
+        description: PingOne DaVinci OIDC client identifier
+        required: false
+      PINGONE_REDIRECT_URI:
+        description: PingOne DaVinci OIDC redirect URI
+        required: false
+      PINGONE_ACR_VALUES:
+        description: ACR values to route to the correct DaVinci flow
+        required: false
+      PINGONE_USERNAME:
+        description: PingOne DaVinci test account username
+        required: false
+      PINGONE_PASSWORD:
+        description: PingOne DaVinci test account password
+        required: false
 
 permissions:
   contents: read
 
 jobs:
-  e2e-android-journey:
-    name: E2E — Android BrowserStack (journey)
+  e2e-android-journey-davinci:
+    name: E2E — Android BrowserStack (journey & davinci)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     defaults:
@@ -83,6 +101,12 @@ jobs:
       PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
       PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
       PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+      PINGONE_DISCOVERY_ENDPOINT: ${{ secrets.PINGONE_DISCOVERY_ENDPOINT }}
+      PINGONE_CLIENT_ID: ${{ secrets.PINGONE_CLIENT_ID }}
+      PINGONE_REDIRECT_URI: ${{ secrets.PINGONE_REDIRECT_URI }}
+      PINGONE_ACR_VALUES: ${{ secrets.PINGONE_ACR_VALUES }}
+      PINGONE_USERNAME: ${{ secrets.PINGONE_USERNAME }}
+      PINGONE_PASSWORD: ${{ secrets.PINGONE_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -111,8 +135,8 @@ jobs:
       - name: Compute BrowserStack identifiers
         # Naming convention:
         #   Project : rn-<moduleName>-test  → rn-sdk-test
-        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>-journey
-        #   Session : <platform>-<framework>-journey
+        #   Build   : <EVENT_PREFIX>-<RUN_ID>-<RUN_ATTEMPT>-<SHORT_SHA>-journey-davinci
+        #   Session : <platform>-<framework>-journey-davinci
         run: |
           set -euo pipefail
           SHORT_SHA="${GITHUB_SHA:0:7}"
@@ -127,7 +151,7 @@ jobs:
               BUILD_PREFIX="run"
               ;;
           esac
-          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}-journey" >> "$GITHUB_ENV"
+          echo "BROWSERSTACK_BUILD_ID=${BUILD_PREFIX}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${SHORT_SHA}-journey-davinci" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_PROJECT_NAME=${{ inputs.browserstack_project_name }}" >> "$GITHUB_ENV"
           echo "BROWSERSTACK_SESSION_NAME=${{ inputs.browserstack_session_name }}" >> "$GITHUB_ENV"
 
@@ -159,9 +183,9 @@ jobs:
           fi
           echo "test_url=$test_url" >> "$GITHUB_OUTPUT"
 
-      - name: Run E2E journey tests on BrowserStack real devices
+      - name: Run E2E journey & davinci tests on BrowserStack real devices
         id: run-tests
-        run: yarn test:runner:bs:android:journey 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
+        run: yarn test:runner:bs:android:journey-davinci 2>&1 | tee /tmp/detox-bs.log; exit "${PIPESTATUS[0]}"
         working-directory: ${{ github.workspace }}
         env:
           BROWSERSTACK_APP_URL: ${{ steps.upload-app.outputs.app_url }}
@@ -212,7 +236,7 @@ jobs:
           fi
 
           {
-            echo "## BrowserStack Android Detox Summary — Journey"
+            echo "## BrowserStack Android Detox Summary — Journey & DaVinci"
             echo
             echo "- Build ID: \`${build_id}\`"
             echo "- Overall status: ${overall_status}"

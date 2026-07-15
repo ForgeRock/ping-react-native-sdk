@@ -65,6 +65,21 @@ export const E2E_ENV = {
 };
 
 /**
+ * DaVinci-specific environment variables. Set these in PingTestRunner/.env
+ * (see .env.example) or inject them as CI secrets.
+ */
+export const DAVINCI_ENV = {
+  discoveryEndpoint: process.env['PINGONE_DISCOVERY_ENDPOINT'] ?? '',
+  clientId: process.env['PINGONE_CLIENT_ID'] ?? '',
+  redirectUri:
+    process.env['PINGONE_REDIRECT_URI'] ??
+    'org.forgerock.demo://oauth2redirect',
+  testUsername: process.env['PINGONE_USERNAME'] ?? '',
+  testPassword: process.env['PINGONE_PASSWORD'] ?? '',
+  acrValues: process.env['PINGONE_ACR_VALUES'] ?? '',
+};
+
+/**
  * Returns true when all required env vars for live auth tests are set.
  */
 export function hasLiveAuthEnv(): boolean {

@@ -44,6 +44,10 @@ const UseJourneyScenario = React.lazy(
 );
 const UseOidcScenario = React.lazy(() => import('./scenarios/UseOidcScenario'));
 const EnvScenario = React.lazy(() => import('./scenarios/EnvScenario'));
+const DaVinciScenario = React.lazy(() => import('./scenarios/DaVinciScenario'));
+const UseDaVinciScenario = React.lazy(
+  () => import('./scenarios/UseDaVinciScenario'),
+);
 
 interface LaunchArgs {
   PING_TEST_SCENARIO?: string;
@@ -82,6 +86,10 @@ function ScenarioContent(): React.JSX.Element {
       return <UseOidcScenario forceError />;
     case 'env':
       return <EnvScenario />;
+    case 'davinci':
+      return <DaVinciScenario />;
+    case 'use-davinci':
+      return <UseDaVinciScenario />;
     default:
       return <DefaultView />;
   }

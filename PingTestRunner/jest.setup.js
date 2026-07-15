@@ -81,6 +81,66 @@ jest.mock('../packages/browser/src/NativeRNPingBrowser', () => ({
   })),
 }));
 
+// ---------- rn-davinci ----------
+// Track configured client identity so JS bridge bugs (skipped configure, wrong
+// id forwarded, reuse after dispose) surface as test failures rather than
+// silently returning canned data.
+jest.mock('../packages/davinci/src/NativeRNPingDavinci', () => {
+  const active = new Set();
+  let counter = 0;
+  const assertActive = (method, id) => {
+    if (!active.has(id)) {
+      throw new Error(
+        `[NativeRNPingDavinci mock] ${method} called with unknown or disposed davinciId="${id}"`,
+      );
+    }
+  };
+  return {
+    __esModule: true,
+    default: {
+      configureDaVinci: jest.fn(async () => {
+        counter += 1;
+        const id = `davinci-id-mock-${counter}`;
+        active.add(id);
+        return id;
+      }),
+      start: jest.fn(async (id) => {
+        assertActive('start', id);
+        return { type: 'ContinueNode', collectors: [] };
+      }),
+      next: jest.fn(async (id) => {
+        assertActive('next', id);
+        return { type: 'SuccessNode', session: { value: 'session-mock' } };
+      }),
+      getSession: jest.fn(async (id) => {
+        assertActive('getSession', id);
+        return { accessToken: 'mock-access-token' };
+      }),
+      refresh: jest.fn(async (id) => {
+        assertActive('refresh', id);
+        return { accessToken: 'mock-refreshed-token' };
+      }),
+      revoke: jest.fn(async (id) => {
+        assertActive('revoke', id);
+        return true;
+      }),
+      userinfo: jest.fn(async (id) => {
+        assertActive('userinfo', id);
+        return { sub: 'user-mock' };
+      }),
+      logout: jest.fn(async (id) => {
+        assertActive('logout', id);
+        return undefined;
+      }),
+      dispose: jest.fn(async (id) => {
+        assertActive('dispose', id);
+        active.delete(id);
+        return undefined;
+      }),
+    },
+  };
+});
+
 // ---------- rn-device-id ----------
 jest.mock('../packages/device-id/src/NativeRNPingDeviceId', () => ({
   __esModule: true,

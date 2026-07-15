@@ -11,15 +11,17 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useJourney, type JourneyUserSession } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
+import { useDaVinci } from '@ping-identity/rn-davinci';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
 import { RootStackParamList } from '../App';
 import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import UserProfileJourneyPanel from './userProfile/components/organisms/UserProfileJourneyPanel';
 import UserProfileOidcPanel from './userProfile/components/organisms/UserProfileOidcPanel';
+import UserProfileDaVinciPanel from './userProfile/components/organisms/UserProfileDaVinciPanel';
 
-type UserProfileTab = 'Journey' | 'OIDC';
-const USER_PROFILE_TABS = ['Journey', 'OIDC'] as const;
+type UserProfileTab = 'Journey' | 'OIDC' | 'DaVinci';
+const USER_PROFILE_TABS = ['Journey', 'OIDC', 'DaVinci'] as const;
 
 type UserProfileNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -49,9 +51,19 @@ export default function UserProfileScreen({
     useState<boolean>(false);
   const [showRawOidcUserInfo, setShowRawOidcUserInfo] =
     useState<boolean>(false);
+  const [davinciUserInfo, setDavinciUserInfo] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [davinciHasSession, setDavinciHasSession] = useState<boolean>(false);
+  const [davinciLoading, setDavinciLoading] = useState<boolean>(false);
+  const [davinciError, setDavinciError] = useState<string | null>(null);
+  const [showRawDavinciUserInfo, setShowRawDavinciUserInfo] =
+    useState<boolean>(false);
 
   const [, journeyActions] = useJourney();
   const [oidcState, oidcActions] = useOidc();
+  const davinciActions = useDaVinci();
 
   const refreshJourneySession = useCallback(async (): Promise<void> => {
     setJourneyLoading(true);
@@ -85,15 +97,45 @@ export default function UserProfileScreen({
     }
   }, [oidcActions]);
 
+  const refreshDavinciSession = useCallback(async (): Promise<void> => {
+    setDavinciLoading(true);
+    setDavinciError(null);
+    setShowRawDavinciUserInfo(false);
+    try {
+      const session = await davinciActions.user();
+      if (!session) {
+        setDavinciHasSession(false);
+        setDavinciUserInfo(null);
+        return;
+      }
+      setDavinciHasSession(true);
+      const info = await davinciActions.userinfo();
+      setDavinciUserInfo(info);
+    } catch (error) {
+      setDavinciError(formatError(error));
+      setDavinciHasSession(false);
+      setDavinciUserInfo(null);
+    } finally {
+      setDavinciLoading(false);
+    }
+  }, [davinciActions]);
+
   useFocusEffect(
     useCallback(() => {
       if (activeTab === 'Journey') {
         void refreshJourneySession();
       } else if (activeTab === 'OIDC') {
         void refreshOidcSession();
+      } else if (activeTab === 'DaVinci') {
+        void refreshDavinciSession();
       }
       return undefined;
-    }, [activeTab, refreshJourneySession, refreshOidcSession]),
+    }, [
+      activeTab,
+      refreshJourneySession,
+      refreshOidcSession,
+      refreshDavinciSession,
+    ]),
   );
 
   /**
@@ -109,6 +151,9 @@ export default function UserProfileScreen({
     }
     if (tab !== 'OIDC') {
       setShowRawOidcUserInfo(false);
+    }
+    if (tab !== 'DaVinci') {
+      setShowRawDavinciUserInfo(false);
     }
   }, []);
 
@@ -154,6 +199,20 @@ export default function UserProfileScreen({
                 Alert.alert('OIDC start failed', formatError(cause));
               }
             }}
+          />
+        ) : null}
+
+        {activeTab === 'DaVinci' ? (
+          <UserProfileDaVinciPanel
+            loading={davinciLoading}
+            userInfo={davinciUserInfo}
+            hasSession={davinciHasSession}
+            error={davinciError}
+            showRawUserInfo={showRawDavinciUserInfo}
+            onToggleRawUserInfo={() =>
+              setShowRawDavinciUserInfo(value => !value)
+            }
+            onStartDaVinci={() => navigation.navigate('DaVinci')}
           />
         ) : null}
       </ScrollView>

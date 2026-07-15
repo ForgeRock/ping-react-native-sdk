@@ -1,0 +1,122 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+coverage:
+  precision: 2
+  round: down
+  range: '70...100'
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+        informational: false
+        only_pulls: false
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+        base: auto
+        if_ci_failed: error
+        only_pulls: false
+
+component_management:
+  default_rules:
+    statuses:
+      - type: patch
+        target: 80%
+        threshold: 1%
+  individual_components:
+    # Bridge glue (*Common.swift/.kt, newarch/oldarch dispatch, TurboModule specs) drives
+    # network/session calls through live native SDKs (PingOrchestrate/PingOidc). Several
+    # branches there are only reachable with an authenticated session, which needs an
+    # HTTP-mocking harness this repo doesn't have yet — so patch coverage is reported but
+    # does not block merge.
+    - component_id: bridge-glue
+      name: 'Bridge glue'
+      paths:
+        - '**/ios/*Common.swift'
+        - '**/ios/newarch/**'
+        - '**/ios/oldarch/**'
+        - '**/android/src/newarch/**'
+        - '**/android/src/oldarch/**'
+        - '**/src/NativeRNPing*.ts'
+      statuses:
+        - type: patch
+          target: 60%
+          threshold: 1%
+          informational: true
+    # Mappers, error classes, config parsers, and factories are pure logic with no native
+    # I/O — fully unit-testable today, so they're held to a higher bar than the repo default.
+    - component_id: pure-logic
+      name: 'Pure logic'
+      paths:
+        - '**/ios/Mapper/**'
+        - '**/ios/Error/**'
+        - '**/ios/Config/**'
+        - '**/ios/Factory/**'
+        - '**/ios/Collector/**'
+        - '**/android/**/mapper/**'
+        - '**/android/**/error/**'
+        - '**/android/**/config/**'
+        - '**/android/**/factory/**'
+        - '**/android/**/collector/**'
+      statuses:
+        - type: patch
+          target: 80%
+          threshold: 1%
+
+flags:
+  javascript:
+    paths:
+      - packages/
+    carryforward: true
+  android:
+    paths:
+      - packages/
+    carryforward: true
+  ios:
+    paths:
+      - packages/
+    carryforward: true
+
+comment:
+  layout: 'header, diff, flags, components, files, footer'
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  show_carryforward_flags: true
+
+ignore:
+  - '**/__tests__/**'
+  - '**/__mocks__/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/*.spec.ts'
+  - '**/*.spec.tsx'
+  - '**/build/**'
+  - '**/node_modules/**'
+  - 'PingSampleApp/**'
+  - 'PingTestRunner/**'
+  - '**/*.md'
+  # ObjC++ TurboModule/Classic bridge glue (RNPing*.mm, RNPing*Classic.mm) just
+  # dispatches to *Common.swift, which is tested; no test target covers .mm files.
+  - '**/ios/*.mm'
+  # Header declarations only (@interface/@end, FOUNDATION_EXPORT) — no
+  # executable lines for coverage tooling to instrument.
+  - '**/ios/*.h'
+  # RN package-registration boilerplate (getModule()/getReactModuleInfoProvider()
+  # name-string dispatch) — no business logic, requires a live RN bridge to
+  # exercise, not a JVM unit test.
+  - '**/android/src/newarch/**/*Package.kt'
+  - '**/android/src/oldarch/**/*Package.kt'
+  # Build manifests/config — never compiled or instrumented.
+  - '**/*.podspec'
+  - '**/android/build.gradle'
+  - '**/android/src/main/AndroidManifest.xml'

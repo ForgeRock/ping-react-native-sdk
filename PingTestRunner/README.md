@@ -17,29 +17,30 @@ This app is **not** a demo or sample app. It is a minimal, dependency-light host
 
 ## Overview
 
-| Layer | Tool | Location |
-|---|---|---|
-| JS unit tests (per package) | Jest | `packages/*/src/__tests__/` |
-| Integration tests | Jest (node env, native mocked) | `__tests__/integration/` |
-| Android native unit tests | Kotlin/JUnit/Robolectric via Gradle | `packages/*/android/src/test/` |
-| iOS native unit tests | Swift/XCTest via CocoaPods test_spec | `packages/*/ios/Tests/` |
-| E2E tests | Detox | `e2e/` |
-| Android build | Gradle + React Native | `android/` |
-| iOS build | CocoaPods + React Native | `ios/` |
+| Layer                       | Tool                                 | Location                       |
+| --------------------------- | ------------------------------------ | ------------------------------ |
+| JS unit tests (per package) | Jest                                 | `packages/*/src/__tests__/`    |
+| Integration tests           | Jest (node env, native mocked)       | `__tests__/integration/`       |
+| Android native unit tests   | Kotlin/JUnit/Robolectric via Gradle  | `packages/*/android/src/test/` |
+| iOS native unit tests       | Swift/XCTest via CocoaPods test_spec | `packages/*/ios/Tests/`        |
+| E2E tests                   | Detox                                | `e2e/`                         |
+| Android build               | Gradle + React Native                | `android/`                     |
+| iOS build                   | CocoaPods + React Native             | `ios/`                         |
 
 ### Packages under test
 
-| Package | Integration test file |
-|---|---|
-| `@ping-identity/rn-browser` | `browser.test.ts` |
-| `@ping-identity/rn-core` | `core.test.ts` |
-| `@ping-identity/rn-device-id` | `device-id.test.ts` |
+| Package                            | Integration test file    |
+| ---------------------------------- | ------------------------ |
+| `@ping-identity/rn-browser`        | `browser.test.ts`        |
+| `@ping-identity/rn-core`           | `core.test.ts`           |
+| `@ping-identity/rn-davinci`        | `davinci.test.ts`        |
+| `@ping-identity/rn-device-id`      | `device-id.test.ts`      |
 | `@ping-identity/rn-device-profile` | `device-profile.test.ts` |
-| `@ping-identity/rn-journey` | `journey.test.ts` |
-| `@ping-identity/rn-logger` | `logger.test.ts` |
-| `@ping-identity/rn-oidc` | `oidc.test.ts` |
-| `@ping-identity/rn-storage` | `storage.test.ts` |
-| `@ping-identity/rn-types` | `types.test.ts` |
+| `@ping-identity/rn-journey`        | `journey.test.ts`        |
+| `@ping-identity/rn-logger`         | `logger.test.ts`         |
+| `@ping-identity/rn-oidc`           | `oidc.test.ts`           |
+| `@ping-identity/rn-storage`        | `storage.test.ts`        |
+| `@ping-identity/rn-types`          | `types.test.ts`          |
 
 ---
 
@@ -175,17 +176,32 @@ E2E tests that exercise live authentication flows are **self-skipping** when env
 
 Use the same keys as `PingTestRunner/.env.example`:
 
-| Variable | Description | Example |
-|---|---|---|
-| `PING_DISCOVERY_ENDPOINT` | OIDC discovery URL | `https://openam.example.com/openam/.well-known/openid-configuration` |
-| `PING_CLIENT_ID` | OAuth2 client ID | `my-rn-client` |
-| `PING_REDIRECT_URI` | Redirect URI (must be registered on server) | `org.forgerock.demo://oauth2redirect` |
-| `PING_SERVER_URL` | PingAM base URL | `https://openam.example.com/openam` |
-| `PING_REALM_PATH` | Realm path | `/alpha` |
-| `PING_COOKIE_NAME` | Session cookie key used by Journey config | `iPlanetDirectoryPro` |
-| `PING_JOURNEY_NAME` | Auth tree / journey name | `Login` |
-| `PING_TEST_USERNAME` | Test user login | `testuser@example.com` |
-| `PING_TEST_PASSWORD` | Test user password | *(store in CI secrets)* |
+| Variable                  | Description                                 | Example                                                              |
+| ------------------------- | ------------------------------------------- | -------------------------------------------------------------------- |
+| `PING_DISCOVERY_ENDPOINT` | OIDC discovery URL                          | `https://openam.example.com/openam/.well-known/openid-configuration` |
+| `PING_CLIENT_ID`          | OAuth2 client ID                            | `my-rn-client`                                                       |
+| `PING_REDIRECT_URI`       | Redirect URI (must be registered on server) | `org.forgerock.demo://oauth2redirect`                                |
+| `PING_SERVER_URL`         | PingAM base URL                             | `https://openam.example.com/openam`                                  |
+| `PING_REALM_PATH`         | Realm path                                  | `/alpha`                                                             |
+| `PING_COOKIE_NAME`        | Session cookie key used by Journey config   | `iPlanetDirectoryPro`                                                |
+| `PING_JOURNEY_NAME`       | Auth tree / journey name                    | `Login`                                                              |
+| `PING_TEST_USERNAME`      | Test user login                             | `testuser@example.com`                                               |
+| `PING_TEST_PASSWORD`      | Test user password                          | _(store in CI secrets)_                                              |
+
+DaVinci E2E tests (`davinci.test.ts`) exercise a live PingOne DaVinci flow and use their own set of variables:
+
+| Variable                     | Description                                                                | Example                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `PINGONE_DISCOVERY_ENDPOINT` | DaVinci OIDC discovery endpoint                                            | `https://auth.pingone.com/<env-id>/as/.well-known/openid-configuration` |
+| `PINGONE_CLIENT_ID`          | DaVinci OIDC client ID                                                     | `my-davinci-client`                                                     |
+| `PINGONE_REDIRECT_URI`       | Redirect URI (optional, defaults to `org.forgerock.demo://oauth2redirect`) | `org.forgerock.demo://oauth2redirect`                                   |
+| `PINGONE_ACR_VALUES`         | ACR values to route to the correct DaVinci flow (optional)                 | _(flow-specific)_                                                       |
+| `PINGONE_USERNAME`           | DaVinci username collector value                                           | `testuser@example.com`                                                  |
+| `PINGONE_PASSWORD`           | DaVinci password collector value                                           | _(store in CI secrets)_                                                 |
+| `PING_DAVINCI_USERNAME_KEY`  | Collector key for the username field (optional, defaults to `username`)    | `username`                                                              |
+| `PING_DAVINCI_PASSWORD_KEY`  | Collector key for the password field (optional, defaults to `password`)    | `password`                                                              |
+
+Without these set, the DaVinci live cases self-skip while the launch smoke test and form-rendering assertions still run.
 
 You can export these from a local file (not committed):
 
@@ -232,8 +248,10 @@ PingTestRunner/
 ├── scenarios/                     # Headless test screens (one per feature)
 │   ├── JourneyScenario.tsx
 │   ├── OidcScenario.tsx
+│   ├── DaVinciScenario.tsx
 │   ├── UseJourneyScenario.tsx
 │   ├── UseOidcScenario.tsx
+│   ├── UseDaVinciScenario.tsx
 │   ├── EnvScenario.tsx
 │   ├── DeviceIdScenario.tsx
 │   ├── DeviceProfileScenario.tsx
@@ -245,6 +263,7 @@ PingTestRunner/
 │   └── integration/               # Jest integration tests (one per package)
 │       ├── browser.test.ts
 │       ├── core.test.ts
+│       ├── davinci.test.ts
 │       ├── device-id.test.ts
 │       ├── device-profile.test.ts
 │       ├── journey.test.ts
@@ -263,6 +282,7 @@ PingTestRunner/
 │   ├── use-journey.test.ts        # useJourney + useJourneyForm hook tests
 │   ├── use-oidc.test.ts           # useOidc hook tests
 │   ├── oidc-happy-path.test.ts
+│   ├── davinci.test.ts            # DaVinci happy-path flow (PingOne DaVinci)
 │   ├── device-id.test.ts
 │   ├── device-profile.test.ts
 │   ├── storage.test.ts

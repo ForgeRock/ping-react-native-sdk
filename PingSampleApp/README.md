@@ -10,14 +10,15 @@ of the MIT license. See the LICENSE file for details.
 # Ping Identity React Native Sample App
 
 A reference application for the Ping Identity React Native SDK. It demonstrates
-Journey authentication, OIDC authorization, device management, FIDO/WebAuthn,
-device binding, external IdP login, and token/session inspection — all wired
-together with the SDK's native-backed modules.
+Journey authentication, DaVinci orchestration, OIDC authorization, device
+management, FIDO/WebAuthn, device binding, external IdP login, and
+token/session inspection — all wired together with the SDK's native-backed
+modules.
 
 ## Prerequisites
 
 - [React Native 0.80.1](https://reactnative.dev/docs/0.80/set-up-your-environment) environment set up (Node, Xcode, Android Studio)
-- Ruby + Bundler (iOS only)
+- Ruby >= 3.3.6 + Bundler (iOS only)
 - A Ping Identity server (ForgeRock/PingAM or PingOne/PingAdvancedIdentityCloud)
 
 ## Step 1: Configure your environment
@@ -48,6 +49,10 @@ PINGONE_CLIENT_ID=...
 PINGONE_DISCOVERY_ENDPOINT=...
 PINGONE_REDIRECT_URI=...
 ```
+
+> The DaVinci screen reuses the `PINGONE_*` variables above — DaVinci flows
+> are configured against the same PingOne tenant discovery endpoint, so no
+> separate `DAVINCI_*` keys are needed.
 
 See `.env.example` for the full list of supported keys including external IdP
 (Facebook, Google) configuration.
@@ -98,6 +103,14 @@ KEYSTORE_PASSWORD=<your-password>
 KEY_PASSWORD=<your-password>
 ```
 
+### Android — SDK location
+
+> **Note:** The Android build requires `ANDROID_HOME` to be set in your environment.
+>
+> If it is not set, create `PingSampleApp/android/local.properties` containing `sdk.dir=/path/to/your/Android/SDK` before running the app.
+>
+> You can find the Android SDK path in Android Studio under **Settings** > **Languages & Frameworks** > **Android SDK**.
+
 ## Step 3: Start Metro
 
 ```sh
@@ -134,10 +147,11 @@ open -a "Android Studio"
 | ------------------------ | ----------------------------------------------------------------------------- |
 | Journey (Full)           | `rn-journey`, `rn-binding`, `rn-fido`, `rn-external-idp`, `rn-device-profile` |
 | Journey (Form / Minimal) | `rn-journey`                                                                  |
+| DaVinci                  | `rn-davinci`                                                                  |
 | OIDC                     | `rn-oidc`, `rn-browser`                                                       |
-| Token                    | `rn-oidc`                                                                     |
-| User Profile             | `rn-oidc`                                                                     |
-| Logout                   | `rn-oidc`, `rn-journey`                                                       |
+| Token                    | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
+| User Profile             | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
+| Logout                   | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
 | Devices                  | `rn-device-client`                                                            |
 | Device Profile           | `rn-device-profile`                                                           |
 | Binding Keys             | `rn-binding`                                                                  |

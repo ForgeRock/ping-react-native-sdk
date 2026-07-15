@@ -13,6 +13,8 @@ import {
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
 import type { JourneyClient } from '@ping-identity/rn-journey';
+import { createDaVinciClient } from '@ping-identity/rn-davinci';
+import type { DaVinciClient, DaVinciConfig } from '@ping-identity/rn-davinci';
 import Config from 'react-native-config';
 
 import { logger } from '@ping-identity/rn-logger';
@@ -282,9 +284,53 @@ export const loginClient = createJourneyClient({
 });
 
 /**
+ * DaVinci storage handle dedicated to the sample DaVinci flow.
+ */
+const davinciOidcStorage = configureOidcStorage({
+  android: {
+    fileName: 'rn-sample-davinci',
+    keyAlias: 'rn.sample.davinci',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.CACHE_ON_FAILURE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.davinci',
+    encryptor: true,
+    cacheable: true,
+  },
+});
+
+/**
+ * DaVinci client configuration used to drive the sample DaVinci screen.
+ *
+ * @remarks
+ * Reuses the PingOne OIDC environment variables since DaVinci flows are
+ * configured by the PingOne tenant's discovery endpoint.
+ */
+export const sampleDaVinciConfig: DaVinciConfig = {
+  logger: appLogger,
+  modules: {
+    oidc: {
+      clientId: Config.PINGONE_CLIENT_ID!,
+      discoveryEndpoint: Config.PINGONE_DISCOVERY_ENDPOINT!,
+      redirectUri: Config.PINGONE_REDIRECT_URI!,
+      scopes: pingOneScopes,
+      acrValues: Config.PINGONE_ACR_VALUES || undefined,
+      storage: davinciOidcStorage,
+    },
+  },
+};
+
+/**
+ * DaVinci client used by the sample app DaVinci screen.
+ */
+export const sampleDaVinciClient: DaVinciClient =
+  createDaVinciClient(sampleDaVinciConfig);
+
+/**
  * Supported sample app configuration groups.
  */
-export type SampleConfigGroup = 'Journey' | 'OIDC (Web)';
+export type SampleConfigGroup = 'Journey' | 'OIDC (Web)' | 'DaVinci';
 
 /**
  * Runtime-selectable sample app client profile.
