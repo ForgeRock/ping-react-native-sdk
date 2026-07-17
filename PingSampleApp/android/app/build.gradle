@@ -129,6 +129,18 @@ android {
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
+
+    // SDKS-5217: packages/* are on Java 21 (ping-android-sdk 2.1.0 investigation).
+    // react.internal.disableJavaVersionAlignment=true in gradle.properties stops RNGP
+    // from forcing this module back to 17, so it must be aligned explicitly here.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
 
 dependencies {
