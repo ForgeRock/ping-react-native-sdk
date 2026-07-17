@@ -71,8 +71,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+    kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -88,10 +92,10 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:device-profile:2.0.1")
-  implementation("com.pingidentity.sdks:journey-plugin:2.0.1")
-  implementation("com.pingidentity.sdks:device-root:2.0.1")
-  implementation("com.pingidentity.sdks:logger:2.0.1")
+  implementation("com.pingidentity.sdks:device-profile:2.1.0")
+  implementation("com.pingidentity.sdks:journey-plugin:2.1.0")
+  implementation("com.pingidentity.sdks:device-root:2.1.0")
+  implementation("com.pingidentity.sdks:logger:2.1.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
@@ -101,8 +105,15 @@ dependencies {
   compileOnly "com.google.android.gms:play-services-location:21.3.0"
   compileOnly "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0"
 
+  // SDKS-5217 Option C PoC — see packages/davinci/android/build.gradle
+  constraints {
+    implementation("io.ktor:ktor-client-cio") { version { strictly "3.3.3" } }
+    implementation("io.ktor:ktor-client-core") { version { strictly "3.3.3" } }
+    implementation("io.ktor:ktor-client-logging") { version { strictly "3.3.3" } }
+  }
+
   testImplementation "junit:junit:4.13.2"
   testImplementation "io.mockk:mockk:1.13.9"
   testImplementation "org.robolectric:robolectric:4.11.1"
-  testImplementation("com.pingidentity.sdks:device-profile:2.0.1")
+  testImplementation("com.pingidentity.sdks:device-profile:2.1.0")
 }

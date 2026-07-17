@@ -70,8 +70,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+    kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -95,10 +99,20 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:davinci:2.0.1")
+  implementation("com.pingidentity.sdks:davinci:2.1.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
+
+  // SDKS-5217 Option C PoC — force ktor down to lowest 3.x carrying the KTOR-8614 fix.
+  // `strictly` is a global veto in Gradle's single-graph resolution (confirmed under
+  // Option A), so this is expected to win over network:2.1.0's plain `requires 3.5.0`
+  // graph-wide, not just within davinci's own subtree.
+  constraints {
+    implementation("io.ktor:ktor-client-cio") { version { strictly "3.3.3" } }
+    implementation("io.ktor:ktor-client-core") { version { strictly "3.3.3" } }
+    implementation("io.ktor:ktor-client-logging") { version { strictly "3.3.3" } }
+  }
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.test:core:1.6.1"
