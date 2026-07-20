@@ -67,7 +67,7 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^29.5.14",
     "@types/react": "^19.1.0",
-    "detox": "npm:@browserstack/detox@20.38.0-cloud.3",
+    "detox": "npm:@browserstack/detox@20.51.3-cloud.0",
     "dotenv": "^16.4.7",
     "eslint": "^8.19.0",
     "jest": "^29.7.0",
