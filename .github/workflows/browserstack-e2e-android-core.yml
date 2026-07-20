@@ -26,6 +26,12 @@ on:
       BROWSERSTACK_ACCESS_KEY:
         description: BrowserStack account access key
         required: true
+      BROWSERSTACK_DEVICE:
+        description: BrowserStack Android device name to run E2E tests on
+        required: false
+      BROWSERSTACK_OS_VERSION:
+        description: BrowserStack Android OS version to run E2E tests on
+        required: false
       PING_SERVER_URL:
         description: Ping server base URL for Tier 2 E2E coverage
         required: false
@@ -73,6 +79,8 @@ jobs:
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      BROWSERSTACK_DEVICE: ${{ secrets.BROWSERSTACK_DEVICE }}
+      BROWSERSTACK_OS_VERSION: ${{ secrets.BROWSERSTACK_OS_VERSION }}
       PING_SERVER_URL: ${{ secrets.PING_SERVER_URL }}
       PING_REALM_PATH: ${{ secrets.PING_REALM_PATH }}
       PING_COOKIE_NAME: ${{ secrets.PING_COOKIE_NAME }}
