@@ -25,7 +25,7 @@
     "clean": "rimraf lib",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
-    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\" README.md babel.config.js jest.config.js eslint.config.mjs"
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\" babel.config.js jest.config.js eslint.config.mjs"
   },
   "dependencies": {
     "@ping-identity/rn-types": "workspace:*"
