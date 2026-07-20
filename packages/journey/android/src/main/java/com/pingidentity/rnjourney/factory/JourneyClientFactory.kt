@@ -16,6 +16,7 @@ import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
 import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.network.okHttpClient
 import com.pingidentity.rncore.oidc.OidcClientConfigHandle
 import com.pingidentity.rncore.oidc.OidcOpenIdConfig
 import com.pingidentity.rncore.registry.Registry
@@ -66,6 +67,8 @@ internal class JourneyClientFactory(
     fun build(payload: JourneyClientPayload): Workflow {
         val resolvedLogger = loggerResolver(payload.loggerId)
         return Journey {
+            // SDKS-5217 Option C-alt PoC — temporary, not for merge.
+            httpClient = okHttpClient()
             resolvedLogger?.let { logger = it }
             serverUrl = payload.serverUrl
             payload.timeout?.let { timeout = it }

@@ -14,6 +14,7 @@ import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
+import com.pingidentity.rncore.network.okHttpClient
 import com.pingidentity.rndavinci.config.DaVinciClientPayload
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
@@ -39,6 +40,8 @@ internal class DaVinciClientFactory(
     fun build(payload: DaVinciClientPayload): Workflow {
         val resolvedLogger = resolveLogger(payload.loggerId)
         return DaVinci {
+            // SDKS-5217 Option C-alt PoC — temporary, not for merge.
+            httpClient = okHttpClient()
             resolvedLogger?.let { logger = it }
             payload.timeout?.let { timeout = it }
 

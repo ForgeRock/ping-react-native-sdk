@@ -99,20 +99,23 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:android:2.1.0")
-  implementation("com.pingidentity.sdks:logger:2.1.0")
-  implementation("com.pingidentity.sdks:external-idp:2.1.0")
-  implementation("com.pingidentity.sdks:journey-plugin:2.1.0")
+  implementation("com.pingidentity.sdks:android:2.1.0") {
+    exclude group: "io.ktor"
+  }
+  implementation("com.pingidentity.sdks:logger:2.1.0") {
+    exclude group: "io.ktor"
+  }
+  implementation("com.pingidentity.sdks:external-idp:2.1.0") {
+    exclude group: "io.ktor"
+  }
+  implementation("com.pingidentity.sdks:journey-plugin:2.1.0") {
+    exclude group: "io.ktor"
+  }
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
 
   // SDKS-5217 Option C PoC — see packages/davinci/android/build.gradle
-  constraints {
-    implementation("io.ktor:ktor-client-cio") { version { strictly "3.3.3" } }
-    implementation("io.ktor:ktor-client-core") { version { strictly "3.3.3" } }
-    implementation("io.ktor:ktor-client-logging") { version { strictly "3.3.3" } }
-  }
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.test:core:1.6.1"

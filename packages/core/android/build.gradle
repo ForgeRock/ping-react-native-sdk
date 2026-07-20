@@ -89,6 +89,13 @@ dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
+  // SDKS-5217 Option C-alt PoC — temporary, not for merge.
+  // `api` (not `implementation`) so HttpClient's type is visible on consumers' compile
+  // classpath — rn-core's okHttpClient() exposes it as a return type.
+  api("com.pingidentity.sdks:network:2.1.0") {
+    exclude group: "io.ktor"
+  }
+  implementation "com.squareup.okhttp3:okhttp:4.9.2"
   testImplementation "junit:junit:4.13.2"
   testImplementation "org.robolectric:robolectric:4.11.1"
 }

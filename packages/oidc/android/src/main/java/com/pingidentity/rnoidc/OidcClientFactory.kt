@@ -14,6 +14,7 @@ import com.pingidentity.oidc.OpenIdConfiguration
 import com.pingidentity.oidc.module.Oidc
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
+import com.pingidentity.rncore.network.okHttpClient
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 
@@ -35,6 +36,8 @@ internal class OidcClientFactory(
   fun buildWebClient(config: OidcClientPayload): OidcWebClient {
     val resolvedLogger = loggerResolver(config.loggerId)
     return OidcWebClient {
+      // SDKS-5217 Option C-alt PoC — temporary, not for merge.
+      httpClient = okHttpClient()
       module(Oidc) {
         resolvedLogger?.let { logger = it }
         config.discoveryEndpoint?.let { discoveryEndpoint = it }
@@ -68,6 +71,8 @@ internal class OidcClientFactory(
   fun buildOidcClient(config: OidcClientPayload): OidcClient {
     val resolvedLogger = loggerResolver(config.loggerId)
     return OidcClient {
+      // SDKS-5217 Option C-alt PoC — temporary, not for merge.
+      httpClient = okHttpClient()
       resolvedLogger?.let { logger = it }
       config.discoveryEndpoint?.let { discoveryEndpoint = it }
       clientId = config.clientId
