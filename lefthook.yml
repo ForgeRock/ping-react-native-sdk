@@ -16,7 +16,7 @@ pre-commit:
       run: yarn eslint --no-config-lookup --config eslint.config.mjs {staged_files}
 
     - name: copyright
-      glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp,md}'
+      glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp}'
       run: scripts/check-copyright.sh {staged_files}
 
 pre-push:

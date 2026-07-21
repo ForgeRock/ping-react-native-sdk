@@ -44,9 +44,21 @@ jobs:
       - name: Run unit tests
         run: yarn test:affected:coverage
 
+      # No affected packages (e.g. dependency-only changes) produce no report files;
+      # dorny/test-reporter errors out on a missing-files glob regardless of fail-on-error.
+      - name: Check for test report files
+        id: check-reports
+        if: always()
+        run: |
+          if compgen -G "packages/*/build/test-results/js/*.xml" > /dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Publish test results as GitHub check runs.
       - name: Publish test report
-        if: always()
+        if: always() && steps.check-reports.outputs.found == 'true'
         uses: dorny/test-reporter@v2
         with:
           name: JavaScript Unit Test Results
