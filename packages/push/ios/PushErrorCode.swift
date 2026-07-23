@@ -29,4 +29,5 @@ enum PushErrorCode: String {
   case policyViolation = "policy_violation"
   case registrationFailed = "registration_failed"
   case networkFailure = "network_failure"
+  case pushNumberChallengeError = "push_number_challenge_error"
 }

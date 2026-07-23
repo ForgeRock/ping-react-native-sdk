@@ -40,16 +40,16 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
 
   # Native Ping SDK dependency
-  s.dependency 'PingBrowser', '2.0.0'
-  s.dependency 'PingLogger', '2.0.0'
-  s.dependency 'PingOidc', '2.0.0'
-  s.dependency 'PingOrchestrate', '2.0.0'
-  s.dependency 'PingStorage', '2.0.0'
+  s.dependency 'PingBrowser', '2.1.0'
+  s.dependency 'PingLogger', '2.1.0'
+  s.dependency 'PingOidc', '2.1.0'
+  s.dependency 'PingOrchestrate', '2.1.0'
+  s.dependency 'PingStorage', '2.1.0'
   s.dependency 'RNPingCore'
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
-    test_spec.dependency "PingOidc", '2.0.0'
+    test_spec.dependency "PingOidc", '2.1.0'
     test_spec.dependency "RNPingCore"
   end
 

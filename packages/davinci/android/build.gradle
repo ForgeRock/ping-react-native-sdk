@@ -70,8 +70,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+  kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -95,7 +99,7 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:davinci:2.0.1")
+  implementation("com.pingidentity.sdks:davinci:2.1.0")
   // Required: IdpCollector is defined in external-idp. The JS authorizeForDaVinci API is optional but this native dep is not.
   compileOnly("com.pingidentity.sdks:external-idp:2.0.1")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"

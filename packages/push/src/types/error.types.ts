@@ -36,6 +36,7 @@ import { PingError } from '@ping-identity/rn-types';
  * | `'policy_violation'` | The operation violates a credential or account policy. |
  * | `'registration_failed'` | Device registration with the push service failed. |
  * | `'network_failure'` | A network error occurred communicating with the push service. |
+ * | `'push_number_challenge_error'` | The server rejected a Push Number Challenge response. |
  */
 export type PushErrorCode =
   | 'not_initialized'
@@ -56,6 +57,7 @@ export type PushErrorCode =
   | 'policy_violation'
   | 'registration_failed'
   | 'network_failure'
+  | 'push_number_challenge_error'
   | (string & {});
 
 /**
