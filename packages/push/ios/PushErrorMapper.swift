@@ -34,6 +34,7 @@ func pushErrorCode(_ error: Error) -> String {
   case .policyViolation:          return PushErrorCode.policyViolation.rawValue
   case .registrationFailed:       return PushErrorCode.registrationFailed.rawValue
   case .networkFailure:           return PushErrorCode.networkFailure.rawValue
+  case .pushNumberChallengeError: return PushErrorCode.pushNumberChallengeError.rawValue
   }
 }
 
@@ -62,6 +63,7 @@ func pushErrorType(_ error: Error) -> ErrorType {
   case .messageParsingFailed:   return .parseError
   case .registrationFailed,
        .networkFailure:         return .networkError
+  case .pushNumberChallengeError: return .argumentError
   }
 }
 

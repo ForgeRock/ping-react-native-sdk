@@ -12,7 +12,7 @@ buildscript {
         compileSdkVersion = 36
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
-        kotlinVersion = "2.1.20"
+        kotlinVersion = "2.2.20"
     }
     repositories {
         google()
@@ -21,7 +21,12 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        // Pin the Kotlin Gradle plugin/compiler to the same $kotlinVersion declared
+        // above. Leaving this unpinned lets Gradle resolve an unrelated (often older)
+        // Kotlin compiler version, which then chokes on kotlin-stdlib metadata pulled
+        // in transitively by the Ping Android SDK (e.g. via ktor-client), causing an
+        // internal compiler error. See PingSampleApp/android/build.gradle for the same pin.
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 

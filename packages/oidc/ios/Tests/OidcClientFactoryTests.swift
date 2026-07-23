@@ -45,9 +45,24 @@ final class OidcClientFactoryTests: XCTestCase {
 
     let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
 
-    XCTAssertEqual(config.openId?.endSessionEndpoint, "")
-    XCTAssertEqual(config.openId?.revocationEndpoint, "")
-    XCTAssertNil(config.openId?.pingEndsessionEndpoint)
+    // `openIdOverride` only runs after a successful `discover()` (see OidcClientConfig.oidcInitialize),
+    // so it is exercised directly here against a stand-in discovered configuration rather than
+    // through `config.openId`, which stays nil until discovery completes.
+    var discovered = OpenIdConfiguration(
+      authorizationEndpoint: "",
+      tokenEndpoint: "",
+      userinfoEndpoint: "",
+      endSessionEndpoint: "",
+      revocationEndpoint: ""
+    )
+    config.openIdOverride?(&discovered)
+
+    XCTAssertEqual(discovered.authorizationEndpoint, "https://example.com/oauth2/authorize")
+    XCTAssertEqual(discovered.tokenEndpoint, "https://example.com/oauth2/token")
+    XCTAssertEqual(discovered.userinfoEndpoint, "https://example.com/oauth2/userinfo")
+    XCTAssertEqual(discovered.endSessionEndpoint, "")
+    XCTAssertEqual(discovered.revocationEndpoint, "")
+    XCTAssertNil(discovered.pingEndsessionEndpoint)
   }
 
   func testBuildWebClientMapsBrowserOptions() {

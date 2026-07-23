@@ -34,11 +34,12 @@ jobs:
           npm install -g jest
           npm install -g detox-cli
 
+      # Packages compile with sourceCompatibility/targetCompatibility JavaVersion.VERSION_21.
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Build SDK packages
         run: yarn packages:build
