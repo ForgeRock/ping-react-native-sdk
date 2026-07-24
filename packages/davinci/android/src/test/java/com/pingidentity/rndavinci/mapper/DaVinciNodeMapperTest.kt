@@ -64,26 +64,18 @@ class DaVinciNodeMapperTest {
     private fun Map<String, Any?>.asList(key: String): List<Map<String, Any?>>? =
         this[key] as? List<Map<String, Any?>>
 
+    // IdpCollector.init() throws MalformedURLException when "links" is absent because
+    // the native SDK always calls new URL(href ?: "") — set public fields directly instead.
     private fun makeIdpCollector(
         idpId: String,
         idpType: String,
         label: String,
         href: String? = null
-    ): IdpCollector {
-        val linksJson = href?.let {
-            buildJsonObject {
-                put("authenticate", buildJsonObject { put("href", it) })
-            }
-        }
-        return IdpCollector().apply {
-            init(buildJsonObject {
-                put("idpId", idpId)
-                put("idpType", idpType)
-                put("label", label)
-                put("idpEnabled", true)
-                if (linksJson != null) put("links", linksJson)
-            })
-        }
+    ): IdpCollector = IdpCollector().apply {
+        this.idpId = idpId
+        this.idpType = idpType
+        this.label = label
+        if (href != null) this.link = java.net.URL(href)
     }
 
     // ---- Node type tests ----
