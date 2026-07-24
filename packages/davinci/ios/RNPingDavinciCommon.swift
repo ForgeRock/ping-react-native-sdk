@@ -74,6 +74,7 @@ public final class RNPingDavinciCommon: NSObject {
 
   /// Clears DaVinci runtime state in serialized lifecycle order.
   private static func cleanupAsync() async {
+    CoreRuntime.setDaVinciCollectorResolver(nil)
     await lifecycleCoordinator.enqueue {
       stateStore.removeAll()
       await davinciRegistry.removeAll()
@@ -115,6 +116,9 @@ public final class RNPingDavinciCommon: NSObject {
 
       let idRef = Ref<String>()
       await lifecycleCoordinator.enqueue {
+        CoreRuntime.setDaVinciCollectorResolver { davinciId in
+          stateStore.activeContinueNode(for: davinciId).map { Array($0.collectors) }
+        }
         idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId))
       }
       guard let davinciId = idRef.value else {

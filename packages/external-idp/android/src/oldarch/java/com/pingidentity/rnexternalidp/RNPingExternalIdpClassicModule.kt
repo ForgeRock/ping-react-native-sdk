@@ -80,6 +80,24 @@ class RNPingExternalIdpClassicModule(
     RNPingExternalIdpCommon.setSelectedProvider(journeyId, provider, options, config, promise)
   }
 
+  /**
+   * Launches the external IdP authorization flow for an active DaVinci IdpCollector.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Per-call options payload (index).
+   * @param config Per-call configuration payload (loggerId, redirectUri).
+   * @param promise React Native promise resolved with null or rejected on error.
+   */
+  @ReactMethod
+  fun authorizeForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingExternalIdpCommon.authorizeForDaVinci(davinciId, options, config, promise)
+  }
+
   companion object {
     const val NAME = "RNPingExternalIdpClassic"
   }

@@ -8,6 +8,7 @@
 import type {
   DaVinciFormValue,
   DaVinciNormalizedCollector,
+  IdpCollector,
 } from '@ping-identity/rn-davinci';
 
 /**
@@ -46,4 +47,10 @@ export type DaVinciCollectorRendererProps = {
    * Whether the form can currently be submitted.
    */
   canSubmit: boolean;
+  /**
+   * Called when the user presses a social login button for an IDP collector.
+   *
+   * @param collector The IdpCollector to authorize.
+   */
+  onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
 };

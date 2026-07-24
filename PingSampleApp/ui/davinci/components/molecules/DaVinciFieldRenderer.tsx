@@ -8,6 +8,7 @@
 import React, { memo } from 'react';
 import DaVinciDeviceField from './DaVinciDeviceField';
 import DaVinciFlowButton from './DaVinciFlowButton';
+import DaVinciIdpField from './DaVinciIdpField';
 import DaVinciLabelField from './DaVinciLabelField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
 import DaVinciPasswordField from './DaVinciPasswordField';
@@ -56,6 +57,10 @@ function DaVinciFieldRenderer(
     case 'DEVICE_REGISTRATION':
     case 'DEVICE_AUTHENTICATION':
       return <DaVinciDeviceField {...props} />;
+    case 'SOCIAL_LOGIN_BUTTON':
+      return (
+        <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
+      );
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

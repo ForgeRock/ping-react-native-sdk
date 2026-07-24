@@ -23,6 +23,7 @@ import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
 import com.pingidentity.davinci.plugin.Collector
+import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.ErrorNode
@@ -41,6 +42,7 @@ import kotlinx.serialization.json.jsonPrimitive
 internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
+    internal const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -159,6 +161,9 @@ internal object DaVinciNodeMapper {
                     ?: fieldJson["type"]?.jsonPrimitive?.content
                     ?: continue
 
+                // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
+                if (resolvedType == SOCIAL_LOGIN_BUTTON) continue
+
                 // A field is supported when the SDK instantiated a collector for its key.
                 if (registeredKeys.contains(key)) continue
 
@@ -182,6 +187,7 @@ internal object DaVinciNodeMapper {
         logger: Logger? = null
     ): Map<String, Any?>? {
         val payload = when (collector) {
+            is IdpCollector -> mapIdpCollector(collector)
             is TextCollector -> mapTextCollector(collector)
             is PasswordCollector -> mapPasswordCollector(collector, node, logger)
             is SubmitCollector -> mapBaseCollector(collector)
@@ -201,7 +207,33 @@ internal object DaVinciNodeMapper {
                 null
             }
         } ?: return null
-        return applyRawField(payload, collector.id(), node, logger)
+        val fieldKey = rawFieldKey(collector) ?: return null
+        return applyRawField(payload, fieldKey, node, logger)
+    }
+
+    /**
+     * Returns the stable raw-field key for a collector.
+     *
+     * Most collectors use [Collector.id] which equals the server `key` field. Collectors that
+     * do not extend [FieldCollector] (e.g. [IdpCollector]) override with their own stable identifier.
+     * Add a new branch here for any future collector whose id() does not match its form field key.
+     */
+    private fun rawFieldKey(collector: Collector<*>): String? = when (collector) {
+        is IdpCollector -> collector.idpId
+        else -> collector.id()
+    }
+
+    private fun mapIdpCollector(collector: IdpCollector): MutableMap<String, Any?> {
+        val map = linkedMapOf<String, Any?>(
+            "key" to collector.idpId,
+            "type" to SOCIAL_LOGIN_BUTTON,
+            "label" to collector.label,
+            "idpId" to collector.idpId,
+            "idpType" to collector.idpType,
+            "idpEnabled" to collector.idpEnabled,
+        )
+        runCatching { collector.link.toString() }.getOrNull()?.let { map["link"] = it }
+        return map
     }
 
     /**

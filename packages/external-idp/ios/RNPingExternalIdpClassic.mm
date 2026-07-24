@@ -67,4 +67,18 @@ RCT_EXPORT_METHOD(selectProviderForJourney:(NSString *)journeyId
   }];
 }
 
+/**
+ * Launches the external IdP authorization flow for an active DaVinci collector.
+ */
+RCT_EXPORT_METHOD(authorizeForDaVinci:(NSString *)davinciId
+                  options:(NSDictionary *)options
+                  config:(NSDictionary *)config
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingExternalIdpImpl *impl) {
+    [impl authorizeForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
+  }];
+}
+
 @end

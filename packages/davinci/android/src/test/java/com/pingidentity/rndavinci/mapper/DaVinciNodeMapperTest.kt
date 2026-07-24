@@ -18,6 +18,7 @@ import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
 import com.pingidentity.davinci.plugin.Collector
+import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.network.HttpRequest
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
@@ -62,6 +63,20 @@ class DaVinciNodeMapperTest {
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.asList(key: String): List<Map<String, Any?>>? =
         this[key] as? List<Map<String, Any?>>
+
+    // IdpCollector.init() throws MalformedURLException when "links" is absent because
+    // the native SDK always calls new URL(href ?: "") — set public fields directly instead.
+    private fun makeIdpCollector(
+        idpId: String,
+        idpType: String,
+        label: String,
+        href: String? = null
+    ): IdpCollector = IdpCollector().apply {
+        this.idpId = idpId
+        this.idpType = idpType
+        this.label = label
+        if (href != null) this.link = java.net.URL(href)
+    }
 
     // ---- Node type tests ----
 
@@ -627,6 +642,56 @@ class DaVinciNodeMapperTest {
         val c = result.asList("collectors")!![0]
 
         assertFalse(c.containsKey("passwordPolicy"))
+    }
+
+    // ---- IdpCollector ----
+
+    @Test
+    fun mapIdpCollectorEmitsTypeIDP() {
+        val collector = makeIdpCollector(idpId = "google-idp-1", idpType = "GOOGLE", label = "Sign in with Google")
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals(DaVinciNodeMapper.SOCIAL_LOGIN_BUTTON, c["type"])
+    }
+
+    @Test
+    fun mapIdpCollectorUsesIdpIdAsKey() {
+        val collector = makeIdpCollector(idpId = "facebook-idp-42", idpType = "FACEBOOK", label = "Sign in with Facebook")
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("facebook-idp-42", c["key"])
+        assertEquals("facebook-idp-42", c["idpId"])
+    }
+
+    @Test
+    fun mapIdpCollectorEmitsIdpTypeAndLabel() {
+        val collector = makeIdpCollector(idpId = "apple-idp-99", idpType = "APPLE", label = "Sign in with Apple")
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("APPLE", c["idpType"])
+        assertEquals("Sign in with Apple", c["label"])
+        assertEquals(true, c["idpEnabled"])
+    }
+
+    @Test
+    fun mapIdpCollectorEmitsLinkWhenPresent() {
+        val href = "https://auth.pingone.com/connections/idp-1/loginFirstFactor?interactionId=abc"
+        val collector = makeIdpCollector(idpId = "google-idp-1", idpType = "GOOGLE", label = "Google", href = href)
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals(href, c["link"])
     }
 
     @Test

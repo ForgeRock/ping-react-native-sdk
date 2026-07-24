@@ -381,6 +381,17 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     },
 
     /**
+     * Returns the native DaVinci instance identifier.
+     *
+     * Triggers lazy configuration when called before `start()`.
+     *
+     * @throws {DaVinciError} When configuration fails.
+     */
+    async getId() {
+      return ensureConfigured();
+    },
+
+    /**
      * Disposes the native DaVinci instance and releases runtime state.
      *
      * @remarks

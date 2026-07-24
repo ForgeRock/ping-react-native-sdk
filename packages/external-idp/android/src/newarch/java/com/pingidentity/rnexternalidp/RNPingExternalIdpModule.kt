@@ -60,6 +60,18 @@ class RNPingExternalIdpModule(reactContext: ReactApplicationContext) :
     RNPingExternalIdpCommon.setSelectedProvider(journeyId, provider, options, config, promise)
   }
 
+  /**
+   * Launches the external IdP authorization flow for an active DaVinci IdpCollector.
+   */
+  override fun authorizeForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingExternalIdpCommon.authorizeForDaVinci(davinciId, options, config, promise)
+  }
+
   companion object {
     const val NAME = "RNPingExternalIdp"
   }

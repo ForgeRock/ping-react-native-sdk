@@ -99,4 +99,17 @@ export type DaVinciClient = {
    * @throws {DaVinciError} When disposal fails.
    */
   dispose: () => Promise<void>;
+
+  /**
+   * Returns the native DaVinci instance identifier.
+   *
+   * @remarks
+   * Used by cross-module integrations (e.g. `@ping-identity/rn-external-idp`)
+   * to target the correct native DaVinci instance without direct package coupling.
+   * Satisfies the {@link DaVinciInstance} contract from `@ping-identity/rn-types`.
+   *
+   * @returns The internal DaVinci instance id.
+   * @throws {DaVinciError} When configuration fails.
+   */
+  getId: () => Promise<string>;
 };
