@@ -72,4 +72,29 @@ public final class RNPingExternalIdpImpl: NSObject, Sendable {
       rejecter: rejecter
     )
   }
+
+  /// Launches the external IdP authorization flow for an active DaVinci `IdpCollector`.
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Per-call authorize options.
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolve: Promise resolver for void completion.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func authorizeForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingExternalIdpCommon.authorizeForDaVinci(
+      davinciId,
+      options: options,
+      config: config,
+      resolver: resolve,
+      rejecter: rejecter
+    )
+  }
 }

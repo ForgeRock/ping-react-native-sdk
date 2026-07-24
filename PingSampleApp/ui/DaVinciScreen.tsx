@@ -27,6 +27,9 @@ export default function DaVinciScreen(props: Props): React.ReactElement {
   const handleAuthenticated = useCallback((): void => {
     navigation.navigate('Home');
   }, [navigation]);
+  const handleUserProfile = useCallback((): void => {
+    navigation.navigate('UserProfile');
+  }, [navigation]);
 
   return (
     <ScrollView
@@ -34,7 +37,10 @@ export default function DaVinciScreen(props: Props): React.ReactElement {
       contentContainerStyle={davinciScreenStyles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <DaVinciClientPanel onAuthenticated={handleAuthenticated} />
+      <DaVinciClientPanel
+        onAuthenticated={handleAuthenticated}
+        onUserProfile={handleUserProfile}
+      />
     </ScrollView>
   );
 }

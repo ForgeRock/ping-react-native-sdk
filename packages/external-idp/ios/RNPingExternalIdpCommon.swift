@@ -223,6 +223,98 @@ public class RNPingExternalIdpCommon: NSObject {
     }
   }
 
+  /// Launches the external IdP authorization flow for an active DaVinci `IdpCollector`.
+  ///
+  /// Architecturally different from Journey: the IdP token flows through
+  /// `daVinci.next()` via the native `RequestInterceptor`. This method resolves
+  /// void — the token is NOT returned to JS.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Per-call options payload.
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolver: Promise resolver for void completion.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public static func authorizeForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    let callConfig = parseCallConfig(config)
+    let handlers = PromiseBridge<NSNull>(resolver: resolver, rejecter: rejecter)
+    if davinciId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      handlers.reject(
+        GenericError(
+          type: .argumentError,
+          error: ExternalIdpErrorCode.callbackNotFound.rawValue,
+          message: "DaVinci id must not be empty for external IdP authorization."
+        )
+      )
+      return
+    }
+
+    guard PresentationAnchorResolver.resolveForegroundWindowAnchor() != nil else {
+      handlers.reject(
+        GenericError(
+          type: .authError,
+          error: ExternalIdpErrorCode.windowUnavailable.rawValue,
+          message: "No active application window is available for external IdP authorization."
+        )
+      )
+      return
+    }
+
+    let collectorIndex = parseCallbackIndex(options)
+
+    Task { @MainActor in
+      let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      logger?.i("External IdP authorizeForDaVinci requested for collector index \(collectorIndex)")
+
+      guard let collectors = await CoreRuntime.resolveDaVinciCollectors(davinciId) else {
+        logger?.w("External IdP authorizeForDaVinci collectors not found for davinciId \(davinciId)", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: ExternalIdpErrorCode.callbackNotFound.rawValue,
+            message: "No active DaVinci collectors found for id \(davinciId)."
+          )
+        )
+        return
+      }
+
+      let matching = collectors.compactMap { $0 as? IdpCollector }
+      guard collectorIndex >= 0, collectorIndex < matching.count else {
+        logger?.w("External IdP authorizeForDaVinci collector not found at index \(collectorIndex)", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: ExternalIdpErrorCode.callbackNotFound.rawValue,
+            message: "No active IdP collector found for DaVinci \(davinciId) at index \(collectorIndex)."
+          )
+        )
+        return
+      }
+
+      let collector = matching[collectorIndex]
+      let callbackURLScheme = callConfig.redirectUri.isEmpty ? nil : callConfig.redirectUri
+      let result = await collector.authorize(callbackURLScheme: callbackURLScheme)
+      switch result {
+      case .success:
+        logger?.d("External IdP authorizeForDaVinci succeeded")
+        handlers.resolve(NSNull())
+
+      case .failure(let error):
+        let mapped = mapIdpError(error)
+        logger?.e("External IdP authorizeForDaVinci failed with code \(mapped.error)", error: error as NSError)
+        handlers.reject(mapped, underlying: error as NSError)
+      }
+    }
+  }
+
   /// Resolves a native logger from the shared Core logger registry.
   ///
   /// - Parameter loggerId: Logger handle identifier from JS.

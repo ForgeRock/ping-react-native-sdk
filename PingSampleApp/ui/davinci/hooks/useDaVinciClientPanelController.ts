@@ -5,16 +5,22 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   useDaVinci,
+  useDaVinciContext,
   useDaVinciForm,
   type DaVinciError,
   type DaVinciFormResult,
   type DaVinciNode,
+  type IdpCollector,
 } from '@ping-identity/rn-davinci';
+import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
+import { logger } from '@ping-identity/rn-logger';
+import Config from 'react-native-config';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
 import { useDaVinciAutoStartEffect } from './useDaVinciAutoStartEffect';
+import { useDaVinciAutoForwarder } from './useDaVinciAutoForwarder';
 
 /**
  * Result contract consumed by `DaVinciClientPanel`.
@@ -28,6 +34,8 @@ export type UseDaVinciClientPanelControllerResult = {
   loading: boolean;
   /** Last hook-level DaVinci error. */
   error: DaVinciError | null;
+  /** Last IdP-authorize error message (cleared on next start). */
+  idpError: string | null;
   /** True when a session is confirmed active for the current DaVinci client. */
   hasActiveSession: boolean;
   /** True while the initial session bootstrap check is running. */
@@ -47,6 +55,13 @@ export type UseDaVinciClientPanelControllerResult = {
    * @param flowKey - Flow collector key.
    */
   onFlowAction: (flowKey: string) => void;
+  /**
+   * Launches the social login browser flow for an IDP collector, then
+   * automatically advances the DaVinci flow via `next()`.
+   *
+   * @param collector - The IdpCollector to authorize.
+   */
+  onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
   /** Restarts the DaVinci flow. */
   onStart: () => Promise<void>;
   /** Logs out the active user and clears local session state. */
@@ -80,8 +95,23 @@ export function useDaVinciClientPanelController(
   options: UseDaVinciClientPanelControllerOptions = {},
 ): UseDaVinciClientPanelControllerResult {
   const { onAuthenticated } = options;
+  const davinciContext = useDaVinciContext();
   const { node, loading, error, start, next, user, logoutUser } = useDaVinci();
-  const form = useDaVinciForm(node);
+  const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
+  const externalIdp = useMemo(
+    () =>
+      createExternalIdpClient({
+        redirectUri: Config.PINGONE_REDIRECT_URI ?? '',
+        logger: externalIdpLogger,
+      }),
+    [externalIdpLogger],
+  );
+  const form = useDaVinciForm(node, {
+    handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']),
+  });
+
+  const [idpError, setIdpError] = useState<string | null>(null);
+  const [idpJustAuthorized, setIdpJustAuthorized] = useState<boolean>(false);
 
   const { hasActiveSession, setHasActiveSession, isSessionCheckRunning } =
     useDaVinciSessionController({
@@ -90,6 +120,7 @@ export function useDaVinciClientPanelController(
     });
 
   const onStart = useCallback(async (): Promise<boolean> => {
+    setIdpError(null);
     try {
       await start();
       return true;
@@ -107,6 +138,21 @@ export function useDaVinciClientPanelController(
     onStart,
   });
 
+  const continueNodeKey = useMemo(() => {
+    if (node?.type !== 'ContinueNode') return '';
+    return node.collectors.map(c => c.key ?? c.type).join(',');
+  }, [node]);
+
+  useDaVinciAutoForwarder({
+    node,
+    form,
+    loading,
+    continueNodeKey,
+    enabled: idpJustAuthorized,
+    onForwarded: () => setIdpJustAuthorized(false),
+    next,
+  });
+
   const onSubmit = useCallback((): void => {
     if (loading) {
       return;
@@ -119,6 +165,41 @@ export function useDaVinciClientPanelController(
       // `error` is already updated by the hook.
     });
   }, [form, loading, next]);
+
+  const onIdpAuthorize = useCallback(
+    async (collector: IdpCollector): Promise<void> => {
+      if (loading) {
+        return;
+      }
+      const davinciClient = davinciContext?.client;
+      if (!davinciClient) {
+        console.warn(
+          '[DaVinci] authorizeForDaVinci: no DaVinci client in context',
+        );
+        return;
+      }
+      // Determine which index this collector occupies among IDP collectors on the
+      // current node so the native side can resolve the right IdpCollector.
+      const idpFields = form.fields.filter(
+        f => f.type === 'SOCIAL_LOGIN_BUTTON',
+      );
+      const index = idpFields.findIndex(f => f.key === collector.key);
+      try {
+        // authorizeForDaVinci opens the IdP browser flow and sets the
+        // resume request internally — token flows through the subsequent next().
+        await externalIdp.authorizeForDaVinci(davinciClient, {
+          index: index >= 0 ? index : 0,
+        });
+        setIdpJustAuthorized(true);
+        await next({ collectors: [] });
+      } catch (err) {
+        console.warn('[DaVinci] authorizeForDaVinci failed:', err);
+        const msg = err instanceof Error ? err.message : String(err);
+        setIdpError(msg);
+      }
+    },
+    [davinciContext?.client, externalIdp, form.fields, loading, next],
+  );
 
   const onFlowAction = useCallback(
     (flowKey: string): void => {
@@ -156,10 +237,12 @@ export function useDaVinciClientPanelController(
     form,
     loading,
     error,
+    idpError,
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,
     onFlowAction,
+    onIdpAuthorize,
     onStart: onStartAction,
     onLogout,
   };

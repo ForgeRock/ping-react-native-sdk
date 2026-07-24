@@ -11,6 +11,7 @@ import type {
   ContinueNode,
   DaVinciFormResult,
   DaVinciNormalizedCollector,
+  IdpCollector,
   UnsupportedDaVinciField,
 } from '@ping-identity/rn-davinci';
 import { commonStyles } from '../../../../src/styles/common';
@@ -45,6 +46,12 @@ export type DaVinciContinueNodePanelProps = {
    * @param flowKey Flow collector key.
    */
   onFlowAction: (flowKey: string) => void;
+  /**
+   * Launches the social login browser flow for an IDP collector.
+   *
+   * @param collector The IdpCollector to authorize.
+   */
+  onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
 };
 
 /**
@@ -104,7 +111,7 @@ function renderUnsupportedFieldsNotice(
 export default function DaVinciContinueNodePanel(
   props: DaVinciContinueNodePanelProps,
 ): React.ReactElement {
-  const { node, form, loading, onSubmit, onFlowAction } = props;
+  const { node, form, loading, onSubmit, onFlowAction, onIdpAuthorize } = props;
   const { fields, values, canSubmit, issues, setValue } = form;
 
   const showFallbackSubmit = useMemo(
@@ -124,6 +131,7 @@ export default function DaVinciContinueNodePanel(
           onChange={next => setValue(collector.key, next)}
           onSubmit={onSubmit}
           onFlowAction={onFlowAction}
+          onIdpAuthorize={onIdpAuthorize}
           loading={loading}
           canSubmit={canSubmit}
         />

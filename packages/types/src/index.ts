@@ -144,6 +144,21 @@ export type JourneyInstance = {
 };
 
 /**
+ * Minimal DaVinci instance contract for cross-module coordination.
+ *
+ * @remarks
+ * The DaVinci module owns instance creation; this type enables other modules
+ * (e.g. rn-external-idp) to invoke DaVinci operations without introducing
+ * package coupling. Mirrors {@link JourneyInstance} structurally.
+ */
+export type DaVinciInstance = {
+  /**
+   * Returns the native DaVinci instance identifier.
+   */
+  getId: () => Promise<string>;
+};
+
+/**
  * No-op logger that satisfies the {@link LoggerInstance} contract without
  * emitting anything. Used as the default when no logger is provided.
  */

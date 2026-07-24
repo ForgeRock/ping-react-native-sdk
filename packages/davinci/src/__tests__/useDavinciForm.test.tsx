@@ -7,7 +7,6 @@
 
 import React, { useEffect } from 'react';
 import { render, act } from '@testing-library/react-native';
-import { integrationRequiredCollectorTypes } from '../collectorHelpers';
 import { useDaVinciForm } from '../useDavinciForm';
 
 type ContinueNode = import('../types').ContinueNode;
@@ -156,33 +155,33 @@ describe('useDaVinciForm — meta', () => {
   });
 
   it('hasAutoCapable stays false even when other meta flags are true', async () => {
-    integrationRequiredCollectorTypes.add('IDP');
-    try {
-      const node: ContinueNode = {
-        type: 'ContinueNode',
-        collectors: [
-          { key: 'idp', type: 'IDP', label: 'IdP', required: false },
-          { key: 'l', type: 'LABEL', content: 'x' },
-        ] as ContinueNode['collectors'],
-      };
-      let latest: DaVinciFormResult | null = null;
+    const node: ContinueNode = {
+      type: 'ContinueNode',
+      collectors: [
+        {
+          key: 'idp',
+          type: 'SOCIAL_LOGIN_BUTTON',
+          label: 'IdP',
+          required: false,
+        },
+        { key: 'l', type: 'LABEL', content: 'x' },
+      ] as ContinueNode['collectors'],
+    };
+    let latest: DaVinciFormResult | null = null;
 
-      render(
-        <FormHarness
-          node={node}
-          onResult={(r) => {
-            latest = r;
-          }}
-        />,
-      );
+    render(
+      <FormHarness
+        node={node}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
 
-      const meta = requireLatest(latest).meta;
-      expect(meta.hasIntegrationRequired).toBe(true);
-      expect(meta.hasOutputOnly).toBe(true);
-      expect(meta.hasAutoCapable).toBe(false);
-    } finally {
-      integrationRequiredCollectorTypes.delete('IDP');
-    }
+    const meta = requireLatest(latest).meta;
+    expect(meta.hasIntegrationRequired).toBe(true);
+    expect(meta.hasOutputOnly).toBe(true);
+    expect(meta.hasAutoCapable).toBe(false);
   });
 });
 
@@ -550,68 +549,68 @@ describe('useDaVinciForm — setValueByType', () => {
 
 describe('useDaVinciForm — handledCollectorTypes', () => {
   it('omits handled integration collectors and allows canSubmit=true', async () => {
-    integrationRequiredCollectorTypes.add('IDP');
-    try {
-      const node: ContinueNode = {
-        type: 'ContinueNode',
-        collectors: [
-          { key: 'idp', type: 'IDP', label: 'IdP', required: false },
-          {
-            key: 'submit',
-            type: 'SUBMIT_BUTTON',
-            label: 'Submit',
-            required: false,
-          },
-        ] as ContinueNode['collectors'],
-      };
-      let latest: DaVinciFormResult | null = null;
+    const node: ContinueNode = {
+      type: 'ContinueNode',
+      collectors: [
+        {
+          key: 'idp',
+          type: 'SOCIAL_LOGIN_BUTTON',
+          label: 'IdP',
+          required: false,
+        },
+        {
+          key: 'submit',
+          type: 'SUBMIT_BUTTON',
+          label: 'Submit',
+          required: false,
+        },
+      ] as ContinueNode['collectors'],
+    };
+    let latest: DaVinciFormResult | null = null;
 
-      render(
-        <FormHarness
-          node={node}
-          options={{ handledCollectorTypes: new Set(['IDP']) }}
-          onResult={(r) => {
-            latest = r;
-          }}
-        />,
-      );
+    render(
+      <FormHarness
+        node={node}
+        options={{ handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']) }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
 
-      expect(requireLatest(latest).canSubmit).toBe(true);
-      expect(requireLatest(latest).issues).toEqual([]);
-    } finally {
-      integrationRequiredCollectorTypes.delete('IDP');
-    }
+    expect(requireLatest(latest).canSubmit).toBe(true);
+    expect(requireLatest(latest).issues).toEqual([]);
   });
 
   it('emits INTEGRATION_REQUIRED and blocks submit when type is not in the set', async () => {
-    integrationRequiredCollectorTypes.add('IDP');
-    try {
-      const node: ContinueNode = {
-        type: 'ContinueNode',
-        collectors: [
-          { key: 'idp', type: 'IDP', label: 'IdP', required: false },
-        ] as ContinueNode['collectors'],
-      };
-      let latest: DaVinciFormResult | null = null;
+    const node: ContinueNode = {
+      type: 'ContinueNode',
+      collectors: [
+        {
+          key: 'idp',
+          type: 'SOCIAL_LOGIN_BUTTON',
+          label: 'IdP',
+          required: false,
+        },
+      ] as ContinueNode['collectors'],
+    };
+    let latest: DaVinciFormResult | null = null;
 
-      render(
-        <FormHarness
-          node={node}
-          onResult={(r) => {
-            latest = r;
-          }}
-        />,
-      );
+    render(
+      <FormHarness
+        node={node}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
 
-      expect(requireLatest(latest).canSubmit).toBe(false);
-      expect(
-        requireLatest(latest).issues.some(
-          (i) => i.code === 'INTEGRATION_REQUIRED',
-        ),
-      ).toBe(true);
-    } finally {
-      integrationRequiredCollectorTypes.delete('IDP');
-    }
+    expect(requireLatest(latest).canSubmit).toBe(false);
+    expect(
+      requireLatest(latest).issues.some(
+        (i) => i.code === 'INTEGRATION_REQUIRED',
+      ),
+    ).toBe(true);
   });
 });
 

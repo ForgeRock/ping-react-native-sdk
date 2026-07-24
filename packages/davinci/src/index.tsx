@@ -21,7 +21,7 @@ export {
 /**
  * React DaVinci provider and hook helpers.
  */
-export { DaVinciProvider, useDaVinci } from './useDavinci';
+export { DaVinciProvider, useDaVinci, useDaVinciContext } from './useDavinci';
 /**
  * Headless collector form helper hook for DaVinci nodes.
  */
@@ -30,6 +30,7 @@ export { useDaVinciForm } from './useDavinciForm';
  * Hook and provider type contracts.
  */
 export type {
+  DaVinciContextValue,
   DaVinciHookActions,
   DaVinciHookResult,
   DaVinciProviderProps,

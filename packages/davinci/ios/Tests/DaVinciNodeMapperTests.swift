@@ -11,6 +11,7 @@
 import XCTest
 import PingDavinci
 import PingDavinciPlugin
+import PingExternalIdP
 import PingOrchestrate
 @testable import RNPingDavinci
 
@@ -531,6 +532,68 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNotNil(collectors?[2]["raw"])
   }
 
+  // MARK: - IdpCollector serialization
+
+  func testMapIdpCollectorEmitsTypeIDP() {
+    let node = makeContinueNode(collectors: [
+      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Sign in with Google")
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["type"] as? String, DaVinciNodeMapper.socialLoginButton)
+  }
+
+  func testMapIdpCollectorEmitsIdpId() {
+    let node = makeContinueNode(collectors: [
+      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Sign in with Google")
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["idpId"] as? String, "google-idp-1")
+    XCTAssertEqual(first?["idpType"] as? String, "GOOGLE")
+    XCTAssertEqual(first?["label"] as? String, "Sign in with Google")
+    XCTAssertEqual(first?["idpEnabled"] as? Bool, true)
+  }
+
+  func testMapIdpCollectorUsesIdpIdAsKeyNotUUID() {
+    let node = makeContinueNode(collectors: [
+      makeIdpCollector(idpId: "facebook-idp-42", idpType: "FACEBOOK", label: "Sign in with Facebook")
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    // key must equal idpId, NOT the UUID returned by IdpCollector.id
+    XCTAssertEqual(first?["key"] as? String, "facebook-idp-42")
+  }
+
+  func testMapIdpCollectorEmitsLinkWhenPresent() {
+    let href = "https://auth.pingone.com/connections/idp-1/loginFirstFactor?interactionId=abc"
+    let node = makeContinueNode(collectors: [
+      makeIdpCollector(idpId: "apple-idp-99", idpType: "APPLE", label: "Sign in with Apple", href: href)
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["link"] as? String, href)
+  }
+
+  func testMapIdpCollectorOmitsLinkWhenAbsent() {
+    let node = makeContinueNode(collectors: [
+      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Google", href: nil)
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["link"])
+  }
+
   // MARK: - multiple collector types
 
   func testMapContinueNodeWithMultipleCollectorTypes() {
@@ -570,6 +633,24 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
   private func makeDaVinciSuccessNode(sessionValue: String) -> SuccessNode {
     return SuccessNode(input: [:], session: StubSession(value: sessionValue))
+  }
+
+  private func makeIdpCollector(
+    idpId: String,
+    idpType: String,
+    label: String,
+    href: String? = nil
+  ) -> IdpCollector {
+    var json: [String: Any] = [
+      "idpId": idpId,
+      "idpType": idpType,
+      "label": label,
+      "idpEnabled": true
+    ]
+    if let href = href {
+      json["links"] = ["authenticate": ["href": href]]
+    }
+    return IdpCollector(with: json)
   }
 }
 
