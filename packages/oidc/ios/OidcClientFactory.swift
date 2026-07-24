@@ -51,8 +51,13 @@ enum OidcClientFactory {
       config.logger = logger
     }
 
-    if let openId = payload.openId, let openIdConfig = buildOpenIdConfiguration(openId) {
-      config.openId = openIdConfig
+    // TODO-PARITY(SDKS-5245): PingOidc 2.1.0 made `openId` private(set); only
+    // `openIdOverride` (patches fields after discovery completes) is public now.
+    // Configs that previously relied on `openId` to skip discovery entirely
+    // (no `discoveryEndpoint`) can no longer do so — `openIdOverride` never
+    // fires without a prior successful `discover()` call.
+    if let openId = payload.openId {
+      config.openIdOverride = openIdOverride(for: openId)
     }
 
     if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
@@ -100,8 +105,9 @@ enum OidcClientFactory {
         if !payload.additionalParameters.isEmpty {
           oidc.additionalParameters = payload.additionalParameters
         }
-        if let openId = payload.openId, let openIdConfig = buildOpenIdConfiguration(openId) {
-          oidc.openId = openIdConfig
+        // TODO-PARITY(SDKS-5245): see buildOidcClient — same `openId` API narrowing applies here.
+        if let openId = payload.openId {
+          oidc.openIdOverride = openIdOverride(for: openId)
         }
         if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
           oidc.storage = storage
@@ -185,25 +191,27 @@ enum OidcClientFactory {
     return .NO_CACHE
   }
 
-  /// Build OpenID configuration using the Codable initializer.
+  /// Build an `openIdOverride` closure that patches discovered endpoints from the JS payload.
   ///
   /// - Parameter openId: Parsed OpenID override payload.
-  /// - Returns: OpenID configuration or nil when serialization fails.
-  private static func buildOpenIdConfiguration(_ openId: OpenIdPayload) -> OpenIdConfiguration? {
-    var payload: [String: Any] = [
-      "authorization_endpoint": openId.authorizationEndpoint,
-      "token_endpoint": openId.tokenEndpoint,
-      "userinfo_endpoint": openId.userinfoEndpoint,
-      "end_session_endpoint": openId.endSessionEndpoint ?? "",
-      "revocation_endpoint": openId.revocationEndpoint ?? ""
-    ]
-    if let pingEnd = openId.pingEndIdpSessionEndpoint {
-      payload["ping_end_idp_session_endpoint"] = pingEnd
+  /// - Returns: Closure applied to the `OpenIdConfiguration` produced by discovery.
+  private static func openIdOverride(
+    for openId: OpenIdPayload
+  ) -> (inout OpenIdConfiguration) -> Void {
+    return { config in
+      config.authorizationEndpoint = openId.authorizationEndpoint
+      config.tokenEndpoint = openId.tokenEndpoint
+      config.userinfoEndpoint = openId.userinfoEndpoint
+      if let endSessionEndpoint = openId.endSessionEndpoint {
+        config.endSessionEndpoint = endSessionEndpoint
+      }
+      if let revocationEndpoint = openId.revocationEndpoint {
+        config.revocationEndpoint = revocationEndpoint
+      }
+      if let pingEnd = openId.pingEndIdpSessionEndpoint {
+        config.pingEndsessionEndpoint = pingEnd
+      }
     }
-    guard let data = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
-      return nil
-    }
-    return try? JSONDecoder().decode(OpenIdConfiguration.self, from: data)
   }
 
   /// Map JS string values to PingBrowser BrowserType.

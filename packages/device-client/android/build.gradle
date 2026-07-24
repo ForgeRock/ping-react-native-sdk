@@ -67,8 +67,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+  kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -84,9 +88,9 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:device-client:2.0.1")
-  implementation("com.pingidentity.sdks:android:2.0.1")
-  implementation("com.pingidentity.sdks:logger:2.0.1")
+  implementation("com.pingidentity.sdks:device-client:2.1.0")
+  implementation("com.pingidentity.sdks:android:2.1.0")
+  implementation("com.pingidentity.sdks:logger:2.1.0")
   implementation "io.ktor:ktor-client-core:2.3.12"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"

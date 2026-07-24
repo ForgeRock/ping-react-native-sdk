@@ -87,10 +87,12 @@ final class JourneyClientFactory {
           if !oidcConfig.additionalParameters.isEmpty {
             module.additionalParameters = oidcConfig.additionalParameters
           }
+          // TODO-PARITY(SDKS-5245): PingOidc 2.1.0 made `openId` private(set); only
+          // `openIdOverride` (patches fields after discovery completes) is public now.
+          // Configs that previously relied on `openId` to skip discovery entirely
+          // (no `discoveryEndpoint`) can no longer do so.
           if let openId = oidcConfig.openId {
-            if let openIdConfiguration = Self.buildOpenIdConfiguration(openId) {
-              module.openId = openIdConfiguration
-            }
+            module.openIdOverride = Self.openIdOverride(for: openId)
           }
           if let oidcStorage {
             module.storage = oidcStorage
@@ -215,25 +217,27 @@ final class JourneyClientFactory {
     )
   }
 
-  /// Builds OpenID configuration for `OidcClientConfig`.
+  /// Builds an `openIdOverride` closure that patches discovered endpoints from the shared payload.
   ///
   /// - Parameter openId: Shared OpenID configuration payload.
-  /// - Returns: Native OpenID configuration when encoding succeeds.
-  private static func buildOpenIdConfiguration(_ openId: OidcOpenIdConfig) -> OpenIdConfiguration? {
-    var payload: [String: Any] = [
-      "authorization_endpoint": openId.authorizationEndpoint,
-      "token_endpoint": openId.tokenEndpoint,
-      "userinfo_endpoint": openId.userinfoEndpoint,
-      "end_session_endpoint": openId.endSessionEndpoint ?? "",
-      "revocation_endpoint": openId.revocationEndpoint ?? ""
-    ]
-    if let pingEnd = openId.pingEndIdpSessionEndpoint {
-      payload["ping_end_idp_session_endpoint"] = pingEnd
+  /// - Returns: Closure applied to the `OpenIdConfiguration` produced by discovery.
+  private static func openIdOverride(
+    for openId: OidcOpenIdConfig
+  ) -> (inout OpenIdConfiguration) -> Void {
+    return { config in
+      config.authorizationEndpoint = openId.authorizationEndpoint
+      config.tokenEndpoint = openId.tokenEndpoint
+      config.userinfoEndpoint = openId.userinfoEndpoint
+      if let endSessionEndpoint = openId.endSessionEndpoint {
+        config.endSessionEndpoint = endSessionEndpoint
+      }
+      if let revocationEndpoint = openId.revocationEndpoint {
+        config.revocationEndpoint = revocationEndpoint
+      }
+      if let pingEnd = openId.pingEndIdpSessionEndpoint {
+        config.pingEndsessionEndpoint = pingEnd
+      }
     }
-    guard let data = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
-      return nil
-    }
-    return try? JSONDecoder().decode(OpenIdConfiguration.self, from: data)
   }
 
   /// Builds an OIDC storage delegate from a registered storage id.
