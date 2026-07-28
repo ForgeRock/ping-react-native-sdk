@@ -232,7 +232,7 @@ internal object DaVinciNodeMapper {
             "idpType" to collector.idpType,
             "idpEnabled" to collector.idpEnabled,
         )
-        runCatching { collector.link.toString() }.getOrNull()?.let { map["link"] = it }
+        collector.link?.let { map["link"] = it.toString() }
         return map
     }
 

@@ -171,6 +171,7 @@ export function useDaVinciClientPanelController(
       if (loading) {
         return;
       }
+      setIdpError(null);
       const davinciClient = davinciContext?.client;
       if (!davinciClient) {
         console.warn(

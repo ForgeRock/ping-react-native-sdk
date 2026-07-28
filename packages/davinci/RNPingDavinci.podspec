@@ -48,6 +48,8 @@ Pod::Spec.new do |s|
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
     test_spec.dependency "PingDavinci", '2.0.0'
+    test_spec.dependency "PingExternalIdP", '2.0.0'
+    test_spec.dependency "PingOrchestrate", '2.0.0'
     test_spec.dependency "RNPingCore"
   end
 
