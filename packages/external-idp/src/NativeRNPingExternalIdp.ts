@@ -64,6 +64,23 @@ export interface Spec extends TurboModule {
     options: Object,
     config: Object,
   ): Promise<void>;
+
+  /**
+   * Launches the external IdP authorization flow for a DaVinci-scoped `IdpCollector`.
+   *
+   * The token is NOT returned — it flows through `daVinci.next()` via the native
+   * `RequestInterceptor`. Resolves void when the redirect is complete.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Per-call authorize options payload (index).
+   * @param config Per-client runtime configuration payload (loggerId, redirectUri).
+   * @returns A promise that resolves to void when authorization completes.
+   */
+  authorizeForDaVinci(
+    davinciId: string,
+    options: Object,
+    config: Object,
+  ): Promise<void>;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 

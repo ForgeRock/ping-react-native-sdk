@@ -26,6 +26,13 @@ export type DaVinciClientPanelProps = {
    * Use this to navigate away from the DaVinci screen on success.
    */
   onAuthenticated?: () => void;
+  /**
+   * Optional callback fired when the user taps "User Profile".
+   *
+   * @remarks
+   * Use this to navigate to the user profile screen.
+   */
+  onUserProfile?: () => void;
 };
 
 /**
@@ -42,16 +49,18 @@ export type DaVinciClientPanelProps = {
 export default function DaVinciClientPanel(
   props: DaVinciClientPanelProps,
 ): React.ReactElement {
-  const { onAuthenticated } = props;
+  const { onAuthenticated, onUserProfile } = props;
   const {
     node,
     form,
     loading,
     error,
+    idpError,
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,
     onFlowAction,
+    onIdpAuthorize,
     onStart,
     onLogout,
   } = useDaVinciClientPanelController({ onAuthenticated });
@@ -66,6 +75,7 @@ export default function DaVinciClientPanel(
             loading={loading}
             onSubmit={onSubmit}
             onFlowAction={onFlowAction}
+            onIdpAuthorize={onIdpAuthorize}
           />
         ) : null}
 
@@ -76,6 +86,13 @@ export default function DaVinciClientPanel(
               You have completed the DaVinci flow successfully.
             </Text>
             <AsyncActionButton label="Logout" onPress={onLogout} />
+            {onUserProfile ? (
+              <AsyncActionButton
+                label="User Profile"
+                onPress={onUserProfile}
+                variant="secondary"
+              />
+            ) : null}
             <AsyncActionButton
               label="Run again"
               onPress={onStart}
@@ -85,14 +102,12 @@ export default function DaVinciClientPanel(
         ) : null}
 
         {node?.type === 'ErrorNode' ? (
-          <View style={davinciScreenStyles.errorCard}>
-            <Text style={davinciScreenStyles.errorCardTitle}>
-              The server reported an error
-            </Text>
-            <Text style={davinciScreenStyles.errorCardMessage}>
-              {node.message || 'Please try again.'}
-            </Text>
-          </View>
+          <EmptyStateCard
+            title="The server reported an error"
+            message={node.message || 'Please try again.'}
+            ctaLabel="Retry"
+            onCtaPress={onStart}
+          />
         ) : null}
 
         {node?.type === 'FailureNode' ? (
@@ -109,6 +124,15 @@ export default function DaVinciClientPanel(
             title="DaVinci"
             message="Start a DaVinci flow to authenticate."
             ctaLabel="Start flow"
+            onCtaPress={onStart}
+          />
+        ) : null}
+
+        {idpError ? (
+          <EmptyStateCard
+            title="Sign-in failed"
+            message={idpError}
+            ctaLabel="Retry"
             onCtaPress={onStart}
           />
         ) : null}

@@ -6,6 +6,7 @@
  */
 
 import { PingError } from '@ping-identity/rn-types';
+import type { DaVinciInstance } from '@ping-identity/rn-types';
 import type { JourneyInstance } from '@ping-identity/rn-types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
@@ -80,7 +81,7 @@ export type ExternalIdpClientConfig = {
 };
 
 /**
- * Reusable client for external IdP operations in Journey flows.
+ * Reusable client for external IdP operations in Journey and DaVinci flows.
  */
 export type ExternalIdpClient = {
   /**
@@ -116,6 +117,29 @@ export type ExternalIdpClient = {
     journey: JourneyInstance,
     provider: string,
     options?: ExternalIdpSelectOptions,
+  ): Promise<void>;
+
+  /**
+   * Launches the external IdP authorization flow for a DaVinci-scoped `IdpCollector`.
+   *
+   * Architecturally different from Journey: the IdP token flows through
+   * `daVinci.next({ collectors: [] })` via the native `RequestInterceptor` mechanism
+   * — this call does NOT return the token directly. Call `daVinci.next()` immediately
+   * after this resolves to advance the flow.
+   *
+   * @remarks
+   * No `selectProviderForDaVinci` equivalent exists — each social login option is its
+   * own `IdpCollector` with `idpId`/`idpType`/`label` pre-set. The `index` option
+   * handles the rare case of multiple `IdpCollector` instances on the same node.
+   *
+   * @param daVinci Active DaVinci instance.
+   * @param options Optional per-call authorize options (index).
+   * @returns A promise that resolves to void when the IdP redirect is complete.
+   * @throws ExternalIdpError when authorization fails.
+   */
+  authorizeForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: ExternalIdpAuthorizeOptions,
   ): Promise<void>;
 };
 
@@ -153,4 +177,4 @@ export type ExternalIdpErrorCode =
   | 'EXTERNAL_IDP_ACTIVITY_UNAVAILABLE' // Android only
   | 'EXTERNAL_IDP_WINDOW_UNAVAILABLE'; // iOS only
 
-export type { JourneyInstance };
+export type { DaVinciInstance, JourneyInstance };

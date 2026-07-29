@@ -7,6 +7,7 @@
 
 export { ExternalIdpError } from './externalIdp.types';
 export type {
+  DaVinciInstance,
   ExternalIdpAuthorizeOptions,
   ExternalIdpClient,
   ExternalIdpConfig,

@@ -9,7 +9,7 @@ of the MIT license. See the LICENSE file for details.
 
 # Ping Identity React Native External IDP
 
-The Ping External IDP library empowers your React Native applications to seamlessly authenticate users through external Identity Providers (IDPs) such as Google, Facebook, and Apple. Acting as a plugin for the `journey` module, it streamlines the integration process by providing the necessary configurations and functionalities to initiate and manage authentication flows with these external services.
+The Ping External IDP library empowers your React Native applications to seamlessly authenticate users through external Identity Providers (IDPs) such as Google, Facebook, and Apple. Acting as a plugin for the `journey` and `davinci` modules, it streamlines the integration process by providing the necessary configurations and functionalities to initiate and manage authentication flows with these external services.
 
 This library abstracts away the complexities of dealing with different IDP protocols and SDKs, offering a unified and developer-friendly API. By leveraging Ping External IDP, you can enhance your application's user experience by offering familiar and convenient login options.
 
@@ -21,6 +21,7 @@ This library abstracts away the complexities of dealing with different IDP proto
 - [iOS native configuration](#ios-native-configuration)
 - [Provider console setup](#provider-console-setup)
 - [Usage](#usage)
+- [DaVinci usage](#davinci-usage)
 - [API reference](#api-reference)
 - [Errors](#errors)
 - [Known limitations](#known-limitations)
@@ -362,6 +363,50 @@ if (form.canSubmit) {
 
 ---
 
+## DaVinci usage
+
+DaVinci flows represent each social login option as an `IdpCollector` with `type: 'SOCIAL_LOGIN_BUTTON'`. Unlike Journey, there is no `SelectIdpCallback` — each provider has its own button. The token flows through `daVinci.next()` via a `RequestInterceptor` inside the native SDK; `authorizeForDaVinci` returns `void`, not a token.
+
+Install the DaVinci module alongside this package:
+
+```bash
+yarn add @ping-identity/rn-davinci
+```
+
+### Handle `IdpCollector` — authorize with an external provider
+
+Call `authorizeForDaVinci` when a DaVinci `ContinueNode` contains an `IdpCollector`. After the promise resolves, call `daVinci.next({ collectors: [] })` to advance the flow.
+
+```ts
+try {
+  await externalIdp.authorizeForDaVinci(daVinci, {
+    // index: 0  // Use when there are multiple IdpCollectors in one node
+  });
+  await daVinci.next({ collectors: [] });
+} catch (error) {
+  // See Errors section
+}
+```
+
+### With `useDaVinciForm`
+
+Pass `handledCollectorTypes` so IDP collectors are excluded from blocking submit issues:
+
+```ts
+import { useDaVinci, useDaVinciForm } from '@ping-identity/rn-davinci';
+
+const { node, next } = useDaVinci(daVinciClient);
+const form = useDaVinciForm(node, {
+  handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']),
+});
+
+// When the user taps a social login button:
+await externalIdp.authorizeForDaVinci(daVinciClient);
+await next({ collectors: [] });
+```
+
+---
+
 ## API reference
 
 ```ts
@@ -372,6 +417,7 @@ import type {
   ExternalIdpAuthorizeOptions,
   ExternalIdpSelectOptions,
   ExternalIdpResult,
+  DaVinciInstance,
 } from '@ping-identity/rn-external-idp';
 
 function createExternalIdpClient(config: ExternalIdpConfig): ExternalIdpClient;
@@ -386,6 +432,11 @@ interface ExternalIdpClient {
     journey: JourneyInstance,
     provider: string,
     options?: ExternalIdpSelectOptions,
+  ): Promise<void>;
+
+  authorizeForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: ExternalIdpAuthorizeOptions,
   ): Promise<void>;
 }
 ```

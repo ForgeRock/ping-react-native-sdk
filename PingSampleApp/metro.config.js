@@ -30,6 +30,7 @@ const deviceClientPackage = path.resolve(
   __dirname,
   '../packages/device-client',
 );
+const davinciPackage = path.resolve(__dirname, '../packages/davinci');
 const pushPackage = path.resolve(__dirname, '../packages/push');
 const workspaceRoot = path.resolve(__dirname, '..');
 
@@ -46,6 +47,7 @@ const config = {
     loggerPackage,
     typesPackage,
     bindingPackage,
+    davinciPackage,
     deviceClientPackage,
     pushPackage,
     workspaceRoot,
@@ -71,6 +73,7 @@ const config = {
       '@ping-identity/rn-logger': loggerPackage,
       '@ping-identity/rn-types': typesPackage,
       '@ping-identity/rn-binding': bindingPackage,
+      '@ping-identity/rn-davinci': davinciPackage,
       '@ping-identity/rn-device-client': deviceClientPackage,
       '@ping-identity/rn-push': pushPackage,
     },

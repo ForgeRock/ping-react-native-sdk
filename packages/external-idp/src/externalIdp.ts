@@ -14,6 +14,7 @@ import {
 } from './NativeRNPingExternalIdp';
 import { noopLogger } from '@ping-identity/rn-types';
 import type {
+  DaVinciInstance,
   ExternalIdpAuthorizeOptions,
   ExternalIdpClient,
   ExternalIdpConfig,
@@ -174,6 +175,31 @@ export function createExternalIdpClient(
           journeyId,
           selectedProvider,
           toNativeSelectOptions(options),
+          toNativeConfig(resolvedConfig),
+        );
+      });
+    },
+
+    /**
+     * Launches the external IdP authorization flow for a DaVinci-scoped `IdpCollector`.
+     *
+     * Architecturally different from Journey: the IdP token flows through
+     * `daVinci.next({ collectors: [] })` via the native `RequestInterceptor` mechanism
+     * — this call resolves void, not a token. Call `daVinci.next()` immediately after.
+     *
+     * @param daVinci Active DaVinci instance.
+     * @param options Optional per-call authorize options (index).
+     * @throws ExternalIdpError when authorization fails.
+     */
+    authorizeForDaVinci(
+      daVinci: DaVinciInstance,
+      options: ExternalIdpAuthorizeOptions = {},
+    ): Promise<void> {
+      return withLogging('authorizeForDaVinci', async () => {
+        const davinciId = await daVinci.getId();
+        await getNativeModule().authorizeForDaVinci(
+          davinciId,
+          toNativeAuthorizeOptions(options),
           toNativeConfig(resolvedConfig),
         );
       });

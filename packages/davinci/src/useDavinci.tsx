@@ -115,9 +115,11 @@ export type DaVinciHookResult = DaVinciHookActions & {
 };
 
 /**
- * Internal React context value holding the shared DaVinci client and hook result.
+ * React context value holding the shared DaVinci client and hook result.
+ *
+ * @public
  */
-type DaVinciContextValue = {
+export type DaVinciContextValue = {
   client: DaVinciClient;
   davinci: DaVinciHookResult;
 };
@@ -153,6 +155,9 @@ const missingDaVinciClient: DaVinciClient = {
     throw missingDaVinciClientError;
   },
   async dispose(): Promise<void> {
+    throw missingDaVinciClientError;
+  },
+  async getId(): Promise<string> {
     throw missingDaVinciClientError;
   },
 };
@@ -363,11 +368,10 @@ export function useDaVinci(client?: DaVinciClient): DaVinciHookResult {
 }
 
 /**
- * Exposes the {@link DaVinciContext} value for use by {@link useDaVinciForm}
- * when consuming a provider-managed client.
+ * Exposes the {@link DaVinciContextValue} for the nearest {@link DaVinciProvider}.
  *
  * @returns Context value containing the shared client and hook result, or `null` when called outside a provider.
- * @internal
+ * @public
  */
 export function useDaVinciContext(): DaVinciContextValue | null {
   return useContext(DaVinciContext);

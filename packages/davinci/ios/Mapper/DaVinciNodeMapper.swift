@@ -8,6 +8,7 @@
 import Foundation
 import PingDavinci
 import PingDavinciPlugin
+import PingExternalIdP
 import PingLogger
 import PingOrchestrate
 import RNPingCore
@@ -15,6 +16,7 @@ import RNPingCore
 /// Maps native iOS DaVinci nodes and collectors to React Native bridge payloads.
 enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
+  static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -119,6 +121,9 @@ enum DaVinciNodeMapper {
         continue
       }
 
+      // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
+      if resolvedType == socialLoginButton { continue }
+
       // A field is supported when the SDK instantiated a collector for its key.
       guard !registeredKeys.contains(key) else { continue }
 
@@ -194,6 +199,8 @@ enum DaVinciNodeMapper {
   ) -> [String: Any]? {
     var map: [String: Any]?
     switch collector {
+    case let idpCollector as IdpCollector:
+      map = mapIdpCollector(idpCollector)
     case let textCollector as TextCollector:
       map = mapTextCollector(textCollector)
     case let passwordCollector as PasswordCollector:
@@ -222,8 +229,38 @@ enum DaVinciNodeMapper {
       return nil
     }
     guard var collectorMap = map else { return nil }
-    applyRawField(&collectorMap, collectorKey: collector.id, node: node, logger: logger)
+    applyRawField(&collectorMap, collectorKey: rawFieldKey(for: collector), node: node, logger: logger)
     return collectorMap
+  }
+
+  /// Returns the stable raw-field key for a collector.
+  ///
+  /// Most collectors use `collector.id` which equals the server `key` field. Collectors
+  /// that do not extend `FieldCollector` (e.g. `IdpCollector`) override with their own
+  /// stable identifier. Add a new branch here for any future collector whose `id` does
+  /// not match its form field key.
+  private static func rawFieldKey(for collector: any Collector) -> String {
+    if let idp = collector as? IdpCollector { return idp.idpId }
+    return collector.id
+  }
+
+  /// Serializes an `IdpCollector` to a bridge map.
+  ///
+  /// Uses `idpId` as the `key` field — `IdpCollector.id` returns a new UUID on every
+  /// access and cannot be used as a stable form-field key.
+  private static func mapIdpCollector(_ collector: IdpCollector) -> [String: Any] {
+    var map: [String: Any] = [
+      "key": collector.idpId,
+      "type": socialLoginButton,
+      "label": collector.label,
+      "idpId": collector.idpId,
+      "idpType": collector.idpType,
+      "idpEnabled": collector.idpEnabled,
+    ]
+    if let link = collector.link {
+      map["link"] = link.absoluteString
+    }
+    return map
   }
 
   // MARK: - Field collector helpers

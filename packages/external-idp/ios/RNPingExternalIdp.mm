@@ -66,6 +66,25 @@ RCT_EXPORT_MODULE()
   });
 }
 
+/**
+ Launches the external IdP authorization flow for an active DaVinci collector.
+ */
+- (void)authorizeForDaVinci:(NSString *)davinciId
+                    options:(NSDictionary *)options
+                     config:(NSDictionary *)config
+                    resolve:(RCTPromiseResolveBlock)resolve
+                     reject:(RCTPromiseRejectBlock)rejecter
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] authorizeForDaVinci:davinciId options:options config:config resolve:resolve rejecter:rejecter];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] authorizeForDaVinci:davinciId options:options config:config resolve:resolve rejecter:rejecter];
+  });
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

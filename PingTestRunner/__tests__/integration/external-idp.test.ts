@@ -26,6 +26,7 @@ export {};
 type NativeExternalIdpMock = {
   authorizeForJourney: jest.Mock;
   selectProviderForJourney: jest.Mock;
+  authorizeForDaVinci: jest.Mock;
 };
 
 function makeMock(
@@ -37,6 +38,7 @@ function makeMock(
       additionalParameters: { foo: 'bar' },
     })),
     selectProviderForJourney: jest.fn(async () => undefined),
+    authorizeForDaVinci: jest.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -86,11 +88,12 @@ describe('@ping-identity/rn-external-idp — integration', () => {
       expect(typeof mod.createExternalIdpClient).toBe('function');
     });
 
-    it('createExternalIdpClient returns a client with authorizeForJourney and selectProviderForJourney', async () => {
+    it('createExternalIdpClient returns a client with authorizeForJourney, selectProviderForJourney, and authorizeForDaVinci', async () => {
       const mod = await loadExternalIdp(makeMock());
       const client = mod.createExternalIdpClient({});
       expect(typeof client.authorizeForJourney).toBe('function');
       expect(typeof client.selectProviderForJourney).toBe('function');
+      expect(typeof client.authorizeForDaVinci).toBe('function');
     });
   });
 
@@ -286,6 +289,133 @@ describe('@ping-identity/rn-external-idp — integration', () => {
 
       await expect(client.authorizeForJourney(journey)).rejects.toMatchObject({
         code: 'EXTERNAL_IDP_UNSUPPORTED_PROVIDER',
+      });
+    });
+  });
+
+  // ─── authorizeForDaVinci() ────────────────────────────────────────────────
+
+  describe('authorizeForDaVinci()', () => {
+    it('resolves the davinci id and forwards it to native', async () => {
+      const mock = makeMock();
+      const mod = await loadExternalIdp(mock);
+      const client = mod.createExternalIdpClient({});
+      const daVinci = { getId: jest.fn(async () => 'davinci-123') };
+
+      await client.authorizeForDaVinci(daVinci);
+
+      expect(daVinci.getId).toHaveBeenCalledTimes(1);
+      expect(mock.authorizeForDaVinci).toHaveBeenCalledWith(
+        'davinci-123',
+        expect.any(Object),
+        expect.any(Object),
+      );
+    });
+
+    it('forwards options to native', async () => {
+      const mock = makeMock();
+      const mod = await loadExternalIdp(mock);
+      const client = mod.createExternalIdpClient({
+        redirectUri: 'com.myapp://callback',
+      });
+      const daVinci = { getId: jest.fn(async () => 'davinci-opts') };
+
+      await client.authorizeForDaVinci(daVinci, { index: 2 });
+
+      expect(mock.authorizeForDaVinci).toHaveBeenCalledWith(
+        'davinci-opts',
+        { index: 2 },
+        expect.any(Object),
+      );
+    });
+
+    it('forwards an empty options object when no options are provided', async () => {
+      const mock = makeMock();
+      const mod = await loadExternalIdp(mock);
+      const client = mod.createExternalIdpClient({});
+      const daVinci = { getId: jest.fn(async () => 'davinci-defaults') };
+
+      await client.authorizeForDaVinci(daVinci);
+
+      expect(mock.authorizeForDaVinci).toHaveBeenCalledWith(
+        'davinci-defaults',
+        {},
+        expect.any(Object),
+      );
+    });
+
+    it('forwards redirectUri and loggerId from config to native', async () => {
+      const mock = makeMock();
+      const mod = await loadExternalIdp(mock);
+      const logger = {
+        nativeHandle: { id: 'logger-handle-dv' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+      const client = mod.createExternalIdpClient({
+        redirectUri: 'com.myapp://callback',
+        logger,
+      });
+      const daVinci = { getId: jest.fn(async () => 'davinci-cfg') };
+
+      await client.authorizeForDaVinci(daVinci);
+
+      expect(mock.authorizeForDaVinci).toHaveBeenCalledWith(
+        'davinci-cfg',
+        {},
+        { redirectUri: 'com.myapp://callback', loggerId: 'logger-handle-dv' },
+      );
+    });
+
+    it('resolves without returning a value', async () => {
+      const mod = await loadExternalIdp(makeMock());
+      const client = mod.createExternalIdpClient({});
+      const daVinci = { getId: jest.fn(async () => 'davinci-void') };
+
+      const result = await client.authorizeForDaVinci(daVinci);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('propagates a native authorize error to the caller', async () => {
+      const mock = makeMock({
+        authorizeForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'EXTERNAL_IDP_AUTHORIZE_ERROR',
+            message: 'Authorization failed.',
+            type: 'authorize_error',
+          };
+        }),
+      });
+      const mod = await loadExternalIdp(mock);
+      const client = mod.createExternalIdpClient({});
+      const daVinci = { getId: jest.fn(async () => 'davinci-err') };
+
+      await expect(client.authorizeForDaVinci(daVinci)).rejects.toMatchObject({
+        code: 'EXTERNAL_IDP_AUTHORIZE_ERROR',
+        message: 'Authorization failed.',
+      });
+    });
+
+    it('propagates a cancellation error to the caller', async () => {
+      const mock = makeMock({
+        authorizeForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'EXTERNAL_IDP_CANCELLED',
+            message: 'User cancelled.',
+            type: 'cancelled',
+          };
+        }),
+      });
+      const mod = await loadExternalIdp(mock);
+      const client = mod.createExternalIdpClient({});
+      const daVinci = { getId: jest.fn(async () => 'davinci-cancel') };
+
+      await expect(client.authorizeForDaVinci(daVinci)).rejects.toMatchObject({
+        code: 'EXTERNAL_IDP_CANCELLED',
       });
     });
   });

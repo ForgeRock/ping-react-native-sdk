@@ -17,6 +17,7 @@ import com.facebook.react.bridge.ReadableType
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.idp.IdpCanceledException
 import com.pingidentity.idp.UnsupportedIdPException
+import com.pingidentity.idp.davinci.IdpCollector as DaVinciIdpCollector
 import com.pingidentity.idp.journey.IdpCallback
 import com.pingidentity.idp.journey.SelectIdpCallback
 import com.pingidentity.logger.Logger
@@ -314,6 +315,115 @@ object RNPingExternalIdpCommon {
   }
 
   /**
+   * Launches the external IdP authorization flow for an active DaVinci IdpCollector.
+   *
+   * Architecturally different from Journey: the IdP token flows through
+   * `daVinci.next()` via the native `RequestInterceptor`. This call resolves null
+   * on success — the token is NOT returned to JS.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Per-call options payload (index).
+   * @param config Per-call configuration payload (loggerId, redirectUri).
+   * @param promise React Native promise resolved with null or rejected on error.
+   */
+  @JvmStatic
+  fun authorizeForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    val callConfig = parseCallConfig(config)
+    val logger = resolveLoggerFromCore(callConfig.loggerId)
+    if (davinciId.isBlank()) {
+      logger?.w("External IdP authorizeForDaVinci rejected because DaVinci id was empty", null)
+      rejectWithError(
+        promise = promise,
+        code = ExternalIdpErrorCodes.CALLBACK_NOT_FOUND,
+        message = "DaVinci id must not be empty for external IdP authorization.",
+        type = ErrorType.ARGUMENT_ERROR
+      )
+      return
+    }
+    if (!hasForegroundActivity()) {
+      logger?.w(
+        "External IdP authorizeForDaVinci rejected because no foreground activity is available",
+        null
+      )
+      rejectWithError(
+        promise = promise,
+        code = ExternalIdpErrorCodes.ACTIVITY_UNAVAILABLE,
+        message = "No foreground activity available for external IdP authorization."
+      )
+      return
+    }
+
+    scope.launchBridge(promise, ExternalIdpErrorCodes.AUTHORIZE_ERROR) {
+      try {
+        val index = parseCallbackIndex(options)
+        logger?.i("External IdP authorizeForDaVinci requested for collector index $index")
+        val collector = resolveDaVinciIdpCollector(davinciId, index)
+        if (collector == null) {
+          logger?.w("External IdP authorizeForDaVinci collector not found at index $index", null)
+          rejectWithError(
+            promise = promise,
+            code = ExternalIdpErrorCodes.CALLBACK_NOT_FOUND,
+            message = "No active IdP collector found for DaVinci $davinciId at index $index.",
+            type = ErrorType.STATE_ERROR
+          )
+          return@launchBridge
+        }
+        val parsedRedirectUri = callConfig.redirectUri.trim().takeIf { it.isNotEmpty() }?.toUri()
+
+        val result = withContext(Dispatchers.Main) {
+          parsedRedirectUri?.let { collector.authorize(it) } ?: collector.authorize()
+        }
+
+        result.fold(
+          onSuccess = {
+            logger?.d("External IdP authorizeForDaVinci succeeded")
+            promise.resolve(null)
+          },
+          onFailure = { error ->
+            val (code, message) = discriminateIdpError(error)
+            logger?.e("External IdP authorizeForDaVinci failed with code $code", error)
+            rejectWithError(
+              promise = promise,
+              code = code,
+              message = message,
+              throwable = error
+            )
+          }
+        )
+      } catch (e: CancellationException) {
+        throw e
+      } catch (e: Throwable) {
+        when (e) {
+          is ClassNotFoundException, is NoClassDefFoundError -> {
+            logger?.e("External IdP authorizeForDaVinci failed because provider SDK is unavailable", e)
+            rejectWithError(
+              promise = promise,
+              code = ExternalIdpErrorCodes.UNSUPPORTED_PROVIDER,
+              message = "Native provider SDK is not available: ${e.message}",
+              throwable = e
+            )
+          }
+          else -> {
+            val (code, message) = discriminateIdpError(e)
+            logger?.e("External IdP authorizeForDaVinci failed with code $code", e)
+            rejectWithError(
+              promise = promise,
+              code = code,
+              message = message,
+              throwable = e
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Rejects a promise with the shared External IdP error contract.
    */
   private fun rejectWithError(
@@ -401,6 +511,14 @@ object RNPingExternalIdpCommon {
     if (loggerId.isNullOrBlank()) return null
     val handle = CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract ?: return null
     return handle.nativeLogger as? Logger
+  }
+
+  /**
+   * Resolves a DaVinci IdpCollector from core-exposed DaVinci collectors by davinciId and type index.
+   */
+  private suspend fun resolveDaVinciIdpCollector(davinciId: String, index: Int): DaVinciIdpCollector? {
+    val collectors = CoreRuntime.resolveDaVinciCollectors(davinciId) ?: return null
+    return collectors.filterIsInstance<DaVinciIdpCollector>().getOrNull(index)
   }
 
   /**

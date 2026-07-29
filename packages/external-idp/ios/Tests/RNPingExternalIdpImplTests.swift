@@ -65,6 +65,28 @@ final class RNPingExternalIdpImplTests: XCTestCase {
     XCTAssertEqual(code, "EXTERNAL_IDP_WINDOW_UNAVAILABLE")
   }
 
+  // MARK: - authorizeForDaVinci
+
+  func testAuthorizeForDaVinciRejectsWhenDaVinciIdIsEmpty() async {
+    let (code, type, _) = await invokeAuthorizeForDaVinci(davinciId: "")
+    XCTAssertEqual(code, "EXTERNAL_IDP_CALLBACK_NOT_FOUND")
+    XCTAssertEqual(type, ErrorType.argumentError.rawValue)
+  }
+
+  func testAuthorizeForDaVinciRejectsWhenDaVinciIdIsWhitespace() async {
+    let (code, type, _) = await invokeAuthorizeForDaVinci(davinciId: "   ")
+    XCTAssertEqual(code, "EXTERNAL_IDP_CALLBACK_NOT_FOUND")
+    XCTAssertEqual(type, ErrorType.argumentError.rawValue)
+  }
+
+  func testAuthorizeForDaVinciRejectsWithWindowUnavailableWhenNoActiveWindow() async {
+    let (code, type, message) = await invokeAuthorizeForDaVinci(davinciId: "davinci-1")
+    XCTAssertEqual(code, "EXTERNAL_IDP_WINDOW_UNAVAILABLE")
+    XCTAssertEqual(type, ErrorType.authError.rawValue)
+    XCTAssertNotNil(message)
+    XCTAssertTrue(message?.contains("window") == true)
+  }
+
   // MARK: - selectProviderForJourney
 
   func testSelectProviderForJourneyRejectsWhenJourneyIdIsEmpty() async {
@@ -147,6 +169,28 @@ final class RNPingExternalIdpImplTests: XCTestCase {
       impl.selectProviderForJourney(
         journeyId,
         provider: provider,
+        options: options,
+        config: config,
+        resolve: { _ in
+          continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil, nil))
+        },
+        rejecter: { code, message, error in
+          let type = (error as NSError?)?.userInfo["type"] as? String
+          continuation.resume(returning: (code, type, message))
+        }
+      )
+    }
+  }
+
+  @MainActor
+  private func invokeAuthorizeForDaVinci(
+    davinciId: String,
+    options: NSDictionary = [:],
+    config: NSDictionary = [:]
+  ) async -> (String?, String?, String?) {
+    await withCheckedContinuation { (continuation: CheckedContinuation<(String?, String?, String?), Never>) in
+      impl.authorizeForDaVinci(
+        davinciId,
         options: options,
         config: config,
         resolve: { _ in

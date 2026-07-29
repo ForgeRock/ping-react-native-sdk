@@ -10,6 +10,9 @@ import Foundation
 /// A closure that returns the callbacks for a running Journey instance.
 public typealias JourneyCallbackResolver = @Sendable (String) async -> [Any]?
 
+/// A closure that returns the collectors for a running DaVinci instance.
+public typealias DaVinciCollectorResolver = @Sendable (String) async -> [Any]?
+
 /// Thread-safe storage for the optional Journey callback resolver.
 ///
 /// - Note: `@unchecked Sendable` is used because this class stores a mutable
@@ -26,6 +29,29 @@ private final class JourneyCallbackResolverStore: @unchecked Sendable {
     }
 
     func get() -> JourneyCallbackResolver? {
+        lock.lock()
+        let current = resolver
+        lock.unlock()
+        return current
+    }
+}
+
+/// Thread-safe storage for the optional DaVinci collector resolver.
+///
+/// - Note: `@unchecked Sendable` is used because this class stores a mutable
+///   closure reference that Swift cannot prove sendable. Access is serialized
+///   with `NSLock`, so cross-thread mutation/read is synchronized.
+private final class DaVinciCollectorResolverStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var resolver: DaVinciCollectorResolver?
+
+    func set(_ resolver: DaVinciCollectorResolver?) {
+        lock.lock()
+        self.resolver = resolver
+        lock.unlock()
+    }
+
+    func get() -> DaVinciCollectorResolver? {
         lock.lock()
         let current = resolver
         lock.unlock()
@@ -75,6 +101,9 @@ public enum CoreRuntime {
     /// Internal resolver store used to avoid shared mutable global state.
     private static let journeyCallbackResolverStore = JourneyCallbackResolverStore()
 
+    /// Internal DaVinci collector resolver store.
+    private static let davinciCollectorResolverStore = DaVinciCollectorResolverStore()
+
     /// Registers or clears the resolver that exposes Journey callbacks to other packages.
     ///
     /// Packages that need Journey callbacks (binding, fido, device-profile) cannot depend
@@ -94,5 +123,26 @@ public enum CoreRuntime {
             return nil
         }
         return await resolver(journeyId)
+    }
+
+    /// Registers or clears the resolver that exposes DaVinci collectors to other packages.
+    ///
+    /// Plugin packages (external-idp, protect) cannot depend on `rn-davinci` directly —
+    /// this indirection lets DaVinci inject its collector lookup at init time without
+    /// creating a circular dependency.
+    ///
+    /// - Parameter resolver: Resolver closure to register, or `nil` to clear.
+    public static func setDaVinciCollectorResolver(_ resolver: DaVinciCollectorResolver?) {
+        davinciCollectorResolverStore.set(resolver)
+    }
+
+    /// Resolves DaVinci collectors for the given DaVinci instance via the registered resolver.
+    public static func resolveDaVinciCollectors(
+        _ davinciId: String
+    ) async -> [Any]? {
+        guard let resolver = davinciCollectorResolverStore.get() else {
+            return nil
+        }
+        return await resolver(davinciId)
     }
 }

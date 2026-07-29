@@ -351,6 +351,46 @@ export type DeviceAuthenticationCollector = BaseCollector & {
 };
 
 /**
+ * Social login / external IdP collector.
+ *
+ * @remarks
+ * Corresponds to the native `SOCIAL_LOGIN_BUTTON` server type.
+ *
+ * The `key` field is set to `idpId` (the stable server-assigned identifier) rather than the
+ * native collector's own `.id` property, which returns a new UUID on every access.
+ *
+ * Handled entirely by `@ping-identity/rn-external-idp` — appears as `executionMode:
+ * 'integration_required'` and `kind: 'integration'` in normalized collectors.
+ *
+ * @public
+ */
+export type IdpCollector = {
+  /** Stable server-assigned IdP identifier, used as the form field key. */
+  key: string;
+  type: 'SOCIAL_LOGIN_BUTTON';
+  /** Human-readable button label (e.g. 'Sign in with Google'). */
+  label: string;
+  /** Server IdP identifier (same as `key`). */
+  idpId: string;
+  /**
+   * Provider type string.
+   *
+   * @remarks
+   * Verified against iOS `DavinciPlugin/Constants.swift` and Android
+   * `IdpCollector` bytecode — the SDK registers `'GOOGLE'`, `'FACEBOOK'`,
+   * and `'APPLE'` (uppercase). `'APPLE'` is iOS-only; Android has no native
+   * Apple sign-in handler. The union is left open (`| string`) to accommodate
+   * future providers without a breaking change.
+   */
+  idpType: 'GOOGLE' | 'FACEBOOK' | 'APPLE' | string;
+  /** Whether the IdP is currently enabled. */
+  idpEnabled: boolean;
+  /** IdP authentication URL (informational — not used directly by JS). */
+  link?: string;
+  raw?: Record<string, unknown>;
+};
+
+/**
  * Discriminated union of all collector types returned by the DaVinci bridge.
  *
  * @remarks
@@ -369,7 +409,8 @@ export type DaVinciCollector =
   | MultiSelectCollector
   | PhoneNumberCollector
   | DeviceRegistrationCollector
-  | DeviceAuthenticationCollector;
+  | DeviceAuthenticationCollector
+  | IdpCollector;
 
 // ---------------------------------------------------------------------------
 // Node shapes

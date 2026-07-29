@@ -383,6 +383,85 @@ describe('ExternalIdp API', () => {
     });
   });
 
+  it('authorizeForDaVinci success — resolves void', async () => {
+    const authorizeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authorizeForDaVinci: authorizeNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-1') };
+    const client = createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    const result = await client.authorizeForDaVinci(daVinci);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('authorizeForDaVinci — calls daVinci.getId() and forwards davinciId to native', async () => {
+    const authorizeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authorizeForDaVinci: authorizeNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-1') };
+    const client = createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    await client.authorizeForDaVinci(daVinci);
+
+    expect(daVinci.getId).toHaveBeenCalledTimes(1);
+    expect(authorizeNative).toHaveBeenCalledWith(
+      'davinci-1',
+      {},
+      { redirectUri: 'com.app://cb' },
+    );
+  });
+
+  it('authorizeForDaVinci with index option — forwards to native', async () => {
+    const authorizeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authorizeForDaVinci: authorizeNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-2') };
+    const client = createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    await client.authorizeForDaVinci(daVinci, { index: 1 });
+
+    expect(authorizeNative).toHaveBeenCalledWith(
+      'davinci-2',
+      { index: 1 },
+      { redirectUri: 'com.app://cb' },
+    );
+  });
+
+  it('authorizeForDaVinci with no options — forwards empty options object to native', async () => {
+    const authorizeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authorizeForDaVinci: authorizeNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-3') };
+    const client = createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    await client.authorizeForDaVinci(daVinci);
+
+    expect(authorizeNative).toHaveBeenCalledWith(
+      'davinci-3',
+      {},
+      { redirectUri: 'com.app://cb' },
+    );
+  });
+
+  it('authorizeForDaVinci failure — propagates error', async () => {
+    const nativeError = new Error('EXTERNAL_IDP_AUTHORIZE_ERROR');
+    const authorizeNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      authorizeForDaVinci: authorizeNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-4') };
+    const client = createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    await expect(client.authorizeForDaVinci(daVinci)).rejects.toThrow(
+      'EXTERNAL_IDP_AUTHORIZE_ERROR',
+    );
+  });
+
   it('keeps client configs isolated per instance', async () => {
     const authorizeNative = jest
       .fn()

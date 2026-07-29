@@ -13,6 +13,7 @@ import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.pingidentity.idp.journey.SelectIdpCallback
 import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.DaVinciCollectorResolver
 import com.pingidentity.rncore.JourneyCallbackResolver
 import com.pingidentity.rncore.error.ErrorType
 import java.lang.reflect.InvocationTargetException
@@ -43,6 +44,7 @@ import org.robolectric.annotation.Implements
 @Config(sdk = [29], shadows = [ShadowExternalIdpArguments::class])
 class RNPingExternalIdpTest {
   private var originalJourneyCallbackResolver: JourneyCallbackResolver? = null
+  private var originalDaVinciCollectorResolver: DaVinciCollectorResolver? = null
 
   /**
    * Configure bridge test seams before each test.
@@ -50,7 +52,9 @@ class RNPingExternalIdpTest {
   @Before
   fun setUp() {
     originalJourneyCallbackResolver = CoreRuntime.journeyCallbackResolver
+    originalDaVinciCollectorResolver = CoreRuntime.davinciCollectorResolver
     CoreRuntime.journeyCallbackResolver = null
+    CoreRuntime.davinciCollectorResolver = null
     RNPingExternalIdpCommon.foregroundActivityProvider = { true }
   }
 
@@ -60,6 +64,7 @@ class RNPingExternalIdpTest {
   @After
   fun tearDown() {
     CoreRuntime.journeyCallbackResolver = originalJourneyCallbackResolver
+    CoreRuntime.davinciCollectorResolver = originalDaVinciCollectorResolver
     RNPingExternalIdpCommon.foregroundActivityProvider = { true }
   }
 
@@ -294,6 +299,65 @@ class RNPingExternalIdpTest {
     assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
     assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, error.getString("error"))
     assertTrue(error.getString("message")?.contains("index 2") == true)
+  }
+
+  /**
+   * Ensures DaVinci authorization rejects blank davinciId with the shared error payload.
+   */
+  @Test
+  fun authorizeForDaVinciRejectsWhenDaVinciIdIsBlank() {
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForDaVinci("  ", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    val error = captureReject(promise)
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, promise.rejectCode)
+    assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, error.getString("error"))
+    assertTrue(error.getString("message")?.contains("DaVinci id must not be empty") == true)
+  }
+
+  /**
+   * Ensures DaVinci authorization rejects when no foreground activity is available.
+   */
+  @Test
+  fun authorizeForDaVinciRejectsWhenActivityUnavailable() {
+    RNPingExternalIdpCommon.foregroundActivityProvider = { false }
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForDaVinci(
+      "davinci-id",
+      JavaOnlyMap(),
+      JavaOnlyMap.of("redirectUri", "com.example://callback"),
+      promise
+    )
+
+    val error = captureReject(promise)
+    assertEquals(ExternalIdpErrorCodes.ACTIVITY_UNAVAILABLE, promise.rejectCode)
+    assertEquals(ErrorType.AUTH_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.ACTIVITY_UNAVAILABLE, error.getString("error"))
+    assertTrue(error.getString("message")?.contains("No foreground activity") == true)
+  }
+
+  /**
+   * Ensures DaVinci authorization rejects when no collector is registered in CoreRuntime.
+   */
+  @Test
+  fun authorizeForDaVinciRejectsWhenNoDaVinciCollectorRegistered() {
+    CoreRuntime.davinciCollectorResolver = { emptyList() }
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForDaVinci(
+      "davinci-id",
+      JavaOnlyMap(),
+      JavaOnlyMap(),
+      promise
+    )
+
+    val error = captureReject(promise)
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, promise.rejectCode)
+    assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.CALLBACK_NOT_FOUND, error.getString("error"))
   }
 
   /**

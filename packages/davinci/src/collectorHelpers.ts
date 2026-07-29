@@ -67,15 +67,17 @@ export const flowCollectorTypes = new Set<string>([
  * (e.g. `rn-external-idp`, `rn-fido`, `rn-device-client` / Protect).
  *
  * @remarks
- * Empty in the base DaVinci package — each integration ticket registers its
- * own type strings here when the matching native collector is added:
- * - IdP collector → `'IDP'`
+ * Each integration ticket registers its own type strings here when the matching
+ * native collector is added:
+ * - IdP collector → `'SOCIAL_LOGIN_BUTTON'` (SDKS-5128)
  * - FIDO collectors → `'FIDO_REGISTRATION'` / `'FIDO_AUTHENTICATION'`
  * - Protect collector → `'PROTECT'`
  *
  * @public
  */
-export const integrationRequiredCollectorTypes = new Set<string>();
+export const integrationRequiredCollectorTypes = new Set<
+  DaVinciCollector['type']
+>(['SOCIAL_LOGIN_BUTTON']);
 
 const textFieldKindTypes = new Set<string>(['TEXT', 'HIDDEN']);
 const passwordFieldKindTypes = new Set<string>(['PASSWORD', 'PASSWORD_VERIFY']);
@@ -125,7 +127,7 @@ const flowFieldKindTypes = new Set<string>([
  * @public
  */
 export function resolveExecutionMode(type: string): DaVinciExecutionMode {
-  if (integrationRequiredCollectorTypes.has(type)) {
+  if (integrationRequiredCollectorTypes.has(type as DaVinciCollector['type'])) {
     return 'integration_required';
   }
   if (manualCollectorTypes.has(type)) {
@@ -163,7 +165,7 @@ export function resolveExecutionMode(type: string): DaVinciExecutionMode {
  * @public
  */
 export function resolveFieldKind(type: string): DaVinciFieldKind {
-  if (integrationRequiredCollectorTypes.has(type)) {
+  if (integrationRequiredCollectorTypes.has(type as DaVinciCollector['type'])) {
     return 'integration';
   }
   if (textFieldKindTypes.has(type)) {
