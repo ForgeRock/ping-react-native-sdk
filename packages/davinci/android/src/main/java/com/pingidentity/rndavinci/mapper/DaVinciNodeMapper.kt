@@ -232,7 +232,9 @@ internal object DaVinciNodeMapper {
             "idpType" to collector.idpType,
             "idpEnabled" to collector.idpEnabled,
         )
-        collector.link?.let { map["link"] = it.toString() }
+        // link is a plain Java field — typed non-null in Kotlin but starts as null at the JVM level
+        // until init() runs. runCatching guards the UninitializedPropertyAccessException on test doubles.
+        runCatching { collector.link.toString() }.getOrNull()?.let { map["link"] = it }
         return map
     }
 
