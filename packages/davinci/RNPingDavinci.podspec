@@ -26,6 +26,7 @@ Pod::Spec.new do |s|
   else
     s.source_files = [
       "ios/RNPingDavinciClassic.mm",
+      "ios/RNPingDavinciEventEmitterGate.mm",
       "ios/**/*.swift",
       "ios/**/*.h"
     ]
@@ -35,6 +36,7 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = ['5.0', '5.1', '6.0']
 
+  # TEMP(SDKS-5130): bumped to 2.1.0 to consume new collectors ahead of the SDKS-5245 bump PR; revert when it merges to main.
   s.dependency "RNPingCore"
   s.dependency "PingDavinci", '2.1.0'
   s.dependency "PingDavinciPlugin", '2.1.0'

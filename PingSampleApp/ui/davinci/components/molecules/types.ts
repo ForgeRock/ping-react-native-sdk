@@ -9,6 +9,8 @@ import type {
   DaVinciFormValue,
   DaVinciNormalizedCollector,
   IdpCollector,
+  PollingCollector,
+  PollingStatus,
 } from '@ping-identity/rn-davinci';
 
 /**
@@ -53,4 +55,20 @@ export type DaVinciCollectorRendererProps = {
    * @param collector The IdpCollector to authorize.
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
+  /**
+   * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
+   *
+   * @remarks
+   * Mirrors `DaVinciClient.pollStatus` scoped to a specific collector key —
+   * the molecule owns subscription lifecycle (start on mount, unsubscribe on
+   * unmount); the controller owns advancing the flow on a terminal status.
+   *
+   * @param collector The PollingCollector to poll.
+   * @param onStatus Callback invoked with each streamed status tick.
+   * @returns An unsubscribe function.
+   */
+  onPollStatus: (
+    collector: PollingCollector,
+    onStatus: (status: PollingStatus) => void,
+  ) => Promise<() => void>;
 };

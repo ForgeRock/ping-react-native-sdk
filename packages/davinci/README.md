@@ -278,29 +278,85 @@ await form.submitFlow('forgot-password');
 
 The following collector types are supported on Android and iOS:
 
-| Collector Type          | Description                                       | Input Handling |
-| ----------------------- | ------------------------------------------------- | -------------- |
-| `TEXT`                  | Single-line text input.                           | Manual input   |
-| `PASSWORD`              | Masked password input.                            | Manual input   |
-| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.      | Manual input   |
-| `SINGLE_SELECT`         | Single-select input.                              | Manual input   |
-| `DROPDOWN`              | Single-select dropdown.                           | Manual input   |
-| `RADIO`                 | Single-select radio group.                        | Manual input   |
-| `MULTI_SELECT`          | Multi-select input.                               | Manual input   |
-| `COMBOBOX`              | Multi-select combobox.                            | Manual input   |
-| `CHECKBOX`              | Multi-select checkbox group.                      | Manual input   |
-| `PHONE_NUMBER`          | Phone number input with country code.             | Manual input   |
-| `DEVICE_REGISTRATION`   | Device picker for registration.                   | Manual input   |
-| `DEVICE_AUTHENTICATION` | Device picker for authentication.                 | Manual input   |
-| `SUBMIT_BUTTON`         | Triggers form submission immediately.             | Immediate      |
-| `ACTION`                | Action button that advances the flow immediately. | Immediate      |
-| `FLOW_BUTTON`           | Flow button that advances the flow immediately.   | Immediate      |
-| `FLOW_LINK`             | Flow link that advances the flow immediately.     | Immediate      |
-| `LABEL`                 | Read-only display content.                        | Output-only    |
+| Collector Type          | Description                                                                            | Input Handling |
+| ----------------------- | -------------------------------------------------------------------------------------- | -------------- |
+| `TEXT`                  | Single-line text input.                                                                | Manual input   |
+| `PASSWORD`              | Masked password input.                                                                 | Manual input   |
+| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                           | Manual input   |
+| `SINGLE_SELECT`         | Single-select input.                                                                   | Manual input   |
+| `DROPDOWN`              | Single-select dropdown.                                                                | Manual input   |
+| `RADIO`                 | Single-select radio group.                                                             | Manual input   |
+| `MULTI_SELECT`          | Multi-select input.                                                                    | Manual input   |
+| `COMBOBOX`              | Multi-select combobox.                                                                 | Manual input   |
+| `CHECKBOX`              | Multi-select checkbox group.                                                           | Manual input   |
+| `PHONE_NUMBER`          | Phone number input with country code.                                                  | Manual input   |
+| `DEVICE_REGISTRATION`   | Device picker for registration.                                                        | Manual input   |
+| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                      | Manual input   |
+| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                  | Immediate      |
+| `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
+| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
+| `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
+| `LABEL`                 | Read-only display content.                                                             | Output-only    |
+| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
+| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
 
 Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Protect) are
 surfaced in node payloads and require client-side integration before submission
 (`executionMode: 'integration_required'`).
+
+### Polling and QR code flows
+
+`POLLING` and `QR_CODE` collectors support out-of-band authentication (push approval, QR
+scan, email verification) where the flow waits for user action on another device or
+channel. Both are display/output-only — neither participates in form submission.
+
+A `ContinueNode` commonly carries a `QR_CODE` collector (rendered for the user to scan)
+alongside a `POLLING` collector (which reports when the out-of-band action completes):
+
+```ts
+const node = await client.start();
+
+if (node.type === 'ContinueNode') {
+  const qr = node.collectors.find((c) => c.type === 'QR_CODE');
+  if (qr) {
+    // Render `qr.content` (a full data URI, e.g. "data:image/png;base64,...")
+    // as an <Image source={{ uri: qr.content }} /> or similar.
+  }
+
+  const unsubscribe = await client.pollStatus((status) => {
+    switch (status.status) {
+      case 'continue':
+        console.log(
+          `Waiting… attempt ${status.retryCount}/${status.maxRetries}`,
+        );
+        break;
+      case 'complete':
+        client.next({ collectors: [] }); // advance explicitly
+        break;
+      case 'timedOut':
+      case 'expired':
+      case 'error':
+        // Surface the failure to the user; call unsubscribe() if abandoning the poll.
+        break;
+    }
+  });
+
+  // Later, e.g. on screen unmount:
+  // unsubscribe();
+}
+```
+
+- `client.pollStatus(onStatus, options?)` resolves the active `PollingCollector` on the
+  current node (pass `options.key` to disambiguate when a node has more than one),
+  starts streaming native polling ticks, and returns an `unsubscribe` function.
+- `pollStatus` does **not** auto-advance the flow — call `next()` explicitly on any
+  terminal status (`complete`, `timedOut`, `expired`, `error`) to progress past it.
+- Calling the returned `unsubscribe()` stops **local event delivery only**. Neither
+  native SDK exposes a primitive to cancel an in-flight poll, so the native poll keeps
+  running to completion (bounded by `pollRetries` × `pollInterval`) even after
+  unsubscribing.
+- `pollInterval` and `pollRetries` on the `PollingCollector` payload are normalized to
+  `number` on both platforms.
 
 ### Unsupported fields
 
@@ -340,6 +396,7 @@ Stable DaVinci error codes:
 - `DAVINCI_SESSION_ERROR`
 - `DAVINCI_LOGOUT_ERROR`
 - `DAVINCI_DISPOSE_ERROR`
+- `DAVINCI_POLL_ERROR`
 - `DAVINCI_ARGUMENT_ERROR`
 - `DAVINCI_STATE_ERROR`
 - `DAVINCI_MISSING_INTEGRATION_ERROR`

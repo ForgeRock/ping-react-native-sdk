@@ -14,6 +14,8 @@ import {
   type DaVinciFormResult,
   type DaVinciNode,
   type IdpCollector,
+  type PollingCollector,
+  type PollingStatus,
 } from '@ping-identity/rn-davinci';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { logger } from '@ping-identity/rn-logger';
@@ -62,6 +64,18 @@ export type UseDaVinciClientPanelControllerResult = {
    * @param collector - The IdpCollector to authorize.
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
+  /**
+   * Streams {@link PollingStatus} updates for a {@link PollingCollector},
+   * automatically advancing the flow via `next()` once a terminal status
+   * (`complete`, `timedOut`, `expired`, `error`) is observed.
+   *
+   * @param collector - The PollingCollector to poll.
+   * @param onStatus - Callback invoked with each streamed status tick.
+   */
+  onPollStatus: (
+    collector: PollingCollector,
+    onStatus: (status: PollingStatus) => void,
+  ) => Promise<() => void>;
   /** Restarts the DaVinci flow. */
   onStart: () => Promise<void>;
   /** Logs out the active user and clears local session state. */
@@ -96,7 +110,8 @@ export function useDaVinciClientPanelController(
 ): UseDaVinciClientPanelControllerResult {
   const { onAuthenticated } = options;
   const davinciContext = useDaVinciContext();
-  const { node, loading, error, start, next, user, logoutUser } = useDaVinci();
+  const { node, loading, error, start, next, user, logoutUser, pollStatus } =
+    useDaVinci();
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdp = useMemo(
     () =>
@@ -218,6 +233,25 @@ export function useDaVinciClientPanelController(
     [form, loading],
   );
 
+  const onPollStatus = useCallback(
+    async (
+      collector: PollingCollector,
+      onStatus: (status: PollingStatus) => void,
+    ): Promise<() => void> =>
+      pollStatus(
+        status => {
+          onStatus(status);
+          if (status.status !== 'continue') {
+            next({ collectors: [] }).catch(() => {
+              // `error` is already updated by the hook.
+            });
+          }
+        },
+        { key: collector.key },
+      ),
+    [next, pollStatus],
+  );
+
   const onStartAction = useCallback(async (): Promise<void> => {
     await onStart();
   }, [onStart]);
@@ -244,6 +278,7 @@ export function useDaVinciClientPanelController(
     onSubmit,
     onFlowAction,
     onIdpAuthorize,
+    onPollStatus,
     onStart: onStartAction,
     onLogout,
   };

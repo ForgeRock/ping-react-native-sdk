@@ -163,4 +163,15 @@ class BaseTestCase: XCTestCase {
             line: line
         )
     }
+
+    /// Skips the test if DaVinci env vars are not set.
+    /// Mirrors hasDaVinciEnv() from e2e/davinci.test.ts.
+    func skipIfNoDaVinciEnv(file: StaticString = #file, line: UInt = #line) throws {
+        try XCTSkipUnless(
+            env.hasDaVinciEnv,
+            "Skipping: PINGONE_DISCOVERY_ENDPOINT, PINGONE_CLIENT_ID, PINGONE_USERNAME, PINGONE_PASSWORD not set.",
+            file: file,
+            line: line
+        )
+    }
 }

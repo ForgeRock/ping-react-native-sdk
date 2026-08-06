@@ -138,6 +138,24 @@ export interface Spec extends TurboModule {
    * @param davinciId - Native DaVinci instance identifier.
    */
   dispose(davinciId: string): Promise<void>;
+
+  /**
+   * Start streaming polling status updates for the active `PollingCollector`.
+   *
+   * @remarks
+   * Resolves immediately with a native-generated `subscriptionId` — it does not
+   * wait for a terminal polling status. Native begins emitting `PollingStatus`
+   * ticks via the global event emitter (event name
+   * `com.pingidentity.rndavinci.PollingStatus`, payload tagged with
+   * `subscriptionId`) only after this promise has resolved, so there is no
+   * window where an event can arrive before the caller has the id to filter on.
+   *
+   * @param davinciId - Native DaVinci instance identifier.
+   * @param options - Optional collector selection (`key`, when more than one
+   *   `PollingCollector` is present on the active node).
+   * @returns Serialised `{ subscriptionId }` payload.
+   */
+  pollDaVinci(davinciId: string, options: Object): Promise<Object>;
 }
 
 let _nativeModule: Spec | null = null;
@@ -211,6 +229,9 @@ const NativeRNPingDavinci: Spec = {
   },
   dispose(davinciId) {
     return getNativeModule().dispose(davinciId);
+  },
+  pollDaVinci(davinciId, options) {
+    return getNativeModule().pollDaVinci(davinciId, options);
   },
 };
 

@@ -5,6 +5,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+// TEMP(SDKS-5130): bumped to SDK 2.1.0 / JVM 21 ahead of the SDKS-5245 bump PR; revert this file's version/JVM changes when it merges to main.
+
 buildscript {
   ext.getExtOrDefault = {name ->
     return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['RNPingStorage_' + name]

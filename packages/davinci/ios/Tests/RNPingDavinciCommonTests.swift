@@ -9,7 +9,10 @@
 //
 
 import XCTest
+import PingDavinci
+import PingDavinciPlugin
 import PingLogger
+import PingOrchestrate
 @testable import RNPingCore
 @testable import RNPingDavinci
 
@@ -526,6 +529,342 @@ final class RNPingDavinciCommonTests: XCTestCase {
     assertGetSessionResolves(latestId)
   }
 
+  // MARK: - pollDaVinci
+
+  func testPollDaVinciRejectsStateErrorWhenNoContinueNode() {
+    assertReject(
+      expectedCode: DaVinciErrorCodes.pollError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.pollDaVinci(
+        "missing",
+        options: [:],
+        resolver: { resolver($0) },
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testPollDaVinciRejectsStateErrorWhenNoPollingCollectorPresent() {
+    let davinciId = "no-polling-collector"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [])
+    )
+
+    assertReject(
+      expectedCode: DaVinciErrorCodes.pollError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.pollDaVinci(
+        davinciId,
+        options: [:],
+        resolver: { resolver($0) },
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testPollDaVinciRejectsStateErrorWhenKeyDoesNotMatchAnyPresentCollector() {
+    let davinciId = "key-not-among-present-collectors"
+    let existing = FakePollingCollector(key: "existing-key", statuses: [.complete(status: "approved")])
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [existing])
+    )
+
+    assertReject(
+      expectedCode: DaVinciErrorCodes.pollError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.pollDaVinci(
+        davinciId,
+        options: ["key": "no-such-key"],
+        resolver: { resolver($0) },
+        rejecter: rejecter
+      )
+    }
+
+    XCTAssertFalse(existing.pollWasCalled)
+  }
+
+  func testPollDaVinciSelectsCollectorByKeyWhenMultiplePresent() {
+    let davinciId = "multi-collector"
+    let matching = FakePollingCollector(key: "target-key", statuses: [.complete(status: "approved")])
+    let other = FakePollingCollector(key: "other-key", statuses: [.complete(status: "wrong")])
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [other, matching])
+    )
+
+    let resolveExpectation = expectation(description: "poll resolve")
+
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: ["key": "target-key"],
+      resolver: { _ in
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+
+    wait(for: [resolveExpectation], timeout: 2.0)
+    let pollStartedExpectation = expectation(description: "matching collector polled")
+    Task {
+      while !matching.pollWasCalled { try? await Task.sleep(nanoseconds: 10_000_000) }
+      pollStartedExpectation.fulfill()
+    }
+    wait(for: [pollStartedExpectation], timeout: 2.0)
+
+    XCTAssertTrue(matching.pollWasCalled)
+    XCTAssertFalse(other.pollWasCalled)
+  }
+
+  func testPollDaVinciResolvesWithSubscriptionIdBeforeAnyEventIsEmitted() {
+    let davinciId = "ordering-check"
+    let collector = FakePollingCollector(
+      key: "polling-field",
+      statuses: [.complete(status: "approved")],
+      delayNanoseconds: 200_000_000
+    )
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let resolveExpectation = expectation(description: "poll resolve")
+    let capture = StringCaptureBox()
+
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { payload in
+        if let subscriptionId = payload["subscriptionId"] as? String {
+          capture.set(subscriptionId)
+        }
+        // No event should have been observed yet: the fake collector sleeps before yielding.
+        XCTAssertEqual(observer.events.count, 0)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+
+    wait(for: [resolveExpectation], timeout: 2.0)
+    XCTAssertNotNil(capture.value)
+
+    let eventExpectation = expectation(description: "event received")
+    observer.onEvent = { _ in eventExpectation.fulfill() }
+    wait(for: [eventExpectation], timeout: 2.0)
+  }
+
+  func testPollDaVinciEmitsContinueThenCompleteEventPayloads() {
+    let davinciId = "continue-then-complete"
+    let collector = FakePollingCollector(
+      key: "polling-field",
+      statuses: [.continue(retryCount: 1, maxRetries: 60), .complete(status: "approved")]
+    )
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let twoEventsExpectation = expectation(description: "two events received")
+    observer.onEvent = { _ in
+      if observer.events.count == 2 { twoEventsExpectation.fulfill() }
+    }
+
+    let resolveExpectation = expectation(description: "poll resolve")
+    let capture = StringCaptureBox()
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { payload in
+        if let subscriptionId = payload["subscriptionId"] as? String {
+          capture.set(subscriptionId)
+        }
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [resolveExpectation], timeout: 2.0)
+
+    wait(for: [twoEventsExpectation], timeout: 2.0)
+
+    XCTAssertEqual(observer.events[0]["status"] as? String, "continue")
+    XCTAssertEqual(observer.events[0]["retryCount"] as? Int, 1)
+    XCTAssertEqual(observer.events[0]["maxRetries"] as? Int, 60)
+    XCTAssertEqual(observer.events[0]["subscriptionId"] as? String, capture.value)
+    XCTAssertEqual(observer.events[0]["daVinciId"] as? String, davinciId)
+    XCTAssertEqual(observer.events[1]["status"] as? String, "complete")
+    XCTAssertEqual(observer.events[1]["value"] as? String, "approved")
+  }
+
+  func testPollDaVinciEmitsTimedOutEvent() {
+    assertSinglePollEvent(statuses: [.timedOut]) { event in
+      XCTAssertEqual(event["status"] as? String, "timedOut")
+    }
+  }
+
+  func testPollDaVinciEmitsExpiredEvent() {
+    assertSinglePollEvent(statuses: [.expired]) { event in
+      XCTAssertEqual(event["status"] as? String, "expired")
+    }
+  }
+
+  func testPollDaVinciEmitsErrorEventWithMessage() {
+    struct SampleError: LocalizedError {
+      var errorDescription: String? { "network down" }
+    }
+
+    assertSinglePollEvent(statuses: [.error(SampleError())]) { event in
+      XCTAssertEqual(event["status"] as? String, "error")
+      let errorBody = event["error"] as? [String: Any]
+      XCTAssertEqual(errorBody?["message"] as? String, "network down")
+    }
+  }
+
+  // MARK: - pollDaVinci natural completion does not leak the davinciId-keyed job tracking
+
+  func testPollDaVinciRemovesTaskFromDaVinciIdTrackingOnNaturalCompletion() {
+    let davinciId = "natural-completion-no-leak"
+    let collector = FakePollingCollector(
+      key: "polling-field",
+      statuses: [.complete(status: "approved")]
+    )
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let eventExpectation = expectation(description: "event received")
+    observer.onEvent = { _ in eventExpectation.fulfill() }
+
+    let resolveExpectation = expectation(description: "poll resolve")
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { _ in
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [resolveExpectation, eventExpectation], timeout: 2.0)
+
+    // Give the natural-completion cleanup a moment to run after the terminal event.
+    let settleExpectation = expectation(description: "settle period elapsed")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      settleExpectation.fulfill()
+    }
+    wait(for: [settleExpectation], timeout: 1.0)
+
+    XCTAssertEqual(
+      RNPingDavinciCommon._trackedPollTaskCount(for: davinciId),
+      0,
+      "A naturally completed poll must be removed from the davinciId-keyed tracking " +
+        "structure — otherwise finished tasks pile up for the client's lifetime"
+    )
+  }
+
+  // MARK: - dispose()/cleanup() poll safety net
+
+  func testDisposeCancelsOutstandingPollJobForDaVinciId() {
+    let davinciId = "dispose-cancels-poll"
+    let collector = FakePollingCollector(
+      key: "polling-field",
+      statuses: (1...50).map { .continue(retryCount: $0, maxRetries: 60) },
+      delayBetweenEmissionsNanoseconds: 30_000_000
+    )
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let firstEventExpectation = expectation(description: "first event received")
+    observer.onEvent = { _ in firstEventExpectation.fulfill() }
+
+    let resolveExpectation = expectation(description: "poll resolve")
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { _ in
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [resolveExpectation, firstEventExpectation], timeout: 2.0)
+
+    let disposeExpectation = expectation(description: "dispose resolve")
+    RNPingDavinciCommon.dispose(
+      davinciId,
+      resolver: {
+        Task { @MainActor in disposeExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [disposeExpectation], timeout: 1.0)
+
+    let countAtDispose = observer.events.count
+    let settleExpectation = expectation(description: "settle period elapsed")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      settleExpectation.fulfill()
+    }
+    wait(for: [settleExpectation], timeout: 1.0)
+
+    XCTAssertEqual(
+      observer.events.count,
+      countAtDispose,
+      "dispose() must cancel outstanding poll tasks for the disposed davinciId"
+    )
+  }
+
+  func testCleanupCancelsAllOutstandingPollTasks() {
+    let davinciId = "cleanup-cancels-poll"
+    let collector = FakePollingCollector(
+      key: "polling-field",
+      statuses: (1...50).map { .continue(retryCount: $0, maxRetries: 60) },
+      delayBetweenEmissionsNanoseconds: 30_000_000
+    )
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let firstEventExpectation = expectation(description: "first event received")
+    observer.onEvent = { _ in firstEventExpectation.fulfill() }
+
+    let resolveExpectation = expectation(description: "poll resolve")
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { _ in
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [resolveExpectation, firstEventExpectation], timeout: 2.0)
+
+    RNPingDavinciCommon.cleanup()
+
+    let countAtCleanup = observer.events.count
+    let settleExpectation = expectation(description: "settle period elapsed")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      settleExpectation.fulfill()
+    }
+    wait(for: [settleExpectation], timeout: 1.0)
+
+    XCTAssertEqual(
+      observer.events.count,
+      countAtCleanup,
+      "cleanup() must cancel all outstanding poll tasks, matching Android's " +
+        "cleanup_cancelsAllOutstandingPollJobs parity test"
+    )
+  }
+
   // MARK: - Helpers
 
   private func assertReject(
@@ -555,6 +894,53 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
     XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+  }
+
+  /// Runs `pollDaVinci` against a `FakePollingCollector` that yields a single terminal
+  /// status, waits for the corresponding `RNPingDavinci_NativeEmit` notification, and
+  /// hands the decoded event body to `assertions`.
+  private func assertSinglePollEvent(
+    statuses: [PollingStatus],
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    assertions: ([String: Any]) -> Void
+  ) {
+    let davinciId = "single-event-\(UUID().uuidString)"
+    let collector = FakePollingCollector(key: "polling-field", statuses: statuses)
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [collector])
+    )
+
+    let observer = EventObserver()
+    let eventExpectation = expectation(description: "event received")
+    observer.onEvent = { _ in eventExpectation.fulfill() }
+
+    let resolveExpectation = expectation(description: "poll resolve")
+    RNPingDavinciCommon.pollDaVinci(
+      davinciId,
+      options: [:],
+      resolver: { _ in
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in }
+    )
+    wait(for: [resolveExpectation, eventExpectation], timeout: 2.0)
+
+    guard let event = observer.events.first else {
+      XCTFail("Expected one polling status event", file: file, line: line)
+      return
+    }
+    assertions(event)
+  }
+
+  private func makeContinueNode(collectors: [any Collector], input: [String: Any] = [:]) -> ContinueNode {
+    return TestContinueNode(
+      context: FlowContext(flowContext: SharedContext()),
+      workflow: Workflow(config: WorkflowConfig()),
+      input: input,
+      actions: collectors
+    )
   }
 
   private func configureDaVinciAndWait(loggerId: String? = nil) -> String {
@@ -617,5 +1003,114 @@ private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable 
   init(loggerLevel: String) {
     self.loggerLevel = loggerLevel
     self.nativeLogger = LogManager.none
+  }
+}
+
+private final class TestContinueNode: ContinueNode {
+  override func asRequest() -> Request {
+    return workflow.config.httpClient.request()
+  }
+}
+
+/// A bridge-level test double standing in for `PollingCollector` on the active
+/// `ContinueNode`. `PollingCollector` is declared `public` (not `open`) in the iOS
+/// SDK, so it cannot be subclassed cross-module — this conforms to `Collector` (so
+/// it can sit in `node.collectors`) and to `PollableCollector` (the seam
+/// `RNPingDavinciCommon.pollDaVinci` actually depends on), replacing the real
+/// `poll()` network/timing logic entirely rather than exercising it.
+private final class FakePollingCollector: Collector, PollableCollector, @unchecked Sendable {
+  typealias T = String
+
+  let id: String
+  private let statuses: [PollingStatus]
+  private let delayNanoseconds: UInt64
+  private let delayBetweenEmissionsNanoseconds: UInt64
+  private let lock = NSLock()
+  private var _pollWasCalled = false
+
+  var pollWasCalled: Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    return _pollWasCalled
+  }
+
+  init(
+    key: String,
+    statuses: [PollingStatus],
+    delayNanoseconds: UInt64 = 0,
+    delayBetweenEmissionsNanoseconds: UInt64 = 0
+  ) {
+    self.id = key
+    self.statuses = statuses
+    self.delayNanoseconds = delayNanoseconds
+    self.delayBetweenEmissionsNanoseconds = delayBetweenEmissionsNanoseconds
+  }
+
+  init(with json: [String: Any]) {
+    fatalError("Use init(key:statuses:) for tests")
+  }
+
+  func initialize(with value: Any) {}
+
+  func payload() -> String? { nil }
+
+  func poll() -> AsyncStream<PollingStatus> {
+    lock.lock()
+    _pollWasCalled = true
+    lock.unlock()
+    return AsyncStream { continuation in
+      Task {
+        if delayNanoseconds > 0 {
+          try? await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        for status in statuses {
+          if Task.isCancelled { break }
+          continuation.yield(status)
+          if delayBetweenEmissionsNanoseconds > 0 {
+            try? await Task.sleep(nanoseconds: delayBetweenEmissionsNanoseconds)
+          }
+        }
+        continuation.finish()
+      }
+    }
+  }
+}
+
+/// Observes `RNPingDavinci_NativeEmit` notifications posted by `emitPollingStatus`,
+/// decoding each `eventBody` for assertions without going through the Obj-C++ bridge
+/// modules (`RNPingDavinci`/`RNPingDavinciClassic`), which are not exercised by these
+/// Swift-layer unit tests.
+private final class EventObserver: @unchecked Sendable {
+  private let lock = NSLock()
+  private var _events: [[String: Any]] = []
+  var onEvent: (([String: Any]) -> Void)?
+
+  var events: [[String: Any]] {
+    lock.lock()
+    defer { lock.unlock() }
+    return _events
+  }
+
+  init() {
+    NotificationCenter.default.addObserver(
+      forName: .pingDavinciNativeEmit,
+      object: nil,
+      queue: nil
+    ) { [weak self] notification in
+      guard
+        let self,
+        let body = notification.userInfo?["eventBody"] as? [String: Any]
+      else {
+        return
+      }
+      self.lock.lock()
+      self._events.append(body)
+      self.lock.unlock()
+      self.onEvent?(body)
+    }
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
   }
 }

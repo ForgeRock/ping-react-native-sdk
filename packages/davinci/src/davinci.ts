@@ -12,14 +12,23 @@ import {
   getDaVinciUserInfo,
   logoutDaVinci,
   nextDaVinci,
+  pollDaVinci,
   refreshDaVinciSession,
   revokeDaVinciSession,
   startDaVinci,
 } from './davinciMethods';
+import { DaVinciEvents } from './events';
 import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
-import type { DaVinciClient, DaVinciConfig, DaVinciNextInput } from './types';
+import type {
+  DaVinciClient,
+  DaVinciConfig,
+  DaVinciNextInput,
+  DaVinciPollStatusOptions,
+  PollingStatus,
+} from './types';
 import { DaVinciError } from './types/error.types';
 import { noopLogger } from '@ping-identity/rn-types';
+import { DeviceEventEmitter } from 'react-native';
 
 /**
  * Resolves and validates the OIDC storage handle id from the config.
@@ -389,6 +398,67 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
      */
     async getId() {
       return ensureConfigured();
+    },
+
+    /**
+     * Streams `PollingStatus` updates for the active `PollingCollector`.
+     *
+     * @remarks
+     * Resolves the bridge's early-resolving `{ subscriptionId }` promise, then
+     * — synchronously in that same continuation — subscribes to the shared
+     * `DeviceEventEmitter` channel filtered by `subscriptionId`, so there is no
+     * window where a tick can arrive before the listener is attached. The
+     * listener removes itself on any terminal status (`complete`, `timedOut`,
+     * `expired`, `error`). Does not call `next()` — the caller must advance
+     * the flow explicitly on a terminal status.
+     *
+     * The returned unsubscribe function stops **local event delivery only** —
+     * neither native SDK exposes a primitive to cancel an in-flight poll, so
+     * the native poll continues running to completion (bounded by
+     * `pollRetries` × `pollInterval`) even after `unsubscribe()` is called.
+     *
+     * @param onStatus - Callback invoked with each streamed status tick.
+     * @param options - Optional collector selection.
+     * @returns An unsubscribe function that stops local event delivery. The
+     *   native poll keeps running to completion; it cannot be cancelled.
+     * @throws {DaVinciError} When no active `PollingCollector` is resolved.
+     */
+    async pollStatus(
+      onStatus: (status: PollingStatus) => void,
+      options: DaVinciPollStatusOptions = {},
+    ) {
+      const id = await ensureConfigured();
+      logDebug('DaVinci pollStatus requested', { davinciId: id });
+      let subscriptionId: string;
+      try {
+        subscriptionId = await pollDaVinci(id, options);
+      } catch (error) {
+        logError('DaVinci pollStatus failed', error, { davinciId: id });
+        throw error;
+      }
+
+      const subscription = DeviceEventEmitter.addListener(
+        DaVinciEvents.POLLING_STATUS,
+        (event: Record<string, unknown>) => {
+          if (event.subscriptionId !== subscriptionId) {
+            return;
+          }
+          const status = event as unknown as PollingStatus;
+          if (status.status !== 'continue') {
+            subscription.remove();
+          }
+          onStatus(status);
+        },
+      );
+
+      logInfo('DaVinci pollStatus succeeded', {
+        davinciId: id,
+        subscriptionId,
+      });
+
+      return () => {
+        subscription.remove();
+      };
     },
 
     /**

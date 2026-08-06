@@ -5,12 +5,20 @@
  * of the MIT license. See the LICENSE file for details.
  */
 #import <React/RCTBridgeModule.h>
+#if __has_include(<React/RCTCallableJSModules.h>)
+#import <React/RCTCallableJSModules.h>
+#else
+@protocol RCTCallableJSModules <NSObject>
+- (void)invokeModule:(NSString *)moduleName method:(NSString *)methodName withArgs:(NSArray *)args;
+@end
+#endif
 
 #if __has_include("RNPingDavinci-Swift.h")
 #import "RNPingDavinci-Swift.h"
 #else
 #import <RNPingDavinci/RNPingDavinci-Swift.h>
 #endif
+#import "RNPingDavinciEventEmitterGate.h"
 
 /**
  * Classic (non-Turbo) React Native module for DaVinci operations.
@@ -23,6 +31,9 @@
 
 @implementation RNPingDavinciClassic
 
+// Receives callableJSModules from the RCT bridge (Old Arch).
+@synthesize callableJSModules = _callableJSModules;
+
 RCT_EXPORT_MODULE(RNPingDavinciClassic)
 
 // Module init does not touch UIKit; main-thread hops are handled inside
@@ -31,6 +42,41 @@ RCT_EXPORT_MODULE(RNPingDavinciClassic)
 + (BOOL)requiresMainQueueSetup
 {
   return NO;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    if (RNPingDavinciClaimEventEmitterOwnership(@"classic")) {
+      [[NSNotificationCenter defaultCenter]
+          addObserver:self
+             selector:@selector(onNativeEmit:)
+                 name:@"RNPingDavinci_NativeEmit"
+               object:nil];
+    }
+  }
+  return self;
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+/**
+ * Receives internal emit notifications from the Swift bridge and forwards
+ * them to JS DeviceEventEmitter via callableJSModules.
+ */
+- (void)onNativeEmit:(NSNotification *)notification
+{
+  NSString *name = notification.userInfo[@"eventName"];
+  id body = notification.userInfo[@"eventBody"];
+  if (!name || !_callableJSModules) {
+    return;
+  }
+  NSArray *args = body ? @[name, body] : @[name];
+  [_callableJSModules invokeModule:@"RCTDeviceEventEmitter" method:@"emit" withArgs:args];
 }
 
 /**
@@ -150,6 +196,17 @@ RCT_EXPORT_METHOD(dispose:(NSString *)davinciId
            resolve([NSNull null]);
          }
          rejecter:reject];
+  }];
+}
+
+/// Starts streaming polling status updates for the active `PollingCollector`.
+RCT_EXPORT_METHOD(pollDaVinci:(NSString *)davinciId
+                  options:(NSDictionary *)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
+    [impl pollDaVinci:davinciId options:options resolver:resolve rejecter:reject];
   }];
 }
 

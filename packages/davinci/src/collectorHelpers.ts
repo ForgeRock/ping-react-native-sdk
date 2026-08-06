@@ -35,7 +35,21 @@ const manualCollectorTypes = new Set<string>([
   'DEVICE_AUTHENTICATION',
 ]);
 
-const outputOnlyCollectorTypes = new Set<string>(['LABEL']);
+/**
+ * Output-only collector types — no user input, not submitted via `next()`.
+ *
+ * @remarks
+ * `POLLING` is driven by {@link DaVinciClient.pollStatus}, not by form
+ * submission; `QR_CODE` is a display-only image. Both classify as
+ * `output_only` for execution-mode purposes even though they represent very
+ * different UI affordances (see {@link resolveFieldKind}, which distinguishes
+ * them via the `polling`/`qrCode` kinds).
+ */
+const outputOnlyCollectorTypes = new Set<string>([
+  'LABEL',
+  'POLLING',
+  'QR_CODE',
+]);
 
 const immediateCollectorTypes = new Set<string>([
   'SUBMIT_BUTTON',
@@ -97,6 +111,8 @@ const deviceFieldKindTypes = new Set<string>([
   'DEVICE_AUTHENTICATION',
 ]);
 const outputFieldKindTypes = new Set<string>(['LABEL']);
+const pollingFieldKindTypes = new Set<string>(['POLLING']);
+const qrCodeFieldKindTypes = new Set<string>(['QR_CODE']);
 const flowFieldKindTypes = new Set<string>([
   'SUBMIT_BUTTON',
   'ACTION',
@@ -188,6 +204,12 @@ export function resolveFieldKind(type: string): DaVinciFieldKind {
   }
   if (outputFieldKindTypes.has(type)) {
     return 'output';
+  }
+  if (pollingFieldKindTypes.has(type)) {
+    return 'polling';
+  }
+  if (qrCodeFieldKindTypes.has(type)) {
+    return 'qrCode';
   }
   if (flowFieldKindTypes.has(type)) {
     return 'flow';

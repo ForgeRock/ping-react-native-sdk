@@ -391,6 +391,79 @@ export type IdpCollector = {
 };
 
 /**
+ * Async polling collector — waits for out-of-band user action (push approval,
+ * QR scan, email verification) to complete on another device or channel.
+ *
+ * @remarks
+ * Driven by {@link DaVinciClient.pollStatus}, not by form submission — `pollStatus`
+ * resolves the active `PollingCollector` on the current {@link ContinueNode} and
+ * streams {@link PollingStatus} events until a terminal status is reached.
+ *
+ * `pollInterval`/`pollRetries` are normalized to `number` across platforms —
+ * iOS's native collector exposes them as `Int`, Android's as `String`; the
+ * bridge coerces Android's values before serialising.
+ *
+ * @public
+ */
+export type PollingCollector = BaseCollector & {
+  type: 'POLLING';
+  /** Polling interval in milliseconds between each attempt. */
+  pollInterval: number;
+  /** Maximum number of polling attempts before timing out. */
+  pollRetries: number;
+  /** Whether this collector polls a server challenge-status endpoint rather than simple retry counting. */
+  pollChallengeStatus: boolean;
+  /** Challenge identifier used to construct the polling endpoint URL when `pollChallengeStatus` is `true`. */
+  challenge: string;
+};
+
+/**
+ * Display-only QR code collector — renders a scannable code for out-of-band
+ * authentication (e.g. push registration, cross-device sign-in).
+ *
+ * @remarks
+ * Does not extend {@link BaseCollector} — like `LabelCollector`, the native
+ * `QRCodeCollector` (Android: `Collector<Nothing>`; iOS: `Collector`) does not
+ * implement `FieldCollector` and therefore has no `label` or `required`.
+ *
+ * Does not participate in form submission — native `payload()` always returns
+ * `nil`/`null` on both platforms.
+ *
+ * `key` is not exposed by the native Android `QRCodeCollector` (2.1.0) — the
+ * server sends it in the raw field JSON, but the collector's `init()` never
+ * reads it, and its `id()` falls back to a fresh random UUID on every call.
+ * On Android the bridge emits `key: ""` for this collector until the native
+ * SDK exposes it; see `DaVinciNodeMapper.kt`'s `TODO-SDK-PARITY` comment.
+ * iOS's native collector does parse `key` and is unaffected.
+ *
+ * @public
+ */
+export type QRCodeCollector = {
+  /** Unique collector key identifying this field in the form. */
+  key: string;
+  type: 'QR_CODE';
+  /**
+   * Full data URI of the QR code image (e.g. `"data:image/png;base64,..."`).
+   *
+   * @remarks
+   * Android's native `content` getter retains the raw data URI as received
+   * from the server. iOS's native collector strips the `"data:...base64,"`
+   * prefix during `init` and only retains decoded `imageData` bytes — the
+   * bridge reconstructs the data URI on iOS (see `DaVinciNodeMapper.swift`).
+   */
+  content: string;
+  /** Alternative text to display when the QR code cannot be rendered or scanned. */
+  fallbackText: string;
+  /**
+   * Raw server-side field JSON from `node.input.form.components.fields[]`.
+   *
+   * @remarks
+   * Populated by the native mapper.
+   */
+  raw?: Record<string, unknown>;
+};
+
+/**
  * Discriminated union of all collector types returned by the DaVinci bridge.
  *
  * @remarks
@@ -410,7 +483,48 @@ export type DaVinciCollector =
   | PhoneNumberCollector
   | DeviceRegistrationCollector
   | DeviceAuthenticationCollector
-  | IdpCollector;
+  | IdpCollector
+  | PollingCollector
+  | QRCodeCollector;
+
+/**
+ * Discriminated union of streamed polling status events emitted by
+ * {@link DaVinciClient.pollStatus}.
+ *
+ * @remarks
+ * Mirrors the native `PollingStatus` streamed by iOS `PollingCollector.poll()`
+ * (`AsyncStream<PollingStatus>`) and Android `PollingCollector.pollStatus()`
+ * (`Flow<PollingStatus>`). `continue` is an intermediate tick; `complete`,
+ * `timedOut`, `expired`, and `error` are terminal — no further ticks are
+ * emitted for the same `subscriptionId` after one of these fires.
+ *
+ * `pollStatus` does not auto-advance the flow on a terminal status — the
+ * consumer must call `next()` explicitly to progress past it.
+ *
+ * @public
+ */
+export type PollingStatus =
+  | { status: 'continue'; retryCount: number; maxRetries: number }
+  | { status: 'complete'; value: string }
+  | { status: 'timedOut' }
+  | { status: 'expired' }
+  | { status: 'error'; error: { message: string } };
+
+/**
+ * Options accepted by {@link DaVinciClient.pollStatus}.
+ *
+ * @public
+ */
+export type DaVinciPollStatusOptions = {
+  /**
+   * Collector key to poll, when more than one {@link PollingCollector} is
+   * present on the active {@link ContinueNode}.
+   *
+   * @remarks
+   * When omitted, the bridge resolves the first `PollingCollector` on the node.
+   */
+  key?: string;
+};
 
 // ---------------------------------------------------------------------------
 // Node shapes

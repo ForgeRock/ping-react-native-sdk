@@ -15,6 +15,7 @@ type NativeDaVinciModuleMock = {
   userinfo: jest.Mock;
   logout: jest.Mock;
   dispose: jest.Mock;
+  pollDaVinci: jest.Mock;
 };
 
 const createNativeMock = (
@@ -32,6 +33,7 @@ const createNativeMock = (
   userinfo: jest.fn(async () => ({ sub: 'user-1' })),
   logout: jest.fn(async () => undefined),
   dispose: jest.fn(async () => undefined),
+  pollDaVinci: jest.fn(async () => ({ subscriptionId: 'sub-1' })),
   ...overrides,
 });
 
@@ -792,6 +794,236 @@ describe('createDaVinciClient — error propagation', () => {
         .catch((e: unknown) => e),
       'DAVINCI_CONFIG_ERROR',
       'bad config',
+    );
+  });
+});
+
+describe('createDaVinciClient — pollStatus', () => {
+  it('resolves the subscriptionId and subscribes before any event can be missed', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+
+    await client.pollStatus(onStatus);
+
+    expect(native.pollDaVinci).toHaveBeenCalledWith('davinci-id-1', {});
+
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'sub-1',
+      status: 'continue',
+      retryCount: 1,
+      maxRetries: 10,
+    });
+
+    expect(onStatus).toHaveBeenCalledWith({
+      subscriptionId: 'sub-1',
+      status: 'continue',
+      retryCount: 1,
+      maxRetries: 10,
+    });
+  });
+
+  it('forwards the key option to the bridge', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    const client = createDaVinciClient(VALID_CONFIG);
+
+    await client.pollStatus(jest.fn(), { key: 'poll-key' });
+
+    expect(native.pollDaVinci).toHaveBeenCalledWith('davinci-id-1', {
+      key: 'poll-key',
+    });
+  });
+
+  it('ignores events tagged with a different subscriptionId', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+    await client.pollStatus(onStatus);
+
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'some-other-subscription',
+      status: 'continue',
+      retryCount: 1,
+      maxRetries: 10,
+    });
+
+    expect(onStatus).not.toHaveBeenCalled();
+  });
+
+  it('removes the listener after a terminal status and stops forwarding further ticks', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+    await client.pollStatus(onStatus);
+
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'sub-1',
+      status: 'complete',
+      value: 'success',
+    });
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'sub-1',
+      status: 'continue',
+      retryCount: 2,
+      maxRetries: 10,
+    });
+
+    expect(onStatus).toHaveBeenCalledTimes(1);
+    expect(onStatus).toHaveBeenCalledWith({
+      subscriptionId: 'sub-1',
+      status: 'complete',
+      value: 'success',
+    });
+  });
+
+  it.each(['complete', 'timedOut', 'expired', 'error'])(
+    'removes the listener on terminal status %s',
+    async (status) => {
+      const native = createNativeMock();
+      const { createDaVinciClient } = loadModule(native);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { DeviceEventEmitter } = require('react-native');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { DaVinciEvents } = require('../events');
+
+      const client = createDaVinciClient(VALID_CONFIG);
+      const onStatus = jest.fn();
+      await client.pollStatus(onStatus);
+
+      DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+        subscriptionId: 'sub-1',
+        status,
+      });
+      DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+        subscriptionId: 'sub-1',
+        status: 'continue',
+        retryCount: 1,
+        maxRetries: 10,
+      });
+
+      expect(onStatus).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('does not call next() internally on any status', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    await client.pollStatus(jest.fn());
+
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'sub-1',
+      status: 'complete',
+      value: 'success',
+    });
+
+    expect(native.next).not.toHaveBeenCalled();
+  });
+
+  it('unsubscribe stops onStatus from firing on subsequent events (local listener removal only)', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+    const unsubscribe = await client.pollStatus(onStatus);
+
+    unsubscribe();
+
+    DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+      subscriptionId: 'sub-1',
+      status: 'continue',
+      retryCount: 1,
+      maxRetries: 10,
+    });
+
+    expect(onStatus).not.toHaveBeenCalled();
+  });
+
+  // Backpressure characterization: pollStatus has no batching/throttling
+  // layer between the native DeviceEventEmitter and the consumer's onStatus
+  // callback, and pollInterval/pollRetries are server-controlled, so a
+  // misconfigured DaVinci flow can emit ticks far faster than a
+  // UI can render them. This test fires a synchronous burst and asserts a
+  // strict 1:1 delivery — every tick reaches onStatus, none are coalesced or
+  // dropped — to prove the lack of backpressure at the SDK boundary. Because
+  // a typical consumer calls setState inside onStatus, this call count is a
+  // direct proxy for its re-render count under burst load; the fix (if any)
+  // is the consumer's or the SDK's responsibility to throttle, not this test's.
+  it('delivers every tick of a burst synchronously with no coalescing or drops', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DeviceEventEmitter } = require('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DaVinciEvents } = require('../events');
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+    await client.pollStatus(onStatus);
+
+    const TICK_COUNT = 2000;
+    for (let i = 1; i <= TICK_COUNT; i++) {
+      DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+        subscriptionId: 'sub-1',
+        status: 'continue',
+        retryCount: i,
+        maxRetries: TICK_COUNT,
+      });
+    }
+
+    expect(onStatus).toHaveBeenCalledTimes(TICK_COUNT);
+    onStatus.mock.calls.forEach(([status], index) => {
+      expect(status).toMatchObject({ retryCount: index + 1 });
+    });
+  });
+
+  it('propagates native pollDaVinci rejection as DaVinciError', async () => {
+    const native = createNativeMock({
+      pollDaVinci: jest.fn(async () => {
+        throw {
+          type: 'state_error',
+          error: 'DAVINCI_POLL_ERROR',
+          message: 'no active PollingCollector',
+        };
+      }),
+    });
+    const { createDaVinciClient } = loadModule(native);
+
+    assertDaVinciError(
+      await createDaVinciClient(VALID_CONFIG)
+        .pollStatus(jest.fn())
+        .catch((e: unknown) => e),
+      'DAVINCI_POLL_ERROR',
+      'no active PollingCollector',
     );
   });
 });
