@@ -6,6 +6,7 @@
  */
 
 import {
+  collectProtectForDaVinci,
   configureDaVinci,
   disposeDaVinci,
   getDaVinciSession,
@@ -128,6 +129,21 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
   const rawLoggerId = config.logger?.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
+  const protectConfig = config.modules?.protect;
+  const rawProtectLoggerId = protectConfig?.logger?.nativeHandle?.id;
+  const protectLoggerId = rawProtectLoggerId?.trim()
+    ? rawProtectLoggerId
+    : undefined;
+
+  let nativeProtect: Record<string, unknown> | undefined;
+  if (protectConfig) {
+    const { logger: _pl, ...protectNativeFields } = protectConfig;
+    nativeProtect = {
+      ...protectNativeFields,
+      ...(protectLoggerId ? { loggerId: protectLoggerId } : {}),
+    };
+  }
+
   const nativeConfig: NativeDaVinciConfig = {
     discoveryEndpoint: oidcConfig.discoveryEndpoint,
     clientId: oidcConfig.clientId,
@@ -146,6 +162,7 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     additionalParameters: oidcConfig.additionalParameters,
     timeout: config.timeout,
     loggerId,
+    protect: nativeProtect,
   };
 
   let davinciId: string | null = null;
@@ -389,6 +406,24 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
      */
     async getId() {
       return ensureConfigured();
+    },
+
+    /**
+     * Runs PingOne Protect data collection for the active PROTECT collector.
+     *
+     * @param options - Optional per-call options.
+     * @throws {DaVinciError} When collection fails or Protect is not installed.
+     */
+    async collectProtect(options?: { index?: number }) {
+      const id = await ensureConfigured();
+      logDebug('DaVinci collectProtect requested', { davinciId: id });
+      try {
+        await collectProtectForDaVinci(id, options ?? {});
+        logDebug('DaVinci collectProtect succeeded', { davinciId: id });
+      } catch (error) {
+        logError('DaVinci collectProtect failed', error, { davinciId: id });
+        throw error;
+      }
     },
 
     /**

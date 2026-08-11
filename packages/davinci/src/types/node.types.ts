@@ -351,6 +351,26 @@ export type DeviceAuthenticationCollector = BaseCollector & {
 };
 
 /**
+ * Risk/Protect collector — silently collects device and behavioral signals.
+ *
+ * @remarks
+ * Corresponds to the native `PROTECT` server type. Has no `label`, `required`, or `value`
+ * fields — `ProtectCollector` does not extend `FieldCollector` in the native SDK.
+ *
+ * Handled entirely by `@ping-identity/rn-protect` — appears as `executionMode:
+ * 'integration_required'` and `kind: 'integration'` in normalized collectors.
+ * Call `createProtectClient().collectForDaVinci(daVinci)` before `daVinci.next({})`.
+ *
+ * @public
+ */
+export type ProtectCollector = {
+  /** Unique collector key identifying this field in the form. */
+  key: string;
+  type: 'PROTECT';
+  raw?: Record<string, unknown>;
+};
+
+/**
  * Social login / external IdP collector.
  *
  * @remarks
@@ -410,6 +430,7 @@ export type DaVinciCollector =
   | PhoneNumberCollector
   | DeviceRegistrationCollector
   | DeviceAuthenticationCollector
+  | ProtectCollector
   | IdpCollector;
 
 // ---------------------------------------------------------------------------
@@ -442,6 +463,35 @@ export type UnsupportedDaVinciField = {
  */
 export type ContinueNode = {
   type: 'ContinueNode';
+  /**
+   * Connector ID from the server payload (`input["id"]`).
+   *
+   * @remarks
+   * Absent when the native `ContinueNode` instance is not a `Connector` subtype
+   * (rare in practice; the DaVinci SDK always constructs `Connector` instances).
+   */
+  id?: string;
+  /**
+   * Form step name from `input.form.name`.
+   *
+   * @remarks
+   * Absent when the server payload does not include a form name.
+   */
+  name?: string;
+  /**
+   * Form step description from `input.form.description`.
+   *
+   * @remarks
+   * Absent when the server payload does not include a form description.
+   */
+  description?: string;
+  /**
+   * Form step category from `input.form.category`.
+   *
+   * @remarks
+   * Absent when the server payload does not include a form category.
+   */
+  category?: string;
   /** Collectors representing the form fields for this step. */
   collectors: DaVinciCollector[];
   /**

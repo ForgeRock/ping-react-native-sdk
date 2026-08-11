@@ -26,4 +26,5 @@ enum DaVinciErrorCodes: String {
   case stateError = "DAVINCI_STATE_ERROR"
   case missingIntegrationError = "DAVINCI_MISSING_INTEGRATION_ERROR"
   case unknownError = "DAVINCI_UNKNOWN_ERROR"
+  case protectCollectError = "DAVINCI_PROTECT_COLLECT_ERROR"
 }

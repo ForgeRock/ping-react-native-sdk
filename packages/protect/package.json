@@ -1,0 +1,71 @@
+{
+  "name": "@ping-identity/rn-protect",
+  "version": "1.0.0",
+  "description": "Ping Identity Protect library for React Native, enabling Risk/Protect data collection in DaVinci flows.",
+  "homepage": "https://www.pingidentity.com/",
+  "license": "MIT",
+  "author": "Ping Identity",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForgeRock/ping-react-native-sdk"
+  },
+  "main": "lib/module/index.js",
+  "types": "lib/typescript/src/index.d.ts",
+  "files": [
+    "src",
+    "lib",
+    "android",
+    "ios",
+    "*.podspec"
+  ],
+  "scripts": {
+    "codegen": "yarn @react-native/codegen --config ./codegenConfig.json",
+    "build": "bob build",
+    "test": "jest",
+    "clean": "rimraf lib",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint --no-config-lookup --config ../../eslint.config.mjs \"src/**/*.{js,jsx,ts,tsx}\"",
+    "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\" babel.config.js jest.config.js eslint.config.mjs"
+  },
+  "dependencies": {
+    "@ping-identity/rn-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@ping-identity/rn-core": "workspace:*",
+    "@ping-identity/rn-davinci": "workspace:*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
+    "react-native-builder-bob": "^0.40.14",
+    "react-test-renderer": "19.1.0",
+    "typescript": "^5.9.2"
+  },
+  "codegenConfig": {
+    "name": "RNPingProtectSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.pingidentity.rnprotect"
+    }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  }
+}

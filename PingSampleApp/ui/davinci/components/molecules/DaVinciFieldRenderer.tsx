@@ -61,6 +61,8 @@ function DaVinciFieldRenderer(
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
       );
+    case 'PROTECT':
+      return null;
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

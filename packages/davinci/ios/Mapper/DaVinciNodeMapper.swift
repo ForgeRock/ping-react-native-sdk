@@ -17,6 +17,7 @@ import RNPingCore
 enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
   static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
+  static let protect = "PROTECT"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -40,6 +41,10 @@ enum DaVinciNodeMapper {
     switch node {
     case let continueNode as ContinueNode:
       payload["type"] = "ContinueNode"
+      payload["id"] = continueNode.id
+      payload["name"] = continueNode.name
+      payload["description"] = continueNode.description
+      payload["category"] = continueNode.category
       payload["collectors"] = mapCollectors(continueNode, logger: logger)
       payload["input"] = JsonBridgeMapper.encodeJsonObject(continueNode.input)
       let unsupported = unsupportedFields(continueNode, logger: logger)
@@ -124,6 +129,9 @@ enum DaVinciNodeMapper {
       // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
       if resolvedType == socialLoginButton { continue }
 
+      // PROTECT fields are handled in mapCollector via form-field type lookup.
+      if resolvedType == protect { continue }
+
       // A field is supported when the SDK instantiated a collector for its key.
       guard !registeredKeys.contains(key) else { continue }
 
@@ -166,6 +174,28 @@ enum DaVinciNodeMapper {
     return formFields(node, logger: logger)?.first { ($0["key"] as? String) == collectorKey }
   }
 
+  /// Resolves the server-declared type for a collector whose class is not a known compile-time
+  /// type, by reading `inputType` (preferred) or `type` from the matching form field in
+  /// `node.input.form.components.fields[]`.
+  ///
+  /// Used to detect collectors from optional SDK packages (e.g. ProtectCollector from
+  /// PingOneProtect) without importing those packages. The field type is what the server sent,
+  /// so this remains correct regardless of SDK renames or package restructuring.
+  ///
+  /// - Parameters:
+  ///   - collector: Collector whose class was not matched by the primary switch cases.
+  ///   - node: Active continue node providing form field context.
+  ///   - logger: Optional Ping logger for non-fatal navigation warnings.
+  /// - Returns: The resolved field type string (e.g. `"PROTECT"`), or `nil` if the field is absent.
+  static func resolvedFormFieldType(
+    for collector: any Collector,
+    node: ContinueNode,
+    logger: Logger?
+  ) -> String? {
+    let fieldJson = findFieldJson(collector.id, node: node, logger: logger)
+    return (fieldJson?["inputType"] as? String) ?? (fieldJson?["type"] as? String)
+  }
+
   /// Looks up the field-level JSON for a collector and emits it as `raw` on the collector map.
   ///
   /// Collectors whose key has no matching field entry (e.g. action buttons) have `raw` omitted.
@@ -202,7 +232,7 @@ enum DaVinciNodeMapper {
     case let idpCollector as IdpCollector:
       map = mapIdpCollector(idpCollector)
     case let textCollector as TextCollector:
-      map = mapTextCollector(textCollector)
+      map = mapTextCollector(textCollector, node: node)
     case let passwordCollector as PasswordCollector:
       map = mapPasswordCollector(passwordCollector, node: node, logger: logger)
     case let submitCollector as SubmitCollector:
@@ -222,11 +252,16 @@ enum DaVinciNodeMapper {
     case let authenticationCollector as DeviceAuthenticationCollector:
       map = mapDeviceAuthenticationCollector(authenticationCollector)
     default:
-      logger?.w(
-        "[\(logTag)] Skipping unsupported collector type: \(String(describing: type(of: collector)))",
-        error: nil
-      )
-      return nil
+      switch resolvedFormFieldType(for: collector, node: node, logger: logger) {
+      case protect:
+        map = ["key": collector.id, "type": protect]
+      default:
+        logger?.w(
+          "[\(logTag)] Skipping unsupported collector type: \(String(describing: type(of: collector)))",
+          error: nil
+        )
+        return nil
+      }
     }
     guard var collectorMap = map else { return nil }
     applyRawField(&collectorMap, collectorKey: rawFieldKey(for: collector), node: node, logger: logger)
@@ -288,9 +323,11 @@ enum DaVinciNodeMapper {
 
   /// Serializes a `TextCollector` to a bridge map, including value and optional validation regex.
   ///
-  /// - Parameter collector: TextCollector instance.
+  /// - Parameters:
+  ///   - collector: TextCollector instance.
+  ///   - node: Active continue node providing form field context.
   /// - Returns: Serialized text collector map.
-  private static func mapTextCollector(_ collector: TextCollector) -> [String: Any] {
+  private static func mapTextCollector(_ collector: TextCollector, node: ContinueNode) -> [String: Any] {
     var map = baseFieldCollectorMap(collector)
     map["value"] = collector.value
     if let validation = collector.validation, let regex = validation.regex {

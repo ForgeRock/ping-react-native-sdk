@@ -43,6 +43,7 @@ internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
     internal const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
+    internal const val PROTECT = "PROTECT"
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -77,6 +78,11 @@ internal object DaVinciNodeMapper {
         when (node) {
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
+                payload["id"] = node.input["id"]?.jsonPrimitive?.content ?: ""
+                val form = node.input["form"]?.jsonObject
+                payload["name"] = form?.get("name")?.jsonPrimitive?.content ?: ""
+                payload["description"] = form?.get("description")?.jsonPrimitive?.content ?: ""
+                payload["category"] = form?.get("category")?.jsonPrimitive?.content ?: ""
                 payload["collectors"] = mapCollectorsPayload(node, logger)
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
                 val unsupported = unsupportedFieldsPayload(node, logger)
@@ -164,6 +170,9 @@ internal object DaVinciNodeMapper {
                 // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
                 if (resolvedType == SOCIAL_LOGIN_BUTTON) continue
 
+                // PROTECT fields are handled in mapCollectorPayload via form-field type lookup.
+                if (resolvedType == PROTECT) continue
+
                 // A field is supported when the SDK instantiated a collector for its key.
                 if (registeredKeys.contains(key)) continue
 
@@ -199,12 +208,17 @@ internal object DaVinciNodeMapper {
             is DeviceRegistrationCollector -> mapDeviceRegistrationCollector(collector)
             is DeviceAuthenticationCollector -> mapDeviceAuthenticationCollector(collector)
             else -> {
-                logWarning(
-                    logger,
-                    "Skipping unsupported collector type: ${collector::class.java.simpleName}",
-                    UnsupportedOperationException("Unsupported collector: ${collector::class.java.name}")
-                )
-                null
+                when (resolvedFormFieldType(collector, node, logger)) {
+                    PROTECT -> linkedMapOf("key" to collector.id(), "type" to PROTECT)
+                    else -> {
+                        logWarning(
+                            logger,
+                            "Skipping unsupported collector type: ${collector::class.java.simpleName}",
+                            UnsupportedOperationException("Unsupported collector: ${collector::class.java.name}")
+                        )
+                        null
+                    }
+                }
             }
         } ?: return null
         val fieldKey = rawFieldKey(collector) ?: return null
@@ -364,6 +378,30 @@ internal object DaVinciNodeMapper {
                 false
             }
         }?.jsonObject
+    }
+
+    /**
+     * Resolves the server-declared type for a collector whose class is not a known compile-time
+     * type, by reading `inputType` (preferred) or `type` from the matching form field in
+     * `node.input.form.components.fields[]`.
+     *
+     * Used to detect collectors from optional SDK packages (e.g. ProtectCollector from
+     * PingOneProtect) without importing those packages. The field type is what the server sent,
+     * so this remains correct regardless of SDK renames or package restructuring.
+     *
+     * @param collector Collector whose class was not matched by the primary `when` branches.
+     * @param node Parent continue node providing form field context.
+     * @param logger Optional Ping logger for non-fatal navigation warnings.
+     * @return The resolved field type string (e.g. `"PROTECT"`), or `null` if the field is absent.
+     */
+    internal fun resolvedFormFieldType(
+        collector: Collector<*>,
+        node: ContinueNode,
+        logger: Logger? = null
+    ): String? {
+        val fieldJson = findFieldJson(node, collector.id(), logger)
+        return fieldJson?.get("inputType")?.jsonPrimitive?.content
+            ?: fieldJson?.get("type")?.jsonPrimitive?.content
     }
 
     /**

@@ -62,11 +62,13 @@ internal object RNPingDavinciCommon {
      * Handle storing a native DaVinci workflow instance.
      *
      * @property workflow Native DaVinci workflow.
-     * @property loggerId Optional logger handle id from JS.
+     * @property loggerId Optional logger handle id from JS (DaVinci-level).
+     * @property protectLoggerId Optional logger handle id scoped to Protect operations.
      */
     private data class DaVinciHandle(
         val workflow: Workflow,
-        val loggerId: String?
+        val loggerId: String?,
+        val protectLoggerId: String? = null,
     ) : NativeHandle
 
     /**
@@ -186,7 +188,9 @@ internal object RNPingDavinciCommon {
 
         try {
             val workflow = clientFactory.build(payload)
-            val davinciId = davinciRegistry.register(DaVinciHandle(workflow, payload.loggerId))
+            val davinciId = davinciRegistry.register(
+                DaVinciHandle(workflow, payload.loggerId, payload.protect?.loggerId)
+            )
             promise.resolve(davinciId)
         } catch (error: Exception) {
             promise.reject(DaVinciErrorMapper.map(error, DaVinciErrorCodes.INIT), error)
@@ -471,6 +475,78 @@ internal object RNPingDavinciCommon {
             promise.resolve(null)
         } catch (error: Exception) {
             promise.reject(DaVinciErrorMapper.map(error, DaVinciErrorCodes.DISPOSE), error)
+        }
+    }
+
+    /**
+     * Runs PingOne Protect data collection against the active `ProtectCollector` in the flow.
+     *
+     * Requires `rn-protect` to be installed at runtime. When the Protect SDK classes are
+     * absent (no `rn-protect` in the app), the call rejects with `DAVINCI_PROTECT_COLLECT_ERROR`
+     * and a message explaining that `@ping-identity/rn-protect` must be installed.
+     *
+     * @param davinciId Native DaVinci instance id.
+     * @param options Per-call options (e.g. `index` for multi-collector nodes).
+     * @param promise Promise resolved on success or rejected on error.
+     */
+    fun collectProtect(davinciId: String, options: ReadableMap, promise: Promise) {
+        val currentNode = continueNodeMap[davinciId]
+        if (currentNode == null) {
+            promise.reject(
+                DaVinciErrorMapper.state(
+                    DaVinciErrorCodes.STATE,
+                    "No active ContinueNode found for davinci id=$davinciId"
+                )
+            )
+            return
+        }
+
+        val handle = davinciRegistry.resolve(davinciId) as? DaVinciHandle
+        val logger = resolveLoggerFromCore(handle?.protectLoggerId ?: handle?.loggerId)
+
+        scope.launchBridge(promise, DaVinciErrorCodes.PROTECT_COLLECT) {
+            try {
+                val index = parseCollectorIndex(options)
+                @Suppress("UNCHECKED_CAST")
+                val collectors = currentNode.actions
+                    .filterIsInstance<com.pingidentity.protect.davinci.ProtectCollector>()
+                val collector = collectors.getOrNull(index)
+                if (collector == null) {
+                    promise.reject(
+                        GenericError(
+                            type = ErrorType.STATE_ERROR,
+                            error = DaVinciErrorCodes.PROTECT_COLLECT,
+                            message = "No active Protect collector found for DaVinci $davinciId at index $index."
+                        )
+                    )
+                    return@launchBridge
+                }
+                logger?.d("Protect collectProtect requested davinciId=$davinciId index=$index")
+                collector.collect().getOrThrow()
+                logger?.d("Protect collectProtect succeeded davinciId=$davinciId")
+                promise.resolve(null)
+            } catch (e: NoClassDefFoundError) {
+                logger?.e("Protect collectProtect failed: rn-protect not installed", e)
+                promise.reject(
+                    GenericError(
+                        type = ErrorType.STATE_ERROR,
+                        error = DaVinciErrorCodes.PROTECT_COLLECT,
+                        message = "@ping-identity/rn-protect must be installed to use collectProtect(). NoClassDefFoundError: ${e.message}"
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Parses the collector index from bridge options, defaulting to 0.
+     */
+    private fun parseCollectorIndex(options: ReadableMap?): Int {
+        if (options == null || !options.hasKey("index") || options.isNull("index")) return 0
+        return when (options.getType("index")) {
+            com.facebook.react.bridge.ReadableType.Number -> options.getDouble("index").toInt()
+            com.facebook.react.bridge.ReadableType.String -> options.getString("index")?.toIntOrNull() ?: 0
+            else -> 0
         }
     }
 

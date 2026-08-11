@@ -56,6 +56,11 @@ export type NativeDaVinciConfig = {
   timeout?: number;
   /** Resolved logger handle id from the logger registry. */
   loggerId?: string;
+  /**
+   * Optional protect lifecycle configuration.
+   * When present, `DaVinciClientFactory` registers `ProtectLifecycleModule` at workflow creation.
+   */
+  protect?: Object;
 };
 
 /**
@@ -138,6 +143,18 @@ export interface Spec extends TurboModule {
    * @param davinciId - Native DaVinci instance identifier.
    */
   dispose(davinciId: string): Promise<void>;
+
+  /**
+   * Run PingOne Protect data collection against the active PROTECT collector in the flow.
+   *
+   * @remarks
+   * Requires `@ping-identity/rn-protect` to be installed. Rejects with
+   * `DAVINCI_PROTECT_COLLECT_ERROR` when the Protect SDK is absent or collection fails.
+   *
+   * @param davinciId - Native DaVinci instance identifier.
+   * @param options - Per-call options (e.g. `index` for multi-collector nodes).
+   */
+  collectProtect(davinciId: string, options: Object): Promise<void>;
 }
 
 let _nativeModule: Spec | null = null;
@@ -211,6 +228,9 @@ const NativeRNPingDavinci: Spec = {
   },
   dispose(davinciId) {
     return getNativeModule().dispose(davinciId);
+  },
+  collectProtect(davinciId, options) {
+    return getNativeModule().collectProtect(davinciId, options);
   },
 };
 

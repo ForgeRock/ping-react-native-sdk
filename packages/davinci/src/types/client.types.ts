@@ -112,4 +112,27 @@ export type DaVinciClient = {
    * @throws {DaVinciError} When configuration fails.
    */
   getId: () => Promise<string>;
+
+  /**
+   * Run PingOne Protect data collection against the active PROTECT collector in the flow.
+   *
+   * @remarks
+   * Call this before `next()` when the active `ContinueNode` contains a PROTECT collector.
+   * The collected payload is set internally on the native collector so `next({})` picks it
+   * up automatically — no explicit collector value is needed.
+   *
+   * Requires `@ping-identity/rn-protect` to be installed. Rejects when Protect is absent
+   * or collection fails.
+   *
+   * @param options - Optional per-call options.
+   * @param options.index - Zero-based index of the PROTECT collector. Defaults to `0`.
+   * @throws {DaVinciError} When collection fails or Protect is not installed.
+   *
+   * @example
+   * ```ts
+   * await daVinci.collectProtect();
+   * const node = await daVinci.next({});
+   * ```
+   */
+  collectProtect: (options?: { index?: number }) => Promise<void>;
 };

@@ -318,6 +318,9 @@ export const sampleDaVinciConfig: DaVinciConfig = {
       acrValues: Config.PINGONE_ACR_VALUES || undefined,
       storage: davinciOidcStorage,
     },
+    protect: {
+      logger: appLogger,
+    },
   },
 };
 

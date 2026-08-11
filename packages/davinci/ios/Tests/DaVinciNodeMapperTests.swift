@@ -594,6 +594,31 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(first?["link"])
   }
 
+  // MARK: - PROTECT field exclusion
+  // Note: ProtectCollector live-instance tests are not included here because PingOneProtect
+  // is intentionally not a compile-time dependency of rn-davinci. The bridge detects PROTECT
+  // collectors via the server's form-field JSON (field type == "PROTECT"), not by class name.
+  // The exclusion from unsupportedFields is tested below using a pure form-input fixture.
+
+  func testProtectFormFieldIsExcludedFromUnsupportedFields() {
+    // A PROTECT form field with no corresponding registered collector must NOT appear in
+    // unsupportedFields — the mapper explicitly skips fields whose resolvedType == "PROTECT".
+    let formInput: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "protect-1", "type": "PROTECT"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [], input: formInput)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNil(payload["unsupportedFields"])
+  }
+
   // MARK: - multiple collector types
 
   func testMapContinueNodeWithMultipleCollectorTypes() {
@@ -652,6 +677,72 @@ final class DaVinciNodeMapperTests: XCTestCase {
     }
     return IdpCollector(with: json)
   }
+
+  // MARK: - resolvedFormFieldType
+
+  func testResolvedFormFieldTypeReturnsInputTypeWhenPresent() {
+    let input: [String: Any] = [
+      "form": ["components": ["fields": [
+        ["key": "protect-field", "inputType": "PROTECT", "type": "OTHER"]
+      ]]]
+    ]
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: input)
+
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+  }
+
+  func testResolvedFormFieldTypeFallsBackToTypeWhenInputTypeMissing() {
+    let input: [String: Any] = [
+      "form": ["components": ["fields": [
+        ["key": "protect-field", "type": "PROTECT"]
+      ]]]
+    ]
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: input)
+
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+  }
+
+  func testResolvedFormFieldTypeReturnsNilWhenFieldMissing() {
+    let collector = makeTextCollector(key: "no-field")
+    let node = makeContinueNode(collectors: [collector], input: [:])
+
+    XCTAssertNil(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil))
+  }
+
+  func testResolvedFormFieldTypeReturnsNilWhenNoFormPresent() {
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: [:])
+
+    XCTAssertNil(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil))
+  }
+
+  // MARK: - Connector fields
+
+  func testMapContinueNodeConnectorFieldsAlwaysPresent() {
+    // TestContinueNode is not a Connector subtype — extension properties return "" safely.
+    let node = makeContinueNode(collectors: [])
+
+    let result = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNotNil(result["id"])
+    XCTAssertNotNil(result["name"])
+    XCTAssertNotNil(result["description"])
+    XCTAssertNotNil(result["category"])
+  }
+
+  func testMapContinueNodeConnectorFieldsDefaultToEmptyStringForNonConnectorSubtype() {
+    let node = makeContinueNode(collectors: [])
+
+    let result = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(result["id"] as? String, "")
+    XCTAssertEqual(result["name"] as? String, "")
+    XCTAssertEqual(result["description"] as? String, "")
+    XCTAssertEqual(result["category"] as? String, "")
+  }
+
 }
 
 private final class TestContinueNode: ContinueNode {

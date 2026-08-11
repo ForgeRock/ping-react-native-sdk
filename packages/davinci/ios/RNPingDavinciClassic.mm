@@ -153,4 +153,20 @@ RCT_EXPORT_METHOD(dispose:(NSString *)davinciId
   }];
 }
 
+/// Runs PingOne Protect data collection for the active PROTECT collector.
+RCT_EXPORT_METHOD(collectProtect:(NSString *)davinciId
+                  options:(NSDictionary *)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
+    [impl collectProtect:davinciId
+                 options:options
+                resolver:^{
+                  resolve([NSNull null]);
+                }
+                rejecter:reject];
+  }];
+}
+
 @end

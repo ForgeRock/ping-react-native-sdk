@@ -13,6 +13,7 @@ import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import com.pingidentity.rndavinci.config.DaVinciClientPayload
+import com.pingidentity.rndavinci.config.ProtectLifecyclePayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -123,6 +124,37 @@ class DaVinciClientFactoryTest {
     }
 
     @Test
+    fun build_withNullProtectPayloadDoesNotThrow() {
+        val factory = DaVinciClientFactory(RecordingRegistry(), RecordingRegistry())
+
+        val workflow = factory.build(minimalPayload(protect = null))
+
+        assertNotNull(workflow)
+    }
+
+    @Test
+    fun build_withProtectPayloadButMissingClassDoesNotThrow() {
+        // ProtectLifecycle (from protect SDK) is compileOnly and absent in the test classpath;
+        // the factory must silently swallow NoClassDefFoundError and return a workflow.
+        val factory = DaVinciClientFactory(RecordingRegistry(), RecordingRegistry())
+        val protectPayload = ProtectLifecyclePayload(
+            envId = "env-123",
+            isBehavioralDataCollection = true,
+            isLazyMetadata = false,
+            customHost = null,
+            isConsoleLogEnabled = false,
+            deviceAttributesToIgnore = emptyList(),
+            pauseBehavioralDataOnSuccess = false,
+            resumeBehavioralDataOnStart = false,
+            loggerId = null,
+        )
+
+        val workflow = factory.build(minimalPayload(protect = protectPayload))
+
+        assertNotNull(workflow)
+    }
+
+    @Test
     fun build_silentlyIgnoresLoggerHandleWithIncompatibleNativeType() {
         val loggerRegistry = RecordingRegistry().apply {
             addHandle("logger-1", TestLoggerHandle(nativeLogger = "not-a-logger"))
@@ -201,7 +233,8 @@ class DaVinciClientFactoryTest {
                 uiLocales = "en",
                 acrValues = "urn:mfa",
                 refreshThreshold = 60L,
-                additionalParameters = mapOf("custom" to "value")
+                additionalParameters = mapOf("custom" to "value"),
+                protect = null,
             )
         )
 
@@ -212,7 +245,8 @@ class DaVinciClientFactoryTest {
 
     private fun minimalPayload(
         storageId: String? = null,
-        loggerId: String? = null
+        loggerId: String? = null,
+        protect: ProtectLifecyclePayload? = null,
     ): DaVinciClientPayload {
         return DaVinciClientPayload(
             discoveryEndpoint = "https://example.com/.well-known/openid-configuration",
@@ -231,7 +265,8 @@ class DaVinciClientFactoryTest {
             uiLocales = null,
             acrValues = null,
             refreshThreshold = null,
-            additionalParameters = emptyMap()
+            additionalParameters = emptyMap(),
+            protect = protect,
         )
     }
 

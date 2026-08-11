@@ -211,3 +211,21 @@ export async function disposeDaVinci(davinciId: string): Promise<void> {
     throw DaVinciError.from(error);
   }
 }
+
+/**
+ * Run PingOne Protect data collection for the active PROTECT collector in a DaVinci flow.
+ *
+ * @param davinciId - Native DaVinci instance identifier.
+ * @param options - Per-call options (e.g. `index` for multi-collector nodes).
+ * @throws {DaVinciError} When collection fails or Protect is not installed.
+ */
+export async function collectProtectForDaVinci(
+  davinciId: string,
+  options: { index?: number },
+): Promise<void> {
+  try {
+    await NativeRNPingDavinci.collectProtect(davinciId, options);
+  } catch (error) {
+    throw DaVinciError.from(error);
+  }
+}

@@ -72,6 +72,72 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertNil(payload.timeout)
     XCTAssertTrue(payload.scopes.isEmpty)
     XCTAssertTrue(payload.additionalParameters.isEmpty)
+    XCTAssertNil(payload.protect)
+  }
+
+  // MARK: - Protect lifecycle parsing
+
+  func testParseProtectAbsentReturnsNilProtect() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect"
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+
+    XCTAssertNil(payload.protect)
+  }
+
+  func testParseProtectDefaultsWhenEmpty() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "protect": NSDictionary()
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+    let protect = try XCTUnwrap(payload.protect)
+
+    XCTAssertNil(protect.envId)
+    XCTAssertTrue(protect.isBehavioralDataCollection)
+    XCTAssertFalse(protect.isLazyMetadata)
+    XCTAssertNil(protect.customHost)
+    XCTAssertFalse(protect.isConsoleLogEnabled)
+    XCTAssertTrue(protect.deviceAttributesToIgnore.isEmpty)
+    XCTAssertFalse(protect.pauseBehavioralDataOnSuccess)
+    XCTAssertFalse(protect.resumeBehavioralDataOnStart)
+  }
+
+  func testParseProtectAllFieldsMapped() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "protect": [
+        "envId": "env-abc",
+        "isBehavioralDataCollection": false,
+        "isLazyMetadata": true,
+        "customHost": "https://custom.host",
+        "isConsoleLogEnabled": true,
+        "deviceAttributesToIgnore": ["deviceId", "screen"],
+        "pauseBehavioralDataOnSuccess": true,
+        "resumeBehavioralDataOnStart": true
+      ] as NSDictionary
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+    let protect = try XCTUnwrap(payload.protect)
+
+    XCTAssertEqual(protect.envId, "env-abc")
+    XCTAssertFalse(protect.isBehavioralDataCollection)
+    XCTAssertTrue(protect.isLazyMetadata)
+    XCTAssertEqual(protect.customHost, "https://custom.host")
+    XCTAssertTrue(protect.isConsoleLogEnabled)
+    XCTAssertEqual(protect.deviceAttributesToIgnore, ["deviceId", "screen"])
+    XCTAssertTrue(protect.pauseBehavioralDataOnSuccess)
+    XCTAssertTrue(protect.resumeBehavioralDataOnStart)
   }
 
   func testParseThrowsWhenDiscoveryEndpointMissing() {

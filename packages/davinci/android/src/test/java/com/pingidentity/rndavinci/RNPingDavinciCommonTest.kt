@@ -499,6 +499,63 @@ class RNPingDavinciCommonTest {
         assertNull(captureResolve(promise))
     }
 
+    // ---- collectProtect ----
+
+    @Test
+    fun collectProtect_rejectsWithStateErrorWhenNoContinueNode() {
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.collectProtect("no-such-id", JavaOnlyMap(), promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.STATE, error.getString("error"))
+    }
+
+    @Test
+    fun collectProtect_rejectsWithStateErrorWhenNoProtectCollector() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = emptyList()))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.collectProtect(davinciId, JavaOnlyMap(), promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.PROTECT_COLLECT, error.getString("error"))
+        assertTrue(error.getString("message")?.contains("No active Protect collector") == true)
+    }
+
+    @Test
+    fun collectProtect_rejectsWithStateErrorWhenIndexOutOfRange() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = emptyList()))
+        val options = JavaOnlyMap.of("index", 5)
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.collectProtect(davinciId, options, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.PROTECT_COLLECT, error.getString("error"))
+    }
+
+    @Test
+    fun collectProtect_rejectsWhenCollectFails() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(
+            davinciId,
+            DummyContinueNode(actions = listOf(com.pingidentity.protect.davinci.ProtectCollector()))
+        )
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.collectProtect(davinciId, JavaOnlyMap(), promise)
+
+        val error = captureReject(promise)
+        assertEquals(DaVinciErrorCodes.PROTECT_COLLECT, promise.rejectCode)
+        assertEquals(DaVinciErrorCodes.PROTECT_COLLECT, error.getString("error"))
+    }
+
     // ---- next() collector-apply error catches ----
 
     @Test
@@ -578,9 +635,9 @@ class RNPingDavinciCommonTest {
 
     private fun registerDaVinciHandle(workflow: Workflow): String {
         val clazz = Class.forName("com.pingidentity.rndavinci.RNPingDavinciCommon\$DaVinciHandle")
-        val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java)
+        val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java, String::class.java)
         ctor.isAccessible = true
-        val handle = ctor.newInstance(workflow, null) as NativeHandle
+        val handle = ctor.newInstance(workflow, null, null) as NativeHandle
         return CoreRuntime.davinciRegistry.register(handle)
     }
 

@@ -142,6 +142,18 @@ class RNPingDavinciClassicModule(
     RNPingDavinciCommon.dispose(davinciId, promise)
   }
 
+  /**
+   * Run PingOne Protect data collection against the active PROTECT collector.
+   *
+   * @param davinciId Native DaVinci client id.
+   * @param options Per-call options (index, etc.).
+   * @param promise Promise resolved on success or rejected on error.
+   */
+  @ReactMethod
+  fun collectProtect(davinciId: String, options: ReadableMap, promise: Promise) {
+    RNPingDavinciCommon.collectProtect(davinciId, options, promise)
+  }
+
   companion object {
     const val NAME = "RNPingDavinciClassic"
   }

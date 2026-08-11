@@ -52,6 +52,9 @@ target 'PingTestRunner' do
   pod 'RNPingDavinci',
     :path => '../../node_modules/@ping-identity/rn-davinci',
     :testspecs => ['Tests']
+  pod 'RNPingProtect',
+    :path => '../../node_modules/@ping-identity/rn-protect',
+    :testspecs => ['Tests']
   pod 'RNPingDeviceClient',
     :path => '../../node_modules/@ping-identity/rn-device-client',
     :testspecs => ['Tests']

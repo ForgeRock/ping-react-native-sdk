@@ -282,6 +282,16 @@ jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({
   fromNativeAuthorizeResult: jest.fn((result) => result),
 }));
 
+// ---------- rn-protect ----------
+jest.mock('../packages/protect/src/NativeRNPingProtect', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    collectForDaVinci: jest.fn(async () => undefined),
+  })),
+  toNativeCollectOptions: jest.fn((options) => options),
+  toNativeConfig: jest.fn((config) => config),
+}));
+
 // ---------- rn-push ----------
 jest.mock('../packages/push/src/NativeRNPingPush', () => ({
   __esModule: true,

@@ -44,6 +44,12 @@ jobs:
       - name: Run unit tests
         run: yarn test:affected:coverage
 
+      # Run JS integration tests from PingTestRunner — these exercise the JS bridge layer
+      # across all packages using mocked native modules and are not covered by Turbo's
+      # affected-package filter above.
+      - name: Run integration tests
+        run: yarn test:runner:integration
+
       # No affected packages (e.g. dependency-only changes) produce no report files;
       # dorny/test-reporter errors out on a missing-files glob regardless of fail-on-error.
       - name: Check for test report files

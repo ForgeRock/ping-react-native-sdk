@@ -25,6 +25,7 @@ export default function DaVinciTextField(
   const { collector, value, onChange } = props;
   const textCollector = collector as TextCollector;
   const stringValue = typeof value === 'string' ? value : textCollector.value;
+  const isMultiline = stringValue.length > 60;
 
   return (
     <View style={davinciFieldStyles.card}>
@@ -38,6 +39,7 @@ export default function DaVinciTextField(
         onChangeText={onChange}
         autoCapitalize="none"
         autoCorrect={false}
+        multiline={isMultiline}
       />
       <DaVinciErrorList errors={textCollector.validation?.errors} />
     </View>

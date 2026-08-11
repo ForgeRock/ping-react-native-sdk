@@ -37,4 +37,6 @@ internal object DaVinciErrorCodes {
     const val MISSING_INTEGRATION = "DAVINCI_MISSING_INTEGRATION_ERROR"
     /** Catch-all for unclassified failures. */
     const val UNKNOWN = "DAVINCI_UNKNOWN_ERROR"
+    /** PingOne Protect data collection failure. */
+    const val PROTECT_COLLECT = "DAVINCI_PROTECT_COLLECT_ERROR"
 }

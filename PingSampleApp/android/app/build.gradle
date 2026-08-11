@@ -148,6 +148,9 @@ dependencies {
     // Enables Facebook Login support for external identity provider flows.
     implementation("com.facebook.android:facebook-login:18.0.3")
 
+    // Required at runtime: rn-protect declares protect compileOnly so apps must add it explicitly.
+    implementation("com.pingidentity.sdks:protect:2.0.1")
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

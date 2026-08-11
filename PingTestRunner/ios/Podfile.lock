@@ -54,6 +54,11 @@ PODS:
     - PingBrowser (~> 2.0.0)
     - PingCommons (~> 2.0.0)
     - PingOrchestrate (~> 2.0.0)
+  - PingOneProtect (2.0.0):
+    - PingDavinciPlugin (~> 2.0.0)
+    - PingJourneyPlugin (~> 2.0.0)
+    - PingOneSignals (~> 5.4.0)
+  - PingOneSignals (5.4.0)
   - PingOrchestrate (2.0.0):
     - PingNetwork (~> 2.0.0)
     - PingStorage (~> 2.0.0)
@@ -2402,6 +2407,12 @@ PODS:
     - glog
     - hermes-engine
     - PingDavinci (= 2.0.0)
+    - PingDavinciPlugin (= 2.0.0)
+    - PingExternalIdP (= 2.0.0)
+    - PingLogger (= 2.0.0)
+    - PingOidc (= 2.0.0)
+    - PingOrchestrate (= 2.0.0)
+    - PingStorage (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2433,6 +2444,12 @@ PODS:
     - glog
     - hermes-engine
     - PingDavinci (= 2.0.0)
+    - PingDavinciPlugin (= 2.0.0)
+    - PingExternalIdP (= 2.0.0)
+    - PingLogger (= 2.0.0)
+    - PingOidc (= 2.0.0)
+    - PingOrchestrate (= 2.0.0)
+    - PingStorage (= 2.0.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3036,6 +3053,68 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingProtect (1.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingOneProtect (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingProtect/Tests (1.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingOneProtect (= 2.0.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingPush (1.0.0):
     - boost
     - DoubleConversion
@@ -3268,6 +3347,8 @@ DEPENDENCIES:
   - "RNPingOath/Tests (from `../../node_modules/@ping-identity/rn-oath`)"
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingOidc/Tests (from `../../node_modules/@ping-identity/rn-oidc`)"
+  - "RNPingProtect (from `../../node_modules/@ping-identity/rn-protect`)"
+  - "RNPingProtect/Tests (from `../../node_modules/@ping-identity/rn-protect`)"
   - "RNPingPush (from `../../node_modules/@ping-identity/rn-push`)"
   - "RNPingPush/Tests (from `../../node_modules/@ping-identity/rn-push`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
@@ -3293,6 +3374,8 @@ SPEC REPOS:
     - PingNetwork
     - PingOath
     - PingOidc
+    - PingOneProtect
+    - PingOneSignals
     - PingOrchestrate
     - PingPush
     - PingStorage
@@ -3473,6 +3556,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-oath"
   RNPingOidc:
     :path: "../../node_modules/@ping-identity/rn-oidc"
+  RNPingProtect:
+    :path: "../../node_modules/@ping-identity/rn-protect"
   RNPingPush:
     :path: "../../node_modules/@ping-identity/rn-push"
   RNPingStorage:
@@ -3483,11 +3568,11 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
-  fast_float: 914e00b8b67cb8ba184a778c7bbc2e9fe98d37b3
+  fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427
-  fmt: b85d977e8fe789fd71c77123f9f4920d88c4d170
-  glog: 682871fb30f4a65f657bf357581110656ea90b08
-  hermes-engine: c8443ebca6460d15100b5b29ae584a1a6c9dc18b
+  fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
+  glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
+  hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
   PingBinding: 46036fcbcd4e3cb6a453f08822493ba451d4c8ab
   PingBrowser: d1526bdcc6197781d0d54fe7ac16ba09a55a1faa
   PingCommons: 49f2244bda1c41913fa37d9481e969702d658ade
@@ -3504,11 +3589,13 @@ SPEC CHECKSUMS:
   PingNetwork: b8fde435c5d30ee4024aa7d7f1c95a1e0eafc2e8
   PingOath: e401ec4a9bc3edad14ca1c205c1420b7636fbf80
   PingOidc: eda685279cfaba6d42ca474a953306448987e760
+  PingOneProtect: 614fe5ce05b86889022494946ff5132fdda3b706
+  PingOneSignals: 3d14d429201435960e062e3481356b9f21fa657f
   PingOrchestrate: 21d780ed7eeb3c366ae43785017b2700478db783
   PingPush: 71aed837ffd7bed5a75f9f08a05431c232094957
   PingStorage: 7e3bc6966fbf7587523e56a8a7b0f5d85ea3bd94
   PingTamperDetector: b5e4b7aa325a11f2de1f3df9bdd8cc3391cddf1c
-  RCT-Folly: fb64616e25cfac1c3d10bfd784d68926325ae67f
+  RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
   RCTTypeSafety: d877728097547d0a37786cc9130c43ad71739ac3
@@ -3577,7 +3664,7 @@ SPEC CHECKSUMS:
   RNPingBinding: c9449a4e6b808afc9dcc311a07804559c0c522b4
   RNPingBrowser: 042c960b67b47a85b0e1de373b76ddb2609487e1
   RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
-  RNPingDavinci: b37645623c3b3b3b1b0669a56a3d2e7ec231e75d
+  RNPingDavinci: ab9a3d6acd3878b1c499fc1c43178b8739c0245e
   RNPingDeviceClient: bd78e33420a8f5dcd6ab3b21691805743b12079f
   RNPingDeviceId: 24f49f8d518103367f6bbcbcf54138a424541ba7
   RNPingDeviceProfile: 4c6b306859c9bc9cdad0aea830d9a8e0227dcc4a
@@ -3587,11 +3674,12 @@ SPEC CHECKSUMS:
   RNPingLogger: db39fa39b31cd5026a7c279cd52996fafac190e1
   RNPingOath: 2e64a03cd27ac198b21d2e4a4d767eaa31bd2b03
   RNPingOidc: dceb88744c13a9bdd44a339f244d3a0535bf8232
+  RNPingProtect: 03c6e22185e4a00d87cdfbde0b7cff3410607f3d
   RNPingPush: 898e5dd90a372e2ac9a27f0c622c2f17614fbd26
   RNPingStorage: 17cf506d51259fa7c64a649d97ed974bd5350b22
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: 06fe91365819bf22b320c91bdb09a02aa2b3c437
+PODFILE CHECKSUM: 9ceaad74f9b24aba51880ae069d18f1dffba35e4
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

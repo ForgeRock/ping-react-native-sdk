@@ -160,6 +160,9 @@ const missingDaVinciClient: DaVinciClient = {
   async getId(): Promise<string> {
     throw missingDaVinciClientError;
   },
+  async collectProtect(): Promise<void> {
+    throw missingDaVinciClientError;
+  },
 };
 
 /**

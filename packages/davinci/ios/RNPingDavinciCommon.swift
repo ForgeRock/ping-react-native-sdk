@@ -12,6 +12,9 @@ import PingLogger
 import PingOidc
 import PingOrchestrate
 import RNPingCore
+#if canImport(PingOneProtect)
+import PingOneProtect
+#endif
 
 /// Serializes lifecycle operations that mutate shared DaVinci runtime state.
 private actor DaVinciLifecycleCoordinator {
@@ -119,7 +122,7 @@ public final class RNPingDavinciCommon: NSObject {
         CoreRuntime.setDaVinciCollectorResolver { davinciId in
           stateStore.activeContinueNode(for: davinciId).map { Array($0.collectors) }
         }
-        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId))
+        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId, protectLoggerId: payload.protect?.loggerId))
       }
       guard let davinciId = idRef.value else {
         promise.reject(DaVinciErrorMapper.state(code: .initError, message: "Failed to register DaVinci instance"))
@@ -413,7 +416,88 @@ public final class RNPingDavinciCommon: NSObject {
     }
   }
 
+  /// Runs PingOne Protect data collection for the active PROTECT collector in a DaVinci flow.
+  ///
+  /// Requires `@ping-identity/rn-protect` (which includes `PingOneProtect`) to be installed.
+  /// When the Protect SDK is absent, rejects with `DAVINCI_PROTECT_COLLECT_ERROR`.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Per-call options — `index` selects the PROTECT collector (default 0).
+  ///   - resolver: Promise resolver called on success.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func collectProtect(
+    _ davinciId: String,
+    options: NSDictionary,
+    resolver: @escaping VoidResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<Void>(resolver: resolver, rejecter: rejecter)
+    let collectorIndex = parseCollectorIndex(options)
+    #if canImport(PingOneProtect)
+    Task { @MainActor in
+      let handle = await davinciRegistry.resolve(davinciId) as? DaVinciHandle
+      let logger = await resolveLoggerFromCore(handle?.protectLoggerId ?? handle?.loggerId)
+      guard let currentNode = stateStore.activeContinueNode(for: davinciId) else {
+        promise.reject(
+          DaVinciErrorMapper.state(
+            code: .stateError,
+            message: "No active ContinueNode found for davinci id=\(davinciId)"
+          )
+        )
+        return
+      }
+      let index = collectorIndex
+      let matching = currentNode.collectors.compactMap { $0 as? ProtectCollector }
+      guard index >= 0, index < matching.count else {
+        promise.reject(
+          DaVinciErrorMapper.state(
+            code: .protectCollectError,
+            message: "No active Protect collector found for DaVinci \(davinciId) at index \(index)."
+          )
+        )
+        return
+      }
+      let collector = matching[index]
+      logger?.d("Protect collectProtect requested davinciId=\(davinciId) index=\(index)")
+      let result = await collector.collect()
+      switch result {
+      case .success:
+        logger?.d("Protect collectProtect succeeded davinciId=\(davinciId)")
+        promise.resolve(())
+      case .failure(let error):
+        logger?.e("Protect collectProtect failed davinciId=\(davinciId)", error: error as NSError)
+        promise.reject(
+          DaVinciErrorMapper.map(error, code: .protectCollectError)
+        )
+      }
+    }
+    #else
+    promise.reject(
+      DaVinciErrorMapper.state(
+        code: .protectCollectError,
+        message: "@ping-identity/rn-protect must be installed to use collectProtect()."
+      )
+    )
+    #endif
+  }
+
   // MARK: - Helpers
+
+  /// Parses the collector index from bridge options, defaulting to 0.
+  ///
+  /// - Parameter options: Per-call options dictionary.
+  /// - Returns: Parsed collector index.
+  private static func parseCollectorIndex(_ options: NSDictionary) -> Int {
+    if let value = options["index"] as? NSNumber {
+      return value.intValue
+    }
+    if let value = options["index"] as? String, let parsed = Int(value) {
+      return parsed
+    }
+    return 0
+  }
 
   /// Resolves a DaVinci instance from the shared core registry.
   ///
@@ -434,6 +518,18 @@ public final class RNPingDavinciCommon: NSObject {
     else {
       return nil
     }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? Logger
+  }
+
+  /// Resolves a logger from the core registry by logger handle id.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or `nil` when missing or unresolvable.
+  private static func resolveLoggerFromCore(_ loggerId: String?) async -> Logger? {
+    guard let loggerId, !loggerId.isEmpty else { return nil }
     guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
       return nil
     }
@@ -506,10 +602,12 @@ public final class RNPingDavinciCommon: NSObject {
 private final class DaVinciHandle: NativeHandle, @unchecked Sendable {
   let davinci: DaVinci
   let loggerId: String?
+  let protectLoggerId: String?
 
-  init(davinci: DaVinci, loggerId: String?) {
+  init(davinci: DaVinci, loggerId: String?, protectLoggerId: String? = nil) {
     self.davinci = davinci
     self.loggerId = loggerId
+    self.protectLoggerId = protectLoggerId
   }
 }
 

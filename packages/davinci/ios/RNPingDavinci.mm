@@ -198,6 +198,21 @@ RCT_EXPORT_MODULE()
                    rejecter:reject];
 }
 
+/// Bridges `collectProtect(davinciId, options)`.
+/// Swift resolves void; bridge resolves `null` for JS promise compatibility.
+- (void)collectProtect:(NSString *)davinciId
+               options:(NSDictionary *)options
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] collectProtect:davinciId
+                           options:options
+                          resolver:^{
+                            resolve([NSNull null]);
+                          }
+                          rejecter:reject];
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {
