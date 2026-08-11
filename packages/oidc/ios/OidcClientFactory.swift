@@ -51,11 +51,10 @@ enum OidcClientFactory {
       config.logger = logger
     }
 
-    // TODO-PARITY(SDKS-5245): PingOidc 2.1.0 made `openId` private(set); only
-    // `openIdOverride` (patches fields after discovery completes) is public now.
-    // Configs that previously relied on `openId` to skip discovery entirely
-    // (no `discoveryEndpoint`) can no longer do so — `openIdOverride` never
-    // fires without a prior successful `discover()` call.
+    // PingOidc 2.1.0 made `openId` private(set); only `openIdOverride` (patches fields
+    // after discovery completes) is public now. `OidcConfigParser` rejects configs that
+    // omit `discoveryEndpoint`, so `openId` here is always applied as an override on top
+    // of a required discovery call, never as a standalone bypass.
     if let openId = payload.openId {
       config.openIdOverride = openIdOverride(for: openId)
     }
@@ -105,7 +104,8 @@ enum OidcClientFactory {
         if !payload.additionalParameters.isEmpty {
           oidc.additionalParameters = payload.additionalParameters
         }
-        // TODO-PARITY(SDKS-5245): see buildOidcClient — same `openId` API narrowing applies here.
+        // See buildOidcClient — `openId` is always applied as an override on top of a
+        // required discovery call (enforced by `OidcConfigParser`).
         if let openId = payload.openId {
           oidc.openIdOverride = openIdOverride(for: openId)
         }

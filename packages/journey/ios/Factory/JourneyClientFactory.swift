@@ -87,10 +87,10 @@ final class JourneyClientFactory {
           if !oidcConfig.additionalParameters.isEmpty {
             module.additionalParameters = oidcConfig.additionalParameters
           }
-          // TODO-PARITY(SDKS-5245): PingOidc 2.1.0 made `openId` private(set); only
-          // `openIdOverride` (patches fields after discovery completes) is public now.
-          // Configs that previously relied on `openId` to skip discovery entirely
-          // (no `discoveryEndpoint`) can no longer do so.
+          // PingOidc 2.1.0 made `openId` private(set); only `openIdOverride` (patches
+          // fields after discovery completes) is public now. `resolveOidcConfig` and
+          // `resolveOidcConfigFromHandle` reject configs that omit `discoveryEndpoint`,
+          // so `openId` here is always applied as an override, never as a standalone bypass.
           if let openId = oidcConfig.openId {
             module.openIdOverride = Self.openIdOverride(for: openId)
           }
@@ -142,7 +142,14 @@ final class JourneyClientFactory {
     }
     let coreOpenId = oidcPayload.openId.map(Self.toCoreOpenId)
     let hasDiscoveryEndpoint = !(oidcPayload.discoveryEndpoint?.isEmpty ?? true)
-    guard hasDiscoveryEndpoint || coreOpenId != nil else {
+    // PingOidc 2.1.0 only applies `openId` as an override patched onto a successful
+    // discover() call — it can no longer be used to skip discovery entirely.
+    guard hasDiscoveryEndpoint else {
+      if coreOpenId != nil {
+        throw JourneyBridgeError.argument(
+          "Journey OIDC config is missing discoveryEndpoint. `openId` alone can no longer bypass discovery — provide discoveryEndpoint; openId will be applied as an override after discovery."
+        )
+      }
       return nil
     }
 
@@ -177,9 +184,11 @@ final class JourneyClientFactory {
     }
 
     let discoveryEndpoint = handle.discoveryEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines)
-    if (discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true) && handle.openId == nil {
+    // PingOidc 2.1.0 only applies `openId` as an override patched onto a successful
+    // discover() call — it can no longer be used to skip discovery entirely.
+    if discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true {
       throw JourneyBridgeError.argument(
-        "OIDC client id=\(oidcClientId) does not expose discoveryEndpoint or openId. Configure OIDC with discoveryEndpoint or openId before composing Journey."
+        "OIDC client id=\(oidcClientId) does not expose discoveryEndpoint. `openId` alone can no longer bypass discovery — configure OIDC with discoveryEndpoint before composing Journey."
       )
     }
 

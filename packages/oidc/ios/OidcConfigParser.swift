@@ -23,8 +23,10 @@ enum OidcConfigParser {
     let discoveryEndpoint = config["discoveryEndpoint"] as? String
     let openIdPayload = parseOpenId(config["openId"])
     let iosConfig = config["ios"] as? NSDictionary
-    if (discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true), openIdPayload == nil {
-      throw NSError(domain: "RNPingOidc", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing discoveryEndpoint or openId"])
+    // PingOidc 2.1.0+ only applies `openId` as an override patched onto the result of a
+    // successful discover() call — it can no longer be used to skip discovery entirely.
+    if discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true {
+      throw NSError(domain: "RNPingOidc", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing discoveryEndpoint. `openId` alone can no longer bypass discovery — provide discoveryEndpoint; openId will be applied as an override after discovery."])
     }
     let redirectUri = try ReadableMapUtils.requireString(config, key: "redirectUri")
     let scopes = try ReadableMapUtils.requireStringArray(config, key: "scopes")
