@@ -168,6 +168,62 @@ describe('@ping-identity/rn-journey — integration', () => {
       expect(Array.isArray(node.callbacks)).toBe(true);
     });
 
+    it('start() surfaces ContinueNode UI metadata fields unchanged, including submitButtonText resolved from stage JSON', async () => {
+      const mock = makeMock({
+        start: jest.fn(async () => ({
+          id: 'n1',
+          type: 'ContinueNode',
+          callbacks: [],
+          header: 'Sign On',
+          description: 'Enter your credentials to continue',
+          stage: JSON.stringify({
+            submitButtonText: { en: 'Continue' },
+            pageFooter: { en: 'Need help?' },
+          }),
+          submitButtonText: 'Continue',
+          pageFooter: 'Need help?',
+        })),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const node = await client.start('Login');
+      expect(node.header).toBe('Sign On');
+      expect(node.description).toBe('Enter your credentials to continue');
+      expect(node.stage).toBe(
+        JSON.stringify({
+          submitButtonText: { en: 'Continue' },
+          pageFooter: { en: 'Need help?' },
+        }),
+      );
+      expect(node.submitButtonText).toBe('Continue');
+      expect(node.pageFooter).toBe('Need help?');
+    });
+
+    it('start() surfaces empty-string ContinueNode UI metadata fields when native omits them', async () => {
+      const mock = makeMock({
+        start: jest.fn(async () => ({
+          id: 'n1',
+          type: 'ContinueNode',
+          callbacks: [],
+          header: '',
+          description: '',
+          stage: '',
+          submitButtonText: '',
+          pageFooter: '',
+        })),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const node = await client.start('Login');
+      expect(node.header).toBe('');
+      expect(node.description).toBe('');
+      expect(node.stage).toBe('');
+      expect(node.submitButtonText).toBe('');
+      expect(node.pageFooter).toBe('');
+    });
+
     it('next() advances the journey and returns the next node', async () => {
       const mock = makeMock();
       const mod = await loadJourney(mock);

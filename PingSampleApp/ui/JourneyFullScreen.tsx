@@ -627,6 +627,12 @@ export default function JourneyFullScreen(): React.ReactElement {
 
         {node?.type === 'ContinueNode' ? (
           <View style={styles.section}>
+            {node.header ? (
+              <Text style={styles.nodeHeader}>{node.header}</Text>
+            ) : null}
+            {node.description ? (
+              <Text style={styles.nodeDescription}>{node.description}</Text>
+            ) : null}
             <Text style={commonStyles.journeySectionTitle}>Callbacks</Text>
             {indexedCallbacks.map(renderCallback)}
             {issues.map((issue, index) => (
@@ -639,8 +645,13 @@ export default function JourneyFullScreen(): React.ReactElement {
               onPress={onSubmit}
               disabled={loading}
             >
-              <Text style={commonStyles.journeyButtonText}>Continue</Text>
+              <Text style={commonStyles.journeyButtonText}>
+                {node.submitButtonText || 'Continue'}
+              </Text>
             </TouchableOpacity>
+            {node.pageFooter ? (
+              <Text style={styles.nodeFooter}>{node.pageFooter}</Text>
+            ) : null}
           </View>
         ) : null}
 

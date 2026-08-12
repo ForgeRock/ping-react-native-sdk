@@ -30,6 +30,11 @@ import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
 import com.pingidentity.journey.plugin.callbacks
+import com.pingidentity.journey.plugin.description
+import com.pingidentity.journey.plugin.header
+import com.pingidentity.journey.plugin.pageFooter
+import com.pingidentity.journey.plugin.stage
+import com.pingidentity.journey.plugin.submitButtonText
 import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.ErrorNode
@@ -81,10 +86,24 @@ internal object JourneyNodeMapper {
         val payload = linkedMapOf<String, Any?>()
 
         when (node) {
+            // TODO-SDK-PARITY(SDKS-5309): a non-string header/description/stage value from the
+            // server throws IllegalArgumentException here (via ContinueNode.header/.description/.stage
+            // calling JsonElement.jsonPrimitive.content), rejecting the whole promise. iOS's
+            // equivalent (`input[...] as? String`) silently falls through to "" for that field
+            // only.
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
                 payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it, logger) }
+                payload["header"] = node.header
+                payload["description"] = node.description
+                payload["stage"] = node.stage
+                // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter locale matching only
+                // checks Locale.getDefault() here, while iOS iterates the full ordered
+                // preferred-locale list — identical server data + device settings can resolve
+                // different localized text per platform.
+                payload["submitButtonText"] = node.submitButtonText
+                payload["pageFooter"] = node.pageFooter
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"

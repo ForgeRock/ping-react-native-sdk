@@ -21,7 +21,12 @@ final class JourneyNodeMapperTests: XCTestCase {
     let node = TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),
       workflow: Workflow(config: WorkflowConfig()),
-      input: ["authId": "auth-id"],
+      input: [
+        "authId": "auth-id",
+        "header": "Sign In",
+        "description": "Enter your credentials",
+        "stage": "loginStage"
+      ],
       actions: [callback]
     )
 
@@ -34,6 +39,73 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(callbacks?.count, 1)
     XCTAssertEqual(callbacks?.first?["type"] as? String, "NameCallback")
     XCTAssertEqual(callbacks?.first?["prompt"] as? String, "User Name")
+    XCTAssertEqual(payload["header"] as? String, "Sign In")
+    XCTAssertEqual(payload["description"] as? String, "Enter your credentials")
+    XCTAssertEqual(payload["stage"] as? String, "loginStage")
+    XCTAssertEqual(payload["submitButtonText"] as? String, "")
+    XCTAssertEqual(payload["pageFooter"] as? String, "")
+  }
+
+  func testMapNodePayloadContinueMissingUiFieldsReturnsEmptyStrings() {
+    let node = TestContinueNode(
+      context: FlowContext(flowContext: SharedContext()),
+      workflow: Workflow(config: WorkflowConfig()),
+      input: [:],
+      actions: []
+    )
+
+    let payload = JourneyNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(payload["header"] as? String, "")
+    XCTAssertEqual(payload["description"] as? String, "")
+    XCTAssertEqual(payload["stage"] as? String, "")
+    XCTAssertEqual(payload["submitButtonText"] as? String, "")
+    XCTAssertEqual(payload["pageFooter"] as? String, "")
+  }
+
+  func testMapNodePayloadContinueResolvesSubmitButtonTextAndPageFooterFromStageJson() {
+    let node = TestContinueNode(
+      context: FlowContext(flowContext: SharedContext()),
+      workflow: Workflow(config: WorkflowConfig()),
+      input: [
+        "stage": "{\"submitButtonText\":{\"en-us\":\"Continue\"},\"pageFooter\":{\"en-us\":\"Footer\"}}"
+      ],
+      actions: []
+    )
+
+    let payload = JourneyNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(payload["submitButtonText"] as? String, "Continue")
+    XCTAssertEqual(payload["pageFooter"] as? String, "Footer")
+  }
+
+  func testMapNodePayloadContinueWithMalformedStageJsonReturnsEmptyLocalizedFields() {
+    let node = TestContinueNode(
+      context: FlowContext(flowContext: SharedContext()),
+      workflow: Workflow(config: WorkflowConfig()),
+      input: ["stage": "not-json"],
+      actions: []
+    )
+
+    let payload = JourneyNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(payload["stage"] as? String, "not-json")
+    XCTAssertEqual(payload["submitButtonText"] as? String, "")
+    XCTAssertEqual(payload["pageFooter"] as? String, "")
+  }
+
+  func testMapNodePayloadContinueWithNonStringHeaderResolvesWithEmptyString() {
+    let node = TestContinueNode(
+      context: FlowContext(flowContext: SharedContext()),
+      workflow: Workflow(config: WorkflowConfig()),
+      input: ["header": ["nested": "object"]],
+      actions: []
+    )
+
+    let payload = JourneyNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(payload["type"] as? String, "ContinueNode")
+    XCTAssertEqual(payload["header"] as? String, "")
   }
 
   func testMapNodePayloadErrorIncludesStatusMessageAndInput() {

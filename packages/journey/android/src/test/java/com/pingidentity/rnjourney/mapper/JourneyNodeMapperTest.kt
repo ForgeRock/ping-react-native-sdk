@@ -36,39 +36,173 @@ import com.pingidentity.orchestrate.SuccessNode
 import com.pingidentity.orchestrate.Workflow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import java.util.Locale
 
 /**
  * Unit tests for Journey node and callback mapping.
  */
 class JourneyNodeMapperTest {
 
+    private lateinit var originalLocale: Locale
+
+    @Before
+    fun captureDefaultLocale() {
+        originalLocale = Locale.getDefault()
+    }
+
+    @After
+    fun restoreDefaultLocale() {
+        Locale.setDefault(originalLocale)
+    }
+
+    /**
+     * Builds a real (non-mocked) [ContinueNode] subclass so mapper tests exercise the native
+     * SDK's own `header`/`description`/`stage`/`submitButtonText`/`pageFooter` extension
+     * properties, following the pattern established by [mapContinueNodeReturnsCompletePayload].
+     */
+    private fun continueNode(input: kotlinx.serialization.json.JsonObject) = object : ContinueNode(
+        context = FlowContext(SharedContext(mutableMapOf("flowId" to "abc-123"))),
+        workflow = Workflow { },
+        input = input,
+        actions = listOf(object : Action {
+            override fun toString(): String = "FakeAction"
+        })
+    ) {
+        override fun asRequest() = throw UnsupportedOperationException("Not used in mapper tests")
+    }
+
     @Test
     fun mapContinueNodeReturnsCompletePayload() {
-        val context = FlowContext(SharedContext(mutableMapOf("flowId" to "abc-123")))
-        val workflow = Workflow { }
-        val action = object : Action {
-            override fun toString(): String = "FakeAction"
-        }
-        val node = object : ContinueNode(
-            context = context,
-            workflow = workflow,
-            input = buildJsonObject {
+        val node = continueNode(
+            buildJsonObject {
                 put("stage", "login")
-            },
-            actions = listOf(action)
-        ) {
-            override fun asRequest() = throw UnsupportedOperationException("Not used in mapper tests")
-        }
+                put("header", "Sign in")
+                put("description", "Enter your credentials")
+            }
+        )
 
         val map = JourneyNodeMapper.mapNodePayload(node)
 
         assertEquals("ContinueNode", map["type"])
         assertEquals("login", (map["input"] as Map<*, *>)["stage"])
         assertTrue((map["callbacks"] as List<*>).isEmpty())
+        assertEquals("Sign in", map["header"])
+        assertEquals("Enter your credentials", map["description"])
+        assertEquals("login", map["stage"])
+        // "stage" here is a plain string, not a locale JSON object, so the native SDK's own
+        // locale lookup finds nothing and falls back to "".
+        assertEquals("", map["submitButtonText"])
+        assertEquals("", map["pageFooter"])
+    }
+
+    @Test
+    fun mapContinueNodeMissingUiFieldsReturnsEmptyStrings() {
+        val node = continueNode(buildJsonObject { })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("", map["header"])
+        assertEquals("", map["description"])
+        assertEquals("", map["stage"])
+        assertEquals("", map["submitButtonText"])
+        assertEquals("", map["pageFooter"])
+    }
+
+    @Test
+    fun mapContinueNodeResolvesSubmitButtonTextAndPageFooterFromStageJson() {
+        val stageJson = """{"submitButtonText":{"en-CA":"Continue"},"pageFooter":{"en-CA":"All rights reserved"}}"""
+        val node = continueNode(buildJsonObject { put("stage", stageJson) })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals(stageJson, map["stage"])
+        assertEquals("Continue", map["submitButtonText"])
+        assertEquals("All rights reserved", map["pageFooter"])
+    }
+
+    // The single-locale test above passes whether or not locale matching actually works,
+    // because the native SDK's stage-JSON lookup short-circuits to the only value present when
+    // the map has exactly one entry. These tests pin Locale.setDefault() to force each distinct
+    // branch of the matching order (exact, hyphen/underscore variant, language-only,
+    // first-available) against a stage JSON with multiple locale keys.
+    @Test
+    fun mapContinueNodeResolvesSubmitButtonTextByExactLocaleMatch() {
+        Locale.setDefault(Locale.forLanguageTag("en-CA"))
+        val stageJson = """{"submitButtonText":{"en_ca":"Continue CA","fr_fr":"Continuer FR"}}"""
+        val node = continueNode(buildJsonObject { put("stage", stageJson) })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Continue CA", map["submitButtonText"])
+    }
+
+    @Test
+    fun mapContinueNodeResolvesSubmitButtonTextByHyphenVariantMatch() {
+        Locale.setDefault(Locale.forLanguageTag("en-CA"))
+        val stageJson = """{"submitButtonText":{"en-ca":"Continue CA","fr-fr":"Continuer FR"}}"""
+        val node = continueNode(buildJsonObject { put("stage", stageJson) })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Continue CA", map["submitButtonText"])
+    }
+
+    @Test
+    fun mapContinueNodeResolvesSubmitButtonTextByLanguageOnlyFallback() {
+        Locale.setDefault(Locale.forLanguageTag("en-GB"))
+        val stageJson = """{"submitButtonText":{"en":"Continue EN","fr":"Continuer FR"}}"""
+        val node = continueNode(buildJsonObject { put("stage", stageJson) })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Continue EN", map["submitButtonText"])
+    }
+
+    @Test
+    fun mapContinueNodeResolvesSubmitButtonTextByFirstAvailableFallback() {
+        Locale.setDefault(Locale.forLanguageTag("de-DE"))
+        val stageJson = """{"submitButtonText":{"fr":"Continuer FR","ja":"続く"}}"""
+        val node = continueNode(buildJsonObject { put("stage", stageJson) })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Continuer FR", map["submitButtonText"])
+    }
+
+    @Test
+    fun mapContinueNodeWithMalformedStageJsonReturnsEmptyLocalizedFields() {
+        val node = continueNode(buildJsonObject { put("stage", "not-valid-json") })
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("not-valid-json", map["stage"])
+        assertEquals("", map["submitButtonText"])
+        assertEquals("", map["pageFooter"])
+    }
+
+    @Test
+    fun mapContinueNodeWithNonStringHeaderRejectsInsteadOfCrashing() {
+        // Documents the Android/iOS parity divergence: a non-string header/description/stage
+        // value makes the native SDK's ContinueNode.header throw IllegalArgumentException (via
+        // JsonElement.jsonPrimitive.content), which JourneyNodeMapper does not catch locally —
+        // it propagates up so the caller's promise is rejected rather than resolving with a
+        // degraded payload (see TODO-SDK-PARITY(SDKS-5309) note in JourneyNodeMapper.kt).
+        val node = continueNode(
+            buildJsonObject {
+                put("header", buildJsonObject { put("nested", "value") })
+            }
+        )
+
+        assertThrows(IllegalArgumentException::class.java) {
+            JourneyNodeMapper.mapNodePayload(node)
+        }
     }
 
     @Test

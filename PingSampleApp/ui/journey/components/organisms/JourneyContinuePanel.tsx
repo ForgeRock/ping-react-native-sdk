@@ -30,6 +30,24 @@ export type JourneyContinuePanelProps = {
    */
   form: JourneyFormResult;
   /**
+   * Optional page header text from the active `ContinueNode` payload.
+   */
+  header?: string;
+  /**
+   * Optional page description text from the active `ContinueNode` payload.
+   */
+  description?: string;
+  /**
+   * Optional locale-resolved submit button text from the active
+   * `ContinueNode` payload. Falls back to "Continue" when absent.
+   */
+  submitButtonText?: string;
+  /**
+   * Optional locale-resolved page footer text from the active `ContinueNode`
+   * payload.
+   */
+  pageFooter?: string;
+  /**
    * True while a Journey action is currently in-flight.
    */
   loading: boolean;
@@ -81,6 +99,10 @@ export default function JourneyContinuePanel(
 ): React.ReactElement {
   const {
     form,
+    header,
+    description,
+    submitButtonText,
+    pageFooter,
     loading,
     pollingWaitMs,
     resumeUrl,
@@ -216,6 +238,11 @@ export default function JourneyContinuePanel(
 
   return (
     <>
+      {header ? <Text style={styles.nodeHeader}>{header}</Text> : null}
+      {description ? (
+        <Text style={styles.nodeDescription}>{description}</Text>
+      ) : null}
+
       {/* `setFieldValue` writes into `useJourneyForm` state, consumed as `form.input` on submit. */}
       {fields.map(field => (
         <JourneyFieldRenderer
@@ -298,7 +325,9 @@ export default function JourneyContinuePanel(
           onPress={onSubmit}
           disabled={submitDisabled}
         >
-          <Text style={commonStyles.buttonText}>Continue</Text>
+          <Text style={commonStyles.buttonText}>
+            {submitButtonText || 'Continue'}
+          </Text>
         </TouchableOpacity>
       ) : null}
 
@@ -308,6 +337,8 @@ export default function JourneyContinuePanel(
           {pollingWaitSeconds}s.
         </Text>
       ) : null}
+
+      {pageFooter ? <Text style={styles.nodeFooter}>{pageFooter}</Text> : null}
     </>
   );
 }
