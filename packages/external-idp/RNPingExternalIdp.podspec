@@ -35,7 +35,6 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
   s.swift_version = ['5.0', '5.1', '6.0']
 
-  # TEMP(SDKS-5130): bumped to 2.1.0 to match RNPingDavinci's dependency versions in the shared Podfile; revert when SDKS-5245 merges to main.
   # Native Ping SDK dependency
   s.dependency "RNPingCore"
   s.dependency "PingExternalIdP", '2.1.0'

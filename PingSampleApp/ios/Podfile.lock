@@ -2932,7 +2932,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingLogger (~> 2.1.0)
+    - PingLogger (= 2.1.0)
     - PingPush (= 2.1.0)
     - PingStorage (= 2.1.0)
     - RCT-Folly
@@ -3691,7 +3691,7 @@ SPEC CHECKSUMS:
   RNPingLogger: b7dd73f42b3fea86a56fc7a35999cf4333fbde20
   RNPingOath: 261b44b957975c0c036b1bed6ef953c4767b8fcc
   RNPingOidc: d490892cb09a11c189b2259bca0fecfc09a109fd
-  RNPingPush: 3f02ee0f3d971c0d8affdb13b8fcefc4de789de1
+  RNPingPush: d160e2fac65d1f19b0e95d9196f618cc5aaaddf1
   RNPingStorage: 2c45c6d29cfcf8e1ed8ec3e32df1443e29dabd67
   RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
   RNSVG: e8fb86f41fccd7b67c4480bb9e179e0ad5785b80
@@ -3701,7 +3701,6 @@ SPEC CHECKSUMS:
   VisionCameraBarcodeScanner: 0b6fe2e3c52ca68a0dbd5d25719c7523c68d807f
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: 028568894d00fcf91d539f78055479b61112c6a8
-
+PODFILE CHECKSUM: 35159028c49678100eea2347153c0cf4cd45998f
 
 COCOAPODS: 1.15.2

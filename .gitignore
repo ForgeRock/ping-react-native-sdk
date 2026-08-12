@@ -8,6 +8,7 @@ yarn-error.log
 
 # Builds
 android/.gradle/
+**/android/.gradle/
 android/build/
 **/android/build/
 ios/build/
