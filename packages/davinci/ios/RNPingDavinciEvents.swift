@@ -10,6 +10,7 @@ import Foundation
 /// DeviceEventEmitter event names used by the RNPingDavinci bridge.
 @objcMembers
 public class RNPingDavinciEvents: NSObject {
+  /// Event name emitted to JS with the current DaVinci polling status.
   public static let pollingStatus = "com.pingidentity.rndavinci.PollingStatus"
 }
 
@@ -18,5 +19,6 @@ public class RNPingDavinciEvents: NSObject {
 /// `RNPingDavinciClassic`) currently owns JS event forwarding — see
 /// `RNPingDavinciEventEmitterGate`.
 public extension Notification.Name {
+  /// Notification posted when the Swift common runtime has a native event to forward to JS.
   static let pingDavinciNativeEmit = Notification.Name("RNPingDavinci_NativeEmit")
 }

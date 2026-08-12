@@ -50,6 +50,7 @@ RCT_EXPORT_MODULE()
 - (void)dealloc
 {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingDavinciReleaseEventEmitterOwnership(@"turbo");
 }
 
 /**
@@ -82,6 +83,7 @@ RCT_EXPORT_MODULE()
 - (void)invalidate
 {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingDavinciReleaseEventEmitterOwnership(@"turbo");
   [[self swiftImpl] invalidate];
 }
 

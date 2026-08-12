@@ -47,6 +47,12 @@ internal object DaVinciNodeMapper {
     internal const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
     private const val QR_CODE = "QR_CODE"
 
+    /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollInterval` fails to parse. */
+    private const val DEFAULT_POLL_INTERVAL = 2000
+
+    /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollRetries` fails to parse. */
+    private const val DEFAULT_POLL_RETRIES = 60
+
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
@@ -216,7 +222,7 @@ internal object DaVinciNodeMapper {
             is PhoneNumberCollector -> mapPhoneNumberCollector(collector)
             is DeviceRegistrationCollector -> mapDeviceRegistrationCollector(collector)
             is DeviceAuthenticationCollector -> mapDeviceAuthenticationCollector(collector)
-            is PollingCollector -> mapPollingCollector(collector)
+            is PollingCollector -> mapPollingCollector(collector, logger)
             else -> {
                 logWarning(
                     logger,
@@ -420,7 +426,9 @@ internal object DaVinciNodeMapper {
      * @remarks
      * `pollInterval`/`pollRetries` are coerced from the native `String` to `Int` — Android's
      * native collector types them as `String`, iOS's as `Int`; the bridge normalizes to a
-     * single numeric shape (`number` in TS) across platforms.
+     * single numeric shape (`number` in TS) across platforms. If a value fails to parse, it
+     * falls back to the same default the native `PollingCollector.pollStatus()` uses internally
+     * (`2000`/`60`) and logs a warning rather than leaking the raw string into a numeric field.
      *
      * TODO-SDK-PARITY: Android's `PollingCollector.retriesAllowed` (2.1.0) resets to
      * `pollRetries.toInt()` on every `init(input)` — a fresh collector instance for the same
@@ -428,10 +436,24 @@ internal object DaVinciNodeMapper {
      * `SharedContext.Keys.pollingRetriesRemaining(...)`, read back in `continueNode`'s `didSet`.
      * Not fixable from the bridge; file against the native SDK.
      */
-    private fun mapPollingCollector(collector: PollingCollector): Map<String, Any?> {
+    private fun mapPollingCollector(collector: PollingCollector, logger: Logger? = null): Map<String, Any?> {
         val map = baseCollectorMap(collector)
-        map["pollInterval"] = collector.pollInterval.toIntOrNull() ?: collector.pollInterval
-        map["pollRetries"] = collector.pollRetries.toIntOrNull() ?: collector.pollRetries
+        map["pollInterval"] = collector.pollInterval.toIntOrNull() ?: run {
+            logWarning(
+                logger,
+                "Failed to coerce pollInterval=\"${collector.pollInterval}\" to Int, defaulting to $DEFAULT_POLL_INTERVAL",
+                NumberFormatException("Invalid pollInterval: ${collector.pollInterval}")
+            )
+            DEFAULT_POLL_INTERVAL
+        }
+        map["pollRetries"] = collector.pollRetries.toIntOrNull() ?: run {
+            logWarning(
+                logger,
+                "Failed to coerce pollRetries=\"${collector.pollRetries}\" to Int, defaulting to $DEFAULT_POLL_RETRIES",
+                NumberFormatException("Invalid pollRetries: ${collector.pollRetries}")
+            )
+            DEFAULT_POLL_RETRIES
+        }
         map["pollChallengeStatus"] = collector.pollChallengeStatus
         map["challenge"] = collector.challenge
         return map

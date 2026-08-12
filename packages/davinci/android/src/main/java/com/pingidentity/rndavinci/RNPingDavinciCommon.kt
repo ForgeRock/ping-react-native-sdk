@@ -44,6 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import java.lang.ref.WeakReference
 import java.util.UUID
@@ -586,7 +587,7 @@ internal object RNPingDavinciCommon {
                 pollJobsByDaVinciId[davinciId]?.remove(job)
             }
         }
-        pollJobsByDaVinciId.getOrPut(davinciId) { ConcurrentHashMap.newKeySet() }.add(job)
+        pollJobsByDaVinciId.computeIfAbsent(davinciId) { ConcurrentHashMap.newKeySet() }.add(job)
 
         val result = Arguments.createMap()
         result.putString("subscriptionId", subscriptionId)
@@ -599,11 +600,11 @@ internal object RNPingDavinciCommon {
      * Emits one [PollingStatus] tick to JS via [DeviceEventManagerModule.RCTDeviceEventEmitter].
      * No-op when the React context is unavailable (e.g. the module was invalidated mid-poll).
      *
-     * Hops to [Dispatchers.Main] before emitting, matching the convention in
-     * `RNPingPushCommon`/`RNPingBindingCommon` — [scope] runs on [Dispatchers.Default] for the
-     * poll job itself.
+     * Hops to [Dispatchers.Main] via [withContext] before emitting, staying on the calling
+     * poll [Job] so cancellation (unsubscribe/dispose) also cancels any in-flight emit instead
+     * of leaking a detached [Dispatchers.Main] coroutine.
      */
-    private fun emitPollingStatus(davinciId: String, subscriptionId: String, status: PollingStatus) {
+    private suspend fun emitPollingStatus(davinciId: String, subscriptionId: String, status: PollingStatus) {
         val emitter = reactContextRef?.get()
             ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             ?: return
@@ -630,7 +631,7 @@ internal object RNPingDavinciCommon {
                 params.putMap("error", errorMap)
             }
         }
-        scope.launch(Dispatchers.Main) { emitter.emit(RNPingDavinciEvents.POLLING_STATUS, params) }
+        withContext(Dispatchers.Main) { emitter.emit(RNPingDavinciEvents.POLLING_STATUS, params) }
     }
 
     // ---- Private helpers ----

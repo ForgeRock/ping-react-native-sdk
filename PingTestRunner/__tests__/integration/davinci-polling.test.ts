@@ -156,9 +156,28 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
   afterEach(() => jest.restoreAllMocks());
 
   describe('simple polling', () => {
-    it('resolves subscriptionId before any tick is delivered, then streams continue ticks', async () => {
-      const mock = makeMock();
-      const { mod, emitter } = await loadDaVinci(mock);
+    it('delivers a tick emitted before subscriptionId resolves, then streams continue ticks', async () => {
+      const emitterRef: {
+        current?: ReturnType<typeof createDeviceEventEmitter>;
+      } = {};
+      const mock = makeMock({
+        pollDaVinci: jest.fn(async () => {
+          // Simulate the native side emitting a status tick over the
+          // DeviceEventEmitter channel before the pollDaVinci promise
+          // resolves — the two channels are independent, so this ordering
+          // is possible in production and must not drop the early event.
+          emitterRef.current!.emit(POLLING_STATUS_EVENT, {
+            subscriptionId: 'sub-1',
+            status: 'continue',
+            retryCount: 0,
+            maxRetries: 60,
+          });
+          return { subscriptionId: 'sub-1' };
+        }),
+      });
+      const loaded = await loadDaVinci(mock);
+      const { mod, emitter } = loaded;
+      emitterRef.current = emitter;
       const client = mod.createDaVinciClient(VALID_CONFIG);
       await client.start();
 
@@ -166,6 +185,12 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
       await client.pollStatus(onStatus);
 
       expect(mock.pollDaVinci).toHaveBeenCalledWith('davinci-id-mock', {});
+      expect(onStatus).toHaveBeenNthCalledWith(1, {
+        subscriptionId: 'sub-1',
+        status: 'continue',
+        retryCount: 0,
+        maxRetries: 60,
+      });
 
       emitter.emit(POLLING_STATUS_EVENT, {
         subscriptionId: 'sub-1',
@@ -180,8 +205,8 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
         maxRetries: 60,
       });
 
-      expect(onStatus).toHaveBeenCalledTimes(2);
-      expect(onStatus).toHaveBeenNthCalledWith(1, {
+      expect(onStatus).toHaveBeenCalledTimes(3);
+      expect(onStatus).toHaveBeenNthCalledWith(2, {
         subscriptionId: 'sub-1',
         status: 'continue',
         retryCount: 1,

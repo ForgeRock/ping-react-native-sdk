@@ -62,6 +62,7 @@ RCT_EXPORT_MODULE(RNPingDavinciClassic)
 - (void)dealloc
 {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingDavinciReleaseEventEmitterOwnership(@"classic");
 }
 
 /**

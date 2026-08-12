@@ -740,7 +740,7 @@ class DaVinciNodeMapperTest {
     }
 
     @Test
-    fun mapPollingCollectorFallsBackToRawStringWhenPollIntervalIsNonNumeric() {
+    fun mapPollingCollectorFallsBackToNativeDefaultWhenPollIntervalIsNonNumeric() {
         // `pollRetries` must stay numeric — PollingCollector.init() unconditionally calls
         // pollRetries.toInt() to seed retriesAllowed, so a non-numeric value throws at
         // construction time, before the mapper's toIntOrNull() fallback is ever reached.
@@ -760,7 +760,8 @@ class DaVinciNodeMapperTest {
         val result = DaVinciNodeMapper.mapNodePayload(node)
         val c = result.asList("collectors")!![0]
 
-        assertEquals("not-a-number", c["pollInterval"])
+        // 2000 matches native PollingCollector.pollStatus()'s own fallback for an unparseable pollInterval.
+        assertEquals(2000, c["pollInterval"])
         assertEquals(60, c["pollRetries"])
     }
 

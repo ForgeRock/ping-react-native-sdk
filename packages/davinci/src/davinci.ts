@@ -404,13 +404,17 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
      * Streams `PollingStatus` updates for the active `PollingCollector`.
      *
      * @remarks
-     * Resolves the bridge's early-resolving `{ subscriptionId }` promise, then
-     * — synchronously in that same continuation — subscribes to the shared
-     * `DeviceEventEmitter` channel filtered by `subscriptionId`, so there is no
-     * window where a tick can arrive before the listener is attached. The
-     * listener removes itself on any terminal status (`complete`, `timedOut`,
-     * `expired`, `error`). Does not call `next()` — the caller must advance
-     * the flow explicitly on a terminal status.
+     * Subscribes to the shared `DeviceEventEmitter` channel *before* calling
+     * the bridge, buffering any ticks that arrive while `subscriptionId` is
+     * still unknown. Neither native side guarantees that its polling task
+     * starts only after the `{ subscriptionId }` promise resolves — iOS
+     * schedules the poll on an unstructured `Task` that can emit a tick
+     * before `pollDaVinci`'s promise settles — so subscribing first and
+     * replaying buffered ticks once `subscriptionId` is known is the only
+     * way to guarantee no tick is dropped. The listener removes itself on
+     * any terminal status (`complete`, `timedOut`, `expired`, `error`).
+     * Does not call `next()` — the caller must advance the flow explicitly
+     * on a terminal status.
      *
      * The returned unsubscribe function stops **local event delivery only** —
      * neither native SDK exposes a primitive to cancel an in-flight poll, so
@@ -429,27 +433,43 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     ) {
       const id = await ensureConfigured();
       logDebug('DaVinci pollStatus requested', { davinciId: id });
-      let subscriptionId: string;
-      try {
-        subscriptionId = await pollDaVinci(id, options);
-      } catch (error) {
-        logError('DaVinci pollStatus failed', error, { davinciId: id });
-        throw error;
-      }
+
+      let subscriptionId: string | undefined;
+      const buffered: Record<string, unknown>[] = [];
+
+      const deliver = (event: Record<string, unknown>) => {
+        const status = event as unknown as PollingStatus;
+        if (status.status !== 'continue') {
+          subscription.remove();
+        }
+        onStatus(status);
+      };
 
       const subscription = DeviceEventEmitter.addListener(
         DaVinciEvents.POLLING_STATUS,
         (event: Record<string, unknown>) => {
+          if (subscriptionId === undefined) {
+            buffered.push(event);
+            return;
+          }
           if (event.subscriptionId !== subscriptionId) {
             return;
           }
-          const status = event as unknown as PollingStatus;
-          if (status.status !== 'continue') {
-            subscription.remove();
-          }
-          onStatus(status);
+          deliver(event);
         },
       );
+
+      try {
+        subscriptionId = await pollDaVinci(id, options);
+      } catch (error) {
+        subscription.remove();
+        logError('DaVinci pollStatus failed', error, { davinciId: id });
+        throw error;
+      }
+
+      buffered
+        .filter((event) => event.subscriptionId === subscriptionId)
+        .forEach(deliver);
 
       logInfo('DaVinci pollStatus succeeded', {
         davinciId: id,

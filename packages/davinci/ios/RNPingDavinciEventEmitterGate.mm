@@ -15,8 +15,11 @@
 //
 // RNPingDavinciClaimEventEmitterOwnership lets whichever module initialises
 // first claim the single forwarding slot (returns YES). The other module
-// receives NO and stays silent. The Swift layer (RNPingDavinciCommon.emitEvent)
-// posts to NotificationCenter without caring which arch won.
+// receives NO and stays silent. The owner releases the slot on teardown via
+// RNPingDavinciReleaseEventEmitterOwnership, so a module instance recreated
+// after a bridge reload can reclaim it. The Swift layer
+// (RNPingDavinciCommon.emitEvent) posts to NotificationCenter without caring
+// which arch won.
 
 #import "RNPingDavinciEventEmitterGate.h"
 
@@ -30,17 +33,27 @@ static NSLock *RNPingDavinciEventEmitterGateLock(void)
   return lock;
 }
 
+static NSString *_Nullable gRNPingDavinciEventEmitterOwnerId = nil;
+
 BOOL RNPingDavinciClaimEventEmitterOwnership(NSString *ownerId)
 {
-  (void)ownerId;
   NSLock *lock = RNPingDavinciEventEmitterGateLock();
   [lock lock];
-  static BOOL hasEventEmitterOwner = NO;
   BOOL didClaim = NO;
-  if (!hasEventEmitterOwner) {
-    hasEventEmitterOwner = YES;
+  if (gRNPingDavinciEventEmitterOwnerId == nil) {
+    gRNPingDavinciEventEmitterOwnerId = [ownerId copy];
     didClaim = YES;
   }
   [lock unlock];
   return didClaim;
+}
+
+void RNPingDavinciReleaseEventEmitterOwnership(NSString *ownerId)
+{
+  NSLock *lock = RNPingDavinciEventEmitterGateLock();
+  [lock lock];
+  if ([gRNPingDavinciEventEmitterOwnerId isEqualToString:ownerId]) {
+    gRNPingDavinciEventEmitterOwnerId = nil;
+  }
+  [lock unlock];
 }

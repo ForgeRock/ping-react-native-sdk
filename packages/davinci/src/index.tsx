@@ -40,10 +40,6 @@ export type {
  */
 export { DaVinciError } from './types/error.types';
 /**
- * Internal DeviceEventEmitter event names used by the RNPingDavinci bridge.
- */
-export { DaVinciEvents } from './events';
-/**
  * All DaVinci public type contracts.
  */
 export type * from './types';

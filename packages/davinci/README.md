@@ -314,6 +314,8 @@ A `ContinueNode` commonly carries a `QR_CODE` collector (rendered for the user t
 alongside a `POLLING` collector (which reports when the out-of-band action completes):
 
 ```ts
+import { DaVinciError } from '@ping-identity/rn-davinci';
+
 const node = await client.start();
 
 if (node.type === 'ContinueNode') {
@@ -323,20 +325,27 @@ if (node.type === 'ContinueNode') {
     // as an <Image source={{ uri: qr.content }} /> or similar.
   }
 
-  const unsubscribe = await client.pollStatus((status) => {
+  const unsubscribe = await client.pollStatus(async (status) => {
     switch (status.status) {
       case 'continue':
         console.log(
           `Waiting… attempt ${status.retryCount}/${status.maxRetries}`,
         );
         break;
-      case 'complete':
-        client.next({ collectors: [] }); // advance explicitly
-        break;
       case 'timedOut':
       case 'expired':
       case 'error':
-        // Surface the failure to the user; call unsubscribe() if abandoning the poll.
+        // Surface the failure to the user before progressing past the node.
+        console.warn(`Poll ended with status: ${status.status}`);
+      // eslint-disable-next-line no-fallthrough
+      case 'complete':
+        try {
+          await client.next({ collectors: [] }); // required on every terminal status
+        } catch (err) {
+          if (err instanceof DaVinciError) {
+            console.log(err.code, err.type, err.message);
+          }
+        }
         break;
     }
   });

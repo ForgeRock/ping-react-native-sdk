@@ -16,7 +16,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// subscribe simultaneously and every polling status event would fire twice
 /// on the JS side.
 ///
-/// Returns `YES` exactly once for the process lifetime; subsequent callers get `NO`.
+/// Returns `YES` if `ownerId` is not already held by another owner; `NO` otherwise.
 FOUNDATION_EXPORT BOOL RNPingDavinciClaimEventEmitterOwnership(NSString *ownerId);
+
+/// Releases the event-emitter ownership slot previously claimed by `ownerId`,
+/// allowing a subsequent `RNPingDavinciClaimEventEmitterOwnership` call (e.g. from a
+/// module instance recreated after a bridge reload) to succeed. No-op if `ownerId`
+/// does not currently hold the slot.
+FOUNDATION_EXPORT void RNPingDavinciReleaseEventEmitterOwnership(NSString *ownerId);
 
 NS_ASSUME_NONNULL_END

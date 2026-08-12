@@ -87,8 +87,8 @@ export type DaVinciHookActions = {
    *
    * @param onStatus - Callback invoked with each streamed status tick.
    * @param options - Optional collector selection.
-   * @returns An unsubscribe function that removes the listener and cancels
-   *   the native poll if still active.
+   * @returns An unsubscribe function that removes the local status listener
+   *   only; it does not cancel the active native poll.
    * @throws {DaVinciError} When no active `PollingCollector` is resolved.
    */
   pollStatus: (

@@ -829,6 +829,42 @@ describe('createDaVinciClient — pollStatus', () => {
     });
   });
 
+  it('delivers a tick emitted before pollDaVinci resolves its subscriptionId', async () => {
+    // Reproduces the native race where the polling task (iOS's unstructured
+    // `Task`, or a poorly-sequenced Android job) emits its first tick before
+    // the bridge promise carrying `subscriptionId` settles. Emitting inside
+    // the mocked native call, before it returns, models "event message
+    // ordered ahead of the resolve message" — the scenario a fixed
+    // pollStatus must not drop.
+    const native = createNativeMock({
+      pollDaVinci: jest.fn(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { DeviceEventEmitter } = require('react-native');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { DaVinciEvents } = require('../events');
+        DeviceEventEmitter.emit(DaVinciEvents.POLLING_STATUS, {
+          subscriptionId: 'sub-1',
+          status: 'continue',
+          retryCount: 1,
+          maxRetries: 10,
+        });
+        return { subscriptionId: 'sub-1' };
+      }),
+    });
+    const { createDaVinciClient } = loadModule(native);
+
+    const client = createDaVinciClient(VALID_CONFIG);
+    const onStatus = jest.fn();
+    await client.pollStatus(onStatus);
+
+    expect(onStatus).toHaveBeenCalledWith({
+      subscriptionId: 'sub-1',
+      status: 'continue',
+      retryCount: 1,
+      maxRetries: 10,
+    });
+  });
+
   it('forwards the key option to the bridge', async () => {
     const native = createNativeMock();
     const { createDaVinciClient } = loadModule(native);

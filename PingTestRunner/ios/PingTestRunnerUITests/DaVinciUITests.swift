@@ -83,7 +83,7 @@ final class DaVinciUITests: BaseTestCase {
         loginWithValidCredentials()
         elementWithTestID("davinci-userinfo-btn").tapWhenReady()
         let userinfo = textContentOfElement(withTestID: "davinci-userinfo-result", timeout: netTimeout)
-        XCTAssertTrue(userinfo.contains("\"sub\""), "Expected userinfo payload to contain 'sub', got '\(userinfo)'")
+        XCTAssertTrue(userinfo.contains("\"sub\""), "Expected userinfo payload to contain 'sub'")
     }
 
     func testRefreshObtainsNewToken() throws {

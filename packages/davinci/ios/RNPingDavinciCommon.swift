@@ -506,18 +506,14 @@ public final class RNPingDavinciCommon: NSObject {
     }
 
     let subscriptionId = UUID().uuidString
-    let taskRef = Ref<Task<Void, Never>>()
     let task = Task {
       for await status in collector.poll() {
         if Task.isCancelled { break }
         emitPollingStatus(davinciId: davinciId, subscriptionId: subscriptionId, status: status)
       }
-      if let completedTask = taskRef.value {
-        pollJobStore.remove(davinciId: davinciId, task: completedTask)
-      }
+      pollJobStore.remove(davinciId: davinciId, subscriptionId: subscriptionId)
     }
-    taskRef.value = task
-    pollJobStore.register(davinciId: davinciId, task: task)
+    pollJobStore.register(davinciId: davinciId, subscriptionId: subscriptionId, task: task)
 
     promise.resolve(["subscriptionId": subscriptionId] as NSDictionary)
   }
@@ -641,39 +637,52 @@ public final class RNPingDavinciCommon: NSObject {
   }
 }
 
-/// Tracks in-flight poll `Task`s grouped by `davinciId`, so `dispose()`/`cleanup()`
-/// can cancel every outstanding poll for one instance — a safety net against
-/// orphaned polls. There is no public per-poll cancellation surface (neither
-/// native SDK exposes a cancellation primitive for an in-flight poll), so tasks
-/// are only ever removed here on natural completion or instance-scoped teardown.
+/// Tracks in-flight poll `Task`s keyed by `subscriptionId`, grouped by
+/// `davinciId`, so `dispose()`/`cleanup()` can cancel every outstanding poll
+/// for one instance — a safety net against orphaned polls. There is no public
+/// per-poll cancellation surface (neither native SDK exposes a cancellation
+/// primitive for an in-flight poll), so tasks are only ever removed here on
+/// natural completion or instance-scoped teardown.
 ///
 /// - Note: `@unchecked Sendable` is used because this class owns a mutable map of
 ///   `Task` handles. All reads/writes are synchronized with `NSLock`.
 private final class PollJobStore: @unchecked Sendable {
   private let lock = NSLock()
-  private var tasksByDaVinciId = [String: Set<Task<Void, Never>>]()
+  private var tasksByDaVinciId = [String: [String: Task<Void, Never>]]()
+  /// Tombstones `subscriptionId`s that completed before `register` was called for them.
+  private var completedSubscriptions = Set<String>()
 
-  /// Registers a poll task before the promise resolves.
-  func register(davinciId: String, task: Task<Void, Never>) {
+  /// Registers a poll task, keyed by `subscriptionId`, before the promise resolves.
+  ///
+  /// - Note: A no-op if `subscriptionId` already completed and was removed —
+  ///   an unstructured `Task` can start running concurrently with the caller
+  ///   that spawned it, so completion may race ahead of this call. Without this
+  ///   guard, a late `register` would resurrect an already-finished task.
+  func register(davinciId: String, subscriptionId: String, task: Task<Void, Never>) {
     lock.lock()
-    tasksByDaVinciId[davinciId, default: []].insert(task)
-    lock.unlock()
+    defer { lock.unlock() }
+    if completedSubscriptions.remove(subscriptionId) != nil {
+      return
+    }
+    tasksByDaVinciId[davinciId, default: [:]][subscriptionId] = task
   }
 
   /// Removes a completed poll task's bookkeeping without cancelling it (it already finished).
-  func remove(davinciId: String, task: Task<Void, Never>) {
+  func remove(davinciId: String, subscriptionId: String) {
     lock.lock()
-    tasksByDaVinciId[davinciId]?.remove(task)
+    defer { lock.unlock() }
+    if tasksByDaVinciId[davinciId]?.removeValue(forKey: subscriptionId) == nil {
+      completedSubscriptions.insert(subscriptionId)
+    }
     if tasksByDaVinciId[davinciId]?.isEmpty == true {
       tasksByDaVinciId.removeValue(forKey: davinciId)
     }
-    lock.unlock()
   }
 
   /// Cancels every tracked poll task for `davinciId`.
   func cancelAll(for davinciId: String) {
     lock.lock()
-    let tasks = tasksByDaVinciId.removeValue(forKey: davinciId) ?? []
+    let tasks = tasksByDaVinciId.removeValue(forKey: davinciId).map { Array($0.values) } ?? []
     lock.unlock()
     tasks.forEach { $0.cancel() }
   }
@@ -681,8 +690,9 @@ private final class PollJobStore: @unchecked Sendable {
   /// Cancels every tracked poll task, across all DaVinci instances.
   func removeAll() {
     lock.lock()
-    let tasks = tasksByDaVinciId.values.flatMap { $0 }
+    let tasks = tasksByDaVinciId.values.flatMap { $0.values }
     tasksByDaVinciId.removeAll()
+    completedSubscriptions.removeAll()
     lock.unlock()
     tasks.forEach { $0.cancel() }
   }

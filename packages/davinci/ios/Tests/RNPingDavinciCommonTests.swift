@@ -784,6 +784,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     let observer = EventObserver()
     let firstEventExpectation = expectation(description: "first event received")
+    firstEventExpectation.assertForOverFulfill = false
     observer.onEvent = { _ in firstEventExpectation.fulfill() }
 
     let resolveExpectation = expectation(description: "poll resolve")
@@ -835,6 +836,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     let observer = EventObserver()
     let firstEventExpectation = expectation(description: "first event received")
+    firstEventExpectation.assertForOverFulfill = false
     observer.onEvent = { _ in firstEventExpectation.fulfill() }
 
     let resolveExpectation = expectation(description: "poll resolve")
