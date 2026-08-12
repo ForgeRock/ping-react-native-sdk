@@ -80,7 +80,6 @@ android {
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
-    
     // The Ping Android SDK's 2.1.0 artifacts are compiled for JVM 21, and every
     // rn-* package targets JVM 21 to match (see e.g. packages/push/android/build.gradle).
     // This app module must target the same JVM version, or compileDebugKotlin fails
