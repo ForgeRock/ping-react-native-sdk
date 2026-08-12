@@ -32,4 +32,5 @@ internal object PushErrorCode {
     const val POLICY_VIOLATION = "policy_violation"
     const val REGISTRATION_FAILED = "registration_failed"
     const val NETWORK_FAILURE = "network_failure"
+    const val PUSH_NUMBER_CHALLENGE_ERROR = "push_number_challenge_error"
 }

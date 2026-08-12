@@ -43,6 +43,7 @@ The repository packages use:
 - `targetSdkVersion`: `36`
 - `minSdkVersion`: `29`
 - `kotlinVersion`: `2.2.10`
+- JVM target: `21` (Java/Kotlin `sourceCompatibility`/`targetCompatibility`/`jvmTarget`) — required by the Ping Android SDK `2.1.0` artifacts; consuming apps must target JVM 21 as well
 
 ### iOS deployment target
 
