@@ -51,10 +51,9 @@ enum OidcClientFactory {
       config.logger = logger
     }
 
-    // PingOidc 2.1.0 made `openId` private(set); only `openIdOverride` (patches fields
-    // after discovery completes) is public now. `OidcConfigParser` rejects configs that
-    // omit `discoveryEndpoint`, so `openId` here is always applied as an override on top
-    // of a required discovery call, never as a standalone bypass.
+    // TODO-SDK-PARITY(SDKS-5301): iOS applies `openId` via `openIdOverride`, patched onto the
+    // result of a required discovery call. Android assigns `openId` directly and does not
+    // require discovery first.
     if let openId = payload.openId {
       config.openIdOverride = openIdOverride(for: openId)
     }
