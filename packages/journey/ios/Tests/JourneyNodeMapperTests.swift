@@ -46,6 +46,7 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["pageFooter"] as? String, "")
   }
 
+  /// Absent header/description/stage/submitButtonText/pageFooter should all default to "".
   func testMapNodePayloadContinueMissingUiFieldsReturnsEmptyStrings() {
     let node = TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),
@@ -63,6 +64,7 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["pageFooter"] as? String, "")
   }
 
+  /// submitButtonText/pageFooter should resolve from the stage JSON's locale map.
   func testMapNodePayloadContinueResolvesSubmitButtonTextAndPageFooterFromStageJson() {
     let node = TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),
@@ -79,6 +81,7 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["pageFooter"] as? String, "Footer")
   }
 
+  /// Unparseable stage JSON should not throw; localized fields should default to "".
   func testMapNodePayloadContinueWithMalformedStageJsonReturnsEmptyLocalizedFields() {
     let node = TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),
@@ -94,6 +97,7 @@ final class JourneyNodeMapperTests: XCTestCase {
     XCTAssertEqual(payload["pageFooter"] as? String, "")
   }
 
+  /// A non-string header value should resolve to "" rather than propagate an exception.
   func testMapNodePayloadContinueWithNonStringHeaderResolvesWithEmptyString() {
     let node = TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),

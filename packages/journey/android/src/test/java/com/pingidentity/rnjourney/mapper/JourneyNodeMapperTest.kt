@@ -51,11 +51,13 @@ class JourneyNodeMapperTest {
 
     private lateinit var originalLocale: Locale
 
+    /** Saves the JVM default locale so locale-dependent tests can restore it afterward. */
     @Before
     fun captureDefaultLocale() {
         originalLocale = Locale.getDefault()
     }
 
+    /** Restores the JVM default locale captured by [captureDefaultLocale]. */
     @After
     fun restoreDefaultLocale() {
         Locale.setDefault(originalLocale)
@@ -101,6 +103,7 @@ class JourneyNodeMapperTest {
         assertEquals("", map["pageFooter"])
     }
 
+    /** Absent header/description/stage/submitButtonText/pageFooter should all default to "". */
     @Test
     fun mapContinueNodeMissingUiFieldsReturnsEmptyStrings() {
         val node = continueNode(buildJsonObject { })
@@ -114,6 +117,7 @@ class JourneyNodeMapperTest {
         assertEquals("", map["pageFooter"])
     }
 
+    /** submitButtonText/pageFooter should resolve from the stage JSON's locale map. */
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextAndPageFooterFromStageJson() {
         val stageJson = """{"submitButtonText":{"en-CA":"Continue"},"pageFooter":{"en-CA":"All rights reserved"}}"""
@@ -131,6 +135,7 @@ class JourneyNodeMapperTest {
     // the map has exactly one entry. These tests pin Locale.setDefault() to force each distinct
     // branch of the matching order (exact, hyphen/underscore variant, language-only,
     // first-available) against a stage JSON with multiple locale keys.
+    /** An exact locale tag match in the stage JSON should win over other candidates. */
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextByExactLocaleMatch() {
         Locale.setDefault(Locale.forLanguageTag("en-CA"))
@@ -142,6 +147,7 @@ class JourneyNodeMapperTest {
         assertEquals("Continue CA", map["submitButtonText"])
     }
 
+    /** A hyphen-cased locale key (e.g. "en-ca") should still match an underscore locale tag. */
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextByHyphenVariantMatch() {
         Locale.setDefault(Locale.forLanguageTag("en-CA"))
@@ -153,6 +159,7 @@ class JourneyNodeMapperTest {
         assertEquals("Continue CA", map["submitButtonText"])
     }
 
+    /** With no region match, resolution should fall back to a language-only locale key. */
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextByLanguageOnlyFallback() {
         Locale.setDefault(Locale.forLanguageTag("en-GB"))
@@ -164,6 +171,7 @@ class JourneyNodeMapperTest {
         assertEquals("Continue EN", map["submitButtonText"])
     }
 
+    /** With no language match at all, resolution should fall back to the first available locale. */
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextByFirstAvailableFallback() {
         Locale.setDefault(Locale.forLanguageTag("de-DE"))
@@ -175,6 +183,7 @@ class JourneyNodeMapperTest {
         assertEquals("Continuer FR", map["submitButtonText"])
     }
 
+    /** Unparseable stage JSON should not throw; localized fields should default to "". */
     @Test
     fun mapContinueNodeWithMalformedStageJsonReturnsEmptyLocalizedFields() {
         val node = continueNode(buildJsonObject { put("stage", "not-valid-json") })
@@ -186,6 +195,7 @@ class JourneyNodeMapperTest {
         assertEquals("", map["pageFooter"])
     }
 
+    /** A non-string header value should normalize to "" rather than propagate an exception. */
     @Test
     fun mapContinueNodeWithNonStringHeaderNormalizesToEmptyString() {
         // ContinueNode.header throws IllegalArgumentException (via JsonElement.jsonPrimitive.content)
@@ -207,6 +217,7 @@ class JourneyNodeMapperTest {
         assertEquals("login", map["stage"])
     }
 
+    /** A non-string description value should normalize to "" rather than propagate an exception. */
     @Test
     fun mapContinueNodeWithNonStringDescriptionNormalizesToEmptyString() {
         val node = continueNode(
@@ -224,6 +235,7 @@ class JourneyNodeMapperTest {
         assertEquals("login", map["stage"])
     }
 
+    /** A non-string stage value should normalize to "" rather than propagate an exception. */
     @Test
     fun mapContinueNodeWithNonStringStageNormalizesToEmptyString() {
         val node = continueNode(
@@ -241,6 +253,7 @@ class JourneyNodeMapperTest {
         assertEquals("", map["stage"])
     }
 
+    /** header/description/stage should each normalize to "" independently when all are non-string. */
     @Test
     fun mapContinueNodeWithAllNonStringUiFieldsNormalizesEachIndependently() {
         val node = continueNode(
