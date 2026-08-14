@@ -39,7 +39,6 @@ import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -188,21 +187,75 @@ class JourneyNodeMapperTest {
     }
 
     @Test
-    fun mapContinueNodeWithNonStringHeaderRejectsInsteadOfCrashing() {
-        // Documents the Android/iOS parity divergence: a non-string header/description/stage
-        // value makes the native SDK's ContinueNode.header throw IllegalArgumentException (via
-        // JsonElement.jsonPrimitive.content), which JourneyNodeMapper does not catch locally —
-        // it propagates up so the caller's promise is rejected rather than resolving with a
-        // degraded payload (see TODO-SDK-PARITY(SDKS-5309) note in JourneyNodeMapper.kt).
+    fun mapContinueNodeWithNonStringHeaderNormalizesToEmptyString() {
+        // ContinueNode.header throws IllegalArgumentException (via JsonElement.jsonPrimitive.content)
+        // when the server sends a non-string value. The mapper normalizes it to "" instead of
+        // rejecting the whole promise, matching iOS's `input[...] as? String` fallback (see
+        // TODO-SDK-PARITY(SDKS-5309) note in JourneyNodeMapper.kt).
         val node = continueNode(
             buildJsonObject {
                 put("header", buildJsonObject { put("nested", "value") })
+                put("description", "Enter your credentials")
+                put("stage", "login")
             }
         )
 
-        assertThrows(IllegalArgumentException::class.java) {
-            JourneyNodeMapper.mapNodePayload(node)
-        }
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("", map["header"])
+        assertEquals("Enter your credentials", map["description"])
+        assertEquals("login", map["stage"])
+    }
+
+    @Test
+    fun mapContinueNodeWithNonStringDescriptionNormalizesToEmptyString() {
+        val node = continueNode(
+            buildJsonObject {
+                put("header", "Sign in")
+                put("description", buildJsonObject { put("nested", "value") })
+                put("stage", "login")
+            }
+        )
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Sign in", map["header"])
+        assertEquals("", map["description"])
+        assertEquals("login", map["stage"])
+    }
+
+    @Test
+    fun mapContinueNodeWithNonStringStageNormalizesToEmptyString() {
+        val node = continueNode(
+            buildJsonObject {
+                put("header", "Sign in")
+                put("description", "Enter your credentials")
+                put("stage", buildJsonObject { put("nested", "value") })
+            }
+        )
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("Sign in", map["header"])
+        assertEquals("Enter your credentials", map["description"])
+        assertEquals("", map["stage"])
+    }
+
+    @Test
+    fun mapContinueNodeWithAllNonStringUiFieldsNormalizesEachIndependently() {
+        val node = continueNode(
+            buildJsonObject {
+                put("header", buildJsonObject { put("nested", "value") })
+                put("description", buildJsonObject { put("nested", "value") })
+                put("stage", buildJsonObject { put("nested", "value") })
+            }
+        )
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("", map["header"])
+        assertEquals("", map["description"])
+        assertEquals("", map["stage"])
     }
 
     @Test

@@ -57,6 +57,19 @@ internal object JourneyNodeMapper {
     }
 
     /**
+     * Reads a `ContinueNode` string field, normalizing to "" when the underlying JSON value is
+     * not a string primitive rather than propagating the native SDK's IllegalArgumentException.
+     */
+    private fun stringFieldOrEmpty(logger: Logger?, field: String, block: () -> String): String {
+        return try {
+            block()
+        } catch (error: IllegalArgumentException) {
+            logWarning(logger, "Normalizing non-string ContinueNode.$field to \"\"", error)
+            ""
+        }
+    }
+
+    /**
      * Convert a native node into bridge-friendly map payload.
      *
      * @param node Native Journey node.
@@ -86,18 +99,18 @@ internal object JourneyNodeMapper {
         val payload = linkedMapOf<String, Any?>()
 
         when (node) {
-            // TODO-SDK-PARITY(SDKS-5309): a non-string header/description/stage value from the
-            // server throws IllegalArgumentException here (via ContinueNode.header/.description/.stage
-            // calling JsonElement.jsonPrimitive.content), rejecting the whole promise. iOS's
-            // equivalent (`input[...] as? String`) silently falls through to "" for that field
-            // only.
             is ContinueNode -> {
                 payload["type"] = "ContinueNode"
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
                 payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it, logger) }
-                payload["header"] = node.header
-                payload["description"] = node.description
-                payload["stage"] = node.stage
+                // TODO-SDK-PARITY(SDKS-5309): ContinueNode.header/.description/.stage throw
+                // IllegalArgumentException (via JsonElement.jsonPrimitive.content) when the
+                // server sends a non-string value for that field. Each field is normalized to
+                // "" independently here to match iOS's `input[...] as? String` fallback, rather
+                // than rejecting the whole promise.
+                payload["header"] = stringFieldOrEmpty(logger, "header") { node.header }
+                payload["description"] = stringFieldOrEmpty(logger, "description") { node.description }
+                payload["stage"] = stringFieldOrEmpty(logger, "stage") { node.stage }
                 // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter locale matching only
                 // checks Locale.getDefault() here, while iOS iterates the full ordered
                 // preferred-locale list — identical server data + device settings can resolve
