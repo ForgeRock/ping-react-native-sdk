@@ -221,6 +221,10 @@ enum DaVinciNodeMapper {
       map = mapDeviceRegistrationCollector(registrationCollector)
     case let authenticationCollector as DeviceAuthenticationCollector:
       map = mapDeviceAuthenticationCollector(authenticationCollector)
+    case let booleanCollector as BooleanCollector:
+      map = mapBooleanCollector(booleanCollector)
+    case let readOnlyCollector as ReadOnlyTextCollector:
+      map = mapReadOnlyTextCollector(readOnlyCollector)
     default:
       logger?.w(
         "[\(logTag)] Skipping unsupported collector type: \(String(describing: type(of: collector)))",
@@ -431,6 +435,54 @@ enum DaVinciNodeMapper {
     var map = baseFieldCollectorMap(collector)
     map["devices"] = mapDevices(collector.devices)
     return map
+  }
+
+  /// Serializes a `BooleanCollector` to a bridge map.
+  ///
+  /// - Parameter collector: BooleanCollector instance.
+  /// - Returns: Serialized boolean collector map.
+  /// - Note: `errorMessage` is nullable on iOS — emitted as `""` when absent to match the Android non-null contract.
+  private static func mapBooleanCollector(_ collector: BooleanCollector) -> [String: Any] {
+    var map = baseFieldCollectorMap(collector)
+    map["value"] = collector.value
+    map["appearance"] = collector.appearance.rawValue
+    map["errorMessage"] = collector.errorMessage ?? ""
+    if let rc = collector.richContent {
+      map["richContent"] = [
+        "content": rc.content,
+        "replacements": Dictionary(
+          uniqueKeysWithValues: rc.replacements.map { (k, r) in
+            (k, [
+              "value": r.value,
+              "href": r.href ?? "",
+              "type": r.type,
+              "target": r.target ?? ""
+            ] as [String: Any])
+          }
+        )
+      ] as [String: Any]
+    }
+    return map
+  }
+
+  /// Serializes a `ReadOnlyTextCollector` to a bridge map.
+  ///
+  /// The `type` field is normalized to `"READ_ONLY_TEXT"` (the stable inputType) rather
+  /// than emitting the server-varying `collector.type` (e.g. `"AGREEMENT"`).
+  ///
+  /// - Parameter collector: ReadOnlyTextCollector instance.
+  /// - Returns: Serialized read-only text collector map.
+  private static func mapReadOnlyTextCollector(_ collector: ReadOnlyTextCollector) -> [String: Any] {
+    return [
+      "key": collector.key,
+      "type": "READ_ONLY_TEXT",
+      "content": collector.content,
+      "title": collector.title,
+      "titleEnabled": collector.titleEnabled,
+      "enabled": collector.enabled,
+      "agreementId": collector.agreementId,
+      "useDynamicAgreement": collector.useDynamicAgreement
+    ]
   }
 
   /// Converts an array of `Option` values to serializable bridge maps.

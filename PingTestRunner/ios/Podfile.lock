@@ -2404,6 +2404,7 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
+    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -2440,6 +2441,7 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
+    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -3588,7 +3590,7 @@ SPEC CHECKSUMS:
   RNPingBinding: 1731d5254b7d026df05ee056ab7802f4888537e9
   RNPingBrowser: b6afbf0fa46c9ae0a10daeb46927f05eca5c7c6d
   RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
-  RNPingDavinci: 81122638cb43d20c7e24e66eea5bd8700fd48aae
+  RNPingDavinci: 605780d605c87d00216376bb2b3f4f5ee72817e8
   RNPingDeviceClient: 0ff89a604e97d1168eff3aba4b1d889139619bd7
   RNPingDeviceId: 6eb3e9fc68a78e1aee87652e025f6e1ec6d5d67e
   RNPingDeviceProfile: 3086f14fc5024196a64290afbbf7917432dd5900
@@ -3605,4 +3607,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 06fe91365819bf22b320c91bdb09a02aa2b3c437
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

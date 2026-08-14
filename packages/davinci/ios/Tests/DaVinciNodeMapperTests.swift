@@ -388,13 +388,14 @@ final class DaVinciNodeMapperTests: XCTestCase {
   // MARK: - unsupportedFields parity
 
   func testMapNodePayloadSurfacesUnsupportedFields() {
+    // BOOLEAN and READ_ONLY_TEXT are registered in 2.1.0 and produce collectors, so they
+    // no longer appear in unsupportedFields. Use a genuinely unregistered inputType here.
     let input: [String: Any] = [
       "form": [
         "components": [
           "fields": [
             ["key": "username", "type": "TEXT", "inputType": "TEXT"],
-            ["key": "tos", "type": "AGREEMENT", "inputType": "READ_ONLY_TEXT"],
-            ["key": "marketing", "type": "SINGLE_CHECKBOX", "inputType": "BOOLEAN"]
+            ["key": "exotic", "type": "EXOTIC_FUTURE_TYPE", "inputType": "EXOTIC_FUTURE_TYPE"]
           ]
         ]
       ]
@@ -407,11 +408,9 @@ final class DaVinciNodeMapperTests: XCTestCase {
     let payload = DaVinciNodeMapper.mapNodePayload(node)
     let unsupported = payload["unsupportedFields"] as? [[String: Any]]
 
-    XCTAssertEqual(unsupported?.count, 2)
-    XCTAssertEqual(unsupported?[0]["key"] as? String, "tos")
-    XCTAssertEqual(unsupported?[0]["type"] as? String, "READ_ONLY_TEXT")
-    XCTAssertEqual(unsupported?[1]["key"] as? String, "marketing")
-    XCTAssertEqual(unsupported?[1]["type"] as? String, "BOOLEAN")
+    XCTAssertEqual(unsupported?.count, 1)
+    XCTAssertEqual(unsupported?[0]["key"] as? String, "exotic")
+    XCTAssertEqual(unsupported?[0]["type"] as? String, "EXOTIC_FUTURE_TYPE")
   }
 
   func testMapNodePayloadFallsBackToTypeWhenInputTypeMissing() {
@@ -592,6 +591,142 @@ final class DaVinciNodeMapperTests: XCTestCase {
     let first = (payload["collectors"] as? [[String: Any]])?.first
 
     XCTAssertNil(first?["link"])
+  }
+
+  // MARK: - BooleanCollector serialization
+
+  func testMapBooleanCollectorIncludesAllBaseAndBooleanFields() {
+    let node = makeContinueNode(collectors: [
+      BooleanCollector(with: [
+        "key": "accept-terms",
+        "type": "SINGLE_CHECKBOX",
+        "label": "I accept the terms",
+        "required": true,
+        "appearance": "CHECKBOX",
+        "errorMessage": "You must accept the terms to continue."
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["key"] as? String, "accept-terms")
+    XCTAssertEqual(first?["type"] as? String, "SINGLE_CHECKBOX")
+    XCTAssertEqual(first?["label"] as? String, "I accept the terms")
+    XCTAssertEqual(first?["required"] as? Bool, true)
+    XCTAssertEqual(first?["value"] as? Bool, false)
+    XCTAssertEqual(first?["appearance"] as? String, "CHECKBOX")
+    XCTAssertEqual(first?["errorMessage"] as? String, "You must accept the terms to continue.")
+    XCTAssertNil(first?["richContent"])
+  }
+
+  func testMapBooleanCollectorErrorMessageFallsBackToEmptyStringWhenAbsent() {
+    let node = makeContinueNode(collectors: [
+      BooleanCollector(with: [
+        "key": "toggle", "type": "SINGLE_CHECKBOX", "label": "Toggle", "required": false
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["errorMessage"] as? String, "")
+  }
+
+  func testMapBooleanCollectorIncludesRichContentWhenPresent() {
+    let node = makeContinueNode(collectors: [
+      BooleanCollector(with: [
+        "key": "consent",
+        "type": "SINGLE_CHECKBOX",
+        "label": "Consent",
+        "required": false,
+        "appearance": "SWITCH",
+        "richContent": [
+          "content": "Please read the {{link}} before continuing.",
+          "replacements": [
+            "link": [
+              "value": "Terms of Service",
+              "href": "https://example.com/tos",
+              "type": "link",
+              "target": "_blank"
+            ]
+          ]
+        ]
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+    let rc = first?["richContent"] as? [String: Any]
+
+    XCTAssertNotNil(rc)
+    XCTAssertEqual(rc?["content"] as? String, "Please read the {{link}} before continuing.")
+    let replacements = rc?["replacements"] as? [String: Any]
+    let linkReplacement = replacements?["link"] as? [String: Any]
+    XCTAssertNotNil(linkReplacement)
+    XCTAssertEqual(linkReplacement?["value"] as? String, "Terms of Service")
+    XCTAssertEqual(linkReplacement?["href"] as? String, "https://example.com/tos")
+    XCTAssertEqual(linkReplacement?["type"] as? String, "link")
+    XCTAssertEqual(linkReplacement?["target"] as? String, "_blank")
+  }
+
+  func testMapBooleanCollectorOmitsRichContentWhenAbsent() {
+    let node = makeContinueNode(collectors: [
+      BooleanCollector(with: [
+        "key": "toggle", "type": "SINGLE_CHECKBOX", "label": "Toggle", "required": false
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["richContent"])
+  }
+
+  // MARK: - ReadOnlyTextCollector serialization
+
+  func testMapReadOnlyTextCollectorIncludesAllFields() {
+    let node = makeContinueNode(collectors: [
+      ReadOnlyTextCollector(with: [
+        "key": "agreement",
+        "type": "AGREEMENT",
+        "content": "This is example agreement text.",
+        "title": "Terms of Service Agreement",
+        "titleEnabled": true,
+        "enabled": true,
+        "agreement": [
+          "id": "6ff30c9e-cd98-4fe5-85ca-01111ca20702",
+          "useDynamicAgreement": false
+        ]
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["key"] as? String, "agreement")
+    // Bridge normalizes type to READ_ONLY_TEXT regardless of server type ("AGREEMENT")
+    XCTAssertEqual(first?["type"] as? String, "READ_ONLY_TEXT")
+    XCTAssertEqual(first?["content"] as? String, "This is example agreement text.")
+    XCTAssertEqual(first?["title"] as? String, "Terms of Service Agreement")
+    XCTAssertEqual(first?["titleEnabled"] as? Bool, true)
+    XCTAssertEqual(first?["enabled"] as? Bool, true)
+    XCTAssertEqual(first?["agreementId"] as? String, "6ff30c9e-cd98-4fe5-85ca-01111ca20702")
+    XCTAssertEqual(first?["useDynamicAgreement"] as? Bool, false)
+  }
+
+  func testMapReadOnlyTextCollectorNormalizesTypeToReadOnlyText() {
+    // The server `type` field varies (e.g. "AGREEMENT") — the bridge must emit "READ_ONLY_TEXT"
+    let node = makeContinueNode(collectors: [
+      ReadOnlyTextCollector(with: [
+        "key": "tos", "type": "AGREEMENT", "content": "TOS text", "title": "", "titleEnabled": false, "enabled": true
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["type"] as? String, "READ_ONLY_TEXT")
   }
 
   // MARK: - multiple collector types

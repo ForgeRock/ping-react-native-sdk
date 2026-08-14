@@ -24,6 +24,7 @@ const manualCollectorTypes = new Set<string>([
   'TEXT',
   'PASSWORD',
   'PASSWORD_VERIFY',
+  'SINGLE_CHECKBOX',
   'SINGLE_SELECT',
   'DROPDOWN',
   'RADIO',
@@ -35,7 +36,7 @@ const manualCollectorTypes = new Set<string>([
   'DEVICE_AUTHENTICATION',
 ]);
 
-const outputOnlyCollectorTypes = new Set<string>(['LABEL']);
+const outputOnlyCollectorTypes = new Set<string>(['LABEL', 'READ_ONLY_TEXT']);
 
 const immediateCollectorTypes = new Set<string>([
   'SUBMIT_BUTTON',
@@ -81,6 +82,7 @@ export const integrationRequiredCollectorTypes = new Set<
 
 const textFieldKindTypes = new Set<string>(['TEXT', 'HIDDEN']);
 const passwordFieldKindTypes = new Set<string>(['PASSWORD', 'PASSWORD_VERIFY']);
+const booleanFieldKindTypes = new Set<string>(['SINGLE_CHECKBOX']);
 const singleSelectFieldKindTypes = new Set<string>([
   'SINGLE_SELECT',
   'DROPDOWN',
@@ -96,7 +98,7 @@ const deviceFieldKindTypes = new Set<string>([
   'DEVICE_REGISTRATION',
   'DEVICE_AUTHENTICATION',
 ]);
-const outputFieldKindTypes = new Set<string>(['LABEL']);
+const outputFieldKindTypes = new Set<string>(['LABEL', 'READ_ONLY_TEXT']);
 const flowFieldKindTypes = new Set<string>([
   'SUBMIT_BUTTON',
   'ACTION',
@@ -173,6 +175,9 @@ export function resolveFieldKind(type: string): DaVinciFieldKind {
   }
   if (passwordFieldKindTypes.has(type)) {
     return 'password';
+  }
+  if (booleanFieldKindTypes.has(type)) {
+    return 'boolean';
   }
   if (singleSelectFieldKindTypes.has(type)) {
     return 'singleSelect';
@@ -265,6 +270,11 @@ function resolveDefaultValue(
     return undefined;
   }
 
+  if (booleanFieldKindTypes.has(collector.type)) {
+    const value = (collector as { value?: unknown }).value;
+    return typeof value === 'boolean' ? value : false;
+  }
+
   if (
     textFieldKindTypes.has(collector.type) ||
     passwordFieldKindTypes.has(collector.type) ||
@@ -291,6 +301,10 @@ function hasManualValue(
 ): boolean {
   if (value === undefined || value === null) {
     return false;
+  }
+
+  if (typeof value === 'boolean') {
+    return value === true;
   }
 
   if (typeof value === 'string') {

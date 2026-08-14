@@ -351,6 +351,76 @@ export type DeviceAuthenticationCollector = BaseCollector & {
 };
 
 /**
+ * Single checkbox or toggle collector.
+ *
+ * @remarks
+ * Corresponds to the native `BOOLEAN` inputType / `SINGLE_CHECKBOX` server type.
+ * Extends {@link BaseCollector} — has `key`, `label`, and `required`.
+ *
+ * When `required` is `true` and `value` is `false`, the native SDK's `validate()`
+ * emits a validation error using `errorMessage`. JS consumers should surface
+ * `errorMessage` to the user in that case.
+ *
+ * @public
+ */
+export type BooleanCollector = BaseCollector & {
+  type: 'SINGLE_CHECKBOX';
+  /** Current checked state (mutable — set via `next()`). */
+  value: boolean;
+  /** Render hint — whether to display as a checkbox or a switch toggle. */
+  appearance: 'CHECKBOX' | 'SWITCH';
+  /** Validation error message shown when `required` is `true` and `value` is `false`. */
+  errorMessage: string;
+  /**
+   * Optional rich content with template text and named link replacements.
+   *
+   * @remarks
+   * Present when the server includes a `richContent` object in the field definition.
+   */
+  richContent?: RichContent;
+};
+
+/**
+ * Read-only text / agreement collector.
+ *
+ * @remarks
+ * Corresponds to the native `READ_ONLY_TEXT` inputType. The server `type` field
+ * may vary (e.g. `"AGREEMENT"`) — the bridge normalizes it to `'READ_ONLY_TEXT'`
+ * for a stable discriminant.
+ *
+ * Does not extend {@link BaseCollector} — `ReadOnlyTextCollector` does not implement
+ * `FieldCollector` in the native SDK and therefore has no `label`, `required`, or `value`.
+ * Has no mutable value and contributes no payload to form submission.
+ *
+ * @public
+ */
+export type ReadOnlyTextCollector = {
+  /** Unique collector key identifying this field in the form. */
+  key: string;
+  /** Normalized type discriminant — always `'READ_ONLY_TEXT'` regardless of server `type`. */
+  type: 'READ_ONLY_TEXT';
+  /** The text content to display to the user. */
+  content: string;
+  /** Title shown when `titleEnabled` is `true`. */
+  title: string;
+  /** Whether to display the title above the content. */
+  titleEnabled: boolean;
+  /** Whether this collector is active. */
+  enabled: boolean;
+  /** UUID of the agreement definition. */
+  agreementId: string;
+  /** Whether the agreement content is loaded dynamically. */
+  useDynamicAgreement: boolean;
+  /**
+   * Raw server-side field JSON from `node.input.form.components.fields[]`.
+   *
+   * @remarks
+   * Populated by the native mapper.
+   */
+  raw?: Record<string, unknown>;
+};
+
+/**
  * Social login / external IdP collector.
  *
  * @remarks
@@ -393,10 +463,6 @@ export type IdpCollector = {
 /**
  * Discriminated union of all collector types returned by the DaVinci bridge.
  *
- * @remarks
- * Collector types `BooleanCollector` and `ReadOnlyTextCollector` are absent from
- * the 2.0.1 Android/iOS SDK sources and are therefore not included here.
- *
  * @public
  */
 export type DaVinciCollector =
@@ -410,6 +476,8 @@ export type DaVinciCollector =
   | PhoneNumberCollector
   | DeviceRegistrationCollector
   | DeviceAuthenticationCollector
+  | BooleanCollector
+  | ReadOnlyTextCollector
   | IdpCollector;
 
 // ---------------------------------------------------------------------------

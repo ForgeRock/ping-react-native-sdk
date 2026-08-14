@@ -9,6 +9,7 @@ package com.pingidentity.rndavinci.collector
 
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
+import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.Device
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
@@ -128,6 +129,9 @@ internal object DaVinciCollectorValueApplier {
                     )
                 collector.value = device
             }
+            is BooleanCollector -> {
+                collector.value = asBoolean(value, key)
+            }
             else -> {
                 // All remaining collectors (TextCollector, PasswordCollector, SingleValueCollector,
                 // SubmitCollector, FlowCollector) extend SingleValueCollector which has setValue(String).
@@ -185,6 +189,14 @@ internal object DaVinciCollectorValueApplier {
         val truncatedToLong = bridgedNumber.toLong()
         val isIntegerValued = bridgedNumber == truncatedToLong.toDouble()
         return if (isIntegerValued) truncatedToLong else bridgedNumber
+    }
+
+    private fun asBoolean(value: Any?, fieldName: String): Boolean {
+        return when (value) {
+            is Boolean -> value
+            is String -> value.equals("true", ignoreCase = true)
+            else -> throw IllegalArgumentException("$fieldName expects a boolean value, got: ${value?.javaClass?.simpleName}")
+        }
     }
 
     private fun asString(value: Any?, fieldName: String): String {
