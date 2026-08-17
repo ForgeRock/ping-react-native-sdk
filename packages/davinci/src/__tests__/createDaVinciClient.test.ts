@@ -822,7 +822,6 @@ describe('createDaVinciClient — pollStatus', () => {
     });
 
     expect(onStatus).toHaveBeenCalledWith({
-      subscriptionId: 'sub-1',
       status: 'continue',
       retryCount: 1,
       maxRetries: 10,
@@ -858,7 +857,6 @@ describe('createDaVinciClient — pollStatus', () => {
     await client.pollStatus(onStatus);
 
     expect(onStatus).toHaveBeenCalledWith({
-      subscriptionId: 'sub-1',
       status: 'continue',
       retryCount: 1,
       maxRetries: 10,
@@ -925,7 +923,6 @@ describe('createDaVinciClient — pollStatus', () => {
 
     expect(onStatus).toHaveBeenCalledTimes(1);
     expect(onStatus).toHaveBeenCalledWith({
-      subscriptionId: 'sub-1',
       status: 'complete',
       value: 'success',
     });

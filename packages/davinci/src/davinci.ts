@@ -438,11 +438,13 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
       const buffered: Record<string, unknown>[] = [];
 
       const deliver = (event: Record<string, unknown>) => {
-        const status = event as unknown as PollingStatus;
+        const status = { ...event };
+        delete status.subscriptionId;
+        delete status.daVinciId;
         if (status.status !== 'continue') {
           subscription.remove();
         }
-        onStatus(status);
+        onStatus(status as PollingStatus);
       };
 
       const subscription = DeviceEventEmitter.addListener(

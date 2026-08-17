@@ -186,7 +186,6 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
 
       expect(mock.pollDaVinci).toHaveBeenCalledWith('davinci-id-mock', {});
       expect(onStatus).toHaveBeenNthCalledWith(1, {
-        subscriptionId: 'sub-1',
         status: 'continue',
         retryCount: 0,
         maxRetries: 60,
@@ -207,7 +206,6 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
 
       expect(onStatus).toHaveBeenCalledTimes(3);
       expect(onStatus).toHaveBeenNthCalledWith(2, {
-        subscriptionId: 'sub-1',
         status: 'continue',
         retryCount: 1,
         maxRetries: 60,
@@ -237,7 +235,6 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
 
       expect(onStatus).toHaveBeenCalledTimes(1);
       expect(onStatus).toHaveBeenCalledWith({
-        subscriptionId: 'sub-1',
         status: 'complete',
         value: 'ok',
       });
@@ -377,7 +374,6 @@ describe('@ping-identity/rn-davinci — polling integration', () => {
 
       expect(onStatus).toHaveBeenCalledTimes(2);
       expect(onStatus).toHaveBeenLastCalledWith({
-        subscriptionId: 'sub-1',
         status: 'expired',
       });
     });

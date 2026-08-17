@@ -304,69 +304,6 @@ Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Prot
 surfaced in node payloads and require client-side integration before submission
 (`executionMode: 'integration_required'`).
 
-### Polling and QR code flows
-
-`POLLING` and `QR_CODE` collectors support out-of-band authentication (push approval, QR
-scan, email verification) where the flow waits for user action on another device or
-channel. Both are display/output-only — neither participates in form submission.
-
-A `ContinueNode` commonly carries a `QR_CODE` collector (rendered for the user to scan)
-alongside a `POLLING` collector (which reports when the out-of-band action completes):
-
-```ts
-import { DaVinciError } from '@ping-identity/rn-davinci';
-
-const node = await client.start();
-
-if (node.type === 'ContinueNode') {
-  const qr = node.collectors.find((c) => c.type === 'QR_CODE');
-  if (qr) {
-    // Render `qr.content` (a full data URI, e.g. "data:image/png;base64,...")
-    // as an <Image source={{ uri: qr.content }} /> or similar.
-  }
-
-  const unsubscribe = await client.pollStatus(async (status) => {
-    switch (status.status) {
-      case 'continue':
-        console.log(
-          `Waiting… attempt ${status.retryCount}/${status.maxRetries}`,
-        );
-        break;
-      case 'timedOut':
-      case 'expired':
-      case 'error':
-        // Surface the failure to the user before progressing past the node.
-        console.warn(`Poll ended with status: ${status.status}`);
-      // eslint-disable-next-line no-fallthrough
-      case 'complete':
-        try {
-          await client.next({ collectors: [] }); // required on every terminal status
-        } catch (err) {
-          if (err instanceof DaVinciError) {
-            console.log(err.code, err.type, err.message);
-          }
-        }
-        break;
-    }
-  });
-
-  // Later, e.g. on screen unmount:
-  // unsubscribe();
-}
-```
-
-- `client.pollStatus(onStatus, options?)` resolves the active `PollingCollector` on the
-  current node (pass `options.key` to disambiguate when a node has more than one),
-  starts streaming native polling ticks, and returns an `unsubscribe` function.
-- `pollStatus` does **not** auto-advance the flow — call `next()` explicitly on any
-  terminal status (`complete`, `timedOut`, `expired`, `error`) to progress past it.
-- Calling the returned `unsubscribe()` stops **local event delivery only**. Neither
-  native SDK exposes a primitive to cancel an in-flight poll, so the native poll keeps
-  running to completion (bounded by `pollRetries` × `pollInterval`) even after
-  unsubscribing.
-- `pollInterval` and `pollRetries` on the `PollingCollector` payload are normalized to
-  `number` on both platforms.
-
 ### Unsupported fields
 
 When the native SDK cannot instantiate a collector from the server payload, the bridge surfaces it in `ContinueNode.unsupportedFields`:
