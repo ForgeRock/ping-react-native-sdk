@@ -6,13 +6,10 @@
  */
 
 export {
+  collectProtect,
   startProtect,
   pauseBehavioralData,
   resumeBehavioralData,
 } from './protect';
 export { ProtectError } from './types';
-export type {
-  ProtectCollectOptions,
-  ProtectConfig,
-  ProtectErrorCode,
-} from './types';
+export type { ProtectConfig, ProtectErrorCode } from './types';

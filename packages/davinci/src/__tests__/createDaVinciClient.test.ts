@@ -15,7 +15,6 @@ type NativeDaVinciModuleMock = {
   userinfo: jest.Mock;
   logout: jest.Mock;
   dispose: jest.Mock;
-  collectProtect: jest.Mock;
 };
 
 const createNativeMock = (
@@ -33,7 +32,6 @@ const createNativeMock = (
   userinfo: jest.fn(async () => ({ sub: 'user-1' })),
   logout: jest.fn(async () => undefined),
   dispose: jest.fn(async () => undefined),
-  collectProtect: jest.fn(async () => undefined),
   ...overrides,
 });
 
@@ -842,59 +840,5 @@ describe('createDaVinciClient — error propagation', () => {
       'DAVINCI_CONFIG_ERROR',
       'bad config',
     );
-  });
-
-  it('propagates native collectProtect rejection as DaVinciError', async () => {
-    const protectError = {
-      type: 'state_error',
-      error: 'DAVINCI_PROTECT_COLLECT_ERROR',
-      message: 'no protect collector',
-    };
-    const native = createNativeMock({
-      collectProtect: jest.fn(async () => {
-        throw protectError;
-      }),
-    });
-    const { createDaVinciClient } = loadModule(native);
-
-    assertDaVinciError(
-      await createDaVinciClient(VALID_CONFIG)
-        .collectProtect()
-        .catch((e: unknown) => e),
-      'DAVINCI_PROTECT_COLLECT_ERROR',
-      'no protect collector',
-    );
-  });
-});
-
-describe('createDaVinciClient — collectProtect', () => {
-  it('calls native collectProtect with davinciId and empty options by default', async () => {
-    const native = createNativeMock();
-    const { createDaVinciClient } = loadModule(native);
-    const client = createDaVinciClient(VALID_CONFIG);
-
-    await client.collectProtect();
-
-    expect(native.collectProtect).toHaveBeenCalledWith('davinci-id-1', {});
-  });
-
-  it('forwards index option to native collectProtect', async () => {
-    const native = createNativeMock();
-    const { createDaVinciClient } = loadModule(native);
-    const client = createDaVinciClient(VALID_CONFIG);
-
-    await client.collectProtect({ index: 2 });
-
-    expect(native.collectProtect).toHaveBeenCalledWith('davinci-id-1', {
-      index: 2,
-    });
-  });
-
-  it('resolves void on success', async () => {
-    const native = createNativeMock();
-    const { createDaVinciClient } = loadModule(native);
-    const client = createDaVinciClient(VALID_CONFIG);
-
-    await expect(client.collectProtect()).resolves.toBeUndefined();
   });
 });

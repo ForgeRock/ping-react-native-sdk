@@ -287,8 +287,11 @@ jest.mock('../packages/protect/src/NativeRNPingProtect', () => ({
   __esModule: true,
   getNativeModule: jest.fn(() => ({
     collectForDaVinci: jest.fn(async () => undefined),
+    initialize: jest.fn(async () => undefined),
+    pauseBehavioralData: jest.fn(async () => undefined),
+    resumeBehavioralData: jest.fn(async () => undefined),
   })),
-  toNativeCollectOptions: jest.fn((options) => options),
+  toNativeProtectConfig: jest.fn((config) => config),
   toNativeConfig: jest.fn((config) => config),
 }));
 

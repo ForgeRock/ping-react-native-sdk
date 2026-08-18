@@ -140,6 +140,32 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertTrue(protect.resumeBehavioralDataOnStart)
   }
 
+  func testParseProtectLoggerIdForwarded() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "protect": ["loggerId": "protect-logger-1"] as NSDictionary
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+
+    XCTAssertEqual(payload.protect?.loggerId, "protect-logger-1")
+  }
+
+  func testParseProtectLoggerIdIsNilWhenAbsent() throws {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "protect": NSDictionary()
+    ]
+
+    let payload = try DaVinciConfigParser.parse(config)
+
+    XCTAssertNil(payload.protect?.loggerId)
+  }
+
   func testParseThrowsWhenDiscoveryEndpointMissing() {
     let config: NSDictionary = [
       "clientId": "my-client",

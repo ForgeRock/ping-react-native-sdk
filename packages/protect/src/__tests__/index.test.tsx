@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 import {
+  collectProtect,
   startProtect,
   pauseBehavioralData,
   resumeBehavioralData,
@@ -13,7 +14,6 @@ import {
 jest.mock('../NativeRNPingProtect', () => ({
   __esModule: true,
   getNativeModule: jest.fn(),
-  toNativeCollectOptions: jest.fn((options) => options),
   toNativeConfig: jest.fn((options) => options),
   toNativeProtectConfig: jest.fn((config) => config),
 }));
@@ -134,8 +134,8 @@ describe('Protect API', () => {
 
     await startProtect({ logger });
 
-    expect(logger.info).toHaveBeenCalledWith('Protect startProtect requested');
-    expect(logger.debug).toHaveBeenCalledWith('Protect startProtect success');
+    expect(logger.debug).toHaveBeenCalledWith('Protect startProtect requested');
+    expect(logger.info).toHaveBeenCalledWith('Protect startProtect success');
   });
 
   it('startProtect() logs failure before rethrowing', async () => {
@@ -244,6 +244,58 @@ describe('Protect API', () => {
 
     await expect(resumeBehavioralData()).rejects.toThrow(
       'PROTECT_INITIALIZE_ERROR',
+    );
+  });
+
+  // ─── collectProtect() ─────────────────────────────────────────────────────
+
+  it('collectProtect() calls getId() on the DaVinci instance and passes id to native', async () => {
+    const collectNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForDaVinci: collectNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-id-1') };
+
+    await collectProtect(daVinci);
+
+    expect(daVinci.getId).toHaveBeenCalledTimes(1);
+    expect(collectNative).toHaveBeenCalledWith(
+      'davinci-id-1',
+      expect.any(Object),
+      expect.any(Object),
+    );
+  });
+
+  it('collectProtect() passes empty options to native', async () => {
+    const collectNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForDaVinci: collectNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-abc') };
+
+    await collectProtect(daVinci);
+
+    expect(collectNative).toHaveBeenCalledWith('davinci-abc', {}, {});
+  });
+
+  it('collectProtect() resolves on native success', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForDaVinci: jest.fn().mockResolvedValue(undefined),
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-xyz') };
+
+    await expect(collectProtect(daVinci)).resolves.toBeUndefined();
+  });
+
+  it('collectProtect() wraps native error as ProtectError', async () => {
+    const nativeError = new Error('PROTECT_COLLECT_ERROR');
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForDaVinci: jest.fn().mockRejectedValue(nativeError),
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-xyz') };
+
+    await expect(collectProtect(daVinci)).rejects.toThrow(
+      'PROTECT_COLLECT_ERROR',
     );
   });
 });

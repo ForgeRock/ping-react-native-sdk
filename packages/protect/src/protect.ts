@@ -6,7 +6,7 @@
  */
 
 import { noopLogger } from '@ping-identity/rn-types';
-import type { LoggerInstance } from '@ping-identity/rn-types';
+import type { DaVinciInstance, LoggerInstance } from '@ping-identity/rn-types';
 import {
   getNativeModule,
   toNativeConfig,
@@ -25,10 +25,10 @@ async function withLogging<T>(
   logger: LoggerInstance,
   fn: () => Promise<T>,
 ): Promise<T> {
-  logger.info(`Protect ${operation} requested`);
+  logger.debug(`Protect ${operation} requested`);
   try {
     const result = await fn();
-    logger.debug(`Protect ${operation} success`);
+    logger.info(`Protect ${operation} success`);
     return result;
   } catch (error) {
     logger.error(`Protect ${operation} failed`);
@@ -40,6 +40,7 @@ async function withLogging<T>(
  * Initializes the Protect SDK and optionally resumes behavioral data collection.
  *
  * @param config - Protect SDK configuration and optional logger.
+ * @returns Resolves with `void` on success.
  * @throws {@link ProtectError} when initialization fails.
  *
  * @example
@@ -75,6 +76,7 @@ export async function startProtect(config: ProtectConfig = {}): Promise<void> {
  * Call this after a successful authentication flow. Requires `startProtect()` first.
  *
  * @param options - Optional logger instance.
+ * @returns Resolves with `void` on success.
  * @throws {@link ProtectError} when the SDK is not initialized.
  *
  * @example
@@ -101,6 +103,7 @@ export async function pauseBehavioralData(
  * Call this at the start of a new authentication flow. Requires `startProtect()` first.
  *
  * @param options - Optional logger instance.
+ * @returns Resolves with `void` on success.
  * @throws {@link ProtectError} when the SDK is not initialized.
  *
  * @example
@@ -119,4 +122,37 @@ export async function resumeBehavioralData(
   return withLogging('resumeBehavioralData', logger, () =>
     getNativeModule().resumeBehavioralData(toNativeConfig({ loggerId })),
   );
+}
+
+/**
+ * Runs PingOne Protect data collection for the active PROTECT collector in a DaVinci flow.
+ *
+ * Call this before `daVinci.next({})` when the current node contains a PROTECT collector.
+ * The collected payload is set internally on the native collector so that `next` picks it
+ * up automatically.
+ *
+ * @param daVinci - Active DaVinci instance.
+ * @returns Resolves with `void` on successful Protect data collection.
+ * @throws {@link ProtectError} when collection fails or the collector is not found.
+ *
+ * @example
+ * ```ts
+ * import { collectProtect } from '@ping-identity/rn-protect';
+ * await collectProtect(daVinci);
+ * await daVinci.next({});
+ * ```
+ *
+ * @public
+ */
+export async function collectProtect(daVinci: DaVinciInstance): Promise<void> {
+  const davinciId = await daVinci.getId();
+  try {
+    await getNativeModule().collectForDaVinci(
+      davinciId,
+      {},
+      toNativeConfig({}),
+    );
+  } catch (error) {
+    throw ProtectError.from(error);
+  }
 }

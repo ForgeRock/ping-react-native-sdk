@@ -8,7 +8,6 @@
 export { ProtectError } from './protect.types';
 export type {
   ProtectClientConfig,
-  ProtectCollectOptions,
   ProtectConfig,
   ProtectErrorCode,
 } from './protect.types';

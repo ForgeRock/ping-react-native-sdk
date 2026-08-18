@@ -98,7 +98,7 @@ dependencies {
   implementation("com.pingidentity.sdks:davinci:2.0.1")
   // Required: IdpCollector is defined in external-idp. The JS authorizeForDaVinci API is optional but this native dep is not.
   compileOnly("com.pingidentity.sdks:external-idp:2.0.1")
-  compileOnly("com.pingidentity.sdks:protect:2.0.1") // ProtectLifecycleModule; wired when rn-protect is present
+  compileOnly("com.pingidentity.sdks:protect:2.0.1") // ProtectLifecycle module; wired at config time when modules.protect is set
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))

@@ -359,7 +359,7 @@ export type DeviceAuthenticationCollector = BaseCollector & {
  *
  * Handled entirely by `@ping-identity/rn-protect` — appears as `executionMode:
  * 'integration_required'` and `kind: 'integration'` in normalized collectors.
- * Call `createProtectClient().collectForDaVinci(daVinci)` before `daVinci.next({})`.
+ * Call `collectProtect(davinciClient)` from `@ping-identity/rn-protect` before `daVinci.next({})`.
  *
  * @public
  */

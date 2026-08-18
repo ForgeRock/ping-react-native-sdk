@@ -42,7 +42,6 @@ async function loadProtect(nativeMock: NativeProtectMock) {
   jest.doMock('../../../packages/protect/src/NativeRNPingProtect', () => ({
     __esModule: true,
     getNativeModule: jest.fn(() => nativeMock),
-    toNativeCollectOptions: jest.fn((options: unknown) => options),
     toNativeConfig: jest.fn((config: unknown) => config),
     toNativeProtectConfig: jest.fn((config: unknown) => config),
   }));

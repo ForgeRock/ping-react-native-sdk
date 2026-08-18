@@ -72,22 +72,6 @@ export type ProtectConfig = {
 };
 
 /**
- * Per-call options for `collectForDaVinci`.
- *
- * @public
- */
-export type ProtectCollectOptions = {
-  /**
-   * Zero-based index of the `ProtectCollector` within the active `ContinueNode`.
-   *
-   * @remarks
-   * Defaults to `0`. Use a non-zero value when a node contains multiple `PROTECT`
-   * collectors (uncommon).
-   */
-  index?: number;
-};
-
-/**
  * Per-call bridge configuration forwarded to the native module.
  *
  * @internal
@@ -112,12 +96,22 @@ export type ProtectErrorCode =
  * @public
  */
 export class ProtectError extends PingError {
+  /**
+   * @param message - Human-readable error description.
+   * @param code - Machine-readable error code.
+   * @param type - Error category.
+   * @param status - Optional HTTP status code.
+   */
   constructor(message: string, code: string, type: string, status?: number) {
     super(message, code, type, status);
     this.name = 'ProtectError';
     Object.setPrototypeOf(this, new.target.prototype);
   }
 
+  /**
+   * @param error - The caught value to wrap.
+   * @returns A `ProtectError` instance.
+   */
   static from(error: unknown): ProtectError {
     return PingError.fromAs(error, ProtectError);
   }

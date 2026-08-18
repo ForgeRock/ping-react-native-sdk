@@ -16,7 +16,7 @@ The Ping Protect library integrates PingOne Protect behavioral data collection i
 
 ## Overview
 
-When a DaVinci flow includes a `PROTECT` collector, the native PingOne Protect SDK collects behavioral and device signals in the background. This library bridges that native collection to your React Native app — call `daVinci.collectProtect()` before advancing the flow, and the collected payload is forwarded automatically on the next `daVinci.next({})` call.
+When a DaVinci flow includes a `PROTECT` collector, the native PingOne Protect SDK collects behavioral and device signals in the background. This library bridges that native collection to your React Native app — call `collectProtect(daVinci)` from `@ping-identity/rn-protect` before advancing the flow, and the collected payload is forwarded automatically on the next `daVinci.next({})` call.
 
 No foreground window, activity, or user interaction is required. Collection runs entirely in the background.
 
@@ -71,10 +71,12 @@ const client = createDaVinciClient({
 
 All `protect` fields are optional. If `@ping-identity/rn-protect` is not installed, the `modules.protect` value is silently ignored at runtime.
 
-When the lifecycle module is active, use `daVinci.collectProtect()` directly on the DaVinci client before advancing the flow:
+When the lifecycle module is active, call `collectProtect` from `@ping-identity/rn-protect` before advancing the flow:
 
 ```ts
-await daVinci.collectProtect();
+import { collectProtect } from '@ping-identity/rn-protect';
+
+await collectProtect(daVinci);
 await daVinci.next({});
 ```
 
@@ -112,11 +114,13 @@ await startProtect({
 
 ### 2. Collect for a DaVinci flow
 
-When `modules.protect` is configured on `createDaVinciClient`, call `daVinci.collectProtect()` directly — no separate protect object needed:
+When `modules.protect` is configured on `createDaVinciClient`, import `collectProtect` from `@ping-identity/rn-protect` and pass the DaVinci client:
 
 ```ts
+import { collectProtect } from '@ping-identity/rn-protect';
+
 try {
-  await daVinci.collectProtect();
+  await collectProtect(daVinci);
   const node = await daVinci.next({});
 } catch (error) {
   // See Errors section
@@ -155,6 +159,7 @@ Pass `handledCollectorTypes` so PROTECT collectors are excluded from blocking su
 
 ```ts
 import { useDaVinci, useDaVinciForm } from '@ping-identity/rn-davinci';
+import { collectProtect } from '@ping-identity/rn-protect';
 
 const { node, next } = useDaVinci(daVinciClient);
 const form = useDaVinciForm(node, {
@@ -162,7 +167,7 @@ const form = useDaVinciForm(node, {
 });
 
 // Before submitting the form, run collection:
-await daVinciClient.collectProtect();
+await collectProtect(daVinciClient);
 
 if (form.canSubmit) {
   await next(form.input);
@@ -178,6 +183,7 @@ import {
   useDaVinciForm,
   createDaVinciClient,
 } from '@ping-identity/rn-davinci';
+import { collectProtect } from '@ping-identity/rn-protect';
 
 const daVinciClient = createDaVinciClient({
   modules: {
@@ -202,7 +208,7 @@ function LoginScreen() {
     const hasProtect = node.collectors.some((c) => c.type === 'PROTECT');
     if (!hasProtect) return;
 
-    daVinciClient.collectProtect().catch(console.error);
+    collectProtect(daVinciClient).catch(console.error);
   }, [node]);
 
   async function handleSubmit() {
@@ -220,6 +226,7 @@ function LoginScreen() {
 
 ```ts
 import {
+  collectProtect,
   startProtect,
   pauseBehavioralData,
   resumeBehavioralData,
@@ -229,6 +236,7 @@ import type {
   ProtectErrorCode,
 } from '@ping-identity/rn-protect';
 
+function collectProtect(daVinci: DaVinciInstance): Promise<void>;
 function startProtect(config?: ProtectConfig): Promise<void>;
 function pauseBehavioralData(options?: {
   logger?: LoggerInstance;
@@ -266,10 +274,10 @@ interface ProtectConfig {
 All promise rejections throw a `ProtectError` instance, which extends `PingError extends Error`. Use `instanceof` to narrow the error type:
 
 ```ts
-import { ProtectError } from '@ping-identity/rn-protect';
+import { collectProtect, ProtectError } from '@ping-identity/rn-protect';
 
 try {
-  await daVinci.collectProtect();
+  await collectProtect(daVinci);
 } catch (err) {
   if (err instanceof ProtectError) {
     console.log(err.code, err.message);
@@ -281,7 +289,7 @@ Stable error codes:
 
 - `PROTECT_INITIALIZE_ERROR` — the native Protect SDK failed to initialize, pause, or resume.
 - `PROTECT_COLLECT_ERROR` — the native Protect SDK failed to collect signals.
-- `PROTECT_COLLECTOR_NOT_FOUND` — no PROTECT collector was found at the specified index.
+- `PROTECT_COLLECTOR_NOT_FOUND` — no active PROTECT collector was found for the current DaVinci flow.
 
 ---
 

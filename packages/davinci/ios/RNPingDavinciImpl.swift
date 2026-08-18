@@ -174,21 +174,4 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   ) {
     RNPingDavinciCommon.dispose(davinciId, resolver: resolver, rejecter: rejecter)
   }
-
-  /// Runs PingOne Protect data collection for the active PROTECT collector.
-  ///
-  /// - Parameters:
-  ///   - davinciId: Native DaVinci instance id.
-  ///   - options: Per-call options (index, etc.).
-  ///   - resolver: Promise resolver called on success.
-  ///   - rejecter: Promise rejecter called with `GenericError`.
-  @objc(collectProtect:options:resolver:rejecter:)
-  public func collectProtect(
-    _ davinciId: String,
-    options: NSDictionary,
-    resolver: @escaping VoidResolver,
-    rejecter: @escaping PromiseRejecter
-  ) {
-    RNPingDavinciCommon.collectProtect(davinciId, options: options, resolver: resolver, rejecter: rejecter)
-  }
 }

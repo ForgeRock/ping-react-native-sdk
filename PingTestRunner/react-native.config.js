@@ -7,10 +7,10 @@
 
 module.exports = {
   dependencies: {
-    // rn-protect is included in package.json for Robolectric unit tests only.
-    // Excluding Android autolinking prevents the CMake build from looking for
-    // codegen JNI output that only exists after a full package build.
-    // iOS autolinking is kept so that use_native_modules! generates the
+    // rn-protect is included in package.json for integration tests (protect.test.ts)
+    // and Robolectric unit tests. Excluding Android autolinking prevents the CMake
+    // build from looking for codegen JNI output that only exists after a full package
+    // build. iOS autolinking is kept so that use_native_modules! generates the
     // RNPingProtectSpec codegen header required by RNPingProtect.mm.
     '@ping-identity/rn-protect': {
       platforms: {

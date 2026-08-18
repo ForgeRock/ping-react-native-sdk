@@ -73,12 +73,12 @@ public class RNPingProtectCommon: NSObject {
       return
     }
 
-    let collectorIndex = parseCollectorIndex(options)
+    let collectorIndex = 0
 
     // `@objc` methods cannot be declared `async`, so a Task is required to
-    // enter the async context. The body runs off the main actor so that
-    // `Protect.initialize()` and `Protect.data()` do not block the UI thread.
-    // `PromiseBridge.resolve/reject` are safe to call from any thread.
+    // enter the async context. The Task inherits @MainActor isolation from the
+    // enclosing function — it does NOT run off the main actor.
+    // TODO-PARITY: Android runs collectForDaVinci on Dispatchers.IO; iOS runs on main actor.
     Task {
       let logger = await resolveLoggerFromCore(callConfig.loggerId)
       logger?.i("Protect collectForDaVinci requested for collector index \(collectorIndex)")
@@ -198,6 +198,9 @@ public class RNPingProtectCommon: NSObject {
 
     Task {
       let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      // TODO-PARITY: iOS rejects if Protect is not initialized (PingOneProtect throws);
+      // Android resolves silently in the same state. Align once the native SDK
+      // provides a uniform initialization check.
       logger?.i("Protect pauseBehavioralData requested")
       do {
         try Protect.pauseBehavioralData()
@@ -208,7 +211,7 @@ public class RNPingProtectCommon: NSObject {
         handlers.reject(
           GenericError(
             type: .authError,
-            error: ProtectErrorCode.initializeError.rawValue,
+            error: ProtectErrorCode.collectError.rawValue,
             message: error.localizedDescription
           ),
           underlying: error as NSError
@@ -245,7 +248,7 @@ public class RNPingProtectCommon: NSObject {
         handlers.reject(
           GenericError(
             type: .authError,
-            error: ProtectErrorCode.initializeError.rawValue,
+            error: ProtectErrorCode.collectError.rawValue,
             message: error.localizedDescription
           ),
           underlying: error as NSError
@@ -274,20 +277,6 @@ public class RNPingProtectCommon: NSObject {
       .trimmingCharacters(in: .whitespacesAndNewlines)
     let loggerId = (trimmed?.isEmpty == false) ? trimmed : nil
     return ProtectCallConfig(loggerId: loggerId)
-  }
-
-  /// Parses collector index from call options.
-  ///
-  /// - Parameter options: Per-call options payload.
-  /// - Returns: Parsed collector index, defaulting to 0.
-  static func parseCollectorIndex(_ options: NSDictionary) -> Int {
-    if let value = options["index"] as? NSNumber {
-      return value.intValue
-    }
-    if let value = options["index"] as? String, let parsed = Int(value) {
-      return parsed
-    }
-    return 0
   }
 
   /// Parses Protect SDK initialization configuration from the JS bridge payload.

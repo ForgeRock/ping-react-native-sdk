@@ -78,8 +78,8 @@ internal class DaVinciClientFactory(
                         pauseBehavioralDataOnSuccess = protect.pauseBehavioralDataOnSuccess
                         resumeBehavioralDataOnStart = protect.resumeBehavioralDataOnStart
                     }
-                } catch (_: NoClassDefFoundError) {
-                    // Protect SDK absent — rn-protect not installed; skip lifecycle module.
+                } catch (e: NoClassDefFoundError) {
+                    logger?.e("modules.protect was configured but the PingOne Protect SDK is not on the classpath; ProtectLifecycle was NOT registered. Add com.pingidentity.sdks:protect.", e)
                 }
             }
         }

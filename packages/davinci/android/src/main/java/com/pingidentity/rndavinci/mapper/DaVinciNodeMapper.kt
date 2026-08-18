@@ -170,9 +170,6 @@ internal object DaVinciNodeMapper {
                 // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
                 if (resolvedType == SOCIAL_LOGIN_BUTTON) continue
 
-                // PROTECT fields are handled in mapCollectorPayload via form-field type lookup.
-                if (resolvedType == PROTECT) continue
-
                 // A field is supported when the SDK instantiated a collector for its key.
                 if (registeredKeys.contains(key)) continue
 

@@ -31,8 +31,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.Implementation
-import org.robolectric.annotation.Implements
 
 /**
  * Unit tests for Protect module metadata and bridge behavior.
@@ -233,26 +231,6 @@ class RNPingProtectTest {
     configuredField.setBoolean(RNPingProtectCommon, true)
     RNPingProtectCommon.cleanup()
   }
-}
-
-/**
- * Robolectric shadow for React Native bridge map creation.
- */
-@Implements(className = "com.facebook.react.bridge.Arguments")
-object ShadowProtectArguments {
-  /**
-   * Creates a Java-only writable map for JVM unit tests.
-   */
-  @Implementation
-  @JvmStatic
-  fun createMap(): WritableMap = JavaOnlyMap()
-
-  /**
-   * Creates a Java-only writable array for JVM unit tests.
-   */
-  @Implementation
-  @JvmStatic
-  fun createArray(): WritableArray = com.facebook.react.bridge.JavaOnlyArray()
 }
 
 /**

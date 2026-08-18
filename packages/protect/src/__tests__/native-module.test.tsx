@@ -15,7 +15,6 @@ jest.mock('react-native', () => ({
 import {
   _resetNativeModuleForTesting,
   getNativeModule,
-  toNativeCollectOptions,
   toNativeConfig,
 } from '../NativeRNPingProtect';
 
@@ -74,16 +73,6 @@ describe('getNativeModule', () => {
 });
 
 describe('native cast helpers', () => {
-  it('toNativeCollectOptions passes through the options object', () => {
-    const options = { index: 1 };
-    expect(toNativeCollectOptions(options)).toBe(options);
-  });
-
-  it('toNativeCollectOptions handles empty options object', () => {
-    const options = {};
-    expect(toNativeCollectOptions(options)).toBe(options);
-  });
-
   it('toNativeConfig passes through the config object', () => {
     const config = { loggerId: 'logger-1' };
     expect(toNativeConfig(config)).toBe(config);

@@ -16,6 +16,7 @@ import {
   type IdpCollector,
 } from '@ping-identity/rn-davinci';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
+import { collectProtect } from '@ping-identity/rn-protect';
 import { logger } from '@ping-identity/rn-logger';
 import Config from 'react-native-config';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
@@ -158,17 +159,17 @@ export function useDaVinciClientPanelController(
   });
 
   const onProtectCollect = useCallback(async (): Promise<void> => {
-    const davinciClient = davinciContext?.client;
-    if (!davinciClient) {
-      return;
-    }
     const protectFields = form.fields.filter(f => f.type === 'PROTECT');
     if (protectFields.length === 0) {
       return;
     }
+    const davinciClient = davinciContext?.client;
+    if (!davinciClient) {
+      throw new Error('[DaVinci] collectProtect: no DaVinci client in context');
+    }
     try {
-      for (let index = 0; index < protectFields.length; index++) {
-        await davinciClient.collectProtect({ index });
+      for (let i = 0; i < protectFields.length; i++) {
+        await collectProtect(davinciClient);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -187,8 +188,9 @@ export function useDaVinciClientPanelController(
     }
     onProtectCollect()
       .then(() => next(plan.input))
-      .catch(() => {
-        // `error` is already updated by the hook.
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[DaVinci] onSubmit failed: ${msg}`);
       });
   }, [form, loading, next, onProtectCollect]);
 

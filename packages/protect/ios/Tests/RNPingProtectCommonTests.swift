@@ -32,28 +32,6 @@ final class RNPingProtectCommonTests: XCTestCase {
     XCTAssertNil(config.loggerId)
   }
 
-  // MARK: - parseCollectorIndex
-
-  func testParseCollectorIndexFromNSNumber() {
-    let result = RNPingProtectCommon.parseCollectorIndex(["index": NSNumber(value: 2)])
-    XCTAssertEqual(result, 2)
-  }
-
-  func testParseCollectorIndexFromNumericString() {
-    let result = RNPingProtectCommon.parseCollectorIndex(["index": "3"])
-    XCTAssertEqual(result, 3)
-  }
-
-  func testParseCollectorIndexDefaultsToZeroWhenAbsent() {
-    let result = RNPingProtectCommon.parseCollectorIndex([:])
-    XCTAssertEqual(result, 0)
-  }
-
-  func testParseCollectorIndexDefaultsToZeroForInvalidString() {
-    let result = RNPingProtectCommon.parseCollectorIndex(["index": "notanumber"])
-    XCTAssertEqual(result, 0)
-  }
-
   // MARK: - parseProtectInitConfig
 
   func testParseProtectInitConfigExtractsEnvId() {
@@ -85,7 +63,7 @@ final class RNPingProtectCommonTests: XCTestCase {
 
   // MARK: - pauseBehavioralData / resumeBehavioralData rejection when SDK not initialized
 
-  @MainActor func testPauseBehavioralDataRejectsWhenSDKNotInitialized() {
+  @MainActor func testPauseBehavioralDataRejectsWhenSDKNotInitialized() async {
     let expectation = XCTestExpectation(description: "pauseBehavioralData rejects")
     var rejectedCode: String?
 
@@ -96,11 +74,11 @@ final class RNPingProtectCommonTests: XCTestCase {
       expectation.fulfill()
     })
 
-    wait(for: [expectation], timeout: 5)
-    XCTAssertEqual(rejectedCode, "PROTECT_INITIALIZE_ERROR")
+    await fulfillment(of: [expectation], timeout: 5)
+    XCTAssertEqual(rejectedCode, "PROTECT_COLLECT_ERROR")
   }
 
-  @MainActor func testResumeBehavioralDataRejectsWhenSDKNotInitialized() {
+  @MainActor func testResumeBehavioralDataRejectsWhenSDKNotInitialized() async {
     let expectation = XCTestExpectation(description: "resumeBehavioralData rejects")
     var rejectedCode: String?
 
@@ -111,7 +89,7 @@ final class RNPingProtectCommonTests: XCTestCase {
       expectation.fulfill()
     })
 
-    wait(for: [expectation], timeout: 5)
-    XCTAssertEqual(rejectedCode, "PROTECT_INITIALIZE_ERROR")
+    await fulfillment(of: [expectation], timeout: 5)
+    XCTAssertEqual(rejectedCode, "PROTECT_COLLECT_ERROR")
   }
 }

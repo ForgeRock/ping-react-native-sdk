@@ -97,7 +97,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation("com.pingidentity.sdks:android:2.0.1")
   implementation("com.pingidentity.sdks:logger:2.0.1")
-  compileOnly("com.pingidentity.sdks:protect:2.0.1") // ProtectCollector is in protect; compileOnly so apps without rn-protect don't bundle it
+  implementation("com.pingidentity.sdks:protect:2.0.1")
   compileOnly("com.pingidentity.sdks:davinci:2.0.1") // CoreRuntime.resolveDaVinciCollectors requires davinci on classpath; compileOnly — linked transitively via rn-davinci
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))

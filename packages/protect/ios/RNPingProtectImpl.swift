@@ -20,6 +20,10 @@ public final class RNPingProtectImpl: NSObject, Sendable {
     super.init()
   }
 
+  // TODO: Add invalidate() to cancel in-flight Tasks and reset module state on React context teardown
+  // once PingOneProtect exposes a public cleanup/teardown API. Currently Protect has no public
+  // teardown method (internal reset() is not part of the public API).
+
   /// Runs Protect SDK data collection for the active `ProtectCollector` in a DaVinci flow.
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.

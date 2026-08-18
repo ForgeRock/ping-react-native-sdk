@@ -7,11 +7,7 @@
 
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
-import type {
-  ProtectClientConfig,
-  ProtectCollectOptions,
-  ProtectConfig,
-} from './types';
+import type { ProtectClientConfig, ProtectConfig } from './types';
 
 /**
  * Native module specification for RNPingProtect.
@@ -101,15 +97,6 @@ export function getNativeModule(): Spec {
       'Ensure the library is linked correctly and the app has been rebuilt.' +
       availableModules,
   );
-}
-
-/**
- * Casts collect options to a codegen-compatible object.
- */
-export function toNativeCollectOptions(
-  options: ProtectCollectOptions,
-): Record<string, unknown> {
-  return options as unknown as Record<string, unknown>;
 }
 
 /**

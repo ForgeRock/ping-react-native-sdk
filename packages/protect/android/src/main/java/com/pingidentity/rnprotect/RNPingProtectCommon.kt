@@ -32,7 +32,6 @@ import kotlinx.coroutines.cancel
  */
 object RNPingProtectCommon {
   private const val LOGGER_ID_KEY = "loggerId"
-  private const val INDEX_KEY = "index"
 
   /** Indicates whether shared runtime wiring has been initialized. */
   private var configured = false
@@ -92,6 +91,8 @@ object RNPingProtectCommon {
     scope.cancel()
     scope = createScope()
     configured = false
+    // TODO: call Protect SDK teardown here once a public cleanup API is available.
+    // Currently com.pingidentity.protect.Protect exposes no shutdown method.
   }
 
   /**
@@ -125,8 +126,9 @@ object RNPingProtectCommon {
       return
     }
 
+    val index = 0
+
     scope.launchBridge(promise, ProtectErrorCodes.COLLECT_ERROR) {
-      val index = parseCollectorIndex(options)
       logger?.i("Protect collectForDaVinci requested for collector index $index")
       val collector = resolveProtectCollector(davinciId, index)
       if (collector == null) {
@@ -191,6 +193,9 @@ object RNPingProtectCommon {
     val callConfig = parseCallConfig(config)
     val logger = resolveLoggerFromCore(callConfig.loggerId)
     scope.launchBridge(promise, ProtectErrorCodes.INITIALIZE_ERROR) {
+      // TODO-PARITY: Android resolves silently when Protect is not initialized;
+      // iOS rejects in the same state (PingOneProtect throws). Align once the
+      // native SDK provides a uniform initialization check.
       logger?.i("Protect pauseBehavioralData requested")
       Protect.pauseBehavioralData()
       logger?.d("Protect pauseBehavioralData succeeded")
@@ -312,15 +317,4 @@ object RNPingProtectCommon {
     return collectors.filterIsInstance<ProtectCollector>().getOrNull(index)
   }
 
-  /**
-   * Parses the collector type index from options, defaulting to 0.
-   */
-  private fun parseCollectorIndex(options: ReadableMap?): Int {
-    if (options == null || !options.hasKey(INDEX_KEY) || options.isNull(INDEX_KEY)) return 0
-    return when (options.getType(INDEX_KEY)) {
-      ReadableType.Number -> options.getDouble(INDEX_KEY).toInt()
-      ReadableType.String -> options.getString(INDEX_KEY)?.toIntOrNull() ?: 0
-      else -> 0
-    }
-  }
 }

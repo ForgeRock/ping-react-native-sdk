@@ -6,7 +6,6 @@
  */
 
 import {
-  collectProtectForDaVinci,
   configureDaVinci,
   disposeDaVinci,
   getDaVinciSession,
@@ -406,24 +405,6 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
      */
     async getId() {
       return ensureConfigured();
-    },
-
-    /**
-     * Runs PingOne Protect data collection for the active PROTECT collector.
-     *
-     * @param options - Optional per-call options.
-     * @throws {DaVinciError} When collection fails or Protect is not installed.
-     */
-    async collectProtect(options?: { index?: number }) {
-      const id = await ensureConfigured();
-      logDebug('DaVinci collectProtect requested', { davinciId: id });
-      try {
-        await collectProtectForDaVinci(id, options ?? {});
-        logDebug('DaVinci collectProtect succeeded', { davinciId: id });
-      } catch (error) {
-        logError('DaVinci collectProtect failed', error, { davinciId: id });
-        throw error;
-      }
     },
 
     /**
