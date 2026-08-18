@@ -1061,18 +1061,38 @@ private final class FakePollingCollector: Collector, PollableCollector, @uncheck
     _pollWasCalled = true
     lock.unlock()
     return AsyncStream { continuation in
-      Task {
+      let producerTask = Task { [
+        statuses,
+        delayNanoseconds,
+        delayBetweenEmissionsNanoseconds
+      ] in
         if delayNanoseconds > 0 {
-          try? await Task.sleep(nanoseconds: delayNanoseconds)
+          do {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+          } catch {
+            continuation.finish()
+            return
+          }
         }
         for status in statuses {
-          if Task.isCancelled { break }
+          if Task.isCancelled {
+            continuation.finish()
+            return
+          }
           continuation.yield(status)
           if delayBetweenEmissionsNanoseconds > 0 {
-            try? await Task.sleep(nanoseconds: delayBetweenEmissionsNanoseconds)
+            do {
+              try await Task.sleep(nanoseconds: delayBetweenEmissionsNanoseconds)
+            } catch {
+              continuation.finish()
+              return
+            }
           }
         }
         continuation.finish()
+      }
+      continuation.onTermination = { @Sendable _ in
+        producerTask.cancel()
       }
     }
   }
