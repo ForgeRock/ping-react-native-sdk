@@ -43,7 +43,7 @@ Pod::Spec.new do |s|
   # Native Ping SDK dependencies
   s.dependency "PingPush", "2.1.0"
   s.dependency "PingStorage", "2.1.0"
-  s.dependency "PingLogger", "2.1.0"
+  s.dependency "PingLogger", "~> 2.1.0"
   s.dependency "RNPingCore"
 
   install_modules_dependencies(s)

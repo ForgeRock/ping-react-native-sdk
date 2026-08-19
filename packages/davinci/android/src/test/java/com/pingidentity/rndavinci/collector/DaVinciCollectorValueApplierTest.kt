@@ -9,6 +9,7 @@ package com.pingidentity.rndavinci.collector
 
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
+import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
@@ -421,6 +422,47 @@ class DaVinciCollectorValueApplierTest {
         )
 
         assertEquals("5550001234", collector.phoneNumber)
+    }
+
+    @Test
+    fun applyBooleanCollectorSetsTrueValue() {
+        val collector = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "agree")
+                put("type", "SINGLE_CHECKBOX")
+                put("label", "I agree")
+                put("required", true)
+                put("inputType", "BOOLEAN")
+                put("appearance", "CHECKBOX")
+                put("errorMessage", "Required.")
+            })
+        }
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors("agree" to true))
+
+        assertTrue(collector.value)
+    }
+
+    @Test
+    fun applyBooleanCollectorSetsFalseValue() {
+        val collector = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "agree")
+                put("type", "SINGLE_CHECKBOX")
+                put("label", "I agree")
+                put("required", true)
+                put("inputType", "BOOLEAN")
+                put("appearance", "CHECKBOX")
+                put("errorMessage", "Required.")
+            })
+        }
+        val node = nodeWith(collector)
+        collector.value = true
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors("agree" to false))
+
+        assertFalse(collector.value)
     }
 
     @Test

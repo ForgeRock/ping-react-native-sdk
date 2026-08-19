@@ -295,6 +295,33 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     }
   }
 
+  // MARK: - apply — BooleanCollector
+
+  func testApplyBooleanCollectorSetsTrueValue() throws {
+    let collector = makeBooleanCollector(key: "agree")
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [DaVinciCollectorValueApplier.CollectorMutation(key: "agree", value: true)]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+    XCTAssertTrue(collector.value)
+  }
+
+  func testApplyBooleanCollectorSetsFalseValue() throws {
+    let collector = makeBooleanCollector(key: "agree")
+    collector.value = true
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [DaVinciCollectorValueApplier.CollectorMutation(key: "agree", value: false)]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+    XCTAssertFalse(collector.value)
+  }
+
+  func testApplyBooleanCollectorCoercesNSNumberBool() throws {
+    let collector = makeBooleanCollector(key: "agree")
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [DaVinciCollectorValueApplier.CollectorMutation(key: "agree", value: NSNumber(value: true))]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+    XCTAssertTrue(collector.value)
+  }
+
   // MARK: - apply — FlowCollector trigger detection
 
   func testApplyReturnsFlowTriggerTrueForFlowCollector() throws {
@@ -366,6 +393,13 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     return DeviceAuthenticationCollector(with: [
       "key": key, "type": "DEVICE_AUTHENTICATION", "label": key, "required": false,
       "options": devicesJson
+    ])
+  }
+
+  private func makeBooleanCollector(key: String) -> BooleanCollector {
+    return BooleanCollector(with: [
+      "key": key, "type": "SINGLE_CHECKBOX", "inputType": "BOOLEAN",
+      "label": "I agree", "required": true, "appearance": "CHECKBOX", "errorMessage": "Required."
     ])
   }
 

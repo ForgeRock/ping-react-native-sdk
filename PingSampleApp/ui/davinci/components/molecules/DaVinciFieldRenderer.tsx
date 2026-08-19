@@ -6,6 +6,7 @@
  */
 
 import React, { memo } from 'react';
+import DaVinciBooleanField from './DaVinciBooleanField';
 import DaVinciDeviceField from './DaVinciDeviceField';
 import DaVinciFlowButton from './DaVinciFlowButton';
 import DaVinciIdpField from './DaVinciIdpField';
@@ -15,6 +16,7 @@ import DaVinciPasswordField from './DaVinciPasswordField';
 import DaVinciPhoneNumberField from './DaVinciPhoneNumberField';
 import DaVinciPollingField from './DaVinciPollingField';
 import DaVinciQrCodeField from './DaVinciQrCodeField';
+import DaVinciReadOnlyTextField from './DaVinciReadOnlyTextField';
 import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
 import DaVinciTextField from './DaVinciTextField';
@@ -44,8 +46,12 @@ function DaVinciFieldRenderer(
     case 'FLOW_BUTTON':
     case 'FLOW_LINK':
       return <DaVinciFlowButton {...props} />;
+    case 'SINGLE_CHECKBOX':
+      return <DaVinciBooleanField {...props} />;
     case 'LABEL':
       return <DaVinciLabelField {...props} />;
+    case 'READ_ONLY_TEXT':
+      return <DaVinciReadOnlyTextField {...props} />;
     case 'SINGLE_SELECT':
     case 'DROPDOWN':
     case 'RADIO':

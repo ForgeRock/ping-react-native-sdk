@@ -143,6 +143,9 @@ enum DaVinciCollectorValueApplier {
       }
       authenticationCollector.value = device
 
+    case let booleanCollector as BooleanCollector:
+      booleanCollector.value = try asBoolean(value, key: key)
+
     default:
       // All remaining collectors (TextCollector, PasswordCollector, SingleSelectCollector,
       // SubmitCollector, FlowCollector) extend SingleValueCollector which accepts a String
@@ -252,6 +255,31 @@ enum DaVinciCollectorValueApplier {
     } catch {
       throw DaVinciBridgeError.argument(
         "DeviceAuthenticationCollector key='\(key)': failed to construct fallback device"
+      )
+    }
+  }
+
+  /// Coerce a dynamic value to a Bool.
+  ///
+  /// - Parameters:
+  ///   - value: Dynamic value.
+  ///   - key: Collector key (used in error messages).
+  /// - Returns: Bool value.
+  /// - Throws: `DaVinciBridgeError.argument` when value cannot be represented as a Bool.
+  private static func asBoolean(_ value: Any?, key: String) throws -> Bool {
+    switch value {
+    case let bool as Bool:
+      return bool
+    case let number as NSNumber:
+      if CFGetTypeID(number) == CFBooleanGetTypeID() {
+        return number.boolValue
+      }
+      return number.intValue != 0
+    case let string as String:
+      return string.lowercased() == "true"
+    default:
+      throw DaVinciBridgeError.argument(
+        "Collector key='\(key)' expects a boolean value"
       )
     }
   }

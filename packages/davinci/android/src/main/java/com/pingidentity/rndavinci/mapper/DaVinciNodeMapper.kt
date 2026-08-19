@@ -11,6 +11,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 import kotlinx.serialization.json.Json
 import com.pingidentity.davinci.collector.Device
+import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
@@ -21,6 +22,7 @@ import com.pingidentity.davinci.collector.PasswordPolicy
 import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.QRCodeCollector
+import com.pingidentity.davinci.collector.ReadOnlyTextCollector
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
@@ -222,6 +224,8 @@ internal object DaVinciNodeMapper {
             is PhoneNumberCollector -> mapPhoneNumberCollector(collector)
             is DeviceRegistrationCollector -> mapDeviceRegistrationCollector(collector)
             is DeviceAuthenticationCollector -> mapDeviceAuthenticationCollector(collector)
+            is BooleanCollector -> mapBooleanCollector(collector)
+            is ReadOnlyTextCollector -> mapReadOnlyTextCollector(collector)
             is PollingCollector -> mapPollingCollector(collector, logger)
             else -> {
                 logWarning(
@@ -515,6 +519,56 @@ internal object DaVinciNodeMapper {
         val map = baseCollectorMap(collector)
         map["devices"] = mapDevices(collector.devices)
         return map
+    }
+
+    /**
+     * Serialize a [BooleanCollector] to a payload map.
+     *
+     * @param collector Native boolean collector.
+     * @return Serialized boolean collector map.
+     */
+    private fun mapBooleanCollector(collector: BooleanCollector): Map<String, Any?> {
+        val map = baseCollectorMap(collector)
+        map["value"] = collector.value
+        map["appearance"] = collector.appearance.value
+        map["errorMessage"] = collector.errorMessage
+        collector.richContent?.let { rc ->
+            map["richContent"] = mapOf(
+                "content" to rc.content,
+                "replacements" to rc.replacements.mapValues { (_, r) ->
+                    buildMap {
+                        put("value", r.value)
+                        put("href", r.href)
+                        put("type", r.type)
+                        put("target", r.target)
+                    }
+                }
+            )
+        }
+        return map
+    }
+
+    /**
+     * Serialize a [ReadOnlyTextCollector] to a payload map.
+     *
+     * @remarks
+     * The `type` field is normalized to `"READ_ONLY_TEXT"` (the stable inputType) rather than the
+     * server-varying `type` field (e.g. `"AGREEMENT"`), matching the TypeScript contract.
+     *
+     * @param collector Native read-only text collector.
+     * @return Serialized read-only text collector map.
+     */
+    private fun mapReadOnlyTextCollector(collector: ReadOnlyTextCollector): Map<String, Any?> {
+        return linkedMapOf(
+            "key" to collector.key,
+            "type" to "READ_ONLY_TEXT",
+            "content" to collector.content,
+            "title" to collector.title,
+            "titleEnabled" to collector.titleEnabled,
+            "enabled" to collector.enabled,
+            "agreementId" to collector.agreementId,
+            "useDynamicAgreement" to collector.useDynamicAgreement
+        )
     }
 
     private fun mapOptions(options: List<com.pingidentity.davinci.collector.Option>): List<Map<String, Any?>> {

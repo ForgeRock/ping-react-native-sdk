@@ -51,11 +51,12 @@ export type DaVinciExecutionMode =
  * Parallels {@link JourneyFieldKind} from the Journey package.
  * - `text`         — single-line text input (TEXT, HIDDEN)
  * - `password`     — masked password input (PASSWORD, PASSWORD_VERIFY)
+ * - `boolean`      — single checkbox or toggle (SINGLE_CHECKBOX)
  * - `singleSelect` — single-select input (SINGLE_SELECT, DROPDOWN, RADIO)
  * - `multiSelect`  — multi-select input (MULTI_SELECT, COMBOBOX, CHECKBOX)
  * - `phone`        — phone number input (PHONE_NUMBER)
  * - `device`       — device picker (DEVICE_REGISTRATION, DEVICE_AUTHENTICATION)
- * - `output`       — display-only content (LABEL)
+ * - `output`       — display-only content (LABEL, READ_ONLY_TEXT)
  * - `polling`      — async out-of-band polling status (POLLING), driven by `pollStatus`
  * - `qrCode`       — display-only QR code image (QR_CODE)
  * - `flow`         — immediate-submit action (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
@@ -67,6 +68,7 @@ export type DaVinciExecutionMode =
 export type DaVinciFieldKind =
   | 'text'
   | 'password'
+  | 'boolean'
   | 'singleSelect'
   | 'multiSelect'
   | 'phone'
@@ -125,6 +127,7 @@ export type DaVinciNormalizedCollector = DaVinciCollector & {
 export type DaVinciFormValue =
   | string // TEXT, PASSWORD, SINGLE_SELECT, DEVICE_REGISTRATION (type string)
   | string[] // MULTI_SELECT
+  | boolean // SINGLE_CHECKBOX
   | { countryCode: string; phoneNumber: string } // PHONE_NUMBER
   | { type: string; id?: string; description?: string } // DEVICE_AUTHENTICATION
   | null;
