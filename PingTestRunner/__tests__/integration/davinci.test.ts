@@ -31,7 +31,6 @@ type NativeDaVinciMock = {
   userinfo: jest.Mock;
   logout: jest.Mock;
   dispose: jest.Mock;
-  collectProtect: jest.Mock;
 };
 
 function makeMock(
@@ -74,7 +73,6 @@ function makeMock(
     userinfo: jest.fn(async () => ({ sub: 'user-mock' })),
     logout: jest.fn(async () => undefined),
     dispose: jest.fn(async () => undefined),
-    collectProtect: jest.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -211,7 +209,6 @@ describe('@ping-identity/rn-davinci — integration', () => {
         'userinfo',
         'logoutUser',
         'dispose',
-        'collectProtect',
       ];
       for (const m of methods) {
         expect(typeof client[m]).toBe('function');
@@ -349,53 +346,6 @@ describe('@ping-identity/rn-davinci — integration', () => {
       await client.dispose();
       await client.start();
       expect(mock.configureDaVinci).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  // ─── collectProtect() ─────────────────────────────────────────────────────
-
-  describe('collectProtect()', () => {
-    it('delegates to native collectProtect with the davinciId', async () => {
-      const mock = makeMock();
-      const mod = await loadDaVinci(mock);
-      const client = mod.createDaVinciClient(VALID_CONFIG);
-      await client.start();
-      await client.collectProtect();
-      expect(mock.collectProtect).toHaveBeenCalledWith('davinci-id-mock', {});
-    });
-
-    it('forwards the index option to native', async () => {
-      const mock = makeMock();
-      const mod = await loadDaVinci(mock);
-      const client = mod.createDaVinciClient(VALID_CONFIG);
-      await client.start();
-      await client.collectProtect({ index: 2 });
-      expect(mock.collectProtect).toHaveBeenCalledWith('davinci-id-mock', {
-        index: 2,
-      });
-    });
-
-    it('resolves void on success', async () => {
-      const mock = makeMock();
-      const mod = await loadDaVinci(mock);
-      const client = mod.createDaVinciClient(VALID_CONFIG);
-      await client.start();
-      await expect(client.collectProtect()).resolves.toBeUndefined();
-    });
-
-    it('propagates native errors as DaVinciError', async () => {
-      const mock = makeMock({
-        collectProtect: jest.fn(async () => {
-          throw { error: 'PROTECT_COLLECT_ERROR', message: 'Collect failed.' };
-        }),
-      });
-      const mod = await loadDaVinci(mock);
-      const client = mod.createDaVinciClient(VALID_CONFIG);
-      await client.start();
-      await expect(client.collectProtect()).rejects.toMatchObject({
-        name: 'DaVinciError',
-        message: 'Collect failed.',
-      });
     });
   });
 
