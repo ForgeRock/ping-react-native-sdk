@@ -130,9 +130,6 @@ enum DaVinciNodeMapper {
       // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
       if resolvedType == socialLoginButton { continue }
 
-      // PROTECT fields are handled in mapCollector via form-field type lookup.
-      if resolvedType == protect { continue }
-
       // A field is supported when the SDK instantiated a collector for its key.
       guard !registeredKeys.contains(key) else { continue }
 

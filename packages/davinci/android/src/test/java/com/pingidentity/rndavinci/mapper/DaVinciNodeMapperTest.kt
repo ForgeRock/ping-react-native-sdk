@@ -698,17 +698,18 @@ class DaVinciNodeMapperTest {
         assertEquals(href, c["link"])
     }
 
-    // ---- PROTECT field exclusion ----
+    // ---- PROTECT field unsupported surfacing ----
     // Note: ProtectCollector live-instance tests are not included because
     // com.pingidentity.sdks:protect is intentionally not a compile-time dependency of
     // rn-davinci. The bridge detects PROTECT collectors via the server's form-field JSON
-    // (field type == "PROTECT"), not by class name. The exclusion from unsupportedFields
-    // is tested below using a pure form-input fixture.
+    // (field type == "PROTECT"), not by class name.
+    // When rn-protect is absent (no ProtectCollector registered), a PROTECT field
+    // is surfaced via unsupportedFields so JS consumers can observe it.
 
     @Test
-    fun mapProtectFormFieldIsExcludedFromUnsupportedFields() {
-        // A PROTECT form field with no registered collector must NOT appear in unsupportedFields
-        // — the mapper skips fields whose resolved type == "PROTECT".
+    fun mapProtectFormFieldAppearsInUnsupportedFieldsWhenCollectorAbsent() {
+        // A PROTECT form field with no registered collector must appear in unsupportedFields
+        // so JS can observe that the server sent a PROTECT collector but rn-protect is absent.
         val input = buildJsonObject {
             put("form", buildJsonObject {
                 put("components", buildJsonObject {
@@ -724,7 +725,11 @@ class DaVinciNodeMapperTest {
         val node = makeNode(input)
 
         val result = DaVinciNodeMapper.mapNodePayload(node)
-        assertFalse(result.containsKey("unsupportedFields"))
+        val unsupported = result.asList("unsupportedFields")
+        assertNotNull(unsupported)
+        assertEquals(1, unsupported!!.size)
+        assertEquals("protect-1", unsupported[0]["key"])
+        assertEquals("PROTECT", unsupported[0]["type"])
     }
 
     // ---- BooleanCollector ----

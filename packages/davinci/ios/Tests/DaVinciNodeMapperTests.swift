@@ -593,15 +593,16 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(first?["link"])
   }
 
-  // MARK: - PROTECT field exclusion
+  // MARK: - PROTECT field unsupported surfacing
   // Note: ProtectCollector live-instance tests are not included here because PingOneProtect
   // is intentionally not a compile-time dependency of rn-davinci. The bridge detects PROTECT
   // collectors via the server's form-field JSON (field type == "PROTECT"), not by class name.
-  // The exclusion from unsupportedFields is tested below using a pure form-input fixture.
+  // When rn-protect is absent (no ProtectCollector registered), a PROTECT field is surfaced
+  // via unsupportedFields so JS consumers can observe it.
 
-  func testProtectFormFieldIsExcludedFromUnsupportedFields() {
-    // A PROTECT form field with no corresponding registered collector must NOT appear in
-    // unsupportedFields — the mapper explicitly skips fields whose resolvedType == "PROTECT".
+  func testProtectFormFieldAppearsInUnsupportedFieldsWhenCollectorAbsent() {
+    // A PROTECT form field with no registered collector must appear in unsupportedFields
+    // so JS can observe that the server sent a PROTECT collector but rn-protect is absent.
     let formInput: [String: Any] = [
       "form": [
         "components": [
@@ -615,7 +616,10 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
     let payload = DaVinciNodeMapper.mapNodePayload(node)
 
-    XCTAssertNil(payload["unsupportedFields"])
+    let unsupported = payload["unsupportedFields"] as? [[String: Any]]
+    XCTAssertEqual(unsupported?.count, 1)
+    XCTAssertEqual(unsupported?.first?["key"] as? String, "protect-1")
+    XCTAssertEqual(unsupported?.first?["type"] as? String, "PROTECT")
   }
 
   // MARK: - BooleanCollector serialization
