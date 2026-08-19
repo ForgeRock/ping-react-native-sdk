@@ -1,10 +1,3 @@
-<!--
-Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-
-This software may be modified and distributed under the terms
-of the MIT license. See the LICENSE file for details.
--->
-
 # AGENTS.md
 
 This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Copilot, Gemini, etc.) when working with code in this repository. It follows the open AGENTS.md convention.
@@ -322,6 +315,7 @@ Integration-only changes (no new UI scenario) still require a test in `PingTestR
 ## Licensing (Mandatory)
 
 - Every new source file must include the project's license header at the top of the file
+- **Exception:** `.md` files (README, CHANGELOG, etc.) do not get a license header
 - Use the same license text and formatting as existing files in the repository
 - Do not invent or modify license headers
 - If the correct license header is unclear, stop and ask before proceeding

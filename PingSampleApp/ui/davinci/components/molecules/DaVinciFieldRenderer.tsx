@@ -69,6 +69,8 @@ function DaVinciFieldRenderer(
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
       );
+    case 'PROTECT':
+      return null;
     case 'POLLING':
       return <DaVinciPollingField {...props} />;
     case 'QR_CODE':

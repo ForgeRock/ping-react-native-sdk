@@ -158,6 +158,98 @@ export type DaVinciOidcModuleConfig = {
 };
 
 /**
+ * Protect lifecycle module configuration nested under {@link DaVinciModules}.
+ *
+ * @remarks
+ * When present, the native DaVinci workflow registers the `ProtectLifecycleModule`
+ * at creation time. This wires behavioral-data initialization, pause-on-success,
+ * and resume-on-start hooks directly into the workflow lifecycle — no manual
+ * `protect.start()` / `protect.pauseBehavioralData()` calls are needed.
+ *
+ * Requires `@ping-identity/rn-protect` to be installed. If the package is absent
+ * at runtime the lifecycle module is silently skipped and collection does not run.
+ *
+ * @public
+ */
+// Intentionally mirrors ProtectConfig from @ping-identity/rn-protect field-for-field.
+// Kept as a separate declaration to avoid a hard davinci → protect dependency (protect is optional).
+export type DaVinciProtectModuleConfig = {
+  /**
+   * Optional JavaScript logger instance for Protect operations.
+   *
+   * @remarks
+   * When provided, native `collectProtect` calls resolve this logger for
+   * operation-level logging. Falls back to the top-level DaVinci logger when absent.
+   * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
+   */
+  logger?: LoggerInstance;
+
+  /**
+   * PingOne environment ID used by the Protect SDK.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.envId` on both platforms.
+   */
+  envId?: string;
+
+  /**
+   * Whether to enable behavioral data collection.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.isBehavioralDataCollection`. Defaults to `true`.
+   */
+  isBehavioralDataCollection?: boolean;
+
+  /**
+   * Whether to use lazy metadata loading.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.isLazyMetadata`. Defaults to `false`.
+   */
+  isLazyMetadata?: boolean;
+
+  /**
+   * Custom host URL for the Protect SDK signals endpoint.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.customHost` on both platforms.
+   */
+  customHost?: string;
+
+  /**
+   * Whether to enable console logging inside the Protect SDK.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.isConsoleLogEnabled`. Defaults to `false`.
+   */
+  isConsoleLogEnabled?: boolean;
+
+  /**
+   * Device attributes to exclude from signal collection.
+   *
+   * @remarks
+   * Maps to `ProtectConfig.deviceAttributesToIgnore` on both platforms.
+   */
+  deviceAttributesToIgnore?: string[];
+
+  /**
+   * Whether to pause behavioral data collection after a successful flow.
+   *
+   * @remarks
+   * Maps to `ProtectLifecycleConfig.pauseBehavioralDataOnSuccess`. Defaults to `false`.
+   */
+  pauseBehavioralDataOnSuccess?: boolean;
+
+  /**
+   * Whether to resume behavioral data collection when the flow starts.
+   *
+   * @remarks
+   * Maps to `ProtectLifecycleConfig.resumeBehavioralDataOnStart`. Defaults to `false`.
+   */
+  resumeBehavioralDataOnStart?: boolean;
+};
+
+/**
  * DaVinci module integrations.
  *
  * @public
@@ -168,6 +260,15 @@ export type DaVinciModules = {
    * parameters, and optional custom token storage.
    */
   oidc: DaVinciOidcModuleConfig;
+
+  /**
+   * Optional Protect lifecycle module configuration.
+   *
+   * @remarks
+   * When provided, wires the native `ProtectLifecycleModule` into the DaVinci
+   * workflow at creation time. Requires `@ping-identity/rn-protect` to be installed.
+   */
+  protect?: DaVinciProtectModuleConfig;
 };
 
 /**

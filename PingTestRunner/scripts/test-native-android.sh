@@ -17,6 +17,7 @@ cd "$(dirname "$0")/../android"
   :ping-identity_rn-device-id:test \
   :ping-identity_rn-device-profile:test \
   :ping-identity_rn-external-idp:test \
+  :ping-identity_rn-protect:test \
   :ping-identity_rn-fido:test \
   :ping-identity_rn-journey:test \
   :ping-identity_rn-logger:test \

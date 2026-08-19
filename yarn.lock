@@ -3191,6 +3191,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ping-identity/rn-protect@workspace:*, @ping-identity/rn-protect@workspace:packages/protect":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-protect@workspace:packages/protect"
+  dependencies:
+    "@ping-identity/rn-types": "workspace:*"
+    "@testing-library/react-native": "npm:^13.3.3"
+    react-native-builder-bob: "npm:^0.40.14"
+    react-test-renderer: "npm:19.1.0"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    "@ping-identity/rn-core": "workspace:*"
+    "@ping-identity/rn-davinci": "workspace:*"
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-push@workspace:*, @ping-identity/rn-push@workspace:packages/push":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-push@workspace:packages/push"
@@ -12392,6 +12409,7 @@ __metadata:
     "@ping-identity/rn-logger": "workspace:*"
     "@ping-identity/rn-oath": "workspace:*"
     "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-protect": "workspace:*"
     "@ping-identity/rn-push": "workspace:*"
     "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
@@ -12445,6 +12463,7 @@ __metadata:
     "@ping-identity/rn-logger": "workspace:*"
     "@ping-identity/rn-oath": "workspace:*"
     "@ping-identity/rn-oidc": "workspace:*"
+    "@ping-identity/rn-protect": "workspace:*"
     "@ping-identity/rn-push": "workspace:*"
     "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"

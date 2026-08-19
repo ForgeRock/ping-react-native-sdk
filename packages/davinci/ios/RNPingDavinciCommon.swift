@@ -26,6 +26,7 @@ protocol PollableCollector: Sendable {
 
 extension PollingCollector: PollableCollector {}
 
+
 /// Serializes lifecycle operations that mutate shared DaVinci runtime state.
 private actor DaVinciLifecycleCoordinator {
   /// Tail task representing the latest enqueued lifecycle work item.
@@ -153,7 +154,7 @@ public final class RNPingDavinciCommon: NSObject {
         CoreRuntime.setDaVinciCollectorResolver { davinciId in
           stateStore.activeContinueNode(for: davinciId).map { Array($0.collectors) }
         }
-        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId))
+        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId, protectLoggerId: payload.protect?.loggerId))
       }
       guard let davinciId = idRef.value else {
         promise.reject(DaVinciErrorMapper.state(code: .initError, message: "Failed to register DaVinci instance"))
@@ -545,6 +546,18 @@ public final class RNPingDavinciCommon: NSObject {
     return handle.nativeLogger as? Logger
   }
 
+  /// Resolves a logger from the core registry by logger handle id.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or `nil` when missing or unresolvable.
+  private static func resolveLoggerFromCore(_ loggerId: String?) async -> Logger? {
+    guard let loggerId, !loggerId.isEmpty else { return nil }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? Logger
+  }
+
   /// Maps token and optional userinfo into a bridge-safe session payload.
   ///
   /// - Parameters:
@@ -714,10 +727,12 @@ private final class PollJobStore: @unchecked Sendable {
 private final class DaVinciHandle: NativeHandle, @unchecked Sendable {
   let davinci: DaVinci
   let loggerId: String?
+  let protectLoggerId: String?
 
-  init(davinci: DaVinci, loggerId: String?) {
+  init(davinci: DaVinci, loggerId: String?, protectLoggerId: String? = nil) {
     self.davinci = davinci
     self.loggerId = loggerId
+    self.protectLoggerId = protectLoggerId
   }
 }
 

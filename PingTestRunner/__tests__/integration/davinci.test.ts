@@ -807,6 +807,157 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(plan.input.collectors).toEqual([{ key: 'auth', value }]);
     });
 
+    it('PROTECT — resolveExecutionMode returns integration_required', async () => {
+      const mod = await loadDaVinci(makeMock());
+      expect(mod.resolveExecutionMode('PROTECT')).toBe('integration_required');
+    });
+
+    it('PROTECT — normalizeCollectors marks it integration_required and not requiresUserInput', async () => {
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [{ key: 'protect.success', type: 'PROTECT' }],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0]).toMatchObject({
+        key: 'protect.success',
+        type: 'PROTECT',
+        executionMode: 'integration_required',
+        requiresUserInput: false,
+      });
+    });
+
+    it('PROTECT — excluded from buildNextInput payload', async () => {
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              { key: 'protect.success', type: 'PROTECT' },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {});
+      // PROTECT collector must not appear in the payload — only the submit button
+      expect(
+        plan.input.collectors.find(
+          (c: { key: string }) => c.key === 'protect.success',
+        ),
+      ).toBeUndefined();
+      expect(plan.input.collectors).toContainEqual({
+        key: 'submit',
+        value: 'submit',
+      });
+    });
+
+    it('PROTECT — canSubmit is false without handledCollectorTypes (INTEGRATION_REQUIRED blocks)', async () => {
+      // PROTECT is integration_required — without rn-protect handling it, the issue
+      // is blocking and canSubmit must be false so the app knows it needs the plugin.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              { key: 'protect.success', type: 'PROTECT' },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {});
+      expect(plan.canSubmit).toBe(false);
+      expect(plan.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'INTEGRATION_REQUIRED',
+          key: 'protect.success',
+        }),
+      );
+    });
+
+    it('PROTECT — canSubmit is true when PROTECT is in handledCollectorTypes', async () => {
+      // Simulates rn-protect having already called collectForDaVinci and passing
+      // 'PROTECT' as a handled type so buildNextInput does not block submission.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              { key: 'protect.success', type: 'PROTECT' },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {}, new Set(['PROTECT']));
+      expect(plan.canSubmit).toBe(true);
+      expect(plan.issues).toHaveLength(0);
+    });
+
+    it('TEXT with boolean formData pre-fill — value is the string "true"', async () => {
+      // Simulates protect.success: true arriving from the native bridge after the
+      // iOS formDataValue fallback coerces the server-sent Bool to a string.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'protect.success',
+                type: 'TEXT',
+                label: '',
+                required: false,
+                value: 'true', // bridge coerced Bool → "true"
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0].value).toBe('true');
+      const plan = mod.buildNextInput(node, { 'protect.success': 'true' });
+      expect(plan.input.collectors).toContainEqual({
+        key: 'protect.success',
+        value: 'true',
+      });
+    });
+
+    it('SOCIAL_LOGIN_BUTTON — resolveExecutionMode returns integration_required', async () => {
+      const mod = await loadDaVinci(makeMock());
+      expect(mod.resolveExecutionMode('SOCIAL_LOGIN_BUTTON')).toBe(
+        'integration_required',
+      );
+    });
+
     it('unsupported collector — surfaces a non-blocking issue and excludes from payload', async () => {
       const mod = await loadDaVinci(
         makeMock({

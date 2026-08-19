@@ -49,7 +49,9 @@ internal data class DaVinciClientPayload(
     /** Optional proactive token refresh threshold in seconds. */
     val refreshThreshold: Long?,
     /** Optional additional authorization parameters. */
-    val additionalParameters: Map<String, String>
+    val additionalParameters: Map<String, String>,
+    /** Optional protect lifecycle module configuration. Present only when modules.protect is provided. */
+    val protect: ProtectLifecyclePayload?,
 )
 
 /**
@@ -96,6 +98,12 @@ internal object DaVinciConfigParser {
             emptyMap()
         }
 
+        val protect = if (config.hasKey("protect")) {
+            config.getMap("protect")?.let { parseProtectLifecyclePayload(it) }
+        } else {
+            null
+        }
+
         return DaVinciClientPayload(
             discoveryEndpoint = discoveryEndpoint,
             clientId = clientId,
@@ -113,7 +121,47 @@ internal object DaVinciConfigParser {
             uiLocales = uiLocales,
             acrValues = acrValues,
             refreshThreshold = refreshThreshold,
-            additionalParameters = additionalParameters
+            additionalParameters = additionalParameters,
+            protect = protect,
+        )
+    }
+
+    private fun parseProtectLifecyclePayload(map: ReadableMap): ProtectLifecyclePayload {
+        val envId = if (map.hasKey("envId")) map.getString("envId")?.takeIf { it.isNotBlank() } else null
+        val isBehavioralDataCollection = if (map.hasKey("isBehavioralDataCollection")) {
+            map.getBoolean("isBehavioralDataCollection")
+        } else {
+            true
+        }
+        val isLazyMetadata = if (map.hasKey("isLazyMetadata")) map.getBoolean("isLazyMetadata") else false
+        val customHost = if (map.hasKey("customHost")) map.getString("customHost")?.takeIf { it.isNotBlank() } else null
+        val isConsoleLogEnabled = if (map.hasKey("isConsoleLogEnabled")) map.getBoolean("isConsoleLogEnabled") else false
+        val deviceAttributesToIgnore = if (map.hasKey("deviceAttributesToIgnore")) {
+            readStringArray(map.getArray("deviceAttributesToIgnore"))
+        } else {
+            emptyList()
+        }
+        val pauseBehavioralDataOnSuccess = if (map.hasKey("pauseBehavioralDataOnSuccess")) {
+            map.getBoolean("pauseBehavioralDataOnSuccess")
+        } else {
+            false
+        }
+        val resumeBehavioralDataOnStart = if (map.hasKey("resumeBehavioralDataOnStart")) {
+            map.getBoolean("resumeBehavioralDataOnStart")
+        } else {
+            false
+        }
+        val loggerId = if (map.hasKey("loggerId")) map.getString("loggerId")?.takeIf { it.isNotBlank() } else null
+        return ProtectLifecyclePayload(
+            envId = envId,
+            isBehavioralDataCollection = isBehavioralDataCollection,
+            isLazyMetadata = isLazyMetadata,
+            customHost = customHost,
+            isConsoleLogEnabled = isConsoleLogEnabled,
+            deviceAttributesToIgnore = deviceAttributesToIgnore,
+            pauseBehavioralDataOnSuccess = pauseBehavioralDataOnSuccess,
+            resumeBehavioralDataOnStart = resumeBehavioralDataOnStart,
+            loggerId = loggerId,
         )
     }
 }

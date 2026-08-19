@@ -18,6 +18,7 @@ import {
   type PollingStatus,
 } from '@ping-identity/rn-davinci';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
+import { collectProtect } from '@ping-identity/rn-protect';
 import { logger } from '@ping-identity/rn-logger';
 import Config from 'react-native-config';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
@@ -38,6 +39,8 @@ export type UseDaVinciClientPanelControllerResult = {
   error: DaVinciError | null;
   /** Last IdP-authorize error message (cleared on next start). */
   idpError: string | null;
+  /** Last Protect collect error message (cleared on next start). */
+  protectError: string | null;
   /** True when a session is confirmed active for the current DaVinci client. */
   hasActiveSession: boolean;
   /** True while the initial session bootstrap check is running. */
@@ -122,10 +125,11 @@ export function useDaVinciClientPanelController(
     [externalIdpLogger],
   );
   const form = useDaVinciForm(node, {
-    handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']),
+    handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON', 'PROTECT']),
   });
 
   const [idpError, setIdpError] = useState<string | null>(null);
+  const [protectError, setProtectError] = useState<string | null>(null);
   const [idpJustAuthorized, setIdpJustAuthorized] = useState<boolean>(false);
 
   const { hasActiveSession, setHasActiveSession, isSessionCheckRunning } =
@@ -136,6 +140,7 @@ export function useDaVinciClientPanelController(
 
   const onStart = useCallback(async (): Promise<boolean> => {
     setIdpError(null);
+    setProtectError(null);
     try {
       await start();
       return true;
@@ -168,6 +173,26 @@ export function useDaVinciClientPanelController(
     next,
   });
 
+  const onProtectCollect = useCallback(async (): Promise<void> => {
+    const protectFields = form.fields.filter(f => f.type === 'PROTECT');
+    if (protectFields.length === 0) {
+      return;
+    }
+    const davinciClient = davinciContext?.client;
+    if (!davinciClient) {
+      throw new Error('[DaVinci] collectProtect: no DaVinci client in context');
+    }
+    try {
+      for (let i = 0; i < protectFields.length; i++) {
+        await collectProtect(davinciClient);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setProtectError(msg);
+      throw err;
+    }
+  }, [davinciContext?.client, form.fields]);
+
   const onSubmit = useCallback((): void => {
     if (loading) {
       return;
@@ -176,10 +201,13 @@ export function useDaVinciClientPanelController(
     if (!plan.canSubmit) {
       return;
     }
-    next(plan.input).catch(() => {
-      // `error` is already updated by the hook.
-    });
-  }, [form, loading, next]);
+    onProtectCollect()
+      .then(() => next(plan.input))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[DaVinci] onSubmit failed: ${msg}`);
+      });
+  }, [form, loading, next, onProtectCollect]);
 
   const onIdpAuthorize = useCallback(
     async (collector: IdpCollector): Promise<void> => {
@@ -273,6 +301,7 @@ export function useDaVinciClientPanelController(
     loading,
     error,
     idpError,
+    protectError,
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,

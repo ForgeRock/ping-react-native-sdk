@@ -56,6 +56,11 @@ export type NativeDaVinciConfig = {
   timeout?: number;
   /** Resolved logger handle id from the logger registry. */
   loggerId?: string;
+  /**
+   * Optional protect lifecycle configuration.
+   * When present, `DaVinciClientFactory` registers `ProtectLifecycleModule` at workflow creation.
+   */
+  protect?: Object;
 };
 
 /**

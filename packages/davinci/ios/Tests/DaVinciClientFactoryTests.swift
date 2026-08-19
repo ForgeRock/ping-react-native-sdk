@@ -39,7 +39,34 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
+    )
+
+    let davinci = try await DaVinciClientFactory().build(payload)
+    XCTAssertNotNil(davinci)
+  }
+
+  func testBuildWithNullProtectPayloadDoesNotThrow() async throws {
+    let payload = DaVinciClientPayload(
+      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
+      clientId: "my-client",
+      redirectUri: "com.example.app://oauth2redirect",
+      scopes: ["openid"],
+      storageId: nil,
+      loggerId: nil,
+      timeout: nil,
+      signOutRedirectUri: nil,
+      loginHint: nil,
+      nonce: nil,
+      state: nil,
+      prompt: nil,
+      display: nil,
+      uiLocales: nil,
+      acrValues: nil,
+      refreshThreshold: nil,
+      additionalParameters: [:],
+      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -68,7 +95,8 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -97,7 +125,8 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -122,7 +151,8 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
     )
 
     do {
@@ -155,7 +185,8 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -184,7 +215,8 @@ final class DaVinciClientFactoryTests: XCTestCase {
       uiLocales: nil,
       acrValues: nil,
       refreshThreshold: nil,
-      additionalParameters: [:]
+      additionalParameters: [:],
+      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)

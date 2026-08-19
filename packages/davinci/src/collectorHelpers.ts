@@ -86,14 +86,14 @@ export const flowCollectorTypes = new Set<string>([
  * Each integration ticket registers its own type strings here when the matching
  * native collector is added:
  * - IdP collector → `'SOCIAL_LOGIN_BUTTON'` (SDKS-5128)
+ * - Protect collector → `'PROTECT'` (SDKS-5129)
  * - FIDO collectors → `'FIDO_REGISTRATION'` / `'FIDO_AUTHENTICATION'`
- * - Protect collector → `'PROTECT'`
  *
  * @public
  */
 export const integrationRequiredCollectorTypes = new Set<
   DaVinciCollector['type']
->(['SOCIAL_LOGIN_BUTTON']);
+>(['SOCIAL_LOGIN_BUTTON', 'PROTECT']);
 
 const textFieldKindTypes = new Set<string>(['TEXT', 'HIDDEN']);
 const passwordFieldKindTypes = new Set<string>(['PASSWORD', 'PASSWORD_VERIFY']);

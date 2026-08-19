@@ -593,6 +593,35 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(first?["link"])
   }
 
+  // MARK: - PROTECT field unsupported surfacing
+  // Note: ProtectCollector live-instance tests are not included here because PingOneProtect
+  // is intentionally not a compile-time dependency of rn-davinci. The bridge detects PROTECT
+  // collectors via the server's form-field JSON (field type == "PROTECT"), not by class name.
+  // When rn-protect is absent (no ProtectCollector registered), a PROTECT field is surfaced
+  // via unsupportedFields so JS consumers can observe it.
+
+  func testProtectFormFieldAppearsInUnsupportedFieldsWhenCollectorAbsent() {
+    // A PROTECT form field with no registered collector must appear in unsupportedFields
+    // so JS can observe that the server sent a PROTECT collector but rn-protect is absent.
+    let formInput: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "protect-1", "type": "PROTECT"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [], input: formInput)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    let unsupported = payload["unsupportedFields"] as? [[String: Any]]
+    XCTAssertEqual(unsupported?.count, 1)
+    XCTAssertEqual(unsupported?.first?["key"] as? String, "protect-1")
+    XCTAssertEqual(unsupported?.first?["type"] as? String, "PROTECT")
+  }
+
   // MARK: - BooleanCollector serialization
 
   func testMapBooleanCollectorIncludesAllBaseAndBooleanFields() {
@@ -953,6 +982,72 @@ final class DaVinciNodeMapperTests: XCTestCase {
     }
     return IdpCollector(with: json)
   }
+
+  // MARK: - resolvedFormFieldType
+
+  func testResolvedFormFieldTypeReturnsInputTypeWhenPresent() {
+    let input: [String: Any] = [
+      "form": ["components": ["fields": [
+        ["key": "protect-field", "inputType": "PROTECT", "type": "OTHER"]
+      ]]]
+    ]
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: input)
+
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+  }
+
+  func testResolvedFormFieldTypeFallsBackToTypeWhenInputTypeMissing() {
+    let input: [String: Any] = [
+      "form": ["components": ["fields": [
+        ["key": "protect-field", "type": "PROTECT"]
+      ]]]
+    ]
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: input)
+
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+  }
+
+  func testResolvedFormFieldTypeReturnsNilWhenFieldMissing() {
+    let collector = makeTextCollector(key: "no-field")
+    let node = makeContinueNode(collectors: [collector], input: [:])
+
+    XCTAssertNil(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil))
+  }
+
+  func testResolvedFormFieldTypeReturnsNilWhenNoFormPresent() {
+    let collector = makeTextCollector(key: "protect-field")
+    let node = makeContinueNode(collectors: [collector], input: [:])
+
+    XCTAssertNil(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil))
+  }
+
+  // MARK: - Connector fields
+
+  func testMapContinueNodeConnectorFieldsAlwaysPresent() {
+    // TestContinueNode is not a Connector subtype — extension properties return "" safely.
+    let node = makeContinueNode(collectors: [])
+
+    let result = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNotNil(result["id"])
+    XCTAssertNotNil(result["name"])
+    XCTAssertNotNil(result["description"])
+    XCTAssertNotNil(result["category"])
+  }
+
+  func testMapContinueNodeConnectorFieldsDefaultToEmptyStringForNonConnectorSubtype() {
+    let node = makeContinueNode(collectors: [])
+
+    let result = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertEqual(result["id"] as? String, "")
+    XCTAssertEqual(result["name"] as? String, "")
+    XCTAssertEqual(result["description"] as? String, "")
+    XCTAssertEqual(result["category"] as? String, "")
+  }
+
 }
 
 private final class TestContinueNode: ContinueNode {

@@ -6,7 +6,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Config from 'react-native-config';
 import type {
   ContinueNode,
   DaVinciFormResult,
@@ -17,6 +18,7 @@ import type {
   UnsupportedDaVinciField,
 } from '@ping-identity/rn-davinci';
 import { commonStyles } from '../../../../src/styles/common';
+import { colors } from '../../../../src/styles/colors';
 import { davinciScreenStyles } from '../../../../src/styles/davinciStyles';
 import AsyncActionButton from '../../../components/molecules/AsyncActionButton';
 import DaVinciFieldRenderer from '../molecules/DaVinciFieldRenderer';
@@ -120,6 +122,41 @@ function renderUnsupportedFieldsNotice(
  * @param props Component props.
  * @returns Continue node form element.
  */
+const styles = StyleSheet.create({
+  formHeader: { marginBottom: 16 },
+  formTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textDark,
+    marginBottom: 4,
+  },
+  formDescription: {
+    fontSize: 14,
+    color: colors.gray,
+  },
+  debugPanel: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 8,
+  },
+  debugTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
+    color: '#666',
+  },
+  debugScroll: {
+    maxHeight: 300,
+  },
+  debugText: {
+    fontSize: 10,
+    fontFamily: 'Courier',
+    color: '#333',
+  },
+});
+
 export default function DaVinciContinueNodePanel(
   props: DaVinciContinueNodePanelProps,
 ): React.ReactElement {
@@ -141,6 +178,15 @@ export default function DaVinciContinueNodePanel(
 
   return (
     <View>
+      {node.name || node.description ? (
+        <View style={styles.formHeader}>
+          {node.name ? <Text style={styles.formTitle}>{node.name}</Text> : null}
+          {node.description ? (
+            <Text style={styles.formDescription}>{node.description}</Text>
+          ) : null}
+        </View>
+      ) : null}
+
       {renderUnsupportedFieldsNotice(node.unsupportedFields)}
 
       {fields.map(collector => (
@@ -171,6 +217,18 @@ export default function DaVinciContinueNodePanel(
         <Text style={commonStyles.textError}>
           Please complete required fields before continuing.
         </Text>
+      ) : null}
+
+      {(Config.DAVINCI_SHOW_DEBUG_PANEL ?? 'false').trim().toLowerCase() ===
+      'true' ? (
+        <View style={styles.debugPanel}>
+          <Text style={styles.debugTitle}>DEBUG: Raw Node JSON</Text>
+          <ScrollView style={styles.debugScroll} nestedScrollEnabled>
+            <Text style={styles.debugText} selectable>
+              {JSON.stringify(node, null, 2)}
+            </Text>
+          </ScrollView>
+        </View>
       ) : null}
     </View>
   );
