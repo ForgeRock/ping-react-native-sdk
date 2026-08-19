@@ -7,6 +7,7 @@
 
 package com.pingidentity.rndavinci.mapper
 
+import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
@@ -16,6 +17,7 @@ import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.QRCodeCollector
+import com.pingidentity.davinci.collector.ReadOnlyTextCollector
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
@@ -723,6 +725,132 @@ class DaVinciNodeMapperTest {
 
         val result = DaVinciNodeMapper.mapNodePayload(node)
         assertFalse(result.containsKey("unsupportedFields"))
+    }
+
+    // ---- BooleanCollector ----
+
+    @Test
+    fun mapBooleanCollectorIncludesAllBaseAndBooleanFields() {
+        val collector = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "accept-terms")
+                put("type", "SINGLE_CHECKBOX")
+                put("label", "I accept the terms")
+                put("required", true)
+                put("appearance", "CHECKBOX")
+                put("errorMessage", "You must accept the terms to continue.")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("accept-terms", c["key"])
+        assertEquals("SINGLE_CHECKBOX", c["type"])
+        assertEquals("I accept the terms", c["label"])
+        assertEquals(true, c["required"])
+        assertEquals(false, c["value"])
+        assertEquals("CHECKBOX", c["appearance"])
+        assertEquals("You must accept the terms to continue.", c["errorMessage"])
+        assertFalse(c.containsKey("richContent"))
+    }
+
+    @Test
+    fun mapBooleanCollectorIncludesRichContentWhenPresent() {
+        val collector = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "consent")
+                put("type", "SINGLE_CHECKBOX")
+                put("label", "Consent")
+                put("required", false)
+                put("appearance", "SWITCH")
+                put("errorMessage", "")
+                put("richContent", buildJsonObject {
+                    put("content", "Please read the {{link}} before continuing.")
+                    put("replacements", buildJsonObject {
+                        put("link", buildJsonObject {
+                            put("value", "Terms of Service")
+                            put("href", "https://example.com/tos")
+                            put("type", "link")
+                            put("target", "_blank")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("SWITCH", c["appearance"])
+        @Suppress("UNCHECKED_CAST")
+        val rc = c["richContent"] as? Map<String, Any?>
+        assertNotNull(rc)
+        assertEquals("Please read the {{link}} before continuing.", rc!!["content"])
+        @Suppress("UNCHECKED_CAST")
+        val replacements = rc["replacements"] as? Map<String, Any?>
+        assertNotNull(replacements)
+        @Suppress("UNCHECKED_CAST")
+        val linkReplacement = replacements!!["link"] as? Map<String, Any?>
+        assertNotNull(linkReplacement)
+        assertEquals("Terms of Service", linkReplacement!!["value"])
+        assertEquals("https://example.com/tos", linkReplacement["href"])
+        assertEquals("link", linkReplacement["type"])
+        assertEquals("_blank", linkReplacement["target"])
+    }
+
+    @Test
+    fun mapBooleanCollectorOmitsRichContentWhenAbsent() {
+        val collector = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "toggle")
+                put("type", "SINGLE_CHECKBOX")
+                put("label", "Toggle")
+                put("required", false)
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertFalse(c.containsKey("richContent"))
+    }
+
+    // ---- ReadOnlyTextCollector ----
+
+    @Test
+    fun mapReadOnlyTextCollectorIncludesAllFields() {
+        val collector = ReadOnlyTextCollector().apply {
+            init(buildJsonObject {
+                put("key", "agreement")
+                put("type", "AGREEMENT")
+                put("content", "This is example agreement text.")
+                put("title", "Terms of Service Agreement")
+                put("titleEnabled", true)
+                put("enabled", true)
+                put("agreement", buildJsonObject {
+                    put("id", "6ff30c9e-cd98-4fe5-85ca-01111ca20702")
+                    put("useDynamicAgreement", false)
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("agreement", c["key"])
+        // Bridge normalizes type to READ_ONLY_TEXT regardless of server type ("AGREEMENT")
+        assertEquals("READ_ONLY_TEXT", c["type"])
+        assertEquals("This is example agreement text.", c["content"])
+        assertEquals("Terms of Service Agreement", c["title"])
+        assertEquals(true, c["titleEnabled"])
+        assertEquals(true, c["enabled"])
+        assertEquals("6ff30c9e-cd98-4fe5-85ca-01111ca20702", c["agreementId"])
+        assertEquals(false, c["useDynamicAgreement"])
     }
 
     @Test

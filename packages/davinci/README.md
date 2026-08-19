@@ -296,7 +296,9 @@ The following collector types are supported on Android and iOS:
 | `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
 | `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
 | `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
+| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                             | Manual input   |
 | `LABEL`                 | Read-only display content.                                                             | Output-only    |
+| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
 | `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
 | `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
 
