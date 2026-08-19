@@ -13,6 +13,8 @@ import DaVinciLabelField from './DaVinciLabelField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
 import DaVinciPasswordField from './DaVinciPasswordField';
 import DaVinciPhoneNumberField from './DaVinciPhoneNumberField';
+import DaVinciPollingField from './DaVinciPollingField';
+import DaVinciQrCodeField from './DaVinciQrCodeField';
 import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
 import DaVinciTextField from './DaVinciTextField';
@@ -63,6 +65,10 @@ function DaVinciFieldRenderer(
       );
     case 'PROTECT':
       return null;
+    case 'POLLING':
+      return <DaVinciPollingField {...props} />;
+    case 'QR_CODE':
+      return <DaVinciQrCodeField {...props} />;
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

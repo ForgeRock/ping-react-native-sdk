@@ -12,6 +12,21 @@ import PingLogger
 import PingOidc
 import PingOrchestrate
 import RNPingCore
+
+/// Seam allowing `pollDaVinci` to be exercised in bridge-level unit tests without
+/// invoking `PollingCollector`'s real network/timing logic. `PollingCollector` is
+/// declared `public` (not `open`) in the iOS SDK, so it cannot be subclassed
+/// cross-module — conforming it to this protocol via the extension below lets test
+/// doubles substitute for it with no production behavior change (`id`/`poll()` are
+/// already implemented identically on the real type).
+protocol PollableCollector: Sendable {
+  var id: String { get }
+  func poll() -> AsyncStream<PollingStatus>
+}
+
+extension PollingCollector: PollableCollector {}
+
+
 /// Serializes lifecycle operations that mutate shared DaVinci runtime state.
 private actor DaVinciLifecycleCoordinator {
   /// Tail task representing the latest enqueued lifecycle work item.
@@ -53,6 +68,8 @@ public final class RNPingDavinciCommon: NSObject {
   public typealias BoolResolver = @Sendable (Bool) -> Void
   /// Promise resolver for void results.
   public typealias VoidResolver = @Sendable () -> Void
+  /// Promise resolver for poll subscription payloads.
+  public typealias PollResolver = @Sendable (NSDictionary) -> Void
   /// Promise rejecter closure type used by the DaVinci Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -62,6 +79,8 @@ public final class RNPingDavinciCommon: NSObject {
   private static let davinciRegistry: Registry = CoreRuntime.davinciRegistry
   /// Lifecycle coordinator ensuring ordered configure/cleanup execution.
   private static let lifecycleCoordinator = DaVinciLifecycleCoordinator()
+  /// In-flight poll tasks keyed by `subscriptionId`, grouped by `davinciId`.
+  private static let pollJobStore = PollJobStore()
 
   /// Releases shared runtime state.
   @objc
@@ -74,11 +93,28 @@ public final class RNPingDavinciCommon: NSObject {
   /// Clears DaVinci runtime state in serialized lifecycle order.
   private static func cleanupAsync() async {
     CoreRuntime.setDaVinciCollectorResolver(nil)
+    pollJobStore.removeAll()
     await lifecycleCoordinator.enqueue {
       stateStore.removeAll()
       await davinciRegistry.removeAll()
     }
   }
+
+#if DEBUG
+  /// Registers a `ContinueNode` for `davinciId` without a full `configureDaVinci` call.
+  ///
+  /// - Note: Test-only seam so `pollDaVinci` tests can install a fake `PollingCollector`
+  ///   on a node without exercising native workflow construction.
+  static func _setContinueNodeForTesting(davinciId: String, node: ContinueNode) {
+    stateStore.setNode(davinciId: davinciId, node: node)
+  }
+
+  /// Test-only seam exposing the number of poll tasks currently tracked for
+  /// `davinciId`, to verify natural-completion cleanup doesn't leak tracking entries.
+  static func _trackedPollTaskCount(for davinciId: String) -> Int {
+    pollJobStore.trackedTaskCount(for: davinciId)
+  }
+#endif
 
   // MARK: - Bridge methods
 
@@ -394,6 +430,10 @@ public final class RNPingDavinciCommon: NSObject {
 
   /// Disposes a DaVinci workflow and clears native state for that client.
   ///
+  /// Also cancels any outstanding poll `Task`s for `davinciId` — a safety net so a
+  /// disposed instance never leaves an orphaned poll running after the caller stops
+  /// listening for its events.
+  ///
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.
   ///   - resolver: Promise resolver called when dispose completes.
@@ -405,11 +445,78 @@ public final class RNPingDavinciCommon: NSObject {
     rejecter: @escaping PromiseRejecter
   ) {
     let promise = PromiseBridge<Void>(resolver: resolver, rejecter: rejecter)
+    pollJobStore.cancelAll(for: davinciId)
     Task { @MainActor in
       stateStore.clearNodeState(for: davinciId)
       await davinciRegistry.remove(davinciId)
       promise.resolve(())
     }
+  }
+
+  /// Starts streaming polling status updates for the active `PollingCollector`.
+  ///
+  /// The poll `Task` is registered in the shared job store — keyed by `davinciId` —
+  /// before the promise resolves. Swift schedules a `Task`'s body asynchronously
+  /// rather than running it inline, so the actual `AsyncStream` consumption (and
+  /// therefore the first possible JS event) cannot begin until after this function
+  /// returns and the promise has resolved, mirroring the ordering guarantee on the
+  /// Android side.
+  ///
+  /// - Note: `PollingCollector.poll()` exposes no cancellation hook (no
+  ///   `onTermination`, no `cancel()`) — a platform constraint of the iOS SDK. Once
+  ///   started, this `Task` runs to its own terminal state unless `dispose`/
+  ///   `cleanup` cancels it as a teardown safety net.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Bridge map with an optional `key` selecting which
+  ///     `PollingCollector` to poll when more than one is present on the active
+  ///     node; the first one is used when `key` is absent.
+  ///   - resolver: Promise resolver called with `{ subscriptionId }`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func pollDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    resolver: @escaping PollResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    guard let node = stateStore.activeContinueNode(for: davinciId) else {
+      promise.reject(
+        DaVinciErrorMapper.state(
+          code: .pollError,
+          message: "No active ContinueNode found for davinci id=\(davinciId)"
+        )
+      )
+      return
+    }
+
+    let requestedKey = options["key"] as? String
+    let collectors = node.collectors.compactMap { $0 as? any PollableCollector }
+    let collector = requestedKey.map { key in collectors.first { $0.id == key } } ?? collectors.first
+    guard let collector else {
+      promise.reject(
+        DaVinciErrorMapper.state(
+          code: .pollError,
+          message: "No active PollingCollector found for davinci id=\(davinciId)"
+            + (requestedKey.map { " with key=\($0)" } ?? "")
+        )
+      )
+      return
+    }
+
+    let subscriptionId = UUID().uuidString
+    let task = Task {
+      for await status in collector.poll() {
+        if Task.isCancelled { break }
+        emitPollingStatus(davinciId: davinciId, subscriptionId: subscriptionId, status: status)
+      }
+      pollJobStore.remove(davinciId: davinciId, subscriptionId: subscriptionId)
+    }
+    pollJobStore.register(davinciId: davinciId, subscriptionId: subscriptionId, task: task)
+
+    promise.resolve(["subscriptionId": subscriptionId] as NSDictionary)
   }
 
   // MARK: - Helpers
@@ -508,6 +615,109 @@ public final class RNPingDavinciCommon: NSObject {
       return String(describing: value)
     }
   }
+
+  /// Emits one `PollingStatus` tick to JS via the shared `RNPingDavinci_NativeEmit`
+  /// notification, which the architecture-specific bridge module owning the event
+  /// emitter gate forwards to `RCTDeviceEventEmitter`.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - subscriptionId: Subscription id returned by `pollDaVinci`.
+  ///   - status: Native polling status tick.
+  private static func emitPollingStatus(davinciId: String, subscriptionId: String, status: PollingStatus) {
+    var body: [String: Any] = ["subscriptionId": subscriptionId, "daVinciId": davinciId]
+    switch status {
+    case .continue(let retryCount, let maxRetries):
+      body["status"] = "continue"
+      body["retryCount"] = retryCount
+      body["maxRetries"] = maxRetries
+    case .complete(let value):
+      body["status"] = "complete"
+      body["value"] = value
+    case .timedOut:
+      body["status"] = "timedOut"
+    case .expired:
+      body["status"] = "expired"
+    case .error(let error):
+      body["status"] = "error"
+      body["error"] = ["message": error.localizedDescription]
+    }
+    NotificationCenter.default.post(
+      name: .pingDavinciNativeEmit,
+      object: nil,
+      userInfo: ["eventName": RNPingDavinciEvents.pollingStatus, "eventBody": body]
+    )
+  }
+}
+
+/// Tracks in-flight poll `Task`s keyed by `subscriptionId`, grouped by
+/// `davinciId`, so `dispose()`/`cleanup()` can cancel every outstanding poll
+/// for one instance — a safety net against orphaned polls. There is no public
+/// per-poll cancellation surface (neither native SDK exposes a cancellation
+/// primitive for an in-flight poll), so tasks are only ever removed here on
+/// natural completion or instance-scoped teardown.
+///
+/// - Note: `@unchecked Sendable` is used because this class owns a mutable map of
+///   `Task` handles. All reads/writes are synchronized with `NSLock`.
+private final class PollJobStore: @unchecked Sendable {
+  private let lock = NSLock()
+  private var tasksByDaVinciId = [String: [String: Task<Void, Never>]]()
+  /// Tombstones `subscriptionId`s that completed before `register` was called for them.
+  private var completedSubscriptions = Set<String>()
+
+  /// Registers a poll task, keyed by `subscriptionId`, before the promise resolves.
+  ///
+  /// - Note: A no-op if `subscriptionId` already completed and was removed —
+  ///   an unstructured `Task` can start running concurrently with the caller
+  ///   that spawned it, so completion may race ahead of this call. Without this
+  ///   guard, a late `register` would resurrect an already-finished task.
+  func register(davinciId: String, subscriptionId: String, task: Task<Void, Never>) {
+    lock.lock()
+    defer { lock.unlock() }
+    if completedSubscriptions.remove(subscriptionId) != nil {
+      return
+    }
+    tasksByDaVinciId[davinciId, default: [:]][subscriptionId] = task
+  }
+
+  /// Removes a completed poll task's bookkeeping without cancelling it (it already finished).
+  func remove(davinciId: String, subscriptionId: String) {
+    lock.lock()
+    defer { lock.unlock() }
+    if tasksByDaVinciId[davinciId]?.removeValue(forKey: subscriptionId) == nil {
+      completedSubscriptions.insert(subscriptionId)
+    }
+    if tasksByDaVinciId[davinciId]?.isEmpty == true {
+      tasksByDaVinciId.removeValue(forKey: davinciId)
+    }
+  }
+
+  /// Cancels every tracked poll task for `davinciId`.
+  func cancelAll(for davinciId: String) {
+    lock.lock()
+    let tasks = tasksByDaVinciId.removeValue(forKey: davinciId).map { Array($0.values) } ?? []
+    lock.unlock()
+    tasks.forEach { $0.cancel() }
+  }
+
+  /// Cancels every tracked poll task, across all DaVinci instances.
+  func removeAll() {
+    lock.lock()
+    let tasks = tasksByDaVinciId.values.flatMap { $0.values }
+    tasksByDaVinciId.removeAll()
+    completedSubscriptions.removeAll()
+    lock.unlock()
+    tasks.forEach { $0.cancel() }
+  }
+
+#if DEBUG
+  /// Test-only seam returning the number of tracked poll tasks for `davinciId`.
+  func trackedTaskCount(for davinciId: String) -> Int {
+    lock.lock()
+    defer { lock.unlock() }
+    return tasksByDaVinciId[davinciId]?.count ?? 0
+  }
+#endif
 }
 
 /// Handle for storing DaVinci client instances.

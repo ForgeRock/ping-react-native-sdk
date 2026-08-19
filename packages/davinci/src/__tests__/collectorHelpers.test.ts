@@ -72,6 +72,14 @@ describe('resolveExecutionMode', () => {
     expect(resolveExecutionMode('')).toBe('unsupported');
   });
 
+  it('returns output_only for POLLING', () => {
+    expect(resolveExecutionMode('POLLING')).toBe('output_only');
+  });
+
+  it('returns output_only for QR_CODE', () => {
+    expect(resolveExecutionMode('QR_CODE')).toBe('output_only');
+  });
+
   it('never returns integration_required for any base-registry type', () => {
     const allKnownTypes = [...manualTypes, 'LABEL', ...immediateTypes];
     allKnownTypes.forEach((type) => {
@@ -140,6 +148,14 @@ describe('resolveFieldKind', () => {
   it('returns unknown for unrecognised types', () => {
     expect(resolveFieldKind('UNKNOWN_TYPE')).toBe('unknown');
     expect(resolveFieldKind('')).toBe('unknown');
+  });
+
+  it('returns polling for POLLING', () => {
+    expect(resolveFieldKind('POLLING')).toBe('polling');
+  });
+
+  it('returns qrCode for QR_CODE', () => {
+    expect(resolveFieldKind('QR_CODE')).toBe('qrCode');
   });
 });
 
@@ -290,6 +306,46 @@ describe('normalizeCollectors', () => {
 
     const [normalized] = normalizeCollectors([collector]);
     expect(normalized.raw).toBe(raw);
+  });
+});
+
+describe('normalizeCollectors — POLLING and QR_CODE', () => {
+  const pollingCollector: DaVinciCollector = {
+    key: 'poll-1',
+    type: 'POLLING',
+    label: 'Waiting for approval',
+    required: false,
+    pollInterval: 2000,
+    pollRetries: 60,
+    pollChallengeStatus: false,
+    challenge: '',
+  } as DaVinciCollector;
+
+  const qrCodeCollector: DaVinciCollector = {
+    key: 'qr-1',
+    type: 'QR_CODE',
+    content: 'data:image/png;base64,abc123',
+    fallbackText: 'Scan this code',
+  } as DaVinciCollector;
+
+  it('classifies POLLING as output_only with kind polling and no required input', () => {
+    const [normalized] = normalizeCollectors([pollingCollector]);
+    expect(normalized).toMatchObject({
+      key: 'poll-1',
+      executionMode: 'output_only',
+      requiresUserInput: false,
+      kind: 'polling',
+    });
+  });
+
+  it('classifies QR_CODE as output_only with kind qrCode and no required input', () => {
+    const [normalized] = normalizeCollectors([qrCodeCollector]);
+    expect(normalized).toMatchObject({
+      key: 'qr-1',
+      executionMode: 'output_only',
+      requiresUserInput: false,
+      kind: 'qrCode',
+    });
   });
 });
 
@@ -604,6 +660,36 @@ describe('buildNextInput — excluded modes', () => {
     expect(result.input.collectors).toEqual([
       { key: 'username', value: 'alice' },
     ]);
+  });
+
+  it('excludes POLLING and QR_CODE collectors from payload entirely', () => {
+    const node = makeNode([
+      {
+        key: 'poll-1',
+        type: 'POLLING',
+        label: 'Waiting',
+        required: false,
+        pollInterval: 2000,
+        pollRetries: 60,
+        pollChallengeStatus: false,
+        challenge: '',
+      } as DaVinciCollector,
+      {
+        key: 'qr-1',
+        type: 'QR_CODE',
+        content: 'data:image/png;base64,abc',
+        fallbackText: 'fallback',
+      } as DaVinciCollector,
+      baseField('username', 'TEXT'),
+    ]);
+
+    const result = buildNextInput(node, { username: 'alice' });
+
+    expect(result.input.collectors).toEqual([
+      { key: 'username', value: 'alice' },
+    ]);
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
   });
 
   it('excludes integration_required collectors from payload and blocks submit when unhandled', () => {

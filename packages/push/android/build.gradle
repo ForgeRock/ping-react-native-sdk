@@ -67,8 +67,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+  kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -84,10 +88,15 @@ android {
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation("com.pingidentity.sdks:push:2.0.1")
-  implementation("com.pingidentity.sdks:commons:2.0.1")
-  implementation("com.pingidentity.sdks:android:2.0.1")
-  implementation("com.pingidentity.sdks:logger:2.0.1")
+  implementation("com.pingidentity.sdks:push:2.1.0")
+  implementation("com.pingidentity.sdks:commons:2.1.0")
+  implementation("com.pingidentity.sdks:android:2.1.0")
+  implementation("com.pingidentity.sdks:logger:2.1.0")
+  // com.pingidentity.mfa.push.exception.PushNumberChallengeException extends
+  // com.pingidentity.exception.ApiException, defined here. The push SDK only
+  // declares this as a runtime dependency, so it must be added explicitly to
+  // make the class hierarchy visible to the Kotlin compiler.
+  implementation("com.pingidentity.sdks:utils:2.1.0")
   // FCM is a peer dependency — host app adds the version via its own BOM
   implementation("com.google.firebase:firebase-messaging")
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"

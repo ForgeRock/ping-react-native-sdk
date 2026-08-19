@@ -15,6 +15,7 @@ type NativeDaVinciModuleMock = {
   userinfo: jest.Mock;
   logout: jest.Mock;
   dispose: jest.Mock;
+  pollDaVinci: jest.Mock;
 };
 
 const createNativeMock = (
@@ -29,6 +30,7 @@ const createNativeMock = (
   userinfo: jest.fn(async () => ({ sub: 'user-1' })),
   logout: jest.fn(async () => undefined),
   dispose: jest.fn(async () => undefined),
+  pollDaVinci: jest.fn(async () => ({ subscriptionId: 'sub-1' })),
   ...overrides,
 });
 
@@ -352,6 +354,72 @@ describe('davinciMethods', () => {
       const err = await disposeDaVinci('davinci-id-1').catch((e: unknown) => e);
 
       assertDaVinciError(err, 'DAVINCI_DISPOSE_ERROR', 'dispose failed');
+    });
+  });
+
+  describe('pollDaVinci', () => {
+    it('calls native pollDaVinci and returns the subscriptionId', async () => {
+      const native = createNativeMock();
+      const { pollDaVinci } = loadMethods(native);
+
+      const subscriptionId = await pollDaVinci('davinci-id-1');
+
+      expect(subscriptionId).toBe('sub-1');
+      expect(native.pollDaVinci).toHaveBeenCalledWith('davinci-id-1', {});
+    });
+
+    it('forwards the key option to native pollDaVinci', async () => {
+      const native = createNativeMock();
+      const { pollDaVinci } = loadMethods(native);
+
+      await pollDaVinci('davinci-id-1', { key: 'poll-key' });
+
+      expect(native.pollDaVinci).toHaveBeenCalledWith('davinci-id-1', {
+        key: 'poll-key',
+      });
+    });
+
+    it('throws DAVINCI_POLL_ERROR when native resolves a malformed payload', async () => {
+      const native = createNativeMock({
+        pollDaVinci: jest.fn(async () => ({})),
+      });
+      const { pollDaVinci } = loadMethods(native);
+
+      const err = await pollDaVinci('davinci-id-1').catch((e: unknown) => e);
+
+      assertDaVinciError(err, 'DAVINCI_POLL_ERROR');
+    });
+
+    it('throws DAVINCI_POLL_ERROR when native resolves null', async () => {
+      const native = createNativeMock({
+        pollDaVinci: jest.fn(async () => null),
+      });
+      const { pollDaVinci } = loadMethods(native);
+
+      const err = await pollDaVinci('davinci-id-1').catch((e: unknown) => e);
+
+      assertDaVinciError(err, 'DAVINCI_POLL_ERROR');
+    });
+
+    it('coerces native rejection to DaVinciError', async () => {
+      const native = createNativeMock({
+        pollDaVinci: jest.fn(async () => {
+          throw {
+            type: 'state_error',
+            error: 'DAVINCI_POLL_ERROR',
+            message: 'no active PollingCollector',
+          };
+        }),
+      });
+      const { pollDaVinci } = loadMethods(native);
+
+      const err = await pollDaVinci('davinci-id-1').catch((e: unknown) => e);
+
+      assertDaVinciError(
+        err,
+        'DAVINCI_POLL_ERROR',
+        'no active PollingCollector',
+      );
     });
   });
 });

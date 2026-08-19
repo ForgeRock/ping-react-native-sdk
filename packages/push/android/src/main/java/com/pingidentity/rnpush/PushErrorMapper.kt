@@ -18,6 +18,7 @@ import com.pingidentity.mfa.commons.exception.MfaStorageException
 import com.pingidentity.mfa.push.exception.DeviceTokenMissingException
 import com.pingidentity.mfa.push.exception.NotificationExpiredException
 import com.pingidentity.mfa.push.exception.NotificationNotFoundException
+import com.pingidentity.mfa.push.exception.PushNumberChallengeException
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
@@ -49,6 +50,7 @@ object PushErrorMapper {
      * - [DeviceTokenMissingException] → `"device_token_not_set"`
      * - [NotificationNotFoundException] → `"notification_not_found"`
      * - [NotificationExpiredException] → `"notification_not_found"` (expired is a subset of not-found)
+     * - [PushNumberChallengeException] → `"push_number_challenge_error"`
      * - All other [MfaException] subtypes → `"network_failure"`
      * - All other [Exception] → `"network_failure"`
      *
@@ -79,6 +81,7 @@ object PushErrorMapper {
         is NotificationNotFoundException -> ErrorType.STATE_ERROR
         is NotificationExpiredException -> ErrorType.STATE_ERROR
         is DeviceTokenMissingException -> ErrorType.STATE_ERROR
+        is PushNumberChallengeException -> ErrorType.ARGUMENT_ERROR
         else -> ErrorType.NETWORK_ERROR
     }
 
@@ -96,9 +99,10 @@ object PushErrorMapper {
             is DuplicateCredentialException -> PushErrorCode.DUPLICATE_CREDENTIAL
             is CredentialNotFoundException -> PushErrorCode.CREDENTIAL_NOT_FOUND
             is DeviceTokenMissingException -> PushErrorCode.DEVICE_TOKEN_NOT_SET
+            is PushNumberChallengeException -> PushErrorCode.PUSH_NUMBER_CHALLENGE_ERROR
             // All other MfaException subtypes fall through to NETWORK_FAILURE.
             //
-            // Android SDK coverage gap: 8 of the 18 PushErrorCode values have no
+            // Android SDK coverage gap: 8 of the 19 PushErrorCode values have no
             // corresponding Android exception class in the mfa-commons / mfa-push SDK:
             //   - INVALID_URI                (URI validation is client-side)
             //   - MISSING_REQUIRED_PARAMETER

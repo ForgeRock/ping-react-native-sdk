@@ -6,7 +6,12 @@
  */
 
 import type { DaVinciNextInput } from './config.types';
-import type { DaVinciNode, DaVinciUserSession } from './node.types';
+import type {
+  DaVinciNode,
+  DaVinciPollStatusOptions,
+  DaVinciUserSession,
+  PollingStatus,
+} from './node.types';
 
 /**
  * DaVinci imperative client API contract.
@@ -112,4 +117,28 @@ export type DaVinciClient = {
    * @throws {DaVinciError} When configuration fails.
    */
   getId: () => Promise<string>;
+
+  /**
+   * Streams {@link PollingStatus} updates for the active `PollingCollector`
+   * on the current node.
+   *
+   * @remarks
+   * Does not auto-advance the flow — the consumer must call `next()`
+   * explicitly on any terminal status (`complete`, `timedOut`, `expired`,
+   * `error`) to progress past it. The returned unsubscribe function stops
+   * local event delivery only — neither native SDK exposes a primitive to
+   * cancel an in-flight poll, so the native poll keeps running to completion
+   * (bounded by `pollRetries` × `pollInterval`) even after unsubscribing.
+   *
+   * @param onStatus - Callback invoked with each streamed {@link PollingStatus} tick.
+   * @param options - Optional collector selection (`key`), when more than one
+   *   `PollingCollector` is present on the active node.
+   * @returns An unsubscribe function that stops local event delivery. It does
+   *   not stop the native poll, which cannot be cancelled.
+   * @throws {DaVinciError} When no active `PollingCollector` is resolved.
+   */
+  pollStatus: (
+    onStatus: (status: PollingStatus) => void,
+    options?: DaVinciPollStatusOptions,
+  ) => Promise<() => void>;
 };

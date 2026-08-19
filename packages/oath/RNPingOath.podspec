@@ -35,12 +35,12 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
 
   # Native Ping SDK dependency
-  s.dependency "PingOath", '2.0.0'
+  s.dependency "PingOath", '2.1.0'
   s.dependency "RNPingCore"
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
-    test_spec.dependency "PingOath", '2.0.0'
+    test_spec.dependency "PingOath", '2.1.0'
     test_spec.dependency "RNPingCore"
   end
 

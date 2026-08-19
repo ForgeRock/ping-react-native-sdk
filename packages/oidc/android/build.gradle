@@ -70,8 +70,12 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_17
-    targetCompatibility JavaVersion.VERSION_17
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+  kotlinOptions {
+    jvmTarget = "21"
   }
 
   sourceSets {
@@ -95,11 +99,17 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:android:2.0.1")
-  implementation("com.pingidentity.sdks:oidc:2.0.1")
-  implementation("com.pingidentity.sdks:browser:2.0.1")
-  implementation("com.pingidentity.sdks:orchestrate:2.0.1")
-  implementation("com.pingidentity.sdks:storage:2.0.1")
+  implementation("com.pingidentity.sdks:android:2.1.0")
+  implementation("com.pingidentity.sdks:oidc:2.1.0")
+  // NOTE(SDKS-5296): browser 2.1.0's AAR ships CustomTabActivity's redirect
+  // scheme with the ${appRedirectUriScheme} manifest placeholder pre-resolved
+  // to the literal "com.pingidentity.test", so downstream manifestPlaceholders
+  // overrides (see PingSampleApp/PingTestRunner app build.gradle) have no
+  // effect. Verify the placeholder is left unresolved again before bumping
+  // past this version, and re-check that manifestPlaceholders overrides work.
+  implementation("com.pingidentity.sdks:browser:2.1.0")
+  implementation("com.pingidentity.sdks:orchestrate:2.1.0")
+  implementation("com.pingidentity.sdks:storage:2.1.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))

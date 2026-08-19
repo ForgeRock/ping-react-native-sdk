@@ -505,6 +505,14 @@ function CollectorField({
     );
   }
 
+  if (collector.type === 'QR_CODE') {
+    return <Text testID={testID}>{collector.fallbackText}</Text>;
+  }
+
+  if (collector.type === 'POLLING') {
+    return <Text testID={testID}>Polling…</Text>;
+  }
+
   if (collector.type === 'DEVICE_AUTHENTICATION') {
     return (
       <View testID={testID}>

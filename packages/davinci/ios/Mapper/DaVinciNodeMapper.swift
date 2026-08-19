@@ -18,6 +18,7 @@ enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
   static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
   static let protect = "PROTECT"
+  private static let qrCode = "QR_CODE"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -251,6 +252,13 @@ enum DaVinciNodeMapper {
       map = mapDeviceRegistrationCollector(registrationCollector)
     case let authenticationCollector as DeviceAuthenticationCollector:
       map = mapDeviceAuthenticationCollector(authenticationCollector)
+    case let pollingCollector as PollingCollector:
+      map = mapPollingCollector(pollingCollector)
+    case let qrCodeCollector as QRCodeCollector:
+      // QRCodeCollector's `key` is parsed natively (unlike Android 2.1.0) but it does not
+      // extend FieldCollector — no `label`/`required` — so it's fully serialized here and
+      // returned early rather than routed through `applyRawField` below.
+      return mapQRCodeCollector(qrCodeCollector, node: node, logger: logger)
     default:
       switch resolvedFormFieldType(for: collector, node: node, logger: logger) {
       case protect:
@@ -467,6 +475,61 @@ enum DaVinciNodeMapper {
   ) -> [String: Any] {
     var map = baseFieldCollectorMap(collector)
     map["devices"] = mapDevices(collector.devices)
+    return map
+  }
+
+  /// Serializes a `PollingCollector` to a bridge map.
+  ///
+  /// - Note: `pollInterval`/`pollRetries` are native `Int` on iOS — Android's native
+  ///   collector types them as `String`; the bridge normalizes both to `number` in TS.
+  ///
+  /// - Parameter collector: PollingCollector instance.
+  /// - Returns: Serialized polling collector map.
+  private static func mapPollingCollector(_ collector: PollingCollector) -> [String: Any] {
+    var map = baseFieldCollectorMap(collector)
+    map["pollInterval"] = collector.pollInterval
+    map["pollRetries"] = collector.pollRetries
+    map["pollChallengeStatus"] = collector.pollChallengeStatus
+    map["challenge"] = collector.challenge
+    return map
+  }
+
+  /// Serializes a `QRCodeCollector` to a bridge map.
+  ///
+  /// - Note: iOS's native `QRCodeCollector` strips the `"data:...base64,"` prefix during
+  ///   `init` and retains only decoded `imageData` bytes — the original data URI string is
+  ///   discarded. The ticket contract requires exposing the full data URI as `content`.
+  ///   Preferred source: the raw `content` string from `node.input.form.components.fields[]`
+  ///   (via `findFieldJson`), which is the exact, untouched server value — no MIME type has
+  ///   to be guessed. Fallback: reconstruct from `imageData` (re-encode to base64, re-prepend
+  ///   a `"data:image/png;base64,"` prefix) when the raw field is absent, matching the MIME
+  ///   type QR codes are documented to use. Android's native `content` getter retains the raw
+  ///   data URI as received from the server and needs no reconstruction.
+  ///
+  /// - Parameters:
+  ///   - collector: QRCodeCollector instance.
+  ///   - node: Active continue node providing form field context for the `raw` field lookup.
+  ///   - logger: Optional Ping logger for non-fatal mapping warnings.
+  /// - Returns: Serialized QR code collector map.
+  private static func mapQRCodeCollector(
+    _ collector: QRCodeCollector,
+    node: ContinueNode,
+    logger: Logger?
+  ) -> [String: Any] {
+    let field = findFieldJson(collector.key, node: node, logger: logger)
+    let content = (field?["content"] as? String)
+      ?? collector.imageData.map { "data:image/png;base64,\($0.base64EncodedString())" }
+      ?? ""
+
+    var map: [String: Any] = [
+      "key": collector.key,
+      "type": qrCode,
+      "content": content,
+      "fallbackText": collector.fallbackText
+    ]
+    if let field {
+      map["raw"] = JsonBridgeMapper.encodeJsonObject(field)
+    }
     return map
   }
 

@@ -56,6 +56,8 @@ export type DaVinciExecutionMode =
  * - `phone`        — phone number input (PHONE_NUMBER)
  * - `device`       — device picker (DEVICE_REGISTRATION, DEVICE_AUTHENTICATION)
  * - `output`       — display-only content (LABEL)
+ * - `polling`      — async out-of-band polling status (POLLING), driven by `pollStatus`
+ * - `qrCode`       — display-only QR code image (QR_CODE)
  * - `flow`         — immediate-submit action (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
  * - `integration`  — handled by an external integration package (future collectors)
  * - `unknown`      — unrecognised type
@@ -70,6 +72,8 @@ export type DaVinciFieldKind =
   | 'phone'
   | 'device'
   | 'output'
+  | 'polling'
+  | 'qrCode'
   | 'flow'
   | 'integration'
   | 'unknown';

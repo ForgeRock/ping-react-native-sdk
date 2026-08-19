@@ -29,6 +29,8 @@ internal object DaVinciErrorCodes {
     const val LOGOUT = "DAVINCI_LOGOUT_ERROR"
     /** Client disposal failure. */
     const val DISPOSE = "DAVINCI_DISPOSE_ERROR"
+    /** Poll start/subscription failure. */
+    const val POLL = "DAVINCI_POLL_ERROR"
     /** JS guardrails: invalid argument at call site. */
     const val ARGUMENT = "DAVINCI_ARGUMENT_ERROR"
     /** Operation on invalid state (e.g. no active node). */

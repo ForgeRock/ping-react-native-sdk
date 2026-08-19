@@ -111,6 +111,38 @@ KEY_PASSWORD=<your-password>
 >
 > You can find the Android SDK path in Android Studio under **Settings** > **Languages & Frameworks** > **Android SDK**.
 
+### Android — JVM 21 / Kotlin requirements
+
+> **Note: Android JVM 21 and Kotlin 2.2.10 (React Native 0.80)**
+>
+> This SDK depends on Ping Android SDK `2.1.0` artifacts, which are compiled for **JVM 21**, and every
+> `rn-*` package (and this app module) now targets JVM 21 to match — up from
+> JVM 17. This requires:
+>
+> - **JDK 21** available to Gradle. Set `JAVA_HOME` to a JDK 21 installation
+>   (or configure it in Android Studio under **Settings** > **Build Tools** >
+>   **Gradle** > **Gradle JDK**).
+> - **Kotlin `2.2.10`**, pinned explicitly in `PingSampleApp/android/build.gradle`.
+>   React Native 0.80's Gradle plugin (RNGP) otherwise resolves an unrelated,
+>   often older, Kotlin compiler version — which then fails on `kotlin-stdlib`
+>   metadata pulled in transitively by the Ping Android SDK (e.g. via
+>   `ktor-client`).
+>
+> `PingSampleApp/android/gradle.properties` sets two flags to make this work
+> under RNGP:
+>
+> - `react.internal.disableJavaVersionAlignment=true` — RNGP normally
+>   force-installs JVM target 17 on every Android/Kotlin module. This opts out
+>   so the JVM 21 settings above actually take effect.
+> - `kotlin.jvm.target.validation.mode=warning` — downgrades JVM-target-mismatch
+>   errors (surfaced by third-party `node_modules` that relied on RNGP's
+>   alignment to mask their own internal Java/Kotlin version split) to warnings
+>   instead of hard build failures.
+>
+> If you see a JVM target mismatch or an internal Kotlin compiler error during
+> `yarn android`, confirm your Gradle JDK is 21 and re-run `yarn packages:build`
+> from the repo root so the packages pick up the same Kotlin version.
+
 ## Step 3: Start Metro
 
 ```sh

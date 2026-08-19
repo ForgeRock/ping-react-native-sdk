@@ -58,6 +58,7 @@ export type DaVinciErrorCode =
   | 'DAVINCI_SESSION_ERROR' // user() / refresh() / revoke() / userinfo()
   | 'DAVINCI_LOGOUT_ERROR' // logoutUser()
   | 'DAVINCI_DISPOSE_ERROR' // dispose()
+  | 'DAVINCI_POLL_ERROR' // pollStatus(): poll start/subscription failure
   | 'DAVINCI_ARGUMENT_ERROR' // JS guardrails: invalid argument at call site
   | 'DAVINCI_STATE_ERROR' // operation on invalid state (e.g. no active node)
   | 'DAVINCI_MISSING_INTEGRATION_ERROR' // collector requires additional module integration

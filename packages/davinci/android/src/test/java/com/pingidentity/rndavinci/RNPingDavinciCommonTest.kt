@@ -10,9 +10,13 @@ package com.pingidentity.rndavinci
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.pingidentity.davinci.collector.PasswordCollector
+import com.pingidentity.davinci.collector.PollingCollector
+import com.pingidentity.davinci.collector.PollingStatus
 import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.network.HttpRequest
 import com.pingidentity.oidc.OidcError
@@ -31,6 +35,17 @@ import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
 import com.pingidentity.storage.Storage
 import com.pingidentity.utils.Result
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -51,18 +66,21 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29], shadows = [ShadowDaVinciCommonArguments::class])
 class RNPingDavinciCommonTest {
 
     @Before
     fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
         RNPingDavinciCommon.configure()
     }
 
     @After
     fun tearDown() {
         RNPingDavinciCommon.cleanup()
+        Dispatchers.resetMain()
     }
 
     // ---- configure / cleanup ----
@@ -564,7 +582,358 @@ class RNPingDavinciCommonTest {
         assertEquals(DaVinciErrorCodes.UNSUPPORTED_COLLECTOR, error.getString("error"))
     }
 
+    // ---- pollDaVinci ----
+
+    @Test
+    fun pollDaVinci_rejectsStateErrorWhenNoContinueNode() {
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci("no-such-id", JavaOnlyMap(), promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.POLL, error.getString("error"))
+    }
+
+    @Test
+    fun pollDaVinci_rejectsStateErrorWhenNoPollingCollectorPresent() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = emptyList()))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.POLL, error.getString("error"))
+    }
+
+    @Test
+    fun pollDaVinci_rejectsStateErrorWhenKeyDoesNotMatchAnyPresentCollector() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.id() } returns "existing-key"
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+
+        val options = JavaOnlyMap().apply { putString("key", "no-such-key") }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, options, promise)
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.POLL, error.getString("error"))
+        verify(exactly = 0) { collector.pollStatus() }
+    }
+
+    @Test
+    fun pollDaVinci_selectsCollectorByKeyWhenMultiplePresent() {
+        val (reactContext, _) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val matching = mockk<PollingCollector>(relaxed = true)
+        every { matching.id() } returns "target-key"
+        every { matching.pollStatus() } returns flowOf(PollingStatus.Complete("approved"))
+        val other = mockk<PollingCollector>(relaxed = true)
+        every { other.id() } returns "other-key"
+        every { other.pollStatus() } returns flowOf(PollingStatus.Complete("wrong"))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(other, matching)))
+
+        val options = JavaOnlyMap().apply { putString("key", "target-key") }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, options, promise)
+        captureResolve(promise)
+
+        verify(timeout = 2000) { matching.pollStatus() }
+        verify(exactly = 0) { other.pollStatus() }
+    }
+
+    @Test
+    fun pollDaVinci_resolvesWithSubscriptionIdBeforeAnyEventIsEmitted() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flow {
+            delay(200)
+            emit(PollingStatus.Complete("approved"))
+        }
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+
+        val resolved = captureResolve(promise) as WritableMap
+        assertTrue(resolved.getString("subscriptionId")!!.isNotBlank())
+        verify(exactly = 0) { emitter.emit(any(), any()) }
+
+        verify(timeout = 2000) { emitter.emit(RNPingDavinciEvents.POLLING_STATUS, any()) }
+    }
+
+    @Test
+    fun pollDaVinci_emitsContinueThenCompleteEventPayloads() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flowOf(
+            PollingStatus.Continue(retryCount = 1, maxRetries = 60),
+            PollingStatus.Complete("approved")
+        )
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitted = mutableListOf<WritableMap>()
+        val latch = CountDownLatch(2)
+        every { emitter.emit(any(), any()) } answers {
+            emitted.add(secondArg())
+            latch.countDown()
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+        val subscriptionId = (captureResolve(promise) as WritableMap).getString("subscriptionId")
+
+        assertTrue("Expected both continue and complete events", latch.await(2, TimeUnit.SECONDS))
+        assertEquals(2, emitted.size)
+        assertEquals("continue", emitted[0].getString("status"))
+        assertEquals(1, emitted[0].getInt("retryCount"))
+        assertEquals(60, emitted[0].getInt("maxRetries"))
+        assertEquals(subscriptionId, emitted[0].getString("subscriptionId"))
+        assertEquals(davinciId, emitted[0].getString("daVinciId"))
+        assertEquals("complete", emitted[1].getString("status"))
+        assertEquals("approved", emitted[1].getString("value"))
+    }
+
+    @Test
+    fun pollDaVinci_emitsTimedOutEvent() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flowOf(PollingStatus.TimedOut)
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitted = mutableListOf<WritableMap>()
+        val latch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers {
+            emitted.add(secondArg())
+            latch.countDown()
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+        captureResolve(promise)
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS))
+        assertEquals("timedOut", emitted[0].getString("status"))
+    }
+
+    @Test
+    fun pollDaVinci_emitsExpiredEvent() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flowOf(PollingStatus.Expired)
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitted = mutableListOf<WritableMap>()
+        val latch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers {
+            emitted.add(secondArg())
+            latch.countDown()
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+        captureResolve(promise)
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS))
+        assertEquals("expired", emitted[0].getString("status"))
+    }
+
+    @Test
+    fun pollDaVinci_emitsErrorEventWithMessage() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flowOf(PollingStatus.Error(RuntimeException("network down")))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitted = mutableListOf<WritableMap>()
+        val latch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers {
+            emitted.add(secondArg())
+            latch.countDown()
+        }
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+        captureResolve(promise)
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS))
+        assertEquals("error", emitted[0].getString("status"))
+        assertEquals("network down", emitted[0].getMap("error")?.getString("message"))
+    }
+
+    @Test
+    fun pollDaVinci_doesNotCrashWhenReactContextIsUnavailable() {
+        // No RNPingDavinciCommon.configure(...) call — reactContextRef stays unset,
+        // exercising emitPollingStatus's no-op early return.
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        val latch = CountDownLatch(1)
+        every { collector.pollStatus() } returns flow {
+            emit(PollingStatus.Complete("approved"))
+            latch.countDown()
+        }
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), promise)
+        val resolved = captureResolve(promise) as WritableMap
+
+        assertTrue(resolved.getString("subscriptionId")!!.isNotBlank())
+        assertTrue(
+            "Poll job must still run to completion without a React context",
+            latch.await(2, TimeUnit.SECONDS)
+        )
+    }
+
+    // ---- pollDaVinci natural completion does not leak the davinciId-keyed job tracking ----
+
+    @Test
+    fun pollDaVinci_removesJobFromDaVinciIdTrackingOnNaturalCompletion() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flowOf(PollingStatus.Complete("approved"))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val latch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers { latch.countDown() }
+        val pollPromise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), pollPromise)
+        captureResolve(pollPromise)
+        assertTrue(latch.await(2, TimeUnit.SECONDS))
+
+        val field = RNPingDavinciCommon::class.java.getDeclaredField("pollJobsByDaVinciId")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val jobsByDaVinciId = field.get(RNPingDavinciCommon) as Map<String, MutableSet<*>>
+
+        var attempts = 0
+        while (jobsByDaVinciId[davinciId]?.isNotEmpty() == true && attempts < 20) {
+            Thread.sleep(50)
+            attempts++
+        }
+
+        assertTrue(
+            "A naturally completed poll job must be removed from the davinciId-keyed " +
+                "tracking structure — otherwise finished jobs pile up for the client's lifetime",
+            jobsByDaVinciId[davinciId].isNullOrEmpty()
+        )
+    }
+
+    // ---- dispose()/cleanup() poll safety net ----
+
+    @Test
+    fun dispose_cancelsOutstandingPollJobForDaVinciId() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flow {
+            var attempt = 0
+            while (true) {
+                emit(PollingStatus.Continue(retryCount = ++attempt, maxRetries = 60))
+                delay(50)
+            }
+        }
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val firstEmitLatch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers {
+            emitCount.incrementAndGet()
+            firstEmitLatch.countDown()
+        }
+        val pollPromise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), pollPromise)
+        captureResolve(pollPromise)
+        assertTrue(firstEmitLatch.await(2, TimeUnit.SECONDS))
+
+        val disposePromise = TestPromise()
+        RNPingDavinciCommon.dispose(davinciId, disposePromise)
+        captureResolve(disposePromise)
+
+        val countAtDispose = emitCount.get()
+        Thread.sleep(300)
+        assertEquals(
+            "dispose() must cancel outstanding poll jobs for the disposed davinciId",
+            countAtDispose,
+            emitCount.get()
+        )
+    }
+
+    @Test
+    fun cleanup_cancelsAllOutstandingPollJobs() {
+        val (reactContext, emitter) = mockReactContextWithEmitter()
+        RNPingDavinciCommon.configure(reactContext)
+
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val collector = mockk<PollingCollector>(relaxed = true)
+        every { collector.pollStatus() } returns flow {
+            var attempt = 0
+            while (true) {
+                emit(PollingStatus.Continue(retryCount = ++attempt, maxRetries = 60))
+                delay(50)
+            }
+        }
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val emitCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val firstEmitLatch = CountDownLatch(1)
+        every { emitter.emit(any(), any()) } answers {
+            emitCount.incrementAndGet()
+            firstEmitLatch.countDown()
+        }
+        val pollPromise = TestPromise()
+
+        RNPingDavinciCommon.pollDaVinci(davinciId, JavaOnlyMap(), pollPromise)
+        captureResolve(pollPromise)
+        assertTrue(firstEmitLatch.await(2, TimeUnit.SECONDS))
+
+        RNPingDavinciCommon.cleanup()
+
+        val countAtCleanup = emitCount.get()
+        Thread.sleep(300)
+        assertEquals(
+            "cleanup() must cancel every outstanding poll job",
+            countAtCleanup,
+            emitCount.get()
+        )
+
+        RNPingDavinciCommon.configure()
+    }
+
     // ---- helpers ----
+
+    private fun mockReactContextWithEmitter():
+        Pair<ReactApplicationContext, DeviceEventManagerModule.RCTDeviceEventEmitter> {
+        val emitter = mockk<DeviceEventManagerModule.RCTDeviceEventEmitter>(relaxed = true)
+        val reactContext = mockk<ReactApplicationContext>(relaxed = true)
+        every {
+            reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+        } returns emitter
+        return reactContext to emitter
+    }
 
     private fun captureResolve(promise: TestPromise): Any? {
         promise.await()

@@ -21,6 +21,7 @@ import com.pingidentity.mfa.commons.exception.MfaStorageException
 import com.pingidentity.mfa.push.exception.DeviceTokenMissingException
 import com.pingidentity.mfa.push.exception.NotificationExpiredException
 import com.pingidentity.mfa.push.exception.NotificationNotFoundException
+import com.pingidentity.mfa.push.exception.PushNumberChallengeException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
@@ -148,6 +149,15 @@ class RNPingPushTest {
   }
 
   /**
+   * PushNumberChallengeException maps to "push_number_challenge_error".
+   */
+  @Test
+  fun pushNumberChallengeExceptionMapsToPushNumberChallengeError() {
+    val error = PushNumberChallengeException(400, "number challenge failed")
+    assertEquals("push_number_challenge_error", PushErrorMapper.resolveErrorCode(error))
+  }
+
+  /**
    * Generic MfaException (not a specific subtype) maps to "network_failure".
    */
   @Test
@@ -210,6 +220,15 @@ class RNPingPushTest {
   fun notificationNotFoundExceptionMapsToStateErrorType() {
     val error = NotificationNotFoundException("not found")
     assertEquals(com.pingidentity.rncore.error.ErrorType.STATE_ERROR, PushErrorMapper.resolveErrorType(error))
+  }
+
+  /**
+   * PushNumberChallengeException maps to ARGUMENT_ERROR type.
+   */
+  @Test
+  fun pushNumberChallengeExceptionMapsToArgumentErrorType() {
+    val error = PushNumberChallengeException(400, "number challenge failed")
+    assertEquals(com.pingidentity.rncore.error.ErrorType.ARGUMENT_ERROR, PushErrorMapper.resolveErrorType(error))
   }
 
   /**
