@@ -61,6 +61,7 @@ export default function DaVinciClientPanel(
     onSubmit,
     onFlowAction,
     onIdpAuthorize,
+    onPollStatus,
     onStart,
     onLogout,
   } = useDaVinciClientPanelController({ onAuthenticated });
@@ -76,6 +77,7 @@ export default function DaVinciClientPanel(
             onSubmit={onSubmit}
             onFlowAction={onFlowAction}
             onIdpAuthorize={onIdpAuthorize}
+            onPollStatus={onPollStatus}
           />
         ) : null}
 

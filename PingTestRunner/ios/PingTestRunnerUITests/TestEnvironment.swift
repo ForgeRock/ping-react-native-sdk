@@ -27,6 +27,14 @@ struct TestEnvironment {
     let redirectUri:          String
     let callbackTreesEnabled: Bool
 
+    // DaVinci — mirrors DAVINCI_ENV in e2e/setup.ts (PINGONE_* env vars).
+    let daVinciDiscoveryEndpoint: String
+    let daVinciClientId:          String
+    let daVinciRedirectUri:       String
+    let daVinciUsername:          String
+    let daVinciPassword:          String
+    let daVinciAcrValues:         String
+
     private init() {
         let e = ProcessInfo.processInfo.environment
         serverUrl         = e["PING_SERVER_URL"]          ?? ""
@@ -39,6 +47,13 @@ struct TestEnvironment {
         clientId          = e["PING_CLIENT_ID"]           ?? ""
         redirectUri       = e["PING_REDIRECT_URI"]        ?? "org.forgerock.demo://oauth2redirect"
         callbackTreesEnabled = e["PING_CALLBACK_TREES_ENABLED"] != "false"
+
+        daVinciDiscoveryEndpoint = e["PINGONE_DISCOVERY_ENDPOINT"] ?? ""
+        daVinciClientId          = e["PINGONE_CLIENT_ID"]          ?? ""
+        daVinciRedirectUri       = e["PINGONE_REDIRECT_URI"]       ?? "org.forgerock.demo://oauth2redirect"
+        daVinciUsername          = e["PINGONE_USERNAME"]           ?? ""
+        daVinciPassword          = e["PINGONE_PASSWORD"]           ?? ""
+        daVinciAcrValues         = e["PINGONE_ACR_VALUES"]         ?? ""
     }
 
     /// True when all vars required for Journey Tier 2 tests are set.
@@ -49,5 +64,12 @@ struct TestEnvironment {
     /// True when OIDC vars are also set (full live-auth flow).
     var hasLiveAuthEnv: Bool {
         hasJourneyEnv && !discoveryEndpoint.isEmpty && !clientId.isEmpty
+    }
+
+    /// True when all vars required for the DaVinci live E2E flow are set.
+    /// Mirrors hasDaVinciEnv() in e2e/davinci.test.ts.
+    var hasDaVinciEnv: Bool {
+        !daVinciDiscoveryEndpoint.isEmpty && !daVinciClientId.isEmpty
+            && !daVinciUsername.isEmpty && !daVinciPassword.isEmpty
     }
 }

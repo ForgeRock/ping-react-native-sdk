@@ -8,6 +8,13 @@
 
 #import <Foundation/Foundation.h>
 #import <React/RCTBridgeModule.h>
+#if __has_include(<React/RCTCallableJSModules.h>)
+#import <React/RCTCallableJSModules.h>
+#else
+@protocol RCTCallableJSModules <NSObject>
+- (void)invokeModule:(NSString *)moduleName method:(NSString *)methodName withArgs:(NSArray *)args;
+@end
+#endif
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
@@ -16,9 +23,50 @@
 #else
 #import <RNPingDavinci/RNPingDavinci-Swift.h>
 #endif
+#import "RNPingDavinciEventEmitterGate.h"
 
 @implementation RNPingDavinci
+
+// Receives callableJSModules from the RCT module registry (Old + New Arch).
+@synthesize callableJSModules = _callableJSModules;
+
 RCT_EXPORT_MODULE()
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    if (RNPingDavinciClaimEventEmitterOwnership(@"turbo")) {
+      [[NSNotificationCenter defaultCenter]
+          addObserver:self
+             selector:@selector(onNativeEmit:)
+                 name:@"RNPingDavinci_NativeEmit"
+               object:nil];
+    }
+  }
+  return self;
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingDavinciReleaseEventEmitterOwnership(@"turbo");
+}
+
+/**
+ * Receives internal emit notifications from the Swift bridge and forwards
+ * them to JS DeviceEventEmitter via callableJSModules.
+ */
+- (void)onNativeEmit:(NSNotification *)notification
+{
+  NSString *name = notification.userInfo[@"eventName"];
+  id body = notification.userInfo[@"eventBody"];
+  if (!name || !_callableJSModules) {
+    return;
+  }
+  NSArray *args = body ? @[name, body] : @[name];
+  [_callableJSModules invokeModule:@"RCTDeviceEventEmitter" method:@"emit" withArgs:args];
+}
 
 /**
  Returns the shared Swift implementation that performs all native work.
@@ -34,6 +82,8 @@ RCT_EXPORT_MODULE()
  */
 - (void)invalidate
 {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingDavinciReleaseEventEmitterOwnership(@"turbo");
   [[self swiftImpl] invalidate];
 }
 
@@ -196,6 +246,15 @@ RCT_EXPORT_MODULE()
                      resolve([NSNull null]);
                    }
                    rejecter:reject];
+}
+
+/// Bridges `pollDaVinci(davinciId, options)`.
+- (void)pollDaVinci:(NSString *)davinciId
+            options:(NSDictionary *)options
+            resolve:(RCTPromiseResolveBlock)resolve
+             reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] pollDaVinci:davinciId options:options resolver:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

@@ -93,6 +93,12 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  // NOTE(SDKS-5296): browser 2.1.0's AAR ships CustomTabActivity's redirect
+  // scheme with the ${appRedirectUriScheme} manifest placeholder pre-resolved
+  // to the literal "com.pingidentity.test", so downstream manifestPlaceholders
+  // overrides (see PingSampleApp/PingTestRunner app build.gradle) have no
+  // effect. Verify the placeholder is left unresolved again before bumping
+  // past this version, and re-check that manifestPlaceholders overrides work.
   implementation("com.pingidentity.sdks:browser:2.1.0")
   implementation("com.pingidentity.sdks:logger:2.1.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"

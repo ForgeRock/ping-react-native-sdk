@@ -15,6 +15,8 @@ import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
+import com.pingidentity.davinci.collector.PollingCollector
+import com.pingidentity.davinci.collector.QRCodeCollector
 import com.pingidentity.davinci.collector.ReadOnlyTextCollector
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
@@ -837,5 +839,195 @@ class DaVinciNodeMapperTest {
         val c = result.asList("collectors")!![0]
 
         assertFalse(c.containsKey("passwordPolicy"))
+    }
+
+    // ---- PollingCollector ----
+
+    @Test
+    fun mapPollingCollectorCoercesIntervalAndRetriesToInt() {
+        val collector = PollingCollector().apply {
+            init(buildJsonObject {
+                put("key", "polling-field")
+                put("type", "POLLING")
+                put("label", "Polling")
+                put("pollInterval", "2000")
+                put("pollRetries", "60")
+                put("pollChallengeStatus", false)
+                put("challenge", "")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals(2000, c["pollInterval"])
+        assertEquals(60, c["pollRetries"])
+        assertEquals(false, c["pollChallengeStatus"])
+        assertEquals("", c["challenge"])
+    }
+
+    @Test
+    fun mapPollingCollectorFallsBackToNativeDefaultWhenPollIntervalIsNonNumeric() {
+        // `pollRetries` must stay numeric — PollingCollector.init() unconditionally calls
+        // pollRetries.toInt() to seed retriesAllowed, so a non-numeric value throws at
+        // construction time, before the mapper's toIntOrNull() fallback is ever reached.
+        val collector = PollingCollector().apply {
+            init(buildJsonObject {
+                put("key", "polling-field")
+                put("type", "POLLING")
+                put("label", "Polling")
+                put("pollInterval", "not-a-number")
+                put("pollRetries", "60")
+                put("pollChallengeStatus", false)
+                put("challenge", "")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        // 2000 matches native PollingCollector.pollStatus()'s own fallback for an unparseable pollInterval.
+        assertEquals(2000, c["pollInterval"])
+        assertEquals(60, c["pollRetries"])
+    }
+
+    @Test
+    fun mapPollingCollectorIncludesChallengeFieldsForChallengeStatusMode() {
+        val collector = PollingCollector().apply {
+            init(buildJsonObject {
+                put("key", "polling-field")
+                put("type", "POLLING")
+                put("label", "Polling")
+                put("pollInterval", "1000")
+                put("pollRetries", "30")
+                put("pollChallengeStatus", true)
+                put("challenge", "abc-challenge-id")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals(true, c["pollChallengeStatus"])
+        assertEquals("abc-challenge-id", c["challenge"])
+    }
+
+    @Test
+    fun mapPollingCollectorIncludesBaseFieldsAndRaw() {
+        val collector = PollingCollector().apply {
+            init(buildJsonObject {
+                put("key", "polling-field")
+                put("type", "POLLING")
+                put("label", "Waiting for approval")
+                put("pollInterval", "2000")
+                put("pollRetries", "60")
+                put("pollChallengeStatus", false)
+                put("challenge", "")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "polling-field")
+                            put("type", "POLLING")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("polling-field", c["key"])
+        assertEquals("Waiting for approval", c["label"])
+        assertNotNull(c["raw"])
+    }
+
+    // ---- QRCodeCollector ----
+
+    @Test
+    fun mapQRCodeCollectorEmitsContentAndFallbackText() {
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject {
+                put("content", "data:image/png;base64,iVBORw0KGgo=")
+                put("fallbackText", "Scan this code with your device")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("QR_CODE", c["type"])
+        assertEquals("data:image/png;base64,iVBORw0KGgo=", c["content"])
+        assertEquals("Scan this code with your device", c["fallbackText"])
+    }
+
+    @Test
+    fun mapQRCodeCollectorEmitsEmptyKeyBecauseNativeIdIsRandomUUID() {
+        // TODO-SDK-PARITY (see DaVinciNodeMapper.mapQRCodeCollector): Android's native
+        // QRCodeCollector.id() falls back to a random UUID per call, so it cannot be used
+        // as a stable key. The bridge emits "" until the native SDK exposes a real key.
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject {
+                put("content", "data:image/png;base64,iVBORw0KGgo=")
+                put("fallbackText", "Scan this code")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["key"])
+    }
+
+    @Test
+    fun mapQRCodeCollectorOmitsRawFieldLookup() {
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject {
+                put("content", "data:image/png;base64,iVBORw0KGgo=")
+                put("fallbackText", "Scan this code")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "qr-field")
+                            put("type", "QR_CODE")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertFalse(c.containsKey("raw"))
+    }
+
+    @Test
+    fun mapQRCodeCollectorDefaultsToEmptyStringsWhenFieldsAbsent() {
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject { })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["content"])
+        assertEquals("", c["fallbackText"])
     }
 }

@@ -12,6 +12,7 @@ import { useDaVinci } from '../useDavinci';
 type DaVinciClient = import('../types').DaVinciClient;
 type DaVinciNode = import('../types').DaVinciNode;
 type DaVinciHookResult = import('../useDavinci').DaVinciHookResult;
+type PollingStatus = import('../types').PollingStatus;
 
 type Harness = {
   client: DaVinciClient;
@@ -94,6 +95,8 @@ function createDaVinciClientMock(
     userinfo: jest.fn(async () => null),
     logoutUser: jest.fn(async () => undefined),
     dispose: jest.fn(async () => undefined),
+    getId: jest.fn(async () => 'davinci-id'),
+    pollStatus: jest.fn(async () => jest.fn()),
     ...overrides,
   };
 }
@@ -308,5 +311,139 @@ describe('useDaVinci', () => {
     expect(result.error).not.toBeNull();
     expect(result.error?.name).toBe('DaVinciError');
     expect((result.error as { code: string }).code).toBe('DAVINCI_START_ERROR');
+  });
+
+  it('user() delegates to the client and returns its result', async () => {
+    const session = { value: 'tok' };
+    const client = createDaVinciClientMock({
+      user: jest.fn(async () => session),
+    });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let result: unknown;
+    await act(async () => {
+      result = await requireLatest(latest).user();
+    });
+
+    expect(result).toBe(session);
+    expect(client.user).toHaveBeenCalledTimes(1);
+  });
+
+  it('refresh() delegates to the client and returns its result', async () => {
+    const session = { value: 'refreshed' };
+    const client = createDaVinciClientMock({
+      refresh: jest.fn(async () => session),
+    });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let result: unknown;
+    await act(async () => {
+      result = await requireLatest(latest).refresh();
+    });
+
+    expect(result).toBe(session);
+    expect(client.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('userinfo() delegates to the client and returns its result', async () => {
+    const claims = { sub: 'user-1' };
+    const client = createDaVinciClientMock({
+      userinfo: jest.fn(async () => claims),
+    });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let result: unknown;
+    await act(async () => {
+      result = await requireLatest(latest).userinfo();
+    });
+
+    expect(result).toBe(claims);
+    expect(client.userinfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('pollStatus() delegates to the client with the callback and options', async () => {
+    const unsubscribe = jest.fn();
+    const pollStatusMock = jest.fn(async () => unsubscribe);
+    const client = createDaVinciClientMock({ pollStatus: pollStatusMock });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    const onStatus = jest.fn((_status: PollingStatus) => undefined);
+    let result: (() => void) | undefined;
+    await act(async () => {
+      result = await requireLatest(latest).pollStatus(onStatus, {
+        key: 'poll-key',
+      });
+    });
+
+    expect(pollStatusMock).toHaveBeenCalledWith(onStatus, { key: 'poll-key' });
+    expect(result).toBe(unsubscribe);
+  });
+
+  it('pollStatus() propagates rejection when no PollingCollector is resolved', async () => {
+    const pollError = {
+      type: 'state_error',
+      error: 'DAVINCI_STATE_ERROR',
+      message: 'No active PollingCollector resolved.',
+    };
+    const client = createDaVinciClientMock({
+      pollStatus: jest.fn(async () => {
+        throw pollError;
+      }),
+    });
+    let latest: DaVinciHookResult | null = null;
+
+    render(
+      <DaVinciHarness
+        client={client}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    let err: unknown;
+    await act(async () => {
+      err = await requireLatest(latest)
+        .pollStatus(jest.fn())
+        .catch((e: unknown) => e);
+    });
+
+    expect(err).toBe(pollError);
   });
 });

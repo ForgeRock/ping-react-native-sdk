@@ -26,7 +26,7 @@ class RNPingDavinciClassicModule(
 ) : ReactContextBaseJavaModule(reactContext) {
 
   init {
-    RNPingDavinciCommon.configure()
+    RNPingDavinciCommon.configure(reactContext)
   }
 
   /**
@@ -140,6 +140,18 @@ class RNPingDavinciClassicModule(
   @ReactMethod
   fun dispose(davinciId: String, promise: Promise) {
     RNPingDavinciCommon.dispose(davinciId, promise)
+  }
+
+  /**
+   * Start streaming polling status updates for the active `PollingCollector`.
+   *
+   * @param davinciId Native DaVinci client id.
+   * @param options Bridge map with an optional `key` collector selector.
+   * @param promise Promise resolved with `{ subscriptionId }`.
+   */
+  @ReactMethod
+  fun pollDaVinci(davinciId: String, options: ReadableMap, promise: Promise) {
+    RNPingDavinciCommon.pollDaVinci(davinciId, options, promise)
   }
 
   companion object {

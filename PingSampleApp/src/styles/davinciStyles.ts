@@ -342,4 +342,20 @@ export const davinciFieldStyles = StyleSheet.create({
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
+  qrCodeImage: {
+    width: 220,
+    height: 220,
+    alignSelf: 'center',
+  },
+  pollingStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  pollingStatusText: {
+    color: colors.gray,
+    fontSize: 13,
+    marginLeft: 8,
+  },
 });

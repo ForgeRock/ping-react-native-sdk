@@ -22,6 +22,8 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   public typealias BoolResolver = @Sendable (Bool) -> Void
   /// Promise resolver for void results.
   public typealias VoidResolver = @Sendable () -> Void
+  /// Promise resolver for poll subscription payloads.
+  public typealias PollResolver = @Sendable (NSDictionary) -> Void
   /// Promise rejecter closure type used by the DaVinci Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -173,5 +175,22 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
     rejecter: @escaping PromiseRejecter
   ) {
     RNPingDavinciCommon.dispose(davinciId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Starts streaming polling status updates for the active `PollingCollector`.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Bridge map with an optional `key` collector selector.
+  ///   - resolver: Promise resolver called with `{ subscriptionId }`.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(pollDaVinci:options:resolver:rejecter:)
+  public func pollDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    resolver: @escaping PollResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingDavinciCommon.pollDaVinci(davinciId, options: options, resolver: resolver, rejecter: rejecter)
   }
 }

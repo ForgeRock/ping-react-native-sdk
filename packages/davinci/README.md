@@ -278,27 +278,29 @@ await form.submitFlow('forgot-password');
 
 The following collector types are supported on Android and iOS:
 
-| Collector Type          | Description                                       | Input Handling |
-| ----------------------- | ------------------------------------------------- | -------------- |
-| `TEXT`                  | Single-line text input.                           | Manual input   |
-| `PASSWORD`              | Masked password input.                            | Manual input   |
-| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.      | Manual input   |
-| `SINGLE_SELECT`         | Single-select input.                              | Manual input   |
-| `DROPDOWN`              | Single-select dropdown.                           | Manual input   |
-| `RADIO`                 | Single-select radio group.                        | Manual input   |
-| `MULTI_SELECT`          | Multi-select input.                               | Manual input   |
-| `COMBOBOX`              | Multi-select combobox.                            | Manual input   |
-| `CHECKBOX`              | Multi-select checkbox group.                      | Manual input   |
-| `PHONE_NUMBER`          | Phone number input with country code.             | Manual input   |
-| `DEVICE_REGISTRATION`   | Device picker for registration.                   | Manual input   |
-| `DEVICE_AUTHENTICATION` | Device picker for authentication.                 | Manual input   |
-| `SUBMIT_BUTTON`         | Triggers form submission immediately.             | Immediate      |
-| `ACTION`                | Action button that advances the flow immediately. | Immediate      |
-| `FLOW_BUTTON`           | Flow button that advances the flow immediately.   | Immediate      |
-| `FLOW_LINK`             | Flow link that advances the flow immediately.     | Immediate      |
-| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).        | Manual input   |
-| `LABEL`                 | Read-only display content.                        | Output-only    |
-| `READ_ONLY_TEXT`        | Read-only text / agreement content.               | Output-only    |
+| Collector Type          | Description                                                                            | Input Handling |
+| ----------------------- | -------------------------------------------------------------------------------------- | -------------- |
+| `TEXT`                  | Single-line text input.                                                                | Manual input   |
+| `PASSWORD`              | Masked password input.                                                                 | Manual input   |
+| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                           | Manual input   |
+| `SINGLE_SELECT`         | Single-select input.                                                                   | Manual input   |
+| `DROPDOWN`              | Single-select dropdown.                                                                | Manual input   |
+| `RADIO`                 | Single-select radio group.                                                             | Manual input   |
+| `MULTI_SELECT`          | Multi-select input.                                                                    | Manual input   |
+| `COMBOBOX`              | Multi-select combobox.                                                                 | Manual input   |
+| `CHECKBOX`              | Multi-select checkbox group.                                                           | Manual input   |
+| `PHONE_NUMBER`          | Phone number input with country code.                                                  | Manual input   |
+| `DEVICE_REGISTRATION`   | Device picker for registration.                                                        | Manual input   |
+| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                      | Manual input   |
+| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                  | Immediate      |
+| `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
+| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
+| `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
+| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                             | Manual input   |
+| `LABEL`                 | Read-only display content.                                                             | Output-only    |
+| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
+| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
+| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
 
 Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Protect) are
 surfaced in node payloads and require client-side integration before submission
@@ -342,6 +344,7 @@ Stable DaVinci error codes:
 - `DAVINCI_SESSION_ERROR`
 - `DAVINCI_LOGOUT_ERROR`
 - `DAVINCI_DISPOSE_ERROR`
+- `DAVINCI_POLL_ERROR`
 - `DAVINCI_ARGUMENT_ERROR`
 - `DAVINCI_STATE_ERROR`
 - `DAVINCI_MISSING_INTEGRATION_ERROR`

@@ -14,6 +14,8 @@ import DaVinciLabelField from './DaVinciLabelField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
 import DaVinciPasswordField from './DaVinciPasswordField';
 import DaVinciPhoneNumberField from './DaVinciPhoneNumberField';
+import DaVinciPollingField from './DaVinciPollingField';
+import DaVinciQrCodeField from './DaVinciQrCodeField';
 import DaVinciReadOnlyTextField from './DaVinciReadOnlyTextField';
 import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
@@ -67,6 +69,10 @@ function DaVinciFieldRenderer(
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
       );
+    case 'POLLING':
+      return <DaVinciPollingField {...props} />;
+    case 'QR_CODE':
+      return <DaVinciQrCodeField {...props} />;
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

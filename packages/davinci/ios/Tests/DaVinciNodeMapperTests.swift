@@ -683,6 +683,145 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(first?["richContent"])
   }
 
+  // MARK: - PollingCollector serialization
+
+  func testMapPollingCollectorIncludesPollFields() {
+    let node = makeContinueNode(collectors: [
+      makePollingCollector(key: "polling-field", pollInterval: 2000, pollRetries: 60)
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["key"] as? String, "polling-field")
+    XCTAssertEqual(first?["pollInterval"] as? Int, 2000)
+    XCTAssertEqual(first?["pollRetries"] as? Int, 60)
+    XCTAssertEqual(first?["pollChallengeStatus"] as? Bool, false)
+    XCTAssertEqual(first?["challenge"] as? String, "")
+  }
+
+  func testMapPollingCollectorIncludesChallengeFieldsForChallengeStatusMode() {
+    let node = makeContinueNode(collectors: [
+      makePollingCollector(
+        key: "polling-field",
+        pollInterval: 1000,
+        pollRetries: 30,
+        pollChallengeStatus: true,
+        challenge: "abc-challenge-id"
+      )
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["pollChallengeStatus"] as? Bool, true)
+    XCTAssertEqual(first?["challenge"] as? String, "abc-challenge-id")
+  }
+
+  func testMapPollingCollectorIncludesRawFieldWhenFormInputPresent() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "polling-field", "type": "POLLING"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [makePollingCollector(key: "polling-field", pollInterval: 2000, pollRetries: 60)],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNotNil(first?["raw"])
+  }
+
+  // MARK: - QRCodeCollector serialization
+
+  func testMapQRCodeCollectorEmitsContentAndFallbackText() {
+    let node = makeContinueNode(collectors: [
+      makeQRCodeCollector(
+        key: "qr-field",
+        content: "data:image/png;base64,iVBORw0KGgo=",
+        fallbackText: "Scan this code with your device"
+      )
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["type"] as? String, "QR_CODE")
+    XCTAssertEqual(first?["content"] as? String, "data:image/png;base64,iVBORw0KGgo=")
+    XCTAssertEqual(first?["fallbackText"] as? String, "Scan this code with your device")
+  }
+
+  func testMapQRCodeCollectorUsesStableKeyFromServerField() {
+    // Unlike Android 2.1.0 (whose native `id()` returns a random UUID per call), iOS's
+    // native `QRCodeCollector.key` is parsed from the server JSON and is stable.
+    let node = makeContinueNode(collectors: [
+      makeQRCodeCollector(key: "qr-field", content: "data:image/png;base64,iVBORw0KGgo=", fallbackText: "Scan")
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["key"] as? String, "qr-field")
+  }
+
+  func testMapQRCodeCollectorReconstructsContentFromImageDataWhenRawFieldAbsent() {
+    let imageBytes = Data([0x01, 0x02, 0x03])
+    let base64 = imageBytes.base64EncodedString()
+    let node = makeContinueNode(collectors: [
+      makeQRCodeCollector(
+        key: "qr-field",
+        content: "data:image/png;base64,\(base64)",
+        fallbackText: "Scan"
+      )
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["content"] as? String, "data:image/png;base64,\(base64)")
+  }
+
+  func testMapQRCodeCollectorDefaultsToEmptyStringWhenContentAndImageDataAbsent() {
+    // Omit "content" entirely (rather than passing an empty string) so
+    // QRCodeCollector.imageData stays nil — Data(base64Encoded: "") would otherwise
+    // decode to a non-nil empty Data, masking the mapper's final `?? ""` fallback.
+    let collector = QRCodeCollector(with: ["key": "qr-field", "fallbackText": "Scan"])
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["content"] as? String, "")
+  }
+
+  func testMapQRCodeCollectorIncludesRawFieldWhenFormInputPresent() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "qr-field", "type": "QR_CODE", "content": "data:image/png;base64,iVBORw0KGgo="]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [makeQRCodeCollector(key: "qr-field", content: "data:image/png;base64,iVBORw0KGgo=", fallbackText: "Scan")],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNotNil(first?["raw"])
+  }
+
   // MARK: - ReadOnlyTextCollector serialization
 
   func testMapReadOnlyTextCollectorIncludesAllFields() {
@@ -764,6 +903,33 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
   private func makePasswordCollector(key: String) -> PasswordCollector {
     return PasswordCollector(with: ["key": key, "type": "PASSWORD", "label": key, "required": false])
+  }
+
+  private func makePollingCollector(
+    key: String,
+    pollInterval: Int,
+    pollRetries: Int,
+    pollChallengeStatus: Bool = false,
+    challenge: String = ""
+  ) -> PollingCollector {
+    return PollingCollector(with: [
+      "key": key,
+      "type": "POLLING",
+      "label": key,
+      "required": false,
+      "pollInterval": pollInterval,
+      "pollRetries": pollRetries,
+      "pollChallengeStatus": pollChallengeStatus,
+      "challenge": challenge
+    ])
+  }
+
+  private func makeQRCodeCollector(key: String, content: String, fallbackText: String) -> QRCodeCollector {
+    return QRCodeCollector(with: [
+      "key": key,
+      "content": content,
+      "fallbackText": fallbackText
+    ])
   }
 
   private func makeDaVinciSuccessNode(sessionValue: String) -> SuccessNode {
