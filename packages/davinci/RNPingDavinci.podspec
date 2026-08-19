@@ -26,6 +26,7 @@ Pod::Spec.new do |s|
   else
     s.source_files = [
       "ios/RNPingDavinciClassic.mm",
+      "ios/RNPingDavinciEventEmitterGate.mm",
       "ios/**/*.swift",
       "ios/**/*.h"
     ]
@@ -34,6 +35,7 @@ Pod::Spec.new do |s|
   s.exclude_files = "ios/Tests/**/*"
   s.private_header_files = "ios/**/*.h"
   s.swift_version = ['5.0', '5.1', '6.0']
+
 
   s.dependency "RNPingCore"
   s.dependency "PingDavinci", '2.1.0'

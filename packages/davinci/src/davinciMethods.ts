@@ -15,6 +15,16 @@ import type {
 import { DaVinciError } from './types/error.types';
 
 /**
+ * Options accepted by {@link pollDaVinci}.
+ *
+ * @internal
+ */
+export type PollDaVinciOptions = {
+  /** Collector key to poll, when more than one `PollingCollector` is present. */
+  key?: string;
+};
+
+/**
  * Configure a native DaVinci workflow instance.
  *
  * @param config - Serialised DaVinci configuration payload.
@@ -207,6 +217,39 @@ export async function logoutDaVinci(davinciId: string): Promise<void> {
 export async function disposeDaVinci(davinciId: string): Promise<void> {
   try {
     await NativeRNPingDavinci.dispose(davinciId);
+  } catch (error) {
+    throw DaVinciError.from(error);
+  }
+}
+
+/**
+ * Start streaming polling status updates for the active `PollingCollector`.
+ *
+ * @param davinciId - Native DaVinci instance identifier.
+ * @param options - Optional collector selection.
+ * @returns Native-generated subscription id used to filter `PollingStatus` events.
+ * @throws {DaVinciError} When no active `PollingCollector` is resolved, or the
+ *   bridge returns a malformed subscription payload.
+ */
+export async function pollDaVinci(
+  davinciId: string,
+  options: PollDaVinciOptions = {},
+): Promise<string> {
+  try {
+    const result = await NativeRNPingDavinci.pollDaVinci(davinciId, options);
+    if (
+      result === null ||
+      typeof result !== 'object' ||
+      typeof (result as { subscriptionId?: unknown }).subscriptionId !==
+        'string'
+    ) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed subscription payload.',
+        'DAVINCI_POLL_ERROR',
+        'native_error',
+      );
+    }
+    return (result as { subscriptionId: string }).subscriptionId;
   } catch (error) {
     throw DaVinciError.from(error);
   }

@@ -12,6 +12,8 @@ import type {
   DaVinciFormResult,
   DaVinciNormalizedCollector,
   IdpCollector,
+  PollingCollector,
+  PollingStatus,
   UnsupportedDaVinciField,
 } from '@ping-identity/rn-davinci';
 import { commonStyles } from '../../../../src/styles/common';
@@ -52,6 +54,16 @@ export type DaVinciContinueNodePanelProps = {
    * @param collector The IdpCollector to authorize.
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
+  /**
+   * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
+   *
+   * @param collector The PollingCollector to poll.
+   * @param onStatus Callback invoked with each streamed status tick.
+   */
+  onPollStatus: (
+    collector: PollingCollector,
+    onStatus: (status: PollingStatus) => void,
+  ) => Promise<() => void>;
 };
 
 /**
@@ -111,7 +123,15 @@ function renderUnsupportedFieldsNotice(
 export default function DaVinciContinueNodePanel(
   props: DaVinciContinueNodePanelProps,
 ): React.ReactElement {
-  const { node, form, loading, onSubmit, onFlowAction, onIdpAuthorize } = props;
+  const {
+    node,
+    form,
+    loading,
+    onSubmit,
+    onFlowAction,
+    onIdpAuthorize,
+    onPollStatus,
+  } = props;
   const { fields, values, canSubmit, issues, setValue } = form;
 
   const showFallbackSubmit = useMemo(
@@ -132,6 +152,7 @@ export default function DaVinciContinueNodePanel(
           onSubmit={onSubmit}
           onFlowAction={onFlowAction}
           onIdpAuthorize={onIdpAuthorize}
+          onPollStatus={onPollStatus}
           loading={loading}
           canSubmit={canSubmit}
         />

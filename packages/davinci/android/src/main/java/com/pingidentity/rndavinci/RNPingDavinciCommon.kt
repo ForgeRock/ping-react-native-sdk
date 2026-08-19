@@ -9,7 +9,11 @@ package com.pingidentity.rndavinci
 
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.pingidentity.davinci.collector.PollingCollector
+import com.pingidentity.davinci.collector.PollingStatus
 import com.pingidentity.davinci.user
 import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
@@ -32,11 +36,18 @@ import com.pingidentity.rndavinci.error.DaVinciErrorCodes
 import com.pingidentity.rndavinci.error.DaVinciErrorMapper
 import com.pingidentity.rndavinci.factory.DaVinciClientFactory
 import com.pingidentity.rndavinci.mapper.DaVinciNodeMapper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+import java.lang.ref.WeakReference
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -57,6 +68,16 @@ internal object RNPingDavinciCommon {
     private val davinciRegistry = CoreRuntime.davinciRegistry
     private val nodeMap = ConcurrentHashMap<String, Node>()
     private val continueNodeMap = ConcurrentHashMap<String, ContinueNode>()
+
+    private var reactContextRef: WeakReference<ReactApplicationContext>? = null
+
+    /**
+     * In-flight poll [Job]s grouped by `davinciId`, so [dispose]/[cleanup] can cancel every
+     * outstanding poll for a given DaVinci instance as a teardown safety net. Native polling
+     * has no cancellation primitive, so this is the only way an in-flight poll is ever stopped
+     * early — it is not exposed to JS.
+     */
+    private val pollJobsByDaVinciId = ConcurrentHashMap<String, MutableSet<Job>>()
 
     /**
      * Handle storing a native DaVinci workflow instance.
@@ -84,9 +105,19 @@ internal object RNPingDavinciCommon {
      * to JS through `ContinueNode.unsupportedFields` (see
      * `DaVinciNodeMapper.unsupportedFieldsPayload`) so consumers can react. Re-
      * evaluate once the SDKs register any new server-introduced field types.
+     *
+     * `reactContext` is captured (weakly, mirroring `RNPingBindingCommon`/
+     * `RNPingPushCommon`) so [pollDaVinci] can resolve the JS
+     * `RCTDeviceEventEmitter` to stream `PollingStatus` ticks. It is optional
+     * and re-applied on every call (even when [configured] is already `true`)
+     * because both `RNPingDavinciModule` and `RNPingDavinciClassicModule` call
+     * `configure()` from their constructors — the reference must stay current
+     * across module re-creation, not just the first init. Existing call sites
+     * that don't need event emission (e.g. tests) can omit it.
      */
     @Synchronized
-    fun configure() {
+    fun configure(reactContext: ReactApplicationContext? = null) {
+        reactContext?.let { reactContextRef = WeakReference(it) }
         if (configured) return
 
         val oidcStorageRegistry = CoreRuntime.oidcStorageConfigRegistry
@@ -110,9 +141,12 @@ internal object RNPingDavinciCommon {
         if (!configured) return
 
         CoreRuntime.davinciCollectorResolver = null
+        pollJobsByDaVinciId.values.forEach { jobs -> jobs.forEach { it.cancel() } }
+        pollJobsByDaVinciId.clear()
         scope.cancel()
         scope = createScope()
         disposeAll()
+        reactContextRef = null
         configured = false
     }
 
@@ -142,6 +176,17 @@ internal object RNPingDavinciCommon {
         continueNodeMap.remove(davinciId)?.let { node -> runCatching { node.close() } }
         nodeMap.remove(davinciId)
         davinciRegistry.remove(davinciId)
+        cancelPollsFor(davinciId)
+    }
+
+    /**
+     * Cancels every in-flight poll [Job] tracked for [davinciId] — a dispose()/cleanup()
+     * safety net so a disposed instance never leaves an orphaned coroutine running after
+     * the caller stops listening for its events.
+     */
+    private fun cancelPollsFor(davinciId: String) {
+        val jobs = pollJobsByDaVinciId.remove(davinciId) ?: return
+        jobs.forEach { it.cancel() }
     }
 
     private fun resolveWorkflow(davinciId: String): Workflow? =
@@ -472,6 +517,121 @@ internal object RNPingDavinciCommon {
         } catch (error: Exception) {
             promise.reject(DaVinciErrorMapper.map(error, DaVinciErrorCodes.DISPOSE), error)
         }
+    }
+
+    /**
+     * Start streaming polling status updates for the active [PollingCollector].
+     *
+     * The poll [Job] is created with [CoroutineStart.LAZY] and registered into
+     * [pollJobsByDaVinciId] before the promise resolves. The promise is then resolved with a
+     * native-generated `subscriptionId`, and only after that does the job actually
+     * [Job.start], beginning to collect [PollingCollector.pollStatus] and emit
+     * [RNPingDavinciEvents.POLLING_STATUS] events tagged with that `subscriptionId`. Because
+     * the RN bridge delivers native→JS messages in FIFO order per channel, this ordering
+     * guarantees JS always has the id to filter on before the first event can arrive.
+     *
+     * Native polling has no cancellation primitive — once started, this [Job] runs to
+     * completion (bounded by the collector's `pollRetries`/`pollInterval`) unless [dispose]
+     * or [cleanup] cancels it as a teardown safety net.
+     *
+     * @param davinciId Native DaVinci instance id.
+     * @param options Bridge map with an optional `key` selecting which `PollingCollector`
+     *   to poll when more than one is present on the active node; the first one is used
+     *   when `key` is absent.
+     * @param promise Promise resolved with `{ subscriptionId }`.
+     */
+    fun pollDaVinci(davinciId: String, options: ReadableMap, promise: Promise) {
+        val node = continueNodeMap[davinciId]
+        if (node == null) {
+            promise.reject(
+                DaVinciErrorMapper.state(
+                    DaVinciErrorCodes.POLL,
+                    "No active ContinueNode found for davinci id=$davinciId"
+                )
+            )
+            return
+        }
+
+        val requestedKey = if (options.hasKey("key") && !options.isNull("key")) {
+            options.getString("key")
+        } else {
+            null
+        }
+        val collectors = node.actions.filterIsInstance<PollingCollector>()
+        val collector = (if (requestedKey != null) {
+            collectors.firstOrNull { it.id() == requestedKey }
+        } else {
+            collectors.firstOrNull()
+        })
+        if (collector == null) {
+            promise.reject(
+                DaVinciErrorMapper.state(
+                    DaVinciErrorCodes.POLL,
+                    "No active PollingCollector found for davinci id=$davinciId" +
+                        (requestedKey?.let { " with key=$it" } ?: "")
+                )
+            )
+            return
+        }
+
+        val subscriptionId = UUID.randomUUID().toString()
+        lateinit var job: Job
+        job = scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                collector.pollStatus().collect { status ->
+                    emitPollingStatus(davinciId, subscriptionId, status)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } finally {
+                pollJobsByDaVinciId[davinciId]?.remove(job)
+            }
+        }
+        pollJobsByDaVinciId.computeIfAbsent(davinciId) { ConcurrentHashMap.newKeySet() }.add(job)
+
+        val result = Arguments.createMap()
+        result.putString("subscriptionId", subscriptionId)
+        promise.resolve(result)
+
+        job.start()
+    }
+
+    /**
+     * Emits one [PollingStatus] tick to JS via [DeviceEventManagerModule.RCTDeviceEventEmitter].
+     * No-op when the React context is unavailable (e.g. the module was invalidated mid-poll).
+     *
+     * Hops to [Dispatchers.Main] via [withContext] before emitting, staying on the calling
+     * poll [Job] so cancellation (unsubscribe/dispose) also cancels any in-flight emit instead
+     * of leaking a detached [Dispatchers.Main] coroutine.
+     */
+    private suspend fun emitPollingStatus(davinciId: String, subscriptionId: String, status: PollingStatus) {
+        val emitter = reactContextRef?.get()
+            ?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
+            ?: return
+
+        val params = Arguments.createMap()
+        params.putString("subscriptionId", subscriptionId)
+        params.putString("daVinciId", davinciId)
+        when (status) {
+            is PollingStatus.Continue -> {
+                params.putString("status", "continue")
+                params.putInt("retryCount", status.retryCount)
+                params.putInt("maxRetries", status.maxRetries)
+            }
+            is PollingStatus.Complete -> {
+                params.putString("status", "complete")
+                params.putString("value", status.status)
+            }
+            is PollingStatus.TimedOut -> params.putString("status", "timedOut")
+            is PollingStatus.Expired -> params.putString("status", "expired")
+            is PollingStatus.Error -> {
+                params.putString("status", "error")
+                val errorMap = Arguments.createMap()
+                errorMap.putString("message", status.exception.message ?: status.exception.toString())
+                params.putMap("error", errorMap)
+            }
+        }
+        withContext(Dispatchers.Main) { emitter.emit(RNPingDavinciEvents.POLLING_STATUS, params) }
     }
 
     // ---- Private helpers ----

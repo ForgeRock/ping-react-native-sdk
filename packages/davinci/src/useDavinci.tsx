@@ -19,7 +19,9 @@ import type {
   DaVinciConfig,
   DaVinciNextInput,
   DaVinciNode,
+  DaVinciPollStatusOptions,
   DaVinciUserSession,
+  PollingStatus,
 } from './types';
 
 /**
@@ -79,6 +81,20 @@ export type DaVinciHookActions = {
    * @throws {DaVinciError} When logout fails.
    */
   logoutUser: () => Promise<void>;
+  /**
+   * Streams {@link PollingStatus} updates for the active `PollingCollector`
+   * on the current node.
+   *
+   * @param onStatus - Callback invoked with each streamed status tick.
+   * @param options - Optional collector selection.
+   * @returns An unsubscribe function that removes the local status listener
+   *   only; it does not cancel the active native poll.
+   * @throws {DaVinciError} When no active `PollingCollector` is resolved.
+   */
+  pollStatus: (
+    onStatus: (status: PollingStatus) => void,
+    options?: DaVinciPollStatusOptions,
+  ) => Promise<() => void>;
   /**
    * Dispose the native DaVinci instance and reset local hook state.
    *
@@ -158,6 +174,9 @@ const missingDaVinciClient: DaVinciClient = {
     throw missingDaVinciClientError;
   },
   async getId(): Promise<string> {
+    throw missingDaVinciClientError;
+  },
+  async pollStatus(): Promise<() => void> {
     throw missingDaVinciClientError;
   },
 };
@@ -246,6 +265,14 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
     setNode(null);
   }, [client]);
 
+  const pollStatus = useCallback(
+    async (
+      onStatus: (status: PollingStatus) => void,
+      options?: DaVinciPollStatusOptions,
+    ): Promise<() => void> => await client.pollStatus(onStatus, options),
+    [client],
+  );
+
   const dispose = useCallback(async (): Promise<void> => {
     await client.dispose();
     setNode(null);
@@ -261,6 +288,7 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
     revoke,
     userinfo,
     logoutUser,
+    pollStatus,
     dispose,
     loading,
     error,

@@ -12,14 +12,23 @@ import {
   getDaVinciUserInfo,
   logoutDaVinci,
   nextDaVinci,
+  pollDaVinci,
   refreshDaVinciSession,
   revokeDaVinciSession,
   startDaVinci,
 } from './davinciMethods';
+import { DaVinciEvents } from './events';
 import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
-import type { DaVinciClient, DaVinciConfig, DaVinciNextInput } from './types';
+import type {
+  DaVinciClient,
+  DaVinciConfig,
+  DaVinciNextInput,
+  DaVinciPollStatusOptions,
+  PollingStatus,
+} from './types';
 import { DaVinciError } from './types/error.types';
 import { noopLogger } from '@ping-identity/rn-types';
+import { DeviceEventEmitter } from 'react-native';
 
 /**
  * Resolves and validates the OIDC storage handle id from the config.
@@ -389,6 +398,89 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
      */
     async getId() {
       return ensureConfigured();
+    },
+
+    /**
+     * Streams `PollingStatus` updates for the active `PollingCollector`.
+     *
+     * @remarks
+     * Subscribes to the shared `DeviceEventEmitter` channel *before* calling
+     * the bridge, buffering any ticks that arrive while `subscriptionId` is
+     * still unknown. Neither native side guarantees that its polling task
+     * starts only after the `{ subscriptionId }` promise resolves — iOS
+     * schedules the poll on an unstructured `Task` that can emit a tick
+     * before `pollDaVinci`'s promise settles — so subscribing first and
+     * replaying buffered ticks once `subscriptionId` is known is the only
+     * way to guarantee no tick is dropped. The listener removes itself on
+     * any terminal status (`complete`, `timedOut`, `expired`, `error`).
+     * Does not call `next()` — the caller must advance the flow explicitly
+     * on a terminal status.
+     *
+     * The returned unsubscribe function stops **local event delivery only** —
+     * neither native SDK exposes a primitive to cancel an in-flight poll, so
+     * the native poll continues running to completion (bounded by
+     * `pollRetries` × `pollInterval`) even after `unsubscribe()` is called.
+     *
+     * @param onStatus - Callback invoked with each streamed status tick.
+     * @param options - Optional collector selection.
+     * @returns An unsubscribe function that stops local event delivery. The
+     *   native poll keeps running to completion; it cannot be cancelled.
+     * @throws {DaVinciError} When no active `PollingCollector` is resolved.
+     */
+    async pollStatus(
+      onStatus: (status: PollingStatus) => void,
+      options: DaVinciPollStatusOptions = {},
+    ) {
+      const id = await ensureConfigured();
+      logDebug('DaVinci pollStatus requested', { davinciId: id });
+
+      let subscriptionId: string | undefined;
+      const buffered: Record<string, unknown>[] = [];
+
+      const deliver = (event: Record<string, unknown>) => {
+        const status = { ...event };
+        delete status.subscriptionId;
+        delete status.daVinciId;
+        if (status.status !== 'continue') {
+          subscription.remove();
+        }
+        onStatus(status as PollingStatus);
+      };
+
+      const subscription = DeviceEventEmitter.addListener(
+        DaVinciEvents.POLLING_STATUS,
+        (event: Record<string, unknown>) => {
+          if (subscriptionId === undefined) {
+            buffered.push(event);
+            return;
+          }
+          if (event.subscriptionId !== subscriptionId) {
+            return;
+          }
+          deliver(event);
+        },
+      );
+
+      try {
+        subscriptionId = await pollDaVinci(id, options);
+      } catch (error) {
+        subscription.remove();
+        logError('DaVinci pollStatus failed', error, { davinciId: id });
+        throw error;
+      }
+
+      buffered
+        .filter((event) => event.subscriptionId === subscriptionId)
+        .forEach(deliver);
+
+      logInfo('DaVinci pollStatus succeeded', {
+        davinciId: id,
+        subscriptionId,
+      });
+
+      return () => {
+        subscription.remove();
+      };
     },
 
     /**

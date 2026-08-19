@@ -22,6 +22,7 @@ enum DaVinciErrorCodes: String {
   case sessionError = "DAVINCI_SESSION_ERROR"
   case logoutError = "DAVINCI_LOGOUT_ERROR"
   case disposeError = "DAVINCI_DISPOSE_ERROR"
+  case pollError = "DAVINCI_POLL_ERROR"
   case argumentError = "DAVINCI_ARGUMENT_ERROR"
   case stateError = "DAVINCI_STATE_ERROR"
   case missingIntegrationError = "DAVINCI_MISSING_INTEGRATION_ERROR"

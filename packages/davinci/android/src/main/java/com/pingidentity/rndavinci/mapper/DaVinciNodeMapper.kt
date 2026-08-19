@@ -19,6 +19,8 @@ import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PasswordPolicy
 import com.pingidentity.davinci.collector.PhoneNumberCollector
+import com.pingidentity.davinci.collector.PollingCollector
+import com.pingidentity.davinci.collector.QRCodeCollector
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
@@ -43,6 +45,13 @@ internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
     internal const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
+    private const val QR_CODE = "QR_CODE"
+
+    /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollInterval` fails to parse. */
+    private const val DEFAULT_POLL_INTERVAL = 2000
+
+    /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollRetries` fails to parse. */
+    private const val DEFAULT_POLL_RETRIES = 60
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -146,6 +155,13 @@ internal object DaVinciNodeMapper {
             .mapNotNull { it.id() }
             .toSet()
 
+        // TODO-SDK-PARITY: QRCodeCollector.id() (Android 2.1.0) falls back to the
+        // Collector interface default, which returns a fresh random UUID per call —
+        // it never matches the server field's real `key`. Excluding QR_CODE here
+        // avoids reporting a field the SDK *did* instantiate a collector for as
+        // dropped/unsupported. Remove this exclusion once the native SDK reads `key`.
+        val hasRegisteredQrCode = node.actions.filterIsInstance<QRCodeCollector>().isNotEmpty()
+
         return buildList {
             for (element in fields) {
                 val fieldJson = try {
@@ -163,6 +179,8 @@ internal object DaVinciNodeMapper {
 
                 // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
                 if (resolvedType == SOCIAL_LOGIN_BUTTON) continue
+
+                if (resolvedType == QR_CODE && hasRegisteredQrCode) continue
 
                 // A field is supported when the SDK instantiated a collector for its key.
                 if (registeredKeys.contains(key)) continue
@@ -186,6 +204,12 @@ internal object DaVinciNodeMapper {
         node: ContinueNode,
         logger: Logger? = null
     ): Map<String, Any?>? {
+        // TODO-SDK-PARITY: QRCodeCollector (Android 2.1.0) does not override `id()`, so it
+        // falls back to the Collector interface default — a fresh random UUID on every call,
+        // never matching the server field's real `key`. Handled separately from the
+        // id()-based rawFieldKey() correlation below; mapQRCodeCollector emits `key: ""`.
+        if (collector is QRCodeCollector) return mapQRCodeCollector(collector)
+
         val payload = when (collector) {
             is IdpCollector -> mapIdpCollector(collector)
             is TextCollector -> mapTextCollector(collector)
@@ -198,6 +222,7 @@ internal object DaVinciNodeMapper {
             is PhoneNumberCollector -> mapPhoneNumberCollector(collector)
             is DeviceRegistrationCollector -> mapDeviceRegistrationCollector(collector)
             is DeviceAuthenticationCollector -> mapDeviceAuthenticationCollector(collector)
+            is PollingCollector -> mapPollingCollector(collector, logger)
             else -> {
                 logWarning(
                     logger,
@@ -392,6 +417,65 @@ internal object DaVinciNodeMapper {
             "key" to collector.key,
             "type" to "LABEL",
             "content" to collector.content
+        )
+    }
+
+    /**
+     * Serialize a [PollingCollector] to a payload map.
+     *
+     * @remarks
+     * `pollInterval`/`pollRetries` are coerced from the native `String` to `Int` — Android's
+     * native collector types them as `String`, iOS's as `Int`; the bridge normalizes to a
+     * single numeric shape (`number` in TS) across platforms. If a value fails to parse, it
+     * falls back to the same default the native `PollingCollector.pollStatus()` uses internally
+     * (`2000`/`60`) and logs a warning rather than leaking the raw string into a numeric field.
+     *
+     * TODO-SDK-PARITY: Android's `PollingCollector.retriesAllowed` (2.1.0) resets to
+     * `pollRetries.toInt()` on every `init(input)` — a fresh collector instance for the same
+     * simple-polling node loses any decrement from a prior instance. iOS persists this via
+     * `SharedContext.Keys.pollingRetriesRemaining(...)`, read back in `continueNode`'s `didSet`.
+     * Not fixable from the bridge; file against the native SDK.
+     */
+    private fun mapPollingCollector(collector: PollingCollector, logger: Logger? = null): Map<String, Any?> {
+        val map = baseCollectorMap(collector)
+        map["pollInterval"] = collector.pollInterval.toIntOrNull() ?: run {
+            logWarning(
+                logger,
+                "Failed to coerce pollInterval=\"${collector.pollInterval}\" to Int, defaulting to $DEFAULT_POLL_INTERVAL",
+                NumberFormatException("Invalid pollInterval: ${collector.pollInterval}")
+            )
+            DEFAULT_POLL_INTERVAL
+        }
+        map["pollRetries"] = collector.pollRetries.toIntOrNull() ?: run {
+            logWarning(
+                logger,
+                "Failed to coerce pollRetries=\"${collector.pollRetries}\" to Int, defaulting to $DEFAULT_POLL_RETRIES",
+                NumberFormatException("Invalid pollRetries: ${collector.pollRetries}")
+            )
+            DEFAULT_POLL_RETRIES
+        }
+        map["pollChallengeStatus"] = collector.pollChallengeStatus
+        map["challenge"] = collector.challenge
+        return map
+    }
+
+    /**
+     * Serialize a [QRCodeCollector] to a payload map.
+     *
+     * @remarks
+     * TODO-SDK-PARITY: Android's native `QRCodeCollector` (2.1.0) does not parse a `key`
+     * from the server field JSON, even though the server sends one (unlike iOS's native
+     * collector, which does). Its `id()` also falls back to the `Collector` interface
+     * default — a fresh random UUID per call — so it cannot be used to correlate back to
+     * `node.input.form.components.fields[]` for a `raw` field lookup either. Emits `key: ""`
+     * until the native SDK exposes it; `raw` is omitted for the same reason.
+     */
+    private fun mapQRCodeCollector(collector: QRCodeCollector): Map<String, Any?> {
+        return linkedMapOf(
+            "key" to "",
+            "type" to QR_CODE,
+            "content" to collector.content,
+            "fallbackText" to collector.fallbackText
         )
     }
 
