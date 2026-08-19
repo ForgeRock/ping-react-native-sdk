@@ -209,8 +209,28 @@ If the logger package is not installed/configured, do not pass logger values in 
 <td>Immediate</td>
 </tr>
 <tr>
+<td><code>SINGLE_CHECKBOX</code></td>
+<td>Single checkbox or toggle (boolean field).</td>
+<td>Manual input</td>
+</tr>
+<tr>
 <td><code>LABEL</code></td>
 <td>Read-only display content.</td>
+<td>Output-only</td>
+</tr>
+<tr>
+<td><code>READ_ONLY_TEXT</code></td>
+<td>Read-only text / agreement content.</td>
+<td>Output-only</td>
+</tr>
+<tr>
+<td><code>POLLING</code></td>
+<td>Async polling collector — see <a href="#polling-and-qr-code-flows">Polling and QR code flows</a>.</td>
+<td>Output-only</td>
+</tr>
+<tr>
+<td><code>QR_CODE</code></td>
+<td>Display-only QR code — see <a href="#polling-and-qr-code-flows">Polling and QR code flows</a>.</td>
 <td>Output-only</td>
 </tr>
 </tbody>
@@ -239,6 +259,7 @@ Use <code>instanceof</code> to narrow the error type:</p>
 <li><code>DAVINCI_SESSION_ERROR</code></li>
 <li><code>DAVINCI_LOGOUT_ERROR</code></li>
 <li><code>DAVINCI_DISPOSE_ERROR</code></li>
+<li><code>DAVINCI_POLL_ERROR</code></li>
 <li><code>DAVINCI_ARGUMENT_ERROR</code></li>
 <li><code>DAVINCI_STATE_ERROR</code></li>
 <li><code>DAVINCI_MISSING_INTEGRATION_ERROR</code></li>
