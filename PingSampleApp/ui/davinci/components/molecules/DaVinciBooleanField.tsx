@@ -28,19 +28,20 @@ export default function DaVinciBooleanField(
   const showError =
     booleanCollector.required && !checked && booleanCollector.errorMessage;
 
-  const label = booleanCollector.required
-    ? `${booleanCollector.label} *`
-    : booleanCollector.label;
-
   if (booleanCollector.appearance === 'SWITCH') {
     return (
       <View style={davinciFieldStyles.card}>
         <View style={styles.switchRow}>
-          <RichTextLabel
-            text={label}
-            richContent={booleanCollector.richContent}
-            style={[davinciFieldStyles.fieldLabel, styles.switchLabel]}
-          />
+          <View style={styles.switchLabel}>
+            <RichTextLabel
+              text={booleanCollector.label}
+              richContent={booleanCollector.richContent}
+              style={davinciFieldStyles.fieldLabel}
+            />
+            {booleanCollector.required ? (
+              <Text style={davinciFieldStyles.fieldLabel}> *</Text>
+            ) : null}
+          </View>
           <Switch
             value={checked}
             onValueChange={next => onChange(next)}
@@ -74,10 +75,13 @@ export default function DaVinciBooleanField(
           {checked ? <Text style={styles.checkmark}>✓</Text> : null}
         </View>
         <RichTextLabel
-          text={label}
+          text={booleanCollector.label}
           richContent={booleanCollector.richContent}
           style={davinciFieldStyles.fieldLabel}
         />
+        {booleanCollector.required ? (
+          <Text style={davinciFieldStyles.fieldLabel}> *</Text>
+        ) : null}
       </Pressable>
       {showError ? (
         <Text style={davinciFieldStyles.errorText}>
@@ -96,7 +100,6 @@ const styles = {
   },
   switchLabel: {
     flex: 1,
-    marginBottom: 0,
     marginRight: 8,
   },
   checkboxRow: {
