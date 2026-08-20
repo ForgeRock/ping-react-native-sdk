@@ -43,12 +43,20 @@ JOURNEY_SCOPES=openid,profile,email
 
 # PingAdvancedIdentityCloud (optional second profile)
 AIC_SERVER_URL=...
+AIC_PAR=false
 
 # PingOne OIDC (optional)
 PINGONE_CLIENT_ID=...
 PINGONE_DISCOVERY_ENDPOINT=...
 PINGONE_REDIRECT_URI=...
+PINGONE_PAR=false
 ```
+
+Set `AIC_PAR` or `PINGONE_PAR` to `true` only when the provider's OIDC
+discovery document advertises a PAR endpoint. `AIC_PAR` controls the Advanced Identity Cloud OIDC clients, while `PINGONE_PAR` controls the
+PingOne OIDC and DaVinci clients. The values are parsed as booleans at build
+time, default to the native SDK behavior when omitted or set to `false`, and
+require an app rebuild after changes.
 
 > The DaVinci screen reuses the `PINGONE_*` variables above — DaVinci flows
 > are configured against the same PingOne tenant discovery endpoint, so no

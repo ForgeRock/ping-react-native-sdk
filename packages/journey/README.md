@@ -56,6 +56,9 @@ Add `modules.oidc` when your Journey flow needs OIDC token/session operations (f
 Storage inside `modules.oidc.storage` and `modules.session.storage` is optional. Configure it only
 if you need native-backed persistence; otherwise omit storage values.
 
+Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
+SDK reads the PAR endpoint from the provider's OIDC discovery document.
+
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
 import {

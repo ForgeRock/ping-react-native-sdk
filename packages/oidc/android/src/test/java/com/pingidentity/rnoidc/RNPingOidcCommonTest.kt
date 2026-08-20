@@ -360,6 +360,7 @@ class RNPingOidcCommonTest {
       openId = null,
       redirectUri = "com.example.app://callback",
       scopes = listOf("openid"),
+      par = null,
       storageId = null,
       loggerId = null,
       acrValues = null,

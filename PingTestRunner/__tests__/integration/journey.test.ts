@@ -82,6 +82,20 @@ const VALID_CONFIG = {
   tree: 'Login',
 };
 
+const CONFIG_WITH_PAR = {
+  ...VALID_CONFIG,
+  modules: {
+    oidc: {
+      clientId: 'journey-client-id',
+      discoveryEndpoint:
+        'https://openam.example.com/am/oauth2/.well-known/openid-configuration',
+      redirectUri: 'org.forgerock.demo://oauth2redirect',
+      scopes: ['openid', 'profile'],
+      par: true,
+    },
+  },
+};
+
 describe('@ping-identity/rn-journey — integration', () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -156,6 +170,41 @@ describe('@ping-identity/rn-journey — integration', () => {
       const id = await client.init();
       expect(typeof id).toBe('string');
       expect(mock.configureJourney).toHaveBeenCalledTimes(1);
+    });
+
+    it('forwards par: true to native configureJourney payload', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(CONFIG_WITH_PAR);
+
+      await client.init();
+
+      expect(mock.configureJourney).toHaveBeenCalledWith(
+        expect.objectContaining({ par: true }),
+      );
+    });
+
+    it('forwards an omitted par value as undefined', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient({
+        ...VALID_CONFIG,
+        modules: {
+          oidc: {
+            clientId: 'journey-client-id',
+            discoveryEndpoint:
+              'https://openam.example.com/am/oauth2/.well-known/openid-configuration',
+            redirectUri: 'org.forgerock.demo://oauth2redirect',
+            scopes: ['openid', 'profile'],
+          },
+        },
+      });
+
+      await client.init();
+
+      expect(mock.configureJourney).toHaveBeenCalledWith(
+        expect.objectContaining({ par: undefined }),
+      );
     });
 
     it('start() returns a ContinueNode with callbacks array', async () => {

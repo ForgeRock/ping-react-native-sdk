@@ -237,6 +237,7 @@ describe('Journey JS API', () => {
             userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
           },
           scopes: ['openid', 'profile'],
+          par: true,
           acrValues: 'loa-2',
           signOutRedirectUri: 'com.example.app://signed-out',
           state: 'state-123',
@@ -265,6 +266,7 @@ describe('Journey JS API', () => {
           userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
         },
         scopes: ['openid', 'profile'],
+        par: true,
         acrValues: 'loa-2',
         signOutRedirectUri: 'com.example.app://signed-out',
         state: 'state-123',
@@ -278,6 +280,30 @@ describe('Journey JS API', () => {
           audience: 'urn:example:api',
         },
       }),
+    );
+  });
+
+  it('keeps par undefined when omitted from OIDC config', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+        },
+      },
+    });
+
+    await client.init();
+
+    expect(native.configureJourney).toHaveBeenCalledWith(
+      expect.objectContaining({ par: undefined }),
     );
   });
 

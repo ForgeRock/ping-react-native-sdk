@@ -114,6 +114,9 @@ object RNPingOidcCommon {
         )
       }
 
+    override val par: Boolean?
+      get() = payload.par
+
     override val acrValues: String?
       get() = payload.acrValues
 

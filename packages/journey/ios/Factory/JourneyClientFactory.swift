@@ -20,6 +20,7 @@ final class JourneyClientFactory {
     let discoveryEndpoint: String?
     let redirectUri: String
     let scopes: [String]
+    let par: Bool?
     let openId: OidcOpenIdConfig?
     let acrValues: String?
     let signOutRedirectUri: String?
@@ -73,6 +74,9 @@ final class JourneyClientFactory {
             module.discoveryEndpoint = discoveryEndpoint
           }
           module.redirectUri = oidcConfig.redirectUri
+          if let par = oidcConfig.par {
+            module.par = par
+          }
           module.scopes = Set(oidcConfig.scopes)
           module.acrValues = oidcConfig.acrValues
           module.state = oidcConfig.state
@@ -158,6 +162,7 @@ final class JourneyClientFactory {
       discoveryEndpoint: oidcPayload.discoveryEndpoint,
       redirectUri: redirectUri,
       scopes: oidcPayload.scopes,
+      par: oidcPayload.par,
       openId: coreOpenId,
       acrValues: oidcPayload.acrValues,
       signOutRedirectUri: oidcPayload.signOutRedirectUri,
@@ -197,6 +202,7 @@ final class JourneyClientFactory {
       discoveryEndpoint: discoveryEndpoint,
       redirectUri: handle.redirectUri,
       scopes: handle.scopes,
+      par: handle.par,
       openId: handle.openId,
       acrValues: handle.acrValues,
       signOutRedirectUri: handle.signOutRedirectUri,

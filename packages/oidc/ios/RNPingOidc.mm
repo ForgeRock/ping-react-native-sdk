@@ -60,12 +60,20 @@ RCT_EXPORT_MODULE()
     if (revocationEndpoint != nil) {
       openIdDict[@"revocationEndpoint"] = revocationEndpoint;
     }
+    NSString *pushedAuthorizationRequestEndpoint = openIdValue.pushedAuthorizationRequestEndpoint();
+    if (pushedAuthorizationRequestEndpoint != nil) {
+      openIdDict[@"pushedAuthorizationRequestEndpoint"] = pushedAuthorizationRequestEndpoint;
+    }
     dict[@"openId"] = openIdDict;
   }
 
   NSString *redirectUri = config.redirectUri();
   if (redirectUri != nil) {
     dict[@"redirectUri"] = redirectUri;
+  }
+
+  if (config.par().has_value()) {
+    dict[@"par"] = @(config.par().value());
   }
 
   NSMutableArray<NSString *> *scopes = [NSMutableArray new];

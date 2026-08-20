@@ -33,6 +33,15 @@ export type OidcOpenIdConfiguration = {
    */
   pingEndIdpSessionEndpoint?: string;
   /**
+   * Pushed Authorization Request endpoint URL.
+   *
+   * @remarks
+   * When omitted from discovery, iOS silently falls back to the standard
+   * authorization flow while Android enters the PAR branch with an empty
+   * endpoint value, which Ktor resolves to its default origin.
+   */
+  pushedAuthorizationRequestEndpoint?: string;
+  /**
    * Token revocation endpoint URL.
    */
   revocationEndpoint?: string;
@@ -127,6 +136,18 @@ export type OidcCoreConfig = {
    * Optional prompt parameter for the authorization request.
    */
   prompt?: string;
+  /**
+   * Whether to use the native Pushed Authorization Request flow.
+   *
+   * Defaults to `false`.
+   *
+   * @remarks
+   * When discovery omits `pushedAuthorizationRequestEndpoint`, iOS silently
+   * falls back to the standard authorization flow while Android enters the
+   * PAR branch with an empty endpoint value, which Ktor resolves to its
+   * default origin.
+   */
+  par?: boolean;
   /**
    * Additional provider-specific parameters.
    */

@@ -54,6 +54,7 @@ const VALID_CONFIG = {
         'https://auth.example.com/.well-known/openid-configuration',
       clientId: 'my-client',
       redirectUri: 'app://callback',
+      scopes: ['openid', 'profile'],
     },
   },
 };
@@ -82,6 +83,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: '',
             clientId: 'c',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
           },
         },
       }),
@@ -100,6 +102,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: '   ',
             clientId: 'c',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
           },
         },
       }),
@@ -116,6 +119,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: 'https://example.com',
             clientId: '',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
           },
         },
       }),
@@ -134,6 +138,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: 'https://example.com',
             clientId: 'c',
             redirectUri: '',
+            scopes: ['openid', 'profile'],
           },
         },
       }),
@@ -153,6 +158,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: '',
             clientId: 'c',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
           },
         },
       });
@@ -178,6 +184,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: 'https://example.com',
             clientId: 'c',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             storage: { id: 'store-1', kind: 'session' } as any,
           },
@@ -198,6 +205,7 @@ describe('createDaVinciClient — validation', () => {
             discoveryEndpoint: 'https://example.com',
             clientId: 'c',
             redirectUri: 'app://cb',
+            scopes: ['openid', 'profile'],
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             storage: { kind: 'oidc' } as any,
           },
@@ -238,6 +246,7 @@ describe('createDaVinciClient — configure payload', () => {
           clientId: 'my-client',
           redirectUri: 'app://callback',
           scopes: ['openid', 'profile'],
+          par: true,
           signOutRedirectUri: 'app://signed-out',
           loginHint: 'demo-user',
           nonce: 'nonce-abc',
@@ -258,6 +267,7 @@ describe('createDaVinciClient — configure payload', () => {
       expect.objectContaining({
         timeout: 30000,
         scopes: ['openid', 'profile'],
+        par: true,
         signOutRedirectUri: 'app://signed-out',
         loginHint: 'demo-user',
         nonce: 'nonce-abc',
@@ -272,6 +282,19 @@ describe('createDaVinciClient — configure payload', () => {
     );
   });
 
+  it('keeps par undefined when omitted from OIDC config', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+
+    const client = createDaVinciClient(VALID_CONFIG);
+
+    await client.start();
+
+    expect(native.configureDaVinci).toHaveBeenCalledWith(
+      expect.objectContaining({ par: undefined }),
+    );
+  });
+
   it('passes storageId when a valid oidc storage handle is provided', async () => {
     const native = createNativeMock();
     const { createDaVinciClient } = loadModule(native);
@@ -283,6 +306,7 @@ describe('createDaVinciClient — configure payload', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'my-client',
           redirectUri: 'app://callback',
+          scopes: ['openid', 'profile'],
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           storage: { id: 'oidc-store-1', kind: 'oidc' } as any,
         },
@@ -327,6 +351,7 @@ describe('createDaVinciClient — configure payload', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'c',
           redirectUri: 'app://cb',
+          scopes: ['openid', 'profile'],
         },
       },
     });
@@ -369,6 +394,7 @@ describe('createDaVinciClient — configure payload', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'c',
           redirectUri: 'app://cb',
+          scopes: ['openid', 'profile'],
         },
       },
     });
@@ -391,6 +417,7 @@ describe('createDaVinciClient — configure payload', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'my-client',
           redirectUri: 'app://callback',
+          scopes: ['openid', 'profile'],
         },
         protect: {
           envId: 'env-abc',
@@ -632,6 +659,7 @@ describe('createDaVinciClient — logging behaviour', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'c',
           redirectUri: 'app://cb',
+          scopes: ['openid', 'profile'],
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           additionalParameters: { fn: (() => 'drop-me') as any },
         },
@@ -668,6 +696,7 @@ describe('createDaVinciClient — logging behaviour', () => {
             'https://auth.example.com/.well-known/openid-configuration',
           clientId: 'c',
           redirectUri: 'app://cb',
+          scopes: ['openid', 'profile'],
         },
       },
     });

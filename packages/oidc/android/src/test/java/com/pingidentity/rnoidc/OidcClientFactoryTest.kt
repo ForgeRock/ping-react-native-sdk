@@ -74,6 +74,24 @@ class OidcClientFactoryTest {
   }
 
   @Test
+  fun buildOidcClient_appliesPar() {
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+
+    val config = factory.buildOidcClient(basePayload().copy(par = true)).extractConfig()
+
+    assertEquals(true, config.par)
+  }
+
+  @Test
+  fun buildOidcClient_defaultsParToFalse() {
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+
+    val config = factory.buildOidcClient(basePayload()).extractConfig()
+
+    assertEquals(false, config.par)
+  }
+
+  @Test
   fun buildOidcClient_defaultsOptionalOpenIdEndpoints() {
     val storageRegistry = RecordingRegistry()
     val factory = OidcClientFactory(storageRegistry) { null }
@@ -84,7 +102,8 @@ class OidcClientFactoryTest {
         userinfoEndpoint = "https://example.com/oauth2/userinfo",
         endSessionEndpoint = null,
         pingEndIdpSessionEndpoint = null,
-        revocationEndpoint = null
+        revocationEndpoint = null,
+        pushedAuthorizationRequestEndpoint = null
       )
     )
 
@@ -122,6 +141,7 @@ class OidcClientFactoryTest {
       openId = null,
       redirectUri = "com.example.app://callback",
       scopes = listOf("openid"),
+      par = null,
       storageId = storageId,
       loggerId = loggerId,
       acrValues = null,

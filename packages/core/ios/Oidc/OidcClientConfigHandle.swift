@@ -60,6 +60,9 @@ public protocol OidcClientConfigHandle: NativeHandle {
   /// Optional OpenID endpoint override configuration.
   var openId: OidcOpenIdConfig? { get }
 
+  /// Optional PAR enablement flag.
+  var par: Bool? { get }
+
   /// Optional ACR values.
   var acrValues: String? { get }
 

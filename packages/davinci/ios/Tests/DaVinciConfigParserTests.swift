@@ -19,6 +19,7 @@ final class DaVinciConfigParserTests: XCTestCase {
       "clientId": "my-client",
       "redirectUri": "com.example.app://oauth2redirect",
       "scopes": ["openid", "profile"],
+      "par": true,
       "storageId": "storage-1",
       "loggerId": "logger-1",
       "timeout": 30000,
@@ -36,23 +37,24 @@ final class DaVinciConfigParserTests: XCTestCase {
 
     let payload = try DaVinciConfigParser.parse(config)
 
-    XCTAssertEqual(payload.discoveryEndpoint, "https://auth.example.com/.well-known/openid-configuration")
-    XCTAssertEqual(payload.clientId, "my-client")
-    XCTAssertEqual(payload.redirectUri, "com.example.app://oauth2redirect")
-    XCTAssertEqual(payload.scopes, ["openid", "profile"])
-    XCTAssertEqual(payload.storageId, "storage-1")
+    XCTAssertEqual(payload.oidc.discoveryEndpoint, "https://auth.example.com/.well-known/openid-configuration")
+    XCTAssertEqual(payload.oidc.clientId, "my-client")
+    XCTAssertEqual(payload.oidc.redirectUri, "com.example.app://oauth2redirect")
+    XCTAssertEqual(payload.oidc.scopes, ["openid", "profile"])
+    XCTAssertEqual(payload.oidc.par, true)
+    XCTAssertEqual(payload.oidc.storageId, "storage-1")
     XCTAssertEqual(payload.loggerId, "logger-1")
     XCTAssertEqual(payload.timeout, 30000)
-    XCTAssertEqual(payload.signOutRedirectUri, "com.example.app://logout")
-    XCTAssertEqual(payload.loginHint, "user@example.com")
-    XCTAssertEqual(payload.nonce, "abc123")
-    XCTAssertEqual(payload.state, "state-xyz")
-    XCTAssertEqual(payload.prompt, "login")
-    XCTAssertEqual(payload.display, "page")
-    XCTAssertEqual(payload.uiLocales, "en-US")
-    XCTAssertEqual(payload.acrValues, "urn:example:acr")
-    XCTAssertEqual(payload.refreshThreshold, 60)
-    XCTAssertEqual(payload.additionalParameters, ["foo": "bar"])
+    XCTAssertEqual(payload.oidc.signOutRedirectUri, "com.example.app://logout")
+    XCTAssertEqual(payload.oidc.loginHint, "user@example.com")
+    XCTAssertEqual(payload.oidc.nonce, "abc123")
+    XCTAssertEqual(payload.oidc.state, "state-xyz")
+    XCTAssertEqual(payload.oidc.prompt, "login")
+    XCTAssertEqual(payload.oidc.display, "page")
+    XCTAssertEqual(payload.oidc.uiLocales, "en-US")
+    XCTAssertEqual(payload.oidc.acrValues, "urn:example:acr")
+    XCTAssertEqual(payload.oidc.refreshThreshold, 60)
+    XCTAssertEqual(payload.oidc.additionalParameters, ["foo": "bar"])
   }
 
   func testParseSucceedsWithRequiredFieldsOnly() throws {
@@ -64,15 +66,27 @@ final class DaVinciConfigParserTests: XCTestCase {
 
     let payload = try DaVinciConfigParser.parse(config)
 
-    XCTAssertEqual(payload.discoveryEndpoint, "https://auth.example.com/.well-known/openid-configuration")
-    XCTAssertEqual(payload.clientId, "my-client")
-    XCTAssertEqual(payload.redirectUri, "com.example.app://oauth2redirect")
-    XCTAssertNil(payload.storageId)
+    XCTAssertEqual(payload.oidc.discoveryEndpoint, "https://auth.example.com/.well-known/openid-configuration")
+    XCTAssertEqual(payload.oidc.clientId, "my-client")
+    XCTAssertEqual(payload.oidc.redirectUri, "com.example.app://oauth2redirect")
+    XCTAssertNil(payload.oidc.storageId)
     XCTAssertNil(payload.loggerId)
     XCTAssertNil(payload.timeout)
-    XCTAssertTrue(payload.scopes.isEmpty)
-    XCTAssertTrue(payload.additionalParameters.isEmpty)
+    XCTAssertTrue(payload.oidc.scopes.isEmpty)
+    XCTAssertNil(payload.oidc.par)
+    XCTAssertTrue(payload.oidc.additionalParameters.isEmpty)
     XCTAssertNil(payload.protect)
+  }
+
+  func testParseThrowsForNonBooleanPar() {
+    let config: NSDictionary = [
+      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
+      "clientId": "my-client",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "par": "true"
+    ]
+
+    XCTAssertThrowsError(try DaVinciConfigParser.parse(config))
   }
 
   // MARK: - Protect lifecycle parsing
@@ -214,7 +228,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     ]
 
     let payload = try DaVinciConfigParser.parse(config)
-    XCTAssertEqual(payload.loginHint, "user@example.com")
+    XCTAssertEqual(payload.oidc.loginHint, "user@example.com")
   }
 
   func testParseReturnsNilForBlankOptionalStrings() throws {
@@ -278,7 +292,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     ]
 
     let payload = try DaVinciConfigParser.parse(config)
-    XCTAssertEqual(payload.refreshThreshold, 120)
+    XCTAssertEqual(payload.oidc.refreshThreshold, 120)
   }
 
   func testParseThrowsForUnparseableRefreshThreshold() {
@@ -305,7 +319,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     ]
 
     let payload = try DaVinciConfigParser.parse(config)
-    XCTAssertTrue(payload.scopes.isEmpty)
+    XCTAssertTrue(payload.oidc.scopes.isEmpty)
   }
 
   func testParseReadsAdditionalParametersMap() throws {
@@ -317,7 +331,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     ]
 
     let payload = try DaVinciConfigParser.parse(config)
-    XCTAssertEqual(payload.additionalParameters["p1"], "v1")
-    XCTAssertEqual(payload.additionalParameters["p2"], "v2")
+    XCTAssertEqual(payload.oidc.additionalParameters["p1"], "v1")
+    XCTAssertEqual(payload.oidc.additionalParameters["p2"], "v2")
   }
 }

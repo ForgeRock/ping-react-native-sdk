@@ -32,11 +32,8 @@ struct ProtectLifecyclePayload: Sendable {
   let loggerId: String?
 }
 
-/// Parsed DaVinci client configuration supplied by JavaScript.
-///
-/// Mirrors the wire format from `NativeDaVinciConfig` in the TypeScript layer
-/// (all OIDC fields are flat under the top-level payload, not nested).
-struct DaVinciClientPayload: Sendable {
+/// Parsed DaVinci OIDC configuration supplied by JavaScript.
+struct DaVinciOidcPayload: Sendable {
   /// OIDC discovery endpoint URL — required.
   let discoveryEndpoint: String
   /// OAuth2 client identifier — required.
@@ -45,12 +42,10 @@ struct DaVinciClientPayload: Sendable {
   let redirectUri: String
   /// OAuth2 scopes to request.
   let scopes: [String]
+  /// Optional PAR enablement flag.
+  let par: Bool?
   /// Optional OIDC storage handle id.
   let storageId: String?
-  /// Optional logger handle id.
-  let loggerId: String?
-  /// Optional network timeout in milliseconds.
-  let timeout: Int64?
   /// Optional sign-out redirect URI (TODO-SDK-PARITY: Android only in 2.0.1 — iOS silently ignores).
   let signOutRedirectUri: String?
   /// Optional login hint.
@@ -71,6 +66,19 @@ struct DaVinciClientPayload: Sendable {
   let refreshThreshold: Int64?
   /// Optional additional authorization request parameters.
   let additionalParameters: [String: String]
+}
+
+/// Parsed DaVinci client configuration supplied by JavaScript.
+///
+/// Mirrors the wire format from `NativeDaVinciConfig` in the TypeScript layer,
+/// while grouping the supported OIDC fields under `oidc` for native use.
+struct DaVinciClientPayload: Sendable {
+  /// Parsed OIDC configuration. Always present because DaVinci requires OIDC.
+  let oidc: DaVinciOidcPayload
+  /// Optional logger handle id.
+  let loggerId: String?
+  /// Optional network timeout in milliseconds.
+  let timeout: Int64?
   /// Optional protect lifecycle module configuration. Present only when modules.protect is provided.
   let protect: ProtectLifecyclePayload?
 }
