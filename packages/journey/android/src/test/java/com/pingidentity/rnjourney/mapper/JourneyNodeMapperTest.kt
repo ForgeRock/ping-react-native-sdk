@@ -34,6 +34,7 @@ import com.pingidentity.orchestrate.FlowContext
 import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.SuccessNode
 import com.pingidentity.orchestrate.Workflow
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.After
@@ -198,10 +199,6 @@ class JourneyNodeMapperTest {
     /** A non-string header value should normalize to "" rather than propagate an exception. */
     @Test
     fun mapContinueNodeWithNonStringHeaderNormalizesToEmptyString() {
-        // ContinueNode.header throws IllegalArgumentException (via JsonElement.jsonPrimitive.content)
-        // when the server sends a non-string value. The mapper normalizes it to "" instead of
-        // rejecting the whole promise, matching iOS's `input[...] as? String` fallback (see
-        // TODO-SDK-PARITY(SDKS-5309) note in JourneyNodeMapper.kt).
         val node = continueNode(
             buildJsonObject {
                 put("header", buildJsonObject { put("nested", "value") })
@@ -261,6 +258,24 @@ class JourneyNodeMapperTest {
                 put("header", buildJsonObject { put("nested", "value") })
                 put("description", buildJsonObject { put("nested", "value") })
                 put("stage", buildJsonObject { put("nested", "value") })
+            }
+        )
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals("", map["header"])
+        assertEquals("", map["description"])
+        assertEquals("", map["stage"])
+    }
+
+    /** Explicit JSON null should match iOS and normalize to an empty string. */
+    @Test
+    fun mapContinueNodeWithNullUiFieldsNormalizesToEmptyStrings() {
+        val node = continueNode(
+            buildJsonObject {
+                put("header", JsonNull)
+                put("description", JsonNull)
+                put("stage", JsonNull)
             }
         )
 

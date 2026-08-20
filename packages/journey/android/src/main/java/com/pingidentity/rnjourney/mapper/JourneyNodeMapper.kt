@@ -30,10 +30,7 @@ import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
 import com.pingidentity.journey.plugin.callbacks
-import com.pingidentity.journey.plugin.description
-import com.pingidentity.journey.plugin.header
 import com.pingidentity.journey.plugin.pageFooter
-import com.pingidentity.journey.plugin.stage
 import com.pingidentity.journey.plugin.submitButtonText
 import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
@@ -42,6 +39,9 @@ import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.SuccessNode
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Maps native Journey nodes/callbacks to JS bridge payloads.
@@ -57,15 +57,14 @@ internal object JourneyNodeMapper {
     }
 
     /**
-     * Reads a `ContinueNode` string field, normalizing to "" when the underlying JSON value is
-     * not a string primitive rather than propagating the native SDK's IllegalArgumentException.
+     * Reads a `ContinueNode` field and normalizes non-string JSON values to "" so the bridge
+     * matches the iOS accessor behavior.
      */
-    private fun stringFieldOrEmpty(logger: Logger?, field: String, block: () -> String): String {
-        return try {
-            block()
-        } catch (error: IllegalArgumentException) {
-            logWarning(logger, "Normalizing non-string ContinueNode.$field to \"\"", error)
-            ""
+    private fun stringFieldOrEmpty(element: JsonElement?): String {
+        return when {
+            element == null || element === JsonNull -> ""
+            element is JsonPrimitive && element.isString -> element.content
+            else -> ""
         }
     }
 
@@ -103,14 +102,12 @@ internal object JourneyNodeMapper {
                 payload["type"] = "ContinueNode"
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
                 payload["callbacks"] = node.callbacks.map { mapCallbackPayload(it, logger) }
-                // TODO-SDK-PARITY(SDKS-5309): ContinueNode.header/.description/.stage throw
-                // IllegalArgumentException (via JsonElement.jsonPrimitive.content) when the
-                // server sends a non-string value for that field. Each field is normalized to
-                // "" independently here to match iOS's `input[...] as? String` fallback, rather
-                // than rejecting the whole promise.
-                payload["header"] = stringFieldOrEmpty(logger, "header") { node.header }
-                payload["description"] = stringFieldOrEmpty(logger, "description") { node.description }
-                payload["stage"] = stringFieldOrEmpty(logger, "stage") { node.stage }
+                // TODO-SDK-PARITY(SDKS-5309): Android's native accessors coerce non-string
+                // primitives to text, while iOS's `input[...] as? String` fallback returns "".
+                // Inspect each JSON element directly to match iOS for all non-string values.
+                payload["header"] = stringFieldOrEmpty(node.input["header"])
+                payload["description"] = stringFieldOrEmpty(node.input["description"])
+                payload["stage"] = stringFieldOrEmpty(node.input["stage"])
                 // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter locale matching only
                 // checks Locale.getDefault() here, while iOS iterates the full ordered
                 // preferred-locale list — identical server data + device settings can resolve

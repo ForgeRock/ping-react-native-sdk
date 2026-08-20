@@ -39,8 +39,8 @@ enum JourneyNodeMapper {
 
     switch node {
     // TODO-SDK-PARITY(SDKS-5309): a non-`String` `header`/`description`/`stage` value here
-    // silently falls through to `""` (`as? String` yields `nil`, coalesced), whereas Android's
-    // equivalent throws `IllegalArgumentException` and rejects the whole promise.
+    // silently falls through to `""` (`as? String` yields `nil`, coalesced). Android's mapper
+    // inspects each JSON element directly to match this behavior instead of using native accessors.
     case let continueNode as ContinueNode:
       payload["type"] = "ContinueNode"
       payload["input"] = JsonBridgeMapper.encodeJsonElement(continueNode.input) ?? NSNull()
