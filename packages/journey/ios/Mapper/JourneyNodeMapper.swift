@@ -38,9 +38,20 @@ enum JourneyNodeMapper {
     var payload = [String: Any]()
 
     switch node {
+    // TODO-SDK-PARITY(SDKS-5309): a non-`String` `header`/`description`/`stage` value here
+    // silently falls through to `""` (`as? String` yields `nil`, coalesced). Android's mapper
+    // inspects each JSON element directly to match this behavior instead of using native accessors.
     case let continueNode as ContinueNode:
       payload["type"] = "ContinueNode"
       payload["input"] = JsonBridgeMapper.encodeJsonElement(continueNode.input) ?? NSNull()
+      payload["header"] = continueNode.pageHeader
+      payload["description"] = continueNode.pageDescription
+      payload["stage"] = continueNode.stage
+      // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter here iterate the full ordered
+      // preferred-locale list, while Android only checks Locale.getDefault() — identical server
+      // data + device settings can resolve different localized text per platform.
+      payload["submitButtonText"] = continueNode.submitButtonText
+      payload["pageFooter"] = continueNode.pageFooter
       payload["callbacks"] = continueNode.callbacks.map { callback in
         mapCallbackPayload(callback)
       }

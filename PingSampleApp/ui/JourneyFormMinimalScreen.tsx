@@ -11,6 +11,7 @@ import { callbackType } from '@ping-identity/rn-types';
 import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
+import { journeyFullScreenStyles as styles } from '../src/styles/journeyStyles';
 import JourneyFieldRenderer from './journey/components/molecules/renderers/JourneyFieldRenderer';
 import PingTextInput from './components/atoms/PingTextInput';
 
@@ -98,6 +99,12 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
 
         {node?.type === 'ContinueNode' ? (
           <>
+            {node.header ? (
+              <Text style={styles.nodeHeader}>{node.header}</Text>
+            ) : null}
+            {node.description ? (
+              <Text style={styles.nodeDescription}>{node.description}</Text>
+            ) : null}
             {form.fields.map(field => (
               <JourneyFieldRenderer
                 key={field.id}
@@ -133,7 +140,9 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
                   }
                   disabled={actions.loading}
                 >
-                  <Text style={commonStyles.journeyButtonText}>Continue</Text>
+                  <Text style={commonStyles.journeyButtonText}>
+                    {node.submitButtonText || 'Continue'}
+                  </Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -141,6 +150,10 @@ export default function JourneyFormMinimalScreen(): React.ReactElement {
                 No manual callback input required for this node.
               </Text>
             )}
+
+            {node.pageFooter ? (
+              <Text style={styles.nodeFooter}>{node.pageFooter}</Text>
+            ) : null}
           </>
         ) : null}
 

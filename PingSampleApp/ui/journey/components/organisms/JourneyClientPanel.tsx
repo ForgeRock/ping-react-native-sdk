@@ -96,9 +96,13 @@ export default function JourneyClientPanel(
       <JourneyBindingUserKeyModal request={userKeyRequest} />
       <JourneyBindingPinModal request={pinRequest} />
       <View style={commonStyles.card}>
-        {showCallbackScreen ? (
+        {showCallbackScreen && node?.type === 'ContinueNode' ? (
           <JourneyContinuePanel
             form={form}
+            header={node.header}
+            description={node.description}
+            submitButtonText={node.submitButtonText}
+            pageFooter={node.pageFooter}
             loading={loading}
             pollingWaitMs={pollingWaitMs}
             resumeUrl={resumeUrl}

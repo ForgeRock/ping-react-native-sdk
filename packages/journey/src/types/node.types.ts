@@ -69,4 +69,43 @@ export type JourneyNode = Omit<Node, 'callbacks'> & {
   input?: Record<string, unknown>;
   /** Callback collection when additional user input is required. */
   callbacks?: JourneyCallback[];
+  /**
+   * Optional page header text for `ContinueNode` payloads.
+   *
+   * @remarks
+   * Populated only for `ContinueNode`. On iOS this normalizes the native
+   * `pageHeader` property to this shared field name.
+   */
+  header?: string;
+  /**
+   * Optional page description text for `ContinueNode` payloads.
+   *
+   * @remarks
+   * Populated only for `ContinueNode`. On iOS this normalizes the native
+   * `pageDescription` property to this shared field name.
+   */
+  description?: string;
+  /**
+   * Optional raw stage JSON string for `ContinueNode` payloads.
+   *
+   * @remarks
+   * Populated only for `ContinueNode`.
+   */
+  stage?: string;
+  /**
+   * Optional locale-resolved submit button text for `ContinueNode` payloads.
+   *
+   * @remarks
+   * Populated only for `ContinueNode`. Resolved by the native SDK from the
+   * `stage` locale map using the device's preferred locale.
+   */
+  submitButtonText?: string;
+  /**
+   * Optional locale-resolved page footer text for `ContinueNode` payloads.
+   *
+   * @remarks
+   * Populated only for `ContinueNode`. Resolved by the native SDK from the
+   * `stage` locale map using the device's preferred locale.
+   */
+  pageFooter?: string;
 };
