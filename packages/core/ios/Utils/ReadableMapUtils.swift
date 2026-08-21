@@ -31,6 +31,17 @@ public enum ReadableMapUtils {
     return values
   }
 
+  /// Read an optional boolean value from a JS dictionary.
+  ///
+  /// - Throws: `NSError` when the key contains a non-boolean value.
+  public static func readBoolean(_ map: NSDictionary, key: String) throws -> Bool? {
+    guard let value = map[key], !(value is NSNull) else { return nil }
+    guard let boolValue = value as? Bool else {
+      throw NSError(domain: "RNPingCore", code: 400, userInfo: [NSLocalizedDescriptionKey: "Expected boolean parameter: \(key)"])
+    }
+    return boolValue
+  }
+
   /// Convert a JS array into a list of strings, ignoring nulls.
   public static func readStringArray(_ array: NSArray?) -> [String] {
     guard let array else { return [] }

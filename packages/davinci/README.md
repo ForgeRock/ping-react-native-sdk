@@ -49,6 +49,7 @@ const client = createDaVinciClient({
       discoveryEndpoint:
         'https://auth.pingone.com/<env-id>/as/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
+      scopes: ['openid', 'profile'],
     },
   },
 });
@@ -58,6 +59,9 @@ const client = createDaVinciClient({
 
 Add `modules.oidc.storage` when you need native-backed OIDC token persistence.
 Configure it only if you need persistent token storage; otherwise omit storage values.
+
+Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
+SDK reads the PAR endpoint from the provider's OIDC discovery document.
 
 ```ts
 import { createDaVinciClient } from '@ping-identity/rn-davinci';

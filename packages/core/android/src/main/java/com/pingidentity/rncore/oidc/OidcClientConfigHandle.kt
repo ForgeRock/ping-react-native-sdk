@@ -63,6 +63,11 @@ interface OidcClientConfigHandle : NativeHandle {
     val openId: OidcOpenIdConfig?
 
     /**
+     * Optional PAR enablement flag.
+     */
+    val par: Boolean?
+
+    /**
      * Optional ACR values.
      */
     val acrValues: String?

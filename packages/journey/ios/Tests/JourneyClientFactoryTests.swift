@@ -28,7 +28,8 @@ final class JourneyClientFactoryTests: XCTestCase {
         clientId: "client-id",
         discoveryEndpoint: "https://example.com/am/oauth2/.well-known/openid-configuration",
         redirectUri: "com.example.app://oauth2redirect",
-        scopes: ["openid", "profile"]
+        scopes: ["openid", "profile"],
+        par: true
       )
     )
     let payload = JourneyClientPayload(
@@ -55,6 +56,39 @@ final class JourneyClientFactoryTests: XCTestCase {
       oidcStorageId: nil,
       loggerId: nil,
       oidcClientId: oidcClientId
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+
+    XCTAssertNotNil(journey)
+  }
+
+  func testBuildWithDirectOidcParEnabledSucceeds() async throws {
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: nil,
+      cookie: nil,
+      clientId: "client-id",
+      discoveryEndpoint: "https://example.com/am/oauth2/.well-known/openid-configuration",
+      redirectUri: "com.example.app://oauth2redirect",
+      scopes: ["openid"],
+      par: true,
+      openId: nil,
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: nil,
+      loggerId: nil,
+      oidcClientId: nil
     )
 
     let journey = try await JourneyClientFactory().build(payload)
@@ -415,6 +449,7 @@ private final class OidcHandleStub: OidcClientConfigHandle {
   let discoveryEndpoint: String?
   let redirectUri: String
   let scopes: [String]
+  let par: Bool?
   let openId: OidcOpenIdConfig?
   let acrValues: String?
   let signOutRedirectUri: String?
@@ -432,6 +467,7 @@ private final class OidcHandleStub: OidcClientConfigHandle {
     discoveryEndpoint: String?,
     redirectUri: String,
     scopes: [String],
+    par: Bool? = nil,
     openId: OidcOpenIdConfig? = nil,
     acrValues: String? = nil,
     signOutRedirectUri: String? = nil,
@@ -448,6 +484,7 @@ private final class OidcHandleStub: OidcClientConfigHandle {
     self.discoveryEndpoint = discoveryEndpoint
     self.redirectUri = redirectUri
     self.scopes = scopes
+    self.par = par
     self.openId = openId
     self.acrValues = acrValues
     self.signOutRedirectUri = signOutRedirectUri

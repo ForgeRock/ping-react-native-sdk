@@ -7,6 +7,7 @@
 
 import type {
   LoggerInstance,
+  OidcCoreConfig,
   OidcStorageHandle,
 } from '@ping-identity/rn-types';
 
@@ -14,147 +15,21 @@ import type {
  * OIDC module configuration nested under {@link DaVinciModules}.
  *
  * @remarks
- * Contains the required OIDC identity fields and all optional OIDC
- * authorization request parameters. Native SDK source of truth:
- * `OidcClientConfig` on both Android and iOS.
+ * Uses the shared OIDC contract for the fields supported by DaVinci. The
+ * discovery endpoint is required because DaVinci's current native OIDC path
+ * requires it. `openId` is intentionally omitted because DaVinci's native
+ * OIDC path does not expose endpoint overrides.
  *
  * @public
  */
-export type DaVinciOidcModuleConfig = {
-  // ---------------------------------------------------------------------------
-  // Required OIDC identity fields (OidcClientConfig)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * OIDC discovery endpoint URL.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.discoveryEndpoint` on both platforms.
-   * Usually the `.well-known/openid-configuration` base URL of your PingOne tenant.
-   */
+export type DaVinciOidcModuleConfig = Omit<
+  OidcCoreConfig,
+  'discoveryEndpoint' | 'openId'
+> & {
+  /** OIDC discovery endpoint URL required by DaVinci's native OIDC path. */
   discoveryEndpoint: string;
-
-  /**
-   * OAuth2 client identifier registered with the OIDC provider.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.clientId` on both platforms.
-   */
-  clientId: string;
-
-  /**
-   * OAuth2 redirect URI registered for this client.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.redirectUri` on both platforms.
-   */
-  redirectUri: string;
-
-  // ---------------------------------------------------------------------------
-  // Optional OIDC fields (OidcClientConfig)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * OAuth2 scopes to request.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.scopes`. Defaults to `['openid', 'profile']` when omitted.
-   */
-  scopes?: string[];
-
-  /**
-   * Optional OIDC token storage handle created by the storage module.
-   *
-   * @remarks
-   * Must be created by `@ping-identity/rn-storage` (`configureOidcStorage()`).
-   */
+  /** Optional OIDC token storage handle created by the storage module. */
   storage?: OidcStorageHandle;
-
-  /**
-   * Sign-out redirect URI used for end-session flows.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.signOutRedirectUri` on Android.
-   * Not available on iOS `OidcClientConfig` in 2.0.1 — silently ignored on iOS
-   * until the iOS SDK exposes it.
-   */
-  signOutRedirectUri?: string;
-
-  /**
-   * Optional login hint forwarded to the authorization endpoint.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.loginHint` on both platforms.
-   */
-  loginHint?: string;
-
-  /**
-   * Optional nonce parameter for the authorization request.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.nonce` on both platforms.
-   */
-  nonce?: string;
-
-  /**
-   * Optional state parameter for the authorization request.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.state` on both platforms.
-   */
-  state?: string;
-
-  /**
-   * Optional prompt parameter for the authorization request.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.prompt` on both platforms.
-   * Typical values: `'login'`, `'consent'`, `'none'`, `'select_account'`.
-   */
-  prompt?: string;
-
-  /**
-   * Optional display parameter for the authorization request.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.display` on both platforms.
-   * Typical values: `'page'`, `'popup'`, `'touch'`, `'wap'`.
-   */
-  display?: string;
-
-  /**
-   * Optional space-separated list of end-user preferred UI locales.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.uiLocales` on both platforms.
-   */
-  uiLocales?: string;
-
-  /**
-   * Optional authentication context class reference values.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.acrValues` on both platforms.
-   */
-  acrValues?: string;
-
-  /**
-   * Optional token refresh threshold in seconds.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.refreshThreshold` on both platforms.
-   * When the remaining token lifetime falls below this value, the SDK
-   * proactively refreshes the token on the next `user()` call.
-   */
-  refreshThreshold?: number;
-
-  /**
-   * Additional provider-specific authorization request parameters.
-   *
-   * @remarks
-   * Maps to `OidcClientConfig.additionalParameters` on both platforms.
-   */
-  additionalParameters?: Record<string, string>;
 };
 
 /**
@@ -307,6 +182,7 @@ export type DaVinciModules = {
  *       discoveryEndpoint: 'https://auth.example.com/.well-known/openid-configuration',
  *       clientId: 'my-client-id',
  *       redirectUri: 'myapp://callback',
+ *       scopes: ['openid', 'profile'],
  *       storage: configureOidcStorage({ android: { keyAlias: 'davinci_key' } }),
  *     },
  *   },

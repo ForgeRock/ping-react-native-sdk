@@ -8,6 +8,7 @@
 package com.pingidentity.rnoidc
 
 import com.facebook.react.bridge.ReadableMap
+import com.pingidentity.rncore.utils.readBoolean
 import com.pingidentity.rncore.utils.readStringMap
 import com.pingidentity.rncore.utils.requireString
 import com.pingidentity.rncore.utils.requireStringArray
@@ -21,6 +22,7 @@ internal data class OidcClientPayload(
   val openId: OpenIdPayload?,
   val redirectUri: String,
   val scopes: List<String>,
+  val par: Boolean?,
   val storageId: String?,
   val loggerId: String?,
   val acrValues: String?,
@@ -44,7 +46,8 @@ internal data class OpenIdPayload(
   val userinfoEndpoint: String,
   val endSessionEndpoint: String?,
   val pingEndIdpSessionEndpoint: String?,
-  val revocationEndpoint: String?
+  val revocationEndpoint: String?,
+  val pushedAuthorizationRequestEndpoint: String?
 )
 
 /**
@@ -74,6 +77,7 @@ internal object OidcConfigParser {
       openId = openId,
       redirectUri = redirectUri,
       scopes = scopes,
+      par = readBoolean(config, "par"),
       storageId = if (config.hasKey("storageId")) config.getString("storageId") else null,
       loggerId = if (config.hasKey("loggerId")) config.getString("loggerId") else null,
       acrValues = if (config.hasKey("acrValues")) config.getString("acrValues") else null,
@@ -125,6 +129,11 @@ internal object OidcConfigParser {
       },
       revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
         openIdMap.getString("revocationEndpoint")
+      } else {
+        null
+      },
+      pushedAuthorizationRequestEndpoint = if (openIdMap.hasKey("pushedAuthorizationRequestEndpoint")) {
+        openIdMap.getString("pushedAuthorizationRequestEndpoint")
       } else {
         null
       }

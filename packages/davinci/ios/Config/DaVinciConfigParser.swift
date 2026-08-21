@@ -39,6 +39,7 @@ enum DaVinciConfigParser {
     }
 
     let scopes = ReadableMapUtils.readStringArray(config["scopes"] as? NSArray)
+    let par = try ReadableMapUtils.readBoolean(config, key: "par")
     let storageId = readOptionalString(config["storageId"])
     let loggerId = readOptionalString(config["loggerId"])
     let timeout = try requireInt64IfPresent(config["timeout"], key: "timeout")
@@ -62,14 +63,13 @@ enum DaVinciConfigParser {
       protect = nil
     }
 
-    return DaVinciClientPayload(
+    let oidc = DaVinciOidcPayload(
       discoveryEndpoint: discoveryEndpoint,
       clientId: clientId,
       redirectUri: redirectUri,
       scopes: scopes,
+      par: par,
       storageId: storageId,
-      loggerId: loggerId,
-      timeout: timeout,
       signOutRedirectUri: signOutRedirectUri,
       loginHint: loginHint,
       nonce: nonce,
@@ -79,7 +79,13 @@ enum DaVinciConfigParser {
       uiLocales: uiLocales,
       acrValues: acrValues,
       refreshThreshold: refreshThreshold,
-      additionalParameters: additionalParameters,
+      additionalParameters: additionalParameters
+    )
+
+    return DaVinciClientPayload(
+      oidc: oidc,
+      loggerId: loggerId,
+      timeout: timeout,
       protect: protect
     )
   }

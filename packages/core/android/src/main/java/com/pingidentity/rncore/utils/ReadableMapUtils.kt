@@ -9,6 +9,7 @@ package com.pingidentity.rncore.utils
 
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 
 /**
  * Read a required string value from a React Native map.
@@ -35,6 +36,21 @@ fun requireStringArray(map: ReadableMap, key: String): List<String> {
     throw IllegalArgumentException("Missing required parameter: $key")
   }
   return values
+}
+
+/**
+ * Read an optional boolean value from a React Native map.
+ *
+ * @throws IllegalArgumentException when the key contains a non-boolean value.
+ */
+fun readBoolean(map: ReadableMap, key: String): Boolean? {
+  if (!map.hasKey(key) || map.isNull(key)) {
+    return null
+  }
+  if (map.getType(key) != ReadableType.Boolean) {
+    throw IllegalArgumentException("Expected boolean parameter: $key")
+  }
+  return map.getBoolean(key)
 }
 
 /**

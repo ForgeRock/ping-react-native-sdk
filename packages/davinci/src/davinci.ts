@@ -95,6 +95,7 @@ function resolveOidcStorageId(value: unknown): string | undefined {
  *       discoveryEndpoint: 'https://auth.example.com/.well-known/openid-configuration',
  *       clientId: 'my-client-id',
  *       redirectUri: 'myapp://callback',
+ *       scopes: ['openid', 'profile'],
  *     },
  *   },
  * });
@@ -164,6 +165,7 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     state: oidcConfig.state,
     prompt: oidcConfig.prompt,
     display: oidcConfig.display,
+    par: oidcConfig.par,
     uiLocales: oidcConfig.uiLocales,
     acrValues: oidcConfig.acrValues,
     refreshThreshold: oidcConfig.refreshThreshold,

@@ -38,6 +38,7 @@ internal class OidcClientFactory(
       module(Oidc) {
         resolvedLogger?.let { logger = it }
         config.discoveryEndpoint?.let { discoveryEndpoint = it }
+        config.par?.let { par = it }
         clientId = config.clientId
         redirectUri = config.redirectUri
         scopes = config.scopes.toMutableSet()
@@ -70,6 +71,7 @@ internal class OidcClientFactory(
     return OidcClient {
       resolvedLogger?.let { logger = it }
       config.discoveryEndpoint?.let { discoveryEndpoint = it }
+      config.par?.let { par = it }
       clientId = config.clientId
       redirectUri = config.redirectUri
       scopes = config.scopes.toMutableSet()
@@ -122,7 +124,10 @@ internal class OidcClientFactory(
       userinfoEndpoint = openId.userinfoEndpoint,
       endSessionEndpoint = openId.endSessionEndpoint ?: "",
       pingEndIdpSessionEndpoint = openId.pingEndIdpSessionEndpoint ?: "",
-      revocationEndpoint = openId.revocationEndpoint ?: ""
+      revocationEndpoint = openId.revocationEndpoint ?: "",
+      // NOTE: native property has no "ed" (pushAuthorizationRequestEndpoint), unlike the JS/iOS
+      // key pushedAuthorizationRequestEndpoint.
+      pushAuthorizationRequestEndpoint = openId.pushedAuthorizationRequestEndpoint ?: ""
     )
   }
 

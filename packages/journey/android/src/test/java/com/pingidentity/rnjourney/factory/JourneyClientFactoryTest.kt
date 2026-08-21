@@ -7,11 +7,16 @@
 
 package com.pingidentity.rnjourney
 
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.oidc.OidcClientConfigHandle
+import com.pingidentity.rncore.oidc.OidcOpenIdConfig
 import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -20,6 +25,11 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
 class JourneyClientFactoryTest {
+
+  @After
+  fun tearDown() {
+    CoreRuntime.oidcClientRegistry.removeAll()
+  }
 
   @Test
   fun build_allowsJourneyOnlyConfigurationWithoutOidc() {
@@ -36,6 +46,37 @@ class JourneyClientFactoryTest {
     )
 
     val workflow = factory.build(payload)
+    assertNotNull(workflow)
+  }
+
+  @Test
+  fun resolveOidcConfigFromHandle_copiesPar() {
+    val handleId = CoreRuntime.oidcClientRegistry.register(TestOidcHandle(par = true))
+
+    val method = JourneyClientFactory::class.java.getDeclaredMethod(
+      "resolveOidcConfigFromHandle",
+      String::class.java
+    )
+    method.isAccessible = true
+    val resolved = method.invoke(
+      JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null },
+      handleId
+    )
+    val par = resolved.javaClass.getDeclaredField("par").apply {
+      isAccessible = true
+    }.get(resolved)
+
+    assertTrue(par == true)
+  }
+
+  @Test
+  fun build_withParEnabled_succeeds() {
+    val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
+
+    val workflow = factory.build(
+      basePayload(sessionStorageId = null, oidcStorageId = null, par = true)
+    )
+
     assertNotNull(workflow)
   }
 
@@ -85,7 +126,8 @@ class JourneyClientFactoryTest {
   private fun basePayload(
     sessionStorageId: String?,
     oidcStorageId: String?,
-    loggerId: String? = null
+    loggerId: String? = null,
+    par: Boolean? = null
   ): JourneyClientPayload {
     return JourneyClientPayload(
       serverUrl = "https://example.com/am",
@@ -97,6 +139,7 @@ class JourneyClientFactoryTest {
         discoveryEndpoint = "https://example.com/am/oauth2/alpha/.well-known/openid-configuration",
         redirectUri = "com.example.app://callback",
         scopes = listOf("openid"),
+        par = par,
         openId = null,
         acrValues = null,
         signOutRedirectUri = null,
@@ -150,4 +193,23 @@ class JourneyClientFactoryTest {
     override val strongBoxPreferred: Boolean? = null,
     override val cacheStrategy: String? = null
   ) : StorageConfigHandleContract
+
+  private data class TestOidcHandle(
+    override val clientId: String = "client-id",
+    override val discoveryEndpoint: String? = "https://example.com/.well-known/openid-configuration",
+    override val redirectUri: String = "com.example.app://callback",
+    override val scopes: List<String> = listOf("openid"),
+    override val openId: OidcOpenIdConfig? = null,
+    override val par: Boolean? = null,
+    override val acrValues: String? = null,
+    override val signOutRedirectUri: String? = null,
+    override val state: String? = null,
+    override val nonce: String? = null,
+    override val uiLocales: String? = null,
+    override val refreshThreshold: Long? = null,
+    override val loginHint: String? = null,
+    override val display: String? = null,
+    override val prompt: String? = null,
+    override val additionalParameters: Map<String, String> = emptyMap()
+  ) : OidcClientConfigHandle, NativeHandle
 }
