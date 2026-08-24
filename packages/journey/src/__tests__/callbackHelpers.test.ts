@@ -206,13 +206,37 @@ describe('Journey callback helpers', () => {
     ]);
   });
 
-  it('treats device profile callback as output-only for helper submit planning', () => {
+  it('blocks canSubmit when DeviceProfileCallback is not in handledCallbackTypes', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
     };
 
     const result = buildNextInput(node, {});
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INTEGRATION_REQUIRED',
+        message:
+          'Callback "DeviceProfileCallback" requires additional integration.',
+        fieldId: 'DeviceProfileCallback:0',
+        callbackType: 'DeviceProfileCallback',
+      },
+    ]);
+  });
+
+  it('allows canSubmit when DeviceProfileCallback is listed in handledCallbackTypes', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
+    };
+
+    const result = buildNextInput(
+      node,
+      {},
+      new Set(['DeviceProfileCallback'] as const),
+    );
 
     expect(result.canSubmit).toBe(true);
     expect(result.issues).toEqual([]);
@@ -456,5 +480,281 @@ describe('Journey callback helpers', () => {
         callbackType: 'ChoiceCallback',
       },
     ]);
+  });
+});
+
+describe('normalizeCallbacks — typed named fields', () => {
+  it('surfaces type shorthand equal to ref.type on every field', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'NameCallback', output: [] },
+        {
+          type: 'ChoiceCallback',
+          choices: ['a', 'b'],
+          defaultChoice: 0,
+          output: [],
+        },
+      ],
+    };
+    const fields = normalizeCallbacks(node);
+    fields.forEach((f) => {
+      expect(f.type).toBe(f.ref.type);
+    });
+  });
+
+  it('adds choices and defaultChoice to ChoiceCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ChoiceCallback',
+          choices: ['email', 'sms', 'totp'],
+          defaultChoice: 1,
+          selectedIndex: 0,
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ChoiceCallback');
+    if (field.type === 'ChoiceCallback') {
+      expect(field.choices).toEqual(['email', 'sms', 'totp']);
+      expect(field.defaultChoice).toBe(1);
+    }
+  });
+
+  it('adds predefinedQuestions and allowUserDefinedQuestions to KbaCreateCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'KbaCreateCallback',
+          predefinedQuestions: ['What is your pet?', 'What city?'],
+          allowUserDefinedQuestions: true,
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('KbaCreateCallback');
+    if (field.type === 'KbaCreateCallback') {
+      expect(field.predefinedQuestions).toEqual([
+        'What is your pet?',
+        'What city?',
+      ]);
+      expect(field.allowUserDefinedQuestions).toBe(true);
+    }
+  });
+
+  it('adds version, terms, createDate to TermsAndConditionsCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'TermsAndConditionsCallback',
+          version: '1.0',
+          terms: 'By using this service...',
+          createDate: '2026-01-01',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('TermsAndConditionsCallback');
+    if (field.type === 'TermsAndConditionsCallback') {
+      expect(field.version).toBe('1.0');
+      expect(field.terms).toBe('By using this service...');
+      expect(field.createDate).toBe('2026-01-01');
+    }
+  });
+
+  it('adds waitTime to PollingWaitCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'PollingWaitCallback', waitTime: 3000, output: [] }],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('PollingWaitCallback');
+    if (field.type === 'PollingWaitCallback') {
+      expect(field.waitTime).toBe(3000);
+    }
+  });
+
+  it('adds messageType to TextOutputCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'TextOutputCallback',
+          messageType: 'ERROR',
+          message: 'Oops',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('TextOutputCallback');
+    if (field.type === 'TextOutputCallback') {
+      expect(field.messageType).toBe('ERROR');
+    }
+  });
+
+  it('adds callbackId to HiddenValueCallback fields without colliding with field id', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'HiddenValueCallback',
+          id: 'csrf-token',
+          value: 'abc123',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('HiddenValueCallback');
+    expect(field.id).toBe('HiddenValueCallback:0'); // field key, not shadowed
+    if (field.type === 'HiddenValueCallback') {
+      expect(field.callbackId).toBe('csrf-token');
+    }
+  });
+
+  it('adds selectedIndex and defaultOption to ConfirmationCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ConfirmationCallback',
+          options: ['OK', 'Cancel'],
+          selectedIndex: 0,
+          defaultOption: 'POSITIVE',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ConfirmationCallback');
+    if (field.type === 'ConfirmationCallback') {
+      expect(field.selectedIndex).toBe(0);
+      expect(field.defaultOption).toBe('POSITIVE');
+    }
+  });
+
+  it('adds messageType to SuspendedTextOutputCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'SuspendedTextOutputCallback',
+          messageType: 'WARNING',
+          message: 'Session paused',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('SuspendedTextOutputCallback');
+    if (field.type === 'SuspendedTextOutputCallback') {
+      expect(field.messageType).toBe('WARNING');
+    }
+  });
+
+  it('adds name and optional fields to ConsentMappingCallback fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ConsentMappingCallback',
+          name: 'profile-read',
+          displayName: 'Read Profile',
+          icon: 'profile-icon',
+          accessLevel: 'READ',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ConsentMappingCallback');
+    if (field.type === 'ConsentMappingCallback') {
+      expect(field.name).toBe('profile-read');
+      expect(field.displayName).toBe('Read Profile');
+      expect(field.icon).toBe('profile-icon');
+      expect(field.accessLevel).toBe('READ');
+    }
+  });
+
+  it('omits optional ConsentMappingCallback fields when absent from payload', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ConsentMappingCallback',
+          name: 'minimal-consent',
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ConsentMappingCallback');
+    if (field.type === 'ConsentMappingCallback') {
+      expect(field.name).toBe('minimal-consent');
+      expect(field.displayName).toBeUndefined();
+      expect(field.icon).toBeUndefined();
+      expect(field.accessLevel).toBeUndefined();
+    }
+  });
+
+  it('adds value to FidoRegistrationCallback fields when present', () => {
+    const credentialOptions = {
+      challenge: 'abc123',
+      rp: { id: 'example.com' },
+    };
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'FidoRegistrationCallback',
+          value: credentialOptions,
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('FidoRegistrationCallback');
+    if (field.type === 'FidoRegistrationCallback') {
+      expect(field.value).toEqual(credentialOptions);
+    }
+  });
+
+  it('omits value from FidoRegistrationCallback fields when absent', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'FidoRegistrationCallback', output: [] }],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('FidoRegistrationCallback');
+    if (field.type === 'FidoRegistrationCallback') {
+      expect(field.value).toBeUndefined();
+    }
+  });
+
+  it('adds value to FidoAuthenticationCallback fields when present', () => {
+    const assertionOptions = { challenge: 'xyz789', rpId: 'example.com' };
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'FidoAuthenticationCallback',
+          value: assertionOptions,
+          output: [],
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('FidoAuthenticationCallback');
+    if (field.type === 'FidoAuthenticationCallback') {
+      expect(field.value).toEqual(assertionOptions);
+    }
   });
 });

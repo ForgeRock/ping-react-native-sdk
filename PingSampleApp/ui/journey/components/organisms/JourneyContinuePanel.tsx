@@ -114,7 +114,7 @@ export default function JourneyContinuePanel(
   const { fields, values, meta, setValue } = form;
 
   const callbackTypes = useMemo<Set<JourneyCallbackType>>(
-    () => new Set(fields.map(field => field.ref.type)),
+    () => new Set(fields.map(field => field.type)),
     [fields],
   );
 
@@ -136,7 +136,7 @@ export default function JourneyContinuePanel(
     callbackType.DeviceProfileCallback,
   );
   const hasSelectIdpCallback = fields.some(
-    field => field.ref.type === nativeExtensionCallbackType.SelectIdpCallback,
+    field => field.type === nativeExtensionCallbackType.SelectIdpCallback,
   );
   const hasSuspendedCallback = callbackTypes.has(
     callbackType.SuspendedTextOutputCallback,
@@ -147,7 +147,7 @@ export default function JourneyContinuePanel(
   const hasManualSubmit = fields.some(
     field =>
       field.requiresUserInput &&
-      !(hasPollingWaitCallback && field.ref.type === 'ConfirmationCallback'),
+      !(hasPollingWaitCallback && field.type === 'ConfirmationCallback'),
   );
 
   // Derive blocking state and display info from form.issues — single source of truth.
@@ -209,9 +209,9 @@ export default function JourneyContinuePanel(
     fields.every(
       field =>
         field.executionMode === 'integration_required' &&
-        isAutoHandledIntegrationCallback(field.ref.type) &&
-        field.ref.type !== 'FidoRegistrationCallback' &&
-        field.ref.type !== 'DeviceBindingCallback',
+        isAutoHandledIntegrationCallback(field.type) &&
+        field.type !== 'FidoRegistrationCallback' &&
+        field.type !== 'DeviceBindingCallback',
     );
 
   const canAutoAdvanceWithContinueButton =

@@ -42,10 +42,12 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   nativeExtensionCallbackType.BindingCallback,
   nativeExtensionCallbackType.DeviceBindingCallback,
   nativeExtensionCallbackType.DeviceSigningVerifierCallback,
+  // DeviceProfileCallback requires rn-device-profile to collect and submit data;
+  // it is not output-only.
+  callbackType.DeviceProfileCallback,
 ]);
 
 const outputOnlyCallbackTypes = new Set<JourneyCallbackType>([
-  callbackType.DeviceProfileCallback,
   callbackType.TextOutputCallback,
   callbackType.SuspendedTextOutputCallback,
   callbackType.MetadataCallback,
@@ -420,12 +422,13 @@ export function normalizeCallbacks(
     const message = readString(callback.message, '');
     const required = resolveRequired(callback);
 
-    return {
+    const base = {
       id: callbackKey(type, typeIndex),
       ref: {
         type,
         typeIndex,
       },
+      type,
       prompt,
       message: message.length > 0 ? message : undefined,
       required,
@@ -436,6 +439,115 @@ export function normalizeCallbacks(
       options: options.length > 0 ? options : undefined,
       raw: callback,
     };
+
+    if (type === callbackType.ChoiceCallback) {
+      return {
+        ...base,
+        choices: readArray(callback.choices).map((c) => readString(c, '')),
+        defaultChoice: readNumber(callback.defaultChoice, 0),
+      };
+    }
+
+    if (type === callbackType.KbaCreateCallback) {
+      return {
+        ...base,
+        predefinedQuestions: readArray(callback.predefinedQuestions).map((q) =>
+          readString(q, ''),
+        ),
+        allowUserDefinedQuestions: readBoolean(
+          callback.allowUserDefinedQuestions,
+          false,
+        ),
+      };
+    }
+
+    if (type === callbackType.TermsAndConditionsCallback) {
+      return {
+        ...base,
+        version: readString(callback.version, ''),
+        terms: readString(callback.terms, ''),
+        createDate: readString(callback.createDate, ''),
+      };
+    }
+
+    if (type === nativeExtensionCallbackType.ConsentMappingCallback) {
+      return {
+        ...base,
+        name: readString(callback.name, ''),
+        displayName: hasCallbackKey(callback, 'displayName')
+          ? readString(callback.displayName, '')
+          : undefined,
+        icon: hasCallbackKey(callback, 'icon')
+          ? readString(callback.icon, '')
+          : undefined,
+        accessLevel: hasCallbackKey(callback, 'accessLevel')
+          ? readString(callback.accessLevel, '')
+          : undefined,
+        fields: hasCallbackKey(callback, 'fields')
+          ? readArray(callback.fields)
+          : undefined,
+      };
+    }
+
+    if (type === callbackType.PollingWaitCallback) {
+      return {
+        ...base,
+        waitTime: readNumber(callback.waitTime, 0),
+      };
+    }
+
+    if (type === callbackType.TextOutputCallback) {
+      return {
+        ...base,
+        messageType: readString(callback.messageType, ''),
+      };
+    }
+
+    if (type === callbackType.SuspendedTextOutputCallback) {
+      return {
+        ...base,
+        messageType: readString(callback.messageType, ''),
+      };
+    }
+
+    if (type === callbackType.HiddenValueCallback) {
+      return {
+        ...base,
+        callbackId: readString(callback.id, ''),
+      };
+    }
+
+    if (type === callbackType.ConfirmationCallback) {
+      return {
+        ...base,
+        selectedIndex: hasCallbackKey(callback, 'selectedIndex')
+          ? readNumber(callback.selectedIndex, -1)
+          : undefined,
+        defaultOption: hasCallbackKey(callback, 'defaultOption')
+          ? readString(callback.defaultOption, '')
+          : undefined,
+        optionType: hasCallbackKey(callback, 'optionType')
+          ? readString(callback.optionType, '')
+          : undefined,
+        messageType: hasCallbackKey(callback, 'messageType')
+          ? readString(callback.messageType, '')
+          : undefined,
+      };
+    }
+
+    if (
+      type === nativeExtensionCallbackType.FidoRegistrationCallback ||
+      type === nativeExtensionCallbackType.FidoAuthenticationCallback
+    ) {
+      return {
+        ...base,
+        value: hasCallbackKey(callback, 'value')
+          ? (callback.value as Record<string, unknown>)
+          : undefined,
+      };
+    }
+
+    return base;
   });
 }
 

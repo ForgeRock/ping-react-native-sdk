@@ -1,10 +1,3 @@
-<!--
-Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-
-This software may be modified and distributed under the terms
-of the MIT license. See the LICENSE file for details.
--->
-
 # Code of Conduct
 
 This repository follows Ping Identity's values and expectations for respectful collaboration. Our shared behavior standards are grounded in [Championing Every Identity](https://www.pingidentity.com/en/company/championing-every-identity/ib.html).

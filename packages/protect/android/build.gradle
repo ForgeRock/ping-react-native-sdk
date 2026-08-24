@@ -95,16 +95,16 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:android:2.0.1")
-  implementation("com.pingidentity.sdks:logger:2.0.1")
-  implementation("com.pingidentity.sdks:protect:2.0.1")
-  compileOnly("com.pingidentity.sdks:davinci:2.0.1") // CoreRuntime.resolveDaVinciCollectors requires davinci on classpath; compileOnly — linked transitively via rn-davinci
+  implementation("com.pingidentity.sdks:android:2.1.0")
+  implementation("com.pingidentity.sdks:logger:2.1.0")
+  implementation("com.pingidentity.sdks:protect:2.1.0")
+  compileOnly("com.pingidentity.sdks:davinci:2.1.0") // CoreRuntime.resolveDaVinciCollectors requires davinci on classpath; compileOnly — linked transitively via rn-davinci
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.test:core:1.6.1"
   testImplementation "org.robolectric:robolectric:4.12.2"
-  testImplementation("com.pingidentity.sdks:protect:2.0.1")
-  testImplementation("com.pingidentity.sdks:davinci:2.0.1")
+  testImplementation("com.pingidentity.sdks:protect:2.1.0")
+  testImplementation("com.pingidentity.sdks:davinci:2.1.0")
 }

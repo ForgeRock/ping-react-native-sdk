@@ -90,9 +90,16 @@ export type JourneyFieldRef = {
 };
 
 /**
- * Normalized callback field shape used by headless callback helpers.
+ * Base shape shared by all normalized callback fields.
+ *
+ * @remarks
+ * `raw` is the original native callback payload and serves as the escape hatch
+ * to access any field not surfaced by the specific field type.
+ *
+ * Use `field.type` (shorthand for `field.ref.type`) as the discriminant to
+ * narrow to a specific field subtype.
  */
-export type JourneyNormalizedField = {
+export type JourneyBaseField = {
   /**
    * Stable internal field key.
    *
@@ -104,6 +111,13 @@ export type JourneyNormalizedField = {
    * Typed callback reference for this field.
    */
   ref: JourneyFieldRef;
+  /**
+   * Callback type shorthand — equivalent to `ref.type`.
+   *
+   * @remarks
+   * Use this as the discriminant to narrow the field to a specific subtype.
+   */
+  type: JourneyCallbackType;
   /**
    * Prompt text provided by the native callback payload.
    *
@@ -140,10 +154,311 @@ export type JourneyNormalizedField = {
    */
   options?: JourneyFieldOption[];
   /**
-   * Original native callback payload.
+   * Original native callback payload (escape hatch).
    */
   raw: JourneyCallback;
 };
+
+/**
+ * Normalized field for a `ChoiceCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyChoiceField = JourneyBaseField & {
+  type: 'ChoiceCallback';
+  /** Available choices provided by the server. */
+  choices: string[];
+  /** Zero-based index of the server-suggested default choice. */
+  defaultChoice: number;
+};
+
+/**
+ * Normalized field for a `ConfirmationCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyConfirmationField = JourneyBaseField & {
+  type: 'ConfirmationCallback';
+  /**
+   * Currently selected option index.
+   *
+   * @remarks
+   * Normalized option labels are available via the inherited `options` field
+   * (typed as `JourneyFieldOption[]`).
+   */
+  selectedIndex?: number;
+  /** Default option label. */
+  defaultOption?: string;
+  /**
+   * Option type discriminator emitted by native (e.g. `YES_NO_OPTION`, `YES_NO_CANCEL_OPTION`).
+   *
+   * @remarks
+   * Use this to determine which button set to render for the confirmation dialog.
+   */
+  optionType?: string;
+  /**
+   * Message type discriminator emitted by native (e.g. `INFORMATION`, `WARNING`, `ERROR`).
+   *
+   * @remarks
+   * Use this to apply appropriate styling or severity indicators to the dialog message.
+   */
+  messageType?: string;
+};
+
+/**
+ * Normalized field for a `KbaCreateCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyKbaCreateField = JourneyBaseField & {
+  type: 'KbaCreateCallback';
+  /** Server-provided predefined question list. */
+  predefinedQuestions: string[];
+  /** Whether users may supply a custom question. */
+  allowUserDefinedQuestions?: boolean;
+};
+
+/**
+ * Normalized field for a `TermsAndConditionsCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyTermsAndConditionsField = JourneyBaseField & {
+  type: 'TermsAndConditionsCallback';
+  /** Terms version identifier. */
+  version: string;
+  /** Terms text. */
+  terms: string;
+  /** Terms creation date. */
+  createDate: string;
+};
+
+/**
+ * Normalized field for a `ConsentMappingCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyConsentMappingField = JourneyBaseField & {
+  type: 'ConsentMappingCallback';
+  /** Consent mapping name. */
+  name: string;
+  /** Display name for UI rendering. */
+  displayName?: string;
+  /** Icon URL or identifier for the consent mapping. */
+  icon?: string;
+  /** Access level granted by accepting this consent. */
+  accessLevel?: string;
+  /** Consent field definitions. */
+  fields?: unknown[];
+};
+
+/**
+ * Normalized field for a `HiddenValueCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyHiddenValueField = JourneyBaseField & {
+  type: 'HiddenValueCallback';
+  /**
+   * Hidden field parameter name from the native callback.
+   *
+   * @remarks
+   * Named `callbackId` to avoid shadowing the `id` field key on `JourneyBaseField`.
+   */
+  callbackId: string;
+};
+
+/**
+ * Normalized field for a `PollingWaitCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyPollingWaitField = JourneyBaseField & {
+  type: 'PollingWaitCallback';
+  /** Suggested polling interval in milliseconds. */
+  waitTime: number;
+};
+
+/**
+ * Normalized field for a `TextOutputCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneyTextOutputField = JourneyBaseField & {
+  type: 'TextOutputCallback';
+  /** Message type discriminator (INFO, WARNING, ERROR). */
+  messageType: string;
+};
+
+/**
+ * Normalized field for a `SuspendedTextOutputCallback` with typed named fields.
+ *
+ * @public
+ */
+export type JourneySuspendedTextOutputField = JourneyBaseField & {
+  type: 'SuspendedTextOutputCallback';
+  /** Message type discriminator. */
+  messageType: string;
+};
+
+/**
+ * Normalized field for a `FidoRegistrationCallback` with typed named fields.
+ *
+ * @remarks
+ * Use `rn-fido` (`registerForJourney`) to drive the registration flow.
+ *
+ * The `value` field is present on iOS only — the native iOS bridge aliases
+ * MetadataCallback-backed FIDO flows to `"FidoRegistrationCallback"` and emits the WebAuthn
+ * credential creation options as `value`. On Android, MetadataCallback-backed FIDO flows
+ * surface as `type: "MetadataCallback"` directly; `value` is always `undefined` on Android
+ * for this normalized field type.
+ *
+ * @public
+ */
+export type JourneyFidoRegistrationField = JourneyBaseField & {
+  type: 'FidoRegistrationCallback';
+  /**
+   * WebAuthn credential creation options.
+   *
+   * @remarks
+   * iOS only — always `undefined` on Android. See type-level remarks for details.
+   */
+  value?: Record<string, unknown>;
+};
+
+/**
+ * Normalized field for a `FidoAuthenticationCallback` with typed named fields.
+ *
+ * @remarks
+ * Use `rn-fido` (`authenticateForJourney`) to drive the authentication flow.
+ *
+ * The `value` field is present on iOS only — the native iOS bridge aliases
+ * MetadataCallback-backed FIDO flows to `"FidoAuthenticationCallback"` and emits the WebAuthn
+ * assertion options as `value`. On Android, MetadataCallback-backed FIDO flows surface as
+ * `type: "MetadataCallback"` directly; `value` is always `undefined` on Android for this
+ * normalized field type.
+ *
+ * @public
+ */
+export type JourneyFidoAuthenticationField = JourneyBaseField & {
+  type: 'FidoAuthenticationCallback';
+  /**
+   * WebAuthn assertion options.
+   *
+   * @remarks
+   * iOS only — always `undefined` on Android. See type-level remarks for details.
+   */
+  value?: Record<string, unknown>;
+};
+
+/**
+ * Normalized field for a `DeviceBindingCallback`.
+ *
+ * @remarks
+ * The native bridge does not emit additional named top-level fields for this type.
+ * Use `rn-binding` integration to handle this callback.
+ *
+ * @public
+ */
+export type JourneyDeviceBindingField = JourneyBaseField & {
+  type: 'DeviceBindingCallback';
+};
+
+/**
+ * Normalized field for a `DeviceSigningVerifierCallback`.
+ *
+ * @remarks
+ * The native bridge does not emit additional named top-level fields for this type.
+ * Use `rn-binding` integration to handle this callback.
+ *
+ * @public
+ */
+export type JourneyDeviceSigningVerifierField = JourneyBaseField & {
+  type: 'DeviceSigningVerifierCallback';
+};
+
+/**
+ * Normalized field for a `DeviceProfileCallback`.
+ *
+ * @remarks
+ * The native bridge does not emit additional named top-level fields for this type.
+ * Use `rn-device-profile` integration to handle this callback.
+ *
+ * @public
+ */
+export type JourneyDeviceProfileField = JourneyBaseField & {
+  type: 'DeviceProfileCallback';
+};
+
+/**
+ * Normalized field for an `IdpCallback`.
+ *
+ * @remarks
+ * The native bridge does not emit additional named top-level fields for this type.
+ * Use `rn-external-idp` integration to handle this callback.
+ *
+ * @public
+ */
+export type JourneyIdpField = JourneyBaseField & {
+  type: 'IdpCallback';
+};
+
+/**
+ * Normalized field for a `SelectIdpCallback`.
+ *
+ * @remarks
+ * The native bridge does not emit additional named top-level fields for this type.
+ * Use `rn-external-idp` integration to handle this callback.
+ *
+ * @public
+ */
+export type JourneySelectIdpField = JourneyBaseField & {
+  type: 'SelectIdpCallback';
+};
+
+/**
+ * Normalized callback field shape used by headless callback helpers.
+ *
+ * @remarks
+ * A discriminated union narrowed by `field.type`. Known callback types expose
+ * named typed fields directly on the field (for example `JourneyChoiceField`
+ * has `choices: string[]` and `defaultChoice: number`). Callbacks from other
+ * SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`), device
+ * profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
+ * represented as marker types or typed variants where the bridge emits named
+ * fields. All other types fall through to `JourneyBaseField`.
+ *
+ * `field.raw` is the original native callback payload and is preserved as an
+ * escape hatch on every variant.
+ *
+ * @example
+ * ```ts
+ * if (field.type === 'ChoiceCallback') {
+ *   field.choices        // string[]
+ *   field.defaultChoice  // number
+ * }
+ * ```
+ *
+ * @public
+ */
+export type JourneyNormalizedField =
+  | JourneyChoiceField
+  | JourneyConfirmationField
+  | JourneyKbaCreateField
+  | JourneyTermsAndConditionsField
+  | JourneyConsentMappingField
+  | JourneyHiddenValueField
+  | JourneyPollingWaitField
+  | JourneyTextOutputField
+  | JourneySuspendedTextOutputField
+  | JourneyFidoRegistrationField
+  | JourneyFidoAuthenticationField
+  | JourneyDeviceBindingField
+  | JourneyDeviceSigningVerifierField
+  | JourneyDeviceProfileField
+  | JourneyIdpField
+  | JourneySelectIdpField
+  | JourneyBaseField;
 
 /**
  * Stable issue code surfaced by callback submit helper.
@@ -255,6 +570,14 @@ export type JourneyFormResult = {
    */
   fields: JourneyNormalizedField[];
   /**
+   * True after the first {@link JourneyFormResult.markAttempted} call.
+   *
+   * @remarks
+   * Gate error display on this flag so validation messages only appear after
+   * the user has attempted submission. Resets to `false` on node change.
+   */
+  attempted: boolean;
+  /**
    * Current form value map keyed by normalized field id.
    */
   values: JourneyFormValues;
@@ -352,4 +675,14 @@ export type JourneyFormResult = {
     value: JourneyFormValue,
     typeIndex?: number,
   ) => boolean;
+  /**
+   * Marks the form as attempted.
+   *
+   * @remarks
+   * Call this when the user first tries to submit. Sets {@link JourneyFormResult.attempted}
+   * to `true` so the UI can gate error display on submission intent.
+   *
+   * @returns Void.
+   */
+  markAttempted: () => void;
 };
