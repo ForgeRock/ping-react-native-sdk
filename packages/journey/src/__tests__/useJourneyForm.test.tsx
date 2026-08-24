@@ -156,6 +156,136 @@ describe('useJourneyForm', () => {
     expect(requireLatest(latest).values['NameCallback:0']).toBeUndefined();
   });
 
+  it('starts with attempted false', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback', output: [] }],
+    };
+
+    let latest: JourneyFormResult | null = null;
+
+    render(
+      <JourneyFormHarness
+        node={node}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).attempted).toBe(false);
+  });
+
+  it('sets attempted to true after markAttempted is called', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback', output: [] }],
+    };
+
+    let latest: JourneyFormResult | null = null;
+
+    render(
+      <JourneyFormHarness
+        node={node}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).attempted).toBe(false);
+
+    act(() => {
+      requireLatest(latest).markAttempted();
+    });
+
+    expect(requireLatest(latest).attempted).toBe(true);
+  });
+
+  it('resets attempted to false when node changes', () => {
+    const firstNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback', output: [] }],
+    };
+
+    const secondNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'PasswordCallback', output: [] }],
+    };
+
+    let latest: JourneyFormResult | null = null;
+
+    let rerender: ((ui: React.ReactElement) => void) | null = null;
+    const rendered = render(
+      <JourneyFormHarness
+        node={firstNode}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+    rerender = rendered.rerender;
+
+    act(() => {
+      requireLatest(latest).markAttempted();
+    });
+
+    expect(requireLatest(latest).attempted).toBe(true);
+
+    act(() => {
+      rerender?.(
+        <JourneyFormHarness
+          node={secondNode}
+          onResult={(result) => {
+            latest = result;
+          }}
+        />,
+      );
+    });
+
+    expect(requireLatest(latest).attempted).toBe(false);
+  });
+
+  it('warns in dev when integration_required callbacks are present without handledCallbackTypes', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
+    };
+
+    render(<JourneyFormHarness node={node} onResult={() => {}} />);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('DeviceProfileCallback'),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it('does not warn when integration_required callbacks are listed in handledCallbackTypes', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
+    };
+
+    function HandledHarness(): React.ReactElement | null {
+      const form = useJourneyForm(node, {
+        handledCallbackTypes: new Set(['DeviceProfileCallback'] as const),
+      });
+      useEffect(() => {}, [form]);
+      return null;
+    }
+
+    render(<HandledHarness />);
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it('supports callback type based field lookup and updates', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',

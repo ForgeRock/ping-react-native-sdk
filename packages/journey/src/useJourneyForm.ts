@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildNextInput, normalizeCallbacks } from './callbackHelpers';
 import type {
   JourneyBuildNextInputResult,
@@ -155,10 +155,13 @@ function deriveMeta(
  * const [node, actions] = useJourney(client);
  * const form = useJourneyForm(node);
  *
- * form.setValueByType('NameCallback', 'demo-user');
+ * form.setValueByType('NameCallback', username);
+ * form.setValueByType('PasswordCallback', password);
+ * form.markAttempted();
  * if (form.canSubmit) {
  *   await actions.next(form.input);
  * }
+ * // Gate error display on form.attempted so errors only show after first submit attempt
  * ```
  *
  * @param node - Current Journey node from `useJourney`.
@@ -193,15 +196,36 @@ export function useJourneyForm(
   }, [fields]);
 
   const [prevFields, setPrevFields] = useState(fields);
-  const [values, setValuesState] = useState<JourneyFormValues>(() =>
-    hydrateValues(fields, {}),
-  );
+  const [formState, setFormState] = useState<{
+    values: JourneyFormValues;
+    attempted: boolean;
+  }>(() => ({ values: hydrateValues(fields, {}), attempted: false }));
 
-  // Adjust state during render when fields change (node switch resets form values).
+  // Adjust state during render when fields change (node switch resets form values and attempted).
   if (prevFields !== fields) {
     setPrevFields(fields);
-    setValuesState(hydrateValues(fields, {}));
+    setFormState({ values: hydrateValues(fields, {}), attempted: false });
   }
+
+  const { values, attempted } = formState;
+
+  useEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
+    const missingTypes = fields
+      .filter(
+        (f) =>
+          f.executionMode === 'integration_required' &&
+          !options.handledCallbackTypes?.has(f.ref.type),
+      )
+      .map((f) => f.ref.type);
+    if (missingTypes.length > 0) {
+      console.warn(
+        `[useJourneyForm] Integration callbacks present but not in handledCallbackTypes: ${missingTypes.join(', ')}. canSubmit will remain false until these types are provided.`,
+      );
+    }
+  }, [fields, options.handledCallbackTypes]);
 
   const submitPlan = useMemo<JourneyBuildNextInputResult>(
     () => buildNextInput(node, values, options.handledCallbackTypes),
@@ -221,13 +245,13 @@ export function useJourneyForm(
    */
   const setValue = useCallback(
     (fieldId: string, value: JourneyFormValue): void => {
-      setValuesState((previous) => {
-        if (previous[fieldId] === value) {
+      setFormState((previous) => {
+        if (previous.values[fieldId] === value) {
           return previous;
         }
         return {
           ...previous,
-          [fieldId]: value,
+          values: { ...previous.values, [fieldId]: value },
         };
       });
     },
@@ -240,13 +264,14 @@ export function useJourneyForm(
    * @param updater - Static patch object or updater function.
    */
   const setValues = useCallback((updater: JourneyFormValuesUpdater): void => {
-    setValuesState((previous) => {
-      const patch = typeof updater === 'function' ? updater(previous) : updater;
-      const nextValues = {
-        ...previous,
-        ...patch,
-      };
-      return isSameValueMap(previous, nextValues) ? previous : nextValues;
+    setFormState((previous) => {
+      const patch =
+        typeof updater === 'function' ? updater(previous.values) : updater;
+      const nextValues = { ...previous.values, ...patch };
+      if (isSameValueMap(previous.values, nextValues)) {
+        return previous;
+      }
+      return { ...previous, values: nextValues };
     });
   }, []);
 
@@ -256,13 +281,13 @@ export function useJourneyForm(
    * @param fieldId - Normalized field id to remove.
    */
   const clearValue = useCallback((fieldId: string): void => {
-    setValuesState((previous) => {
-      if (!(fieldId in previous)) {
+    setFormState((previous) => {
+      if (!(fieldId in previous.values)) {
         return previous;
       }
-      const nextValues = { ...previous };
+      const nextValues = { ...previous.values };
       delete nextValues[fieldId];
-      return nextValues;
+      return { ...previous, values: nextValues };
     });
   }, []);
 
@@ -273,9 +298,12 @@ export function useJourneyForm(
    */
   const reset = useCallback(
     (nextValues: JourneyFormValues = {}): void => {
-      setValuesState((previous) => {
+      setFormState((previous) => {
         const hydrated = hydrateValues(fields, { ...nextValues });
-        return isSameValueMap(previous, hydrated) ? previous : hydrated;
+        if (isSameValueMap(previous.values, hydrated)) {
+          return previous;
+        }
+        return { ...previous, values: hydrated };
       });
     },
     [fields],
@@ -346,6 +374,19 @@ export function useJourneyForm(
   );
 
   /**
+   * Marks the form as attempted.
+   *
+   * @remarks
+   * Call before checking `canSubmit` so the UI can gate error display on
+   * submission intent. Resets to `false` automatically on node change.
+   */
+  const markAttempted = useCallback((): void => {
+    setFormState((previous) =>
+      previous.attempted ? previous : { ...previous, attempted: true },
+    );
+  }, []);
+
+  /**
    * Sets one field value using callback type and optional index.
    *
    * @param callbackType - Callback type to target.
@@ -371,6 +412,7 @@ export function useJourneyForm(
 
   return {
     fields,
+    attempted,
     values,
     input: submitPlan.input,
     canSubmit: submitPlan.canSubmit,
@@ -385,5 +427,6 @@ export function useJourneyForm(
     getFieldsByType,
     getFieldByType,
     setValueByType,
+    markAttempted,
   };
 }

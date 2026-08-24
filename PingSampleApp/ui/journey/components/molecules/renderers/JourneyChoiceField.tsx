@@ -9,11 +9,8 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { commonStyles } from '../../../../../src/styles/common';
 import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
-import {
-  readNumber,
-  resolveOptionLabel,
-  resolvePromptText,
-} from './valueReaders';
+import { readNumber, resolveOptionLabel } from './valueReaders';
+import type { JourneyChoiceField } from '@ping-identity/rn-journey';
 import type { JourneyFieldRendererProps } from './types';
 
 /**
@@ -26,8 +23,13 @@ export default function JourneyChoiceField(
   props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field, currentValue, setFieldValue } = props;
-  const selected = readNumber(currentValue, readNumber(field.defaultValue, -1));
-  const promptText = resolvePromptText(field.prompt, field.message);
+  const selected = readNumber(
+    currentValue,
+    field.type === 'ChoiceCallback'
+      ? (field as JourneyChoiceField).defaultChoice
+      : -1,
+  );
+  const promptText = field.prompt.trim() || field.message?.trim() || '';
 
   return (
     <View style={fieldStyles.card}>

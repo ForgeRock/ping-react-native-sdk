@@ -11,7 +11,8 @@ import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import { commonStyles } from '../../../../../src/styles/common';
 import { colors } from '../../../../../src/styles/colors';
 import { journeyFieldRendererStyles as fieldStyles } from '../../../../../src/styles/journeyStyles';
-import { resolvePromptText, toDisplayString } from './valueReaders';
+import type { JourneyTextOutputField } from '@ping-identity/rn-journey';
+import { toDisplayString } from './valueReaders';
 import type { JourneyFieldRendererProps } from './types';
 
 /**
@@ -24,20 +25,21 @@ export default function JourneyOutputField(
   props: JourneyFieldRendererProps,
 ): React.ReactElement {
   const { field } = props;
-  const promptText = resolvePromptText(field.prompt, field.message);
+  const promptText = field.prompt.trim() || field.message?.trim() || '';
   const helperText =
     typeof field.message === 'string' ? field.message.trim() : '';
   const shouldRenderHelperText =
     helperText.length > 0 && helperText !== promptText.trim();
   const messageType =
-    typeof field.raw.messageType === 'string'
-      ? field.raw.messageType.trim().toUpperCase()
+    field.type === 'TextOutputCallback' ||
+    field.type === 'SuspendedTextOutputCallback'
+      ? (field as JourneyTextOutputField).messageType.trim().toUpperCase()
       : '';
 
   let iconName: string | null = null;
   if (
-    field.ref.type === 'TextOutputCallback' ||
-    field.ref.type === 'SuspendedTextOutputCallback'
+    field.type === 'TextOutputCallback' ||
+    field.type === 'SuspendedTextOutputCallback'
   ) {
     switch (messageType) {
       case 'INFO':
