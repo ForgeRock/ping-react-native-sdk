@@ -11,21 +11,28 @@ import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
+import com.pingidentity.davinci.collector.MaxRepeat
+import com.pingidentity.davinci.collector.MinCharacters
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.QRCodeCollector
 import com.pingidentity.davinci.collector.ReadOnlyTextCollector
+import com.pingidentity.davinci.collector.RegexError
+import com.pingidentity.davinci.collector.Required
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
+import com.pingidentity.davinci.collector.UniqueCharacter
 import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.network.HttpRequest
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.orchestrate.ContinueNodeAware
 import com.pingidentity.orchestrate.EmptySession
 import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.FailureNode
@@ -51,13 +58,17 @@ class DaVinciNodeMapperTest {
         *actions
     )
 
-    private fun makeNode(input: JsonObject, vararg actions: Action) = object : ContinueNode(
-        context = FlowContext(SharedContext(mutableMapOf())),
-        workflow = Workflow(WorkflowConfig()),
-        input = input,
-        actions = listOf(*actions)
-    ) {
-        override fun asRequest(): HttpRequest = throw UnsupportedOperationException()
+    private fun makeNode(input: JsonObject, vararg actions: Action): ContinueNode {
+        val node = object : ContinueNode(
+            context = FlowContext(SharedContext(mutableMapOf())),
+            workflow = Workflow(WorkflowConfig()),
+            input = input,
+            actions = listOf(*actions)
+        ) {
+            override fun asRequest(): HttpRequest = throw UnsupportedOperationException()
+        }
+        actions.filterIsInstance<ContinueNodeAware>().forEach { it.continueNode = node }
+        return node
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -286,6 +297,83 @@ class DaVinciNodeMapperTest {
         assertTrue(c.containsKey("key"))
     }
 
+    @Test
+    fun mapLabelCollectorIncludesRichContentWhenPresent() {
+        val collector = LabelCollector().apply {
+            init(buildJsonObject {
+                put("key", "terms")
+                put("content", "Read the terms")
+                put("richContent", buildJsonObject {
+                    put("content", "Read the {{terms}}")
+                    put("replacements", buildJsonObject {
+                        put("terms", buildJsonObject {
+                            put("value", "terms")
+                            put("href", "https://example.com/terms")
+                            put("type", "link")
+                            put("target", "_blank")
+                        })
+                    })
+                })
+            })
+        }
+        val c = DaVinciNodeMapper.mapNodePayload(makeNode(collector)).asList("collectors")!![0]
+
+        @Suppress("UNCHECKED_CAST")
+        val richContent = c["richContent"] as Map<String, Any?>
+        assertEquals("Read the {{terms}}", richContent["content"])
+        @Suppress("UNCHECKED_CAST")
+        val replacements = richContent["replacements"] as Map<String, Map<String, Any?>>
+        assertEquals("https://example.com/terms", replacements["terms"]!!["href"])
+        assertEquals("_blank", replacements["terms"]!!["target"])
+    }
+
+    @Test
+    fun mapLabelCollectorOmitsRichContentWhenAbsent() {
+        val collector = LabelCollector().apply {
+            init(buildJsonObject {
+                put("key", "terms")
+                put("content", "Read the terms")
+            })
+        }
+        val c = DaVinciNodeMapper.mapNodePayload(makeNode(collector)).asList("collectors")!![0]
+
+        assertFalse(c.containsKey("richContent"))
+    }
+
+    @Test
+    fun mapValidationErrorsIncludesRequiredAndRegex() {
+        assertEquals(
+            mapOf("code" to "REQUIRED"),
+            DaVinciNodeMapper.encodeValidationError(Required)
+        )
+        assertEquals(
+            mapOf("code" to "REGEX_ERROR", "message" to "Invalid value"),
+            DaVinciNodeMapper.encodeValidationError(RegexError("Invalid value"))
+        )
+    }
+
+    @Test
+    fun mapPasswordValidationErrorsIncludesPolicyConstraints() {
+        val errors = DaVinciNodeMapper.encodeValidationErrors(
+            listOf(
+                InvalidLength(8, 64),
+                UniqueCharacter(3),
+                MaxRepeat(2),
+                MinCharacters("digit", 1)
+            )
+        )
+
+        assertEquals(
+            listOf(
+                mapOf("code" to "INVALID_LENGTH", "min" to 8, "max" to 64),
+                mapOf("code" to "UNIQUE_CHARACTER", "min" to 3),
+                mapOf("code" to "MAX_REPEAT", "max" to 2),
+                mapOf("code" to "MIN_CHARACTERS", "character" to "digit", "min" to 1)
+            ),
+            errors
+        )
+    }
+
     // ---- Raw field passthrough tests ----
 
     @Test
@@ -459,6 +547,27 @@ class DaVinciNodeMapperTest {
     }
 
     @Test
+    fun mapPhoneNumberCollectorIncludesExtensionFields() {
+        val collector = PhoneNumberCollector().apply {
+            init(buildJsonObject {
+                put("key", "phone")
+                put("type", "PHONE")
+                put("label", "Phone Number")
+                put("defaultCountryCode", "US")
+                put("validatePhoneNumber", true)
+                put("showExtension", true)
+                put("extensionLabel", "Extension")
+            })
+            extension = "99"
+        }
+        val c = DaVinciNodeMapper.mapNodePayload(makeNode(collector)).asList("collectors")!![0]
+
+        assertEquals("99", c["extension"])
+        assertEquals(true, c["showExtension"])
+        assertEquals("Extension", c["extensionLabel"])
+    }
+
+    @Test
     fun mapPhoneNumberCollectorDefaultCountryCodeFallsBackToEmpty() {
         val collector = PhoneNumberCollector().apply {
             init(buildJsonObject {
@@ -571,40 +680,27 @@ class DaVinciNodeMapperTest {
     // ---- Password policy extraction ----
 
     @Test
-    fun mapPasswordCollectorExtractsPasswordPolicyFromFormField() {
+    fun mapPasswordCollectorUsesNativePasswordPolicyAccessor() {
         val collector = PasswordCollector().apply {
             init(buildJsonObject {
                 put("key", "password")
                 put("type", "PASSWORD")
                 put("label", "Password")
-            })
-        }
-        val input = buildJsonObject {
-            put("form", buildJsonObject {
-                put("components", buildJsonObject {
-                    put("fields", buildJsonArray {
-                        add(buildJsonObject {
-                            put("key", "password")
-                            put("type", "PASSWORD")
-                            put("label", "Password")
-                            put("passwordPolicy", buildJsonObject {
-                                put("name", "Standard Policy")
-                                put("minAgeDays", 0)
-                                put("maxAgeDays", 90)
-                                put("maxRepeatedCharacters", 2)
-                                put("minUniqueCharacters", 5)
-                                put("excludesProfileData", false)
-                                put("notSimilarToCurrent", true)
-                                put("excludesCommonlyUsed", true)
-                                put("populationCount", 0)
-                                put("default", true)
-                            })
-                        })
-                    })
+                put("passwordPolicy", buildJsonObject {
+                    put("name", "Standard Policy")
+                    put("minAgeDays", 0)
+                    put("maxAgeDays", 90)
+                    put("maxRepeatedCharacters", 2)
+                    put("minUniqueCharacters", 5)
+                    put("excludesProfileData", false)
+                    put("notSimilarToCurrent", true)
+                    put("excludesCommonlyUsed", true)
+                    put("populationCount", 0)
+                    put("default", true)
                 })
             })
         }
-        val node = makeNode(input, collector)
+        val node = makeNode(collector)
 
         val result = DaVinciNodeMapper.mapNodePayload(node)
         val c = result.asList("collectors")!![0]
@@ -616,6 +712,53 @@ class DaVinciNodeMapperTest {
         assertEquals("Standard Policy", policy!!["name"])
         assertEquals(90L, policy["maxAgeDays"])
         assertEquals(true, policy["notSimilarToCurrent"])
+    }
+
+    @Test
+    fun mapPasswordCollectorFallsBackToNodeRootPasswordPolicy() {
+        val collector = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password")
+                put("type", "PASSWORD")
+                put("label", "Password")
+            })
+        }
+        val input = buildJsonObject {
+            put("passwordPolicy", buildJsonObject {
+                put("name", "Global Policy")
+                put("maxAgeDays", 30)
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        @Suppress("UNCHECKED_CAST")
+        val policy = c["passwordPolicy"] as? Map<String, Any?>
+        assertNotNull(policy)
+        assertEquals("Global Policy", policy!!["name"])
+        assertEquals(30L, policy["maxAgeDays"])
+    }
+
+    @Test
+    fun mapPasswordCollectorIncludesValidationRegexWhenPresent() {
+        val collector = PasswordCollector().apply {
+            init(buildJsonObject {
+                put("key", "password")
+                put("type", "PASSWORD")
+                put("label", "Password")
+                put("validation", buildJsonObject {
+                    put("regex", "^.{8,}$")
+                    put("errorMessage", "Password is too short")
+                })
+            })
+        }
+        val c = DaVinciNodeMapper.mapNodePayload(makeNode(collector)).asList("collectors")!![0]
+
+        @Suppress("UNCHECKED_CAST")
+        val validation = c["validation"] as Map<String, Any?>
+        assertEquals("^.{8,}$", validation["regex"])
     }
 
     @Test

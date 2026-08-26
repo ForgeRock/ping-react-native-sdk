@@ -128,6 +128,18 @@ RCT_EXPORT_METHOD(next:(NSString *)davinciId
   }];
 }
 
+/// Validates a single collector value without advancing the DaVinci flow.
+RCT_EXPORT_METHOD(validate:(NSString *)davinciId
+                  collectorKey:(NSString *)collectorKey
+                  input:(NSDictionary *)input
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
+    [impl validate:davinciId collectorKey:collectorKey input:input resolver:resolve rejecter:reject];
+  }];
+}
+
 /// Returns session details for a DaVinci client.
 RCT_EXPORT_METHOD(getSession:(NSString *)davinciId
                   resolver:(RCTPromiseResolveBlock)resolve

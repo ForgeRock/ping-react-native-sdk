@@ -10,12 +10,16 @@ package com.pingidentity.rndavinci
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PollingCollector
+import com.pingidentity.davinci.collector.SubmitCollector
+import com.pingidentity.davinci.collector.TextCollector
 import com.pingidentity.davinci.collector.PollingStatus
 import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.network.HttpRequest
@@ -189,6 +193,191 @@ class RNPingDavinciCommonTest {
         )
     }
 
+    // ---- validation capture and retry state ----
+
+    @Test
+    fun validate_resolvesRequiredAndRegexErrors() {
+        val text = TextCollector().apply {
+            init(buildJsonObject {
+                put("key", "username")
+                put("type", "TEXT")
+                put("label", "Username")
+                put("required", true)
+                put("validation", buildJsonObject {
+                    put("regex", "^valid$")
+                    put("errorMessage", "Invalid username")
+                })
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(text)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "username",
+            collectorInput("username", "invalid"),
+            promise
+        )
+
+        val errors = captureResolve(promise) as ReadableArray
+        assertEquals(1, errors.size())
+        assertEquals("REGEX_ERROR", errors.getMap(0)?.getString("code"))
+        assertEquals("Invalid username", errors.getMap(0)?.getString("message"))
+    }
+
+    @Test
+    fun validate_resolvesRequiredErrorForUncheckedBoolean() {
+        val boolean = BooleanCollector().apply {
+            init(buildJsonObject {
+                put("key", "agree")
+                put("type", "BOOLEAN")
+                put("label", "Agree")
+                put("required", true)
+                put("errorMessage", "You must agree.")
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(boolean)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "agree",
+            collectorInput("agree", false),
+            promise
+        )
+
+        val errors = captureResolve(promise) as ReadableArray
+        assertEquals(1, errors.size())
+        assertEquals("REQUIRED", errors.getMap(0)?.getString("code"))
+        assertNull(errors.getMap(0)?.getString("message"))
+    }
+
+    @Test
+    fun validate_resolvesEmptyListWhenValueIsValid() {
+        val text = TextCollector().apply {
+            init(buildJsonObject {
+                put("key", "username")
+                put("type", "TEXT")
+                put("label", "Username")
+                put("required", true)
+                put("validation", buildJsonObject { put("regex", "^valid$") })
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(text)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "username",
+            collectorInput("username", "valid"),
+            promise
+        )
+
+        assertEquals(0, (captureResolve(promise) as ReadableArray).size())
+    }
+
+    @Test
+    fun validate_rejectsWhenCollectorKeyUnknown() {
+        val text = TextCollector().apply {
+            init(buildJsonObject {
+                put("key", "username")
+                put("type", "TEXT")
+                put("label", "Username")
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(text)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "unknown",
+            collectorInput("unknown", "value"),
+            promise
+        )
+
+        val error = captureReject(promise)
+        assertEquals(DaVinciErrorCodes.COLLECTOR_APPLY, error.getString("error"))
+    }
+
+    @Test
+    fun validate_rejectsUnsupportedCollectorType() {
+        val collectorKey = "unsupported-key"
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(
+            davinciId,
+            DummyContinueNode(actions = listOf(UnsupportedTestCollector(collectorKey)))
+        )
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            collectorKey,
+            collectorInput(collectorKey, "value"),
+            promise
+        )
+
+        val error = captureReject(promise)
+        assertEquals(DaVinciErrorCodes.UNSUPPORTED_COLLECTOR, error.getString("error"))
+    }
+
+    @Test
+    fun validate_resolvesEmptyListForCollectorWithoutValidator() {
+        val collector = SubmitCollector()
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            collector.id(),
+            collectorInput(collector.id(), "value"),
+            promise
+        )
+
+        assertEquals(0, (captureResolve(promise) as ReadableArray).size())
+    }
+
+    @Test
+    fun validate_rejectsStateErrorWhenNoContinueNode() {
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            "no-such-id",
+            "username",
+            collectorInput("username", "value"),
+            promise
+        )
+
+        val error = captureReject(promise)
+        assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+        assertEquals(DaVinciErrorCodes.STATE, error.getString("error"))
+    }
+
+    @Test
+    fun setNodeStateRetainsContinueNodeFromErrorNode() {
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        val current = DummyContinueNode(actions = emptyList())
+        setContinueNode(davinciId, current)
+        val error = com.pingidentity.orchestrate.ErrorNode(
+            current.context,
+            buildJsonObject { put("code", "invalid") },
+            "Invalid input"
+        )
+        error.context.flowContext["com.pingidentity.davinci.CONTINUE_NODE"] = current
+
+        invokeSetNodeState(davinciId, error)
+
+        val field = RNPingDavinciCommon::class.java.getDeclaredField("continueNodeMap")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val map = field.get(RNPingDavinciCommon) as Map<String, ContinueNode>
+        assertTrue(map[davinciId] === current)
+    }
+
     // ---- next must not close current node before transitioning ----
 
     @Test
@@ -214,6 +403,7 @@ class RNPingDavinciCommonTest {
                 throw sentinel
             }
         }
+        password.continueNode = node
         setContinueNode(davinciId, node)
 
         val nextInput = JavaOnlyMap().apply {
@@ -933,6 +1123,29 @@ class RNPingDavinciCommonTest {
             reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
         } returns emitter
         return reactContext to emitter
+    }
+
+    private fun collectorInput(key: String, value: String): JavaOnlyMap = collectorInputMap(key) {
+        putString("value", value)
+    }
+
+    private fun collectorInput(key: String, value: Boolean): JavaOnlyMap = collectorInputMap(key) {
+        putBoolean("value", value)
+    }
+
+    private inline fun collectorInputMap(
+        key: String,
+        valueWriter: JavaOnlyMap.() -> Unit
+    ): JavaOnlyMap = JavaOnlyMap().apply {
+        putArray(
+            "collectors",
+            JavaOnlyArray().apply {
+                pushMap(JavaOnlyMap().apply {
+                    putString("key", key)
+                    valueWriter()
+                })
+            }
+        )
     }
 
     private fun captureResolve(promise: TestPromise): Any? {

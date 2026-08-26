@@ -7,8 +7,12 @@
 
 import React, { useState } from 'react';
 import { View } from 'react-native';
-import type { PhoneNumberCollector } from '@ping-identity/rn-davinci';
+import type {
+  DaVinciFieldValidationError,
+  PhoneNumberCollector,
+} from '@ping-identity/rn-davinci';
 import PingTextInput from '../../../components/atoms/PingTextInput';
+import DaVinciErrorList from '../atoms/DaVinciErrorList';
 import DaVinciFieldLabel from '../atoms/DaVinciFieldLabel';
 import PickerModal from '../atoms/PickerModal';
 import { davinciFieldStyles } from '../../../../src/styles/davinciStyles';
@@ -67,7 +71,7 @@ function countryCodeForDialCode(dialCode: string): string | undefined {
 function resolveValue(
   value: unknown,
   collector: PhoneNumberCollector,
-): { countryCode: string; phoneNumber: string } {
+): { countryCode: string; phoneNumber: string; extension: string } {
   let rawCode =
     value &&
     typeof value === 'object' &&
@@ -89,7 +93,15 @@ function resolveValue(
       ? (value as { phoneNumber: string }).phoneNumber
       : (collector.phoneNumber ?? '');
 
-  return { countryCode: rawCode, phoneNumber };
+  const extension =
+    value &&
+    typeof value === 'object' &&
+    'extension' in value &&
+    typeof (value as { extension: unknown }).extension === 'string'
+      ? (value as { extension: string }).extension
+      : (collector.extension ?? '');
+
+  return { countryCode: rawCode, phoneNumber, extension };
 }
 
 /**
@@ -123,11 +135,14 @@ function triggerLabel(isoCode: string): string {
 export default function DaVinciPhoneNumberField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
-  const { collector, value, onChange } = props;
+  const { collector, value, onChange, onValidate } = props;
   const phoneCollector = collector as PhoneNumberCollector;
   const current = resolveValue(value, phoneCollector);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [manualErrors, setManualErrors] = useState<
+    DaVinciFieldValidationError[] | null
+  >(null);
 
   const pickerOptions = COUNTRIES.map(c => ({
     value: c.countryCode,
@@ -150,29 +165,59 @@ export default function DaVinciPhoneNumberField(
             visible={modalVisible}
             onOpen={() => setModalVisible(true)}
             onClose={() => setModalVisible(false)}
-            onSelect={isoCode =>
+            onSelect={isoCode => {
+              setManualErrors(null);
               onChange({
                 countryCode: isoCode,
                 phoneNumber: current.phoneNumber,
-              })
-            }
+                extension: current.extension,
+              });
+            }}
           />
         </View>
         <View style={davinciFieldStyles.phoneNumber}>
           <PingTextInput
             label="Phone number"
             value={current.phoneNumber}
-            onChangeText={text =>
+            onChangeText={text => {
+              setManualErrors(null);
               onChange({
                 countryCode: current.countryCode,
                 phoneNumber: text,
-              })
-            }
+                extension: current.extension,
+              });
+            }}
+            onBlur={() => {
+              onValidate(collector.key, current.phoneNumber)
+                .then(setManualErrors)
+                .catch(error => {
+                  console.warn(
+                    '[DaVinci] Phone number validation failed:',
+                    error,
+                  );
+                });
+            }}
             keyboardType="phone-pad"
             containerStyle={{ marginBottom: 0 }}
           />
         </View>
       </View>
+      {phoneCollector.showExtension ? (
+        <PingTextInput
+          label={phoneCollector.extensionLabel}
+          value={current.extension}
+          onChangeText={extension => {
+            setManualErrors(null);
+            onChange({
+              countryCode: current.countryCode,
+              phoneNumber: current.phoneNumber,
+              extension,
+            });
+          }}
+          keyboardType="phone-pad"
+        />
+      ) : null}
+      <DaVinciErrorList errors={manualErrors ?? undefined} />
     </View>
   );
 }

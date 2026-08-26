@@ -128,7 +128,7 @@ export type DaVinciFormValue =
   | string // TEXT, PASSWORD, SINGLE_SELECT, DEVICE_REGISTRATION (type string)
   | string[] // MULTI_SELECT
   | boolean // SINGLE_CHECKBOX
-  | { countryCode: string; phoneNumber: string } // PHONE_NUMBER
+  | { countryCode: string; phoneNumber: string; extension?: string } // PHONE_NUMBER
   | { type: string; id?: string; description?: string } // DEVICE_AUTHENTICATION
   | null;
 

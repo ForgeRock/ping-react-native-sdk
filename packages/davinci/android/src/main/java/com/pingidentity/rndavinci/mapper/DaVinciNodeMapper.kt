@@ -10,12 +10,16 @@ package com.pingidentity.rndavinci.mapper
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableMap
 import kotlinx.serialization.json.Json
+import com.pingidentity.davinci.RichContent
 import com.pingidentity.davinci.collector.Device
 import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
+import com.pingidentity.davinci.collector.MaxRepeat
+import com.pingidentity.davinci.collector.MinCharacters
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PasswordPolicy
@@ -23,9 +27,13 @@ import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.QRCodeCollector
 import com.pingidentity.davinci.collector.ReadOnlyTextCollector
+import com.pingidentity.davinci.collector.RegexError
+import com.pingidentity.davinci.collector.Required
 import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
+import com.pingidentity.davinci.collector.UniqueCharacter
+import com.pingidentity.davinci.collector.ValidationError
 import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.logger.Logger
@@ -72,7 +80,10 @@ internal object DaVinciNodeMapper {
      * @param logger Optional Ping logger used for non-fatal mapping warnings.
      * @return Serialized node payload.
      */
-    fun mapNode(node: Node, logger: Logger? = null): WritableMap {
+    fun mapNode(
+        node: Node,
+        logger: Logger? = null
+    ): WritableMap {
         return Arguments.makeNativeMap(mapNodePayload(node, logger))
     }
 
@@ -83,7 +94,10 @@ internal object DaVinciNodeMapper {
      * @param logger Optional Ping logger used for non-fatal mapping warnings.
      * @return Serializable node payload map.
      */
-    fun mapNodePayload(node: Node, logger: Logger? = null): Map<String, Any?> {
+    fun mapNodePayload(
+        node: Node,
+        logger: Logger? = null
+    ): Map<String, Any?> {
         val payload = linkedMapOf<String, Any?>()
 
         when (node) {
@@ -122,6 +136,30 @@ internal object DaVinciNodeMapper {
 
         return payload
     }
+
+    /**
+     * Maps a native [ValidationError] to the stable JS-facing error code contract.
+     *
+     * @param error Native validation error produced by a collector's `validate()`.
+     * @return Serialized `{code, ...}` error payload.
+     */
+    internal fun encodeValidationError(error: ValidationError): Map<String, Any?> = when (error) {
+        is Required -> mapOf("code" to "REQUIRED")
+        is RegexError -> mapOf("code" to "REGEX_ERROR", "message" to error.message)
+        is InvalidLength -> mapOf("code" to "INVALID_LENGTH", "min" to error.min, "max" to error.max)
+        is UniqueCharacter -> mapOf("code" to "UNIQUE_CHARACTER", "min" to error.min)
+        is MaxRepeat -> mapOf("code" to "MAX_REPEAT", "max" to error.max)
+        is MinCharacters -> mapOf("code" to "MIN_CHARACTERS", "character" to error.character, "min" to error.min)
+    }
+
+    /**
+     * Maps a list of native [ValidationError]s captured from a submitted collector.
+     *
+     * @param errors Native validation errors from a collector's `validate()` call.
+     * @return Serialized list of `{code, ...}` error payloads.
+     */
+    internal fun encodeValidationErrors(errors: List<ValidationError>): List<Map<String, Any?>> =
+        errors.map(::encodeValidationError)
 
     /**
      * Serialize all `Collector<*>` instances from a `ContinueNode` into a list.
@@ -203,7 +241,7 @@ internal object DaVinciNodeMapper {
      * Returns null when the collector type is unknown and should be skipped.
      *
      * @param collector Collector instance.
-     * @param node Parent continue node (used for password policy extraction).
+     * @param node Parent continue node (used to resolve the raw field JSON for `raw`/unregistered-type lookups).
      * @param logger Optional Ping logger for non-fatal mapping warnings.
      * @return Serialized collector map, or null for unknown types.
      */
@@ -221,7 +259,7 @@ internal object DaVinciNodeMapper {
         val payload = when (collector) {
             is IdpCollector -> mapIdpCollector(collector)
             is TextCollector -> mapTextCollector(collector)
-            is PasswordCollector -> mapPasswordCollector(collector, node, logger)
+            is PasswordCollector -> mapPasswordCollector(collector)
             is SubmitCollector -> mapBaseCollector(collector)
             is FlowCollector -> mapBaseCollector(collector)
             is LabelCollector -> mapLabelCollector(collector)
@@ -317,45 +355,23 @@ internal object DaVinciNodeMapper {
      * `clearPassword` controls whether the native collector wipes its in-memory value when
      * the parent node is closed; it does not affect the bridge value emission.
      *
+     * `passwordPolicy` is read through the native `passwordPolicy()` accessor, which resolves
+     * the field-level policy first and falls back to the node-root policy.
+     *
      * @param collector Native password collector.
-     * @param node Parent continue node (used to extract the field-level password policy from raw JSON).
-     * @param logger Optional Ping logger for non-fatal policy-extraction warnings.
      * @return Serialized password collector map.
      */
-    private fun mapPasswordCollector(
-        collector: PasswordCollector,
-        node: ContinueNode,
-        logger: Logger? = null
-    ): Map<String, Any?> {
+    private fun mapPasswordCollector(collector: PasswordCollector): Map<String, Any?> {
         val map = baseCollectorMap(collector)
         map["value"] = ""
         map["clearPassword"] = collector.clearPassword
-        extractPasswordPolicy(collector.key, node, logger)?.let { policy ->
+        collector.validation?.let { validation ->
+            map["validation"] = mapOf("regex" to validation.regex.pattern)
+        }
+        collector.passwordPolicy()?.let { policy ->
             map["passwordPolicy"] = encodePasswordPolicy(policy)
         }
         return map
-    }
-
-    /**
-     * Reads passwordPolicy from the raw JSON at
-     * `continueNode.input.form.components.fields[].passwordPolicy` by matching the collector key.
-     *
-     * TODO-SDK-FUTURE-SUPPORT: The SDK's own `passwordPolicy()` method is `//TODO` in 2.0.1 because it reads from the
-     * wrong JSON path (node root instead of the field-level object).
-     */
-    private fun extractPasswordPolicy(
-        collectorKey: String,
-        node: ContinueNode,
-        logger: Logger? = null
-    ): PasswordPolicy? {
-        return try {
-            val fieldJson = findFieldJson(node, collectorKey, logger) ?: return null
-            val policyJson = fieldJson["passwordPolicy"]?.jsonObject ?: return null
-            json.decodeFromJsonElement(PasswordPolicy.serializer(), policyJson)
-        } catch (error: Exception) {
-            logWarning(logger, "Failed to extract password policy for key=$collectorKey", error)
-            null
-        }
     }
 
     /**
@@ -452,12 +468,32 @@ internal object DaVinciNodeMapper {
     }
 
     private fun mapLabelCollector(collector: LabelCollector): Map<String, Any?> {
-        return linkedMapOf(
+        val map = linkedMapOf<String, Any?>(
             "key" to collector.key,
             "type" to "LABEL",
             "content" to collector.content
         )
+        collector.richContent?.let { map["richContent"] = encodeRichContent(it) }
+        return map
     }
+
+    /**
+     * Serialize a native [RichContent] into its bridge payload shape.
+     *
+     * @param rc Native rich-content payload.
+     * @return Serialized `{content, replacements}` map.
+     */
+    private fun encodeRichContent(rc: RichContent): Map<String, Any?> = mapOf(
+        "content" to rc.content,
+        "replacements" to rc.replacements.mapValues { (_, r) ->
+            buildMap {
+                put("value", r.value)
+                put("href", r.href)
+                put("type", r.type)
+                put("target", r.target)
+            }
+        }
+    )
 
     /**
      * Serialize a [PollingCollector] to a payload map.
@@ -541,6 +577,9 @@ internal object DaVinciNodeMapper {
         map["validatePhoneNumber"] = collector.validatePhoneNumber
         map["countryCode"] = collector.countryCode
         map["phoneNumber"] = collector.phoneNumber
+        map["extension"] = collector.extension
+        map["showExtension"] = collector.showExtension
+        map["extensionLabel"] = collector.extensionLabel
         return map
     }
 
@@ -567,19 +606,7 @@ internal object DaVinciNodeMapper {
         map["value"] = collector.value
         map["appearance"] = collector.appearance.value
         map["errorMessage"] = collector.errorMessage
-        collector.richContent?.let { rc ->
-            map["richContent"] = mapOf(
-                "content" to rc.content,
-                "replacements" to rc.replacements.mapValues { (_, r) ->
-                    buildMap {
-                        put("value", r.value)
-                        put("href", r.href)
-                        put("type", r.type)
-                        put("target", r.target)
-                    }
-                }
-            )
-        }
+        collector.richContent?.let { map["richContent"] = encodeRichContent(it) }
         return map
     }
 

@@ -42,6 +42,23 @@ final class RNPingDavinciCommonTests: XCTestCase {
     }
   }
 
+  private final class ErrorsCaptureBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue: NSArray?
+
+    func set(_ value: NSArray) {
+      lock.lock()
+      storedValue = value
+      lock.unlock()
+    }
+
+    var value: NSArray? {
+      lock.lock()
+      defer { lock.unlock() }
+      return storedValue
+    }
+  }
+
   private final class StringCaptureBox: @unchecked Sendable {
     private let lock = NSLock()
     private var storedValue: String?
@@ -266,7 +283,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
   func testNextRejectsWhenCollectorInputIsMalformed() {
     assertReject(
-      expectedCode: DaVinciErrorCodes.nextError.rawValue,
+      expectedCode: DaVinciErrorCodes.collectorApplyError.rawValue,
       expectedType: .argumentError
     ) { rejecter, resolver in
       RNPingDavinciCommon.next(
@@ -275,6 +292,173 @@ final class RNPingDavinciCommonTests: XCTestCase {
         resolver: resolver,
         rejecter: rejecter
       )
+    }
+  }
+
+  // MARK: - validate
+
+  func testValidateRejectsWhenNoActiveNode() {
+    assertValidateReject(
+      expectedCode: DaVinciErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.validate(
+        "missing",
+        collectorKey: "username",
+        input: ["collectors": [["key": "username", "value": "alice"]]],
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testValidateRejectsWithCollectorApplyErrorForUnknownCollectorKey() {
+    let davinciId = "validate-unknown-key"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        TextCollector(with: ["key": "username", "type": "TEXT", "label": "Username", "required": false])
+      ])
+    )
+
+    assertValidateReject(
+      expectedCode: DaVinciErrorCodes.collectorApplyError.rawValue,
+      expectedType: .argumentError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.validate(
+        davinciId,
+        collectorKey: "unknown",
+        input: ["collectors": [["key": "unknown", "value": "alice"]]],
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testValidateRejectsWithUnsupportedCollectorErrorForUnsupportedCollectorType() {
+    let davinciId = "validate-unsupported-collector"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        LabelCollector(with: ["key": "notice", "type": "LABEL", "content": "Notice"])
+      ])
+    )
+
+    assertValidateReject(
+      expectedCode: DaVinciErrorCodes.unsupportedCollectorError.rawValue,
+      expectedType: .argumentError
+    ) { rejecter, resolver in
+      RNPingDavinciCommon.validate(
+        davinciId,
+        collectorKey: "notice",
+        input: ["collectors": [["key": "notice", "value": "anything"]]],
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testValidateResolvesRequiredErrorForEmptyRequiredField() {
+    let davinciId = "validate-required"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        TextCollector(with: ["key": "username", "type": "TEXT", "label": "Username", "required": true])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "username",
+      value: ""
+    ) { errors in
+      XCTAssertEqual(errors.count, 1)
+      XCTAssertEqual(errors.first?["code"] as? String, "REQUIRED")
+    }
+  }
+
+  func testValidateNormalizesRequiredBooleanError() {
+    let davinciId = "validate-boolean-required"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        BooleanCollector(with: [
+          "key": "agree", "type": "BOOLEAN", "label": "Agree", "required": true,
+          "errorMessage": "You must agree."
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "agree",
+      value: false
+    ) { errors in
+      XCTAssertEqual(errors.count, 1)
+      XCTAssertEqual(errors.first?["code"] as? String, "REQUIRED")
+      XCTAssertNil(errors.first?["message"])
+    }
+  }
+
+  func testValidateResolvesRegexErrorForInvalidValue() {
+    let davinciId = "validate-regex"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        TextCollector(with: [
+          "key": "email", "type": "TEXT", "label": "Email", "required": false,
+          "validation": ["regex": "^.+@.+$", "errorMessage": "Invalid email"]
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "email",
+      value: "not-an-email"
+    ) { errors in
+      XCTAssertEqual(errors.count, 1)
+      XCTAssertEqual(errors.first?["code"] as? String, "REGEX_ERROR")
+      XCTAssertEqual(errors.first?["message"] as? String, "Invalid email")
+    }
+  }
+
+  func testValidateResolvesEmptyArrayForValidValue() {
+    let davinciId = "validate-valid"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        TextCollector(with: [
+          "key": "email", "type": "TEXT", "label": "Email", "required": false,
+          "validation": ["regex": "^.+@.+$", "errorMessage": "Invalid email"]
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "email",
+      value: "alice@example.com"
+    ) { errors in
+      XCTAssertTrue(errors.isEmpty)
+    }
+  }
+
+  func testValidateResolvesEmptyArrayForNonValidatorCollector() {
+    let davinciId = "validate-non-validator"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        FlowCollector(with: ["key": "next", "type": "FLOW", "label": "Next", "required": false])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "next",
+      value: "NEXT"
+    ) { errors in
+      XCTAssertTrue(errors.isEmpty)
     }
   }
 
@@ -896,6 +1080,68 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
     XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+  }
+
+  /// Same as `assertReject`, sized for `validate()`'s `NSArray`-resolving promise shape.
+  private func assertValidateReject(
+    expectedCode: String,
+    expectedType: ErrorType,
+    call: (
+      _ rejecter: @escaping @Sendable (String, String, NSError?) -> Void,
+      _ resolver: @escaping @Sendable (NSArray) -> Void
+    ) -> Void,
+    file: StaticString = #filePath,
+    line: UInt = #line
+  ) {
+    let rejectExpectation = expectation(description: "reject called")
+    let resolveExpectation = expectation(description: "resolve not called")
+    resolveExpectation.isInverted = true
+
+    let capture = ErrorCaptureBox()
+
+    call({ code, _, error in
+      capture.set(code: code, error: error)
+      Task { @MainActor in rejectExpectation.fulfill() }
+    }, { _ in
+      Task { @MainActor in resolveExpectation.fulfill() }
+    })
+
+    wait(for: [rejectExpectation, resolveExpectation], timeout: 1.0)
+
+    XCTAssertEqual(capture.code, expectedCode, file: file, line: line)
+    XCTAssertEqual(capture.error?.userInfo["type"] as? String, expectedType.rawValue, file: file, line: line)
+  }
+
+  /// Calls `validate()` for one collector/value pair and hands the resolved
+  /// validation error array to `assertions`.
+  private func assertValidateResolves(
+    davinciId: String,
+    collectorKey: String,
+    value: Any,
+    file: StaticString = #filePath,
+    line: UInt = #line,
+    assertions: ([[String: Any]]) -> Void
+  ) {
+    let resolveExpectation = expectation(description: "validate resolve")
+    let rejectExpectation = expectation(description: "validate reject not called")
+    rejectExpectation.isInverted = true
+    let capture = ErrorsCaptureBox()
+
+    RNPingDavinciCommon.validate(
+      davinciId,
+      collectorKey: collectorKey,
+      input: ["collectors": [["key": collectorKey, "value": value]]],
+      resolver: { errors in
+        capture.set(errors)
+        Task { @MainActor in resolveExpectation.fulfill() }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in rejectExpectation.fulfill() }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 1.0)
+    assertions(capture.value as? [[String: Any]] ?? [])
   }
 
   /// Runs `pollDaVinci` against a `FakePollingCollector` that yields a single terminal
