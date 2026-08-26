@@ -7,6 +7,7 @@
 
 import type { DaVinciNextInput } from './config.types';
 import type {
+  DaVinciFieldValidationError,
   DaVinciNode,
   DaVinciPollStatusOptions,
   DaVinciUserSession,
@@ -56,6 +57,32 @@ export type DaVinciClient = {
    * @throws {DaVinciError} When value application or progression fails.
    */
   next: (input: DaVinciNextInput) => Promise<DaVinciNode>;
+
+  /**
+   * Validate one active collector without advancing the flow.
+   *
+   * @remarks
+   * This is a command-query operation, not a pure check: it writes `value`
+   * onto the live collector backing the in-progress submission, because
+   * neither native SDK exposes a primitive that validates a candidate value
+   * without first setting it on the collector. The value passed in *will* be
+   * part of what a subsequent `next()` submits, even if the caller only
+   * intended a speculative/preview check.
+   *
+   * An empty result array means either "no validation errors" or "this
+   * collector has no validator" — it is not a positive confirmation that the
+   * value was actually checked.
+   *
+   * @param collectorKey - Collector key to update and validate.
+   * @param value - Candidate value to apply to the collector before validating.
+   * @returns Validation errors for the collector, or an empty array when valid
+   *   (or when the collector has no validator).
+   * @throws {DaVinciError} When value application or validation fails.
+   */
+  validate: (
+    collectorKey: string,
+    value: unknown,
+  ) => Promise<DaVinciFieldValidationError[]>;
 
   /**
    * Resolve the active user session.

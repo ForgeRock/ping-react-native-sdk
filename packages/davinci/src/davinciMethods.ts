@@ -8,6 +8,7 @@
 import NativeRNPingDavinci from './NativeRNPingDavinci';
 import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
 import type {
+  DaVinciFieldValidationError,
   DaVinciNextInput,
   DaVinciNode,
   DaVinciUserSession,
@@ -94,6 +95,42 @@ export async function nextDaVinci(
       );
     }
     return node as unknown as DaVinciNode;
+  } catch (error) {
+    throw DaVinciError.from(error);
+  }
+}
+
+/**
+ * Validate one active collector without advancing the flow.
+ *
+ * @param davinciId - Native DaVinci instance identifier.
+ * @param collectorKey - Collector key to update and validate.
+ * @param value - Candidate value to apply to the collector before validating.
+ * @returns Validation errors for the collector, or an empty array when valid.
+ * @throws {DaVinciError} When value application or validation fails.
+ */
+export async function validateDaVinci(
+  davinciId: string,
+  collectorKey: string,
+  value: unknown,
+): Promise<DaVinciFieldValidationError[]> {
+  try {
+    const input: DaVinciNextInput = {
+      collectors: [{ key: collectorKey, value }],
+    };
+    const result = await NativeRNPingDavinci.validate(
+      davinciId,
+      collectorKey,
+      input,
+    );
+    if (!Array.isArray(result)) {
+      throw new DaVinciError(
+        '[@ping-identity/rn-davinci] Native bridge returned a malformed validation payload.',
+        'DAVINCI_VALIDATE_ERROR',
+        'native_error',
+      );
+    }
+    return result as DaVinciFieldValidationError[];
   } catch (error) {
     throw DaVinciError.from(error);
   }

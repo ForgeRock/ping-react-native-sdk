@@ -16,6 +16,8 @@ import type {
   PollingCollector,
   PollingStatus,
   UnsupportedDaVinciField,
+  DaVinciFormValue,
+  DaVinciFieldValidationError,
 } from '@ping-identity/rn-davinci';
 import { commonStyles } from '../../../../src/styles/common';
 import { colors } from '../../../../src/styles/colors';
@@ -43,6 +45,17 @@ export type DaVinciContinueNodePanelProps = {
    * Submits the current form by calling `next` with the planned payload.
    */
   onSubmit: () => void;
+  /**
+   * Validates the current value for a collector.
+   *
+   * @param collectorKey Collector key to validate.
+   * @param value Current rendered value for the collector.
+   * @returns Validation errors for the collector.
+   */
+  onValidate: (
+    collectorKey: string,
+    value: DaVinciFormValue,
+  ) => Promise<DaVinciFieldValidationError[]>;
   /**
    * Submits a flow collector (`SUBMIT_BUTTON`, `ACTION`, `FLOW_BUTTON`,
    * `FLOW_LINK`) by key.
@@ -165,6 +178,7 @@ export default function DaVinciContinueNodePanel(
     form,
     loading,
     onSubmit,
+    onValidate,
     onFlowAction,
     onIdpAuthorize,
     onPollStatus,
@@ -195,6 +209,7 @@ export default function DaVinciContinueNodePanel(
           collector={collector}
           value={values[collector.key]}
           onChange={next => setValue(collector.key, next)}
+          onValidate={onValidate}
           onSubmit={onSubmit}
           onFlowAction={onFlowAction}
           onIdpAuthorize={onIdpAuthorize}

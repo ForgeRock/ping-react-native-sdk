@@ -70,6 +70,8 @@ public final class RNPingDavinciCommon: NSObject {
   public typealias VoidResolver = @Sendable () -> Void
   /// Promise resolver for poll subscription payloads.
   public typealias PollResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for validation error array payloads.
+  public typealias ErrorsResolver = @Sendable (NSArray) -> Void
   /// Promise rejecter closure type used by the DaVinci Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -242,6 +244,94 @@ public final class RNPingDavinciCommon: NSObject {
       stateStore.setNode(davinciId: davinciId, node: nextNode)
       let logger = await resolveLogger(davinciId)
       promise.resolve(DaVinciNodeMapper.mapNode(nextNode, logger: logger))
+    }
+  }
+
+  /// Validates a single collector value in isolation, without submitting the form via `next()`.
+  ///
+  /// Applies `value` onto the live collector identified by `collectorKey` using the same
+  /// `DaVinciCollectorValueApplier.apply()` machinery `next()` uses, then runs native
+  /// `Validator.validate()` on that collector and returns its errors.
+  ///
+  /// - Remarks: This is a command-query hybrid, not a pure check — applying `value` mutates the
+  ///   live collector backing the in-progress submission, so it becomes part of what a
+  ///   subsequent `next()` call submits even if the caller only intended a speculative preview.
+  ///   An empty result array means either "no validation errors" or "this collector has no
+  ///   `Validator`" — not a positive confirmation the value was checked.
+  ///
+  /// - Note: iOS naturally serializes concurrent bridge calls onto the `@MainActor`, so a
+  ///   `validate()` call cannot race a concurrent `next()`/`validate()` call mutating the same
+  ///   node's collectors. Android has no equivalent guard (`launchBridge` runs on the shared
+  ///   `Dispatchers.Default` pool with no per-`davinciId` mutex/actor) — see the Android
+  ///   `RNPingDavinciCommon.validate` implementation for the documented trade-off.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - collectorKey: Key of the collector to validate.
+  ///   - input: Bridge input in the same `{ collectors: [{ key, value }] }` shape `next()`
+  ///     uses, containing exactly the single collector entry to validate.
+  ///   - resolver: Promise resolver called with the collector's validation error array.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func validate(
+    _ davinciId: String,
+    collectorKey: String,
+    input: NSDictionary,
+    resolver: @escaping ErrorsResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSArray>(resolver: resolver, rejecter: rejecter)
+    let mutations: [DaVinciCollectorValueApplier.CollectorMutation]
+    do {
+      mutations = try DaVinciCollectorValueApplier.parseInput(input)
+    } catch {
+      promise.reject(DaVinciErrorMapper.map(error, code: .validateError))
+      return
+    }
+
+    Task { @MainActor in
+      guard let currentNode = stateStore.activeContinueNode(for: davinciId) else {
+        promise.reject(
+          DaVinciErrorMapper.state(
+            code: .stateError,
+            message: "No active ContinueNode found for davinci id=\(davinciId)"
+          )
+        )
+        return
+      }
+
+      do {
+        _ = try DaVinciCollectorValueApplier.apply(currentNode, mutations: mutations)
+      } catch {
+        promise.reject(DaVinciErrorMapper.map(error, code: .validateError))
+        return
+      }
+
+      // apply() succeeded above, so collectorKey is guaranteed to resolve to a collector
+      // on currentNode — the nil branches below are unreachable in practice.
+      guard let collector = currentNode.collectors.first(where: { $0.id == collectorKey }) else {
+        promise.resolve([] as NSArray)
+        return
+      }
+
+      guard let validator = collector as? Validator else {
+        promise.resolve([] as NSArray)
+        return
+      }
+
+      let validationErrors = validator.validate()
+      let encodedErrors: [[String: Any]]
+      if let booleanCollector = collector as? BooleanCollector,
+         booleanCollector.required,
+         !booleanCollector.value {
+        // TODO-SDK-PARITY: iOS emits REGEX_ERROR for a required unchecked Boolean
+        // when errorMessage is present, while Android emits REQUIRED. Normalize
+        // the bridge contract to the platform-independent REQUIRED error.
+        encodedErrors = [["code": "REQUIRED"]]
+      } else {
+        encodedErrors = DaVinciNodeMapper.encodeValidationErrors(validationErrors)
+      }
+      promise.resolve(encodedErrors as NSArray)
     }
   }
 
@@ -751,20 +841,38 @@ private final class DaVinciStateStore: @unchecked Sendable {
   /// Android bridge: this clears `PasswordCollector.value` and `FlowCollector.value`
   /// before the new node takes over.
   ///
+  /// - Remarks: When `node` is an `ErrorNode` carrying a retryable continuation (native
+  ///   `ErrorNode.continueNode`), that continuation is kept as the active `ContinueNode`
+  ///   instead of being closed — matching native SDK behavior, where `validate()` and
+  ///   `next()` are independent operations and a recoverable error does not discard the
+  ///   in-progress form. The continuation is only closed once a genuinely different
+  ///   `ContinueNode` (or a terminal `SuccessNode`/`FailureNode`) displaces it.
+  ///
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.
   ///   - node: Latest node received from the DaVinci workflow.
   func setNode(davinciId: String, node: Node) {
     lock.lock()
     nodeMap[davinciId] = node
+    let retainedContinueNode: ContinueNode?
+    switch node {
+    case let continueNode as ContinueNode:
+      retainedContinueNode = continueNode
+    case let errorNode as ErrorNode:
+      retainedContinueNode = errorNode.continueNode
+    default:
+      retainedContinueNode = nil
+    }
     let previousContinueNode: ContinueNode?
-    if let continueNode = node as? ContinueNode {
-      previousContinueNode = continueNodeMap.updateValue(continueNode, forKey: davinciId)
+    if let retainedContinueNode {
+      previousContinueNode = continueNodeMap.updateValue(retainedContinueNode, forKey: davinciId)
     } else {
       previousContinueNode = continueNodeMap.removeValue(forKey: davinciId)
     }
     lock.unlock()
-    previousContinueNode?.close()
+    if previousContinueNode !== retainedContinueNode {
+      previousContinueNode?.close()
+    }
   }
 
   /// Resolves active continue node for a DaVinci id.

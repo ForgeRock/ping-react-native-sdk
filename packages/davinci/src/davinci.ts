@@ -16,6 +16,7 @@ import {
   refreshDaVinciSession,
   revokeDaVinciSession,
   startDaVinci,
+  validateDaVinci,
 } from './davinciMethods';
 import { DaVinciEvents } from './events';
 import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
@@ -299,6 +300,34 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
         return node;
       } catch (error) {
         logError('DaVinci next failed', error, { davinciId: id });
+        throw error;
+      }
+    },
+
+    /**
+     * Validates one active collector without advancing the flow.
+     *
+     * @param collectorKey - Collector key to update and validate.
+     * @param value - Candidate value to apply to the collector before validating.
+     * @returns Validation errors for the collector, or an empty array when valid.
+     * @throws {DaVinciError} When value application or validation fails.
+     */
+    async validate(collectorKey: string, value: unknown) {
+      const id = await ensureConfigured();
+      logDebug('DaVinci validate requested', { davinciId: id, collectorKey });
+      try {
+        const errors = await validateDaVinci(id, collectorKey, value);
+        logInfo('DaVinci validate succeeded', {
+          davinciId: id,
+          collectorKey,
+          errorCount: errors.length,
+        });
+        return errors;
+      } catch (error) {
+        logError('DaVinci validate failed', error, {
+          davinciId: id,
+          collectorKey,
+        });
         throw error;
       }
     },

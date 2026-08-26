@@ -425,6 +425,26 @@ class DaVinciCollectorValueApplierTest {
     }
 
     @Test
+    fun applyPhoneNumberCollectorSetsExtensionField() {
+        val collector = PhoneNumberCollector()
+        val node = nodeWith(collector)
+        val key = collector.id()
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                key to deviceMap(
+                    "countryCode" to "+1",
+                    "phoneNumber" to "5550001234",
+                    "extension" to "99"
+                )
+            )
+        )
+
+        assertEquals("99", collector.extension)
+    }
+
+    @Test
     fun applyBooleanCollectorSetsTrueValue() {
         val collector = BooleanCollector().apply {
             init(buildJsonObject {

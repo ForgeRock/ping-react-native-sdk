@@ -34,41 +34,50 @@ export type BaseCollector = {
 };
 
 /**
- * Collector-level validation error returned by the native SDK's `validate()` method.
+ * Structured validation error mapped from the native SDK's `validate()` result.
  *
  * @remarks
- * In 2.0.1 the bridge emits only `REQUIRED` (iOS only) and `REGEX_ERROR` (both platforms).
- * TODO-SDK-FUTURE-SUPPORT: Password-policy cases (`INVALID_LENGTH`, `UNIQUE_CHARACTER`,
- * `MAX_REPEAT`, `MIN_CHARACTERS`) exist in both the iOS and Android SDKs but their
- * policy-validation blocks are behind `// TODO` markers in `PasswordCollector.validate()`
- * (iOS `PasswordCollector.swift:49-81`, Android `PasswordCollector.kt:63-91`) and are
- * never emitted at runtime — add them when both SDKs remove those blocks.
+ * The native bridge maps `REQUIRED`, `REGEX_ERROR`, `INVALID_LENGTH`,
+ * `UNIQUE_CHARACTER`, `MAX_REPEAT`, and `MIN_CHARACTERS` directly. Password
+ * policy variants include native constraint values, so consumers do not need to
+ * parse localized messages: `INVALID_LENGTH` includes `min` and `max`,
+ * `UNIQUE_CHARACTER` includes `min`, `MAX_REPEAT` includes `max`, and
+ * `MIN_CHARACTERS` includes `character` and `min`.
+ *
+ * Use {@link DaVinciClient.validate} to check a collector's current value
+ * on demand (e.g. on-blur) without advancing the flow.
  *
  * @public
  */
 export type DaVinciFieldValidationError =
   | { code: 'REQUIRED' }
-  | { code: 'REGEX_ERROR'; message: string };
+  | { code: 'REGEX_ERROR'; message: string }
+  | { code: 'INVALID_LENGTH'; min: number; max: number }
+  | { code: 'UNIQUE_CHARACTER'; min: number }
+  | { code: 'MAX_REPEAT'; max: number }
+  | { code: 'MIN_CHARACTERS'; character: string; min: number };
 
 /**
- * Validation rule attached to text and select collectors, including the current
- * evaluation result from the native SDK's `validate()` call.
+ * Server-provided validation rule attached to a validated field collector.
+ *
+ * @remarks
+ * The bridge maps the server regex to `regex`. Use {@link DaVinciClient.validate}
+ * to check a collector's current value on demand.
  *
  * @public
  */
 export type DaVinciValidation = {
-  /** Regular expression pattern the value must satisfy. */
+  /** Regular expression pattern the server requires the value to satisfy. */
   regex: string;
   /**
-   * Validation errors produced by the native SDK's `validate()` call on the
-   * current collector value. Empty when the value is valid; absent when
-   * `validate()` has not yet been called.
+   * Optional collector-level validation data when supplied by a native mapping.
+   * Use {@link DaVinciClient.validate} for on-demand validation results.
    */
   errors?: DaVinciFieldValidationError[];
 };
 
 /**
- * Rich-content payload for label and text collectors.
+ * Rich-content payload for label and boolean collectors.
  *
  * @public
  */
@@ -91,9 +100,8 @@ export type RichContent = {
  * Password policy constraints associated with a {@link PasswordCollector}.
  *
  * @remarks
- * The bridge reads this from `continueNode.input.form.components.fields[]`
- * because the SDK's own `passwordPolicy()` method targets the wrong JSON path
- * in 2.0.1 (it reads from `continueNode.input["passwordPolicy"]`).
+ * The bridge reads this through the native SDK's `passwordPolicy()` accessor,
+ * which handles both field-level and node-level policy payloads.
  *
  * @public
  */
@@ -190,13 +198,15 @@ export type TextCollector = BaseCollector & {
  * Password input collector.
  *
  * @remarks
- * `PASSWORD_VERIFY` is a password-confirmation variant of the same collector class.
+ * `PASSWORD_VERIFY` is a password-confirmation variant of the same collector
+ * class. Password values are write-only: pass them to `next()`. Use
+ * {@link DaVinciClient.validate} for on-demand validation of the current value.
  *
  * @public
  */
 export type PasswordCollector = BaseCollector & {
   type: 'PASSWORD' | 'PASSWORD_VERIFY';
-  /** Current password value (always `""` in bridge output — cleared before serialisation). */
+  /** Current password value (always `""` in bridge output because the bridge clears it before serialization). */
   value: string;
   /**
    * Whether the native collector clears its value when `close()` is called on node exit.
@@ -206,13 +216,15 @@ export type PasswordCollector = BaseCollector & {
    * across node transitions (e.g. validation-error retry loops).
    */
   clearPassword?: boolean;
+  /** Optional server-provided regular-expression validation rule. */
+  validation?: DaVinciValidation;
   /**
-   * Optional password policy constraints.
+   * Optional password policy constraints for rendering password requirements.
    *
    * @remarks
-   * Present only when the server includes a `passwordPolicy` object in the field
-   * definition. The bridge reads it directly from the raw JSON because the SDK's
-   * `passwordPolicy()` method targets the wrong path in 2.0.1.
+   * The bridge reads the native `passwordPolicy()` accessor, which uses a
+   * field-level policy when available and otherwise falls back to a node-level
+   * policy.
    */
   passwordPolicy?: PasswordPolicy;
 };
@@ -244,11 +256,10 @@ export type FlowCollector = BaseCollector & {
  * Label (read-only content) collector.
  *
  * @remarks
- * Does not extend {@link BaseCollector} — `LabelCollector` does not implement
- * `FieldCollector` in the native SDK and therefore has no `label` or `required`.
- *
- * `richContent` is absent from the 2.0.1 iOS/Android SDK sources (`LabelCollector`
- * has only `key` and `content`). Add it when the SDK version that includes it is adopted.
+ * Does not extend {@link BaseCollector}: `LabelCollector` does not implement
+ * `FieldCollector` in the native SDK and therefore has no `label`, `required`,
+ * or mutable value. Render `content` when `richContent` is absent; otherwise,
+ * use its template content and named replacements, including link metadata.
  *
  * @public
  */
@@ -258,7 +269,13 @@ export type LabelCollector = {
   type: 'LABEL';
   /** Raw display content for this label. */
   content: string;
-  // TODO-SDK-FUTURE-SUPPORT: add richContent?: RichContent when the SDK version that exposes it on LabelCollector is adopted
+  /**
+   * Optional rich content with template text and named link replacements.
+   *
+   * @remarks
+   * Present when the server includes a `richContent` object in the field definition.
+   */
+  richContent?: RichContent;
   /**
    * Raw server-side field JSON from `node.input.form.components.fields[]`.
    *
@@ -300,9 +317,12 @@ export type MultiSelectCollector = BaseCollector & {
  * Phone number input collector.
  *
  * @remarks
- * `extension`, `showExtension`, and `extensionLabel` do not exist in the 2.0.1
- * Android/iOS SDK sources and are therefore absent from this contract.
- * TODO-SDK-FUTURE-SUPPORT: add `extension`, `showExtension`, and `extensionLabel` when the SDK version that exposes it.
+ * `countryCode`, `phoneNumber`, and optional `extension` are mutable values
+ * passed to `next()`. `defaultCountryCode`, `validatePhoneNumber`,
+ * `showExtension`, and `extensionLabel` are server-provided configuration.
+ * Render an extension control when `showExtension` is `true`; the submitted
+ * extension can still be omitted.
+ *
  * @public
  */
 export type PhoneNumberCollector = BaseCollector & {
@@ -315,6 +335,12 @@ export type PhoneNumberCollector = BaseCollector & {
   countryCode: string;
   /** Currently entered phone number (mutable). */
   phoneNumber: string;
+  /** Currently entered phone extension (mutable, optional). */
+  extension?: string;
+  /** Whether the phone extension input should be displayed (read-only). */
+  showExtension: boolean;
+  /** Label for the phone extension input (read-only). */
+  extensionLabel: string;
 };
 
 /**
@@ -374,12 +400,9 @@ export type ProtectCollector = {
  * Single checkbox or toggle collector.
  *
  * @remarks
- * Corresponds to the native `BOOLEAN` inputType / `SINGLE_CHECKBOX` server type.
- * Extends {@link BaseCollector} — has `key`, `label`, and `required`.
- *
- * When `required` is `true` and `value` is `false`, the native SDK's `validate()`
- * emits a validation error using `errorMessage`. JS consumers should surface
- * `errorMessage` to the user in that case.
+ * Corresponds to the native `BOOLEAN` inputType / `SINGLE_CHECKBOX` server type
+ * and extends {@link BaseCollector}. `errorMessage` is the native display
+ * message for a required unchecked field.
  *
  * @public
  */

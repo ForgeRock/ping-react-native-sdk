@@ -24,6 +24,8 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   public typealias VoidResolver = @Sendable () -> Void
   /// Promise resolver for poll subscription payloads.
   public typealias PollResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for validation error array payloads.
+  public typealias ErrorsResolver = @Sendable (NSArray) -> Void
   /// Promise rejecter closure type used by the DaVinci Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -85,6 +87,31 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
     rejecter: @escaping PromiseRejecter
   ) {
     RNPingDavinciCommon.next(davinciId, input: input, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Validates a single collector value without submitting the form via `next()`.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - collectorKey: Key of the collector to validate.
+  ///   - input: Bridge input in the same `{ collectors: [{ key, value }] }` shape `next()` uses.
+  ///   - resolver: Promise resolver called with the collector's validation error array.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(validate:collectorKey:input:resolver:rejecter:)
+  public func validate(
+    _ davinciId: String,
+    collectorKey: String,
+    input: NSDictionary,
+    resolver: @escaping ErrorsResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingDavinciCommon.validate(
+      davinciId,
+      collectorKey: collectorKey,
+      input: input,
+      resolver: resolver,
+      rejecter: rejecter
+    )
   }
 
   /// Resolves session details for an active DaVinci user.
