@@ -79,7 +79,7 @@ internal object OathErrorMapper {
       type = ErrorType.STATE_ERROR,
       error = OathErrorCodes.OATH_POLICY_VIOLATION,
       message = e.message,
-      extras = mapOf("violatedPolicy" to e.policy.name)
+      extras = e.policy?.getName()?.let { mapOf("violatedPolicy" to it) } ?: emptyMap()
     )
     is MfaClientNotInitializedException -> GenericError(
       type = ErrorType.STATE_ERROR,
