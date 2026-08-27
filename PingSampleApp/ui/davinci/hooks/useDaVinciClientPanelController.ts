@@ -13,12 +13,18 @@ import {
   type DaVinciError,
   type DaVinciFormResult,
   type DaVinciNode,
-  type IdpCollector,
   type PollingCollector,
   type PollingStatus,
 } from '@ping-identity/rn-davinci';
-import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
-import { collectProtect } from '@ping-identity/rn-protect';
+import {
+  createExternalIdpClient,
+  socialLoginCollectorType,
+  type IdpCollector,
+} from '@ping-identity/rn-external-idp';
+import {
+  collectProtect,
+  protectCollectorType,
+} from '@ping-identity/rn-protect';
 import { logger } from '@ping-identity/rn-logger';
 import Config from 'react-native-config';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
@@ -125,7 +131,10 @@ export function useDaVinciClientPanelController(
     [externalIdpLogger],
   );
   const form = useDaVinciForm(node, {
-    handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON', 'PROTECT']),
+    handledCollectorTypes: new Set([
+      socialLoginCollectorType,
+      protectCollectorType,
+    ]),
   });
 
   const [idpError, setIdpError] = useState<string | null>(null);

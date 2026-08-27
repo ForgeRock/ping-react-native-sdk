@@ -21,7 +21,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
+#if __has_include("RNPingPush-Swift.h")
 #import "RNPingPush-Swift.h"
+#else
+#import <RNPingPush/RNPingPush-Swift.h>
+#endif
 
 @implementation RNPingPush {
   NSString *_pendingAPNsToken;

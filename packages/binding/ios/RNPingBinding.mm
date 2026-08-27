@@ -6,8 +6,6 @@
  */
 
 #import <string>
-// TODO(cleanup): Remove this scaffold import in a cross-module iOS bridge cleanup pass.
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingBinding.h"
 
 #import <Foundation/Foundation.h>
@@ -22,7 +20,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
+#if __has_include("RNPingBinding-Swift.h")
 #import "RNPingBinding-Swift.h"
+#else
+#import <RNPingBinding/RNPingBinding-Swift.h>
+#endif
 #import "RNPingBindingEventEmitterGate.h"
 
 @implementation RNPingBinding

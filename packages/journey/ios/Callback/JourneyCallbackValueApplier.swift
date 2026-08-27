@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import PingFido
 import PingJourney
 import PingJourneyPlugin
 import PingOrchestrate
@@ -232,11 +231,10 @@ enum JourneyCallbackValueApplier {
   /// - Parameter callback: Runtime callback instance.
   /// - Returns: Normalized callback type.
   private static func callbackLookupType(_ callback: Any) -> String {
-    if callback is FidoAuthenticationCallback {
-      return "FidoAuthenticationCallback"
-    }
-    if callback is FidoRegistrationCallback {
-      return "FidoRegistrationCallback"
+    // Detect FIDO subclasses by class name to avoid importing PingFido.
+    let typeName = String(describing: type(of: callback))
+    if typeName == "FidoAuthenticationCallback" || typeName == "FidoRegistrationCallback" {
+      return normalizedCallbackType(typeName)
     }
     if let metadata = callback as? MetadataCallback,
        let fidoType = fidoCallbackType(from: metadata) {

@@ -30,25 +30,29 @@ public enum ErrorType: String {
 /// - `type` classifies the error for app-level branching.
 /// - `error` is a stable, module-specific code (for example, BROWSER_OPEN_ERROR).
 /// - `message`, `code`, and `status` provide extra diagnostics when available.
+/// - `extras` carries module-specific key/value pairs serialised into the JS userInfo map.
 public struct GenericError {
   public let type: ErrorType
   public let error: String
   public let message: String?
   public let code: Any?
   public let status: Any?
+  public let extras: [String: String]?
 
   public init(
     type: ErrorType,
     error: String,
     message: String? = nil,
     code: Any? = nil,
-    status: Any? = nil
+    status: Any? = nil,
+    extras: [String: String]? = nil
   ) {
     self.type = type
     self.error = error
     self.message = message
     self.code = code
     self.status = status
+    self.extras = extras
   }
 
   public func asDictionary() -> NSDictionary {
@@ -64,6 +68,7 @@ public struct GenericError {
     if let status {
       payload["status"] = status
     }
+    extras?.forEach { payload[$0.key] = $0.value }
     return payload
   }
 

@@ -37,7 +37,6 @@ class DaVinciConfigParserTest {
         assertNull(payload.storageId)
         assertNull(payload.loggerId)
         assertNull(payload.timeout)
-        assertNull(payload.protect)
     }
 
     @Test
@@ -113,72 +112,6 @@ class DaVinciConfigParserTest {
         }
 
         DaVinciConfigParser.parse(config)
-    }
-
-    @Test
-    fun parseProtectAbsentReturnsNullProtect() {
-        val config = JavaOnlyMap().apply {
-            putString("discoveryEndpoint", "https://example.com/.well-known/openid-configuration")
-            putString("clientId", "rn-client")
-            putString("redirectUri", "com.example.app://oauth2redirect")
-        }
-
-        val payload = DaVinciConfigParser.parse(config)
-
-        assertNull(payload.protect)
-    }
-
-    @Test
-    fun parseProtectDefaultsAreMapped() {
-        val config = JavaOnlyMap().apply {
-            putString("discoveryEndpoint", "https://example.com/.well-known/openid-configuration")
-            putString("clientId", "rn-client")
-            putString("redirectUri", "com.example.app://oauth2redirect")
-            putMap("protect", JavaOnlyMap())
-        }
-
-        val payload = DaVinciConfigParser.parse(config)
-        val protect = payload.protect!!
-
-        assertNull(protect.envId)
-        assertTrue(protect.isBehavioralDataCollection)
-        assertFalse(protect.isLazyMetadata)
-        assertNull(protect.customHost)
-        assertFalse(protect.isConsoleLogEnabled)
-        assertTrue(protect.deviceAttributesToIgnore.isEmpty())
-        assertFalse(protect.pauseBehavioralDataOnSuccess)
-        assertFalse(protect.resumeBehavioralDataOnStart)
-    }
-
-    @Test
-    fun parseProtectAllFieldsMapped() {
-        val config = JavaOnlyMap().apply {
-            putString("discoveryEndpoint", "https://example.com/.well-known/openid-configuration")
-            putString("clientId", "rn-client")
-            putString("redirectUri", "com.example.app://oauth2redirect")
-            putMap("protect", JavaOnlyMap().apply {
-                putString("envId", "env-123")
-                putBoolean("isBehavioralDataCollection", false)
-                putBoolean("isLazyMetadata", true)
-                putString("customHost", "https://custom.host")
-                putBoolean("isConsoleLogEnabled", true)
-                putArray("deviceAttributesToIgnore", JavaOnlyArray.of("deviceId", "screen"))
-                putBoolean("pauseBehavioralDataOnSuccess", true)
-                putBoolean("resumeBehavioralDataOnStart", true)
-            })
-        }
-
-        val payload = DaVinciConfigParser.parse(config)
-        val protect = payload.protect!!
-
-        assertEquals("env-123", protect.envId)
-        assertFalse(protect.isBehavioralDataCollection)
-        assertTrue(protect.isLazyMetadata)
-        assertEquals("https://custom.host", protect.customHost)
-        assertTrue(protect.isConsoleLogEnabled)
-        assertEquals(listOf("deviceId", "screen"), protect.deviceAttributesToIgnore)
-        assertTrue(protect.pauseBehavioralDataOnSuccess)
-        assertTrue(protect.resumeBehavioralDataOnStart)
     }
 
     @Test(expected = IllegalArgumentException::class)

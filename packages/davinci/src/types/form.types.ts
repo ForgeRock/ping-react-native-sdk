@@ -24,7 +24,7 @@ import type { DaVinciCollector, DaVinciNode } from './node.types';
  *                            without waiting for other field values
  *                            (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
  * - `integration_required` — collector is handled entirely by an external package
- *                            (e.g. `rn-external-idp` driving `IdpCollector`).
+ *                            (e.g. `rn-external-idp` driving `an external integration collector`).
  *                            The bridge serialises the collector data; the external
  *                            package performs its action and then calls `next()`.
  *                            No base-registry collector maps to this mode in 2.0.1 —
@@ -196,14 +196,12 @@ export type DaVinciFormMeta = {
    * Stub for parity with {@link JourneyFormMeta.hasAutoCapable}. No collector
    * type in the DaVinci 2.0.1 iOS/Android SDKs resolves to an `auto_capable`
    * execution mode (see `resolveExecutionMode` in `collectorHelpers.ts`) — this
-   * flag will be wired to live collector presence by future IdP/Protect
-   * integration stories (SDKS-5128 and follow-ons) once such a collector type
-   * is registered.
+   * flag will be wired to live collector presence by future integration
+   * stories once such a collector type is registered.
    */
   hasAutoCapable: boolean;
   /**
-   * True when at least one collector requires an external package integration
-   * (e.g. `rn-external-idp` handling an `IdpCollector`).
+   * True when at least one collector requires an external package integration.
    */
   hasIntegrationRequired: boolean;
   /** True when at least one unsupported (unknown-type) collector is present. */
@@ -227,7 +225,7 @@ export type DaVinciFormValuesUpdater =
 export type DaVinciFormOptions = {
   /**
    * Collector types that the app has already handled via native integration
-   * (for example IdP, FIDO, or Protect). When provided, matching
+   * (for example IdP or FIDO). When provided, matching
    * `integration_required` collectors are excluded from submit issues so that
    * `canSubmit` reflects true readiness.
    */

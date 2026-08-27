@@ -78,7 +78,8 @@ internal object OathErrorMapper {
     is MfaPolicyViolationException -> GenericError(
       type = ErrorType.STATE_ERROR,
       error = OathErrorCodes.OATH_POLICY_VIOLATION,
-      message = e.message
+      message = e.message,
+      extras = mapOf("violatedPolicy" to e.policy.name)
     )
     is MfaClientNotInitializedException -> GenericError(
       type = ErrorType.STATE_ERROR,

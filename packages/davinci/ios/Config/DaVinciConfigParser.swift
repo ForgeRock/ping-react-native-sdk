@@ -55,13 +55,6 @@ enum DaVinciConfigParser {
       config["additionalParameters"] as? NSDictionary
     )
 
-    let protect: ProtectLifecyclePayload?
-    if let protectDict = config["protect"] as? NSDictionary {
-      protect = parseProtectLifecyclePayload(protectDict)
-    } else {
-      protect = nil
-    }
-
     return DaVinciClientPayload(
       discoveryEndpoint: discoveryEndpoint,
       clientId: clientId,
@@ -79,37 +72,7 @@ enum DaVinciConfigParser {
       uiLocales: uiLocales,
       acrValues: acrValues,
       refreshThreshold: refreshThreshold,
-      additionalParameters: additionalParameters,
-      protect: protect
-    )
-  }
-
-  /// Parses a protect lifecycle configuration from a JS bridge dict.
-  ///
-  /// - Parameter dict: Raw protect config payload.
-  /// - Returns: Parsed `ProtectLifecyclePayload` with safe defaults for missing fields.
-  private static func parseProtectLifecyclePayload(_ dict: NSDictionary) -> ProtectLifecyclePayload {
-    let envId = readOptionalString(dict["envId"])
-    let isBehavioralDataCollection = (dict["isBehavioralDataCollection"] as? Bool) ?? true
-    let isLazyMetadata = (dict["isLazyMetadata"] as? Bool) ?? false
-    let customHost = readOptionalString(dict["customHost"])
-    let isConsoleLogEnabled = (dict["isConsoleLogEnabled"] as? Bool) ?? false
-    let deviceAttributesToIgnore: [String] = ReadableMapUtils.readStringArray(
-      dict["deviceAttributesToIgnore"] as? NSArray
-    )
-    let pauseBehavioralDataOnSuccess = (dict["pauseBehavioralDataOnSuccess"] as? Bool) ?? false
-    let resumeBehavioralDataOnStart = (dict["resumeBehavioralDataOnStart"] as? Bool) ?? false
-    let loggerId = readOptionalString(dict["loggerId"])
-    return ProtectLifecyclePayload(
-      envId: envId,
-      isBehavioralDataCollection: isBehavioralDataCollection,
-      isLazyMetadata: isLazyMetadata,
-      customHost: customHost,
-      isConsoleLogEnabled: isConsoleLogEnabled,
-      deviceAttributesToIgnore: deviceAttributesToIgnore,
-      pauseBehavioralDataOnSuccess: pauseBehavioralDataOnSuccess,
-      resumeBehavioralDataOnStart: resumeBehavioralDataOnStart,
-      loggerId: loggerId
+      additionalParameters: additionalParameters
     )
   }
 

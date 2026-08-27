@@ -947,9 +947,9 @@ class RNPingDavinciCommonTest {
 
     private fun registerDaVinciHandle(workflow: Workflow): String {
         val clazz = Class.forName("com.pingidentity.rndavinci.RNPingDavinciCommon\$DaVinciHandle")
-        val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java, String::class.java)
+        val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java)
         ctor.isAccessible = true
-        val handle = ctor.newInstance(workflow, null, null) as NativeHandle
+        val handle = ctor.newInstance(workflow, null) as NativeHandle
         return CoreRuntime.davinciRegistry.register(handle)
     }
 

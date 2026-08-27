@@ -302,7 +302,7 @@ The following collector types are supported on Android and iOS:
 | `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
 | `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
 
-Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Protect) are
+Integration-dependent collectors (for example, social IdP or FIDO) are
 surfaced in node payloads and require client-side integration before submission
 (`executionMode: 'integration_required'`).
 

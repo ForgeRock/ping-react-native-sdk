@@ -25,6 +25,7 @@ class RNPingExternalIdpPackage : BaseReactPackage() {
    * @return External IDP TurboModule instance when the name matches, otherwise null.
    */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
+    RNPingExternalIdpCommon.registerDaVinciSerializer()
     return if (name == RNPingExternalIdpModule.NAME) RNPingExternalIdpModule(reactContext) else null
   }
 

@@ -18,11 +18,13 @@ public final class RNPingProtectImpl: NSObject, Sendable {
   /// Creates a singleton bridge implementation instance.
   @objc private override init() {
     super.init()
+    RNPingProtectCommon.registerDaVinciSerializer()
   }
 
   // TODO: Add invalidate() to cancel in-flight Tasks and reset module state on React context teardown
-  // once PingOneProtect exposes a public cleanup/teardown API. Currently Protect has no public
-  // teardown method (internal reset() is not part of the public API).
+  // once PingOneProtect exposes a public cleanup/teardown API. Verified against PingOneProtect 2.1.0:
+  // the only available methods are initialize(), data(), pauseBehavioralData(), resumeBehavioralData().
+  // The internal reset() is not public. Re-evaluate when upgrading PingOneProtect.
 
   /// Runs Protect SDK data collection for the active `ProtectCollector` in a DaVinci flow.
   /// - Parameters:
@@ -95,4 +97,5 @@ public final class RNPingProtectImpl: NSObject, Sendable {
   ) {
     RNPingProtectCommon.resumeBehavioralData(config, resolver: resolve, rejecter: rejecter)
   }
+
 }

@@ -6,7 +6,6 @@
  */
 
 import Foundation
-import PingFido
 import PingJourney
 import PingJourneyPlugin
 import PingOrchestrate
@@ -226,10 +225,6 @@ enum JourneyNodeMapper {
   /// - Returns: Callback type string exposed to JavaScript.
   private static func callbackType(_ callback: Any) -> String {
     switch callback {
-    case is FidoRegistrationCallback:
-      return "FidoRegistrationCallback"
-    case is FidoAuthenticationCallback:
-      return "FidoAuthenticationCallback"
     case let metadata as MetadataCallback:
       if let fidoType = fidoCallbackType(from: metadata) {
         return fidoType
@@ -240,6 +235,11 @@ enum JourneyNodeMapper {
     case is ValidatedUsernameCallback:
       return "ValidatedCreateUsernameCallback"
     case let abstractCallback as AbstractCallback:
+      // Detect FIDO subclasses by class name to avoid importing PingFido.
+      let typeName = String(describing: type(of: abstractCallback))
+      if typeName == "FidoRegistrationCallback" || typeName == "FidoAuthenticationCallback" {
+        return typeName
+      }
       if let rawType = abstractCallback.json["type"] as? String, !rawType.isEmpty {
         switch rawType {
         case "IdPCallback": return "IdpCallback"

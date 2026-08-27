@@ -11,7 +11,11 @@
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
+#if __has_include("RNPingLogger-Swift.h")
 #import "RNPingLogger-Swift.h"
+#else
+#import <RNPingLogger/RNPingLogger-Swift.h>
+#endif
 
 /**
  * React Native bridge module for PingLogger functionality.
@@ -19,7 +23,7 @@
  * This class serves as the Objective-C bridge between React Native JavaScript
  * and the Swift implementation of the PingLogger module.
  */
-@implementation Logger
+@implementation RNPingLogger
 RCT_EXPORT_MODULE()
 
 /**

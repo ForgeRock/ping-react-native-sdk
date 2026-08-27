@@ -8,7 +8,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
-import type { IdpCollector } from '@ping-identity/rn-davinci';
+import type { IdpCollector } from '@ping-identity/rn-external-idp';
 import { commonStyles } from '../../../../src/styles/common';
 import { journeyFieldRendererStyles as fieldStyles } from '../../../../src/styles/journeyStyles';
 import { davinciFieldStyles } from '../../../../src/styles/davinciStyles';
@@ -81,7 +81,7 @@ export default function DaVinciIdpField(
   props: DaVinciIdpFieldProps,
 ): React.ReactElement {
   const { collector, loading, onIdpAuthorize } = props;
-  const idpCollector = collector as IdpCollector;
+  const idpCollector = collector as unknown as IdpCollector;
   const iconName = resolveIdpIcon(idpCollector.idpType);
   const brand = iconName ? BRAND_STYLES[iconName] : undefined;
 

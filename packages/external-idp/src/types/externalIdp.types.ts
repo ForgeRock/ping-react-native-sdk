@@ -10,6 +10,33 @@ import type { DaVinciInstance } from '@ping-identity/rn-types';
 import type { JourneyInstance } from '@ping-identity/rn-types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 
+/** External IdP collector type emitted by the DaVinci bridge. */
+export const socialLoginCollectorType = 'SOCIAL_LOGIN_BUTTON' as const;
+
+/**
+ * DaVinci collector supplied by the External IdP plugin.
+ *
+ * @public
+ */
+export type IdpCollector = {
+  /** Stable server-assigned IdP identifier used as the collector key. */
+  key: string;
+  /** External IdP collector type. */
+  type: typeof socialLoginCollectorType;
+  /** Human-readable button label. */
+  label: string;
+  /** Server IdP identifier, equal to `key`. */
+  idpId: string;
+  /** Provider type string such as `GOOGLE`, `FACEBOOK`, or `APPLE`. */
+  idpType: 'GOOGLE' | 'FACEBOOK' | 'APPLE' | string;
+  /** Whether the provider is enabled. */
+  idpEnabled: boolean;
+  /** Optional authentication URL supplied by the server. */
+  link?: string;
+  /** Original server-side field JSON when available. */
+  raw?: Record<string, unknown>;
+};
+
 /**
  * Result returned by `authorizeForJourney()`.
  *

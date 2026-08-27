@@ -6,7 +6,11 @@
  */
 
 #import <React/RCTBridgeModule.h>
+#if __has_include("RNPingDeviceProfile-Swift.h")
 #import "RNPingDeviceProfile-Swift.h"
+#else
+#import <RNPingDeviceProfile/RNPingDeviceProfile-Swift.h>
+#endif
 
 /// React Native bridge module for classic (non-TurboModule) access.
 @interface RNPingDeviceProfileClassic : NSObject <RCTBridgeModule>

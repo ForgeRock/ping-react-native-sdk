@@ -6,7 +6,6 @@
  */
  
 #import <string>
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingDeviceId.h"
 
 #import <Foundation/Foundation.h>
@@ -14,7 +13,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
+#if __has_include("RNPingDeviceId-Swift.h")
 #import "RNPingDeviceId-Swift.h"
+#else
+#import <RNPingDeviceId/RNPingDeviceId-Swift.h>
+#endif
 
 @implementation RNPingDeviceId
 RCT_EXPORT_MODULE()

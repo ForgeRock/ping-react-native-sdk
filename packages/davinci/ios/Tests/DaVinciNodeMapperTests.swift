@@ -11,7 +11,6 @@
 import XCTest
 import PingDavinci
 import PingDavinciPlugin
-import PingExternalIdP
 import PingOrchestrate
 @testable import RNPingDavinci
 
@@ -531,83 +530,14 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNotNil(collectors?[2]["raw"])
   }
 
-  // MARK: - IdpCollector serialization
+  // MARK: - Unsupported plugin field surfacing
 
-  func testMapIdpCollectorEmitsTypeIDP() {
-    let node = makeContinueNode(collectors: [
-      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Sign in with Google")
-    ])
-
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
-    let first = (payload["collectors"] as? [[String: Any]])?.first
-
-    XCTAssertEqual(first?["type"] as? String, DaVinciNodeMapper.socialLoginButton)
-  }
-
-  func testMapIdpCollectorEmitsIdpId() {
-    let node = makeContinueNode(collectors: [
-      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Sign in with Google")
-    ])
-
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
-    let first = (payload["collectors"] as? [[String: Any]])?.first
-
-    XCTAssertEqual(first?["idpId"] as? String, "google-idp-1")
-    XCTAssertEqual(first?["idpType"] as? String, "GOOGLE")
-    XCTAssertEqual(first?["label"] as? String, "Sign in with Google")
-    XCTAssertEqual(first?["idpEnabled"] as? Bool, true)
-  }
-
-  func testMapIdpCollectorUsesIdpIdAsKeyNotUUID() {
-    let node = makeContinueNode(collectors: [
-      makeIdpCollector(idpId: "facebook-idp-42", idpType: "FACEBOOK", label: "Sign in with Facebook")
-    ])
-
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
-    let first = (payload["collectors"] as? [[String: Any]])?.first
-
-    // key must equal idpId, NOT the UUID returned by IdpCollector.id
-    XCTAssertEqual(first?["key"] as? String, "facebook-idp-42")
-  }
-
-  func testMapIdpCollectorEmitsLinkWhenPresent() {
-    let href = "https://auth.pingone.com/connections/idp-1/loginFirstFactor?interactionId=abc"
-    let node = makeContinueNode(collectors: [
-      makeIdpCollector(idpId: "apple-idp-99", idpType: "APPLE", label: "Sign in with Apple", href: href)
-    ])
-
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
-    let first = (payload["collectors"] as? [[String: Any]])?.first
-
-    XCTAssertEqual(first?["link"] as? String, href)
-  }
-
-  func testMapIdpCollectorOmitsLinkWhenAbsent() {
-    let node = makeContinueNode(collectors: [
-      makeIdpCollector(idpId: "google-idp-1", idpType: "GOOGLE", label: "Google", href: nil)
-    ])
-
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
-    let first = (payload["collectors"] as? [[String: Any]])?.first
-
-    XCTAssertNil(first?["link"])
-  }
-
-  // MARK: - PROTECT field unsupported surfacing
-  // Note: ProtectCollector live-instance tests are not included here because PingOneProtect
-  // is intentionally not a compile-time dependency of rn-davinci. The bridge detects PROTECT
-  // collectors via the server's form-field JSON (field type == "PROTECT"), not by class name.
-  // When rn-protect is absent (no ProtectCollector registered), a PROTECT field is surfaced
-  // via unsupportedFields so JS consumers can observe it.
-
-  func testProtectFormFieldAppearsInUnsupportedFieldsWhenCollectorAbsent() {
-    // A PROTECT form field with no registered collector must appear in unsupportedFields
-    // so JS can observe that the server sent a PROTECT collector but rn-protect is absent.
+  func testUnknownPluginFieldAppearsInUnsupportedFieldsWhenSerializerAbsent() {
     let formInput: [String: Any] = [
       "form": [
         "components": [
           "fields": [
-            ["key": "protect-1", "type": "PROTECT"]
+            ["key": "plugin-1", "type": "PLUGIN_FIELD"]
           ]
         ]
       ]
@@ -618,8 +548,8 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
     let unsupported = payload["unsupportedFields"] as? [[String: Any]]
     XCTAssertEqual(unsupported?.count, 1)
-    XCTAssertEqual(unsupported?.first?["key"] as? String, "protect-1")
-    XCTAssertEqual(unsupported?.first?["type"] as? String, "PROTECT")
+    XCTAssertEqual(unsupported?.first?["key"] as? String, "plugin-1")
+    XCTAssertEqual(unsupported?.first?["type"] as? String, "PLUGIN_FIELD")
   }
 
   // MARK: - BooleanCollector serialization
@@ -965,48 +895,30 @@ final class DaVinciNodeMapperTests: XCTestCase {
     return SuccessNode(input: [:], session: StubSession(value: sessionValue))
   }
 
-  private func makeIdpCollector(
-    idpId: String,
-    idpType: String,
-    label: String,
-    href: String? = nil
-  ) -> IdpCollector {
-    var json: [String: Any] = [
-      "idpId": idpId,
-      "idpType": idpType,
-      "label": label,
-      "idpEnabled": true
-    ]
-    if let href = href {
-      json["links"] = ["authenticate": ["href": href]]
-    }
-    return IdpCollector(with: json)
-  }
-
   // MARK: - resolvedFormFieldType
 
   func testResolvedFormFieldTypeReturnsInputTypeWhenPresent() {
     let input: [String: Any] = [
       "form": ["components": ["fields": [
-        ["key": "protect-field", "inputType": "PROTECT", "type": "OTHER"]
+        ["key": "plugin-field", "inputType": "PLUGIN_INPUT", "type": "OTHER"]
       ]]]
     ]
-    let collector = makeTextCollector(key: "protect-field")
+    let collector = makeTextCollector(key: "plugin-field")
     let node = makeContinueNode(collectors: [collector], input: input)
 
-    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PLUGIN_INPUT")
   }
 
   func testResolvedFormFieldTypeFallsBackToTypeWhenInputTypeMissing() {
     let input: [String: Any] = [
       "form": ["components": ["fields": [
-        ["key": "protect-field", "type": "PROTECT"]
+        ["key": "plugin-field", "type": "PLUGIN_FIELD"]
       ]]]
     ]
-    let collector = makeTextCollector(key: "protect-field")
+    let collector = makeTextCollector(key: "plugin-field")
     let node = makeContinueNode(collectors: [collector], input: input)
 
-    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PROTECT")
+    XCTAssertEqual(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil), "PLUGIN_FIELD")
   }
 
   func testResolvedFormFieldTypeReturnsNilWhenFieldMissing() {
@@ -1017,7 +929,7 @@ final class DaVinciNodeMapperTests: XCTestCase {
   }
 
   func testResolvedFormFieldTypeReturnsNilWhenNoFormPresent() {
-    let collector = makeTextCollector(key: "protect-field")
+    let collector = makeTextCollector(key: "plugin-field")
     let node = makeContinueNode(collectors: [collector], input: [:])
 
     XCTAssertNil(DaVinciNodeMapper.resolvedFormFieldType(for: collector, node: node, logger: nil))
