@@ -355,17 +355,31 @@ function CollectorField({
 }: CollectorFieldProps): React.JSX.Element | null {
   const testID = `davinci-field-${collector.key}`;
 
+  if (collector.kind === 'integration' || collector.kind === 'unknown') {
+    return null;
+  }
+
   if (collector.type === 'LABEL') {
+    const labelCollector = collector as Extract<
+      DaVinciNormalizedCollector,
+      { type: 'LABEL' }
+    >;
     return (
-      <Text testID={`davinci-label-${collector.key}`}>{collector.content}</Text>
+      <Text testID={`davinci-label-${collector.key}`}>
+        {labelCollector.content}
+      </Text>
     );
   }
 
   if (collector.type === 'SUBMIT_BUTTON') {
+    const submitCollector = collector as Extract<
+      DaVinciNormalizedCollector,
+      { type: 'SUBMIT_BUTTON' }
+    >;
     return (
       <Button
         testID="davinci-submit-btn"
-        title={collector.label || 'Submit'}
+        title={submitCollector.label || 'Submit'}
         onPress={onSubmit}
       />
     );
