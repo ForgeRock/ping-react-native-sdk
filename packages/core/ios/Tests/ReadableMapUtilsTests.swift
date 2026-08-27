@@ -51,4 +51,18 @@ final class ReadableMapUtilsTests: XCTestCase {
 
     XCTAssertThrowsError(try ReadableMapUtils.readBoolean(map, key: "par"))
   }
+
+  /// Verifies a numeric 0 is rejected rather than coerced to false.
+  func testReadBooleanThrowsOnNumericZero() {
+    let map: NSDictionary = ["par": NSNumber(value: 0)]
+
+    XCTAssertThrowsError(try ReadableMapUtils.readBoolean(map, key: "par"))
+  }
+
+  /// Verifies a numeric 1 is rejected rather than coerced to true.
+  func testReadBooleanThrowsOnNumericOne() {
+    let map: NSDictionary = ["par": NSNumber(value: 1)]
+
+    XCTAssertThrowsError(try ReadableMapUtils.readBoolean(map, key: "par"))
+  }
 }

@@ -36,10 +36,12 @@ public enum ReadableMapUtils {
   /// - Throws: `NSError` when the key contains a non-boolean value.
   public static func readBoolean(_ map: NSDictionary, key: String) throws -> Bool? {
     guard let value = map[key], !(value is NSNull) else { return nil }
-    guard let boolValue = value as? Bool else {
+    // CFBooleanGetTypeID() distinguishes an actual Bool from a bridged numeric
+    // NSNumber — both satisfy `as? Bool` in Swift, so numeric 0/1 must be rejected explicitly.
+    guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else {
       throw NSError(domain: "RNPingCore", code: 400, userInfo: [NSLocalizedDescriptionKey: "Expected boolean parameter: \(key)"])
     }
-    return boolValue
+    return number.boolValue
   }
 
   /// Convert a JS array into a list of strings, ignoring nulls.
