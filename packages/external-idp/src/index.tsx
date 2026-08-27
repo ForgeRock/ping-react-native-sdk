@@ -6,7 +6,7 @@
  */
 
 export { createExternalIdpClient } from './externalIdp';
-export { ExternalIdpError } from './types';
+export { ExternalIdpError, socialLoginCollectorType } from './types';
 
 export type {
   ExternalIdpAuthorizeOptions,
@@ -15,4 +15,5 @@ export type {
   ExternalIdpErrorCode,
   ExternalIdpResult,
   ExternalIdpSelectOptions,
+  IdpCollector,
 } from './types';

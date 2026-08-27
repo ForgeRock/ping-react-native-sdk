@@ -12,7 +12,10 @@ import {
   toNativeConfig,
   toNativeSelectOptions,
 } from './NativeRNPingExternalIdp';
-import { noopLogger } from '@ping-identity/rn-types';
+import {
+  noopLogger,
+  registerIntegrationCollectorType,
+} from '@ping-identity/rn-types';
 import type {
   DaVinciInstance,
   ExternalIdpAuthorizeOptions,
@@ -23,7 +26,10 @@ import type {
   JourneyInstance,
 } from './types';
 import { ExternalIdpError } from './types/externalIdp.types';
-import type { ExternalIdpClientConfig } from './types/externalIdp.types';
+import {
+  socialLoginCollectorType,
+  type ExternalIdpClientConfig,
+} from './types/externalIdp.types';
 
 /**
  * Resolve an optional redirect URI and reject values that cannot be used by Auth Tabs.
@@ -84,6 +90,7 @@ function normalizeProvider(provider: string): string {
 export function createExternalIdpClient(
   config: ExternalIdpConfig,
 ): ExternalIdpClient {
+  registerIntegrationCollectorType(socialLoginCollectorType);
   const redirectUri = normalizeRedirectUri(config.redirectUri);
 
   const logger = config.logger ?? noopLogger;

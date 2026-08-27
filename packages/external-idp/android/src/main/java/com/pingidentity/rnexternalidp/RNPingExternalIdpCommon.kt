@@ -46,6 +46,7 @@ object RNPingExternalIdpCommon {
   private const val LOGGER_ID_KEY = "loggerId"
   private const val REDIRECT_URI_KEY = "redirectUri"
   private const val INDEX_KEY = "index"
+  private const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
 
   /** Indicates whether shared runtime wiring has been initialized. */
   private var configured = false
@@ -75,6 +76,34 @@ object RNPingExternalIdpCommon {
   internal var foregroundActivityProvider: () -> Boolean = {
     runCatching { ContextProvider.currentActivity }
       .getOrNull() != null
+  }
+
+  /** Guards one-time serializer registration. */
+  private var serializerRegistered = false
+
+  /**
+   * Registers the IdpCollector serializer with CoreRuntime.
+   *
+   * Safe to call multiple times — subsequent calls are no-ops.
+   */
+  @JvmStatic
+  @Synchronized
+  fun registerDaVinciSerializer() {
+    if (serializerRegistered) return
+    serializerRegistered = true
+    CoreRuntime.registerDaVinciCollectorSerializer { collectorAny ->
+      val collector = collectorAny as? DaVinciIdpCollector ?: return@registerDaVinciCollectorSerializer null
+      val map = linkedMapOf<String, Any?>(
+        "key" to collector.idpId,
+        "type" to SOCIAL_LOGIN_BUTTON,
+        "label" to collector.label,
+        "idpId" to collector.idpId,
+        "idpType" to collector.idpType,
+        "idpEnabled" to collector.idpEnabled,
+      )
+      runCatching { collector.link.toString() }.getOrNull()?.let { map["link"] = it }
+      map
+    }
   }
 
   /**

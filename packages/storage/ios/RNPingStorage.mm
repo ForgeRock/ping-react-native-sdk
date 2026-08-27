@@ -10,7 +10,6 @@
 //
 
 #import <string>
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingStorage.h"
 
 #import <Foundation/Foundation.h>
@@ -18,7 +17,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header
+#if __has_include("RNPingStorage-Swift.h")
 #import "RNPingStorage-Swift.h"
+#else
+#import <RNPingStorage/RNPingStorage-Swift.h>
+#endif
 
 @implementation RNPingStorage
 RCT_EXPORT_MODULE()

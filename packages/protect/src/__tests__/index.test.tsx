@@ -36,7 +36,34 @@ describe('Protect API', () => {
     await startProtect({ envId: 'env-123', isLazyMetadata: true });
 
     expect(initializeNative).toHaveBeenCalledWith(
-      { envId: 'env-123', isLazyMetadata: true },
+      {
+        envId: 'env-123',
+        isLazyMetadata: true,
+        pauseBehavioralDataOnSuccess: undefined,
+        resumeBehavioralDataOnStart: undefined,
+      },
+      { loggerId: undefined },
+    );
+  });
+
+  it('startProtect() forwards lifecycle flags to native initialize', async () => {
+    const initializeNative = jest.fn().mockResolvedValue(undefined);
+    const resumeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initialize: initializeNative,
+      resumeBehavioralData: resumeNative,
+    });
+
+    await startProtect({
+      pauseBehavioralDataOnSuccess: true,
+      resumeBehavioralDataOnStart: true,
+    });
+
+    expect(initializeNative).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pauseBehavioralDataOnSuccess: true,
+        resumeBehavioralDataOnStart: true,
+      }),
       { loggerId: undefined },
     );
   });

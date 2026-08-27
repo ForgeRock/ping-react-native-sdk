@@ -9,13 +9,16 @@
 //
 
 #import "RNPingBrowser.h"
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 
 #import <Foundation/Foundation.h>
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
+#if __has_include("RNPingBrowser-Swift.h")
 #import "RNPingBrowser-Swift.h"
+#else
+#import <RNPingBrowser/RNPingBrowser-Swift.h>
+#endif
 
 @implementation RNPingBrowser
 RCT_EXPORT_MODULE()

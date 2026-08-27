@@ -901,3 +901,64 @@ describe('logger', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 });
+
+describe('OathError.violatedPolicy', () => {
+  let nativeModule: NativeModuleMock;
+  let client: Awaited<
+    ReturnType<Awaited<ReturnType<typeof loadModule>>['createOathClient']>
+  >;
+  let OathError: Awaited<ReturnType<typeof loadModule>>['OathError'];
+
+  beforeEach(async () => {
+    nativeModule = createNativeMock();
+    const mod = await loadModule(nativeModule);
+    OathError = mod.OathError;
+    client = await mod.createOathClient();
+  });
+
+  it('populates violatedPolicy when the rejection payload includes it', async () => {
+    nativeModule.generateCode.mockImplementation(async () => {
+      throw {
+        userInfo: {
+          error: 'OATH_POLICY_VIOLATION',
+          type: 'state_error',
+          message: 'Policy violation',
+          violatedPolicy: 'biometricAvailable',
+        },
+      };
+    });
+
+    expect.assertions(4);
+    try {
+      await client.generateCode('cred-1');
+    } catch (err) {
+      expect(err).toBeInstanceOf(OathError);
+      const oathErr = err as InstanceType<typeof OathError>;
+      expect(oathErr.code).toBe('OATH_POLICY_VIOLATION');
+      expect(oathErr.type).toBe('state_error');
+      expect(oathErr.violatedPolicy).toBe('biometricAvailable');
+    }
+  });
+
+  it('violatedPolicy is undefined when not present in rejection payload', async () => {
+    nativeModule.generateCode.mockImplementation(async () => {
+      throw {
+        userInfo: {
+          error: 'OATH_CODE_GENERATION_FAILED',
+          type: 'internal_error',
+          message: 'Generation failed',
+        },
+      };
+    });
+
+    expect.assertions(2);
+    try {
+      await client.generateCode('cred-1');
+    } catch (err) {
+      expect(err).toBeInstanceOf(OathError);
+      expect(
+        (err as InstanceType<typeof OathError>).violatedPolicy,
+      ).toBeUndefined();
+    }
+  });
+});

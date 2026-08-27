@@ -154,7 +154,7 @@ public final class RNPingDavinciCommon: NSObject {
         CoreRuntime.setDaVinciCollectorResolver { davinciId in
           stateStore.activeContinueNode(for: davinciId).map { Array($0.collectors) }
         }
-        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId, protectLoggerId: payload.protect?.loggerId))
+        idRef.value = await davinciRegistry.register(DaVinciHandle(davinci: davinci, loggerId: payload.loggerId))
       }
       guard let davinciId = idRef.value else {
         promise.reject(DaVinciErrorMapper.state(code: .initError, message: "Failed to register DaVinci instance"))
@@ -727,12 +727,10 @@ private final class PollJobStore: @unchecked Sendable {
 private final class DaVinciHandle: NativeHandle, @unchecked Sendable {
   let davinci: DaVinci
   let loggerId: String?
-  let protectLoggerId: String?
 
-  init(davinci: DaVinci, loggerId: String?, protectLoggerId: String? = nil) {
+  init(davinci: DaVinci, loggerId: String?) {
     self.davinci = davinci
     self.loggerId = loggerId
-    self.protectLoggerId = protectLoggerId
   }
 }
 

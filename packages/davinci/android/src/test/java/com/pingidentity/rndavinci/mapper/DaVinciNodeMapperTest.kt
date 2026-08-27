@@ -22,7 +22,6 @@ import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
 import com.pingidentity.davinci.plugin.Collector
-import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.network.HttpRequest
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
@@ -67,20 +66,6 @@ class DaVinciNodeMapperTest {
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, Any?>.asList(key: String): List<Map<String, Any?>>? =
         this[key] as? List<Map<String, Any?>>
-
-    // IdpCollector.init() throws MalformedURLException when "links" is absent because
-    // the native SDK always calls new URL(href ?: "") — set public fields directly instead.
-    private fun makeIdpCollector(
-        idpId: String,
-        idpType: String,
-        label: String,
-        href: String? = null
-    ): IdpCollector = IdpCollector().apply {
-        this.idpId = idpId
-        this.idpType = idpType
-        this.label = label
-        if (href != null) this.link = java.net.URL(href)
-    }
 
     // ---- Node type tests ----
 
@@ -648,75 +633,17 @@ class DaVinciNodeMapperTest {
         assertFalse(c.containsKey("passwordPolicy"))
     }
 
-    // ---- IdpCollector ----
+    // ---- Unsupported plugin field surfacing ----
 
     @Test
-    fun mapIdpCollectorEmitsTypeIDP() {
-        val collector = makeIdpCollector(idpId = "google-idp-1", idpType = "GOOGLE", label = "Sign in with Google")
-        val node = makeNode(collector)
-
-        val result = DaVinciNodeMapper.mapNodePayload(node)
-        val c = result.asList("collectors")!![0]
-
-        assertEquals(DaVinciNodeMapper.SOCIAL_LOGIN_BUTTON, c["type"])
-    }
-
-    @Test
-    fun mapIdpCollectorUsesIdpIdAsKey() {
-        val collector = makeIdpCollector(idpId = "facebook-idp-42", idpType = "FACEBOOK", label = "Sign in with Facebook")
-        val node = makeNode(collector)
-
-        val result = DaVinciNodeMapper.mapNodePayload(node)
-        val c = result.asList("collectors")!![0]
-
-        assertEquals("facebook-idp-42", c["key"])
-        assertEquals("facebook-idp-42", c["idpId"])
-    }
-
-    @Test
-    fun mapIdpCollectorEmitsIdpTypeAndLabel() {
-        val collector = makeIdpCollector(idpId = "apple-idp-99", idpType = "APPLE", label = "Sign in with Apple")
-        val node = makeNode(collector)
-
-        val result = DaVinciNodeMapper.mapNodePayload(node)
-        val c = result.asList("collectors")!![0]
-
-        assertEquals("APPLE", c["idpType"])
-        assertEquals("Sign in with Apple", c["label"])
-        assertEquals(true, c["idpEnabled"])
-    }
-
-    @Test
-    fun mapIdpCollectorEmitsLinkWhenPresent() {
-        val href = "https://auth.pingone.com/connections/idp-1/loginFirstFactor?interactionId=abc"
-        val collector = makeIdpCollector(idpId = "google-idp-1", idpType = "GOOGLE", label = "Google", href = href)
-        val node = makeNode(collector)
-
-        val result = DaVinciNodeMapper.mapNodePayload(node)
-        val c = result.asList("collectors")!![0]
-
-        assertEquals(href, c["link"])
-    }
-
-    // ---- PROTECT field unsupported surfacing ----
-    // Note: ProtectCollector live-instance tests are not included because
-    // com.pingidentity.sdks:protect is intentionally not a compile-time dependency of
-    // rn-davinci. The bridge detects PROTECT collectors via the server's form-field JSON
-    // (field type == "PROTECT"), not by class name.
-    // When rn-protect is absent (no ProtectCollector registered), a PROTECT field
-    // is surfaced via unsupportedFields so JS consumers can observe it.
-
-    @Test
-    fun mapProtectFormFieldAppearsInUnsupportedFieldsWhenCollectorAbsent() {
-        // A PROTECT form field with no registered collector must appear in unsupportedFields
-        // so JS can observe that the server sent a PROTECT collector but rn-protect is absent.
+    fun mapUnknownPluginFieldAppearsInUnsupportedFieldsWhenSerializerAbsent() {
         val input = buildJsonObject {
             put("form", buildJsonObject {
                 put("components", buildJsonObject {
                     put("fields", buildJsonArray {
                         add(buildJsonObject {
-                            put("key", "protect-1")
-                            put("type", "PROTECT")
+                            put("key", "plugin-1")
+                            put("type", "PLUGIN_FIELD")
                         })
                     })
                 })
@@ -728,8 +655,8 @@ class DaVinciNodeMapperTest {
         val unsupported = result.asList("unsupportedFields")
         assertNotNull(unsupported)
         assertEquals(1, unsupported!!.size)
-        assertEquals("protect-1", unsupported[0]["key"])
-        assertEquals("PROTECT", unsupported[0]["type"])
+        assertEquals("plugin-1", unsupported[0]["key"])
+        assertEquals("PLUGIN_FIELD", unsupported[0]["type"])
     }
 
     // ---- BooleanCollector ----
@@ -880,15 +807,15 @@ class DaVinciNodeMapperTest {
     @Test
     fun resolvedFormFieldTypeReturnsInputTypeWhenPresent() {
         val collector = TextCollector().apply {
-            init(buildJsonObject { put("key", "protect-field") })
+            init(buildJsonObject { put("key", "plugin-field") })
         }
         val input = buildJsonObject {
             put("form", buildJsonObject {
                 put("components", buildJsonObject {
                     put("fields", buildJsonArray {
                         add(buildJsonObject {
-                            put("key", "protect-field")
-                            put("inputType", "PROTECT")
+                            put("key", "plugin-field")
+                            put("inputType", "PLUGIN_INPUT")
                             put("type", "OTHER")
                         })
                     })
@@ -897,21 +824,21 @@ class DaVinciNodeMapperTest {
         }
         val node = makeNode(input, collector)
 
-        assertEquals("PROTECT", DaVinciNodeMapper.resolvedFormFieldType(collector, node))
+        assertEquals("PLUGIN_INPUT", DaVinciNodeMapper.resolvedFormFieldType(collector, node))
     }
 
     @Test
     fun resolvedFormFieldTypeFallsBackToTypeWhenInputTypeMissing() {
         val collector = TextCollector().apply {
-            init(buildJsonObject { put("key", "protect-field") })
+            init(buildJsonObject { put("key", "plugin-field") })
         }
         val input = buildJsonObject {
             put("form", buildJsonObject {
                 put("components", buildJsonObject {
                     put("fields", buildJsonArray {
                         add(buildJsonObject {
-                            put("key", "protect-field")
-                            put("type", "PROTECT")
+                            put("key", "plugin-field")
+                            put("type", "PLUGIN_FIELD")
                         })
                     })
                 })
@@ -919,7 +846,7 @@ class DaVinciNodeMapperTest {
         }
         val node = makeNode(input, collector)
 
-        assertEquals("PROTECT", DaVinciNodeMapper.resolvedFormFieldType(collector, node))
+        assertEquals("PLUGIN_FIELD", DaVinciNodeMapper.resolvedFormFieldType(collector, node))
     }
 
     @Test
@@ -935,7 +862,7 @@ class DaVinciNodeMapperTest {
     @Test
     fun resolvedFormFieldTypeReturnsNullWhenNoFormPresent() {
         val collector = TextCollector().apply {
-            init(buildJsonObject { put("key", "protect-field") })
+            init(buildJsonObject { put("key", "plugin-field") })
         }
         val node = makeNode(collector)
 

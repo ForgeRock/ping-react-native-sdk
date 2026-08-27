@@ -105,11 +105,12 @@ internal enum OathErrorMapper {
         error: OathErrorCodes.codeGenerationFailed.rawValue,
         message: message
       )
-    case .policyViolation(let message, _):
+    case .policyViolation(let policy, let message):
       return GenericError(
         type: .stateError,
         error: OathErrorCodes.policyViolation.rawValue,
-        message: message
+        message: message,
+        extras: ["violatedPolicy": policy]
       )
     case .initializationFailed(let message, _):
       return GenericError(

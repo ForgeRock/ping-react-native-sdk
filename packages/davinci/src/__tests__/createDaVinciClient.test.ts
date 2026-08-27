@@ -380,42 +380,7 @@ describe('createDaVinciClient — configure payload', () => {
     );
   });
 
-  it('forwards modules.protect to nativeConfig.protect when provided', async () => {
-    const native = createNativeMock();
-    const { createDaVinciClient } = loadModule(native);
-
-    const client = createDaVinciClient({
-      modules: {
-        oidc: {
-          discoveryEndpoint:
-            'https://auth.example.com/.well-known/openid-configuration',
-          clientId: 'my-client',
-          redirectUri: 'app://callback',
-        },
-        protect: {
-          envId: 'env-abc',
-          isBehavioralDataCollection: true,
-          pauseBehavioralDataOnSuccess: true,
-          resumeBehavioralDataOnStart: true,
-        },
-      },
-    });
-
-    await client.start();
-
-    expect(native.configureDaVinci).toHaveBeenCalledWith(
-      expect.objectContaining({
-        protect: {
-          envId: 'env-abc',
-          isBehavioralDataCollection: true,
-          pauseBehavioralDataOnSuccess: true,
-          resumeBehavioralDataOnStart: true,
-        },
-      }),
-    );
-  });
-
-  it('sends undefined protect when modules.protect is absent', async () => {
+  it('configures native DaVinci without plugin-specific payloads', async () => {
     const native = createNativeMock();
     const { createDaVinciClient } = loadModule(native);
     const client = createDaVinciClient(VALID_CONFIG);
@@ -423,7 +388,7 @@ describe('createDaVinciClient — configure payload', () => {
     await client.start();
 
     expect(native.configureDaVinci).toHaveBeenCalledWith(
-      expect.objectContaining({ protect: undefined }),
+      expect.not.objectContaining({ protect: expect.anything() }),
     );
   });
 });

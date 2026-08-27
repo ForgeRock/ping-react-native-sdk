@@ -165,11 +165,6 @@ RCT_EXPORT_MODULE()
     dict[@"loggerId"] = loggerId;
   }
 
-  id<NSObject> protect = config.protect();
-  if (protect != nil) {
-    dict[@"protect"] = protect;
-  }
-
   [[self swiftImpl] configureDaVinci:dict resolver:resolve rejecter:reject];
 }
 

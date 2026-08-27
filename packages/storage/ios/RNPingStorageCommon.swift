@@ -126,7 +126,7 @@ public class RNPingStorageCommon: NSObject {
   public static func registerSessionStorage(_ config: NSDictionary) -> String {
     return createQueue.sync {
       registerConfig(config, registry: CoreRuntime.sessionStorageConfigRegistry)
-    }
+    } 
   }
 
   /// Registers an OIDC storage configuration.

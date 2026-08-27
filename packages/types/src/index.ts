@@ -128,6 +128,24 @@ export type * from './oidc.types';
  */
 export type * from './handles.types';
 
+/**
+ * Collector type names handled by optional integration packages.
+ */
+export const integrationCollectorTypes = new Set<string>();
+
+/**
+ * Registers a collector type handled by an optional integration package.
+ *
+ * @param type - Integration-owned collector type string.
+ * @returns Void.
+ */
+export function registerIntegrationCollectorType(type: string): void {
+  const normalized = type.trim();
+  if (normalized.length > 0) {
+    integrationCollectorTypes.add(normalized);
+  }
+}
+
 /*
  * Minimal Journey instance contract for cross-module coordination.
  *

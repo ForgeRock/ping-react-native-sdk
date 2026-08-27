@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export { ProtectError } from './protect.types';
+export { ProtectError, protectCollectorType } from './protect.types';
 export type {
   ProtectClientConfig,
   ProtectConfig,

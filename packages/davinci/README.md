@@ -302,9 +302,23 @@ The following collector types are supported on Android and iOS:
 | `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
 | `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
 
-Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Protect) are
-surfaced in node payloads and require client-side integration before submission
-(`executionMode: 'integration_required'`).
+Integration-dependent collectors are surfaced in node payloads with
+`executionMode: 'integration_required'`. Their minimum generic shape is `key`,
+`type`, and optional `raw`; the owning integration package may provide additional
+fields and the operation needed before `next()`. Use the integration package's
+exported collector type/constant and pass its type in `handledCollectorTypes`:
+
+```ts
+import { socialLoginCollectorType } from '@ping-identity/rn-external-idp';
+
+const form = useDaVinciForm(node, {
+  handledCollectorTypes: new Set([socialLoginCollectorType]),
+});
+```
+
+Known collector-specific fields should be accessed only after narrowing with the
+owning package's type or helper. Generic integration collectors do not guarantee
+fields such as `label`, `options`, or `value`.
 
 ### Unsupported fields
 

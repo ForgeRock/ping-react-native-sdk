@@ -21,6 +21,7 @@ import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
 import DaVinciTextField from './DaVinciTextField';
 import DaVinciUnsupportedField from './DaVinciUnsupportedField';
+import { socialLoginCollectorType } from '@ping-identity/rn-external-idp';
 import type { DaVinciCollectorRendererProps } from './types';
 
 /**
@@ -65,7 +66,7 @@ function DaVinciFieldRenderer(
     case 'DEVICE_REGISTRATION':
     case 'DEVICE_AUTHENTICATION':
       return <DaVinciDeviceField {...props} />;
-    case 'SOCIAL_LOGIN_BUTTON':
+    case socialLoginCollectorType:
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
       );

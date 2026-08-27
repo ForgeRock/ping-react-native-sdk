@@ -18,6 +18,12 @@ import com.pingidentity.rncore.registry.SimpleRegistry
 public typealias JourneyCallbackResolver = suspend (String) -> List<Any>?
 public typealias DaVinciCollectorResolver = suspend (String) -> List<Any>?
 
+/** Closure invoked inside the DaVinci builder to register a plugin-provided native module. */
+public typealias DaVinciModuleHook = (Any) -> Unit
+
+/** Closure that serializes a plugin collector (e.g. IdpCollector) to a bridge payload map. Returns null when the collector type is not handled. */
+public typealias DaVinciCollectorSerializer = (Any) -> Map<String, Any?>?
+
 object CoreRuntime {
     /** Registry for session storage configuration */
     val sessionStorageConfigRegistry: Registry = SimpleRegistry()
@@ -52,6 +58,60 @@ object CoreRuntime {
     /** Resolver that exposes DaVinci collectors to other packages. */
     @Volatile
     var davinciCollectorResolver: DaVinciCollectorResolver? = null
+
+    /** Module hooks keyed by module name; registered by plugin packages at module init. */
+    private val davinciModuleHooks = mutableMapOf<String, DaVinciModuleHook>()
+
+    /** Collector serializers registered by plugin packages at module init. */
+    private val davinciCollectorSerializers = mutableListOf<DaVinciCollectorSerializer>()
+
+    /**
+     * Registers or replaces a plugin module hook for the given key.
+     *
+     * Hooks are invoked by `invokeDaVinciModuleHooks` inside the DaVinci builder at
+     * `configureDaVinci` time. Using a keyed map prevents accumulation when the same
+     * plugin registers a fresh hook on each `createDaVinciClient` call.
+     *
+     * @param key Stable hook identity.
+     * @param hook Closure that receives the DaVinci builder instance.
+     */
+    fun registerDaVinciModuleHook(key: String, hook: DaVinciModuleHook) {
+        synchronized(davinciModuleHooks) { davinciModuleHooks[key] = hook }
+    }
+
+    /**
+     * Invokes all registered module hooks with the given DaVinci builder instance.
+     *
+     * @param builder Native DaVinci builder instance (type-erased to avoid coupling).
+     */
+    fun invokeDaVinciModuleHooks(builder: Any) {
+        val hooks = synchronized(davinciModuleHooks) { davinciModuleHooks.values.toList() }
+        hooks.forEach { it(builder) }
+    }
+
+    /**
+     * Registers a collector serializer.
+     *
+     * Serializers are polled in registration order; the first non-null result wins.
+     * Register at module init time — not per DaVinci instance.
+     *
+     * @param serializer Closure that serializes a collector to a bridge payload map,
+     *   or returns `null` when the collector type is not handled.
+     */
+    fun registerDaVinciCollectorSerializer(serializer: DaVinciCollectorSerializer) {
+        synchronized(davinciCollectorSerializers) { davinciCollectorSerializers.add(serializer) }
+    }
+
+    /**
+     * Serializes a collector using the first registered serializer that handles it.
+     *
+     * @param collector Collector instance to serialize.
+     * @return Bridge payload map, or `null` when no serializer handles the type.
+     */
+    fun serializeDaVinciCollector(collector: Any): Map<String, Any?>? {
+        val serializers = synchronized(davinciCollectorSerializers) { davinciCollectorSerializers.toList() }
+        return serializers.firstNotNullOfOrNull { it(collector) }
+    }
 
     /**
      * Resolves callbacks for the provided Journey id via the registered resolver.

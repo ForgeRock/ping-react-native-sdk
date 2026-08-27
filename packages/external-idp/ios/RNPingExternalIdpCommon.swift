@@ -60,10 +60,48 @@ final class RedirectUriOverridingIdpHandler: NSObject, @preconcurrency IdpHandle
   }
 }
 
+private final class SerializerState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var registered = false
+
+  func register(_ action: () -> Void) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !registered else { return }
+    registered = true
+    action()
+  }
+}
+
 /// Shared iOS implementation for the Ping External IdP React Native module.
 public class RNPingExternalIdpCommon: NSObject {
   private static let loggerIdKey = "loggerId"
   private static let redirectUriKey = "redirectUri"
+  private static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
+  private static let serializerState = SerializerState()
+
+  /// Registers the `IdpCollector` serializer with CoreRuntime.
+  ///
+  /// Safe to call multiple times — subsequent calls are no-ops.
+  public static func registerDaVinciSerializer() {
+    serializerState.register {
+      CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
+        guard let collector = collectorAny as? IdpCollector else { return nil }
+        var map: [String: Any] = [
+          "key": collector.idpId,
+          "type": socialLoginButton,
+          "label": collector.label,
+          "idpId": collector.idpId,
+          "idpType": collector.idpType,
+          "idpEnabled": collector.idpEnabled
+        ]
+        if let link = collector.link {
+          map["link"] = link.absoluteString
+        }
+        return map
+      }
+    }
+  }
 
   /// Stable error codes emitted by the External IdP module.
   ///
