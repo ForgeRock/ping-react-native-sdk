@@ -8,14 +8,17 @@
 import XCTest
 @testable import RNPingCore
 
+/// Tests boolean value reads from React Native readable maps.
 final class ReadableMapUtilsTests: XCTestCase {
 
+  /// Verifies a missing key returns nil.
   func testReadBooleanReturnsNilWhenKeyIsMissing() throws {
     let result = try ReadableMapUtils.readBoolean(NSDictionary(), key: "par")
 
     XCTAssertNil(result)
   }
 
+  /// Verifies a null value returns nil.
   func testReadBooleanReturnsNilWhenValueIsNull() throws {
     let map: NSDictionary = ["par": NSNull()]
 
@@ -24,6 +27,7 @@ final class ReadableMapUtilsTests: XCTestCase {
     XCTAssertNil(result)
   }
 
+  /// Verifies an explicit true value is preserved.
   func testReadBooleanPreservesExplicitTrue() throws {
     let map: NSDictionary = ["par": true]
 
@@ -32,6 +36,7 @@ final class ReadableMapUtilsTests: XCTestCase {
     XCTAssertEqual(result, true)
   }
 
+  /// Verifies an explicit false value is preserved.
   func testReadBooleanPreservesExplicitFalse() throws {
     let map: NSDictionary = ["par": false]
 
@@ -40,6 +45,7 @@ final class ReadableMapUtilsTests: XCTestCase {
     XCTAssertEqual(result, false)
   }
 
+  /// Verifies a non-boolean value throws an error.
   func testReadBooleanThrowsOnNonBooleanValue() {
     let map: NSDictionary = ["par": "true"]
 

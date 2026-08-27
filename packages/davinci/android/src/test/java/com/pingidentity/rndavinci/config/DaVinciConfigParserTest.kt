@@ -88,6 +88,9 @@ class DaVinciConfigParserTest {
         assertEquals(mapOf("audience" to "urn:example:api"), payload.oidc.additionalParameters)
     }
 
+    /**
+     * Verifies that parsing rejects a non-boolean PAR value.
+     */
     @Test(expected = IllegalArgumentException::class)
     fun parseThrowsWhenParIsNotBoolean() {
         val config = JavaOnlyMap().apply {

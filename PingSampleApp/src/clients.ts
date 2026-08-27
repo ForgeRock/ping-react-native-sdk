@@ -52,6 +52,11 @@ function parseOptionalBoolean(value: string | undefined): boolean | undefined {
 const pingOnePar = parseOptionalBoolean(Config.PINGONE_PAR);
 
 /**
+ * Whether Journey PAR is enabled from `JOURNEY_PAR`.
+ */
+const journeyPar = parseOptionalBoolean(Config.JOURNEY_PAR);
+
+/**
  * Whether Advanced Identity Cloud PAR is enabled from `AIC_PAR`.
  */
 const aicPar = parseOptionalBoolean(Config.AIC_PAR);
@@ -84,7 +89,7 @@ export const journeyConfig = {
   discoveryEndpoint: Config.JOURNEY_DISCOVERY_ENDPOINT!,
   redirectUri: Config.JOURNEY_REDIRECT_URI!,
   scopes: journeyScopes,
-  par: aicPar,
+  par: journeyPar,
 };
 
 /**
@@ -141,7 +146,7 @@ export const journeyOidcClient = createOidcClient({
   discoveryEndpoint: journeyConfig.discoveryEndpoint,
   redirectUri: journeyConfig.redirectUri,
   scopes: journeyConfig.scopes,
-  par: aicPar,
+  par: journeyPar,
 });
 
 /**
@@ -179,7 +184,7 @@ const journeyStandaloneOidcClient = createOidcClient({
   discoveryEndpoint: journeyConfig.discoveryEndpoint,
   redirectUri: journeyConfig.redirectUri,
   scopes: journeyConfig.scopes,
-  par: aicPar,
+  par: journeyPar,
   storage: journeyStandaloneOidcStorage,
   logger: appLogger,
 });

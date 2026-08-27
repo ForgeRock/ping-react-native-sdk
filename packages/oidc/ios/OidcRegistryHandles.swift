@@ -45,6 +45,7 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
       revocationEndpoint: openId.revocationEndpoint
     )
   }
+  /// Optional PAR enablement flag.
   var par: Bool? { payload.par }
   var acrValues: String? { payload.acrValues }
   var signOutRedirectUri: String? { payload.signOutRedirectUri }

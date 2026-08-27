@@ -78,6 +78,7 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertNil(payload.protect)
   }
 
+  /// Verifies that parsing rejects a non-Boolean PAR value.
   func testParseThrowsForNonBooleanPar() {
     let config: NSDictionary = [
       "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",

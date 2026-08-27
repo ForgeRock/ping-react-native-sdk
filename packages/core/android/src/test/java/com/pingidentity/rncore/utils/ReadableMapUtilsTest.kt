@@ -13,20 +13,24 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.Assert.assertThrows
 
+/** Tests boolean value reads from React Native readable maps. */
 class ReadableMapUtilsTest {
 
+  /** Verifies missing and null keys return null. */
   @Test
   fun readBoolean_returnsNullWhenKeyIsMissingOrNull() {
     assertNull(readBoolean(JavaOnlyMap(), "par"))
     assertNull(readBoolean(JavaOnlyMap().apply { putNull("par") }, "par"))
   }
 
+  /** Verifies explicit boolean values are preserved. */
   @Test
   fun readBoolean_preservesExplicitBooleanValues() {
     assertEquals(true, readBoolean(JavaOnlyMap().apply { putBoolean("par", true) }, "par"))
     assertEquals(false, readBoolean(JavaOnlyMap().apply { putBoolean("par", false) }, "par"))
   }
 
+  /** Verifies non-boolean values are rejected. */
   @Test
   fun readBoolean_rejectsNonBooleanValues() {
     val map = JavaOnlyMap().apply { putString("par", "true") }

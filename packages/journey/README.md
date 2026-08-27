@@ -107,6 +107,7 @@ const client = createJourneyClient({
         'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid', 'profile', 'email'],
+      par: true,
       storage: oidcStorage,
     },
     session: {

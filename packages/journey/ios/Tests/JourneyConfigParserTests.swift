@@ -112,11 +112,22 @@ final class JourneyConfigParserTests: XCTestCase {
     let config: NSDictionary = [
       "serverUrl": "https://example.com/am",
       "clientId": "client-id",
+      "discoveryEndpoint": "https://example.com/am/oauth2/.well-known/openid-configuration",
       "redirectUri": "com.example.app://oauth2redirect",
+      "openId": [
+        "authorizationEndpoint": "https://example.com/oauth2/authorize",
+        "tokenEndpoint": "https://example.com/oauth2/token",
+        "userinfoEndpoint": "https://example.com/oauth2/userinfo"
+      ],
       "par": "true"
     ]
 
-    XCTAssertThrowsError(try JourneyConfigParser.parse(config))
+    XCTAssertThrowsError(try JourneyConfigParser.parse(config)) { error in
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.domain, "RNPingCore")
+      XCTAssertEqual(nsError.code, 400)
+      XCTAssertEqual(nsError.localizedDescription, "Expected boolean parameter: par")
+    }
   }
 
   func testParseRejectsIncompleteDirectOidcConfig() {

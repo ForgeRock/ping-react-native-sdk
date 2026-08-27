@@ -40,6 +40,7 @@ JOURNEY_CLIENT_ID=my-client-id
 JOURNEY_DISCOVERY_ENDPOINT=https://openam.example.com/am/oauth2/alpha/.well-known/openid-configuration
 JOURNEY_REDIRECT_URI=com.example.app://oauth2redirect
 JOURNEY_SCOPES=openid,profile,email
+JOURNEY_PAR=false
 
 # PingAdvancedIdentityCloud (optional second profile)
 AIC_SERVER_URL=...
@@ -52,11 +53,14 @@ PINGONE_REDIRECT_URI=...
 PINGONE_PAR=false
 ```
 
-Set `AIC_PAR` or `PINGONE_PAR` to `true` only when the provider's OIDC
-discovery document advertises a PAR endpoint. `AIC_PAR` controls the Advanced Identity Cloud OIDC clients, while `PINGONE_PAR` controls the
-PingOne OIDC and DaVinci clients. The values are parsed as booleans at build
-time, default to the native SDK behavior when omitted or set to `false`, and
-require an app rebuild after changes.
+Set `JOURNEY_PAR`, `AIC_PAR`, or `PINGONE_PAR` to `true` only when the
+provider's OIDC discovery document advertises a PAR endpoint. `JOURNEY_PAR`
+controls the Journey OIDC clients, `AIC_PAR` controls the Advanced Identity
+Cloud OIDC clients, and `PINGONE_PAR` controls the PingOne OIDC and DaVinci
+clients. PAR applies to OIDC web flows; native Journey and DaVinci flows do not
+use it. The values are parsed as booleans at build time, default to the native
+SDK behavior when omitted or set to `false`, and require an app rebuild after
+changes.
 
 > The DaVinci screen reuses the `PINGONE_*` variables above — DaVinci flows
 > are configured against the same PingOne tenant discovery endpoint, so no

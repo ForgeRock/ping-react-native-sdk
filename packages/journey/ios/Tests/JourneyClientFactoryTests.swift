@@ -7,6 +7,7 @@
 
 import XCTest
 import PingLogger
+import PingOidc
 @testable import RNPingCore
 @testable import RNPingJourney
 
@@ -59,8 +60,11 @@ final class JourneyClientFactoryTests: XCTestCase {
     )
 
     let journey = try await JourneyClientFactory().build(payload)
+    let oidcModule = journey.config.modules
+      .compactMap { $0.config as? OidcClientConfig }
+      .first
 
-    XCTAssertNotNil(journey)
+    XCTAssertEqual(oidcModule?.par, true)
   }
 
   func testBuildWithDirectOidcParEnabledSucceeds() async throws {
@@ -92,8 +96,11 @@ final class JourneyClientFactoryTests: XCTestCase {
     )
 
     let journey = try await JourneyClientFactory().build(payload)
+    let oidcModule = journey.config.modules
+      .compactMap { $0.config as? OidcClientConfig }
+      .first
 
-    XCTAssertNotNil(journey)
+    XCTAssertEqual(oidcModule?.par, true)
   }
 
   func testBuildAllowsJourneyOnlyConfigurationWithoutOidc() async throws {
