@@ -13,6 +13,7 @@ import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,26 +75,72 @@ class OidcClientFactoryTest {
   }
 
   @Test
-  fun buildOidcClient_defaultsOptionalOpenIdEndpoints() {
+  fun buildOidcClient_appliesOpenIdDirectlyWhenNoDiscoveryEndpoint() {
+    // With no discoveryEndpoint, there is nothing for the openId payload to
+    // merge onto: it becomes the complete configuration, and any endpoint
+    // it leaves unset stays blank (OpenIdConfiguration's own default).
     val storageRegistry = RecordingRegistry()
     val factory = OidcClientFactory(storageRegistry) { null }
     val payload = basePayload().copy(
+      discoveryEndpoint = null,
       openId = OpenIdPayload(
         authorizationEndpoint = "https://example.com/oauth2/authorize",
         tokenEndpoint = "https://example.com/oauth2/token",
         userinfoEndpoint = "https://example.com/oauth2/userinfo",
         endSessionEndpoint = null,
         pingEndIdpSessionEndpoint = null,
-        revocationEndpoint = null
+        revocationEndpoint = null,
+        deviceAuthorizationEndpoint = null
       )
     )
 
     val client = factory.buildOidcClient(payload)
     val config = client.extractConfig()
 
+    assertEquals("https://example.com/oauth2/authorize", config.openId.authorizationEndpoint)
+    assertEquals("https://example.com/oauth2/token", config.openId.tokenEndpoint)
+    assertEquals("https://example.com/oauth2/userinfo", config.openId.userinfoEndpoint)
     assertEquals("", config.openId.endSessionEndpoint)
     assertEquals("", config.openId.pingEndIdpSessionEndpoint)
     assertEquals("", config.openId.revocationEndpoint)
+  }
+
+  @Test
+  fun buildOidcClient_mergesPartialOpenIdOverrideOntoDiscoveryWhenDiscoveryEndpointPresent() {
+    // With a discoveryEndpoint present, a partial openId payload (here, only
+    // deviceAuthorizationEndpoint -- the field Advanced Identity Cloud's own
+    // discovery document omits) must be registered as an override applied
+    // on top of discovery, not pre-empt discovery outright: only the fields
+    // explicitly provided should replace their discovered value.
+    val storageRegistry = RecordingRegistry()
+    val factory = OidcClientFactory(storageRegistry) { null }
+    val payload = basePayload().copy(
+      openId = OpenIdPayload(
+        authorizationEndpoint = null,
+        tokenEndpoint = null,
+        userinfoEndpoint = null,
+        endSessionEndpoint = null,
+        pingEndIdpSessionEndpoint = null,
+        revocationEndpoint = null,
+        deviceAuthorizationEndpoint = "https://example.com/device/code"
+      )
+    )
+
+    val client = factory.buildOidcClient(payload)
+    val config = client.extractConfig()
+
+    val discovered = com.pingidentity.oidc.OpenIdConfiguration(
+      authorizationEndpoint = "https://discovered.example.com/authorize",
+      tokenEndpoint = "https://discovered.example.com/token",
+      userinfoEndpoint = "https://discovered.example.com/userinfo"
+    )
+    assertNotNull(config.openIdOverride)
+    config.openIdOverride?.invoke(discovered)
+
+    assertEquals("https://discovered.example.com/authorize", discovered.authorizationEndpoint)
+    assertEquals("https://discovered.example.com/token", discovered.tokenEndpoint)
+    assertEquals("https://discovered.example.com/userinfo", discovered.userinfoEndpoint)
+    assertEquals("https://example.com/device/code", discovered.deviceAuthorizationEndpoint)
   }
 
   @Test

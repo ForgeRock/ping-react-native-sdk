@@ -234,9 +234,15 @@ final class JourneyClientFactory {
     for openId: OidcOpenIdConfig
   ) -> (inout OpenIdConfiguration) -> Void {
     return { config in
-      config.authorizationEndpoint = openId.authorizationEndpoint
-      config.tokenEndpoint = openId.tokenEndpoint
-      config.userinfoEndpoint = openId.userinfoEndpoint
+      if let authorizationEndpoint = openId.authorizationEndpoint {
+        config.authorizationEndpoint = authorizationEndpoint
+      }
+      if let tokenEndpoint = openId.tokenEndpoint {
+        config.tokenEndpoint = tokenEndpoint
+      }
+      if let userinfoEndpoint = openId.userinfoEndpoint {
+        config.userinfoEndpoint = userinfoEndpoint
+      }
       if let endSessionEndpoint = openId.endSessionEndpoint {
         config.endSessionEndpoint = endSessionEndpoint
       }

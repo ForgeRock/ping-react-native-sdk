@@ -113,17 +113,27 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertThrowsError(try JourneyConfigParser.parse(config))
   }
 
-  func testParseRejectsOpenIdWithoutRequiredEndpoints() {
+  func testParseAllowsPartialOpenIdEndpointOverride() throws {
+    // Every openId field is an independently-optional override applied on
+    // top of discovery -- a caller may supply only the one endpoint their
+    // provider's discovery document omits (e.g. deviceAuthorizationEndpoint
+    // for Advanced Identity Cloud) without providing the others.
     let config: NSDictionary = [
       "serverUrl": "https://example.com/am",
       "clientId": "client-id",
+      "discoveryEndpoint": "https://example.com/am/oauth2/.well-known/openid-configuration",
       "redirectUri": "com.example.app://oauth2redirect",
       "openId": [
-        "authorizationEndpoint": "https://example.com/oauth2/authorize",
-        "tokenEndpoint": "https://example.com/oauth2/token"
+        "revocationEndpoint": "https://example.com/oauth2/revoke"
       ]
     ]
 
-    XCTAssertThrowsError(try JourneyConfigParser.parse(config))
+    let payload = try JourneyConfigParser.parse(config)
+
+    XCTAssertNotNil(payload.oidc?.openId)
+    XCTAssertNil(payload.oidc?.openId?.authorizationEndpoint)
+    XCTAssertNil(payload.oidc?.openId?.tokenEndpoint)
+    XCTAssertNil(payload.oidc?.openId?.userinfoEndpoint)
+    XCTAssertEqual(payload.oidc?.openId?.revocationEndpoint, "https://example.com/oauth2/revoke")
   }
 }

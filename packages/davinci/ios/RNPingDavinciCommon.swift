@@ -168,15 +168,21 @@ public final class RNPingDavinciCommon: NSObject {
   ///
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.
+  ///   - verificationUri: Optional RFC 8628 `verification_uri_complete` URL used when this
+  ///     device approves a device authorization grant; empty string means absent.
   ///   - resolver: Promise resolver called with the first node payload.
   ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc
   public static func start(
     _ davinciId: String,
+    verificationUri: String,
     resolver: @escaping NodeResolver,
     rejecter: @escaping PromiseRejecter
   ) {
     let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    let trimmedVerificationUri = verificationUri.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
     Task { @MainActor in
       guard let davinci = await resolveDaVinci(davinciId) else {
         promise.reject(
@@ -188,7 +194,14 @@ public final class RNPingDavinciCommon: NSObject {
         return
       }
 
-      let node = await davinci.start()
+      let node: Node
+      if let url = URL(string: trimmedVerificationUri) {
+        node = await davinci.start { options in
+          options.verificationUriComplete = url
+        }
+      } else {
+        node = await davinci.start()
+      }
       stateStore.setNode(davinciId: davinciId, node: node)
       let logger = await resolveLogger(davinciId)
       promise.resolve(DaVinciNodeMapper.mapNode(node, logger: logger))

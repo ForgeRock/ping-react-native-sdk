@@ -7,6 +7,7 @@
 
 package com.pingidentity.rndavinci
 
+import android.net.Uri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -20,6 +21,7 @@ import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.oidc.Token
+import com.pingidentity.oidc.module.VERIFICATION_URI_COMPLETE
 import com.pingidentity.utils.Result
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
@@ -246,9 +248,11 @@ internal object RNPingDavinciCommon {
      * Start the DaVinci flow.
      *
      * @param davinciId Native DaVinci instance id.
+     * @param options Optional start options; supports `verificationUri` (RFC 8628
+     *   `verification_uri_complete`) when this device approves a device flow.
      * @param promise Promise resolved with the first node payload.
      */
-    fun start(davinciId: String, promise: Promise) {
+    fun start(davinciId: String, options: ReadableMap?, promise: Promise) {
         val workflow = resolveWorkflow(davinciId)
         if (workflow == null) {
             promise.reject(
@@ -260,8 +264,19 @@ internal object RNPingDavinciCommon {
             return
         }
 
+        val verificationUri = options?.takeIf { it.hasKey("verificationUri") && !it.isNull("verificationUri") }
+            ?.getString("verificationUri")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
         scope.launchBridge(promise, DaVinciErrorCodes.START) {
-            val node = workflow.start()
+            val node = if (verificationUri != null) {
+                workflow.start {
+                    VERIFICATION_URI_COMPLETE to Uri.parse(verificationUri)
+                }
+            } else {
+                workflow.start()
+            }
             setNodeState(davinciId, node)
             promise.resolve(DaVinciNodeMapper.mapNode(node, resolveDaVinciLogger(davinciId)))
         }

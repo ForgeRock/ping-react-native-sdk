@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { DaVinciNextInput } from './config.types';
+import type { DaVinciNextInput, DaVinciStartOptions } from './config.types';
 import type {
   DaVinciNode,
   DaVinciPollStatusOptions,
@@ -43,10 +43,12 @@ export type DaVinciClient = {
    * The flow entry point is determined by the discovery URL in config — no name is
    * passed at runtime (unlike Journey). Each call starts a fresh flow.
    *
+   * @param options - Optional start flags, such as `verificationUri` for RFC 8628
+   * device-flow approval.
    * @returns The first flow node.
    * @throws {DaVinciError} When start fails.
    */
-  start: () => Promise<DaVinciNode>;
+  start: (options?: DaVinciStartOptions) => Promise<DaVinciNode>;
 
   /**
    * Advance the active DaVinci flow by applying collector values.

@@ -37,6 +37,8 @@ public class RNPingOidcCommon: NSObject {
   private static let clientRegistry: Registry = CoreRuntime.oidcClientRegistry
   /// Shared core registry for OIDC web clients.
   private static let webRegistry: Registry = CoreRuntime.oidcWebClientRegistry
+  private static let deviceRegistry: Registry = SimpleRegistry()
+  private static let deviceTasks = DeviceTaskStore()
 
   /// Specific key for identifying the create queue.
   private static let createQueueKey = DispatchSpecificKey<Void>()
@@ -75,9 +77,11 @@ public class RNPingOidcCommon: NSObject {
   ///   leaking native instances across reloads.
   @objc
   public static func cleanup() {
+    Task { await deviceTasks.cancelAll() }
     Task {
       await clientRegistry.removeAll()
       await webRegistry.removeAll()
+      await deviceRegistry.removeAll()
     }
   }
 
@@ -122,6 +126,221 @@ public class RNPingOidcCommon: NSObject {
         return ""
       }
     }
+  }
+
+  /// Create an OIDC device client from JavaScript configuration.
+  @objc
+  public static func createOidcDeviceClient(_ config: NSDictionary) -> String {
+    return createQueue.sync {
+      do {
+        let payload = try OidcConfigParser.parseClientConfig(config)
+        let logger = resolveLoggerFromCoreSync(payload.loggerId)
+        let oidcConfig = OidcClientFactory.buildOidcClient(payload, logger: logger, queueKey: createQueueKey)
+        let client = OidcDeviceClient(config: oidcConfig)
+        let handle = OidcDeviceHandle(payload: payload, client: client)
+        return RegistrySync.registerSync(
+          handle,
+          registry: deviceRegistry,
+          queueKey: createQueueKey,
+          context: "RNPingOidcCommon.createOidcDeviceClient"
+        )
+      } catch {
+        NSException(name: .invalidArgumentException, reason: "Invalid OIDC device client config: \(error.localizedDescription)", userInfo: nil).raise()
+        return ""
+      }
+    }
+  }
+
+  /// Start an OIDC device authorization stream.
+  @objc
+  public static func deviceAuthorize(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    Task {
+      guard let handle = await RegistrySync.resolve(deviceClientId, registry: deviceRegistry) as? OidcDeviceHandle else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.authorizeError.rawValue, message: "No OIDC device client found for id \(deviceClientId)"), rejecter: rejecter)
+        return
+      }
+      let subscriptionId = UUID().uuidString
+      let task = Task { [deviceClientId, subscriptionId, handle] in
+        do {
+          let stream = try await handle.client.deviceAuthorization()
+          for try await status in stream {
+            emitDeviceStatus(deviceClientId: deviceClientId, subscriptionId: subscriptionId, status: status)
+          }
+        } catch is CancellationError {
+          return
+        } catch {
+          emitDeviceStatus(deviceClientId: deviceClientId, subscriptionId: subscriptionId, status: .failure(error))
+        }
+        await deviceTasks.remove(subscriptionId)
+      }
+      await deviceTasks.set(task, for: subscriptionId)
+      resolver(["subscriptionId": subscriptionId])
+    }
+  }
+
+  @objc
+  public static func cancelDeviceAuthorization(_ deviceClientId: String, subscriptionId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task { (await deviceTasks.remove(subscriptionId))?.cancel() }
+    resolver()
+  }
+
+  /// Open a device authorization verification URL in the on-device browser.
+  ///
+  /// Delegates to the native SDK's `OidcDeviceClient.authorize(verificationUriComplete:)`
+  /// which presents the URL in an `SFSafariViewController`. Dismissing the browser
+  /// resolves with a `cancel` result; the authorization polling loop continues
+  /// independently of this call.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - verificationUri: Verification URI (prefer `verification_uri_complete`).
+  ///   - resolver: Resolver called with a `success`/`cancel` payload.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  @objc
+  public static func deviceOpenVerificationUrl(
+    _ deviceClientId: String,
+    verificationUri: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    Task { @MainActor in
+      guard let handle = await RegistrySync.resolve(deviceClientId, registry: deviceRegistry) as? OidcDeviceHandle else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.authorizeError.rawValue, message: "No OIDC device client found for id \(deviceClientId)"), rejecter: rejecter)
+        return
+      }
+      do {
+        try await handle.client.authorize(verificationUriComplete: verificationUri)
+        resolver(["type": "success"])
+      } catch let error as BrowserError {
+        if case .externalUserAgentCancelled = error {
+          resolver(["type": "cancel"])
+        } else {
+          let mapped = GenericError(
+            type: .internalError,
+            error: OidcErrorCodes.authorizeError.rawValue,
+            message: error.localizedDescription
+          )
+          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+        }
+      } catch {
+        reject(OidcErrorMapper.mapAuthorizeThrowable(error), rejecter: rejecter, underlyingError: error as NSError)
+      }
+    }
+  }
+
+  @objc
+  public static func deviceHasUser(_ deviceClientId: String, resolver: @escaping @Sendable (Bool) -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let handle = await RegistrySync.resolve(deviceClientId, registry: deviceRegistry) as? OidcDeviceHandle else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.hasUserError.rawValue, message: "No OIDC device client found for id \(deviceClientId)"), rejecter: rejecter)
+        return
+      }
+      resolver(await handle.client.user() != nil)
+    }
+  }
+
+  @objc
+  public static func disposeOidcDeviceClient(_ deviceClientId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      await deviceRegistry.remove(deviceClientId)
+      resolver()
+    }
+  }
+
+  private static func resolveDeviceUser(_ deviceClientId: String) async -> (any User)? {
+    guard let handle = await RegistrySync.resolve(deviceClientId, registry: deviceRegistry) as? OidcDeviceHandle else {
+      return nil
+    }
+    return await handle.client.user()
+  }
+
+  @objc
+  public static func deviceToken(_ deviceClientId: String, resolver: @escaping @Sendable (NSDictionary) -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let user = await resolveDeviceUser(deviceClientId) else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.tokenError.rawValue, message: "No authenticated device user is available"), rejecter: rejecter)
+        return
+      }
+      switch await user.token() {
+      case .success(let token): resolver(OidcResponseMapper.encodeTokens(token))
+      case .failure(let error): reject(OidcErrorMapper.mapOidcError(error, code: .tokenError), rejecter: rejecter)
+      }
+    }
+  }
+
+  @objc
+  public static func deviceRefresh(_ deviceClientId: String, resolver: @escaping @Sendable (NSDictionary) -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let user = await resolveDeviceUser(deviceClientId) else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.refreshError.rawValue, message: "No authenticated device user is available"), rejecter: rejecter)
+        return
+      }
+      switch await user.refresh() {
+      case .success(let token): resolver(OidcResponseMapper.encodeTokens(token))
+      case .failure(let error): reject(OidcErrorMapper.mapOidcError(error, code: .refreshError), rejecter: rejecter)
+      }
+    }
+  }
+
+  @objc
+  public static func deviceUserinfo(_ deviceClientId: String, cache: Bool, resolver: @escaping @Sendable (NSDictionary) -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let user = await resolveDeviceUser(deviceClientId) else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.userinfoError.rawValue, message: "No authenticated device user is available"), rejecter: rejecter)
+        return
+      }
+      switch await user.userinfo(cache: cache) {
+      case .success(let info): resolver(OidcResponseMapper.encodeUserinfo(info))
+      case .failure(let error): reject(OidcErrorMapper.mapOidcError(error, code: .userinfoError), rejecter: rejecter)
+      }
+    }
+  }
+
+  @objc
+  public static func deviceRevoke(_ deviceClientId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let user = await resolveDeviceUser(deviceClientId) else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.revokeError.rawValue, message: "No authenticated device user is available"), rejecter: rejecter)
+        return
+      }
+      await user.revoke()
+      resolver()
+    }
+  }
+
+  @objc
+  public static func deviceLogout(_ deviceClientId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
+    Task {
+      guard let user = await resolveDeviceUser(deviceClientId) else {
+        reject(GenericError(type: .stateError, error: OidcErrorCodes.logoutError.rawValue, message: "No authenticated device user is available"), rejecter: rejecter)
+        return
+      }
+      await user.logout()
+      resolver()
+    }
+  }
+
+  private static func emitDeviceStatus(deviceClientId: String, subscriptionId: String, status: DeviceFlowStatus) {
+    var body: [String: Any] = ["deviceClientId": deviceClientId, "subscriptionId": subscriptionId]
+    switch status {
+    case .started(let response):
+      body["status"] = ["type": "started", "response": ["deviceCode": response.deviceCode, "userCode": response.userCode, "verificationUri": response.verificationUri, "verificationUriComplete": response.verificationUriComplete as Any, "expiresIn": response.expiresIn, "interval": response.interval]]
+    case .polling(let pollCount, let pollInterval, let nextPollAt):
+      body["status"] = ["type": "polling", "pollCount": pollCount, "pollInterval": pollInterval, "nextPollAt": nextPollAt.timeIntervalSince1970 * 1000]
+    case .success:
+      body["status"] = ["type": "success"]
+    case .expired:
+      body["status"] = ["type": "expired"]
+    case .accessDenied:
+      body["status"] = ["type": "accessDenied"]
+    case .failure(let error):
+      body["status"] = ["type": "failure", "error": ["message": error.localizedDescription]]
+    }
+    NotificationCenter.default.post(name: .pingOidcNativeEmit, object: nil, userInfo: ["eventName": RNPingOidcEvents.deviceFlowStatus, "eventBody": body])
   }
 
   /// Create an OIDC web client from an existing client handle.

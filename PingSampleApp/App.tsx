@@ -19,6 +19,8 @@ import JourneyFullScreen from './ui/JourneyFullScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
+import DeviceAuthorizationScreen from './ui/DeviceAuthorizationScreen';
+import ApproveDeviceScreen from './ui/ApproveDeviceScreen';
 import DeviceProfileScreen from './ui/DeviceProfileScreen';
 import DevicesScreen from './ui/DevicesScreen';
 import UserProfileScreen from './ui/UserProfileScreen';
@@ -32,9 +34,13 @@ import OathTokensScreen from './ui/OathTokensScreen';
 import QRScannerScreen from './ui/QRScannerScreen';
 import DaVinciScreen from './ui/DaVinciScreen';
 import { JourneyProvider } from '@ping-identity/rn-journey';
-import { OidcProvider } from '@ping-identity/rn-oidc';
+import { DeviceAuthGrantProvider, OidcProvider } from '@ping-identity/rn-oidc';
 import { DaVinciProvider } from '@ping-identity/rn-davinci';
-import { sampleAppClientProfiles, sampleDaVinciConfig } from './src/clients';
+import {
+  deviceAuthClient,
+  sampleAppClientProfiles,
+  sampleDaVinciConfig,
+} from './src/clients';
 import { configureBrowser } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -59,12 +65,14 @@ export type RootStackParamList = {
   Home: undefined;
   Configuration: undefined;
   Storage: undefined;
-  JourneyRoute: undefined;
-  JourneyHelper: { journeyName?: string } | undefined;
+  JourneyRoute: { verificationUri?: string } | undefined;
+  JourneyHelper: { journeyName?: string; verificationUri?: string } | undefined;
   JourneyFull: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
+  DeviceAuthorization: undefined;
+  ApproveDevice: { verificationUri?: string } | undefined;
   DeviceProfile: undefined;
   Devices: undefined;
   UserProfile: undefined;
@@ -75,7 +83,7 @@ export type RootStackParamList = {
   PushNotifications: undefined;
   OathTokens: undefined;
   QRScanner: undefined;
-  DaVinci: undefined;
+  DaVinci: { verificationUri?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -144,6 +152,8 @@ export default function App() {
   const [selectedOidcProfileKey, setSelectedOidcProfileKey] = useState<
     string | null
   >(null);
+  const [selectedDeviceAuthProfileKey, setSelectedDeviceAuthProfileKey] =
+    useState<string | null>(null);
 
   const journeyProfiles = useMemo(
     () =>
@@ -153,6 +163,11 @@ export default function App() {
   const oidcProfiles = useMemo(
     () =>
       sampleAppClientProfiles.filter(profile => profile.group === 'OIDC (Web)'),
+    [],
+  );
+  const deviceAuthProfiles = useMemo(
+    () =>
+      sampleAppClientProfiles.filter(profile => profile.group === 'Auth Grant'),
     [],
   );
 
@@ -169,11 +184,22 @@ export default function App() {
       null,
     [oidcProfiles, selectedOidcProfileKey],
   );
+  const selectedDeviceAuthProfile = useMemo(
+    () =>
+      deviceAuthProfiles.find(
+        profile => profile.key === selectedDeviceAuthProfileKey,
+      ) ??
+      deviceAuthProfiles[0] ??
+      null,
+    [deviceAuthProfiles, selectedDeviceAuthProfileKey],
+  );
 
   const journeyProviderClient =
     selectedJourneyProfile?.journeyClient ?? journeyProfiles[0]?.journeyClient;
   const oidcProviderClient =
     selectedOidcProfile?.oidcClient ?? oidcProfiles[0]?.oidcClient;
+  const deviceAuthProviderClient =
+    selectedDeviceAuthProfile?.deviceAuthClient ?? deviceAuthClient;
 
   useEffect(() => {
     let isMounted = true;
@@ -258,7 +284,9 @@ export default function App() {
 
   const selectedConfigName = `Journey: ${
     selectedJourneyProfile?.name ?? 'None'
-  } | OIDC: ${selectedOidcProfile?.name ?? 'None'}`;
+  } | OIDC: ${selectedOidcProfile?.name ?? 'None'} | Auth Grant: ${
+    selectedDeviceAuthProfile?.name ?? 'None'
+  }`;
 
   if (!journeyProviderClient || !oidcProviderClient) {
     return <Text>Client profiles are not configured.</Text>;
@@ -268,183 +296,202 @@ export default function App() {
     // Journey, OIDC and DaVinci hooks resolve clients from these contexts.
     <JourneyProvider client={journeyProviderClient}>
       <OidcProvider client={oidcProviderClient}>
-        <DaVinciProvider config={sampleDaVinciConfig}>
-          <PushNotificationProvider>
-            <NavigationContainer>
-              <Stack.Navigator
-                initialRouteName="Home"
-                screenOptions={{
-                  headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
-                  headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
-                  headerBackButtonDisplayMode: 'minimal',
-                }}
-              >
-                <Stack.Screen
-                  name="Home"
-                  options={{ title: 'PingIdentity Demo', headerShown: false }}
+        <DeviceAuthGrantProvider client={deviceAuthProviderClient}>
+          <DaVinciProvider config={sampleDaVinciConfig}>
+            <PushNotificationProvider>
+              <NavigationContainer>
+                <Stack.Navigator
+                  initialRouteName="Home"
+                  screenOptions={{
+                    headerTitleStyle: { fontFamily: 'Montserrat-Medium' },
+                    headerBackTitleStyle: { fontFamily: 'Montserrat-Regular' },
+                    headerBackButtonDisplayMode: 'minimal',
+                  }}
                 >
-                  {props => (
-                    <HomeScreen
-                      {...props}
-                      selectedConfigName={selectedConfigName}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Configuration"
-                  options={{ title: 'Configuration' }}
-                >
-                  {props => (
-                    <ConfigurationScreen
-                      {...props}
-                      profiles={sampleAppClientProfiles}
-                      selectedJourneyProfileKey={selectedJourneyProfileKey}
-                      selectedOidcProfileKey={selectedOidcProfileKey}
-                      onSelectJourneyProfile={setSelectedJourneyProfileKey}
-                      onSelectOidcProfile={setSelectedOidcProfileKey}
-                    />
-                  )}
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Storage"
-                  component={MultiStorageScreen}
-                  options={{ title: 'Storage' }}
-                />
-                <Stack.Screen
-                  name="JourneyRoute"
-                  options={{ title: 'Journey Configuration' }}
-                >
-                  {props =>
-                    selectedJourneyProfile ? (
-                      <JourneyRouteScreen {...props} />
-                    ) : (
-                      <ConfigurationRequiredScreen
+                  <Stack.Screen
+                    name="Home"
+                    options={{ title: 'PingIdentity Demo', headerShown: false }}
+                  >
+                    {props => (
+                      <HomeScreen
                         {...props}
-                        message="Please select a Journey configuration first."
+                        selectedConfigName={selectedConfigName}
                       />
-                    )
-                  }
-                </Stack.Screen>
-                <Stack.Screen
-                  name="JourneyHelper"
-                  options={{ title: 'Journey Flow' }}
-                >
-                  {props =>
-                    selectedJourneyProfile ? (
-                      <JourneyHelperScreen
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="Configuration"
+                    options={{ title: 'Configuration' }}
+                  >
+                    {props => (
+                      <ConfigurationScreen
                         {...props}
-                        journeyClient={selectedJourneyProfile.journeyClient}
-                        externalIdpRedirectUri={
-                          selectedJourneyProfile.externalIdpRedirectUri
+                        profiles={sampleAppClientProfiles}
+                        selectedJourneyProfileKey={selectedJourneyProfileKey}
+                        selectedOidcProfileKey={selectedOidcProfileKey}
+                        selectedDeviceAuthProfileKey={
+                          selectedDeviceAuthProfile?.key ?? null
+                        }
+                        onSelectJourneyProfile={setSelectedJourneyProfileKey}
+                        onSelectOidcProfile={setSelectedOidcProfileKey}
+                        onSelectDeviceAuthProfile={
+                          setSelectedDeviceAuthProfileKey
                         }
                       />
-                    ) : (
-                      <ConfigurationRequiredScreen
-                        {...props}
-                        message="Please select a Journey configuration first."
-                      />
-                    )
-                  }
-                </Stack.Screen>
-                <Stack.Screen
-                  name="JourneyFull"
-                  options={{ title: 'Journey Full (API)' }}
-                >
-                  {props =>
-                    selectedJourneyProfile ? (
-                      <JourneyFullScreen />
-                    ) : (
-                      <ConfigurationRequiredScreen
-                        {...props}
-                        message="Please select a Journey configuration first."
-                      />
-                    )
-                  }
-                </Stack.Screen>
-                <Stack.Screen
-                  name="Browser"
-                  component={BrowserScreen}
-                  options={{ title: 'Browser Demo' }}
-                />
-                <Stack.Screen
-                  name="Logger"
-                  component={LoggerScreen}
-                  options={{ title: 'Logger Demo' }}
-                />
-                <Stack.Screen name="Oidc" options={{ title: 'OIDC Demo' }}>
-                  {props =>
-                    selectedOidcProfile ? (
-                      <OidcScreen
-                        {...props}
-                        clientConfig={selectedOidcProfile.oidcClientConfig}
-                      />
-                    ) : (
-                      <ConfigurationRequiredScreen
-                        {...props}
-                        message="Please select an OIDC configuration first."
-                      />
-                    )
-                  }
-                </Stack.Screen>
-                <Stack.Screen
-                  name="DeviceProfile"
-                  component={DeviceProfileScreen}
-                  options={{ title: 'Device Profile' }}
-                />
-                <Stack.Screen
-                  name="Devices"
-                  component={DevicesScreen}
-                  options={{ title: 'Device Management' }}
-                />
-                <Stack.Screen
-                  name="UserProfile"
-                  component={UserProfileScreen}
-                  options={{ title: 'User Profile' }}
-                />
-                <Stack.Screen
-                  name="Token"
-                  component={TokenScreen}
-                  options={{ title: 'Token' }}
-                />
-                <Stack.Screen
-                  name="Logout"
-                  component={LogoutScreen}
-                  options={{ title: 'Logout' }}
-                />
-                <Stack.Screen
-                  name="BindingKeys"
-                  component={BindingKeysScreen}
-                  options={{ title: 'Binding Keys' }}
-                />
-                <Stack.Screen
-                  name="Push"
-                  component={PushScreen}
-                  options={{ title: 'Push Authenticator' }}
-                />
-                <Stack.Screen
-                  name="PushNotifications"
-                  component={PushNotificationsScreen}
-                  options={{ title: 'Push Notifications' }}
-                />
-                <Stack.Screen
-                  name="OathTokens"
-                  component={OathTokensScreen}
-                  options={{ title: 'OATH Tokens' }}
-                />
-                <Stack.Screen
-                  name="QRScanner"
-                  component={QRScannerScreen}
-                  options={{ title: 'QR Scanner' }}
-                />
-                <Stack.Screen
-                  name="DaVinci"
-                  component={DaVinciScreen}
-                  options={{ title: 'DaVinci Flow' }}
-                />
-              </Stack.Navigator>
-            </NavigationContainer>
-          </PushNotificationProvider>
-        </DaVinciProvider>
+                    )}
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="Storage"
+                    component={MultiStorageScreen}
+                    options={{ title: 'Storage' }}
+                  />
+                  <Stack.Screen
+                    name="JourneyRoute"
+                    options={{ title: 'Journey Configuration' }}
+                  >
+                    {props =>
+                      selectedJourneyProfile ? (
+                        <JourneyRouteScreen {...props} />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select a Journey configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="JourneyHelper"
+                    options={{ title: 'Journey Flow' }}
+                  >
+                    {props =>
+                      selectedJourneyProfile ? (
+                        <JourneyHelperScreen
+                          {...props}
+                          journeyClient={selectedJourneyProfile.journeyClient}
+                          externalIdpRedirectUri={
+                            selectedJourneyProfile.externalIdpRedirectUri
+                          }
+                        />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select a Journey configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="JourneyFull"
+                    options={{ title: 'Journey Full (API)' }}
+                  >
+                    {props =>
+                      selectedJourneyProfile ? (
+                        <JourneyFullScreen />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select a Journey configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="Browser"
+                    component={BrowserScreen}
+                    options={{ title: 'Browser Demo' }}
+                  />
+                  <Stack.Screen
+                    name="Logger"
+                    component={LoggerScreen}
+                    options={{ title: 'Logger Demo' }}
+                  />
+                  <Stack.Screen name="Oidc" options={{ title: 'OIDC Demo' }}>
+                    {props =>
+                      selectedOidcProfile ? (
+                        <OidcScreen
+                          {...props}
+                          clientConfig={selectedOidcProfile.oidcClientConfig}
+                        />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select an OIDC configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="DeviceAuthorization"
+                    options={{ title: 'Device Authorization' }}
+                  >
+                    {props => <DeviceAuthorizationScreen {...props} />}
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="ApproveDevice"
+                    component={ApproveDeviceScreen}
+                    options={{ title: 'Approve Device' }}
+                  />
+                  <Stack.Screen
+                    name="DeviceProfile"
+                    component={DeviceProfileScreen}
+                    options={{ title: 'Device Profile' }}
+                  />
+                  <Stack.Screen
+                    name="Devices"
+                    component={DevicesScreen}
+                    options={{ title: 'Device Management' }}
+                  />
+                  <Stack.Screen
+                    name="UserProfile"
+                    component={UserProfileScreen}
+                    options={{ title: 'User Profile' }}
+                  />
+                  <Stack.Screen
+                    name="Token"
+                    component={TokenScreen}
+                    options={{ title: 'Token' }}
+                  />
+                  <Stack.Screen
+                    name="Logout"
+                    component={LogoutScreen}
+                    options={{ title: 'Logout' }}
+                  />
+                  <Stack.Screen
+                    name="BindingKeys"
+                    component={BindingKeysScreen}
+                    options={{ title: 'Binding Keys' }}
+                  />
+                  <Stack.Screen
+                    name="Push"
+                    component={PushScreen}
+                    options={{ title: 'Push Authenticator' }}
+                  />
+                  <Stack.Screen
+                    name="PushNotifications"
+                    component={PushNotificationsScreen}
+                    options={{ title: 'Push Notifications' }}
+                  />
+                  <Stack.Screen
+                    name="OathTokens"
+                    component={OathTokensScreen}
+                    options={{ title: 'OATH Tokens' }}
+                  />
+                  <Stack.Screen
+                    name="QRScanner"
+                    component={QRScannerScreen}
+                    options={{ title: 'QR Scanner' }}
+                  />
+                  <Stack.Screen
+                    name="DaVinci"
+                    component={DaVinciScreen}
+                    options={{ title: 'DaVinci Flow' }}
+                  />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </PushNotificationProvider>
+          </DaVinciProvider>
+        </DeviceAuthGrantProvider>
       </OidcProvider>
     </JourneyProvider>
   );

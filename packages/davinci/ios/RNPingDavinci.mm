@@ -173,12 +173,13 @@ RCT_EXPORT_MODULE()
   [[self swiftImpl] configureDaVinci:dict resolver:resolve rejecter:reject];
 }
 
-/// Bridges `start(davinciId)`.
+/// Bridges `start(davinciId, options)`.
 - (void)start:(NSString *)davinciId
-      resolve:(RCTPromiseResolveBlock)resolve
-       reject:(RCTPromiseRejectBlock)reject
+        options:(NSDictionary *)options
+        resolve:(RCTPromiseResolveBlock)resolve
+         reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] start:davinciId resolver:resolve rejecter:reject];
+  [[self swiftImpl] start:davinciId options:options resolver:resolve rejecter:reject];
 }
 
 /// Bridges `next(davinciId, input)`.

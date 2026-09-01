@@ -5,11 +5,23 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { DeviceEventEmitter } from 'react-native';
 import type { OidcStorageHandle } from '@ping-identity/rn-types';
 import type { OidcClientConfig } from '../index';
 
 type NativeModuleMock = {
   createClient: jest.Mock;
+  createOidcDeviceClient: jest.Mock;
+  deviceAuthorize: jest.Mock;
+  deviceHasUser: jest.Mock;
+  deviceToken: jest.Mock;
+  deviceRefresh: jest.Mock;
+  deviceUserinfo: jest.Mock;
+  deviceRevoke: jest.Mock;
+  deviceLogout: jest.Mock;
+  deviceOpenVerificationUrl: jest.Mock;
+  cancelDeviceAuthorization: jest.Mock;
+  disposeOidcDeviceClient: jest.Mock;
   createWebClient: jest.Mock;
   clientToken: jest.Mock;
   clientRefresh: jest.Mock;
@@ -32,6 +44,17 @@ const createNativeMock = (
 ): NativeModuleMock => {
   return {
     createClient: jest.fn(() => 'client-id'),
+    createOidcDeviceClient: jest.fn(() => 'device-id'),
+    deviceAuthorize: jest.fn(async () => ({ subscriptionId: 'sub-id' })),
+    deviceHasUser: jest.fn(async () => true),
+    deviceToken: jest.fn(async () => ({ accessToken: 'token' })),
+    deviceRefresh: jest.fn(async () => ({ accessToken: 'token' })),
+    deviceUserinfo: jest.fn(async () => ({ sub: 'user' })),
+    deviceRevoke: jest.fn(async () => undefined),
+    deviceLogout: jest.fn(async () => undefined),
+    deviceOpenVerificationUrl: jest.fn(async () => ({ type: 'success' })),
+    cancelDeviceAuthorization: jest.fn(async () => undefined),
+    disposeOidcDeviceClient: jest.fn(async () => undefined),
     createWebClient: jest.fn(() => 'web-id'),
     clientToken: jest.fn(async () => ({ accessToken: 'token' })),
     clientRefresh: jest.fn(async () => ({ accessToken: 'token' })),
@@ -84,6 +107,109 @@ const loadModule = async (nativeModule: NativeModuleMock) => {
   );
   return import('../index');
 };
+
+describe('OIDC device client API', () => {
+  it('creates a device client and maps streamed statuses', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcDeviceClient } = await loadModule(nativeModule);
+    const statuses: unknown[] = [];
+    const client = createOidcDeviceClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    await client.authorize((status) => statuses.push(status));
+    DeviceEventEmitter.emit('RNPingOidc_DeviceFlowStatus', {
+      deviceClientId: 'device-id',
+      subscriptionId: 'sub-id',
+      status: {
+        type: 'started',
+        response: {
+          deviceCode: 'device-code',
+          userCode: 'ABCD',
+          verificationUri: 'https://issuer/verify',
+          expiresIn: 600,
+          interval: 5,
+        },
+      },
+    });
+
+    expect(nativeModule.createOidcDeviceClient).toHaveBeenCalled();
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toMatchObject({ type: 'started' });
+  });
+
+  it('returns an OIDC user after native success', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcDeviceClient } = await loadModule(nativeModule);
+    const client = createOidcDeviceClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+    const user = await client.user();
+    expect(user).not.toBeNull();
+    await expect(user?.token()).resolves.toEqual({ accessToken: 'token' });
+  });
+
+  it('deviceOpenVerificationUrl forwards the client id and URL', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcDeviceClient, deviceOpenVerificationUrl } =
+      await loadModule(nativeModule);
+    const client = createOidcDeviceClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    await expect(
+      deviceOpenVerificationUrl(client, 'https://issuer/verify?user_code=ABCD'),
+    ).resolves.toEqual({ type: 'success' });
+    expect(nativeModule.deviceOpenVerificationUrl).toHaveBeenCalledWith(
+      'device-id',
+      'https://issuer/verify?user_code=ABCD',
+    );
+  });
+
+  it('deviceOpenVerificationUrl rejects a blank verificationUri before calling native', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcDeviceClient, deviceOpenVerificationUrl } =
+      await loadModule(nativeModule);
+    const client = createOidcDeviceClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    await expect(
+      deviceOpenVerificationUrl(client, '   '),
+    ).rejects.toMatchObject({ type: 'argument_error' });
+    expect(nativeModule.deviceOpenVerificationUrl).not.toHaveBeenCalled();
+  });
+
+  it('deviceOpenVerificationUrl maps native cancellation to a cancel result', async () => {
+    const nativeModule = createNativeMock({
+      deviceOpenVerificationUrl: jest.fn(async () => ({ type: 'cancel' })),
+    });
+    const { createOidcDeviceClient, deviceOpenVerificationUrl } =
+      await loadModule(nativeModule);
+    const client = createOidcDeviceClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    await expect(
+      deviceOpenVerificationUrl(client, 'https://issuer/verify'),
+    ).resolves.toEqual({ type: 'cancel' });
+  });
+});
 
 describe('OIDC JS API', () => {
   it('passes openId configuration without discoveryEndpoint', async () => {

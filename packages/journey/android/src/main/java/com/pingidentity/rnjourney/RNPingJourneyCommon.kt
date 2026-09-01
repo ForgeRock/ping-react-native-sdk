@@ -18,6 +18,7 @@ import com.pingidentity.journey.start
 import com.pingidentity.journey.user
 import com.pingidentity.logger.Logger
 import com.pingidentity.oidc.Token
+import com.pingidentity.oidc.module.VERIFICATION_URI_COMPLETE
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.Workflow
@@ -225,7 +226,7 @@ internal object RNPingJourneyCommon {
    *
    * @param journeyId Native journey instance id.
    * @param journeyName Journey/tree name to execute.
-   * @param options Optional start flags (`forceAuth`, `noSession`).
+   * @param options Optional start flags (`forceAuth`, `noSession`, `verificationUri`).
    * @param promise Promise resolved with the first node payload.
    */
   fun start(journeyId: String, journeyName: String, options: ReadableMap?, promise: Promise) {
@@ -252,15 +253,36 @@ internal object RNPingJourneyCommon {
 
     val forceAuth = getBooleanOption(options, "forceAuth")
     val noSession = getBooleanOption(options, "noSession")
+    val verificationUri = getStringOption(options, "verificationUri")
 
     scope.launchBridge(promise, JourneyErrorCodes.START) {
       val node = workflow.start(journeyName) {
         this.forceAuth = forceAuth
         this.noSession = noSession
+        if (verificationUri != null) {
+          VERIFICATION_URI_COMPLETE to Uri.parse(verificationUri)
+        }
       }
       setNodeState(journeyId, node)
       promise.resolve(JourneyNodeMapper.mapNode(node, resolveJourneyLogger(journeyId)))
     }
+  }
+
+  /**
+   * Reads an optional string flag from a React Native options map.
+   *
+   * Missing keys, null values, and blank strings resolve to `null` so JS
+   * callers can omit the field without triggering bridge exceptions.
+   *
+   * @param options Optional React Native map.
+   * @param key String key name to resolve.
+   * @return Trimmed string value, or `null` when absent/blank.
+   */
+  private fun getStringOption(options: ReadableMap?, key: String): String? {
+    if (options == null || !options.hasKey(key) || options.isNull(key)) {
+      return null
+    }
+    return options.getString(key)?.trim()?.takeIf { it.isNotEmpty() }
   }
 
   /**

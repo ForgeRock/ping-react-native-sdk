@@ -10,20 +10,24 @@
  *
  * @remarks
  * This shape is intentionally runtime-serializable and module-agnostic.
+ * Every field is independently optional: the native layer applies only the
+ * endpoints present in this object as overrides on top of the values
+ * returned by OIDC discovery, leaving every other discovered endpoint
+ * untouched. Omit a field to keep its discovered value.
  */
 export type OidcOpenIdConfiguration = {
   /**
    * Authorization endpoint URL.
    */
-  authorizationEndpoint: string;
+  authorizationEndpoint?: string;
   /**
    * Token endpoint URL.
    */
-  tokenEndpoint: string;
+  tokenEndpoint?: string;
   /**
    * Userinfo endpoint URL.
    */
-  userinfoEndpoint: string;
+  userinfoEndpoint?: string;
   /**
    * End-session endpoint URL.
    */
@@ -36,6 +40,10 @@ export type OidcOpenIdConfiguration = {
    * Token revocation endpoint URL.
    */
   revocationEndpoint?: string;
+  /**
+   * OAuth 2.0 Device Authorization Grant endpoint URL.
+   */
+  deviceAuthorizationEndpoint?: string;
 };
 
 /**

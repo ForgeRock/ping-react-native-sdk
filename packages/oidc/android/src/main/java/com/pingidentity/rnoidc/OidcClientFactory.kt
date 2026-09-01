@@ -27,6 +27,37 @@ internal class OidcClientFactory(
 ) {
 
   /**
+   * Build a native OIDC config for a device client.
+   *
+   * @param config Parsed JS client payload
+   * @return Configured native OIDC config
+   */
+  fun buildOidcClientConfig(config: OidcClientPayload): OidcClientConfig {
+    val resolvedLogger = loggerResolver(config.loggerId)
+    return OidcClientConfig().apply {
+      resolvedLogger?.let { logger = it }
+      config.discoveryEndpoint?.let { discoveryEndpoint = it }
+      clientId = config.clientId
+      redirectUri = config.redirectUri
+      scopes = config.scopes.toMutableSet()
+      acrValues = config.acrValues
+      signOutRedirectUri = config.signOutRedirectUri
+      state = config.state
+      nonce = config.nonce
+      uiLocales = config.uiLocales
+      config.refreshThreshold?.let { refreshThreshold = it }
+      loginHint = config.loginHint
+      display = config.display
+      prompt = config.prompt
+      if (config.additionalParameters.isNotEmpty()) {
+        additionalParameters = config.additionalParameters
+      }
+      applyOpenIdIfPresent(config.openId, config.discoveryEndpoint)
+      applyStorageIfPresent(config.storageId)
+    }
+  }
+
+  /**
    * Build a native OIDC web client from stored JS configuration.
    *
    * @param config Parsed JS client payload
@@ -53,7 +84,7 @@ internal class OidcClientFactory(
         if (config.additionalParameters.isNotEmpty()) {
           additionalParameters = config.additionalParameters
         }
-        applyOpenIdIfPresent(config.openId)
+        applyOpenIdIfPresent(config.openId, config.discoveryEndpoint)
         applyStorageIfPresent(config.storageId)
       }
     }
@@ -85,7 +116,7 @@ internal class OidcClientFactory(
       if (config.additionalParameters.isNotEmpty()) {
         additionalParameters = config.additionalParameters
       }
-      applyOpenIdIfPresent(config.openId)
+      applyOpenIdIfPresent(config.openId, config.discoveryEndpoint)
       applyStorageIfPresent(config.storageId)
     }
   }
@@ -110,20 +141,50 @@ internal class OidcClientFactory(
   /**
    * Apply OpenID configuration fields if an explicit payload is provided.
    *
+   * When a discovery endpoint is also configured, the payload is applied as
+   * an override on top of the discovered configuration via
+   * [OidcClientConfig.openIdOverride] -- only the fields present in the
+   * payload replace their discovered value, so an override that supplies
+   * only [OpenIdPayload.deviceAuthorizationEndpoint] (for a provider whose
+   * discovery document omits it) does not blank out the other endpoints
+   * discovery would otherwise resolve.
+   *
+   * When no discovery endpoint is configured, there is nothing to merge
+   * onto: the payload is applied directly as the complete configuration,
+   * matching [OpenIdConfiguration]'s own blank-string defaults for any
+   * field the payload leaves unset.
+   *
    * @param openId Optional OpenID configuration payload
+   * @param discoveryEndpoint Discovery endpoint from the same JS payload, if any
    */
-  private fun OidcClientConfig.applyOpenIdIfPresent(openId: OpenIdPayload?) {
+  private fun OidcClientConfig.applyOpenIdIfPresent(
+    openId: OpenIdPayload?,
+    discoveryEndpoint: String?
+  ) {
     if (openId == null) {
       return
     }
-    this.openId = OpenIdConfiguration(
-      authorizationEndpoint = openId.authorizationEndpoint,
-      tokenEndpoint = openId.tokenEndpoint,
-      userinfoEndpoint = openId.userinfoEndpoint,
-      endSessionEndpoint = openId.endSessionEndpoint ?: "",
-      pingEndIdpSessionEndpoint = openId.pingEndIdpSessionEndpoint ?: "",
-      revocationEndpoint = openId.revocationEndpoint ?: ""
-    )
+    if (discoveryEndpoint.isNullOrBlank()) {
+      this.openId = OpenIdConfiguration(
+        authorizationEndpoint = openId.authorizationEndpoint ?: "",
+        tokenEndpoint = openId.tokenEndpoint ?: "",
+        userinfoEndpoint = openId.userinfoEndpoint ?: "",
+        endSessionEndpoint = openId.endSessionEndpoint ?: "",
+        pingEndIdpSessionEndpoint = openId.pingEndIdpSessionEndpoint ?: "",
+        revocationEndpoint = openId.revocationEndpoint ?: "",
+        deviceAuthorizationEndpoint = openId.deviceAuthorizationEndpoint ?: ""
+      )
+      return
+    }
+    openIdOverride = {
+      openId.authorizationEndpoint?.let { authorizationEndpoint = it }
+      openId.tokenEndpoint?.let { tokenEndpoint = it }
+      openId.userinfoEndpoint?.let { userinfoEndpoint = it }
+      openId.endSessionEndpoint?.let { endSessionEndpoint = it }
+      openId.pingEndIdpSessionEndpoint?.let { pingEndIdpSessionEndpoint = it }
+      openId.revocationEndpoint?.let { revocationEndpoint = it }
+      openId.deviceAuthorizationEndpoint?.let { deviceAuthorizationEndpoint = it }
+    }
   }
 
   /**

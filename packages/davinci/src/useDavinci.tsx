@@ -20,6 +20,7 @@ import type {
   DaVinciNextInput,
   DaVinciNode,
   DaVinciPollStatusOptions,
+  DaVinciStartOptions,
   DaVinciUserSession,
   PollingStatus,
 } from './types';
@@ -33,10 +34,11 @@ export type DaVinciHookActions = {
   /**
    * Start the active DaVinci flow.
    *
+   * @param options - Optional start flags (`verificationUri` for RFC 8628 approval).
    * @returns First flow node.
    * @throws {DaVinciError} When start fails.
    */
-  start: () => Promise<DaVinciNode>;
+  start: (options?: DaVinciStartOptions) => Promise<DaVinciNode>;
 
   /**
    * Advance the active DaVinci flow node by submitting collector values.
@@ -192,21 +194,24 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<DaVinciError | null>(null);
 
-  const start = useCallback(async (): Promise<DaVinciNode> => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await client.start();
-      setNode(result);
-      return result;
-    } catch (err) {
-      const typed = DaVinciError.from(err);
-      setError(typed);
-      throw typed;
-    } finally {
-      setLoading(false);
-    }
-  }, [client]);
+  const start = useCallback(
+    async (options?: DaVinciStartOptions): Promise<DaVinciNode> => {
+      try {
+        setLoading(true);
+        setError(null);
+        const result = await client.start(options);
+        setNode(result);
+        return result;
+      } catch (err) {
+        const typed = DaVinciError.from(err);
+        setError(typed);
+        throw typed;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [client],
+  );
 
   const next = useCallback(
     async (input: DaVinciNextInput): Promise<DaVinciNode> => {

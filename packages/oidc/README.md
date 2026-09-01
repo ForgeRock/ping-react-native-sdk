@@ -266,6 +266,93 @@ If you only need OIDC in one screen, you can skip the provider and pass the clie
 const [state, actions] = useOidc(oidcWebClient);
 ```
 
+### Device Authorization Grant
+
+Use the `useDeviceAuthGrant` hook for RFC 8628 device authorization flows. The hook's
+device client stores successful tokens through the configured native OIDC storage, so
+recreate the client with the same configuration when the app starts again.
+
+```tsx
+import {
+  DeviceAuthGrantProvider,
+  createOidcDeviceClient,
+  useDeviceAuthGrant,
+} from '@ping-identity/rn-oidc';
+import { configureOidcStorage } from '@ping-identity/rn-storage';
+
+const deviceStorage = configureOidcStorage({
+  android: {
+    fileName: 'device-auth',
+    keyAlias: 'device-auth',
+    cacheStrategy: 'no_cache',
+  },
+  ios: {
+    account: 'com.example.app.device-auth',
+    encryptor: true,
+    cacheable: false,
+  },
+});
+
+const deviceClient = createOidcDeviceClient({
+  clientId: 'client-id',
+  discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
+  redirectUri: 'com.example.app://callback',
+  scopes: ['openid', 'profile'],
+  storage: deviceStorage,
+});
+
+function App(): React.ReactElement {
+  return (
+    <DeviceAuthGrantProvider client={deviceClient}>
+      <DeviceAuthScreen />
+    </DeviceAuthGrantProvider>
+  );
+}
+
+function DeviceAuthScreen(): React.ReactElement {
+  const [state, actions] = useDeviceAuthGrant();
+
+  React.useEffect(() => {
+    void actions.restore();
+  }, [actions]);
+
+  React.useEffect(() => {
+    if (state.status?.type === 'started' && state.authorizationResponse) {
+      void actions.openVerificationUrl();
+    }
+  }, [actions, state.authorizationResponse, state.status]);
+
+  if (state.isRestoring) return <Text>Restoring session...</Text>;
+  if (state.isAuthenticated) return <Text>Device is authorized.</Text>;
+
+  return (
+    <Button
+      title={state.isFlowActive ? 'Waiting for approval...' : 'Authorize'}
+      disabled={state.isFlowActive || state.isLoading}
+      onPress={() => void actions.authorize()}
+    />
+  );
+}
+```
+
+`DeviceAuthGrantProvider` shares one client and one state machine across all descendant
+screens, including token, profile, and logout screens. The provider restores once on mount,
+while `actions.restore()` can be called again explicitly. `state.status` exposes `started`,
+`polling`, `success`, `expired`, `accessDenied`, and `failure` statuses; call `actions.cancel()`
+to stop polling without logging out.
+
+`actions.openVerificationUrl()` opens the verification URL in the on-device browser
+(iOS `SFSafariViewController`, Android Custom Tab) so the same device can approve the
+flow. It defaults to the `verificationUriComplete` (falling back to `verificationUri`)
+from the latest `started` status; pass a URL explicitly to override. Dismissing the
+browser resolves to `{ type: 'cancel' }` and does not stop the polling loop.
+
+The provider does not dispose a caller-owned client when it unmounts. Call `actions.dispose()`
+when the app is finished with the client. Create the client once at module scope or in a stable
+`useMemo`, never during ordinary render cycles. Provider state is process-local; it cannot keep
+a JavaScript client alive after an app/bridge restart. Native secure storage provides persistence,
+and creating a new client with the same storage configuration lets `restore()` recover it.
+
 ## Android redirect configuration
 
 Configure the app redirect scheme for Custom Tabs/Auth Tabs. For a redirect URI of

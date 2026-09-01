@@ -12,12 +12,13 @@ import Foundation
 
 /// OpenID configuration override payload parsed from JS.
 struct OpenIdPayload {
-  let authorizationEndpoint: String
-  let tokenEndpoint: String
-  let userinfoEndpoint: String
+  let authorizationEndpoint: String?
+  let tokenEndpoint: String?
+  let userinfoEndpoint: String?
   let endSessionEndpoint: String?
   let pingEndIdpSessionEndpoint: String?
   let revocationEndpoint: String?
+  let deviceAuthorizationEndpoint: String?
 }
 
 /// OIDC client configuration payload parsed from JS.

@@ -12,7 +12,9 @@ import { colors } from '../../../../src/styles/colors';
 import { davinciScreenStyles } from '../../../../src/styles/davinciStyles';
 import AsyncActionButton from '../../../components/molecules/AsyncActionButton';
 import EmptyStateCard from '../../../components/molecules/EmptyStateCard';
+import UserCodeConfirmationBanner from '../../../components/molecules/UserCodeConfirmationBanner';
 import { useDaVinciClientPanelController } from '../../hooks/useDaVinciClientPanelController';
+import { extractUserCode } from '../../../utils/extractUserCode';
 import DaVinciContinueNodePanel from './DaVinciContinueNodePanel';
 
 /**
@@ -33,6 +35,12 @@ export type DaVinciClientPanelProps = {
    * Use this to navigate to the user profile screen.
    */
   onUserProfile?: () => void;
+  /**
+   * Optional RFC 8628 `verification_uri_complete` used when this device is the
+   * approving device in a device authorization grant. Passed to DaVinci
+   * `start()` so the flow approves the requesting device.
+   */
+  verificationUri?: string;
 };
 
 /**
@@ -49,7 +57,10 @@ export type DaVinciClientPanelProps = {
 export default function DaVinciClientPanel(
   props: DaVinciClientPanelProps,
 ): React.ReactElement {
-  const { onAuthenticated, onUserProfile } = props;
+  const { onAuthenticated, onUserProfile, verificationUri } = props;
+  const verificationUserCode = verificationUri
+    ? extractUserCode(verificationUri)
+    : undefined;
   const {
     node,
     form,
@@ -64,10 +75,16 @@ export default function DaVinciClientPanel(
     onPollStatus,
     onStart,
     onLogout,
-  } = useDaVinciClientPanelController({ onAuthenticated });
+  } = useDaVinciClientPanelController({ onAuthenticated, verificationUri });
 
   return (
     <View style={davinciScreenStyles.panel}>
+      {verificationUserCode ? (
+        <UserCodeConfirmationBanner
+          userCode={verificationUserCode.toUpperCase()}
+          testID="davinci-panel-user-code"
+        />
+      ) : null}
       <View style={commonStyles.card}>
         {node?.type === 'ContinueNode' ? (
           <DaVinciContinueNodePanel
@@ -140,7 +157,7 @@ export default function DaVinciClientPanel(
         ) : null}
 
         {error ? (
-          <Text style={commonStyles.textError}>
+          <Text style={commonStyles.textError} selectable>
             {`[${error.code}] ${error.message}`}
           </Text>
         ) : null}

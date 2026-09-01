@@ -52,6 +52,11 @@ export type JourneyOptions = {
   forceAuth?: boolean;
   /** Ignore existing session and start a fresh flow. */
   noSession?: boolean;
+  /**
+   * RFC 8628 `verification_uri_complete` URL used when this device approves a
+   * device authorization grant.
+   */
+  verificationUri?: string;
 };
 
 /**
@@ -91,12 +96,12 @@ export type NativeJourneyConfig = {
   scopes?: string[];
   /** Optional OpenID endpoint override. */
   openId?: {
-    /** Authorization endpoint URL. */
-    authorizationEndpoint: string;
-    /** Token endpoint URL. */
-    tokenEndpoint: string;
-    /** Userinfo endpoint URL. */
-    userinfoEndpoint: string;
+    /** Optional authorization endpoint URL. */
+    authorizationEndpoint?: string;
+    /** Optional token endpoint URL. */
+    tokenEndpoint?: string;
+    /** Optional userinfo endpoint URL. */
+    userinfoEndpoint?: string;
     /** Optional end-session endpoint URL. */
     endSessionEndpoint?: string;
     /** Optional Ping end-session endpoint URL. */

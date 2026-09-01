@@ -77,6 +77,12 @@ export default function HomeScreen({
       icon: 'lock',
       screen: 'Oidc',
     },
+    {
+      title: 'Device Authorization Grant',
+      subtitle: 'Start or verify Device Auth',
+      icon: 'phonelink-lock',
+      screen: 'DeviceAuthorization',
+    },
   ];
 
   const userManagementItems: HomeScreenMenuItem[] = [

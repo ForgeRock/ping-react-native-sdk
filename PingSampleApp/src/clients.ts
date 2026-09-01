@@ -8,8 +8,11 @@
 import { createJourneyClient } from '@ping-identity/rn-journey';
 import {
   createOidcClient,
+  createOidcDeviceClient,
   createOidcWebClient,
   type OidcClientConfig,
+  type OidcDeviceClient,
+  type OidcOpenIdConfiguration,
   type OidcWebClient,
 } from '@ping-identity/rn-oidc';
 import type { JourneyClient } from '@ping-identity/rn-journey';
@@ -22,6 +25,7 @@ import {
   CacheStrategy,
   configureOidcStorage,
   configureSessionStorage,
+  type OidcStorage,
 } from '@ping-identity/rn-storage';
 
 /**
@@ -249,6 +253,154 @@ export const pingOneOidcWebClient: OidcWebClient =
   createOidcWebClient(pingOneOidcClient);
 
 /**
+ * Device Authorization Grant preset configuration shape.
+ *
+ * Each preset (PingOne / Advanced Identity Cloud) maps to one selectable
+ * profile on the Configuration screen.
+ */
+export type DeviceAuthConfig = {
+  clientId: string;
+  discoveryEndpoint: string;
+  scopes: string[];
+  display: string;
+  acrValues: string;
+  /**
+   * Optional OpenID endpoint overrides.
+   *
+   * @remarks
+   * Needed when the provider's discovery document omits an endpoint the
+   * device authorization flow requires (for example, Advanced Identity
+   * Cloud's discovery document has no `device_authorization_endpoint`).
+   */
+  openId?: OidcOpenIdConfiguration;
+};
+
+const splitScopes = (value: string | undefined): string[] =>
+  (value ?? '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+
+/**
+ * Device Authorization Grant preset sourced from `DAG_PINGONE_*` env vars.
+ */
+export const pingOneDeviceAuthConfig: DeviceAuthConfig = {
+  clientId: Config.DAG_PINGONE_CLIENT_ID ?? '',
+  discoveryEndpoint: Config.DAG_PINGONE_DISCOVERY_ENDPOINT ?? '',
+  scopes: splitScopes(Config.DAG_PINGONE_SCOPES),
+  display: 'PingOne Device Authorization',
+  acrValues: Config.DAG_PINGONE_ACR_VALUES ?? '',
+};
+
+/**
+ * Base URL shared by every AIC/AM OAuth 2.0 endpoint, derived from the
+ * DAG_AIC discovery endpoint by stripping its `.well-known/openid-configuration`
+ * suffix (for example `.../am/oauth2/alpha/.well-known/openid-configuration`
+ * becomes `.../am/oauth2/alpha`).
+ */
+const aicDeviceAuthEndpointBase = (
+  Config.DAG_AIC_DISCOVERY_ENDPOINT ?? ''
+).replace(/\/\.well-known\/openid-configuration\/?$/, '');
+
+/**
+ * Device Authorization Grant preset sourced from `DAG_AIC_*` env vars.
+ *
+ * @remarks
+ * Advanced Identity Cloud's discovery document does not advertise a
+ * `device_authorization_endpoint`, so it is overridden here from the
+ * tenant's known device-code path. Every other endpoint is left to OIDC
+ * discovery: {@link OidcOpenIdConfiguration}'s fields are independently
+ * optional overrides applied on top of the discovered configuration, not a
+ * replacement for it.
+ */
+export const aicDeviceAuthConfig: DeviceAuthConfig = {
+  clientId: Config.DAG_AIC_CLIENT_ID ?? '',
+  discoveryEndpoint: Config.DAG_AIC_DISCOVERY_ENDPOINT ?? '',
+  scopes: splitScopes(Config.DAG_AIC_SCOPES),
+  display: 'AIC Device Authorization',
+  acrValues: Config.DAG_AIC_ACR_VALUES ?? '',
+  openId: aicDeviceAuthEndpointBase
+    ? {
+        deviceAuthorizationEndpoint: `${aicDeviceAuthEndpointBase}/device/code`,
+      }
+    : undefined,
+};
+
+export const deviceAuthConfigToOidcConfig = (
+  config: DeviceAuthConfig,
+): OidcClientConfig => ({
+  clientId: config.clientId,
+  discoveryEndpoint: config.discoveryEndpoint || undefined,
+  redirectUri:
+    Config.PINGONE_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect',
+  scopes: config.scopes,
+  acrValues: config.acrValues || undefined,
+  openId: config.openId,
+});
+
+/**
+ * Storage handles isolate device-flow tokens per preset so switching between
+ * PingOne and AIC presets never mixes token state.
+ */
+const pingOneDeviceAuthStorage = configureOidcStorage({
+  android: {
+    fileName: 'ping-device-auth',
+    keyAlias: 'ping.device.auth',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.NO_CACHE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.ping.device.auth',
+    encryptor: true,
+    cacheable: false,
+  },
+});
+
+const aicDeviceAuthStorage = configureOidcStorage({
+  android: {
+    fileName: 'aic-device-auth',
+    keyAlias: 'aic.device.auth',
+    strongBoxPreferred: true,
+    cacheStrategy: CacheStrategy.NO_CACHE,
+  },
+  ios: {
+    account: 'com.pingidentity.rnsampleapp.aic.device.auth',
+    encryptor: true,
+    cacheable: false,
+  },
+});
+
+export const createOidcDeviceClientForConfig = (
+  config: DeviceAuthConfig,
+  storage: OidcStorage,
+): OidcDeviceClient =>
+  createOidcDeviceClient({
+    ...deviceAuthConfigToOidcConfig(config),
+    storage,
+    logger: appLogger,
+  });
+
+/**
+ * Device authorization clients for each preset, shared by the sample app
+ * provider via profile selection.
+ */
+export const pingOneDeviceAuthClient = createOidcDeviceClientForConfig(
+  pingOneDeviceAuthConfig,
+  pingOneDeviceAuthStorage,
+);
+
+export const aicDeviceAuthClient = createOidcDeviceClientForConfig(
+  aicDeviceAuthConfig,
+  aicDeviceAuthStorage,
+);
+
+/**
+ * Default device authorization client (PingOne preset) kept for callers that
+ * need a client without profile selection.
+ */
+export const deviceAuthClient = pingOneDeviceAuthClient;
+
+/**
  * Journey-only client for validating flows without OIDC module composition.
  *
  * This mirrors native Journey setup where only `serverUrl` is configured.
@@ -333,7 +485,11 @@ export const sampleDaVinciClient: DaVinciClient =
 /**
  * Supported sample app configuration groups.
  */
-export type SampleConfigGroup = 'Journey' | 'OIDC (Web)' | 'DaVinci';
+export type SampleConfigGroup =
+  | 'Journey'
+  | 'OIDC (Web)'
+  | 'DaVinci'
+  | 'Auth Grant';
 
 /**
  * Runtime-selectable sample app client profile.
@@ -375,6 +531,16 @@ export type SampleAppClientProfile = {
    * Redirect URI used by Journey external IdP integrations.
    */
   externalIdpRedirectUri: string;
+  /**
+   * Device authorization client bound to this profile. Present only for
+   * `Auth Grant` group profiles.
+   */
+  deviceAuthClient?: OidcDeviceClient;
+  /**
+   * Device authorization configuration displayed by the Auth Grant section.
+   * Present only for `Auth Grant` group profiles.
+   */
+  deviceAuthConfig?: DeviceAuthConfig;
 };
 
 /**
@@ -444,6 +610,32 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     oidcClient: pingOneOidcWebClient,
     oidcClientConfig: pingOneOidcClientConfig,
     externalIdpRedirectUri: journeyConfig.redirectUri,
+  },
+  {
+    key: 'dag-pingone',
+    group: 'Auth Grant',
+    name: 'PingOne Device Authorization',
+    host: hostnameFrom(pingOneDeviceAuthConfig.discoveryEndpoint),
+    environment: 'PingOne',
+    journeyClient: loginClient,
+    oidcClient: sampleOidcWebClient,
+    oidcClientConfig: sampleOidcClientConfig,
+    externalIdpRedirectUri: journeyConfig.redirectUri,
+    deviceAuthClient: pingOneDeviceAuthClient,
+    deviceAuthConfig: pingOneDeviceAuthConfig,
+  },
+  {
+    key: 'dag-aic',
+    group: 'Auth Grant',
+    name: 'AIC Device Authorization',
+    host: hostnameFrom(aicDeviceAuthConfig.discoveryEndpoint),
+    environment: pingAdvancedIdentityCloudConfig.realm,
+    journeyClient: loginClient,
+    oidcClient: sampleOidcWebClient,
+    oidcClientConfig: sampleOidcClientConfig,
+    externalIdpRedirectUri: journeyConfig.redirectUri,
+    deviceAuthClient: aicDeviceAuthClient,
+    deviceAuthConfig: aicDeviceAuthConfig,
   },
 ];
 

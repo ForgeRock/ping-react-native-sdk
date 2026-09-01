@@ -63,6 +63,10 @@ class RNPingOidcClassicModule(
    * @return Stable web client identifier
    */
   @ReactMethod(isBlockingSynchronousMethod = true)
+  fun createOidcDeviceClient(config: ReadableMap): String {
+    return RNPingOidcCommon.createOidcDeviceClient(config)
+  }
+
   fun createWebClient(clientId: String): String {
     return RNPingOidcCommon.createWebClient(clientId)
   }
@@ -73,6 +77,51 @@ class RNPingOidcClassicModule(
    * @param clientId Identifier returned by [createClient]
    * @param promise Promise resolved with token payload or rejected with GenericError
    */
+  @ReactMethod
+  fun deviceAuthorize(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceAuthorize(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun deviceHasUser(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceHasUser(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun deviceToken(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceToken(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun deviceRefresh(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRefresh(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun deviceUserinfo(deviceClientId: String, cache: Boolean, promise: Promise) {
+    RNPingOidcCommon.deviceUserinfo(deviceClientId, cache, promise)
+  }
+
+  @ReactMethod
+  fun deviceRevoke(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRevoke(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun deviceLogout(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceLogout(deviceClientId, promise)
+  }
+
+  @ReactMethod
+  fun cancelDeviceAuthorization(deviceClientId: String, subscriptionId: String, promise: Promise) {
+    RNPingOidcCommon.cancelDeviceAuthorization(deviceClientId, subscriptionId, promise)
+  }
+
+  @ReactMethod
+  fun deviceOpenVerificationUrl(deviceClientId: String, verificationUri: String, promise: Promise) {
+    RNPingOidcCommon.deviceOpenVerificationUrl(deviceClientId, verificationUri, promise)
+  }
+
   @ReactMethod
   fun clientToken(clientId: String, promise: Promise) {
     RNPingOidcCommon.clientToken(clientId, promise)
@@ -200,6 +249,11 @@ class RNPingOidcClassicModule(
   @ReactMethod
   fun logout(webClientId: String, promise: Promise) {
     RNPingOidcCommon.logout(webClientId, promise)
+  }
+
+  @ReactMethod
+  fun disposeOidcDeviceClient(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeOidcDeviceClient(deviceClientId, promise)
   }
 
   @ReactMethod

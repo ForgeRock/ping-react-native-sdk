@@ -150,13 +150,16 @@ class OidcConfigParserTest {
   }
 
   @Test
-  fun parseClientConfig_openIdMissingRequiredEndpointThrows() {
+  fun parseClientConfig_openIdAllowsPartialEndpointOverride() {
+    // Every openId field is an independently-optional override applied on
+    // top of discovery -- a caller may supply only the one endpoint their
+    // provider's discovery document omits (e.g. deviceAuthorizationEndpoint
+    // for Advanced Identity Cloud) without providing the others.
     val scopes = JavaOnlyArray().apply {
       pushString("openid")
     }
     val openId = JavaOnlyMap().apply {
-      putString("authorizationEndpoint", "https://example.com/oauth2/authorize")
-      putString("userinfoEndpoint", "https://example.com/oauth2/userinfo")
+      putString("deviceAuthorizationEndpoint", "https://example.com/device/code")
     }
     val config = JavaOnlyMap().apply {
       putString("clientId", "client-id")
@@ -166,9 +169,13 @@ class OidcConfigParserTest {
       putMap("openId", openId)
     }
 
-    assertThrows(IllegalArgumentException::class.java) {
-      OidcConfigParser.parseClientConfig(config)
-    }
+    val payload = OidcConfigParser.parseClientConfig(config)
+
+    assertNotNull(payload.openId)
+    assertNull(payload.openId?.authorizationEndpoint)
+    assertNull(payload.openId?.tokenEndpoint)
+    assertNull(payload.openId?.userinfoEndpoint)
+    assertEquals("https://example.com/device/code", payload.openId?.deviceAuthorizationEndpoint)
   }
 
   @Test

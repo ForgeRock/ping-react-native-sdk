@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
 import { useOidc } from '@ping-identity/rn-oidc';
 import { useDaVinci } from '@ping-identity/rn-davinci';
+import { useDeviceAuthGrant } from '@ping-identity/rn-oidc';
 import { PingError } from '@ping-identity/rn-types';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
@@ -18,8 +19,9 @@ import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import TokenJourneyPanel from './token/components/organisms/TokenJourneyPanel';
 import TokenOidcPanel from './token/components/organisms/TokenOidcPanel';
 import TokenDaVinciPanel from './token/components/organisms/TokenDaVinciPanel';
+import TokenDeviceAuthPanel from './token/components/organisms/TokenDeviceAuthPanel';
 
-const TOKEN_TABS = ['Journey', 'OIDC', 'DaVinci'] as const;
+const TOKEN_TABS = ['Journey', 'OIDC', 'DaVinci', 'Auth Grant'] as const;
 
 type TokenTab = (typeof TOKEN_TABS)[number];
 
@@ -31,6 +33,8 @@ const getEmptyMessage = (tab: TokenTab): string => {
       return 'No OIDC token information is available';
     case 'DaVinci':
       return 'No DaVinci token information is available';
+    case 'Auth Grant':
+      return 'No Auth Grant token information is available';
   }
 };
 
@@ -39,6 +43,11 @@ const JOURNEY_AUTH_REQUIRED_MESSAGE =
 
 const DAVINCI_AUTH_REQUIRED_MESSAGE =
   'No authenticated DaVinci token state found. Complete DaVinci login first, then tap AccessToken.';
+
+const authRequiredMessageFor = (tab: TokenTab): string =>
+  tab === 'DaVinci'
+    ? DAVINCI_AUTH_REQUIRED_MESSAGE
+    : JOURNEY_AUTH_REQUIRED_MESSAGE;
 
 /**
  * Renders token operations by auth source with tabbed navigation.
@@ -53,12 +62,14 @@ export default function TokenScreen(): React.ReactElement {
     Journey: getEmptyMessage('Journey'),
     OIDC: getEmptyMessage('OIDC'),
     DaVinci: getEmptyMessage('DaVinci'),
+    'Auth Grant': getEmptyMessage('Auth Grant'),
   });
   const [loading, setLoading] = useState<boolean>(false);
 
   const [, journeyActions] = useJourney();
   const [, oidcActions] = useOidc();
   const davinciActions = useDaVinci();
+  const [, deviceActions] = useDeviceAuthGrant();
 
   const setActiveTabOutput = useCallback(
     (value: string): void => {
@@ -99,13 +110,20 @@ export default function TokenScreen(): React.ReactElement {
         setActiveTabOutput(session.accessToken);
         return;
       }
+
+      const tokens = await deviceActions.token();
+      setActiveTabOutput(
+        tokens
+          ? JSON.stringify(tokens, null, 2)
+          : getEmptyMessage('Auth Grant'),
+      );
     } catch (error) {
       if (
         error instanceof PingError &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
-        setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
+        setActiveTabOutput(authRequiredMessageFor(activeTab));
       } else {
         setActiveTabOutput(formatError(error));
       }
@@ -115,6 +133,7 @@ export default function TokenScreen(): React.ReactElement {
   }, [
     activeTab,
     davinciActions,
+    deviceActions,
     journeyActions,
     oidcActions,
     setActiveTabOutput,
@@ -164,13 +183,20 @@ export default function TokenScreen(): React.ReactElement {
         setActiveTabOutput(session.refreshToken ?? getEmptyMessage('DaVinci'));
         return;
       }
+
+      const tokens = await deviceActions.refresh();
+      setActiveTabOutput(
+        tokens
+          ? JSON.stringify(tokens, null, 2)
+          : getEmptyMessage('Auth Grant'),
+      );
     } catch (error) {
       if (
         error instanceof PingError &&
         (error.message.includes('No AuthCode is available') ||
           error.message.includes('Please start Journey to authenticate'))
       ) {
-        setActiveTabOutput(JOURNEY_AUTH_REQUIRED_MESSAGE);
+        setActiveTabOutput(authRequiredMessageFor(activeTab));
       } else {
         setActiveTabOutput(formatError(error));
       }
@@ -180,6 +206,7 @@ export default function TokenScreen(): React.ReactElement {
   }, [
     activeTab,
     davinciActions,
+    deviceActions,
     journeyActions,
     oidcActions,
     setActiveTabOutput,
@@ -222,6 +249,12 @@ export default function TokenScreen(): React.ReactElement {
         return;
       }
 
+      if (activeTab === 'Auth Grant') {
+        await deviceActions.revoke();
+        setActiveTabOutput(getEmptyMessage('Auth Grant'));
+        return;
+      }
+
       await journeyActions.revoke();
       const session = await journeyActions.user();
       if (session) {
@@ -246,6 +279,7 @@ export default function TokenScreen(): React.ReactElement {
   }, [
     activeTab,
     davinciActions,
+    deviceActions,
     journeyActions,
     oidcActions,
     setActiveTabOutput,
@@ -309,7 +343,22 @@ export default function TokenScreen(): React.ReactElement {
             }}
             onClear={handleClear}
           />
-        ) : null}
+        ) : (
+          <TokenDeviceAuthPanel
+            tokenOutput={tokenOutputByTab['Auth Grant']}
+            loading={loading}
+            onAccessToken={() => {
+              void handleAccessToken();
+            }}
+            onRefresh={() => {
+              void handleRefresh();
+            }}
+            onRevoke={() => {
+              void handleRevoke();
+            }}
+            onClear={handleClear}
+          />
+        )}
       </ScrollView>
     </View>
   );

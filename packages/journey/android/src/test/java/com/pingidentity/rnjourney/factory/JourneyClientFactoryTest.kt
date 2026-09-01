@@ -68,6 +68,61 @@ class JourneyClientFactoryTest {
     assertEquals(listOf("logger-1"), resolvedLoggerIds)
   }
 
+  @Test
+  fun build_composesWithPartialOpenIdOverrideAndDiscoveryEndpointPresent() {
+    // A partial openId override (only revocationEndpoint set) combined with
+    // a configured discoveryEndpoint must compose successfully -- it is
+    // registered as an override applied on top of discovery, not a
+    // replacement for it, so leaving the other endpoints unset must not
+    // throw or otherwise fail composition.
+    val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
+    val payload = basePayload(sessionStorageId = null, oidcStorageId = null).let {
+      it.copy(
+        oidc = it.oidc?.copy(
+          openId = JourneyOpenIdPayload(
+            authorizationEndpoint = null,
+            tokenEndpoint = null,
+            userinfoEndpoint = null,
+            endSessionEndpoint = null,
+            pingEndIdpSessionEndpoint = null,
+            revocationEndpoint = "https://example.com/oauth2/revoke"
+          )
+        )
+      )
+    }
+
+    val workflow = factory.build(payload)
+
+    assertNotNull(workflow)
+  }
+
+  @Test
+  fun build_appliesOpenIdDirectlyWhenNoDiscoveryEndpoint() {
+    // With no discoveryEndpoint configured, openId is the only endpoint
+    // source, so it must be applied directly (openId-only manual
+    // configuration), mirroring the oidc package's two-branch behavior.
+    val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
+    val payload = basePayload(sessionStorageId = null, oidcStorageId = null).let {
+      it.copy(
+        oidc = it.oidc?.copy(
+          discoveryEndpoint = null,
+          openId = JourneyOpenIdPayload(
+            authorizationEndpoint = "https://example.com/oauth2/authorize",
+            tokenEndpoint = "https://example.com/oauth2/token",
+            userinfoEndpoint = null,
+            endSessionEndpoint = null,
+            pingEndIdpSessionEndpoint = null,
+            revocationEndpoint = null
+          )
+        )
+      )
+    }
+
+    val workflow = factory.build(payload)
+
+    assertNotNull(workflow)
+  }
+
   @Test(expected = IllegalArgumentException::class)
   fun build_throwsWhenSessionStorageIdIsUnknown() {
     val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }

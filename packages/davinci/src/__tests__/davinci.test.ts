@@ -92,7 +92,7 @@ describe('NativeRNPingDavinci lazy wrapper', () => {
       clientId: 'client',
       redirectUri: 'app://cb',
     });
-    expect(stub.start).toHaveBeenCalledWith('id');
+    expect(stub.start).toHaveBeenCalledWith('id', undefined);
     expect(stub.next).toHaveBeenCalledWith('id', {});
     expect(stub.getSession).toHaveBeenCalledWith('id');
     expect(stub.refresh).toHaveBeenCalledWith('id');

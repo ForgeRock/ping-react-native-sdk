@@ -62,6 +62,59 @@ final class JourneyClientFactoryTests: XCTestCase {
     XCTAssertNotNil(journey)
   }
 
+  func testBuildComposesWithPartialOpenIdOverrideFromCoreHandle() async throws {
+    // A partial openId override (only revocationEndpoint set) exposed by an
+    // OIDC handle must compose successfully -- it is registered as an
+    // override applied on top of discovery, not a replacement for it, so
+    // leaving the other endpoints unset must not throw or otherwise fail
+    // composition.
+    let oidcClientId = await CoreRuntime.oidcClientRegistry.register(
+      OidcHandleStub(
+        clientId: "client-id",
+        discoveryEndpoint: "https://example.com/am/oauth2/.well-known/openid-configuration",
+        redirectUri: "com.example.app://oauth2redirect",
+        scopes: ["openid", "profile"],
+        openId: OidcOpenIdConfig(
+          authorizationEndpoint: nil,
+          tokenEndpoint: nil,
+          userinfoEndpoint: nil,
+          endSessionEndpoint: nil,
+          pingEndIdpSessionEndpoint: nil,
+          revocationEndpoint: "https://example.com/oauth2/revoke"
+        )
+      )
+    )
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: "alpha",
+      cookie: "iPlanetDirectoryPro",
+      clientId: nil,
+      discoveryEndpoint: nil,
+      redirectUri: nil,
+      scopes: [],
+      openId: nil,
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: nil,
+      loggerId: nil,
+      oidcClientId: oidcClientId
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+
+    XCTAssertNotNil(journey)
+  }
+
   func testBuildAllowsJourneyOnlyConfigurationWithoutOidc() async throws {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",

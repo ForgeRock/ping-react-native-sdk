@@ -9,6 +9,14 @@
 //
 
 #import <React/RCTBridgeModule.h>
+#if __has_include(<React/RCTCallableJSModules.h>)
+#import <React/RCTCallableJSModules.h>
+#else
+@protocol RCTCallableJSModules <NSObject>
+- (void)invokeModule:(NSString *)moduleName method:(NSString *)methodName withArgs:(NSArray *)args;
+@end
+#endif
+#import "RNPingOidcEventEmitterGate.h"
 #import "RNPingOidc-Swift.h"
 
 /// React Native bridge module for classic (non-TurboModule) access.
@@ -16,12 +24,39 @@
 @end
 
 @implementation RNPingOidcClassic
+@synthesize callableJSModules = _callableJSModules;
 
 RCT_EXPORT_MODULE(RNPingOidcClassic)
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self && RNPingOidcClaimEventEmitterOwnership(@"classic")) {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNativeEmit:) name:@"RNPingOidc_NativeEmit" object:nil];
+  }
+  return self;
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingOidcReleaseEventEmitterOwnership(@"classic");
+}
+
+- (void)onNativeEmit:(NSNotification *)notification
+{
+  NSString *name = notification.userInfo[@"eventName"];
+  id body = notification.userInfo[@"eventBody"];
+  if (name && _callableJSModules) {
+    [_callableJSModules invokeModule:@"RCTDeviceEventEmitter" method:@"emit" withArgs:(body ? @[name, body] : @[name])];
+  }
+}
 
 // Clean up native resources when the bridge is invalidated.
 - (void)invalidate
 {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingOidcReleaseEventEmitterOwnership(@"classic");
   [RNPingOidcCommon cleanup];
 }
 
@@ -33,10 +68,57 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createClient:(NSDictionary *)config)
   return [RNPingOidcCommon createClient:config];
 }
 
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createOidcDeviceClient:(NSDictionary *)config)
+{
+  return [RNPingOidcCommon createOidcDeviceClient:config];
+}
+
 /// Create a native-backed OIDC web client from an existing client id.
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createWebClient:(NSString *)clientId)
 {
   return [RNPingOidcCommon createWebClient:clientId];
+}
+
+RCT_EXPORT_METHOD(deviceAuthorize:(NSString *)deviceClientId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon deviceAuthorize:deviceClientId resolver:resolve rejecter:reject];
+}
+
+RCT_EXPORT_METHOD(cancelDeviceAuthorization:(NSString *)deviceClientId
+                  subscriptionId:(NSString *)subscriptionId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon cancelDeviceAuthorization:deviceClientId subscriptionId:subscriptionId resolver:^{ resolve(nil); } rejecter:reject];
+}
+
+RCT_EXPORT_METHOD(deviceHasUser:(NSString *)deviceClientId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon deviceHasUser:deviceClientId resolver:^(BOOL value) { resolve(@(value)); } rejecter:reject];
+}
+
+RCT_EXPORT_METHOD(deviceOpenVerificationUrl:(NSString *)deviceClientId
+                  verificationUri:(NSString *)verificationUri
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon deviceOpenVerificationUrl:deviceClientId verificationUri:verificationUri resolver:resolve rejecter:reject];
+}
+
+RCT_EXPORT_METHOD(deviceToken:(NSString *)deviceClientId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) { [RNPingOidcCommon deviceToken:deviceClientId resolver:resolve rejecter:reject]; }
+RCT_EXPORT_METHOD(deviceRefresh:(NSString *)deviceClientId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) { [RNPingOidcCommon deviceRefresh:deviceClientId resolver:resolve rejecter:reject]; }
+RCT_EXPORT_METHOD(deviceUserinfo:(NSString *)deviceClientId cache:(BOOL)cache resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) { [RNPingOidcCommon deviceUserinfo:deviceClientId cache:cache resolver:resolve rejecter:reject]; }
+RCT_EXPORT_METHOD(deviceRevoke:(NSString *)deviceClientId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) { [RNPingOidcCommon deviceRevoke:deviceClientId resolver:^{ resolve(nil); } rejecter:reject]; }
+RCT_EXPORT_METHOD(deviceLogout:(NSString *)deviceClientId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) { [RNPingOidcCommon deviceLogout:deviceClientId resolver:^{ resolve(nil); } rejecter:reject]; }
+RCT_EXPORT_METHOD(disposeOidcDeviceClient:(NSString *)deviceClientId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingOidcCommon disposeOidcDeviceClient:deviceClientId resolver:^{ resolve(nil); } rejecter:reject];
 }
 
 #pragma mark - Client Tokens

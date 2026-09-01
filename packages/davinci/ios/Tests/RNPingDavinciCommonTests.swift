@@ -195,6 +195,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
     ) { rejecter, resolver in
       RNPingDavinciCommon.start(
         "missing",
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )
@@ -210,6 +211,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     RNPingDavinciCommon.start(
       davinciId,
+      verificationUri: "",
       resolver: { payload in
         capture.set(payload["type"] as? String ?? "")
         Task { @MainActor in resolveExpectation.fulfill() }
@@ -235,6 +237,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
     RNPingDavinciCommon.start(
       davinciId,
+      verificationUri: "",
       resolver: { payload in
         capture.set(payload["type"] as? String ?? "")
         Task { @MainActor in resolveExpectation.fulfill() }
@@ -486,6 +489,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
     ) { rejecter, resolver in
       RNPingDavinciCommon.start(
         davinciId,
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )
@@ -507,6 +511,7 @@ final class RNPingDavinciCommonTests: XCTestCase {
     ) { rejecter, resolver in
       RNPingDavinciCommon.start(
         firstId,
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )

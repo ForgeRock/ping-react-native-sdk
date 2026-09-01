@@ -78,9 +78,18 @@ RCT_EXPORT_MODULE()
   if (openId.has_value()) {
     auto openIdValue = openId.value();
     NSMutableDictionary *openIdDict = [NSMutableDictionary new];
-    openIdDict[@"authorizationEndpoint"] = openIdValue.authorizationEndpoint();
-    openIdDict[@"tokenEndpoint"] = openIdValue.tokenEndpoint();
-    openIdDict[@"userinfoEndpoint"] = openIdValue.userinfoEndpoint();
+    NSString *authorizationEndpoint = openIdValue.authorizationEndpoint();
+    if (authorizationEndpoint != nil) {
+      openIdDict[@"authorizationEndpoint"] = authorizationEndpoint;
+    }
+    NSString *tokenEndpoint = openIdValue.tokenEndpoint();
+    if (tokenEndpoint != nil) {
+      openIdDict[@"tokenEndpoint"] = tokenEndpoint;
+    }
+    NSString *userinfoEndpoint = openIdValue.userinfoEndpoint();
+    if (userinfoEndpoint != nil) {
+      openIdDict[@"userinfoEndpoint"] = userinfoEndpoint;
+    }
     NSString *endSessionEndpoint = openIdValue.endSessionEndpoint();
     if (endSessionEndpoint != nil) {
       openIdDict[@"endSessionEndpoint"] = endSessionEndpoint;
@@ -170,6 +179,10 @@ RCT_EXPORT_MODULE()
   }
   if (options.noSession().has_value()) {
     opts[@"noSession"] = @(options.noSession().value());
+  }
+  NSString *verificationUri = options.verificationUri();
+  if (verificationUri != nil) {
+    opts[@"verificationUri"] = verificationUri;
   }
 
   [[self swiftImpl] start:journeyId
