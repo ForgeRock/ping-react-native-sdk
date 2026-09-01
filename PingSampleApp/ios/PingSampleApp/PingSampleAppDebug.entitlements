@@ -8,5 +8,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<!-- Domain resolved from ASSOCIATED_DOMAIN in Config.local.xcconfig. It must match the Apple Developer associated domains (webcredentials) configured for the App ID. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:$(ASSOCIATED_DOMAIN)</string>
+	</array>
 </dict>
 </plist>

@@ -113,6 +113,7 @@ async function loadDaVinci(nativeMock: NativeDaVinciMock) {
     };
   registerIntegrationCollectorType('PROTECT');
   registerIntegrationCollectorType('SOCIAL_LOGIN_BUTTON');
+  registerIntegrationCollectorType('FIDO2');
 
   const module = require('@ping-identity/rn-davinci');
   /* eslint-enable @typescript-eslint/no-require-imports */
@@ -988,6 +989,112 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(mod.resolveExecutionMode('SOCIAL_LOGIN_BUTTON')).toBe(
         'integration_required',
       );
+    });
+
+    it('FIDO2 — ContinueNode exposes action-discriminated collector', async () => {
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+                publicKeyCredentialCreationOptions: {
+                  challenge: 'mock-challenge',
+                },
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0]).toMatchObject({
+        key: 'fido2.registration',
+        type: 'FIDO2',
+        action: 'REGISTER',
+        executionMode: 'integration_required',
+        requiresUserInput: false,
+        kind: 'integration',
+      });
+    });
+
+    it('FIDO2 — canSubmit is false without handledCollectorTypes (INTEGRATION_REQUIRED blocks)', async () => {
+      // FIDO2 is integration_required — without rn-fido running the ceremony,
+      // the issue is blocking and canSubmit must be false.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+              },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {});
+      expect(plan.canSubmit).toBe(false);
+      expect(plan.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'INTEGRATION_REQUIRED',
+          key: 'fido2.registration',
+        }),
+      );
+    });
+
+    it('FIDO2 — canSubmit is true when FIDO2 is in handledCollectorTypes', async () => {
+      // Simulates rn-fido having already run the passkey ceremony and passing
+      // 'FIDO2' as a handled type so buildNextInput does not block submission.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+              },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {}, new Set(['FIDO2']));
+      expect(plan.canSubmit).toBe(true);
+      expect(
+        plan.input.collectors.find(
+          (c: { key: string }) => c.key === 'fido2.registration',
+        ),
+      ).toBeUndefined();
     });
 
     it('unsupported collector — surfaces a non-blocking issue and excludes from payload', async () => {

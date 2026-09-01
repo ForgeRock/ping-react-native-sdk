@@ -171,17 +171,36 @@ jest.mock('../packages/device-profile/src/NativeRNPingDeviceProfile', () => ({
 jest.mock('../packages/fido/src/NativeRNPingFido', () => ({
   __esModule: true,
   getNativeModule: jest.fn(() => ({
+    registerDaVinciSerializer: jest.fn(() => undefined),
     registerCredential: jest.fn(async () => ({
       credentialId: 'mock-credential-id',
     })),
     authenticateCredential: jest.fn(async () => ({
       signature: 'mock-signature',
     })),
+    registerCredentialForJourney: jest.fn(async () => ({
+      type: 'success',
+    })),
+    authenticateCredentialForJourney: jest.fn(async () => ({
+      type: 'success',
+    })),
+    registerCredentialForDaVinci: jest.fn(async () => ({
+      attestationValue: {},
+    })),
+    authenticateCredentialForDaVinci: jest.fn(async () => ({
+      assertionValue: {},
+    })),
   })),
   toNativeRegistrationOptions: jest.fn((options) => options),
   toNativeAuthenticationOptions: jest.fn((options) => options),
   fromNativeRegistrationResult: jest.fn((result) => result),
   fromNativeAuthenticationResult: jest.fn((result) => result),
+  toNativeJourneyRegistrationOptions: jest.fn((options) => options),
+  toNativeJourneyAuthenticationOptions: jest.fn((options) => options),
+  fromNativeJourneyResult: jest.fn((result) => result),
+  toNativeDaVinciRegistrationOptions: jest.fn((options) => options),
+  toNativeDaVinciAuthenticationOptions: jest.fn((options) => options),
+  fromNativeDaVinciResult: jest.fn((result) => result),
 }));
 
 // ---------- rn-journey ----------

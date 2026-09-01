@@ -17,6 +17,7 @@ This package provides a native-backed FIDO bridge for React Native.
 - [FIDO prerequisites](#fido-prerequisites)
 - [Client-first usage](#client-first-usage)
 - [Journey integration](#journey-integration)
+- [DaVinci integration](#davinci-integration)
 - [`useJourneyForm` integration](#usejourneyform-integration)
 - [API reference](#api-reference)
 - [Errors](#errors)
@@ -100,7 +101,8 @@ If you install the logger package, pass a JS logger instance created via
 `@ping-identity/rn-logger`.
 If the logger package is not installed/configured, do not pass logger values in FIDO config.
 JavaScript-side FIDO logs use this logger on both platforms.
-Native logger forwarding currently applies on Android; iOS native forwarding is a no-op.
+Native logger forwarding applies to standalone operations on both platforms.
+Journey and DaVinci collector ceremonies retain their workflow-configured native logger.
 
 ```ts
 import { createFidoClient } from '@ping-identity/rn-fido';
@@ -157,6 +159,51 @@ if (node.type === 'ContinueNode') {
 }
 ```
 
+## DaVinci integration
+
+FIDO2 DaVinci collectors use one collector type and an action discriminator:
+`action: 'REGISTER'` exposes creation options, while `action: 'AUTHENTICATE'`
+exposes request options. Create a FIDO client before starting or normalizing
+the DaVinci flow — `createFidoClient` registers `fidoCollectorType`
+(`'FIDO2'`) with the integration registry and eagerly registers the native
+collector serializer, so nodes mapped before the first ceremony still carry
+`action` and the WebAuthn options payload.
+
+Run the ceremony, then advance the DaVinci flow with an empty collector input:
+
+```ts
+import { useDaVinciForm } from '@ping-identity/rn-davinci';
+import {
+  createFidoClient,
+  fidoCollectorType,
+  type FidoCollector,
+} from '@ping-identity/rn-fido';
+
+const fido = createFidoClient();
+const form = useDaVinciForm(node, {
+  handledCollectorTypes: new Set([fidoCollectorType]),
+});
+const collector = node.collectors[0] as FidoCollector;
+
+if (collector.action === 'REGISTER') {
+  await fido.registerForDaVinci(daVinci, { index: 0 });
+} else {
+  await fido.authenticateForDaVinci(daVinci, { index: 0 });
+}
+
+// The native collector retains the attestation or assertion for submission.
+await daVinci.next({ collectors: [] });
+```
+
+When using `useDaVinciForm`, include `fidoCollectorType` in
+`handledCollectorTypes` after creating the FIDO client. Do not pass the FIDO
+collector key to `next()`. The initial DaVinci integration uses native ceremony
+defaults and does not expose React Native customization options.
+
+The optional `index` selects among multiple FIDO2 collectors with the same
+action. The methods return the native attestation or assertion payload for
+informational use; the native collector submits it when the flow advances.
+
 ## `useJourneyForm` integration
 
 When using `useJourneyForm`, pass `handledCallbackTypes` so FIDO fields are excluded from
@@ -206,6 +253,10 @@ import type {
   FidoJourneyRegistrationOptions,
   FidoJourneyAuthenticationOptions,
   FidoJourneyResult,
+  FidoDaVinciRegistrationOptions,
+  FidoDaVinciAuthenticationOptions,
+  FidoDaVinciResult,
+  DaVinciInstance,
   JourneyInstance,
 } from '@ping-identity/rn-fido';
 
@@ -224,6 +275,14 @@ interface FidoClient {
     journey: JourneyInstance,
     options?: FidoJourneyAuthenticationOptions,
   ): Promise<FidoJourneyResult>;
+  registerForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: FidoDaVinciRegistrationOptions,
+  ): Promise<FidoDaVinciResult>;
+  authenticateForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: FidoDaVinciAuthenticationOptions,
+  ): Promise<FidoDaVinciResult>;
 }
 ```
 
@@ -240,6 +299,7 @@ Stable error codes:
 - `FIDO_ACTIVITY_UNAVAILABLE` (Android)
 - `FIDO_WINDOW_UNAVAILABLE` (iOS)
 - `FIDO_CALLBACK_NOT_FOUND`
+- `FIDO_COLLECTOR_NOT_FOUND`
 
 ## Platform notes
 

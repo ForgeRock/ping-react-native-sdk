@@ -83,6 +83,12 @@ private final class DaVinciCollectorSerializerStore: @unchecked Sendable {
         lock.unlock()
         return current
     }
+
+    func clear() {
+        lock.lock()
+        serializers.removeAll()
+        lock.unlock()
+    }
 }
 
 /// Thread-safe storage for the optional DaVinci collector resolver.
@@ -208,6 +214,13 @@ public enum CoreRuntime {
     /// - Parameter serializer: Closure that serializes a collector, or returns `nil` when not handled.
     public static func registerDaVinciCollectorSerializer(_ serializer: @escaping DaVinciCollectorSerializer) {
         davinciCollectorSerializerStore.add(serializer)
+    }
+
+    /// Clears all registered DaVinci collector serializers.
+    ///
+    /// - Note: Test-only seam for hermetic unit tests; not part of the public API.
+    internal static func resetDaVinciCollectorSerializersForTesting() {
+        davinciCollectorSerializerStore.clear()
     }
 
     /// Serializes a collector using the first registered serializer that handles it.

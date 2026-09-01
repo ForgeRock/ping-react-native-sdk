@@ -261,6 +261,15 @@ enum DaVinciNodeMapper {
         return mutableMap
       }
       if let resolvedType = resolvedFormFieldType(for: collector, node: node, logger: logger) {
+        // No registered serializer handled this collector, so it falls back to the
+        // generic {key, type} payload (top-level fields like `action` are dropped).
+        // This is the exact failure mode diagnosed in SDKS-5302: an integration
+        // collector type whose native serializer never registered.
+        logger?.w(
+          "[\(logTag)] No serializer registered for collector type=\(resolvedType) (key=\(collector.id)); " +
+            "falling back to generic {key, type} payload",
+          error: nil
+        )
         map = ["key": collector.id, "type": resolvedType]
       } else {
         logger?.w(

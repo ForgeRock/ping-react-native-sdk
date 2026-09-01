@@ -56,11 +56,13 @@ export default function DaVinciClientPanel(
     loading,
     error,
     idpError,
+    fidoError,
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,
     onFlowAction,
     onIdpAuthorize,
+    onFidoCeremony,
     onPollStatus,
     onStart,
     onLogout,
@@ -77,6 +79,7 @@ export default function DaVinciClientPanel(
             onSubmit={onSubmit}
             onFlowAction={onFlowAction}
             onIdpAuthorize={onIdpAuthorize}
+            onFidoCeremony={onFidoCeremony}
             onPollStatus={onPollStatus}
           />
         ) : null}
@@ -134,6 +137,15 @@ export default function DaVinciClientPanel(
           <EmptyStateCard
             title="Sign-in failed"
             message={idpError}
+            ctaLabel="Retry"
+            onCtaPress={onStart}
+          />
+        ) : null}
+
+        {fidoError ? (
+          <EmptyStateCard
+            title="Passkey action failed"
+            message={fidoError}
             ctaLabel="Retry"
             onCtaPress={onStart}
           />

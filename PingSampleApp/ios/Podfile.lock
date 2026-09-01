@@ -2771,6 +2771,7 @@ PODS:
     - glog
     - hermes-engine
     - PingFido (= 2.1.0)
+    - PingLogger (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3729,7 +3730,7 @@ SPEC CHECKSUMS:
   RNPingDeviceId: 6eb3e9fc68a78e1aee87652e025f6e1ec6d5d67e
   RNPingDeviceProfile: 3086f14fc5024196a64290afbbf7917432dd5900
   RNPingExternalIdp: 8e6e224400407ab3e732bc72976f250940ad644c
-  RNPingFido: 3bb455d8ccc47e45c902af0033f8b3cccee579e7
+  RNPingFido: e6122f604e9bfaa3583b211cbf08713f1bff111f
   RNPingJourney: dc54cca7e6bc6ea03ae6244fbfcb82a3ebc8014d
   RNPingLogger: b7dd73f42b3fea86a56fc7a35999cf4333fbde20
   RNPingOath: 261b44b957975c0c036b1bed6ef953c4767b8fcc

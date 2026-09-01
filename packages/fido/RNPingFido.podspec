@@ -42,11 +42,13 @@ Pod::Spec.new do |s|
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
     test_spec.dependency "PingFido", '2.1.0'
+    test_spec.dependency "PingLogger", '2.1.0'
     test_spec.dependency "RNPingCore"
   end
 
   # Native Ping SDK dependency
   s.dependency "PingFido", '2.1.0'
+  s.dependency "PingLogger", '2.1.0'
   s.dependency "RNPingCore"
 
   install_modules_dependencies(s)

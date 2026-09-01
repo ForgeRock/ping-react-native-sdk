@@ -29,7 +29,11 @@ const loadModule = async ({
   turboModule?: Record<string, unknown>;
 }) => {
   jest.resetModules();
-  const get = jest.fn(() => turboModule);
+  const get = jest.fn(() =>
+    turboModule
+      ? { registerDaVinciSerializer: jest.fn(), ...turboModule }
+      : undefined,
+  );
 
   jest.doMock('react-native', () =>
     createReactNativeMock({
@@ -84,7 +88,10 @@ describe('fido native module wiring', () => {
     const authenticateNative = jest.fn(() => Promise.resolve({ type: 'auth' }));
     const { createFidoClient } = await loadModule({
       nativeModule: {
-        RNPingFidoClassic: { authenticateCredential: authenticateNative },
+        RNPingFidoClassic: {
+          registerDaVinciSerializer: jest.fn(),
+          authenticateCredential: authenticateNative,
+        },
       },
     });
     const client = createFidoClient();
@@ -143,11 +150,54 @@ describe('fido native module wiring', () => {
     );
   });
 
-  it('throws a helpful error when the classic module is missing', async () => {
-    const { createFidoClient } = await loadModule({});
+  it('registerForDaVinci forwards davinci id and options to native module', async () => {
+    const registerDaVinciNative = jest.fn(() =>
+      Promise.resolve({ attestationValue: {} }),
+    );
+    const { createFidoClient } = await loadModule({
+      turboModule: { registerCredentialForDaVinci: registerDaVinciNative },
+    });
+    const daVinci = { getId: jest.fn(() => Promise.resolve('davinci-123')) };
     const client = createFidoClient();
 
-    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
+    await expect(
+      client.registerForDaVinci(daVinci, { index: 0 }),
+    ).resolves.toEqual({ attestationValue: {} });
+    expect(registerDaVinciNative).toHaveBeenCalledWith(
+      'davinci-123',
+      { index: 0 },
+      {},
+    );
+  });
+
+  it('authenticateForDaVinci forwards davinci id and options to native module', async () => {
+    const authenticateDaVinciNative = jest.fn(() =>
+      Promise.resolve({ assertionValue: {} }),
+    );
+    const { createFidoClient } = await loadModule({
+      turboModule: {
+        authenticateCredentialForDaVinci: authenticateDaVinciNative,
+      },
+    });
+    const daVinci = { getId: jest.fn(() => Promise.resolve('davinci-456')) };
+    const client = createFidoClient();
+
+    await expect(
+      client.authenticateForDaVinci(daVinci, { index: 1 }),
+    ).resolves.toEqual({
+      assertionValue: {},
+    });
+    expect(authenticateDaVinciNative).toHaveBeenCalledWith(
+      'davinci-456',
+      { index: 1 },
+      {},
+    );
+  });
+
+  it('throws a helpful error when the native module is missing', async () => {
+    const { createFidoClient } = await loadModule({});
+
+    expect(() => createFidoClient()).toThrow(
       '[@ping-identity/rn-fido] Native module RNPingFido not found.',
     );
   });
@@ -156,9 +206,8 @@ describe('fido native module wiring', () => {
     const { createFidoClient } = await loadModule({
       nativeModule: { SomeOtherModule: {} },
     });
-    const client = createFidoClient();
 
-    await expect(client.register({ challenge: 'abc' })).rejects.toThrow(
+    expect(() => createFidoClient()).toThrow(
       'Available NativeModules: ["SomeOtherModule"]',
     );
   });

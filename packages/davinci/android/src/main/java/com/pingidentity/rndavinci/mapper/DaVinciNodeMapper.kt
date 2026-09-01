@@ -236,6 +236,16 @@ internal object DaVinciNodeMapper {
                 }
                 val resolvedType = resolvedFormFieldType(collector, node, logger)
                 if (resolvedType != null) {
+                    // No registered serializer handled this collector, so it falls back to the
+                    // generic {key, type} payload (top-level fields like `action` are dropped).
+                    // This is the exact failure mode diagnosed in SDKS-5302: an integration
+                    // collector type whose native serializer never registered.
+                    logWarning(
+                        logger,
+                        "No serializer registered for collector type=$resolvedType (key=${collector.id()}); " +
+                            "falling back to generic {key, type} payload",
+                        IllegalStateException("Unserialized collector type: $resolvedType")
+                    )
                     linkedMapOf("key" to collector.id(), "type" to resolvedType)
                 } else {
                     logWarning(

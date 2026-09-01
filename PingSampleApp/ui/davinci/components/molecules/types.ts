@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { FidoCollector } from '@ping-identity/rn-fido';
 import type { IdpCollector } from '@ping-identity/rn-external-idp';
 import type {
   DaVinciFormValue,
@@ -55,6 +56,12 @@ export type DaVinciCollectorRendererProps = {
    * @param collector The IdpCollector to authorize.
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
+  /**
+   * Runs the native passkey ceremony for a FIDO collector.
+   *
+   * @param collector The FIDO collector to process.
+   */
+  onFidoCeremony: (collector: FidoCollector) => Promise<void>;
   /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
    *

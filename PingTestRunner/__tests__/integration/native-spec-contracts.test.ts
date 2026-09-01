@@ -62,7 +62,7 @@ type _BrowserMockedMethods = Pick<BrowserSpec, 'configure' | 'reset' | 'open'>;
 type _DeviceClientMockedMethods = Pick<
   DeviceClientSpec,
   'create' | 'get' | 'update' | 'deleteDevice' | 'dispose'
-  >;
+>;
 // ─── rn-davinci ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: configureDaVinci, start, next, getSession, refresh,
 //                      revoke, userinfo, logout, dispose
@@ -77,7 +77,7 @@ type _DaVinciMockedMethods = Pick<
   | 'userinfo'
   | 'logout'
   | 'dispose'
-  >;
+>;
 
 // ─── rn-device-id ───────────────────────────────────────────────────────────
 // jest.setup.js mocks: getDefaultDeviceId
@@ -99,13 +99,16 @@ type _ExternalIdpMockedMethods = Pick<
 
 // ─── rn-fido ────────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerCredential, authenticateCredential,
-//                      registerCredentialForJourney, authenticateCredentialForJourney
+//                      registerCredentialForJourney, authenticateCredentialForJourney,
+//                      registerCredentialForDaVinci, authenticateCredentialForDaVinci
 type _FidoMockedMethods = Pick<
   FidoSpec,
   | 'registerCredential'
   | 'authenticateCredential'
   | 'registerCredentialForJourney'
   | 'authenticateCredentialForJourney'
+  | 'registerCredentialForDaVinci'
+  | 'authenticateCredentialForDaVinci'
 >;
 
 // ─── rn-journey ─────────────────────────────────────────────────────────────
