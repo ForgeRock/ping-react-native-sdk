@@ -249,7 +249,7 @@ class RNPingDavinciCommonTest {
     fun start_rejectsWithStateErrorWhenDaVinciIdUnknown() {
         val promise = TestPromise()
 
-        RNPingDavinciCommon.start("no-such-id", promise)
+        RNPingDavinciCommon.start("no-such-id", null, promise)
 
         val error = captureReject(promise)
         assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
@@ -355,7 +355,7 @@ class RNPingDavinciCommonTest {
         captureResolve(disposePromise)
 
         val startPromise = TestPromise()
-        RNPingDavinciCommon.start(davinciId, startPromise)
+        RNPingDavinciCommon.start(davinciId, null, startPromise)
         val error = captureReject(startPromise)
 
         assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
