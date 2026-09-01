@@ -353,6 +353,23 @@ export type DaVinciCollectorInput = {
 };
 
 /**
+ * Optional flags when starting a DaVinci flow.
+ *
+ * @public
+ */
+export type DaVinciStartOptions = {
+  /**
+   * RFC 8628 `verification_uri_complete` URL from a device authorization
+   * response. Set this when the current device is acting as the approving
+   * device: the DaVinci flow extracts the `user_code` from this URL and
+   * approves the requesting device.
+   *
+   * @remarks Requires native SDK 2.1.0 or later on both platforms.
+   */
+  verificationUri?: string;
+};
+
+/**
  * Payload for advancing a DaVinci flow node.
  *
  * @public

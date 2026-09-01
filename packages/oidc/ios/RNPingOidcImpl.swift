@@ -34,6 +34,85 @@ public class RNPingOidcImpl: NSObject, @unchecked Sendable {
     return RNPingOidcCommon.createClient(config)
   }
 
+  /// Create a native-backed OIDC device client.
+  public func createOidcDeviceClient(_ config: NSDictionary) -> String {
+    return RNPingOidcCommon.createOidcDeviceClient(config)
+  }
+
+  public func deviceAuthorize(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceAuthorize(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  public func cancelDeviceAuthorization(
+    _ deviceClientId: String,
+    subscriptionId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.cancelDeviceAuthorization(deviceClientId, subscriptionId: subscriptionId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Open a device authorization verification URL in the on-device browser.
+  public func deviceOpenVerificationUrl(
+    _ deviceClientId: String,
+    verificationUri: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceOpenVerificationUrl(deviceClientId, verificationUri: verificationUri, resolver: resolver, rejecter: rejecter)
+  }
+
+  public func deviceHasUser(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceHasUser(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  public func deviceToken(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceToken(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  public func deviceRefresh(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceRefresh(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  public func deviceUserinfo(
+    _ deviceClientId: String,
+    cache: Bool,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceUserinfo(deviceClientId, cache: cache, resolver: resolver, rejecter: rejecter) }
+
+  public func deviceRevoke(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceRevoke(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  public func deviceLogout(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceLogout(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  public func disposeOidcDeviceClient(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.disposeOidcDeviceClient(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
   /// Create a native-backed OIDC web client.
   ///
   /// - Parameter clientId: Identifier returned by `createClient`.

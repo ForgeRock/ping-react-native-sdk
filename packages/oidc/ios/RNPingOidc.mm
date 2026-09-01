@@ -7,12 +7,45 @@
 
 #import <Foundation/Foundation.h>
 #import <React/RCTBridgeModule.h>
+#if __has_include(<React/RCTCallableJSModules.h>)
+#import <React/RCTCallableJSModules.h>
+#else
+@protocol RCTCallableJSModules <NSObject>
+- (void)invokeModule:(NSString *)moduleName method:(NSString *)methodName withArgs:(NSArray *)args;
+@end
+#endif
 #import <ReactCommon/RCTTurboModule.h>
+#import "RNPingOidcEventEmitterGate.h"
 
 #import "RNPingOidc-Swift.h"
 
 @implementation RNPingOidc
+@synthesize callableJSModules = _callableJSModules;
 RCT_EXPORT_MODULE()
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self && RNPingOidcClaimEventEmitterOwnership(@"turbo")) {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onNativeEmit:) name:@"RNPingOidc_NativeEmit" object:nil];
+  }
+  return self;
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingOidcReleaseEventEmitterOwnership(@"turbo");
+}
+
+- (void)onNativeEmit:(NSNotification *)notification
+{
+  NSString *name = notification.userInfo[@"eventName"];
+  id body = notification.userInfo[@"eventBody"];
+  if (name && _callableJSModules) {
+    [_callableJSModules invokeModule:@"RCTDeviceEventEmitter" method:@"emit" withArgs:(body ? @[name, body] : @[name])];
+  }
+}
 
 // Helper to get the Swift singleton.
 - (RNPingOidcImpl *)swiftImpl
@@ -23,6 +56,8 @@ RCT_EXPORT_MODULE()
 // Clean up native resources when the bridge is invalidated.
 - (void)invalidate
 {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  RNPingOidcReleaseEventEmitterOwnership(@"turbo");
   [[self swiftImpl] invalidate];
 }
 
@@ -45,9 +80,18 @@ RCT_EXPORT_MODULE()
   if (openId.has_value()) {
     auto openIdValue = openId.value();
     NSMutableDictionary *openIdDict = [NSMutableDictionary new];
-    openIdDict[@"authorizationEndpoint"] = openIdValue.authorizationEndpoint();
-    openIdDict[@"tokenEndpoint"] = openIdValue.tokenEndpoint();
-    openIdDict[@"userinfoEndpoint"] = openIdValue.userinfoEndpoint();
+    NSString *authorizationEndpoint = openIdValue.authorizationEndpoint();
+    if (authorizationEndpoint != nil) {
+      openIdDict[@"authorizationEndpoint"] = authorizationEndpoint;
+    }
+    NSString *tokenEndpoint = openIdValue.tokenEndpoint();
+    if (tokenEndpoint != nil) {
+      openIdDict[@"tokenEndpoint"] = tokenEndpoint;
+    }
+    NSString *userinfoEndpoint = openIdValue.userinfoEndpoint();
+    if (userinfoEndpoint != nil) {
+      openIdDict[@"userinfoEndpoint"] = userinfoEndpoint;
+    }
     NSString *endSessionEndpoint = openIdValue.endSessionEndpoint();
     if (endSessionEndpoint != nil) {
       openIdDict[@"endSessionEndpoint"] = endSessionEndpoint;
@@ -59,6 +103,10 @@ RCT_EXPORT_MODULE()
     NSString *revocationEndpoint = openIdValue.revocationEndpoint();
     if (revocationEndpoint != nil) {
       openIdDict[@"revocationEndpoint"] = revocationEndpoint;
+    }
+    NSString *deviceAuthorizationEndpoint = openIdValue.deviceAuthorizationEndpoint();
+    if (deviceAuthorizationEndpoint != nil) {
+      openIdDict[@"deviceAuthorizationEndpoint"] = deviceAuthorizationEndpoint;
     }
     dict[@"openId"] = openIdDict;
   }
@@ -135,6 +183,63 @@ RCT_EXPORT_MODULE()
   }
 
   return [[self swiftImpl] createClient:dict];
+}
+
+- (NSString *)createOidcDeviceClient:(JS::NativeRNPingOidc::NativeOidcClientConfig &)config
+{
+  NSMutableDictionary *dict = [NSMutableDictionary new];
+  dict[@"clientId"] = config.clientId();
+  if (config.discoveryEndpoint()) dict[@"discoveryEndpoint"] = config.discoveryEndpoint();
+  dict[@"redirectUri"] = config.redirectUri();
+  NSMutableArray *scopes = [NSMutableArray new];
+  for (auto scope : config.scopes()) [scopes addObject:scope];
+  dict[@"scopes"] = scopes;
+  if (config.storageId()) dict[@"storageId"] = config.storageId();
+  if (config.loggerId()) dict[@"loggerId"] = config.loggerId();
+  auto openId = config.openId();
+  if (openId.has_value()) {
+    auto value = openId.value();
+    NSMutableDictionary *openIdDict = [NSMutableDictionary new];
+    if (value.authorizationEndpoint()) openIdDict[@"authorizationEndpoint"] = value.authorizationEndpoint();
+    if (value.tokenEndpoint()) openIdDict[@"tokenEndpoint"] = value.tokenEndpoint();
+    if (value.userinfoEndpoint()) openIdDict[@"userinfoEndpoint"] = value.userinfoEndpoint();
+    if (value.endSessionEndpoint()) openIdDict[@"endSessionEndpoint"] = value.endSessionEndpoint();
+    if (value.pingEndIdpSessionEndpoint()) openIdDict[@"pingEndIdpSessionEndpoint"] = value.pingEndIdpSessionEndpoint();
+    if (value.revocationEndpoint()) openIdDict[@"revocationEndpoint"] = value.revocationEndpoint();
+    if (value.deviceAuthorizationEndpoint()) openIdDict[@"deviceAuthorizationEndpoint"] = value.deviceAuthorizationEndpoint();
+    dict[@"openId"] = openIdDict;
+  }
+  return [[self swiftImpl] createOidcDeviceClient:dict];
+}
+
+- (void)deviceAuthorize:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] deviceAuthorize:deviceClientId resolver:resolve rejecter:reject];
+}
+
+- (void)cancelDeviceAuthorization:(NSString *)deviceClientId subscriptionId:(NSString *)subscriptionId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] cancelDeviceAuthorization:deviceClientId subscriptionId:subscriptionId resolver:^{ resolve([NSNull null]); } rejecter:reject];
+}
+
+- (void)deviceOpenVerificationUrl:(NSString *)deviceClientId verificationUri:(NSString *)verificationUri resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] deviceOpenVerificationUrl:deviceClientId verificationUri:verificationUri resolver:resolve rejecter:reject];
+}
+
+- (void)deviceHasUser:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] deviceHasUser:deviceClientId resolver:^(BOOL value) { resolve(@(value)); } rejecter:reject];
+}
+
+- (void)deviceToken:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { [[self swiftImpl] deviceToken:deviceClientId resolver:resolve rejecter:reject]; }
+- (void)deviceRefresh:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { [[self swiftImpl] deviceRefresh:deviceClientId resolver:resolve rejecter:reject]; }
+- (void)deviceUserinfo:(NSString *)deviceClientId cache:(BOOL)cache resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { [[self swiftImpl] deviceUserinfo:deviceClientId cache:cache resolver:resolve rejecter:reject]; }
+- (void)deviceRevoke:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { [[self swiftImpl] deviceRevoke:deviceClientId resolver:^{ resolve([NSNull null]); } rejecter:reject]; }
+- (void)deviceLogout:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject { [[self swiftImpl] deviceLogout:deviceClientId resolver:^{ resolve([NSNull null]); } rejecter:reject]; }
+- (void)disposeOidcDeviceClient:(NSString *)deviceClientId resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] disposeOidcDeviceClient:deviceClientId resolver:^{ resolve([NSNull null]); } rejecter:reject];
 }
 
 // createWebClient(clientId): string

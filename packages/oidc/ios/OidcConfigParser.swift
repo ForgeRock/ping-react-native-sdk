@@ -64,18 +64,19 @@ enum OidcConfigParser {
     guard let map = value as? NSDictionary else {
       return nil
     }
-    guard let authorizationEndpoint = map["authorizationEndpoint"] as? String, !authorizationEndpoint.isEmpty,
-          let tokenEndpoint = map["tokenEndpoint"] as? String, !tokenEndpoint.isEmpty,
-          let userinfoEndpoint = map["userinfoEndpoint"] as? String, !userinfoEndpoint.isEmpty else {
-      return nil
-    }
+    // Every field is an independently-optional override applied on top of
+    // discovery (iOS always requires discoveryEndpoint, see the check
+    // above), so a payload supplying only one endpoint -- for example
+    // deviceAuthorizationEndpoint for a provider whose discovery document
+    // omits it -- must not be dropped just because the others are absent.
     return OpenIdPayload(
-      authorizationEndpoint: authorizationEndpoint,
-      tokenEndpoint: tokenEndpoint,
-      userinfoEndpoint: userinfoEndpoint,
+      authorizationEndpoint: map["authorizationEndpoint"] as? String,
+      tokenEndpoint: map["tokenEndpoint"] as? String,
+      userinfoEndpoint: map["userinfoEndpoint"] as? String,
       endSessionEndpoint: map["endSessionEndpoint"] as? String,
       pingEndIdpSessionEndpoint: map["pingEndIdpSessionEndpoint"] as? String,
-      revocationEndpoint: map["revocationEndpoint"] as? String
+      revocationEndpoint: map["revocationEndpoint"] as? String,
+      deviceAuthorizationEndpoint: map["deviceAuthorizationEndpoint"] as? String
     )
   }
 

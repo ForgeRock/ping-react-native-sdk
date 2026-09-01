@@ -69,11 +69,13 @@ public final class RNPingJourneyImpl: NSObject, @unchecked Sendable {
   ) {
     let forceAuth = options?["forceAuth"] as? Bool ?? false
     let noSession = options?["noSession"] as? Bool ?? false
+    let verificationUri = options?["verificationUri"] as? String ?? ""
     RNPingJourneyCommon.start(
       journeyId,
       journeyName: journeyName,
       forceAuth: forceAuth,
       noSession: noSession,
+      verificationUri: verificationUri,
       resolver: resolver,
       rejecter: rejecter
     )

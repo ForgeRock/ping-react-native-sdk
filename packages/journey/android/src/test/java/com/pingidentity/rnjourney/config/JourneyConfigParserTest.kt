@@ -10,6 +10,7 @@ package com.pingidentity.rnjourney
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -162,6 +163,36 @@ class JourneyConfigParserTest {
         assertEquals("direct-client", payload.oidc?.clientId)
         assertNull(payload.oidc?.discoveryEndpoint)
         assertNull(payload.oidc?.redirectUri)
+    }
+
+    @Test
+    fun parseConfigWithPartialOpenIdOverride() {
+        // Every openId field is an independently-optional override applied on
+        // top of discovery -- a caller may supply only the one endpoint their
+        // provider's discovery document omits without providing the others.
+        val config = JavaOnlyMap().apply {
+            putString("serverUrl", "https://example.com/am")
+            putString("clientId", "rn-client")
+            putString("discoveryEndpoint", "https://example.com/am/oauth2/alpha/.well-known/openid-configuration")
+            putString("redirectUri", "com.example.app://oauth2redirect")
+            putArray("scopes", JavaOnlyArray.of("openid"))
+            putMap("openId", JavaOnlyMap().apply {
+                putString("revocationEndpoint", "https://example.com/am/oauth2/alpha/revoke")
+            })
+        }
+
+        val payload = JourneyConfigParser.parse(config)
+
+        assertNotNull(payload.oidc?.openId)
+        assertNull(payload.oidc?.openId?.authorizationEndpoint)
+        assertNull(payload.oidc?.openId?.tokenEndpoint)
+        assertNull(payload.oidc?.openId?.userinfoEndpoint)
+        assertNull(payload.oidc?.openId?.endSessionEndpoint)
+        assertNull(payload.oidc?.openId?.pingEndIdpSessionEndpoint)
+        assertEquals(
+            "https://example.com/am/oauth2/alpha/revoke",
+            payload.oidc?.openId?.revocationEndpoint
+        )
     }
 
     @Test(expected = IllegalArgumentException::class)

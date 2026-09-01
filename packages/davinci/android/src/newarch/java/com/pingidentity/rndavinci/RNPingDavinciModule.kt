@@ -49,10 +49,11 @@ class RNPingDavinciModule(reactContext: ReactApplicationContext) :
    * Start the DaVinci flow.
    *
    * @param davinciId Native DaVinci client id.
+   * @param options Optional start options (for example `verificationUri`).
    * @param promise Promise resolved with the first node payload.
    */
-  override fun start(davinciId: String, promise: Promise) {
-    RNPingDavinciCommon.start(davinciId, promise)
+  override fun start(davinciId: String, options: ReadableMap?, promise: Promise) {
+    RNPingDavinciCommon.start(davinciId, options, promise)
   }
 
   /**

@@ -39,12 +39,13 @@ internal data class OidcClientPayload(
  * Optional OpenID configuration override supplied by JS.
  */
 internal data class OpenIdPayload(
-  val authorizationEndpoint: String,
-  val tokenEndpoint: String,
-  val userinfoEndpoint: String,
+  val authorizationEndpoint: String?,
+  val tokenEndpoint: String?,
+  val userinfoEndpoint: String?,
   val endSessionEndpoint: String?,
   val pingEndIdpSessionEndpoint: String?,
-  val revocationEndpoint: String?
+  val revocationEndpoint: String?,
+  val deviceAuthorizationEndpoint: String?
 )
 
 /**
@@ -110,9 +111,21 @@ internal object OidcConfigParser {
     }
     val openIdMap = config.getMap("openId") ?: return null
     return OpenIdPayload(
-      authorizationEndpoint = requireString(openIdMap, "authorizationEndpoint"),
-      tokenEndpoint = requireString(openIdMap, "tokenEndpoint"),
-      userinfoEndpoint = requireString(openIdMap, "userinfoEndpoint"),
+      authorizationEndpoint = if (openIdMap.hasKey("authorizationEndpoint")) {
+        openIdMap.getString("authorizationEndpoint")
+      } else {
+        null
+      },
+      tokenEndpoint = if (openIdMap.hasKey("tokenEndpoint")) {
+        openIdMap.getString("tokenEndpoint")
+      } else {
+        null
+      },
+      userinfoEndpoint = if (openIdMap.hasKey("userinfoEndpoint")) {
+        openIdMap.getString("userinfoEndpoint")
+      } else {
+        null
+      },
       endSessionEndpoint = if (openIdMap.hasKey("endSessionEndpoint")) {
         openIdMap.getString("endSessionEndpoint")
       } else {
@@ -125,6 +138,11 @@ internal object OidcConfigParser {
       },
       revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
         openIdMap.getString("revocationEndpoint")
+      } else {
+        null
+      },
+      deviceAuthorizationEndpoint = if (openIdMap.hasKey("deviceAuthorizationEndpoint")) {
+        openIdMap.getString("deviceAuthorizationEndpoint")
       } else {
         null
       }

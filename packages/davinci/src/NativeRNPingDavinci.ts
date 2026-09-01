@@ -85,9 +85,11 @@ export interface Spec extends TurboModule {
    * Start the DaVinci flow.
    *
    * @param davinciId - Native DaVinci instance identifier.
+   * @param options - Optional start options; supports `verificationUri` (RFC 8628
+   *   `verification_uri_complete`) when this device approves a device flow.
    * @returns Serialised first flow node.
    */
-  start(davinciId: string): Promise<Object>;
+  start(davinciId: string, options?: Object): Promise<Object>;
 
   /**
    * Advance the active DaVinci flow node.
@@ -211,8 +213,8 @@ const NativeRNPingDavinci: Spec = {
   configureDaVinci(config) {
     return getNativeModule().configureDaVinci(config);
   },
-  start(davinciId) {
-    return getNativeModule().start(davinciId);
+  start(davinciId, options) {
+    return getNativeModule().start(davinciId, options);
   },
   next(davinciId, input) {
     return getNativeModule().next(davinciId, input);

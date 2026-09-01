@@ -76,15 +76,22 @@ final class OidcConfigParserTests: XCTestCase {
     XCTAssertThrowsError(try OidcConfigParser.parseClientConfig(config))
   }
 
-  func testParseOpenIdMissingRequiredFieldReturnsNil() {
+  func testParseOpenIdAllowsPartialEndpointOverride() {
+    // Every openId field is an independently-optional override applied on
+    // top of discovery -- a caller may supply only the one endpoint their
+    // provider's discovery document omits (e.g. deviceAuthorizationEndpoint
+    // for Advanced Identity Cloud) without providing the others.
     let openId: NSDictionary = [
-      "authorizationEndpoint": "https://example.com/oauth2/authorize",
-      "userinfoEndpoint": "https://example.com/oauth2/userinfo"
+      "deviceAuthorizationEndpoint": "https://example.com/device/code"
     ]
 
     let parsed = OidcConfigParser.parseOpenId(openId)
 
-    XCTAssertNil(parsed)
+    XCTAssertNotNil(parsed)
+    XCTAssertNil(parsed?.authorizationEndpoint)
+    XCTAssertNil(parsed?.tokenEndpoint)
+    XCTAssertNil(parsed?.userinfoEndpoint)
+    XCTAssertEqual(parsed?.deviceAuthorizationEndpoint, "https://example.com/device/code")
   }
 
   func testBuildAuthorizeParamsAllowsOverrides() {

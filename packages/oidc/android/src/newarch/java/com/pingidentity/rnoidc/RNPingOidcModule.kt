@@ -59,6 +59,10 @@ class RNPingOidcModule(reactContext: ReactApplicationContext) :
    * @param clientId Identifier returned by [createClient]
    * @return Stable web client identifier
    */
+  override fun createOidcDeviceClient(config: ReadableMap): String {
+    return RNPingOidcCommon.createOidcDeviceClient(config)
+  }
+
   override fun createWebClient(clientId: String): String {
     return RNPingOidcCommon.createWebClient(clientId)
   }
@@ -69,6 +73,42 @@ class RNPingOidcModule(reactContext: ReactApplicationContext) :
    * @param clientId Identifier returned by [createClient]
    * @param promise Promise resolved with token payload or rejected with GenericError
    */
+  override fun deviceAuthorize(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceAuthorize(deviceClientId, promise)
+  }
+
+  override fun deviceHasUser(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceHasUser(deviceClientId, promise)
+  }
+
+  override fun deviceToken(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceToken(deviceClientId, promise)
+  }
+
+  override fun deviceRefresh(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRefresh(deviceClientId, promise)
+  }
+
+  override fun deviceUserinfo(deviceClientId: String, cache: Boolean, promise: Promise) {
+    RNPingOidcCommon.deviceUserinfo(deviceClientId, cache, promise)
+  }
+
+  override fun deviceRevoke(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRevoke(deviceClientId, promise)
+  }
+
+  override fun deviceLogout(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceLogout(deviceClientId, promise)
+  }
+
+  override fun cancelDeviceAuthorization(deviceClientId: String, subscriptionId: String, promise: Promise) {
+    RNPingOidcCommon.cancelDeviceAuthorization(deviceClientId, subscriptionId, promise)
+  }
+
+  override fun deviceOpenVerificationUrl(deviceClientId: String, verificationUri: String, promise: Promise) {
+    RNPingOidcCommon.deviceOpenVerificationUrl(deviceClientId, verificationUri, promise)
+  }
+
   override fun clientToken(clientId: String, promise: Promise) {
     RNPingOidcCommon.clientToken(clientId, promise)
   }
@@ -184,6 +224,10 @@ class RNPingOidcModule(reactContext: ReactApplicationContext) :
    */
   override fun logout(webClientId: String, promise: Promise) {
     RNPingOidcCommon.logout(webClientId, promise)
+  }
+
+  override fun disposeOidcDeviceClient(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeOidcDeviceClient(deviceClientId, promise)
   }
 
   override fun disposeClient(clientId: String, promise: Promise) {

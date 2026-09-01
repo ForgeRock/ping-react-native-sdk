@@ -23,7 +23,8 @@ final class OidcClientFactoryTests: XCTestCase {
         userinfoEndpoint: "https://example.com/oauth2/userinfo",
         endSessionEndpoint: nil,
         pingEndIdpSessionEndpoint: nil,
-        revocationEndpoint: nil
+        revocationEndpoint: nil,
+        deviceAuthorizationEndpoint: nil
       ),
       redirectUri: "com.example.app://callback",
       scopes: ["openid"],
@@ -63,6 +64,59 @@ final class OidcClientFactoryTests: XCTestCase {
     XCTAssertEqual(discovered.endSessionEndpoint, "")
     XCTAssertEqual(discovered.revocationEndpoint, "")
     XCTAssertNil(discovered.pingEndsessionEndpoint)
+  }
+
+  func testBuildOidcClientMergesPartialOpenIdOverrideOntoDiscovery() {
+    // A partial openId override (only deviceAuthorizationEndpoint set, the
+    // field Advanced Identity Cloud's discovery document omits) must merge
+    // onto discovery -- leaving authorizationEndpoint/tokenEndpoint/
+    // userinfoEndpoint at their discovered values -- rather than requiring
+    // every field to be supplied.
+    let payload = OidcClientPayload(
+      clientId: "client-id",
+      discoveryEndpoint: "https://example.com/.well-known/openid-configuration",
+      openId: OpenIdPayload(
+        authorizationEndpoint: nil,
+        tokenEndpoint: nil,
+        userinfoEndpoint: nil,
+        endSessionEndpoint: nil,
+        pingEndIdpSessionEndpoint: nil,
+        revocationEndpoint: nil,
+        deviceAuthorizationEndpoint: "https://example.com/device/code"
+      ),
+      redirectUri: "com.example.app://callback",
+      scopes: ["openid"],
+      storageId: nil,
+      loggerId: nil,
+      browserType: nil,
+      browserMode: nil,
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:]
+    )
+
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
+
+    var discovered = OpenIdConfiguration(
+      authorizationEndpoint: "https://discovered.example.com/authorize",
+      tokenEndpoint: "https://discovered.example.com/token",
+      userinfoEndpoint: "https://discovered.example.com/userinfo",
+      endSessionEndpoint: "",
+      revocationEndpoint: ""
+    )
+    config.openIdOverride?(&discovered)
+
+    XCTAssertEqual(discovered.authorizationEndpoint, "https://discovered.example.com/authorize")
+    XCTAssertEqual(discovered.tokenEndpoint, "https://discovered.example.com/token")
+    XCTAssertEqual(discovered.userinfoEndpoint, "https://discovered.example.com/userinfo")
+    XCTAssertEqual(discovered.deviceAuthorizationEndpoint, "https://example.com/device/code")
   }
 
   func testBuildWebClientMapsBrowserOptions() {

@@ -10,6 +10,7 @@ import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
 import type {
   DaVinciNextInput,
   DaVinciNode,
+  DaVinciStartOptions,
   DaVinciUserSession,
 } from './types';
 import { DaVinciError } from './types/error.types';
@@ -45,12 +46,16 @@ export async function configureDaVinci(
  * Start the DaVinci flow.
  *
  * @param davinciId - Native DaVinci instance identifier.
+ * @param options - Optional start flags (`verificationUri` for RFC 8628 approval).
  * @returns First flow node.
  * @throws {DaVinciError} When start fails.
  */
-export async function startDaVinci(davinciId: string): Promise<DaVinciNode> {
+export async function startDaVinci(
+  davinciId: string,
+  options?: DaVinciStartOptions,
+): Promise<DaVinciNode> {
   try {
-    const node = await NativeRNPingDavinci.start(davinciId);
+    const node = await NativeRNPingDavinci.start(davinciId, options);
     if (
       node === null ||
       typeof node !== 'object' ||

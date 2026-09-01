@@ -76,9 +76,9 @@ internal data class JourneyOidcPayload(
  * Optional OpenID endpoint override settings for Journey OIDC composition.
  */
 internal data class JourneyOpenIdPayload(
-    val authorizationEndpoint: String,
-    val tokenEndpoint: String,
-    val userinfoEndpoint: String,
+    val authorizationEndpoint: String?,
+    val tokenEndpoint: String?,
+    val userinfoEndpoint: String?,
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
     val revocationEndpoint: String?
@@ -218,9 +218,21 @@ internal object JourneyConfigParser {
         }
         val openIdMap = config.getMap("openId") ?: return null
         return JourneyOpenIdPayload(
-            authorizationEndpoint = requireString(openIdMap, "authorizationEndpoint"),
-            tokenEndpoint = requireString(openIdMap, "tokenEndpoint"),
-            userinfoEndpoint = requireString(openIdMap, "userinfoEndpoint"),
+            authorizationEndpoint = if (openIdMap.hasKey("authorizationEndpoint")) {
+                openIdMap.getString("authorizationEndpoint")
+            } else {
+                null
+            },
+            tokenEndpoint = if (openIdMap.hasKey("tokenEndpoint")) {
+                openIdMap.getString("tokenEndpoint")
+            } else {
+                null
+            },
+            userinfoEndpoint = if (openIdMap.hasKey("userinfoEndpoint")) {
+                openIdMap.getString("userinfoEndpoint")
+            } else {
+                null
+            },
             endSessionEndpoint = if (openIdMap.hasKey("endSessionEndpoint")) {
                 openIdMap.getString("endSessionEndpoint")
             } else {

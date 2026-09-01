@@ -9,7 +9,7 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, Text } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useJourney } from '@ping-identity/rn-journey';
-import { useOidc } from '@ping-identity/rn-oidc';
+import { useDeviceAuthGrant, useOidc } from '@ping-identity/rn-oidc';
 import { useDaVinci } from '@ping-identity/rn-davinci';
 import { formatError } from './utils/formatError';
 import { commonStyles } from '../src/styles/common';
@@ -27,15 +27,18 @@ export default function LogoutScreen(): React.ReactElement {
   const [busyJourney, setBusyJourney] = useState<boolean>(false);
   const [busyOidc, setBusyOidc] = useState<boolean>(false);
   const [busyDaVinci, setBusyDaVinci] = useState<boolean>(false);
+  const [busyAuthGrant, setBusyAuthGrant] = useState<boolean>(false);
   const [journeyActive, setJourneyActive] = useState<boolean>(false);
   const [oidcActive, setOidcActive] = useState<boolean>(false);
   const [davinciActive, setDavinciActive] = useState<boolean>(false);
+  const [authGrantActive, setAuthGrantActive] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [, journeyActions] = useJourney();
   const [oidcState, oidcActions] = useOidc();
   const davinciActions = useDaVinci();
+  const [, deviceActions] = useDeviceAuthGrant();
 
   const refreshSessionState = useCallback(async (): Promise<void> => {
     try {
@@ -58,7 +61,14 @@ export default function LogoutScreen(): React.ReactElement {
     } catch {
       setDavinciActive(false);
     }
-  }, [davinciActions, journeyActions, oidcActions]);
+
+    try {
+      const authGrantUser = await deviceActions.restore();
+      setAuthGrantActive(Boolean(authGrantUser));
+    } catch {
+      setAuthGrantActive(false);
+    }
+  }, [davinciActions, deviceActions, journeyActions, oidcActions]);
 
   useFocusEffect(
     useCallback(() => {
@@ -91,6 +101,12 @@ export default function LogoutScreen(): React.ReactElement {
       errors.push(formatError(error));
     }
 
+    try {
+      await deviceActions.logout();
+    } catch (error) {
+      errors.push(formatError(error));
+    }
+
     await refreshSessionState();
     setBusyAll(false);
 
@@ -98,7 +114,13 @@ export default function LogoutScreen(): React.ReactElement {
       setErrorMessage(errors.join('\n'));
       return;
     }
-  }, [davinciActions, journeyActions, oidcActions, refreshSessionState]);
+  }, [
+    davinciActions,
+    deviceActions,
+    journeyActions,
+    oidcActions,
+    refreshSessionState,
+  ]);
 
   const handleLogoutOidc = useCallback(async (): Promise<void> => {
     setBusyOidc(true);
@@ -134,6 +156,25 @@ export default function LogoutScreen(): React.ReactElement {
     }
   }, [journeyActions, refreshSessionState]);
 
+  const handleLogoutAuthGrant = useCallback(async (): Promise<void> => {
+    setBusyAuthGrant(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    try {
+      const loggedOut = await deviceActions.logout();
+      setStatusMessage(
+        loggedOut
+          ? 'Auth Grant session logged out.'
+          : 'No active Auth Grant session found.',
+      );
+    } catch (error) {
+      setErrorMessage(formatError(error));
+    } finally {
+      setBusyAuthGrant(false);
+      await refreshSessionState();
+    }
+  }, [deviceActions, refreshSessionState]);
+
   const handleLogoutDaVinci = useCallback(async (): Promise<void> => {
     setBusyDaVinci(true);
     setErrorMessage(null);
@@ -149,8 +190,10 @@ export default function LogoutScreen(): React.ReactElement {
     }
   }, [davinciActions, refreshSessionState]);
 
-  const disabled = busyAll || busyJourney || busyOidc || busyDaVinci;
-  const hasAnySession = journeyActive || oidcActive || davinciActive;
+  const disabled =
+    busyAll || busyJourney || busyOidc || busyDaVinci || busyAuthGrant;
+  const hasAnySession =
+    journeyActive || oidcActive || davinciActive || authGrantActive;
 
   return (
     <ScrollView contentContainerStyle={commonStyles.container}>
@@ -206,6 +249,21 @@ export default function LogoutScreen(): React.ReactElement {
               void handleLogoutOidc();
             }}
             loading={busyOidc}
+            disabled={disabled}
+          />
+        </CardSection>
+      ) : null}
+
+      {authGrantActive ? (
+        <CardSection title="Auth Grant Session">
+          <Text style={commonStyles.codeText}>
+            Logout from Device Authorization Grant authentication
+          </Text>
+          <Text style={commonStyles.codeText}>Status: Active</Text>
+          <AsyncActionButton
+            label="Logout from Auth Grant Session"
+            onPress={() => void handleLogoutAuthGrant()}
+            loading={busyAuthGrant}
             disabled={disabled}
           />
         </CardSection>

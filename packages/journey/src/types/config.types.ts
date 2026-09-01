@@ -110,6 +110,16 @@ export type JourneyStartOptions = {
    * Ignore existing session state and start a fresh flow.
    */
   noSession?: boolean;
+  /**
+   * The RFC 8628 `verification_uri_complete` URL from a device authorization
+   * response. Set this when the current device is acting as the approving
+   * device: the Journey flow extracts the `user_code` from this URL and
+   * approves the requesting device after successful authentication.
+   *
+   * @remarks Supported on both platforms; the native SDK forwards the URL to
+   * the authorization server after the Journey succeeds.
+   */
+  verificationUri?: string;
 };
 
 /**

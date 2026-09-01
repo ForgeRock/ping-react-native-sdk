@@ -24,6 +24,7 @@ import type {
   DaVinciConfig,
   DaVinciNextInput,
   DaVinciPollStatusOptions,
+  DaVinciStartOptions,
   PollingStatus,
 } from './types';
 import { DaVinciError } from './types/error.types';
@@ -267,14 +268,15 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     /**
      * Starts the DaVinci flow and returns the first node.
      *
+     * @param options - Optional start flags (`verificationUri` for RFC 8628 approval).
      * @returns First flow node.
      * @throws {DaVinciError} When start fails.
      */
-    async start() {
+    async start(options?: DaVinciStartOptions) {
       const id = await ensureConfigured();
       logDebug('DaVinci start requested', { davinciId: id });
       try {
-        const node = await startDaVinci(id);
+        const node = await startDaVinci(id, options);
         logInfo('DaVinci start succeeded', { davinciId: id });
         return node;
       } catch (error) {

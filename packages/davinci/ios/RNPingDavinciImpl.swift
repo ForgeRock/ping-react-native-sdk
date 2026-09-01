@@ -59,15 +59,23 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   ///
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Optional start options dictionary; supports `verificationUri`.
   ///   - resolver: Promise resolver called with the first node payload.
   ///   - rejecter: Promise rejecter called with `GenericError`.
-  @objc(start:resolver:rejecter:)
+  @objc(start:options:resolver:rejecter:)
   public func start(
     _ davinciId: String,
+    options: NSDictionary?,
     resolver: @escaping NodeResolver,
     rejecter: @escaping PromiseRejecter
   ) {
-    RNPingDavinciCommon.start(davinciId, resolver: resolver, rejecter: rejecter)
+    let verificationUri = options?["verificationUri"] as? String ?? ""
+    RNPingDavinciCommon.start(
+      davinciId,
+      verificationUri: verificationUri,
+      resolver: resolver,
+      rejecter: rejecter
+    )
   }
 
   /// Applies collector input and advances DaVinci to the next node.

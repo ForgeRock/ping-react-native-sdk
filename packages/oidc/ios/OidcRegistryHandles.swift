@@ -57,10 +57,21 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
   var additionalParameters: [String: String] { payload.additionalParameters }
 }
 
-/// Handle for storing OIDC web client instances.
+/// Handle for storing OIDC device client instances.
 ///
-/// - Note: `@unchecked Sendable` is used because `OidcWebClient` is an SDK
-///   reference type not declared `Sendable`. This wrapper remains immutable.
+/// - Note: `@unchecked Sendable` is used because `OidcDeviceClient` is an SDK
+///   reference type whose mutable configuration is not declared `Sendable`.
+final class OidcDeviceHandle: NativeHandle, @unchecked Sendable {
+  let payload: OidcClientPayload
+  let client: OidcDeviceClient
+
+  init(payload: OidcClientPayload, client: OidcDeviceClient) {
+    self.payload = payload
+    self.client = client
+  }
+}
+
+/// Handle for storing OIDC web client instances.
 final class OidcWebHandle: NativeHandle, @unchecked Sendable {
   let clientId: String
   let web: OidcWebClient

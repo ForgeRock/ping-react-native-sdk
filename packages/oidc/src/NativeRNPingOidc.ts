@@ -8,29 +8,22 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 
-/**
- * Native configuration payload sent over the bridge.
- */
+/** Native configuration payload sent over the bridge. */
 export type NativeOidcClientConfig = {
   clientId: string;
   discoveryEndpoint?: string;
   openId?: {
-    authorizationEndpoint: string;
-    tokenEndpoint: string;
-    userinfoEndpoint: string;
+    authorizationEndpoint?: string;
+    tokenEndpoint?: string;
+    userinfoEndpoint?: string;
     endSessionEndpoint?: string;
     pingEndIdpSessionEndpoint?: string;
     revocationEndpoint?: string;
+    deviceAuthorizationEndpoint?: string;
   };
   redirectUri: string;
   scopes: string[];
-  /**
-   * Storage configuration id resolved from the Storage module.
-   */
   storageId?: string;
-  /**
-   * Logger configuration id resolved from the Logger module.
-   */
   loggerId?: string;
   acrValues?: string;
   signOutRedirectUri?: string;
@@ -45,9 +38,7 @@ export type NativeOidcClientConfig = {
   additionalParameters?: Object;
 };
 
-/**
- * Native authorization override options.
- */
+/** Native authorization override options. */
 export type NativeOidcAuthorizeOptions = {
   acrValues?: string;
   state?: string;
@@ -60,20 +51,12 @@ export type NativeOidcAuthorizeOptions = {
   additionalParameters?: Object;
 };
 
-/**
- * Native authorization result payload returned by the bridge.
- */
+/** Native authorization result payload returned by the bridge. */
 export type NativeOidcAuthorizeResult =
-  | {
-      type: 'success';
-    }
-  | {
-      type: 'cancel';
-    };
+  | { type: 'success' }
+  | { type: 'cancel' };
 
-/**
- * Native token payload returned by the bridge.
- */
+/** Native token payload returned by the bridge. */
 export type NativeOidcTokens = {
   accessToken: string;
   idToken?: string;
@@ -81,11 +64,10 @@ export type NativeOidcTokens = {
   tokenExpiry?: number;
 };
 
-/**
- * Native module contract for the OIDC package.
- */
+/** Native module contract for the OIDC package. */
 export interface Spec extends TurboModule {
   createClient(config: NativeOidcClientConfig): string;
+  createOidcDeviceClient(config: NativeOidcClientConfig): string;
   createWebClient(clientId: string): string;
   clientToken(clientId: string): Promise<NativeOidcTokens>;
   clientRefresh(clientId: string): Promise<NativeOidcTokens>;
@@ -95,6 +77,24 @@ export interface Spec extends TurboModule {
   ): Promise<Record<string, unknown>>;
   clientRevoke(clientId: string): Promise<void>;
   clientEndSession(clientId: string): Promise<boolean>;
+  deviceAuthorize(deviceClientId: string): Promise<{ subscriptionId: string }>;
+  deviceHasUser(deviceClientId: string): Promise<boolean>;
+  deviceToken(deviceClientId: string): Promise<NativeOidcTokens>;
+  deviceRefresh(deviceClientId: string): Promise<NativeOidcTokens>;
+  deviceUserinfo(
+    deviceClientId: string,
+    cache: boolean,
+  ): Promise<Record<string, unknown>>;
+  deviceRevoke(deviceClientId: string): Promise<void>;
+  deviceLogout(deviceClientId: string): Promise<void>;
+  deviceOpenVerificationUrl(
+    deviceClientId: string,
+    verificationUri: string,
+  ): Promise<NativeOidcAuthorizeResult>;
+  cancelDeviceAuthorization(
+    deviceClientId: string,
+    subscriptionId: string,
+  ): Promise<void>;
   authorize(
     webClientId: string,
     options: NativeOidcAuthorizeOptions,
@@ -109,15 +109,11 @@ export interface Spec extends TurboModule {
   revoke(webClientId: string): Promise<void>;
   logout(webClientId: string): Promise<void>;
   disposeClient(clientId: string): Promise<void>;
+  disposeOidcDeviceClient(deviceClientId: string): Promise<void>;
   disposeWebClient(webClientId: string): Promise<void>;
 }
 
-/**
- * Resolve by probing TurboModule first, then falling back to the classic bridge module.
- *
- * @returns Native module implementation for the current architecture.
- * @throws Error when no native module is registered.
- */
+/** Resolve the native OIDC module for the current architecture. */
 let _nativeModule: Spec | null = null;
 export function getNativeModule(): Spec {
   if (_nativeModule) return _nativeModule;

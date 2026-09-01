@@ -105,7 +105,7 @@ describe('davinciMethods', () => {
       const node = await startDaVinci('davinci-id-1');
 
       expect(node).toEqual({ type: 'ContinueNode', collectors: [] });
-      expect(native.start).toHaveBeenCalledWith('davinci-id-1');
+      expect(native.start).toHaveBeenCalledWith('davinci-id-1', undefined);
     });
 
     it('coerces native rejection to DaVinciError', async () => {

@@ -520,7 +520,7 @@ describe('createDaVinciClient — client methods', () => {
     const node = await client.start();
 
     expect(node).toEqual({ type: 'ContinueNode', collectors: [] });
-    expect(native.start).toHaveBeenCalledWith('davinci-id-1');
+    expect(native.start).toHaveBeenCalledWith('davinci-id-1', undefined);
   });
 
   it('next() calls native next with davinciId and the key-indexed input', async () => {

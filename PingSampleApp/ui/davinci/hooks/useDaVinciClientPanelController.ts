@@ -94,6 +94,12 @@ export type UseDaVinciClientPanelControllerOptions = {
    * out from the panel.
    */
   onAuthenticated?: () => void;
+  /**
+   * Optional RFC 8628 `verification_uri_complete` used when this device is the
+   * approving device in a device authorization grant. Passed to DaVinci
+   * `start()` so the flow approves the requesting device.
+   */
+  verificationUri?: string;
 };
 
 /**
@@ -111,7 +117,7 @@ export type UseDaVinciClientPanelControllerOptions = {
 export function useDaVinciClientPanelController(
   options: UseDaVinciClientPanelControllerOptions = {},
 ): UseDaVinciClientPanelControllerResult {
-  const { onAuthenticated } = options;
+  const { onAuthenticated, verificationUri } = options;
   const davinciContext = useDaVinciContext();
   const { node, loading, error, start, next, user, logoutUser, pollStatus } =
     useDaVinci();
@@ -142,13 +148,13 @@ export function useDaVinciClientPanelController(
     setIdpError(null);
     setProtectError(null);
     try {
-      await start();
+      await start(verificationUri ? { verificationUri } : undefined);
       return true;
     } catch {
       // The hook captures and exposes the error via `error`.
       return false;
     }
-  }, [start]);
+  }, [start, verificationUri]);
 
   useDaVinciAutoStartEffect({
     loading,
