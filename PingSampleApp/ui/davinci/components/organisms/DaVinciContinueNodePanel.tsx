@@ -8,6 +8,7 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Config from 'react-native-config';
+import type { FidoCollector } from '@ping-identity/rn-fido';
 import type { IdpCollector } from '@ping-identity/rn-external-idp';
 import type {
   ContinueNode,
@@ -69,6 +70,12 @@ export type DaVinciContinueNodePanelProps = {
    * @param collector The IdpCollector to authorize.
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
+  /**
+   * Runs the native passkey ceremony for a FIDO collector.
+   *
+   * @param collector The FIDO collector to process.
+   */
+  onFidoCeremony: (collector: FidoCollector) => Promise<void>;
   /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
    *
@@ -181,6 +188,7 @@ export default function DaVinciContinueNodePanel(
     onValidate,
     onFlowAction,
     onIdpAuthorize,
+    onFidoCeremony,
     onPollStatus,
   } = props;
   const { fields, values, canSubmit, issues, setValue } = form;
@@ -213,6 +221,7 @@ export default function DaVinciContinueNodePanel(
           onSubmit={onSubmit}
           onFlowAction={onFlowAction}
           onIdpAuthorize={onIdpAuthorize}
+          onFidoCeremony={onFidoCeremony}
           onPollStatus={onPollStatus}
           loading={loading}
           canSubmit={canSubmit}

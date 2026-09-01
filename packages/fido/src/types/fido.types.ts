@@ -6,7 +6,11 @@
  */
 
 import { PingError } from '@ping-identity/rn-types';
-import type { JourneyInstance, LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  DaVinciInstance,
+  JourneyInstance,
+  LoggerInstance,
+} from '@ping-identity/rn-types';
 
 /**
  * JSON-compatible value used by FIDO bridge payloads.
@@ -77,6 +81,131 @@ export type FidoJourneyAuthenticationOptions = {
 };
 
 /**
+ * DaVinci collector type emitted for FIDO collectors.
+ *
+ * @remarks
+ * Both native DaVinci FIDO plugins register a single `FIDO2` collector type,
+ * discriminated by `action` into registration and authentication variants.
+ */
+export const fidoCollectorType = 'FIDO2' as const;
+
+/**
+ * DaVinci collector requesting FIDO passkey registration.
+ *
+ * @public
+ */
+export type FidoRegistrationCollector = {
+  /** Stable server-assigned identifier used as the collector key. */
+  key: string;
+  /** FIDO collector type. */
+  type: typeof fidoCollectorType;
+  /** Ceremony action dispatched by the native collector factory. */
+  action: 'REGISTER';
+  /** Human-readable label rendered for the collector. */
+  label: string;
+  /** Whether the collector must be completed before submission. */
+  required: boolean;
+  /**
+   * Android-only trigger string surfaced by the native collector.
+   *
+   * @remarks
+   * The iOS collector does not expose `trigger`, so the bridge omits the field
+   * on that platform.
+   *
+   * TODO: iOS SDK will release this as part of 2.2. Update this comment remark after
+   * upgrading dependencies to 2.2.0.
+   */
+  trigger?: string;
+  /**
+   * WebAuthn public key credential creation options returned by the server.
+   *
+   * @remarks
+   * The native SDKs encode raw identifier arrays before the payload crosses the
+   * bridge. Android emits unpadded base64url and iOS emits standard base64, so
+   * consumers that decode these values must accept both flavours.
+   */
+  publicKeyCredentialCreationOptions?: Record<string, unknown>;
+  /** Original server-side field JSON when available. */
+  raw?: Record<string, unknown>;
+};
+
+/**
+ * DaVinci collector requesting FIDO passkey authentication.
+ *
+ * @public
+ */
+export type FidoAuthenticationCollector = {
+  /** Stable server-assigned identifier used as the collector key. */
+  key: string;
+  /** FIDO collector type. */
+  type: typeof fidoCollectorType;
+  /** Ceremony action dispatched by the native collector factory. */
+  action: 'AUTHENTICATE';
+  /** Human-readable label rendered for the collector. */
+  label: string;
+  /** Whether the collector must be completed before submission. */
+  required: boolean;
+  /**
+   * Android-only trigger string surfaced by the native collector.
+   *
+   * @remarks
+   * The iOS collector does not expose `trigger`, so the bridge omits the field
+   * on that platform.
+   */
+  trigger?: string;
+  /**
+   * WebAuthn public key credential request options returned by the server.
+   *
+   * @remarks
+   * The native SDKs encode raw identifier arrays before the payload crosses the
+   * bridge. Android emits unpadded base64url and iOS emits standard base64, so
+   * consumers that decode these values must accept both flavours.
+   */
+  publicKeyCredentialRequestOptions?: Record<string, unknown>;
+  /** Original server-side field JSON when available. */
+  raw?: Record<string, unknown>;
+};
+
+/**
+ * DaVinci collector supplied by the FIDO plugin.
+ *
+ * @remarks
+ * Discriminated by `action` into {@link FidoRegistrationCollector} and
+ * {@link FidoAuthenticationCollector}. Deliberately does not extend the
+ * DaVinci `BaseCollector` because the native FIDO base class is not a field
+ * collector.
+ *
+ * @public
+ */
+export type FidoCollector =
+  | FidoRegistrationCollector
+  | FidoAuthenticationCollector;
+
+/**
+ * Options for DaVinci-scoped FIDO registration ceremony execution.
+ *
+ * @public
+ */
+export type FidoDaVinciRegistrationOptions = {
+  /**
+   * Optional collector index when multiple FIDO2 registration collectors are present.
+   */
+  index?: number;
+};
+
+/**
+ * Options for DaVinci-scoped FIDO authentication ceremony execution.
+ *
+ * @public
+ */
+export type FidoDaVinciAuthenticationOptions = {
+  /**
+   * Optional collector index when multiple FIDO2 authentication collectors are present.
+   */
+  index?: number;
+};
+
+/**
  * Android-specific FIDO runtime configuration options.
  */
 export type FidoAndroidConfig = {
@@ -102,7 +231,8 @@ export type FidoConfig = {
    * @remarks
    * Must be created by `@ping-identity/rn-logger` (`logger(...)`).
    * JavaScript-side FIDO logs use this logger on both platforms.
-   * Native logger forwarding currently applies on Android; iOS native forwarding is a no-op.
+   * Native logger forwarding applies to standalone operations on both platforms.
+   * Journey callback operations retain their Journey-configured native logger.
    */
   logger?: LoggerInstance;
   /**
@@ -129,6 +259,19 @@ export type FidoClientConfig = {
    */
   useFido2Client?: boolean;
 };
+
+/**
+ * Result payload returned by a successful DaVinci FIDO ceremony.
+ *
+ * @remarks
+ * The payload is the raw WebAuthn attestation or assertion produced by the native
+ * ceremony. It is informational only: submission to the DaVinci flow happens
+ * natively through the collector, so callers advance the flow with
+ * `daVinci.next({ collectors: [] })`.
+ *
+ * @public
+ */
+export type FidoDaVinciResult = { [key: string]: FidoJsonValue };
 
 /**
  * Reusable client for FIDO operations.
@@ -176,6 +319,32 @@ export interface FidoClient {
     journey: JourneyInstance,
     options?: FidoJourneyAuthenticationOptions,
   ): Promise<FidoJourneyResult>;
+  /**
+   * Runs the native FIDO passkey ceremony for an active DaVinci `FIDO2` registration collector.
+   *
+   * @param daVinci Active DaVinci instance.
+   * @param options Optional registration ceremony options.
+   * @returns A promise that resolves to the WebAuthn attestation payload. Informational
+   * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
+   * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+   */
+  registerForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: FidoDaVinciRegistrationOptions,
+  ): Promise<FidoDaVinciResult>;
+  /**
+   * Runs the native FIDO passkey ceremony for an active DaVinci `FIDO2` authentication collector.
+   *
+   * @param daVinci Active DaVinci instance.
+   * @param options Optional authentication ceremony options.
+   * @returns A promise that resolves to the WebAuthn assertion payload. Informational
+   * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
+   * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+   */
+  authenticateForDaVinci(
+    daVinci: DaVinciInstance,
+    options?: FidoDaVinciAuthenticationOptions,
+  ): Promise<FidoDaVinciResult>;
 }
 
 /**
@@ -211,4 +380,4 @@ export type FidoErrorCode =
   | 'FIDO_CALLBACK_NOT_FOUND'
   | (string & {});
 
-export type { JourneyInstance };
+export type { DaVinciInstance, JourneyInstance };

@@ -31,6 +31,19 @@ RCT_EXPORT_MODULE()
 }
 
 /**
+ Registers the DaVinci FIDO2 collector serializer with CoreRuntime.
+
+ Called from the JS FIDO client factory at client creation. Synchronous and
+ thread-safe by design: registration is an idempotent in-memory registry
+ append, so no main-thread dispatch is used — a dispatch would return before
+ registration completes and reintroduce the timing race this method closes.
+ */
+- (void)registerDaVinciSerializer
+{
+  [RNPingFidoCommon registerDaVinciSerializer];
+}
+
+/**
  Registers a new FIDO credential.
  */
 - (void)registerCredential:(NSDictionary *)options
@@ -101,6 +114,44 @@ RCT_EXPORT_MODULE()
 
   dispatch_async(dispatch_get_main_queue(), ^{
     [[self swiftImpl] authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+ */
+- (void)registerCredentialForDaVinci:(NSString *)davinciId
+                              options:(NSDictionary *)options
+                               config:(NSDictionary *)config
+                              resolve:(RCTPromiseResolveBlock)resolve
+                               reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] registerForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] registerForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+ */
+- (void)authenticateCredentialForDaVinci:(NSString *)davinciId
+                                  options:(NSDictionary *)options
+                                   config:(NSDictionary *)config
+                                  resolve:(RCTPromiseResolveBlock)resolve
+                                   reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] authenticateForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] authenticateForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 

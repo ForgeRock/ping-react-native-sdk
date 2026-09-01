@@ -2771,6 +2771,7 @@ PODS:
     - glog
     - hermes-engine
     - PingFido (= 2.1.0)
+    - PingLogger (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3720,26 +3721,26 @@ SPEC CHECKSUMS:
   ReactCodegen: 62690fdeb185860673cb78e3d9b049c7e1d40531
   ReactCommon: 17fd88849a174bf9ce45461912291aca711410fc
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RNCAsyncStorage: 1f04c8d56558e533277beda29187f571cf7eecb2
-  RNPingBinding: 42c5def9f466be00bbefb4528f64b60230bd567e
-  RNPingBrowser: 7c0711fae1acb825477f655c947a805d6118ecf4
-  RNPingCore: 1b0525ac7164f9ddb61b686c45b67f19530bb481
-  RNPingDavinci: 45c7d41b6f183d83ae0f4a19bd5c2f83d2429abf
-  RNPingDeviceClient: 826fb04701ac0e409d38bf999e18415e6d64e22b
-  RNPingDeviceId: ff1d33d171c008a9c98b2d7eb2d46032869fad33
-  RNPingDeviceProfile: 428761e9cfac17cd657e1747b2854a93db6572bd
-  RNPingExternalIdp: 9fd15d2f7576223beee2055441e9fd29645348e2
-  RNPingFido: b09295c6b13600591387a57b1930a538d4a7f1e0
-  RNPingJourney: 7eacfa031b070c725ed8368df5fc6ac6710d5b70
-  RNPingLogger: f7620710037e956ca367b5e2a1477a9c6c4f0b5a
-  RNPingOath: bd50b98c9d435fb3fde8e80b966306a9fcd2e2d5
-  RNPingOidc: 38cea6333efa07545e3798b64d10a1536484b655
-  RNPingProtect: 45a4780c53561556254ba1c3dfbbe158dae5a378
-  RNPingPush: 0072c47bce5d54317145f32090b58b7689825655
-  RNPingStorage: 653ee9fa2b7abc8cc3a923cd084cdfd9a35e1123
-  RNScreens: f35bcc83b6e3a871635b1c28728e63c9560f159a
-  RNSVG: 6c85ed4204fc8680c2f6fca3532277fd4f65e5ab
-  RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
+  RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
+  RNPingBinding: 1731d5254b7d026df05ee056ab7802f4888537e9
+  RNPingBrowser: b6afbf0fa46c9ae0a10daeb46927f05eca5c7c6d
+  RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
+  RNPingDavinci: 6476fe1f3a0f3bcb8c875551df12e0b493da6de4
+  RNPingDeviceClient: 0ff89a604e97d1168eff3aba4b1d889139619bd7
+  RNPingDeviceId: 6eb3e9fc68a78e1aee87652e025f6e1ec6d5d67e
+  RNPingDeviceProfile: 3086f14fc5024196a64290afbbf7917432dd5900
+  RNPingExternalIdp: 8e6e224400407ab3e732bc72976f250940ad644c
+  RNPingFido: e6122f604e9bfaa3583b211cbf08713f1bff111f
+  RNPingJourney: dc54cca7e6bc6ea03ae6244fbfcb82a3ebc8014d
+  RNPingLogger: b7dd73f42b3fea86a56fc7a35999cf4333fbde20
+  RNPingOath: 261b44b957975c0c036b1bed6ef953c4767b8fcc
+  RNPingOidc: d490892cb09a11c189b2259bca0fecfc09a109fd
+  RNPingProtect: a08dff0477c7a923a2d346b16e7a67658da56565
+  RNPingPush: 3f02ee0f3d971c0d8affdb13b8fcefc4de789de1
+  RNPingStorage: 2c45c6d29cfcf8e1ed8ec3e32df1443e29dabd67
+  RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
+  RNSVG: e8fb86f41fccd7b67c4480bb9e179e0ad5785b80
+  RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   VisionCamera: e82024ee7ce0fb6168a4c468ef43c711f4486baa
   VisionCameraBarcodeScanner: a65d708fd3672e6d43e94cce39b548465851752b

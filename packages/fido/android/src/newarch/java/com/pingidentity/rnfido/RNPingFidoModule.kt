@@ -65,6 +65,37 @@ class RNPingFidoModule(reactContext: ReactApplicationContext) :
     RNPingFidoCommon.authenticateForJourney(journeyId, options, config, promise)
   }
 
+  /**
+   * Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+   */
+  override fun registerCredentialForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.registerForDaVinci(davinciId, options, config, promise)
+  }
+
+  /**
+   * Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+   */
+  override fun authenticateCredentialForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.authenticateForDaVinci(davinciId, options, config, promise)
+  }
+
+  /**
+   * Registers the DaVinci FIDO2 collector serializer with CoreRuntime.
+   */
+  override fun registerDaVinciSerializer() {
+    RNPingFidoCommon.registerDaVinciSerializer()
+  }
+
   companion object {
     const val NAME = "RNPingFido"
   }

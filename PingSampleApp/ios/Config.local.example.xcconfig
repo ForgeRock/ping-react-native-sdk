@@ -9,3 +9,4 @@ GOOGLE_IOS_REVERSED_CLIENT_ID=com.googleusercontent.apps.your-google-ios-client-
 FACEBOOK_APP_ID=your-facebook-app-id
 FACEBOOK_CLIENT_TOKEN=your-facebook-client-token
 FACEBOOK_LOGIN_PROTOCOL_SCHEME=fbyour-facebook-app-id
+ASSOCIATED_DOMAIN=your-associated-domain.example.com

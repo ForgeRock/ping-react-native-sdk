@@ -102,6 +102,11 @@ android {
         resValue "string", "facebook_app_id", project.env.get("FACEBOOK_APP_ID") ?: ""
         resValue "string", "fb_login_protocol_scheme", project.env.get("FACEBOOK_LOGIN_PROTOCOL_SCHEME") ?: ""
         resValue "string", "facebook_client_token", project.env.get("FACEBOOK_CLIENT_TOKEN") ?: ""
+        // Digital Asset Links statement for passkey (FIDO2) credential delegation.
+        // The backslash escaping must stay in the Gradle value; .env holds the bare domain.
+        def assocDomain = project.env.get("ASSOCIATED_DOMAIN") ?: ""
+        resValue "string", "asset_statements",
+            '[{\\\"include\\\": \\\"https://' + assocDomain + '/.well-known/assetlinks.json\\"}]'
     }
     signingConfigs {
         debug {

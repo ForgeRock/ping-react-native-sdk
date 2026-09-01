@@ -15,6 +15,14 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   /// Shared singleton instance.
   @objc public static let shared = RNPingFidoImpl()
 
+  /// Private initializer; use `shared`.
+  ///
+  /// - Note: Serializer registration is intentionally not performed here. The
+  ///   bridge method `registerDaVinciSerializer` (called from the JS FIDO client
+  ///   factory) is the single iOS registration path — an additional site here
+  ///   would make registration fire on first FIDO native call regardless of
+  ///   client creation, diverging from the Android behavior and from the JS
+  ///   activation contract.
   @objc private override init() {
     super.init()
   }
@@ -96,6 +104,56 @@ public class RNPingFidoImpl: NSObject, @unchecked Sendable {
   ) {
     RNPingFidoCommon.authenticateForJourney(
       journeyId,
+      options: options,
+      config: config,
+      resolver: resolve,
+      rejecter: rejecter
+    )
+  }
+
+  /// Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Registration ceremony options.
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolve: Promise resolver for the attestation payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func registerForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingFidoCommon.registerForDaVinci(
+      davinciId,
+      options: options,
+      config: config,
+      resolver: resolve,
+      rejecter: rejecter
+    )
+  }
+
+  /// Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Authentication ceremony options.
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolve: Promise resolver for the assertion payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public func authenticateForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingFidoCommon.authenticateForDaVinci(
+      davinciId,
       options: options,
       config: config,
       resolver: resolve,
