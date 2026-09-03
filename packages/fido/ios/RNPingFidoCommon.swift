@@ -106,6 +106,10 @@ public class RNPingFidoCommon: NSObject {
   ///   - options: Transformed WebAuthn options; `[:]` when the collector was
   ///     constructed without them (iOS `init` is non-throwing).
   /// - Returns: Bridge payload map.
+  /// - Note: The `trigger` field is intentionally absent from this payload.
+  ///   TODO-PARITY (SDKS-5302): the iOS SDK's `AbstractFidoCollector` exposes no
+  ///   `trigger` property, unlike Android's base collector. The iOS SDK ships
+  ///   `trigger` in 2.2; add the field here when the dependency is upgraded.
   private static func serializeFidoCollector(
     collector: AbstractFidoCollector,
     action: String,
@@ -120,6 +124,9 @@ public class RNPingFidoCommon: NSObject {
       "required": collector.required
     ]
     if !options.isEmpty {
+      // TODO-PARITY (SDKS-5302): iOS emits standard padded base64 for option
+      // bytes while Android emits unpadded base64url (native SDK gap, R3). Do
+      // not normalise here; JS consumers must accept both flavours.
       map[optionsKey] = JsonBridgeMapper.encodeJsonObject(options)
     }
     return map
