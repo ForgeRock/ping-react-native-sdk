@@ -378,6 +378,7 @@ export type FidoErrorCode =
   | 'FIDO_ACTIVITY_UNAVAILABLE'
   | 'FIDO_WINDOW_UNAVAILABLE'
   | 'FIDO_CALLBACK_NOT_FOUND'
+  | 'FIDO_COLLECTOR_NOT_FOUND'
   | (string & {});
 
 export type { DaVinciInstance, JourneyInstance };

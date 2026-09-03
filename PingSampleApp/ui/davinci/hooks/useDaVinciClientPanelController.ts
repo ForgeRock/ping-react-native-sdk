@@ -265,13 +265,17 @@ export function useDaVinciClientPanelController(
         console.warn('[DaVinci] FIDO ceremony: no DaVinci client in context');
         return;
       }
-      const fidoFields = form.fields.filter(f => f.type === fidoCollectorType);
+      // Native resolvers index collectors per concrete ceremony class
+      // (registration vs. authentication), so the index must be computed
+      // within the ceremony-matched subset, not across all FIDO collectors.
+      const fidoFields = form.fields.filter(
+        f =>
+          f.type === fidoCollectorType &&
+          (f as unknown as FidoCollector).action === collector.action,
+      );
       const index = fidoFields.findIndex(f => f.key === collector.key);
       const collectorIndex = index >= 0 ? index : 0;
       try {
-        console.debug('COLLECTOR KEY', collector.key);
-        console.debug('COLLECTOR KEY', collector.action);
-        console.debug('COLLECTOR KEY', collector.label);
         if (collector.action === 'REGISTER') {
           await fido.registerForDaVinci(davinciClient, {
             index: collectorIndex,

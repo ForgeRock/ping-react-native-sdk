@@ -191,6 +191,9 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @returns A promise that resolves to the WebAuthn attestation payload. Informational
      * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
      * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+     * @remarks Unlike the standalone `register`, no per-call logger override applies
+     * here: the client-level `config` is threaded to native but both platforms discard
+     * it for DaVinci ceremonies, which keep the workflow-configured native logger.
      */
     async registerForDaVinci(
       daVinci: DaVinciInstance,
@@ -219,6 +222,9 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @returns A promise that resolves to the WebAuthn assertion payload. Informational
      * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
      * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+     * @remarks Unlike the standalone `authenticate`, no per-call logger override applies
+     * here: the client-level `config` is threaded to native but both platforms discard
+     * it for DaVinci ceremonies, which keep the workflow-configured native logger.
      */
     async authenticateForDaVinci(
       daVinci: DaVinciInstance,

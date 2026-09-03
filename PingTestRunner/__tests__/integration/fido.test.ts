@@ -594,5 +594,113 @@ describe('@ping-identity/rn-fido — integration', () => {
         { collectors: [] },
       );
     });
+
+    it('authenticateForDaVinci then next submits without the FIDO key', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      const result = await fidoClient.authenticateForDaVinci(daVinciClient, {
+        index: 0,
+      });
+
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { index: 0 },
+        {
+          loggerId: undefined,
+          useFido2Client: undefined,
+        },
+      );
+      expect(result).toEqual({ assertionValue: { id: 'cred-1' } });
+
+      await daVinciClient.next({ collectors: [] });
+
+      expect(nativeDaVinciMock.next).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { collectors: [] },
+      );
+    });
+
+    it('propagates FIDO_AUTHENTICATE_CANCELLED from authenticateForDaVinci', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_AUTHENTICATE_CANCELLED',
+            message: 'Cancelled by user',
+            type: 'cancelled',
+          };
+        }),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.authenticateForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_AUTHENTICATE_CANCELLED',
+        message: 'Cancelled by user',
+      });
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates FIDO_COLLECTOR_NOT_FOUND from registerForDaVinci', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_COLLECTOR_NOT_FOUND',
+            message:
+              'No active FIDO registration collector found for DaVinci davinci-id-fido-mock at index 0.',
+            type: 'state_error',
+          };
+        }),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.registerForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_COLLECTOR_NOT_FOUND',
+        type: 'state_error',
+      });
+      expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledTimes(
+        1,
+      );
+    });
   });
 });

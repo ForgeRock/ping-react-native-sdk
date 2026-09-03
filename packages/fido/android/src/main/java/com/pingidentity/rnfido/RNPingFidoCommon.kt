@@ -98,13 +98,15 @@ object RNPingFidoCommon {
           collector = collectorAny,
           action = ACTION_REGISTER,
           optionsKey = Constants.FIELD_PUBLIC_KEY_CREDENTIAL_CREATION_OPTIONS,
-          options = runCatching { collectorAny.publicKeyCredentialCreationOptions }.getOrNull()
+          // Set synchronously inside init(); a collector missing the field fails
+          // init and never reaches this serializer.
+          options = collectorAny.publicKeyCredentialCreationOptions
         )
         is FidoAuthenticationCollector -> serializeFidoCollector(
           collector = collectorAny,
           action = ACTION_AUTHENTICATE,
           optionsKey = Constants.FIELD_PUBLIC_KEY_CREDENTIAL_REQUEST_OPTIONS,
-          options = runCatching { collectorAny.publicKeyCredentialRequestOptions }.getOrNull()
+          options = collectorAny.publicKeyCredentialRequestOptions
         )
         else -> null
       }
@@ -130,15 +132,17 @@ object RNPingFidoCommon {
    * @param collector Initialized native FIDO collector.
    * @param action Ceremony action derived from the matched collector class.
    * @param optionsKey Bridge payload key for the collector's WebAuthn options.
-   * @param options Transformed WebAuthn options, or null when the collector has not
-   *   been initialised (the `lateinit` field throws before `init`).
+   * @param options Transformed WebAuthn options. Always present on a live
+   *   collector: the native collector sets the field synchronously inside `init()`,
+   *   which throws `IllegalArgumentException` when the field is missing from the
+   *   server payload, so an uninitialised collector never reaches this serializer.
    * @return Bridge payload map.
    */
   private fun serializeFidoCollector(
     collector: AbstractFidoCollector,
     action: String,
     optionsKey: String,
-    options: JsonObject?
+    options: JsonObject
   ): Map<String, Any?> {
     val map = linkedMapOf<String, Any?>(
       "key" to collector.key,
@@ -148,7 +152,9 @@ object RNPingFidoCommon {
       "required" to collector.required,
       "trigger" to collector.trigger
     )
-    options?.let { map[optionsKey] = JsonBridgeMapper.encodeJsonElement(it) }
+    // TODO-PARITY (SDKS-5302): Android emits base64url without padding while iOS
+    // emits standard padded base64 for the same option bytes (native SDK gap).
+    map[optionsKey] = JsonBridgeMapper.encodeJsonElement(options)
     return map
   }
 
