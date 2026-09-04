@@ -129,6 +129,16 @@ public final class RNPingDavinciCommon: NSObject {
   static func _activeContinueNodeForTesting(for davinciId: String) -> ContinueNode? {
     stateStore.activeContinueNode(for: davinciId)
   }
+
+  /// Test-only awaitable teardown: same work as `cleanup()` but suspends until the
+  /// enqueued lifecycle work has drained.
+  ///
+  /// - Note: Test fixtures must use this instead of `cleanup()` — the fire-and-forget
+  ///   production shape can land `stateStore.removeAll()` after a subsequent test has
+  ///   synchronously installed its node, wiping it mid-test.
+  static func _cleanupForTesting() async {
+    await cleanupAsync()
+  }
 #endif
 
   // MARK: - Bridge methods

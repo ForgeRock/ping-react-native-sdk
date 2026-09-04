@@ -39,14 +39,14 @@ final class RNPingDavinciImplTests: XCTestCase {
     }
   }
 
-  override func setUp() {
-    super.setUp()
-    RNPingDavinciCommon.cleanup()
+  override func setUp() async throws {
+    try await super.setUp()
+    await RNPingDavinciCommon._cleanupForTesting()
   }
 
-  override func tearDown() {
-    RNPingDavinciCommon.cleanup()
-    super.tearDown()
+  override func tearDown() async throws {
+    await RNPingDavinciCommon._cleanupForTesting()
+    try await super.tearDown()
   }
 
   func testConfigureDaVinciRejectsWhenDiscoveryEndpointMissing() {

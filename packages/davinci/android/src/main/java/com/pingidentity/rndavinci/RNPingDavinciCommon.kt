@@ -64,6 +64,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal object RNPingDavinciCommon {
 
+    private const val TAG = "RNPingDavinciCommon"
+
     private fun createScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -399,15 +401,25 @@ internal object RNPingDavinciCommon {
                 return@launchBridge
             }
 
-            val collector = checkNotNull(
-                currentNode.actions
-                    .filterIsInstance<Collector<*>>()
-                    .find { it.id() == collectorKey }
-            )
+            val collector = currentNode.actions
+                .filterIsInstance<Collector<*>>()
+                .find { it.id() == collectorKey }
+            if (collector == null) {
+                promise.reject(
+                    GenericError(
+                        type = ErrorType.ARGUMENT_ERROR,
+                        error = DaVinciErrorCodes.ARGUMENT,
+                        message = "No collector found for key=$collectorKey"
+                    )
+                )
+                return@launchBridge
+            }
             val validator = collector as? Validator
             val errors = validator?.let { DaVinciNodeMapper.encodeValidationErrors(it.validate()) }
                 ?: emptyList<Map<String, Any?>>()
-            promise.resolve(encodeValidationErrorsArray(errors))
+            promise.resolve(
+                encodeValidationErrorsArray(errors, resolveDaVinciLogger(davinciId))
+            )
         }
     }
 
@@ -418,14 +430,18 @@ internal object RNPingDavinciCommon {
      * cannot substitute with a JVM-only test double in unit tests.
      *
      * @param errors Encoded validation error maps from [DaVinciNodeMapper.encodeValidationErrors].
+     * @param logger Optional logger used to surface unexpected field value types.
      * @return Bridge array of `{code, ...}` error payloads.
      */
-    private fun encodeValidationErrorsArray(errors: List<Map<String, Any?>>): WritableArray =
+    private fun encodeValidationErrorsArray(
+        errors: List<Map<String, Any?>>,
+        logger: Logger?,
+    ): WritableArray =
         Arguments.createArray().apply {
-            errors.forEach { error -> pushMap(encodeValidationErrorMap(error)) }
+            errors.forEach { error -> pushMap(encodeValidationErrorMap(error, logger)) }
         }
 
-    private fun encodeValidationErrorMap(error: Map<String, Any?>): WritableMap =
+    private fun encodeValidationErrorMap(error: Map<String, Any?>, logger: Logger?): WritableMap =
         Arguments.createMap().apply {
             error.forEach { (key, value) ->
                 when (value) {
@@ -435,7 +451,13 @@ internal object RNPingDavinciCommon {
                     is Int -> putInt(key, value)
                     is Long -> putDouble(key, value.toDouble())
                     is Double -> putDouble(key, value)
-                    else -> putString(key, value.toString())
+                    else -> {
+                        logger?.w(
+                            "[$TAG] Unexpected validation error value type " +
+                                "${value::class.java.name} for key '$key'; stringified"
+                        )
+                        putString(key, value.toString())
+                    }
                 }
             }
         }

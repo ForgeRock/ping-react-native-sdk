@@ -76,13 +76,13 @@ final class RNPingDavinciCommonTests: XCTestCase {
     }
   }
 
-  override func setUp() {
-    super.setUp()
-    RNPingDavinciCommon.cleanup()
+  override func setUp() async throws {
+    try await super.setUp()
+    await RNPingDavinciCommon._cleanupForTesting()
   }
 
   override func tearDown() async throws {
-    RNPingDavinciCommon.cleanup()
+    await RNPingDavinciCommon._cleanupForTesting()
     await CoreRuntime.loggerRegistry.removeAll()
     try await super.tearDown()
   }
@@ -1055,7 +1055,8 @@ final class RNPingDavinciCommonTests: XCTestCase {
 
   func testSetNodeStateRetainsContinueNodeFromErrorNode() {
     let davinciId = "error-node-retains-continue"
-    let current = makeContinueNode(collectors: [])
+    let closeSpy = CloseableSpyAction()
+    let current = makeContinueNode(actions: [closeSpy])
     RNPingDavinciCommon._setContinueNodeForTesting(davinciId: davinciId, node: current)
 
     let errorContext = FlowContext(flowContext: SharedContext())
@@ -1073,6 +1074,41 @@ final class RNPingDavinciCommonTests: XCTestCase {
       RNPingDavinciCommon._activeContinueNodeForTesting(for: davinciId) === current,
       "An ErrorNode's retryable continueNode must remain the active node, matching " +
         "Android's setNodeStateRetainsContinueNodeFromErrorNode parity test"
+    )
+    XCTAssertEqual(
+      closeSpy.closeCount, 0,
+      "The retained continueNode must not be closed when the ErrorNode's " +
+        "continueNode is the previously active node"
+    )
+  }
+
+  func testSetNodeStateClosesPreviousContinueNodeWhenErrorNodeCarriesDifferentContinueNode() {
+    let davinciId = "error-node-displaces-continue"
+    let previousCloseSpy = CloseableSpyAction()
+    let previous = makeContinueNode(actions: [previousCloseSpy])
+    RNPingDavinciCommon._setContinueNodeForTesting(davinciId: davinciId, node: previous)
+
+    let replacement = makeContinueNode(actions: [])
+    let errorContext = FlowContext(flowContext: SharedContext())
+    errorContext.flowContext.set(key: SharedContext.Keys.continueNode, value: replacement)
+    let errorNode = ErrorNode(
+      status: 400,
+      input: ["code": "invalid"],
+      message: "Invalid input",
+      context: errorContext
+    )
+
+    RNPingDavinciCommon._setNodeStateForTesting(davinciId: davinciId, node: errorNode)
+
+    XCTAssertTrue(
+      RNPingDavinciCommon._activeContinueNodeForTesting(for: davinciId) === replacement,
+      "The ErrorNode's replacement continueNode must become the active node"
+    )
+    XCTAssertEqual(
+      previousCloseSpy.closeCount, 1,
+      "The displaced previous ContinueNode must be closed when the ErrorNode's " +
+        "continueNode does not match it, matching Android's " +
+        "setNodeState_closesDisplacedContinueNodeOnTransition parity test"
     )
   }
 
@@ -1208,11 +1244,15 @@ final class RNPingDavinciCommonTests: XCTestCase {
   }
 
   private func makeContinueNode(collectors: [any Collector], input: [String: Any] = [:]) -> ContinueNode {
+    return makeContinueNode(actions: collectors, input: input)
+  }
+
+  private func makeContinueNode(actions: [any Action], input: [String: Any] = [:]) -> ContinueNode {
     return TestContinueNode(
       context: FlowContext(flowContext: SharedContext()),
       workflow: Workflow(config: WorkflowConfig()),
       input: input,
-      actions: collectors
+      actions: actions
     )
   }
 
@@ -1282,6 +1322,24 @@ private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable 
 private final class TestContinueNode: ContinueNode {
   override func asRequest() -> Request {
     return workflow.config.httpClient.request()
+  }
+}
+
+/// Records `close()` invocations, mirroring Android's `ClosableAction` test double.
+private final class CloseableSpyAction: Action, Closeable, @unchecked Sendable {
+  private let lock = NSLock()
+  private var _closeCount = 0
+
+  var closeCount: Int {
+    lock.lock()
+    defer { lock.unlock() }
+    return _closeCount
+  }
+
+  func close() {
+    lock.lock()
+    _closeCount += 1
+    lock.unlock()
   }
 }
 

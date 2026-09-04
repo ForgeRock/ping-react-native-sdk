@@ -107,13 +107,21 @@ export async function nextDaVinci(
  * @param collectorKey - Collector key to update and validate.
  * @param value - Candidate value to apply to the collector before validating.
  * @returns Validation errors for the collector, or an empty array when valid.
- * @throws {DaVinciError} When value application or validation fails.
+ * @throws {DaVinciError} With `DAVINCI_ARGUMENT_ERROR` when `collectorKey` is
+ *   empty or whitespace-only; when value application or validation fails.
  */
 export async function validateDaVinci(
   davinciId: string,
   collectorKey: string,
   value: unknown,
 ): Promise<DaVinciFieldValidationError[]> {
+  if (!collectorKey.trim()) {
+    throw new DaVinciError(
+      `[@ping-identity/rn-davinci] validateDaVinci: collectorKey must be a non-empty string (received '${collectorKey}').`,
+      'DAVINCI_ARGUMENT_ERROR',
+      'argument_error',
+    );
+  }
   try {
     const input: DaVinciNextInput = {
       collectors: [{ key: collectorKey, value }],
