@@ -19,6 +19,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -46,10 +47,12 @@ class RNPingFidoCommonSerializerTest {
 
   /**
    * Initializes both FIDO collectors through `init` with a mocked DaVinci instance
-   * supplying the default workflow logger.
+   * supplying the default workflow logger, and clears the one-shot serializer
+   * registration guard so each test registers hermetically regardless of test order.
    */
   @Before
   fun setUp() {
+    RNPingFidoCommon.resetSerializerRegistrationForTesting()
     val daVinci = mockk<DaVinci>()
     every { daVinci.config } returns WorkflowConfig()
 
@@ -62,6 +65,15 @@ class RNPingFidoCommonSerializerTest {
       davinci = daVinci
       init(authenticationInput())
     }
+  }
+
+  /**
+   * Restores the one-shot serializer registration guard so this suite leaves no
+   * residual state for other test classes.
+   */
+  @After
+  fun tearDown() {
+    RNPingFidoCommon.resetSerializerRegistrationForTesting()
   }
 
   /**
