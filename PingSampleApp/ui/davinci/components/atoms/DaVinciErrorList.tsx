@@ -27,10 +27,20 @@ export type DaVinciErrorListProps = {
  * @returns User-facing message.
  */
 function describeError(error: DaVinciFieldValidationError): string {
-  if (error.code === 'REQUIRED') {
-    return 'This field is required.';
+  switch (error.code) {
+    case 'REQUIRED':
+      return 'This field is required.';
+    case 'REGEX_ERROR':
+      return error.message;
+    case 'INVALID_LENGTH':
+      return `Password must be between ${error.min} and ${error.max} characters.`;
+    case 'UNIQUE_CHARACTER':
+      return `Password must contain at least ${error.min} unique characters.`;
+    case 'MAX_REPEAT':
+      return `Password cannot repeat a character more than ${error.max} times.`;
+    case 'MIN_CHARACTERS':
+      return `Password must contain at least ${error.min} ${error.character} characters.`;
   }
-  return error.message;
 }
 
 /**

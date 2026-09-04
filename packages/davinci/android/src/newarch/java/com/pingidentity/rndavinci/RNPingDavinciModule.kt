@@ -67,6 +67,23 @@ class RNPingDavinciModule(reactContext: ReactApplicationContext) :
   }
 
   /**
+   * Validate one active DaVinci collector without advancing the flow.
+   *
+   * @param davinciId Native DaVinci client id.
+   * @param collectorKey Collector key to update and validate.
+   * @param input Single-entry collector mutation payload.
+   * @param promise Promise resolved with encoded validation errors.
+   */
+  override fun validate(
+    davinciId: String,
+    collectorKey: String,
+    input: ReadableMap,
+    promise: Promise,
+  ) {
+    RNPingDavinciCommon.validate(davinciId, collectorKey, input, promise)
+  }
+
+  /**
    * Resolve active user session details.
    *
    * @param davinciId Native DaVinci client id.

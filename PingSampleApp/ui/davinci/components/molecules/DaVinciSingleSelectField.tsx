@@ -7,7 +7,10 @@
 
 import React, { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import type { SingleSelectCollector } from '@ping-identity/rn-davinci';
+import type {
+  DaVinciFieldValidationError,
+  SingleSelectCollector,
+} from '@ping-identity/rn-davinci';
 import DaVinciFieldLabel from '../atoms/DaVinciFieldLabel';
 import DaVinciErrorList from '../atoms/DaVinciErrorList';
 import PickerModal from '../atoms/PickerModal';
@@ -27,12 +30,25 @@ import type { DaVinciCollectorRendererProps } from './types';
 export default function DaVinciSingleSelectField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
-  const { collector, value, onChange } = props;
+  const { collector, value, onChange, onValidate } = props;
   const selectCollector = collector as SingleSelectCollector;
   const selectedValue =
     typeof value === 'string' ? value : selectCollector.value;
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    DaVinciFieldValidationError[] | null
+  >(null);
+
+  const handleSelect = (next: string) => {
+    setValidationErrors(null);
+    onChange(next);
+    onValidate(collector.key, next)
+      .then(setValidationErrors)
+      .catch(error => {
+        console.warn('[DaVinci] Select validation failed:', error);
+      });
+  };
 
   if (selectCollector.type === 'DROPDOWN') {
     return (
@@ -48,9 +64,9 @@ export default function DaVinciSingleSelectField(
           visible={modalVisible}
           onOpen={() => setModalVisible(true)}
           onClose={() => setModalVisible(false)}
-          onSelect={next => onChange(next)}
+          onSelect={handleSelect}
         />
-        <DaVinciErrorList errors={selectCollector.validation?.errors} />
+        <DaVinciErrorList errors={validationErrors ?? undefined} />
       </View>
     );
   }
@@ -68,7 +84,7 @@ export default function DaVinciSingleSelectField(
             key={option.value}
             accessibilityRole="radio"
             accessibilityState={{ selected: isSelected }}
-            onPress={() => onChange(option.value)}
+            onPress={() => handleSelect(option.value)}
             style={[
               davinciFieldStyles.optionRow,
               isSelected ? davinciFieldStyles.optionRowSelected : null,
@@ -95,7 +111,7 @@ export default function DaVinciSingleSelectField(
           </TouchableOpacity>
         );
       })}
-      <DaVinciErrorList errors={selectCollector.validation?.errors} />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }

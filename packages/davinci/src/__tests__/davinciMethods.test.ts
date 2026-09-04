@@ -422,4 +422,76 @@ describe('davinciMethods', () => {
       );
     });
   });
+
+  describe('validateDaVinci', () => {
+    it('calls native validate with davinciId, collectorKey and the input payload', async () => {
+      const native = createNativeMock({
+        validate: jest.fn(async () => []),
+      });
+      const { validateDaVinci } = loadMethods(native);
+
+      const errors = await validateDaVinci('davinci-id-1', 'username', 'alice');
+
+      expect(errors).toEqual([]);
+      expect(native.validate).toHaveBeenCalledWith('davinci-id-1', 'username', {
+        collectors: [{ key: 'username', value: 'alice' }],
+      });
+    });
+
+    it('throws DAVINCI_ARGUMENT_ERROR without calling native when collectorKey is empty', async () => {
+      const native = createNativeMock({
+        validate: jest.fn(async () => []),
+      });
+      const { validateDaVinci } = loadMethods(native);
+
+      const err = await validateDaVinci('davinci-id-1', '', 'alice').catch(
+        (e: unknown) => e,
+      );
+
+      assertDaVinciError(err, 'DAVINCI_ARGUMENT_ERROR');
+      expect((err as Error).message).toContain(
+        'collectorKey must be a non-empty string',
+      );
+      expect(native.validate).not.toHaveBeenCalled();
+    });
+
+    it('throws DAVINCI_ARGUMENT_ERROR without calling native when collectorKey is whitespace-only', async () => {
+      const native = createNativeMock({
+        validate: jest.fn(async () => []),
+      });
+      const { validateDaVinci } = loadMethods(native);
+
+      const err = await validateDaVinci('davinci-id-1', '   ', 'alice').catch(
+        (e: unknown) => e,
+      );
+
+      assertDaVinciError(err, 'DAVINCI_ARGUMENT_ERROR');
+      expect(native.validate).not.toHaveBeenCalled();
+    });
+
+    it('coerces native rejection to DaVinciError', async () => {
+      const native = createNativeMock({
+        validate: jest.fn(async () => {
+          throw {
+            type: 'argument_error',
+            error: 'DAVINCI_COLLECTOR_APPLY_ERROR',
+            message: 'No active collector found',
+          };
+        }),
+      });
+      const { validateDaVinci } = loadMethods(native);
+
+      const err = await validateDaVinci(
+        'davinci-id-1',
+        'unknown',
+        'alice',
+      ).catch((e: unknown) => e);
+
+      assertDaVinciError(
+        err,
+        'DAVINCI_COLLECTOR_APPLY_ERROR',
+        'No active collector found',
+      );
+    });
+  });
 });

@@ -190,6 +190,16 @@ RCT_EXPORT_MODULE()
   [[self swiftImpl] next:davinciId input:input resolver:resolve rejecter:reject];
 }
 
+/// Bridges `validate(davinciId, collectorKey, input)`.
+- (void)validate:(NSString *)davinciId
+     collectorKey:(NSString *)collectorKey
+            input:(NSDictionary *)input
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] validate:davinciId collectorKey:collectorKey input:input resolver:resolve rejecter:reject];
+}
+
 /// Bridges `getSession(davinciId)`.
 - (void)getSession:(NSString *)davinciId
            resolve:(RCTPromiseResolveBlock)resolve

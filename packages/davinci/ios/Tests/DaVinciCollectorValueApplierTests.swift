@@ -52,8 +52,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       "collectors": ["invalid-item"]
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.parseInput(input)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("Invalid collector entry at index 0"))
     }
@@ -66,8 +66,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       ]
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.parseInput(input)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("Missing 'key'"))
     }
@@ -80,8 +80,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       ]
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.parseInput(input)) { error in
-      guard case DaVinciBridgeError.argument = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case DaVinciBridgeError.collectorApply = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
     }
   }
@@ -148,8 +148,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     ])
     let mutations = [DaVinciCollectorValueApplier.CollectorMutation(key: "unknown", value: "v")]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("No active collector found for key='unknown'"))
     }
@@ -212,6 +212,21 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     XCTAssertEqual(collector.phoneNumber, "0700000")
   }
 
+  func testApplyPhoneNumberCollectorSetsExtensionField() throws {
+    let collector = makePhoneNumberCollector(key: "phone")
+    let node = makeContinueNode(collectors: [collector])
+    let value: NSDictionary = [
+      "countryCode": "+1", "phoneNumber": "5551234", "extension": "99"
+    ]
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(key: "phone", value: value)
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+    XCTAssertEqual(collector.countryCode, "+1")
+    XCTAssertEqual(collector.phoneNumber, "5551234")
+    XCTAssertEqual(collector.extension, "99")
+  }
+
   // MARK: - apply — DeviceRegistrationCollector
 
   func testApplyMutatesDeviceRegistrationCollector() throws {
@@ -233,8 +248,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       DaVinciCollectorValueApplier.CollectorMutation(key: "device", value: NSDictionary())
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("value map must include 'type'"))
     }
@@ -248,8 +263,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       DaVinciCollectorValueApplier.CollectorMutation(key: "device", value: value)
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("no device found with type='FIDO'"))
     }
@@ -288,8 +303,8 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
       DaVinciCollectorValueApplier.CollectorMutation(key: "auth", value: NSDictionary())
     ]
     XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
-      guard case let DaVinciBridgeError.argument(message) = error else {
-        return XCTFail("Expected argument error, got \(error)")
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
       }
       XCTAssertTrue(message.contains("value map must include 'type'"))
     }

@@ -26,7 +26,10 @@ enum DaVinciNodeMapper {
   ///   - node: Native DaVinci node.
   ///   - logger: Optional Ping logger for non-fatal mapping warnings.
   /// - Returns: Serialized node payload.
-  static func mapNode(_ node: Node, logger: Logger? = nil) -> NSDictionary {
+  static func mapNode(
+    _ node: Node,
+    logger: Logger? = nil
+  ) -> NSDictionary {
     return JsonBridgeMapper.encodeJsonObject(mapNodePayload(node, logger: logger))
   }
 
@@ -36,7 +39,10 @@ enum DaVinciNodeMapper {
   ///   - node: Native DaVinci node.
   ///   - logger: Optional Ping logger for non-fatal mapping warnings.
   /// - Returns: Serializable node payload map.
-  static func mapNodePayload(_ node: Node, logger: Logger? = nil) -> [String: Any] {
+  static func mapNodePayload(
+    _ node: Node,
+    logger: Logger? = nil
+  ) -> [String: Any] {
     var payload = [String: Any]()
 
     switch node {
@@ -80,6 +86,35 @@ enum DaVinciNodeMapper {
     }
 
     return payload
+  }
+
+  /// Maps a native `ValidationError` to the stable JS-facing error code contract.
+  ///
+  /// - Parameter error: Native validation error produced by a collector's `validate()`.
+  /// - Returns: Serialized `{code, ...}` error payload.
+  static func encodeValidationError(_ error: ValidationError) -> [String: Any] {
+    switch error {
+    case .required:
+      return ["code": "REQUIRED"]
+    case .regexError(let message):
+      return ["code": "REGEX_ERROR", "message": message]
+    case .invalidLength(let min, let max):
+      return ["code": "INVALID_LENGTH", "min": min, "max": max]
+    case .uniqueCharacter(let min):
+      return ["code": "UNIQUE_CHARACTER", "min": min]
+    case .maxRepeat(let max):
+      return ["code": "MAX_REPEAT", "max": max]
+    case .minCharacters(let character, let min):
+      return ["code": "MIN_CHARACTERS", "character": character, "min": min]
+    }
+  }
+
+  /// Maps a list of native `ValidationError`s captured from a submitted collector.
+  ///
+  /// - Parameter errors: Native validation errors from a collector's `validate()` call.
+  /// - Returns: Serialized list of `{code, ...}` error payloads.
+  static func encodeValidationErrors(_ errors: [ValidationError]) -> [[String: Any]] {
+    return errors.map(encodeValidationError)
   }
 
   /// Serializes all `Collector` instances from a `ContinueNode` into an array.
@@ -232,7 +267,7 @@ enum DaVinciNodeMapper {
     case let textCollector as TextCollector:
       map = mapTextCollector(textCollector, node: node)
     case let passwordCollector as PasswordCollector:
-      map = mapPasswordCollector(passwordCollector, node: node, logger: logger)
+      map = mapPasswordCollector(passwordCollector, logger: logger)
     case let submitCollector as SubmitCollector:
       map = mapBaseFieldCollector(submitCollector)
     case let flowCollector as FlowCollector:
@@ -353,54 +388,40 @@ enum DaVinciNodeMapper {
   ///   never round-trips the entered password back to JS. This matches the
   ///   `PasswordCollector.value` contract in the public TypeScript types and aligns
   ///   with the Android bridge's emission.
+  ///
+  /// - Note: `passwordPolicy` is read through the native `passwordPolicy()` accessor,
+  ///   which resolves the field-level policy first and falls back to the node-root policy.
   private static func mapPasswordCollector(
     _ collector: PasswordCollector,
-    node: ContinueNode,
     logger: Logger?
   ) -> [String: Any] {
     var map = baseFieldCollectorMap(collector)
     map["value"] = ""
     map["clearPassword"] = collector.clearPassword
-    if let policy = extractPasswordPolicy(collector.key, node: node, logger: logger) {
-      map["passwordPolicy"] = policy
+    if let validation = collector.validation, let regex = validation.regex {
+      map["validation"] = ["regex": regex.pattern]
+    }
+    if let policy = collector.passwordPolicy(), let encoded = encodePasswordPolicy(policy, logger: logger) {
+      map["passwordPolicy"] = encoded
     }
     return map
   }
 
-  /// Reads passwordPolicy from the raw JSON at
-  /// `continueNode.input.form.components.fields[].passwordPolicy` by matching the
-  /// collector key.
+  /// Serializes a native `PasswordPolicy` into its bridge payload shape.
   ///
-  /// The SDK's own `passwordPolicy()` method reads from the node root
-  /// (`continueNode.input["passwordPolicy"]`) which is the wrong path — that is why
-  /// the bridge does the lookup itself.
-  ///
-  /// - Returns: Bridge-encoded password policy dictionary, or `nil` when missing.
-  private static func extractPasswordPolicy(
-    _ collectorKey: String,
-    node: ContinueNode,
-    logger: Logger?
-  ) -> NSDictionary? {
-    guard
-      let field = findFieldJson(collectorKey, node: node, logger: logger),
-      let policyDict = field["passwordPolicy"] as? [String: Any]
-    else {
-      return nil
-    }
-
+  /// - Parameters:
+  ///   - policy: Native password policy value.
+  ///   - logger: Optional Ping logger for non-fatal encoding warnings.
+  /// - Returns: Bridge-encoded password policy dictionary, or `nil` on encoding failure.
+  private static func encodePasswordPolicy(_ policy: PasswordPolicy, logger: Logger?) -> NSDictionary? {
     do {
-      let data = try JSONSerialization.data(withJSONObject: policyDict, options: [])
-      let policy = try JSONDecoder().decode(PasswordPolicy.self, from: data)
       let encoded = try JSONEncoder().encode(policy)
       if let object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] {
         return JsonBridgeMapper.encodeJsonObject(object)
       }
       return nil
     } catch {
-      logger?.w(
-        "[\(logTag)] Failed to extract password policy for key=\(collectorKey)",
-        error: error
-      )
+      logger?.w("[\(logTag)] Failed to encode password policy", error: error)
       return nil
     }
   }
@@ -410,10 +431,34 @@ enum DaVinciNodeMapper {
   /// - Parameter collector: LabelCollector instance.
   /// - Returns: Serialized label collector map.
   private static func mapLabelCollector(_ collector: LabelCollector) -> [String: Any] {
-    return [
+    var map: [String: Any] = [
       "key": collector.key,
       "type": "LABEL",
       "content": collector.content
+    ]
+    if let rc = collector.richContent {
+      map["richContent"] = encodeRichContent(rc)
+    }
+    return map
+  }
+
+  /// Serializes a native `RichContent` into its bridge payload shape.
+  ///
+  /// - Parameter rc: Native rich-content payload.
+  /// - Returns: Serialized `{content, replacements}` map.
+  private static func encodeRichContent(_ rc: RichContent) -> [String: Any] {
+    return [
+      "content": rc.content,
+      "replacements": Dictionary(
+        uniqueKeysWithValues: rc.replacements.map { (k, r) in
+          (k, [
+            "value": r.value,
+            "href": r.href ?? "",
+            "type": r.type,
+            "target": r.target ?? ""
+          ] as [String: Any])
+        }
+      )
     ]
   }
 
@@ -452,6 +497,9 @@ enum DaVinciNodeMapper {
     map["validatePhoneNumber"] = collector.validatePhoneNumber
     map["countryCode"] = collector.countryCode
     map["phoneNumber"] = collector.phoneNumber
+    map["extension"] = collector.extension
+    map["showExtension"] = collector.showExtension
+    map["extensionLabel"] = collector.extensionLabel
     return map
   }
 
@@ -490,19 +538,7 @@ enum DaVinciNodeMapper {
     map["appearance"] = collector.appearance.rawValue
     map["errorMessage"] = collector.errorMessage ?? ""
     if let rc = collector.richContent {
-      map["richContent"] = [
-        "content": rc.content,
-        "replacements": Dictionary(
-          uniqueKeysWithValues: rc.replacements.map { (k, r) in
-            (k, [
-              "value": r.value,
-              "href": r.href ?? "",
-              "type": r.type,
-              "target": r.target ?? ""
-            ] as [String: Any])
-          }
-        )
-      ] as [String: Any]
+      map["richContent"] = encodeRichContent(rc)
     }
     return map
   }

@@ -25,6 +25,7 @@ type NativeDaVinciMock = {
   configureDaVinci: jest.Mock;
   start: jest.Mock;
   next: jest.Mock;
+  validate: jest.Mock;
   getSession: jest.Mock;
   refresh: jest.Mock;
   revoke: jest.Mock;
@@ -67,6 +68,7 @@ function makeMock(
       type: 'SuccessNode',
       session: { value: 'session-token' },
     })),
+    validate: jest.fn(async () => []),
     getSession: jest.fn(async () => ({ accessToken: 'mock-access-token' })),
     refresh: jest.fn(async () => ({ accessToken: 'mock-refreshed-token' })),
     revoke: jest.fn(async () => true),
@@ -203,6 +205,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       const methods = [
         'start',
         'next',
+        'validate',
         'user',
         'refresh',
         'revoke',
@@ -260,6 +263,34 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(node.type).toBe('SuccessNode');
       expect(mock.next).toHaveBeenCalledTimes(1);
       expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', input);
+    });
+
+    it('validate() forwards a single-entry collector payload to native', async () => {
+      const mock = makeMock();
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      await client.start();
+      const errors = await client.validate('username', 'alice');
+      expect(errors).toEqual([]);
+      expect(mock.validate).toHaveBeenCalledTimes(1);
+      expect(mock.validate).toHaveBeenCalledWith(
+        'davinci-id-mock',
+        'username',
+        {
+          collectors: [{ key: 'username', value: 'alice' }],
+        },
+      );
+    });
+
+    it('validate() resolves with the validation errors returned by native', async () => {
+      const mock = makeMock({
+        validate: jest.fn(async () => [{ code: 'REQUIRED' }]),
+      });
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      await client.start();
+      const errors = await client.validate('username', '');
+      expect(errors).toEqual([{ code: 'REQUIRED' }]);
     });
 
     it('user() resolves with the active session', async () => {
@@ -376,6 +407,22 @@ describe('@ping-identity/rn-davinci — integration', () => {
         name: 'DaVinciError',
       });
     });
+
+    it('validate() propagates native errors as DaVinciError', async () => {
+      const mock = makeMock({
+        validate: jest.fn(async () => {
+          throw new Error('validate failed');
+        }),
+      });
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      await client.start();
+      await expect(
+        client.validate('does-not-exist', 'value'),
+      ).rejects.toMatchObject({
+        name: 'DaVinciError',
+      });
+    });
   });
 
   describe('normalizeCollectors()', () => {
@@ -477,7 +524,85 @@ describe('@ping-identity/rn-davinci — integration', () => {
       ]);
     });
 
-    it('PASSWORD — round-trips a string value and surfaces passwordPolicy', async () => {
+    it('SINGLE_CHECKBOX — preserves metadata and round-trips a boolean', async () => {
+      const richContent = {
+        content: 'I agree to the {terms}.',
+        replacements: {
+          terms: {
+            value: 'terms',
+            href: 'https://example.com/terms',
+            type: 'link',
+            target: '_blank',
+          },
+        },
+      };
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'terms',
+                type: 'SINGLE_CHECKBOX',
+                label: 'Agree to terms',
+                required: true,
+                value: false,
+                appearance: 'CHECKBOX',
+                errorMessage: 'Agreement is required.',
+                richContent,
+                errors: [{ code: 'REQUIRED' }],
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0]).toMatchObject({
+        kind: 'boolean',
+        appearance: 'CHECKBOX',
+        richContent,
+        errors: [{ code: 'REQUIRED' }],
+        errorMessage: 'Agreement is required.',
+      });
+      const plan = mod.buildNextInput(node, { terms: true });
+      expect(plan.input.collectors).toEqual([{ key: 'terms', value: true }]);
+    });
+
+    it('READ_ONLY_TEXT — preserves content and excludes it from payload', async () => {
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'agreement',
+                type: 'READ_ONLY_TEXT',
+                content: 'Review this agreement.',
+                title: 'Agreement',
+                titleEnabled: true,
+                enabled: true,
+                agreementId: 'agreement-id',
+                useDynamicAgreement: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0]).toMatchObject({
+        type: 'READ_ONLY_TEXT',
+        kind: 'output',
+        content: 'Review this agreement.',
+        title: 'Agreement',
+      });
+      expect(mod.buildNextInput(node, {}).input.collectors).toEqual([]);
+    });
+
+    it('PASSWORD — preserves validation and round-trips a string value', async () => {
       const policy = {
         name: 'Default',
         description: 'Default policy',
@@ -507,6 +632,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
                 required: true,
                 value: '',
                 clearPassword: true,
+                validation: { regex: '^.{8,}$' },
                 passwordPolicy: policy,
               },
             ],
@@ -519,6 +645,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(collectors[0]).toMatchObject({
         type: 'PASSWORD',
         clearPassword: true,
+        validation: { regex: '^.{8,}$' },
         passwordPolicy: policy,
       });
       const plan = mod.buildNextInput(node, { password: 's3cret' });
@@ -595,13 +722,29 @@ describe('@ping-identity/rn-davinci — integration', () => {
       ]);
     });
 
-    it('LABEL — output_only and excluded from the payload', async () => {
+    it('LABEL — preserves richContent and excludes it from the payload', async () => {
+      const richContent = {
+        content: 'Welcome {name}!',
+        replacements: {
+          name: {
+            value: 'back',
+            href: '',
+            type: 'text',
+            target: '',
+          },
+        },
+      };
       const mod = await loadDaVinci(
         makeMock({
           start: jest.fn(async () => ({
             type: 'ContinueNode',
             collectors: [
-              { key: 'banner', type: 'LABEL', content: 'Welcome back!' },
+              {
+                key: 'banner',
+                type: 'LABEL',
+                content: 'Welcome back!',
+                richContent,
+              },
             ],
           })),
         }),
@@ -612,6 +755,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(collectors[0]).toMatchObject({
         type: 'LABEL',
         content: 'Welcome back!',
+        richContent,
         executionMode: 'output_only',
       });
       const plan = mod.buildNextInput(node, {});
@@ -684,7 +828,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       ]);
     });
 
-    it('PHONE_NUMBER — round-trips { countryCode, phoneNumber }', async () => {
+    it('PHONE_NUMBER — round-trips { countryCode, phoneNumber, extension }', async () => {
       const mod = await loadDaVinci(
         makeMock({
           start: jest.fn(async () => ({
@@ -699,6 +843,9 @@ describe('@ping-identity/rn-davinci — integration', () => {
                 validatePhoneNumber: true,
                 countryCode: 'US',
                 phoneNumber: '',
+                extension: '',
+                showExtension: true,
+                extensionLabel: 'Extension',
               },
             ],
           })),
@@ -710,14 +857,24 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(collectors[0]).toMatchObject({
         defaultCountryCode: 'US',
         validatePhoneNumber: true,
+        showExtension: true,
+        extensionLabel: 'Extension',
       });
       const plan = mod.buildNextInput(node, {
-        phone: { countryCode: 'GB', phoneNumber: '+447700900123' },
+        phone: {
+          countryCode: 'GB',
+          phoneNumber: '+447700900123',
+          extension: '123',
+        },
       });
       expect(plan.input.collectors).toEqual([
         {
           key: 'phone',
-          value: { countryCode: 'GB', phoneNumber: '+447700900123' },
+          value: {
+            countryCode: 'GB',
+            phoneNumber: '+447700900123',
+            extension: '123',
+          },
         },
       ]);
     });

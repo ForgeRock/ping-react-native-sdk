@@ -6,9 +6,10 @@
  */
 
 import React from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import type { LabelCollector } from '@ping-identity/rn-davinci';
 import { davinciFieldStyles } from '../../../../src/styles/davinciStyles';
+import RichTextLabel from './RichTextLabel';
 import type { DaVinciCollectorRendererProps } from './types';
 
 /**
@@ -24,9 +25,11 @@ export default function DaVinciLabelField(
   const labelCollector = collector as LabelCollector;
   return (
     <View style={davinciFieldStyles.card}>
-      <Text style={davinciFieldStyles.labelContent}>
-        {labelCollector.content}
-      </Text>
+      <RichTextLabel
+        text={labelCollector.content}
+        richContent={labelCollector.richContent}
+        style={davinciFieldStyles.labelContent}
+      />
     </View>
   );
 }

@@ -112,6 +112,13 @@ jest.mock('../packages/davinci/src/NativeRNPingDavinci', () => {
         assertActive('next', id);
         return { type: 'SuccessNode', session: { value: 'session-mock' } };
       }),
+      // Joins the global mock rather than following pollDaVinci's per-test
+      // precedent: validate is exercised broadly (scenario wiring, other
+      // integration suites), matching the majority of methods here.
+      validate: jest.fn(async (id) => {
+        assertActive('validate', id);
+        return [];
+      }),
       getSession: jest.fn(async (id) => {
         assertActive('getSession', id);
         return { accessToken: 'mock-access-token' };

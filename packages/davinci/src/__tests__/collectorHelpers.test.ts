@@ -22,6 +22,7 @@ const manualTypes = [
   'TEXT',
   'PASSWORD',
   'PASSWORD_VERIFY',
+  'SINGLE_CHECKBOX',
   'SINGLE_SELECT',
   'DROPDOWN',
   'RADIO',
@@ -59,8 +60,8 @@ describe('resolveExecutionMode', () => {
     expect(resolveExecutionMode(type)).toBe('manual');
   });
 
-  it('returns output_only for LABEL', () => {
-    expect(resolveExecutionMode('LABEL')).toBe('output_only');
+  it.each(['LABEL', 'READ_ONLY_TEXT'])('returns output_only for %s', (type) => {
+    expect(resolveExecutionMode(type)).toBe('output_only');
   });
 
   it.each(immediateTypes)('returns immediate for %s', (type) => {
@@ -119,6 +120,10 @@ describe('resolveFieldKind', () => {
     },
   );
 
+  it('returns boolean for SINGLE_CHECKBOX', () => {
+    expect(resolveFieldKind('SINGLE_CHECKBOX')).toBe('boolean');
+  });
+
   it('returns phone for PHONE_NUMBER', () => {
     expect(resolveFieldKind('PHONE_NUMBER')).toBe('phone');
   });
@@ -130,8 +135,9 @@ describe('resolveFieldKind', () => {
     },
   );
 
-  it('returns output for LABEL', () => {
+  it('returns output for LABEL and READ_ONLY_TEXT', () => {
     expect(resolveFieldKind('LABEL')).toBe('output');
+    expect(resolveFieldKind('READ_ONLY_TEXT')).toBe('output');
   });
 
   it.each(['SUBMIT_BUTTON', 'ACTION', 'FLOW_BUTTON', 'FLOW_LINK'])(
@@ -240,6 +246,97 @@ describe('normalizeCollectors', () => {
     ]);
   });
 
+  it('normalizes a BooleanCollector while preserving richContent', () => {
+    const collector: DaVinciCollector = {
+      key: 'terms',
+      type: 'SINGLE_CHECKBOX',
+      label: 'Agree to terms',
+      required: true,
+      value: false,
+      appearance: 'CHECKBOX',
+      errorMessage: 'Agreement is required.',
+      richContent: {
+        content: 'I agree to the {terms}.',
+        replacements: {
+          terms: {
+            value: 'terms',
+            href: 'https://example.com/terms',
+            type: 'link',
+            target: '_blank',
+          },
+        },
+      },
+    } as DaVinciCollector;
+
+    const [normalized] = normalizeCollectors([collector]);
+
+    expect(normalized).toMatchObject({
+      executionMode: 'manual',
+      requiresUserInput: true,
+      kind: 'boolean',
+      richContent: collector.richContent,
+    });
+  });
+
+  it('normalizes a ReadOnlyTextCollector as output-only', () => {
+    const collector: DaVinciCollector = {
+      key: 'agreement',
+      type: 'READ_ONLY_TEXT',
+      content: 'Your agreement is available to review.',
+      title: 'Agreement',
+      titleEnabled: true,
+      enabled: true,
+      agreementId: 'agreement-id',
+      useDynamicAgreement: false,
+    } as DaVinciCollector;
+
+    const [normalized] = normalizeCollectors([collector]);
+
+    expect(normalized).toMatchObject({
+      executionMode: 'output_only',
+      requiresUserInput: false,
+      kind: 'output',
+      content: collector.content,
+      title: collector.title,
+    });
+  });
+
+  it('preserves PasswordCollector passwordPolicy and validation fields', () => {
+    const passwordPolicy = {
+      name: 'Default',
+      description: 'Password policy',
+      length: { min: 8, max: 64 },
+      minCharacters: { digit: 1 },
+      maxRepeatedCharacters: 2,
+      minUniqueCharacters: 3,
+      excludesProfileData: true,
+      notSimilarToCurrent: true,
+      excludesCommonlyUsed: true,
+      maxAgeDays: 90,
+      minAgeDays: 1,
+      populationCount: 1,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+      default: true,
+    };
+    const collector: DaVinciCollector = {
+      key: 'password',
+      type: 'PASSWORD',
+      label: 'Password',
+      required: true,
+      value: '',
+      validation: { regex: '^.{8,}$' },
+      passwordPolicy,
+    } as DaVinciCollector;
+
+    const [normalized] = normalizeCollectors([collector]);
+
+    expect(normalized).toMatchObject({
+      validation: collector.validation,
+      passwordPolicy,
+    });
+  });
+
   it('extracts defaultValue from a server-seeded TEXT collector', () => {
     const collector: DaVinciCollector = {
       key: 'username',
@@ -277,12 +374,34 @@ describe('normalizeCollectors', () => {
       validatePhoneNumber: true,
       countryCode: '+44',
       phoneNumber: '5551234',
+      extension: '1234',
     } as DaVinciCollector;
 
     const [normalized] = normalizeCollectors([collector]);
     expect(normalized.defaultValue).toEqual({
       countryCode: '+44',
       phoneNumber: '5551234',
+      extension: '1234',
+    });
+  });
+
+  it('defaults an absent PHONE_NUMBER extension to an empty string', () => {
+    const collector: DaVinciCollector = {
+      key: 'phone',
+      type: 'PHONE_NUMBER',
+      label: 'Phone',
+      required: false,
+      defaultCountryCode: '+1',
+      validatePhoneNumber: true,
+      countryCode: '+44',
+      phoneNumber: '5551234',
+    } as DaVinciCollector;
+
+    const [normalized] = normalizeCollectors([collector]);
+    expect(normalized.defaultValue).toEqual({
+      countryCode: '+44',
+      phoneNumber: '5551234',
+      extension: '',
     });
   });
 
@@ -556,10 +675,14 @@ describe('buildNextInput — manual collector path', () => {
     });
   });
 
-  it('treats PHONE_NUMBER value as { countryCode, phoneNumber }', () => {
+  it('treats PHONE_NUMBER value as { countryCode, phoneNumber, extension }', () => {
     const node = makeNode([baseField('phone', 'PHONE_NUMBER', true)]);
 
-    const phone = { countryCode: '+1', phoneNumber: '5555555' };
+    const phone = {
+      countryCode: '+1',
+      phoneNumber: '5555555',
+      extension: '',
+    };
     const result = buildNextInput(node, { phone });
 
     expect(result.canSubmit).toBe(true);
@@ -570,7 +693,7 @@ describe('buildNextInput — manual collector path', () => {
     const node = makeNode([baseField('phone', 'PHONE_NUMBER', true)]);
 
     const result = buildNextInput(node, {
-      phone: { countryCode: '+1', phoneNumber: '' },
+      phone: { countryCode: '+1', phoneNumber: '', extension: '' },
     });
 
     expect(result.canSubmit).toBe(false);
@@ -649,9 +772,19 @@ describe('buildNextInput — excluded modes', () => {
     ]);
   });
 
-  it('excludes output_only collectors from payload entirely', () => {
+  it('excludes LABEL and READ_ONLY_TEXT collectors from the payload', () => {
     const node = makeNode([
       { key: 'banner', type: 'LABEL', content: 'hi' } as DaVinciCollector,
+      {
+        key: 'agreement',
+        type: 'READ_ONLY_TEXT',
+        content: 'Review this agreement.',
+        title: 'Agreement',
+        titleEnabled: true,
+        enabled: true,
+        agreementId: 'agreement-id',
+        useDynamicAgreement: false,
+      } as DaVinciCollector,
       baseField('username', 'TEXT'),
     ]);
 

@@ -37,7 +37,7 @@ enum DaVinciCollectorValueApplier {
   ///
   /// - Parameter input: Bridge input map.
   /// - Returns: Parsed collector mutations.
-  /// - Throws: `DaVinciBridgeError.argument` when payload is malformed.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when payload is malformed.
   static func parseInput(_ input: NSDictionary) throws -> [CollectorMutation] {
     guard let collectors = input["collectors"] as? [Any] else {
       return []
@@ -46,10 +46,10 @@ enum DaVinciCollectorValueApplier {
     var mutations = [CollectorMutation]()
     for (index, item) in collectors.enumerated() {
       guard let entry = item as? NSDictionary else {
-        throw DaVinciBridgeError.argument("Invalid collector entry at index \(index)")
+        throw DaVinciBridgeError.collectorApply("Invalid collector entry at index \(index)")
       }
       guard let key = entry["key"] as? String, !key.isEmpty else {
-        throw DaVinciBridgeError.argument("Missing 'key' in collector entry at index \(index)")
+        throw DaVinciBridgeError.collectorApply("Missing 'key' in collector entry at index \(index)")
       }
       mutations.append(
         CollectorMutation(
@@ -80,7 +80,7 @@ enum DaVinciCollectorValueApplier {
     var isFlowTrigger = false
     for mutation in mutations {
       guard let collector = collectorsByKey[mutation.key] else {
-        throw DaVinciBridgeError.argument("No active collector found for key='\(mutation.key)'")
+        throw DaVinciBridgeError.collectorApply("No active collector found for key='\(mutation.key)'")
       }
       try applyValue(collector, key: mutation.key, value: mutation.value)
       if collector is FlowCollector {
@@ -111,16 +111,19 @@ enum DaVinciCollectorValueApplier {
       if let phoneNumber = map["phoneNumber"] {
         phoneNumberCollector.phoneNumber = phoneNumber
       }
+      if let extensionValue = map["extension"] {
+        phoneNumberCollector.extension = extensionValue
+      }
 
     case let registrationCollector as DeviceRegistrationCollector:
       let map = asStringMap(value)
       guard let deviceType = map["type"] else {
-        throw DaVinciBridgeError.argument(
+        throw DaVinciBridgeError.collectorApply(
           "DeviceRegistrationCollector key='\(key)': value map must include 'type'"
         )
       }
       guard let device = registrationCollector.devices.first(where: { $0.type == deviceType }) else {
-        throw DaVinciBridgeError.argument(
+        throw DaVinciBridgeError.collectorApply(
           "DeviceRegistrationCollector key='\(key)': no device found with type='\(deviceType)'"
         )
       }
@@ -129,7 +132,7 @@ enum DaVinciCollectorValueApplier {
     case let authenticationCollector as DeviceAuthenticationCollector:
       let map = asStringMap(value)
       guard let deviceType = map["type"] else {
-        throw DaVinciBridgeError.argument(
+        throw DaVinciBridgeError.collectorApply(
           "DeviceAuthenticationCollector key='\(key)': value map must include 'type'"
         )
       }
@@ -179,7 +182,7 @@ enum DaVinciCollectorValueApplier {
   ///   - value: Dynamic value.
   ///   - key: Collector key (used in error messages).
   /// - Returns: String value.
-  /// - Throws: `DaVinciBridgeError.argument` when value cannot be represented as a string.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when value cannot be represented as a string.
   private static func asString(_ value: Any?, key: String) throws -> String {
     switch value {
     case let string as String:
@@ -193,7 +196,7 @@ enum DaVinciCollectorValueApplier {
       }
       return number.stringValue
     default:
-      throw DaVinciBridgeError.argument(
+      throw DaVinciBridgeError.collectorApply(
         "Collector key='\(key)' expects a string-compatible value"
       )
     }
@@ -205,7 +208,7 @@ enum DaVinciCollectorValueApplier {
   ///   - value: Dynamic value.
   ///   - key: Collector key (used in error messages).
   /// - Returns: Array of strings.
-  /// - Throws: `DaVinciBridgeError.argument` when value is not an array or contains a non-String element.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when value is not an array or contains a non-String element.
   private static func asStringList(_ value: Any?, key: String) throws -> [String] {
     let elements: [Any]
     if let array = value as? [Any] {
@@ -213,13 +216,13 @@ enum DaVinciCollectorValueApplier {
     } else if let array = value as? NSArray {
       elements = Array(array)
     } else {
-      throw DaVinciBridgeError.argument(
+      throw DaVinciBridgeError.collectorApply(
         "Collector key='\(key)' expects an array of strings"
       )
     }
     return try elements.map { element in
       guard let string = element as? String else {
-        throw DaVinciBridgeError.argument(
+        throw DaVinciBridgeError.collectorApply(
           "Collector key='\(key)' expects an array of strings, got \(type(of: element))"
         )
       }
@@ -235,7 +238,7 @@ enum DaVinciCollectorValueApplier {
   ///   - type: Resolved device type string.
   ///   - key: Collector key (used for error messages).
   /// - Returns: A `Device` decoded from the map fields.
-  /// - Throws: `DaVinciBridgeError.argument` when the JSON cannot be decoded.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when the JSON cannot be decoded.
   private static func makeFallbackDevice(
     from map: [String: String],
     type deviceType: String,
@@ -253,7 +256,7 @@ enum DaVinciCollectorValueApplier {
       let data = try JSONSerialization.data(withJSONObject: json)
       return try JSONDecoder().decode(Device.self, from: data)
     } catch {
-      throw DaVinciBridgeError.argument(
+      throw DaVinciBridgeError.collectorApply(
         "DeviceAuthenticationCollector key='\(key)': failed to construct fallback device"
       )
     }
@@ -265,7 +268,7 @@ enum DaVinciCollectorValueApplier {
   ///   - value: Dynamic value.
   ///   - key: Collector key (used in error messages).
   /// - Returns: Bool value.
-  /// - Throws: `DaVinciBridgeError.argument` when value cannot be represented as a Bool.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when value cannot be represented as a Bool.
   private static func asBoolean(_ value: Any?, key: String) throws -> Bool {
     switch value {
     case let bool as Bool:
@@ -278,7 +281,7 @@ enum DaVinciCollectorValueApplier {
     case let string as String:
       return string.lowercased() == "true"
     default:
-      throw DaVinciBridgeError.argument(
+      throw DaVinciBridgeError.collectorApply(
         "Collector key='\(key)' expects a boolean value"
       )
     }

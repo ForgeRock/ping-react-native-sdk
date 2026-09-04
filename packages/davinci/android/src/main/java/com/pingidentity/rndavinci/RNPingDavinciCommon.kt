@@ -11,12 +11,18 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.WritableArray
+import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.PollingStatus
+import com.pingidentity.davinci.collector.Validator
+import com.pingidentity.davinci.module.continueNode
+import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.davinci.user
 import com.pingidentity.logger.Logger
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.oidc.Token
@@ -57,6 +63,8 @@ import java.util.concurrent.ConcurrentHashMap
  * coroutine-based HTTP) and calls `withContext(Dispatchers.IO)` nowhere internally.
  */
 internal object RNPingDavinciCommon {
+
+    private const val TAG = "RNPingDavinciCommon"
 
     private fun createScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -152,14 +160,33 @@ internal object RNPingDavinciCommon {
         configured = false
     }
 
+    /**
+     * Update tracked node state for a transition.
+     *
+     * @remarks
+     * When [node] is an [ErrorNode] carrying a retryable continuation (native
+     * `ErrorNode.continueNode()`), that continuation is kept as the active
+     * `ContinueNode` instead of being closed — matching native SDK behavior, where
+     * `validate()` and `next()` are independent operations and a recoverable error
+     * does not discard the in-progress form. The continuation is only closed once a
+     * genuinely different `ContinueNode` (or a terminal `SuccessNode`/`FailureNode`)
+     * displaces it.
+     */
     private fun setNodeState(davinciId: String, node: Node) {
         nodeMap[davinciId] = node
-        val previousContinueNode = if (node is ContinueNode) {
-            continueNodeMap.put(davinciId, node)
+        val retainedContinueNode = when (node) {
+            is ContinueNode -> node
+            is ErrorNode -> node.continueNode()
+            else -> null
+        }
+        val previousContinueNode = if (retainedContinueNode != null) {
+            continueNodeMap.put(davinciId, retainedContinueNode)
         } else {
             continueNodeMap.remove(davinciId)
         }
-        previousContinueNode?.let { runCatching { it.close() } }
+        if (previousContinueNode !== retainedContinueNode) {
+            previousContinueNode?.let { runCatching { it.close() } }
+        }
     }
 
     private fun clearNodeState(davinciId: String) {
@@ -313,9 +340,127 @@ internal object RNPingDavinciCommon {
 
             val nextNode = currentNode.next()
             setNodeState(davinciId, nextNode)
-            promise.resolve(DaVinciNodeMapper.mapNode(nextNode, resolveDaVinciLogger(davinciId)))
+            promise.resolve(
+                DaVinciNodeMapper.mapNode(nextNode, resolveDaVinciLogger(davinciId))
+            )
         }
     }
+
+    /**
+     * Validate one active DaVinci collector without advancing the flow.
+     *
+     * @remarks
+     * This operation mutates the live collector before validating it. Android does not
+     * serialize this call against concurrent [next] or [validate] calls for the same
+     * `davinciId`; this remains a deliberate assumption shared with the existing bridge.
+     *
+     * @param davinciId Native DaVinci instance id.
+     * @param collectorKey Collector key to update and validate.
+     * @param input Single-entry collector mutation payload.
+     * @param promise Promise resolved with encoded validation errors.
+     */
+    fun validate(
+        davinciId: String,
+        collectorKey: String,
+        input: ReadableMap,
+        promise: Promise,
+    ) {
+        val currentNode = continueNodeMap[davinciId]
+        if (currentNode == null) {
+            promise.reject(
+                DaVinciErrorMapper.state(
+                    DaVinciErrorCodes.STATE,
+                    "No active ContinueNode found for davinci id=$davinciId"
+                )
+            )
+            return
+        }
+
+        scope.launchBridge(promise, DaVinciErrorCodes.VALIDATE) {
+            try {
+                DaVinciCollectorValueApplier.apply(currentNode, input)
+            } catch (error: UnsupportedOperationException) {
+                promise.reject(
+                    GenericError(
+                        type = ErrorType.ARGUMENT_ERROR,
+                        error = DaVinciErrorCodes.UNSUPPORTED_COLLECTOR,
+                        message = error.message
+                    ),
+                    error
+                )
+                return@launchBridge
+            } catch (error: IllegalArgumentException) {
+                promise.reject(
+                    GenericError(
+                        type = ErrorType.ARGUMENT_ERROR,
+                        error = DaVinciErrorCodes.COLLECTOR_APPLY,
+                        message = error.message
+                    ),
+                    error
+                )
+                return@launchBridge
+            }
+
+            val collector = currentNode.actions
+                .filterIsInstance<Collector<*>>()
+                .find { it.id() == collectorKey }
+            if (collector == null) {
+                promise.reject(
+                    GenericError(
+                        type = ErrorType.ARGUMENT_ERROR,
+                        error = DaVinciErrorCodes.ARGUMENT,
+                        message = "No collector found for key=$collectorKey"
+                    )
+                )
+                return@launchBridge
+            }
+            val validator = collector as? Validator
+            val errors = validator?.let { DaVinciNodeMapper.encodeValidationErrors(it.validate()) }
+                ?: emptyList<Map<String, Any?>>()
+            promise.resolve(
+                encodeValidationErrorsArray(errors, resolveDaVinciLogger(davinciId))
+            )
+        }
+    }
+
+    /**
+     * Encode validation errors into a bridge array using [Arguments.createArray], not
+     * [Arguments.makeNativeArray] — the latter is declared to return the concrete
+     * `WritableNativeArray` class rather than the `WritableArray` interface, which Robolectric
+     * cannot substitute with a JVM-only test double in unit tests.
+     *
+     * @param errors Encoded validation error maps from [DaVinciNodeMapper.encodeValidationErrors].
+     * @param logger Optional logger used to surface unexpected field value types.
+     * @return Bridge array of `{code, ...}` error payloads.
+     */
+    private fun encodeValidationErrorsArray(
+        errors: List<Map<String, Any?>>,
+        logger: Logger?,
+    ): WritableArray =
+        Arguments.createArray().apply {
+            errors.forEach { error -> pushMap(encodeValidationErrorMap(error, logger)) }
+        }
+
+    private fun encodeValidationErrorMap(error: Map<String, Any?>, logger: Logger?): WritableMap =
+        Arguments.createMap().apply {
+            error.forEach { (key, value) ->
+                when (value) {
+                    null -> putNull(key)
+                    is String -> putString(key, value)
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putDouble(key, value.toDouble())
+                    is Double -> putDouble(key, value)
+                    else -> {
+                        logger?.w(
+                            "[$TAG] Unexpected validation error value type " +
+                                "${value::class.java.name} for key '$key'; stringified"
+                        )
+                        putString(key, value.toString())
+                    }
+                }
+            }
+        }
 
     /**
      * Resolve active session data for a DaVinci user.

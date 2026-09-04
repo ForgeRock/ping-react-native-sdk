@@ -5,9 +5,12 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
-import type { TextCollector } from '@ping-identity/rn-davinci';
+import type {
+  DaVinciFieldValidationError,
+  TextCollector,
+} from '@ping-identity/rn-davinci';
 import PingTextInput from '../../../components/atoms/PingTextInput';
 import DaVinciErrorList from '../atoms/DaVinciErrorList';
 import { davinciFieldStyles } from '../../../../src/styles/davinciStyles';
@@ -22,7 +25,10 @@ import type { DaVinciCollectorRendererProps } from './types';
 export default function DaVinciTextField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
-  const { collector, value, onChange } = props;
+  const { collector, value, onChange, onValidate } = props;
+  const [validationErrors, setValidationErrors] = useState<
+    DaVinciFieldValidationError[] | null
+  >(null);
   const textCollector = collector as TextCollector;
   const stringValue = typeof value === 'string' ? value : textCollector.value;
   const isMultiline = stringValue.length > 60;
@@ -36,12 +42,22 @@ export default function DaVinciTextField(
             : textCollector.label
         }
         value={stringValue}
-        onChangeText={onChange}
+        onChangeText={value => {
+          setValidationErrors(null);
+          onChange(value);
+        }}
+        onBlur={() => {
+          onValidate(collector.key, stringValue)
+            .then(setValidationErrors)
+            .catch(error => {
+              console.warn('[DaVinci] Text validation failed:', error);
+            });
+        }}
         autoCapitalize="none"
         autoCorrect={false}
         multiline={isMultiline}
       />
-      <DaVinciErrorList errors={textCollector.validation?.errors} />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }
