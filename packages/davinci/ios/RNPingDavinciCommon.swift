@@ -116,6 +116,19 @@ public final class RNPingDavinciCommon: NSObject {
   static func _trackedPollTaskCount(for davinciId: String) -> Int {
     pollJobStore.trackedTaskCount(for: davinciId)
   }
+
+  /// Stores an arbitrary `Node` for `davinciId`, mirroring what `start`/`next`
+  /// persist after a workflow step. Unlike `_setContinueNodeForTesting`, this
+  /// accepts non-`ContinueNode` payloads — e.g. an `ErrorNode` whose retryable
+  /// `continueNode` the state store must retain as the active node.
+  static func _setNodeStateForTesting(davinciId: String, node: Node) {
+    stateStore.setNode(davinciId: davinciId, node: node)
+  }
+
+  /// Test-only seam resolving the active `ContinueNode` stored for `davinciId`.
+  static func _activeContinueNodeForTesting(for davinciId: String) -> ContinueNode? {
+    stateStore.activeContinueNode(for: davinciId)
+  }
 #endif
 
   // MARK: - Bridge methods

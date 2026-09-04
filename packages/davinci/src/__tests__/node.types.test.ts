@@ -80,7 +80,7 @@ describe('BooleanCollector', () => {
 });
 
 describe('PasswordCollector', () => {
-  it('declares an optional validation rule with structured errors', () => {
+  it('declares an optional validation rule with the server regex', () => {
     const collector: PasswordCollector = {
       key: 'password',
       type: 'PASSWORD',
@@ -89,13 +89,10 @@ describe('PasswordCollector', () => {
       value: '',
       validation: {
         regex: '^.{8,}$',
-        errors: [{ code: 'INVALID_LENGTH', min: 8, max: 64 }],
       },
     };
 
-    expect(collector.validation?.errors).toEqual([
-      { code: 'INVALID_LENGTH', min: 8, max: 64 },
-    ]);
+    expect(collector.validation?.regex).toBe('^.{8,}$');
   });
 });
 

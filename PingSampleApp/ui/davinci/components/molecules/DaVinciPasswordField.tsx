@@ -27,7 +27,7 @@ export default function DaVinciPasswordField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
   const { collector, value, onChange, onValidate } = props;
-  const [manualErrors, setManualErrors] = useState<
+  const [validationErrors, setValidationErrors] = useState<
     DaVinciFieldValidationError[] | null
   >(null);
   const passwordCollector = collector as PasswordCollector;
@@ -43,12 +43,12 @@ export default function DaVinciPasswordField(
         }
         value={stringValue}
         onChangeText={value => {
-          setManualErrors(null);
+          setValidationErrors(null);
           onChange(value);
         }}
         onBlur={() => {
           onValidate(collector.key, stringValue)
-            .then(setManualErrors)
+            .then(setValidationErrors)
             .catch(error => {
               console.warn('[DaVinci] Password validation failed:', error);
             });
@@ -64,7 +64,7 @@ export default function DaVinciPasswordField(
           value={stringValue}
         />
       ) : null}
-      <DaVinciErrorList errors={manualErrors ?? undefined} />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }

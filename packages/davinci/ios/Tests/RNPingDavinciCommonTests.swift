@@ -1051,6 +1051,31 @@ final class RNPingDavinciCommonTests: XCTestCase {
     )
   }
 
+  // MARK: - node state retention
+
+  func testSetNodeStateRetainsContinueNodeFromErrorNode() {
+    let davinciId = "error-node-retains-continue"
+    let current = makeContinueNode(collectors: [])
+    RNPingDavinciCommon._setContinueNodeForTesting(davinciId: davinciId, node: current)
+
+    let errorContext = FlowContext(flowContext: SharedContext())
+    errorContext.flowContext.set(key: SharedContext.Keys.continueNode, value: current)
+    let errorNode = ErrorNode(
+      status: 400,
+      input: ["code": "invalid"],
+      message: "Invalid input",
+      context: errorContext
+    )
+
+    RNPingDavinciCommon._setNodeStateForTesting(davinciId: davinciId, node: errorNode)
+
+    XCTAssertTrue(
+      RNPingDavinciCommon._activeContinueNodeForTesting(for: davinciId) === current,
+      "An ErrorNode's retryable continueNode must remain the active node, matching " +
+        "Android's setNodeStateRetainsContinueNodeFromErrorNode parity test"
+    )
+  }
+
   // MARK: - Helpers
 
   private func assertReject(

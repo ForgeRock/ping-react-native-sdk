@@ -140,7 +140,7 @@ export default function DaVinciPhoneNumberField(
   const current = resolveValue(value, phoneCollector);
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [manualErrors, setManualErrors] = useState<
+  const [validationErrors, setValidationErrors] = useState<
     DaVinciFieldValidationError[] | null
   >(null);
 
@@ -166,7 +166,7 @@ export default function DaVinciPhoneNumberField(
             onOpen={() => setModalVisible(true)}
             onClose={() => setModalVisible(false)}
             onSelect={isoCode => {
-              setManualErrors(null);
+              setValidationErrors(null);
               onChange({
                 countryCode: isoCode,
                 phoneNumber: current.phoneNumber,
@@ -180,7 +180,7 @@ export default function DaVinciPhoneNumberField(
             label="Phone number"
             value={current.phoneNumber}
             onChangeText={text => {
-              setManualErrors(null);
+              setValidationErrors(null);
               onChange({
                 countryCode: current.countryCode,
                 phoneNumber: text,
@@ -189,7 +189,7 @@ export default function DaVinciPhoneNumberField(
             }}
             onBlur={() => {
               onValidate(collector.key, current.phoneNumber)
-                .then(setManualErrors)
+                .then(setValidationErrors)
                 .catch(error => {
                   console.warn(
                     '[DaVinci] Phone number validation failed:',
@@ -207,7 +207,7 @@ export default function DaVinciPhoneNumberField(
           label={phoneCollector.extensionLabel}
           value={current.extension}
           onChangeText={extension => {
-            setManualErrors(null);
+            setValidationErrors(null);
             onChange({
               countryCode: current.countryCode,
               phoneNumber: current.phoneNumber,
@@ -217,7 +217,7 @@ export default function DaVinciPhoneNumberField(
           keyboardType="phone-pad"
         />
       ) : null}
-      <DaVinciErrorList errors={manualErrors ?? undefined} />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }

@@ -227,6 +227,32 @@ class RNPingDavinciCommonTest {
     }
 
     @Test
+    fun validate_resolvesRequiredErrorForEmptyRequiredField() {
+        val text = TextCollector().apply {
+            init(buildJsonObject {
+                put("key", "username")
+                put("type", "TEXT")
+                put("label", "Username")
+                put("required", true)
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(text)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "username",
+            collectorInput("username", ""),
+            promise
+        )
+
+        val errors = captureResolve(promise) as ReadableArray
+        assertEquals(1, errors.size())
+        assertEquals("REQUIRED", errors.getMap(0)?.getString("code"))
+    }
+
+    @Test
     fun validate_resolvesRequiredErrorForUncheckedBoolean() {
         val boolean = BooleanCollector().apply {
             init(buildJsonObject {

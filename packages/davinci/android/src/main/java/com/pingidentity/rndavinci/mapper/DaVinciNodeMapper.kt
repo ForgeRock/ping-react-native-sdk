@@ -336,7 +336,7 @@ internal object DaVinciNodeMapper {
         val map = baseCollectorMap(collector)
         map["value"] = collector.value ?: ""
         collector.validation?.let { validation ->
-            map["validation"] = mapOf("regex" to validation.regex.pattern)
+            map["validation"] = mapOf("regex" to validation.regex?.pattern)
         }
         return map
     }
@@ -366,7 +366,7 @@ internal object DaVinciNodeMapper {
         map["value"] = ""
         map["clearPassword"] = collector.clearPassword
         collector.validation?.let { validation ->
-            map["validation"] = mapOf("regex" to validation.regex.pattern)
+            map["validation"] = mapOf("regex" to validation.regex?.pattern)
         }
         collector.passwordPolicy()?.let { policy ->
             map["passwordPolicy"] = encodePasswordPolicy(policy)
@@ -559,7 +559,7 @@ internal object DaVinciNodeMapper {
         map["value"] = collector.value ?: ""
         map["options"] = mapOptions(collector.options)
         collector.validation?.let { validation ->
-            map["validation"] = mapOf("regex" to validation.regex.pattern)
+            map["validation"] = mapOf("regex" to validation.regex?.pattern)
         }
         return map
     }
