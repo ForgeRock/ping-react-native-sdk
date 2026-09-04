@@ -26,7 +26,7 @@ export default function DaVinciTextField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
   const { collector, value, onChange, onValidate } = props;
-  const [manualErrors, setManualErrors] = useState<
+  const [validationErrors, setValidationErrors] = useState<
     DaVinciFieldValidationError[] | null
   >(null);
   const textCollector = collector as TextCollector;
@@ -43,12 +43,12 @@ export default function DaVinciTextField(
         }
         value={stringValue}
         onChangeText={value => {
-          setManualErrors(null);
+          setValidationErrors(null);
           onChange(value);
         }}
         onBlur={() => {
           onValidate(collector.key, stringValue)
-            .then(setManualErrors)
+            .then(setValidationErrors)
             .catch(error => {
               console.warn('[DaVinci] Text validation failed:', error);
             });
@@ -57,7 +57,7 @@ export default function DaVinciTextField(
         autoCorrect={false}
         multiline={isMultiline}
       />
-      <DaVinciErrorList errors={manualErrors ?? undefined} />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }

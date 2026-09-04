@@ -62,18 +62,20 @@ export type DaVinciFieldValidationError =
  *
  * @remarks
  * The bridge maps the server regex to `regex`. Use {@link DaVinciClient.validate}
- * to check a collector's current value on demand.
+ * to check a collector's current value on demand — it returns
+ * {@link DaVinciFieldValidationError} results directly.
+ *
+ * Native match semantics differ: Android (`Regex.matches()`) requires the pattern
+ * to match the entire value, while iOS (`NSRegularExpression.firstMatch`) accepts a
+ * match anywhere in the value. Anchor patterns (e.g. `^valid$`) behave identically
+ * on both platforms. An unanchored pattern such as `valid` accepts `invalid-value`
+ * on iOS but rejects it on Android.
  *
  * @public
  */
 export type DaVinciValidation = {
   /** Regular expression pattern the server requires the value to satisfy. */
   regex: string;
-  /**
-   * Optional collector-level validation data when supplied by a native mapping.
-   * Use {@link DaVinciClient.validate} for on-demand validation results.
-   */
-  errors?: DaVinciFieldValidationError[];
 };
 
 /**
