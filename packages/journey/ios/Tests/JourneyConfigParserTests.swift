@@ -20,6 +20,7 @@ final class JourneyConfigParserTests: XCTestCase {
       "discoveryEndpoint": "https://example.com/am/oauth2/.well-known/openid-configuration",
       "redirectUri": "com.example.app://oauth2redirect",
       "scopes": ["openid", "profile"],
+      "par": true,
       "acrValues": "urn:example:acr",
       "signOutRedirectUri": "com.example.app://logout",
       "state": "state",
@@ -42,7 +43,8 @@ final class JourneyConfigParserTests: XCTestCase {
         "userinfoEndpoint": "https://example.com/oauth2/userinfo",
         "endSessionEndpoint": "https://example.com/oauth2/logout",
         "pingEndIdpSessionEndpoint": "https://example.com/oauth2/ping/logout",
-        "revocationEndpoint": "https://example.com/oauth2/revoke"
+        "revocationEndpoint": "https://example.com/oauth2/revoke",
+        "pushedAuthorizationRequestEndpoint": "https://example.com/oauth2/par"
       ]
     ]
 
@@ -56,6 +58,7 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.oidc?.discoveryEndpoint, "https://example.com/am/oauth2/.well-known/openid-configuration")
     XCTAssertEqual(payload.oidc?.redirectUri, "com.example.app://oauth2redirect")
     XCTAssertEqual(payload.oidc?.scopes, ["openid", "profile"])
+    XCTAssertEqual(payload.oidc?.par, true)
     XCTAssertEqual(payload.oidc?.acrValues, "urn:example:acr")
     XCTAssertEqual(payload.oidc?.signOutRedirectUri, "com.example.app://logout")
     XCTAssertEqual(payload.oidc?.state, "state")
@@ -76,6 +79,7 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.oidc?.openId?.endSessionEndpoint, "https://example.com/oauth2/logout")
     XCTAssertEqual(payload.oidc?.openId?.pingEndIdpSessionEndpoint, "https://example.com/oauth2/ping/logout")
     XCTAssertEqual(payload.oidc?.openId?.revocationEndpoint, "https://example.com/oauth2/revoke")
+    XCTAssertEqual(payload.oidc?.openId?.pushedAuthorizationRequestEndpoint, "https://example.com/oauth2/par")
   }
 
   func testParseAllowsOidcClientHandleWithoutDirectOidcFields() throws {
@@ -92,6 +96,40 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertNil(payload.oidc?.clientId)
     XCTAssertNil(payload.oidc?.discoveryEndpoint)
     XCTAssertNil(payload.oidc?.redirectUri)
+    XCTAssertNil(payload.oidc?.par)
+  }
+
+  func testParseParOnlyConfigDoesNotCreateOidcPayload() throws {
+    let config: NSDictionary = [
+      "serverUrl": "https://example.com/am",
+      "par": true
+    ]
+
+    let payload = try JourneyConfigParser.parse(config)
+
+    XCTAssertNil(payload.oidc)
+  }
+
+  func testParseThrowsForNonBooleanPar() {
+    let config: NSDictionary = [
+      "serverUrl": "https://example.com/am",
+      "clientId": "client-id",
+      "discoveryEndpoint": "https://example.com/am/oauth2/.well-known/openid-configuration",
+      "redirectUri": "com.example.app://oauth2redirect",
+      "openId": [
+        "authorizationEndpoint": "https://example.com/oauth2/authorize",
+        "tokenEndpoint": "https://example.com/oauth2/token",
+        "userinfoEndpoint": "https://example.com/oauth2/userinfo"
+      ],
+      "par": "true"
+    ]
+
+    XCTAssertThrowsError(try JourneyConfigParser.parse(config)) { error in
+      let nsError = error as NSError
+      XCTAssertEqual(nsError.domain, "RNPingCore")
+      XCTAssertEqual(nsError.code, 400)
+      XCTAssertEqual(nsError.localizedDescription, "Expected boolean parameter: par")
+    }
   }
 
   func testParseRejectsIncompleteDirectOidcConfig() {

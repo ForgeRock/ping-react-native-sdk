@@ -11,6 +11,7 @@ import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -42,6 +43,7 @@ class JourneyConfigParserTest {
             putString("discoveryEndpoint", "https://example.com/am/oauth2/alpha/.well-known/openid-configuration")
             putString("redirectUri", "com.example.app://oauth2redirect")
             putArray("scopes", JavaOnlyArray.of("openid", "profile"))
+            putBoolean("par", true)
             putString("sessionStorageId", "storage-1")
             putString("oidcStorageId", "oidc-storage-1")
             putString("loggerId", "logger-1")
@@ -56,6 +58,7 @@ class JourneyConfigParserTest {
         assertEquals("rn-client", payload.oidc?.clientId)
         assertEquals("com.example.app://oauth2redirect", payload.oidc?.redirectUri)
         assertEquals(listOf("openid", "profile"), payload.oidc?.scopes)
+        assertTrue(payload.oidc?.par == true)
         assertNull(payload.oidc?.openId)
         assertNull(payload.oidc?.acrValues)
         assertNull(payload.oidc?.signOutRedirectUri)
@@ -74,6 +77,28 @@ class JourneyConfigParserTest {
     }
 
     @Test
+    fun parseParOnlyConfigDoesNotCreateOidcPayload() {
+        val config = JavaOnlyMap().apply {
+            putString("serverUrl", "https://example.com/am")
+            putBoolean("par", true)
+        }
+
+        val payload = JourneyConfigParser.parse(config)
+
+        assertNull(payload.oidc)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun parseThrowsWhenParIsNotBoolean() {
+        val config = JavaOnlyMap().apply {
+            putString("serverUrl", "https://example.com/am")
+            putString("par", "true")
+        }
+
+        JourneyConfigParser.parse(config)
+    }
+
+    @Test
     fun parseConfigWithOidcClientHandle() {
         val config = JavaOnlyMap().apply {
             putString("serverUrl", "https://example.com/am")
@@ -88,6 +113,7 @@ class JourneyConfigParserTest {
         assertNull(payload.oidc?.clientId)
         assertNull(payload.oidc?.discoveryEndpoint)
         assertNull(payload.oidc?.redirectUri)
+        assertNull(payload.oidc?.par)
     }
 
     @Test
@@ -99,6 +125,7 @@ class JourneyConfigParserTest {
             putString("endSessionEndpoint", "https://example.com/am/oauth2/connect/endSession")
             putString("pingEndIdpSessionEndpoint", "https://example.com/am/XUI/#logout")
             putString("revocationEndpoint", "https://example.com/am/oauth2/revoke")
+            putString("pushedAuthorizationRequestEndpoint", "https://example.com/am/oauth2/par")
         }
         val additionalParameters = JavaOnlyMap().apply {
             putString("audience", "urn:example:api")
@@ -135,6 +162,7 @@ class JourneyConfigParserTest {
         assertEquals("https://example.com/am/oauth2/connect/endSession", payload.oidc?.openId?.endSessionEndpoint)
         assertEquals("https://example.com/am/XUI/#logout", payload.oidc?.openId?.pingEndIdpSessionEndpoint)
         assertEquals("https://example.com/am/oauth2/revoke", payload.oidc?.openId?.revocationEndpoint)
+        assertEquals("https://example.com/am/oauth2/par", payload.oidc?.openId?.pushedAuthorizationRequestEndpoint)
         assertEquals("loa-2", payload.oidc?.acrValues)
         assertEquals("com.example.app://signed-out", payload.oidc?.signOutRedirectUri)
         assertEquals("state-123", payload.oidc?.state)

@@ -228,9 +228,8 @@ jest.mock('../packages/logger/src/NativeRNPingLogger', () => ({
 }));
 
 // ---------- rn-oidc ----------
-jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
-  __esModule: true,
-  getNativeModule: jest.fn(() => ({
+jest.mock('../packages/oidc/src/NativeRNPingOidc', () => {
+  const nativeModule = {
     createClient: jest.fn(() => 'oidc-client-id-mock'),
     createWebClient: jest.fn(() => 'oidc-web-client-id-mock'),
     clientToken: jest.fn(async () => ({
@@ -263,8 +262,12 @@ jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
     userinfo: jest.fn(async () => ({ sub: 'web-user-mock' })),
     revoke: jest.fn(async () => undefined),
     logout: jest.fn(async () => undefined),
-  })),
-}));
+  };
+  return {
+    __esModule: true,
+    getNativeModule: jest.fn(() => nativeModule),
+  };
+});
 
 // ---------- rn-external-idp ----------
 jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({

@@ -33,6 +33,35 @@ const journeyScopes = (Config.JOURNEY_SCOPES ?? '')
   .filter(Boolean);
 
 /**
+ * Parses an optional boolean environment value without coercing absence.
+ */
+function parseOptionalBoolean(value: string | undefined): boolean | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+  if (normalized === 'false') {
+    return false;
+  }
+  return undefined;
+}
+
+/**
+ * Whether DaVinci PAR is enabled from `PINGONE_PAR`.
+ */
+const pingOnePar = parseOptionalBoolean(Config.PINGONE_PAR);
+
+/**
+ * Whether Journey PAR is enabled from `JOURNEY_PAR`.
+ */
+const journeyPar = parseOptionalBoolean(Config.JOURNEY_PAR);
+
+/**
+ * Whether Advanced Identity Cloud PAR is enabled from `AIC_PAR`.
+ */
+const aicPar = parseOptionalBoolean(Config.AIC_PAR);
+
+/**
  * Normalized Advanced Identity Cloud OAuth scopes sourced from `AIC_SCOPES`.
  */
 const aicScopes = (Config.AIC_SCOPES ?? '')
@@ -60,6 +89,7 @@ export const journeyConfig = {
   discoveryEndpoint: Config.JOURNEY_DISCOVERY_ENDPOINT!,
   redirectUri: Config.JOURNEY_REDIRECT_URI!,
   scopes: journeyScopes,
+  par: journeyPar,
 };
 
 /**
@@ -77,6 +107,7 @@ export const pingAdvancedIdentityCloudConfig = {
   redirectUri: Config.AIC_REDIRECT_URI!,
   scopes: aicScopes,
   discoveryEndpoint: Config.AIC_DISCOVERY_ENDPOINT!,
+  par: aicPar,
 
   // Journey service names (used by Journey module)
   authServiceName: Config.AIC_AUTH_SERVICE_NAME!,
@@ -115,6 +146,7 @@ export const journeyOidcClient = createOidcClient({
   discoveryEndpoint: journeyConfig.discoveryEndpoint,
   redirectUri: journeyConfig.redirectUri,
   scopes: journeyConfig.scopes,
+  par: journeyPar,
 });
 
 /**
@@ -152,6 +184,7 @@ const journeyStandaloneOidcClient = createOidcClient({
   discoveryEndpoint: journeyConfig.discoveryEndpoint,
   redirectUri: journeyConfig.redirectUri,
   scopes: journeyConfig.scopes,
+  par: journeyPar,
   storage: journeyStandaloneOidcStorage,
   logger: appLogger,
 });
@@ -170,6 +203,7 @@ export const sampleOidcClientConfig: OidcClientConfig = {
   discoveryEndpoint: pingAdvancedIdentityCloudConfig.discoveryEndpoint,
   redirectUri: pingAdvancedIdentityCloudConfig.redirectUri,
   scopes: [...pingAdvancedIdentityCloudConfig.scopes],
+  par: aicPar,
   ios: {
     browserType: 'authSession',
     browserMode: 'login',
@@ -189,6 +223,7 @@ const pingOneOidcClientConfig: OidcClientConfig = {
   redirectUri: Config.PINGONE_REDIRECT_URI!,
   scopes: pingOneScopes,
   acrValues: Config.PINGONE_ACR_VALUES!,
+  par: pingOnePar,
   ios: {
     browserType: 'authSession',
     browserMode: 'login',
@@ -276,6 +311,7 @@ export const loginClient = createJourneyClient({
       discoveryEndpoint: journeyConfig.discoveryEndpoint,
       redirectUri: journeyConfig.redirectUri,
       scopes: journeyConfig.scopes,
+      par: journeyConfig.par,
     },
     session: {
       storage: journeySessionStorageClient1,
@@ -315,6 +351,7 @@ export const sampleDaVinciConfig: DaVinciConfig = {
       discoveryEndpoint: Config.PINGONE_DISCOVERY_ENDPOINT!,
       redirectUri: Config.PINGONE_REDIRECT_URI!,
       scopes: pingOneScopes,
+      par: pingOnePar,
       acrValues: Config.PINGONE_ACR_VALUES || undefined,
       storage: davinciOidcStorage,
     },

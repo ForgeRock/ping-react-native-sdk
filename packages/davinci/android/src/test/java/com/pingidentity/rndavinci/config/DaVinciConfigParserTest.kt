@@ -30,11 +30,12 @@ class DaVinciConfigParserTest {
 
         val payload = DaVinciConfigParser.parse(config)
 
-        assertEquals("https://example.com/.well-known/openid-configuration", payload.discoveryEndpoint)
-        assertEquals("rn-client", payload.clientId)
-        assertEquals("com.example.app://oauth2redirect", payload.redirectUri)
-        assertTrue(payload.scopes.isEmpty())
-        assertNull(payload.storageId)
+        assertEquals("https://example.com/.well-known/openid-configuration", payload.oidc.discoveryEndpoint)
+        assertEquals("rn-client", payload.oidc.clientId)
+        assertEquals("com.example.app://oauth2redirect", payload.oidc.redirectUri)
+        assertTrue(payload.oidc.scopes.isEmpty())
+        assertNull(payload.oidc.par)
+        assertNull(payload.oidc.storageId)
         assertNull(payload.loggerId)
         assertNull(payload.timeout)
         assertNull(payload.protect)
@@ -50,6 +51,7 @@ class DaVinciConfigParserTest {
             putString("clientId", "rn-client")
             putString("redirectUri", "com.example.app://oauth2redirect")
             putArray("scopes", JavaOnlyArray.of("openid", "profile"))
+            putBoolean("par", true)
             putString("storageId", "storage-1")
             putString("loggerId", "logger-1")
             putDouble("timeout", 30000.0)
@@ -67,22 +69,38 @@ class DaVinciConfigParserTest {
 
         val payload = DaVinciConfigParser.parse(config)
 
-        assertEquals("rn-client", payload.clientId)
-        assertEquals("com.example.app://oauth2redirect", payload.redirectUri)
-        assertEquals(listOf("openid", "profile"), payload.scopes)
-        assertEquals("storage-1", payload.storageId)
+        assertEquals("rn-client", payload.oidc.clientId)
+        assertEquals("com.example.app://oauth2redirect", payload.oidc.redirectUri)
+        assertEquals(listOf("openid", "profile"), payload.oidc.scopes)
+        assertTrue(payload.oidc.par == true)
+        assertEquals("storage-1", payload.oidc.storageId)
         assertEquals("logger-1", payload.loggerId)
         assertEquals(30000L, payload.timeout)
-        assertEquals("com.example.app://signed-out", payload.signOutRedirectUri)
-        assertEquals("demo-user", payload.loginHint)
-        assertEquals("nonce-123", payload.nonce)
-        assertEquals("state-123", payload.state)
-        assertEquals("login", payload.prompt)
-        assertEquals("page", payload.display)
-        assertEquals("en fr", payload.uiLocales)
-        assertEquals("loa-2", payload.acrValues)
-        assertEquals(60L, payload.refreshThreshold)
-        assertEquals(mapOf("audience" to "urn:example:api"), payload.additionalParameters)
+        assertEquals("com.example.app://signed-out", payload.oidc.signOutRedirectUri)
+        assertEquals("demo-user", payload.oidc.loginHint)
+        assertEquals("nonce-123", payload.oidc.nonce)
+        assertEquals("state-123", payload.oidc.state)
+        assertEquals("login", payload.oidc.prompt)
+        assertEquals("page", payload.oidc.display)
+        assertEquals("en fr", payload.oidc.uiLocales)
+        assertEquals("loa-2", payload.oidc.acrValues)
+        assertEquals(60L, payload.oidc.refreshThreshold)
+        assertEquals(mapOf("audience" to "urn:example:api"), payload.oidc.additionalParameters)
+    }
+
+    /**
+     * Verifies that parsing rejects a non-boolean PAR value.
+     */
+    @Test(expected = IllegalArgumentException::class)
+    fun parseThrowsWhenParIsNotBoolean() {
+        val config = JavaOnlyMap().apply {
+            putString("discoveryEndpoint", "https://example.com/.well-known/openid-configuration")
+            putString("clientId", "rn-client")
+            putString("redirectUri", "com.example.app://oauth2redirect")
+            putString("par", "true")
+        }
+
+        DaVinciConfigParser.parse(config)
     }
 
     @Test(expected = IllegalArgumentException::class)

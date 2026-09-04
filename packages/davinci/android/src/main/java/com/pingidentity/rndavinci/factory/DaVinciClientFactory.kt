@@ -31,6 +31,47 @@ internal class DaVinciClientFactory(
     private val loggerRegistry: Registry,
 ) {
 
+    private data class ResolvedOidcConfig(
+        val discoveryEndpoint: String,
+        val clientId: String,
+        val redirectUri: String,
+        val scopes: List<String>,
+        val par: Boolean?,
+        val storageId: String?,
+        val signOutRedirectUri: String?,
+        val loginHint: String?,
+        val nonce: String?,
+        val state: String?,
+        val prompt: String?,
+        val display: String?,
+        val uiLocales: String?,
+        val acrValues: String?,
+        val refreshThreshold: Long?,
+        val additionalParameters: Map<String, String>,
+    )
+
+    private fun resolveOidcConfig(payload: DaVinciClientPayload): ResolvedOidcConfig {
+        val oidc = payload.oidc
+        return ResolvedOidcConfig(
+            discoveryEndpoint = oidc.discoveryEndpoint,
+            clientId = oidc.clientId,
+            redirectUri = oidc.redirectUri,
+            scopes = oidc.scopes,
+            par = oidc.par,
+            storageId = oidc.storageId,
+            signOutRedirectUri = oidc.signOutRedirectUri,
+            loginHint = oidc.loginHint,
+            nonce = oidc.nonce,
+            state = oidc.state,
+            prompt = oidc.prompt,
+            display = oidc.display,
+            uiLocales = oidc.uiLocales,
+            acrValues = oidc.acrValues,
+            refreshThreshold = oidc.refreshThreshold,
+            additionalParameters = oidc.additionalParameters,
+        )
+    }
+
     /**
      * Build a DaVinci workflow from parsed configuration.
      *
@@ -39,29 +80,31 @@ internal class DaVinciClientFactory(
      * @throws IllegalArgumentException if payload values are invalid for native SDK setup.
      */
     fun build(payload: DaVinciClientPayload): Workflow {
+        val resolvedOidcConfig = resolveOidcConfig(payload)
         val resolvedLogger = resolveLogger(payload.loggerId)
         return DaVinci {
             resolvedLogger?.let { logger = it }
             payload.timeout?.let { timeout = it }
 
             module(Oidc) {
-                discoveryEndpoint = payload.discoveryEndpoint
-                clientId = payload.clientId
-                redirectUri = payload.redirectUri
-                scopes = payload.scopes.toMutableSet()
-                payload.signOutRedirectUri?.let { signOutRedirectUri = it }
-                payload.loginHint?.let { loginHint = it }
-                payload.nonce?.let { nonce = it }
-                payload.state?.let { state = it }
-                payload.prompt?.let { prompt = it }
-                payload.display?.let { display = it }
-                payload.uiLocales?.let { uiLocales = it }
-                payload.acrValues?.let { acrValues = it }
-                payload.refreshThreshold?.let { refreshThreshold = it }
-                if (payload.additionalParameters.isNotEmpty()) {
-                    additionalParameters = payload.additionalParameters
+                discoveryEndpoint = resolvedOidcConfig.discoveryEndpoint
+                clientId = resolvedOidcConfig.clientId
+                redirectUri = resolvedOidcConfig.redirectUri
+                scopes = resolvedOidcConfig.scopes.toMutableSet()
+                resolvedOidcConfig.par?.let { par = it }
+                resolvedOidcConfig.signOutRedirectUri?.let { signOutRedirectUri = it }
+                resolvedOidcConfig.loginHint?.let { loginHint = it }
+                resolvedOidcConfig.nonce?.let { nonce = it }
+                resolvedOidcConfig.state?.let { state = it }
+                resolvedOidcConfig.prompt?.let { prompt = it }
+                resolvedOidcConfig.display?.let { display = it }
+                resolvedOidcConfig.uiLocales?.let { uiLocales = it }
+                resolvedOidcConfig.acrValues?.let { acrValues = it }
+                resolvedOidcConfig.refreshThreshold?.let { refreshThreshold = it }
+                if (resolvedOidcConfig.additionalParameters.isNotEmpty()) {
+                    additionalParameters = resolvedOidcConfig.additionalParameters
                 }
-                applyOidcStorageIfPresent(payload.storageId)
+                applyOidcStorageIfPresent(resolvedOidcConfig.storageId)
             }
 
             payload.protect?.let { protect ->

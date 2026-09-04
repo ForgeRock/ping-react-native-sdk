@@ -38,6 +38,7 @@ enum OidcConfigParser {
       openId: openIdPayload,
       redirectUri: redirectUri,
       scopes: scopes,
+      par: try ReadableMapUtils.readBoolean(config, key: "par"),
       storageId: config["storageId"] as? String,
       loggerId: config["loggerId"] as? String,
       browserType: iosConfig?["browserType"] as? String,
@@ -75,7 +76,8 @@ enum OidcConfigParser {
       userinfoEndpoint: userinfoEndpoint,
       endSessionEndpoint: map["endSessionEndpoint"] as? String,
       pingEndIdpSessionEndpoint: map["pingEndIdpSessionEndpoint"] as? String,
-      revocationEndpoint: map["revocationEndpoint"] as? String
+      revocationEndpoint: map["revocationEndpoint"] as? String,
+      pushedAuthorizationRequestEndpoint: map["pushedAuthorizationRequestEndpoint"] as? String
     )
   }
 

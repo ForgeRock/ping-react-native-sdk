@@ -32,6 +32,9 @@ enum OidcClientFactory {
     let config = OidcClientConfig()
     config.clientId = payload.clientId
     config.discoveryEndpoint = payload.discoveryEndpoint ?? ""
+    if let par = payload.par {
+      config.par = par
+    }
     config.redirectUri = payload.redirectUri
     config.scopes = Set(payload.scopes)
     config.acrValues = payload.acrValues
@@ -88,6 +91,9 @@ enum OidcClientFactory {
       config.module(OidcModule.config) { oidc in
         oidc.clientId = payload.clientId
         oidc.discoveryEndpoint = payload.discoveryEndpoint ?? ""
+        if let par = payload.par {
+          oidc.par = par
+        }
         oidc.redirectUri = payload.redirectUri
         oidc.scopes = Set(payload.scopes)
         oidc.acrValues = payload.acrValues
@@ -209,6 +215,9 @@ enum OidcClientFactory {
       }
       if let pingEnd = openId.pingEndIdpSessionEndpoint {
         config.pingEndsessionEndpoint = pingEnd
+      }
+      if let pushedEndpoint = openId.pushedAuthorizationRequestEndpoint {
+        config.pushedAuthorizationRequestEndpoint = pushedEndpoint
       }
     }
   }

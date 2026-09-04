@@ -189,6 +189,38 @@ describe('OIDC JS API', () => {
     );
   });
 
+  it('forwards enabled PAR configuration', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+      par: true,
+    });
+
+    expect(nativeModule.createClient).toHaveBeenCalledWith(
+      expect.objectContaining({ par: true }),
+    );
+  });
+
+  it('omits PAR configuration when it is not provided', async () => {
+    const nativeModule = createNativeMock();
+    const { createOidcClient } = await loadModule(nativeModule);
+
+    createOidcClient({
+      clientId: 'client',
+      discoveryEndpoint: 'https://issuer/.well-known/openid-configuration',
+      redirectUri: 'app://redirect',
+      scopes: ['openid'],
+    });
+
+    const payload = nativeModule.createClient.mock.calls[0][0];
+    expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
+  });
+
   it('does not pass loggerId when logger is omitted', async () => {
     const nativeModule = createNativeMock();
     const { createOidcClient } = await loadModule(nativeModule);

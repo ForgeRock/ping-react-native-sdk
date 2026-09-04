@@ -95,6 +95,7 @@ const VALID_CONFIG = {
       clientId: 'davinci-client-id',
       redirectUri: 'org.forgerock.demo://oauth2redirect',
       scopes: ['openid', 'profile'],
+      par: true,
     },
   },
 };
@@ -230,8 +231,32 @@ describe('@ping-identity/rn-davinci — integration', () => {
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = await client.start();
       expect(mock.configureDaVinci).toHaveBeenCalledTimes(1);
+      expect(mock.configureDaVinci).toHaveBeenCalledWith(
+        expect.objectContaining({ par: true }),
+      );
       expect(node.type).toBe('ContinueNode');
       expect(Array.isArray(node.collectors)).toBe(true);
+    });
+
+    it('omits par from the configure payload when not provided', async () => {
+      const mock = makeMock();
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient({
+        modules: {
+          oidc: {
+            discoveryEndpoint:
+              'https://auth.example.com/.well-known/openid-configuration',
+            clientId: 'davinci-client-id',
+            redirectUri: 'org.forgerock.demo://oauth2redirect',
+            scopes: ['openid', 'profile'],
+          },
+        },
+      });
+
+      await client.start();
+
+      const payload = mock.configureDaVinci.mock.calls[0][0];
+      expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
     });
 
     it('start() does not reconfigure on subsequent calls', async () => {
