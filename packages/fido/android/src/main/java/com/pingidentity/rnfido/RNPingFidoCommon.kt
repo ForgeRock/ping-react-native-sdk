@@ -137,6 +137,15 @@ object RNPingFidoCommon {
    *   which throws `IllegalArgumentException` when the field is missing from the
    *   server payload, so an uninitialised collector never reaches this serializer.
    * @return Bridge payload map.
+   *
+   * TODO-PARITY (SDKS-5302): on a malformed FIDO2 payload the native `init()`
+   * throws `IllegalArgumentException` (missing or unsupported action, or missing
+   * options); the exception escapes `CollectorFactory.collector()` uncaught and
+   * Orchestrate's top-level catch turns the whole node into a `FailureNode`.
+   * iOS degrades per collector instead: its factory closure is `try?`-wrapped
+   * (an unconstructible collector is dropped) and its non-throwing
+   * `init(with:)` leaves the options empty. Track an Android SDK fix to fail
+   * per collector, not per node.
    */
   private fun serializeFidoCollector(
     collector: AbstractFidoCollector,
