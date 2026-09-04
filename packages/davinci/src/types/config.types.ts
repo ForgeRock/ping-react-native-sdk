@@ -17,17 +17,27 @@ import type {
  * @remarks
  * Uses the shared OIDC contract for the fields supported by DaVinci. The
  * discovery endpoint is required because DaVinci's current native OIDC path
- * requires it. `openId` is intentionally omitted because DaVinci's native
- * OIDC path does not expose endpoint overrides.
+ * requires it. `scopes` is optional because the native `OidcClientConfig`
+ * property DaVinci's factory sets it through defaults to an empty scope set
+ * on both platforms. `openId` is intentionally omitted because DaVinci's
+ * native OIDC path does not expose endpoint overrides.
  *
  * @public
  */
 export type DaVinciOidcModuleConfig = Omit<
   OidcCoreConfig,
-  'discoveryEndpoint' | 'openId'
+  'discoveryEndpoint' | 'openId' | 'scopes'
 > & {
   /** OIDC discovery endpoint URL required by DaVinci's native OIDC path. */
   discoveryEndpoint: string;
+  /**
+   * OAuth2 scopes to request.
+   *
+   * @remarks
+   * Optional. The native `OidcClientConfig.scopes` property defaults to an
+   * empty scope set on both platforms when omitted.
+   */
+  scopes?: string[];
   /** Optional OIDC token storage handle created by the storage module. */
   storage?: OidcStorageHandle;
 };

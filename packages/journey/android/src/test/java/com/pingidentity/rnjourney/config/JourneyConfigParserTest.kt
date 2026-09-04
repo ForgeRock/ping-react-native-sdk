@@ -125,6 +125,7 @@ class JourneyConfigParserTest {
             putString("endSessionEndpoint", "https://example.com/am/oauth2/connect/endSession")
             putString("pingEndIdpSessionEndpoint", "https://example.com/am/XUI/#logout")
             putString("revocationEndpoint", "https://example.com/am/oauth2/revoke")
+            putString("pushedAuthorizationRequestEndpoint", "https://example.com/am/oauth2/par")
         }
         val additionalParameters = JavaOnlyMap().apply {
             putString("audience", "urn:example:api")
@@ -161,6 +162,7 @@ class JourneyConfigParserTest {
         assertEquals("https://example.com/am/oauth2/connect/endSession", payload.oidc?.openId?.endSessionEndpoint)
         assertEquals("https://example.com/am/XUI/#logout", payload.oidc?.openId?.pingEndIdpSessionEndpoint)
         assertEquals("https://example.com/am/oauth2/revoke", payload.oidc?.openId?.revocationEndpoint)
+        assertEquals("https://example.com/am/oauth2/par", payload.oidc?.openId?.pushedAuthorizationRequestEndpoint)
         assertEquals("loa-2", payload.oidc?.acrValues)
         assertEquals("com.example.app://signed-out", payload.oidc?.signOutRedirectUri)
         assertEquals("state-123", payload.oidc?.state)

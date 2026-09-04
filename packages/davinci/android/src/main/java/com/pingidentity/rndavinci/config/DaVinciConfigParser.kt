@@ -30,7 +30,11 @@ internal object DaVinciConfigParser {
         val clientId = requireString(config, "clientId")
         val redirectUri = requireString(config, "redirectUri")
 
-        val scopes = readStringArray(config.getArray("scopes"))
+        val scopes = if (config.hasKey("scopes")) {
+            readStringArray(config.getArray("scopes"))
+        } else {
+            emptyList()
+        }
         val par = readBoolean(config, "par")
         val storageId = if (config.hasKey("storageId")) config.getString("storageId") else null
         val loggerId = if (config.hasKey("loggerId")) config.getString("loggerId") else null

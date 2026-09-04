@@ -115,7 +115,7 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
     discoveryEndpoint: oidcConfig?.discoveryEndpoint,
     openId: oidcConfig?.openId,
     redirectUri: oidcConfig?.redirectUri,
-    par: oidcConfig?.par,
+    ...(oidcConfig?.par !== undefined ? { par: oidcConfig.par } : {}),
     scopes: oidcConfig?.scopes,
     acrValues: oidcConfig?.acrValues,
     signOutRedirectUri: oidcConfig?.signOutRedirectUri,

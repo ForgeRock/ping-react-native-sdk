@@ -63,6 +63,11 @@ Configure it only if you need persistent token storage; otherwise omit storage v
 Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
 SDK reads the PAR endpoint from the provider's OIDC discovery document.
 
+> **Warning:** If the provider's discovery document does not advertise a PAR endpoint, the
+> native SDK sends the authorization request to an empty URL instead of failing fast. DaVinci's
+> OIDC config does not expose an endpoint override, so confirm PAR support in your provider's
+> discovery document before enabling `par: true`.
+
 ```ts
 import { createDaVinciClient } from '@ping-identity/rn-davinci';
 import { CacheStrategy, configureOidcStorage } from '@ping-identity/rn-storage';
@@ -90,6 +95,7 @@ const client = createDaVinciClient({
         'https://auth.pingone.com/<env-id>/as/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid', 'profile', 'email'],
+      par: true,
       storage: oidcStorage,
     },
   },

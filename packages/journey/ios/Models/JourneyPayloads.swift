@@ -15,6 +15,7 @@ struct JourneyOpenIdPayload: Sendable {
   let endSessionEndpoint: String?
   let pingEndIdpSessionEndpoint: String?
   let revocationEndpoint: String?
+  let pushedAuthorizationRequestEndpoint: String?
 }
 
 /// Optional OIDC module configuration parsed from Journey config.

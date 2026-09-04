@@ -13,7 +13,7 @@ package com.pingidentity.rndavinci.config
  * @param discoveryEndpoint OIDC discovery endpoint URL.
  * @param clientId OAuth2 client identifier.
  * @param redirectUri OAuth2 redirect URI.
- * @param scopes OAuth2 scopes to request.
+ * @param scopes OAuth2 scopes to request. Empty when omitted.
  * @param par Optional PAR enablement flag.
  * @param storageId Optional OIDC storage handle id.
  * @param signOutRedirectUri Optional sign-out redirect URI.

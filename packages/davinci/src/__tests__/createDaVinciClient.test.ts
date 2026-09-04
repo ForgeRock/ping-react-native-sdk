@@ -282,7 +282,7 @@ describe('createDaVinciClient — configure payload', () => {
     );
   });
 
-  it('keeps par undefined when omitted from OIDC config', async () => {
+  it('omits par when it is not provided in OIDC config', async () => {
     const native = createNativeMock();
     const { createDaVinciClient } = loadModule(native);
 
@@ -290,8 +290,29 @@ describe('createDaVinciClient — configure payload', () => {
 
     await client.start();
 
+    const payload = native.configureDaVinci.mock.calls[0][0];
+    expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
+  });
+
+  it('keeps scopes undefined when omitted from OIDC config', async () => {
+    const native = createNativeMock();
+    const { createDaVinciClient } = loadModule(native);
+
+    const client = createDaVinciClient({
+      modules: {
+        oidc: {
+          discoveryEndpoint:
+            'https://auth.example.com/.well-known/openid-configuration',
+          clientId: 'my-client',
+          redirectUri: 'app://callback',
+        },
+      },
+    });
+
+    await client.start();
+
     expect(native.configureDaVinci).toHaveBeenCalledWith(
-      expect.objectContaining({ par: undefined }),
+      expect.objectContaining({ scopes: undefined }),
     );
   });
 

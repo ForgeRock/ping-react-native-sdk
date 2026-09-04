@@ -70,6 +70,38 @@ class JourneyClientFactoryTest {
   }
 
   @Test
+  fun resolveOidcConfigFromHandle_copiesPushedAuthorizationRequestEndpoint() {
+    val handleId = CoreRuntime.oidcClientRegistry.register(
+      TestOidcHandle(
+        openId = OidcOpenIdConfig(
+          authorizationEndpoint = "https://example.com/am/oauth2/authorize",
+          tokenEndpoint = "https://example.com/am/oauth2/token",
+          userinfoEndpoint = "https://example.com/am/oauth2/userinfo",
+          endSessionEndpoint = null,
+          pingEndIdpSessionEndpoint = null,
+          revocationEndpoint = null,
+          pushedAuthorizationRequestEndpoint = "https://example.com/am/oauth2/par"
+        )
+      )
+    )
+
+    val method = JourneyClientFactory::class.java.getDeclaredMethod(
+      "resolveOidcConfigFromHandle",
+      String::class.java
+    )
+    method.isAccessible = true
+    val resolved = method.invoke(
+      JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null },
+      handleId
+    )
+    val resolvedOpenId = resolved.javaClass.getDeclaredField("openId").apply {
+      isAccessible = true
+    }.get(resolved) as OidcOpenIdConfig
+
+    assertEquals("https://example.com/am/oauth2/par", resolvedOpenId.pushedAuthorizationRequestEndpoint)
+  }
+
+  @Test
   fun build_withParEnabled_succeeds() {
     val factory = JourneyClientFactory(RecordingRegistry(), RecordingRegistry()) { null }
 

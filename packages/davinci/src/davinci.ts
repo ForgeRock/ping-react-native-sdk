@@ -165,7 +165,7 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     state: oidcConfig.state,
     prompt: oidcConfig.prompt,
     display: oidcConfig.display,
-    par: oidcConfig.par,
+    ...(oidcConfig.par !== undefined ? { par: oidcConfig.par } : {}),
     uiLocales: oidcConfig.uiLocales,
     acrValues: oidcConfig.acrValues,
     refreshThreshold: oidcConfig.refreshThreshold,

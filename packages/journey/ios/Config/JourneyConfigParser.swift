@@ -141,7 +141,8 @@ enum JourneyConfigParser {
       userinfoEndpoint: userinfoEndpoint,
       endSessionEndpoint: readOptionalString(map["endSessionEndpoint"]),
       pingEndIdpSessionEndpoint: readOptionalString(map["pingEndIdpSessionEndpoint"]),
-      revocationEndpoint: readOptionalString(map["revocationEndpoint"])
+      revocationEndpoint: readOptionalString(map["revocationEndpoint"]),
+      pushedAuthorizationRequestEndpoint: readOptionalString(map["pushedAuthorizationRequestEndpoint"])
     )
   }
 

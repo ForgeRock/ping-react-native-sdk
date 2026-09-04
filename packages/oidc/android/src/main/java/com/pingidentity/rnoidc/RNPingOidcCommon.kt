@@ -110,7 +110,8 @@ object RNPingOidcCommon {
           userinfoEndpoint = it.userinfoEndpoint,
           endSessionEndpoint = it.endSessionEndpoint,
           pingEndIdpSessionEndpoint = it.pingEndIdpSessionEndpoint,
-          revocationEndpoint = it.revocationEndpoint
+          revocationEndpoint = it.revocationEndpoint,
+          pushedAuthorizationRequestEndpoint = it.pushedAuthorizationRequestEndpoint
         )
       }
 

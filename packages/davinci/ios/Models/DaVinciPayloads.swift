@@ -40,7 +40,7 @@ struct DaVinciOidcPayload: Sendable {
   let clientId: String
   /// OAuth2 redirect URI — required.
   let redirectUri: String
-  /// OAuth2 scopes to request.
+  /// OAuth2 scopes to request. Empty when omitted.
   let scopes: [String]
   /// Optional PAR enablement flag.
   let par: Bool?

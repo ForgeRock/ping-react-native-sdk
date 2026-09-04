@@ -57,7 +57,13 @@ Storage inside `modules.oidc.storage` and `modules.session.storage` is optional.
 if you need native-backed persistence; otherwise omit storage values.
 
 Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
-SDK reads the PAR endpoint from the provider's OIDC discovery document.
+SDK reads the PAR endpoint from the provider's OIDC discovery document. To override it, set
+`modules.oidc.openId.pushedAuthorizationRequestEndpoint`.
+
+> **Warning:** If the provider's discovery document does not advertise a PAR endpoint and no
+> override is set, the native SDK sends the authorization request to an empty URL instead of
+> failing fast. Confirm PAR support in your provider's discovery document, or set
+> `pushedAuthorizationRequestEndpoint` explicitly, before enabling `par: true`.
 
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';

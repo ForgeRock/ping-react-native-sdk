@@ -17,6 +17,7 @@ import com.pingidentity.rncore.registry.NativeHandle
  * @property userinfoEndpoint Userinfo endpoint URL.
  * @property endSessionEndpoint Optional end-session endpoint URL.
  * @property pingEndIdpSessionEndpoint Optional Ping end-session endpoint URL.
+ * @property pushedAuthorizationRequestEndpoint Optional PAR endpoint URL.
  * @property revocationEndpoint Optional token revocation endpoint URL.
  */
 data class OidcOpenIdConfig(
@@ -25,7 +26,8 @@ data class OidcOpenIdConfig(
     val userinfoEndpoint: String,
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
-    val revocationEndpoint: String?
+    val revocationEndpoint: String?,
+    val pushedAuthorizationRequestEndpoint: String? = null
 )
 
 /**

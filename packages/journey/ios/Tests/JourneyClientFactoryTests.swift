@@ -103,6 +103,59 @@ final class JourneyClientFactoryTests: XCTestCase {
     XCTAssertEqual(oidcModule?.par, true)
   }
 
+  func testBuildAppliesOpenIdOverrideWithParEndpoint() async throws {
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: nil,
+      cookie: nil,
+      clientId: "client-id",
+      discoveryEndpoint: "https://example.com/am/oauth2/.well-known/openid-configuration",
+      redirectUri: "com.example.app://oauth2redirect",
+      scopes: ["openid"],
+      par: true,
+      openId: JourneyOpenIdPayload(
+        authorizationEndpoint: "https://example.com/oauth2/authorize",
+        tokenEndpoint: "https://example.com/oauth2/token",
+        userinfoEndpoint: "https://example.com/oauth2/userinfo",
+        endSessionEndpoint: nil,
+        pingEndIdpSessionEndpoint: nil,
+        revocationEndpoint: nil,
+        pushedAuthorizationRequestEndpoint: "https://example.com/oauth2/par"
+      ),
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: nil,
+      loggerId: nil,
+      oidcClientId: nil
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+    let oidcModule = journey.config.modules
+      .compactMap { $0.config as? OidcClientConfig }
+      .first
+
+    XCTAssertEqual(oidcModule?.par, true)
+    var discovered = OpenIdConfiguration(
+      authorizationEndpoint: "",
+      tokenEndpoint: "",
+      userinfoEndpoint: "",
+      endSessionEndpoint: "",
+      revocationEndpoint: ""
+    )
+    oidcModule?.openIdOverride?(&discovered)
+    XCTAssertEqual(discovered.pushedAuthorizationRequestEndpoint, "https://example.com/oauth2/par")
+  }
+
   func testBuildAllowsJourneyOnlyConfigurationWithoutOidc() async throws {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",

@@ -100,7 +100,10 @@ internal class JourneyClientFactory(
                             userinfoEndpoint = openIdConfig.userinfoEndpoint,
                             endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
                             pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
-                            revocationEndpoint = openIdConfig.revocationEndpoint ?: ""
+                            revocationEndpoint = openIdConfig.revocationEndpoint ?: "",
+                            // NOTE: native property has no "ed" (pushAuthorizationRequestEndpoint), unlike the JS/iOS
+                            // key pushedAuthorizationRequestEndpoint.
+                            pushAuthorizationRequestEndpoint = openIdConfig.pushedAuthorizationRequestEndpoint ?: ""
                         )
                     }
                     applyOidcStorageIfPresent(payload.oidc?.storageId)
@@ -206,7 +209,8 @@ internal class JourneyClientFactory(
             userinfoEndpoint = userinfoEndpoint,
             endSessionEndpoint = endSessionEndpoint,
             pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint,
-            revocationEndpoint = revocationEndpoint
+            revocationEndpoint = revocationEndpoint,
+            pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
         )
     }
 

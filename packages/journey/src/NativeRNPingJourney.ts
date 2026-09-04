@@ -105,6 +105,8 @@ export type NativeJourneyConfig = {
     pingEndIdpSessionEndpoint?: string;
     /** Optional token revocation endpoint URL. */
     revocationEndpoint?: string;
+    /** Optional Pushed Authorization Request endpoint URL. */
+    pushedAuthorizationRequestEndpoint?: string;
   };
   /** Optional ACR values. */
   acrValues?: string;

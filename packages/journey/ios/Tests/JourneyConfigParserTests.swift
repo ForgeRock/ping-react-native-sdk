@@ -43,7 +43,8 @@ final class JourneyConfigParserTests: XCTestCase {
         "userinfoEndpoint": "https://example.com/oauth2/userinfo",
         "endSessionEndpoint": "https://example.com/oauth2/logout",
         "pingEndIdpSessionEndpoint": "https://example.com/oauth2/ping/logout",
-        "revocationEndpoint": "https://example.com/oauth2/revoke"
+        "revocationEndpoint": "https://example.com/oauth2/revoke",
+        "pushedAuthorizationRequestEndpoint": "https://example.com/oauth2/par"
       ]
     ]
 
@@ -78,6 +79,7 @@ final class JourneyConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.oidc?.openId?.endSessionEndpoint, "https://example.com/oauth2/logout")
     XCTAssertEqual(payload.oidc?.openId?.pingEndIdpSessionEndpoint, "https://example.com/oauth2/ping/logout")
     XCTAssertEqual(payload.oidc?.openId?.revocationEndpoint, "https://example.com/oauth2/revoke")
+    XCTAssertEqual(payload.oidc?.openId?.pushedAuthorizationRequestEndpoint, "https://example.com/oauth2/par")
   }
 
   func testParseAllowsOidcClientHandleWithoutDirectOidcFields() throws {

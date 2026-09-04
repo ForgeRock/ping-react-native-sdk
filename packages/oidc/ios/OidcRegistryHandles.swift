@@ -42,7 +42,8 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
       userinfoEndpoint: openId.userinfoEndpoint,
       endSessionEndpoint: openId.endSessionEndpoint,
       pingEndIdpSessionEndpoint: openId.pingEndIdpSessionEndpoint,
-      revocationEndpoint: openId.revocationEndpoint
+      revocationEndpoint: openId.revocationEndpoint,
+      pushedAuthorizationRequestEndpoint: openId.pushedAuthorizationRequestEndpoint
     )
   }
   /// Optional PAR enablement flag.
