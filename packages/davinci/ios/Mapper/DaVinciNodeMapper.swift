@@ -8,7 +8,6 @@
 import Foundation
 import PingDavinci
 import PingDavinciPlugin
-import PingExternalIdP
 import PingLogger
 import PingOrchestrate
 import RNPingCore
@@ -16,8 +15,6 @@ import RNPingCore
 /// Maps native iOS DaVinci nodes and collectors to React Native bridge payloads.
 enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
-  static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
-  static let protect = "PROTECT"
   private static let qrCode = "QR_CODE"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
@@ -127,9 +124,6 @@ enum DaVinciNodeMapper {
         continue
       }
 
-      // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
-      if resolvedType == socialLoginButton { continue }
-
       // A field is supported when the SDK instantiated a collector for its key.
       guard !registeredKeys.contains(key) else { continue }
 
@@ -176,15 +170,15 @@ enum DaVinciNodeMapper {
   /// type, by reading `inputType` (preferred) or `type` from the matching form field in
   /// `node.input.form.components.fields[]`.
   ///
-  /// Used to detect collectors from optional SDK packages (e.g. ProtectCollector from
-  /// PingOneProtect) without importing those packages. The field type is what the server sent,
-  /// so this remains correct regardless of SDK renames or package restructuring.
+  /// Used to detect collectors from optional SDK packages without importing those packages.
+  /// The field type is what the server sent, so this remains correct regardless of SDK renames
+  /// or package restructuring.
   ///
   /// - Parameters:
   ///   - collector: Collector whose class was not matched by the primary switch cases.
   ///   - node: Active continue node providing form field context.
   ///   - logger: Optional Ping logger for non-fatal navigation warnings.
-  /// - Returns: The resolved field type string (e.g. `"PROTECT"`), or `nil` if the field is absent.
+  /// - Returns: The resolved field type string, or `nil` if the field is absent.
   static func resolvedFormFieldType(
     for collector: any Collector,
     node: ContinueNode,
@@ -227,8 +221,6 @@ enum DaVinciNodeMapper {
   ) -> [String: Any]? {
     var map: [String: Any]?
     switch collector {
-    case let idpCollector as IdpCollector:
-      map = mapIdpCollector(idpCollector)
     case let textCollector as TextCollector:
       map = mapTextCollector(textCollector, node: node)
     case let passwordCollector as PasswordCollector:
@@ -261,10 +253,25 @@ enum DaVinciNodeMapper {
       // returned early rather than routed through `applyRawField` below.
       return mapQRCodeCollector(qrCodeCollector, node: node, logger: logger)
     default:
-      switch resolvedFormFieldType(for: collector, node: node, logger: logger) {
-      case protect:
-        map = ["key": collector.id, "type": protect]
-      default:
+      // Try registered plugin serializers before generic server-type fallback.
+      if let serialized = CoreRuntime.serializeDaVinciCollector(collector) {
+        let fieldKey = (serialized["key"] as? String) ?? ""
+        var mutableMap = serialized
+        applyRawField(&mutableMap, collectorKey: fieldKey, node: node, logger: logger)
+        return mutableMap
+      }
+      if let resolvedType = resolvedFormFieldType(for: collector, node: node, logger: logger) {
+        // No registered serializer handled this collector, so it falls back to the
+        // generic {key, type} payload (top-level fields like `action` are dropped).
+        // This is the exact failure mode diagnosed in SDKS-5302: an integration
+        // collector type whose native serializer never registered.
+        logger?.w(
+          "[\(logTag)] No serializer registered for collector type=\(resolvedType) (key=\(collector.id)); " +
+            "falling back to generic {key, type} payload",
+          error: nil
+        )
+        map = ["key": collector.id, "type": resolvedType]
+      } else {
         logger?.w(
           "[\(logTag)] Skipping unsupported collector type: \(String(describing: type(of: collector)))",
           error: nil
@@ -273,38 +280,8 @@ enum DaVinciNodeMapper {
       }
     }
     guard var collectorMap = map else { return nil }
-    applyRawField(&collectorMap, collectorKey: rawFieldKey(for: collector), node: node, logger: logger)
+    applyRawField(&collectorMap, collectorKey: collector.id, node: node, logger: logger)
     return collectorMap
-  }
-
-  /// Returns the stable raw-field key for a collector.
-  ///
-  /// Most collectors use `collector.id` which equals the server `key` field. Collectors
-  /// that do not extend `FieldCollector` (e.g. `IdpCollector`) override with their own
-  /// stable identifier. Add a new branch here for any future collector whose `id` does
-  /// not match its form field key.
-  private static func rawFieldKey(for collector: any Collector) -> String {
-    if let idp = collector as? IdpCollector { return idp.idpId }
-    return collector.id
-  }
-
-  /// Serializes an `IdpCollector` to a bridge map.
-  ///
-  /// Uses `idpId` as the `key` field — `IdpCollector.id` returns a new UUID on every
-  /// access and cannot be used as a stable form-field key.
-  private static func mapIdpCollector(_ collector: IdpCollector) -> [String: Any] {
-    var map: [String: Any] = [
-      "key": collector.idpId,
-      "type": socialLoginButton,
-      "label": collector.label,
-      "idpId": collector.idpId,
-      "idpType": collector.idpType,
-      "idpEnabled": collector.idpEnabled,
-    ]
-    if let link = collector.link {
-      map["link"] = link.absoluteString
-    }
-    return map
   }
 
   // MARK: - Field collector helpers

@@ -7,31 +7,6 @@
 
 import Foundation
 
-/// Parsed Protect lifecycle module configuration supplied by JavaScript.
-///
-/// Mirrors `DaVinciProtectModuleConfig` in the TypeScript layer and maps to
-/// `ProtectLifecycleConfig` in the native PingOneProtect SDK.
-struct ProtectLifecyclePayload: Sendable {
-  /// PingOne environment ID for the Protect SDK.
-  let envId: String?
-  /// Whether to enable behavioral data collection. Default: true.
-  let isBehavioralDataCollection: Bool
-  /// Whether to use lazy metadata loading. Default: false.
-  let isLazyMetadata: Bool
-  /// Custom host URL for the Protect SDK.
-  let customHost: String?
-  /// Whether to enable console logging inside the Protect SDK. Default: false.
-  let isConsoleLogEnabled: Bool
-  /// Device attributes to exclude from signal collection.
-  let deviceAttributesToIgnore: [String]
-  /// Whether to pause behavioral data collection on successful authentication. Default: false.
-  let pauseBehavioralDataOnSuccess: Bool
-  /// Whether to resume behavioral data collection when the flow starts. Default: false.
-  let resumeBehavioralDataOnStart: Bool
-  /// Optional logger handle id from JS for Protect operations.
-  let loggerId: String?
-}
-
 /// Parsed DaVinci client configuration supplied by JavaScript.
 ///
 /// Mirrors the wire format from `NativeDaVinciConfig` in the TypeScript layer
@@ -71,6 +46,4 @@ struct DaVinciClientPayload: Sendable {
   let refreshThreshold: Int64?
   /// Optional additional authorization request parameters.
   let additionalParameters: [String: String]
-  /// Optional protect lifecycle module configuration. Present only when modules.protect is provided.
-  let protect: ProtectLifecyclePayload?
 }

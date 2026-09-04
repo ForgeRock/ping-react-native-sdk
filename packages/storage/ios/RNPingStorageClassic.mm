@@ -6,7 +6,11 @@
  */
 #import <React/RCTBridgeModule.h>
 #import <React/RCTLog.h>
+#if __has_include("RNPingStorage-Swift.h")
 #import "RNPingStorage-Swift.h"
+#else
+#import <RNPingStorage/RNPingStorage-Swift.h>
+#endif
 
 @interface RNPingStorageClassic : NSObject <RCTBridgeModule>
 @end

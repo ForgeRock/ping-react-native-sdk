@@ -100,9 +100,6 @@ dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation("com.pingidentity.sdks:davinci:2.1.0")
-  // Required: IdpCollector is defined in external-idp. The JS authorizeForDaVinci API is optional but this native dep is not.
-  compileOnly("com.pingidentity.sdks:external-idp:2.1.0")
-  compileOnly("com.pingidentity.sdks:protect:2.0.1") // ProtectLifecycle module; wired at config time when modules.protect is set
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
   implementation(project(":ping-identity_rn-core"))
@@ -110,8 +107,6 @@ dependencies {
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.test:core:1.6.1"
   testImplementation "org.robolectric:robolectric:4.12.2"
-  testImplementation("com.pingidentity.sdks:external-idp:2.1.0")
-  testImplementation("com.pingidentity.sdks:protect:2.0.1")
   testImplementation "io.mockk:mockk:1.13.12"
   testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0"
 }

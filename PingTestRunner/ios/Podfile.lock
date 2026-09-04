@@ -2409,7 +2409,6 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
-    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -2446,7 +2445,6 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
-    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -2730,6 +2728,7 @@ PODS:
     - glog
     - hermes-engine
     - PingFido (= 2.1.0)
+    - PingLogger (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2761,6 +2760,7 @@ PODS:
     - glog
     - hermes-engine
     - PingFido (= 2.1.0)
+    - PingLogger (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2792,7 +2792,6 @@ PODS:
     - glog
     - hermes-engine
     - PingDavinciPlugin (= 2.1.0)
-    - PingFido (= 2.1.0)
     - PingJourney (= 2.1.0)
     - PingJourneyPlugin (= 2.1.0)
     - PingLogger (= 2.1.0)
@@ -3061,6 +3060,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinci (= 2.1.0)
+    - PingDavinciPlugin (= 2.1.0)
     - PingOneProtect (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
@@ -3092,6 +3093,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinci (= 2.1.0)
+    - PingDavinciPlugin (= 2.1.0)
     - PingOneProtect (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
@@ -3665,17 +3668,17 @@ SPEC CHECKSUMS:
   RNPingBinding: 1731d5254b7d026df05ee056ab7802f4888537e9
   RNPingBrowser: b6afbf0fa46c9ae0a10daeb46927f05eca5c7c6d
   RNPingCore: 3926e39f9ab60d83fb4d58225303864ca0d8171b
-  RNPingDavinci: 605780d605c87d00216376bb2b3f4f5ee72817e8
+  RNPingDavinci: 6476fe1f3a0f3bcb8c875551df12e0b493da6de4
   RNPingDeviceClient: 0ff89a604e97d1168eff3aba4b1d889139619bd7
   RNPingDeviceId: 6eb3e9fc68a78e1aee87652e025f6e1ec6d5d67e
   RNPingDeviceProfile: 3086f14fc5024196a64290afbbf7917432dd5900
   RNPingExternalIdp: 8e6e224400407ab3e732bc72976f250940ad644c
-  RNPingFido: 3bb455d8ccc47e45c902af0033f8b3cccee579e7
-  RNPingJourney: 4e2a18cbda69fae0011109b8c7bef8b5dc4bc9d2
+  RNPingFido: e6122f604e9bfaa3583b211cbf08713f1bff111f
+  RNPingJourney: dc54cca7e6bc6ea03ae6244fbfcb82a3ebc8014d
   RNPingLogger: b7dd73f42b3fea86a56fc7a35999cf4333fbde20
   RNPingOath: 261b44b957975c0c036b1bed6ef953c4767b8fcc
   RNPingOidc: d490892cb09a11c189b2259bca0fecfc09a109fd
-  RNPingProtect: cbfd801e3ce9b326dd190772ff1ba16735d4fe78
+  RNPingProtect: a08dff0477c7a923a2d346b16e7a67658da56565
   RNPingPush: 3f02ee0f3d971c0d8affdb13b8fcefc4de789de1
   RNPingStorage: 2c45c6d29cfcf8e1ed8ec3e32df1443e29dabd67
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
@@ -3683,4 +3686,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 9ceaad74f9b24aba51880ae069d18f1dffba35e4
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

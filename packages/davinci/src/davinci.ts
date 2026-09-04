@@ -137,21 +137,6 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
   const rawLoggerId = config.logger?.nativeHandle?.id;
   const loggerId = rawLoggerId?.trim() ? rawLoggerId : undefined;
 
-  const protectConfig = config.modules?.protect;
-  const rawProtectLoggerId = protectConfig?.logger?.nativeHandle?.id;
-  const protectLoggerId = rawProtectLoggerId?.trim()
-    ? rawProtectLoggerId
-    : undefined;
-
-  let nativeProtect: Record<string, unknown> | undefined;
-  if (protectConfig) {
-    const { logger: _pl, ...protectNativeFields } = protectConfig;
-    nativeProtect = {
-      ...protectNativeFields,
-      ...(protectLoggerId ? { loggerId: protectLoggerId } : {}),
-    };
-  }
-
   const nativeConfig: NativeDaVinciConfig = {
     discoveryEndpoint: oidcConfig.discoveryEndpoint,
     clientId: oidcConfig.clientId,
@@ -170,7 +155,6 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     additionalParameters: oidcConfig.additionalParameters,
     timeout: config.timeout,
     loggerId,
-    protect: nativeProtect,
   };
 
   let davinciId: string | null = null;

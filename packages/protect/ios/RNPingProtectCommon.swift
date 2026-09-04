@@ -6,6 +6,8 @@
  */
 
 import Foundation
+import PingDavinci
+import PingDavinciPlugin
 import PingLogger
 import PingOneProtect
 import React
@@ -25,11 +27,27 @@ struct ProtectInitConfig: Sendable {
   let customHost: String?
   let isConsoleLogEnabled: Bool
   let deviceAttributesToIgnore: [String]
+  let pauseBehavioralDataOnSuccess: Bool
+  let resumeBehavioralDataOnStart: Bool
 }
 
 /// Shared iOS implementation for the Ping Protect React Native module.
+private final class SerializerState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var registered = false
+
+  func register(_ action: () -> Void) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !registered else { return }
+    registered = true
+    action()
+  }
+}
+
 public class RNPingProtectCommon: NSObject {
   private static let loggerIdKey = "loggerId"
+  private static let serializerState = SerializerState()
 
   /// Stable error codes emitted by the Protect module.
   ///
@@ -38,6 +56,16 @@ public class RNPingProtectCommon: NSObject {
     case collectError = "PROTECT_COLLECT_ERROR"
     case collectorNotFound = "PROTECT_COLLECTOR_NOT_FOUND"
     case initializeError = "PROTECT_INITIALIZE_ERROR"
+  }
+
+  /// Registers the Protect collector serializer with the generic DaVinci mapper.
+  public static func registerDaVinciSerializer() {
+    serializerState.register {
+      CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
+        guard let collector = collectorAny as? ProtectCollector else { return nil }
+        return ["key": collector.id, "type": "PROTECT"]
+      }
+    }
   }
 
   /// Runs Protect SDK data collection for the active `ProtectCollector` in a DaVinci flow.
@@ -164,6 +192,7 @@ public class RNPingProtectCommon: NSObject {
           c.deviceAttributesToIgnore = initConfig.deviceAttributesToIgnore
         }
         try await Protect.initialize()
+        registerDaVinciModuleHook(initConfig)
         logger?.d("Protect initialize succeeded")
         handlers.resolve(NSNull())
       } catch {
@@ -176,6 +205,23 @@ public class RNPingProtectCommon: NSObject {
           ),
           underlying: error as NSError
         )
+      }
+    }
+  }
+
+  /// Registers the Protect lifecycle module with the generic DaVinci hook registry.
+  private static func registerDaVinciModuleHook(_ config: ProtectInitConfig) {
+    CoreRuntime.registerDaVinciModuleHook(key: "protect") { builder in
+      guard let configBuilder = builder as? DaVinciConfig else { return }
+      configBuilder.module(ProtectLifecycleModule.config) { lifecycleConfig in
+        lifecycleConfig.envId = config.envId
+        lifecycleConfig.isBehavioralDataCollection = config.isBehavioralDataCollection
+        lifecycleConfig.isLazyMetadata = config.isLazyMetadata
+        lifecycleConfig.customHost = config.customHost
+        lifecycleConfig.isConsoleLogEnabled = config.isConsoleLogEnabled
+        lifecycleConfig.deviceAttributesToIgnore = config.deviceAttributesToIgnore
+        lifecycleConfig.pauseBehavioralDataOnSuccess = config.pauseBehavioralDataOnSuccess
+        lifecycleConfig.resumeBehavioralDataOnStart = config.resumeBehavioralDataOnStart
       }
     }
   }
@@ -290,13 +336,17 @@ public class RNPingProtectCommon: NSObject {
     let customHost = (dict["customHost"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let isConsoleLogEnabled = (dict["isConsoleLogEnabled"] as? Bool) ?? false
     let deviceAttributesToIgnore = (dict["deviceAttributesToIgnore"] as? [String]) ?? []
+    let pauseBehavioralDataOnSuccess = (dict["pauseBehavioralDataOnSuccess"] as? Bool) ?? false
+    let resumeBehavioralDataOnStart = (dict["resumeBehavioralDataOnStart"] as? Bool) ?? false
     return ProtectInitConfig(
       envId: envId,
       isBehavioralDataCollection: isBehavioralDataCollection,
       isLazyMetadata: isLazyMetadata,
       customHost: customHost,
       isConsoleLogEnabled: isConsoleLogEnabled,
-      deviceAttributesToIgnore: deviceAttributesToIgnore
+      deviceAttributesToIgnore: deviceAttributesToIgnore,
+      pauseBehavioralDataOnSuccess: pauseBehavioralDataOnSuccess,
+      resumeBehavioralDataOnStart: resumeBehavioralDataOnStart
     )
   }
 }

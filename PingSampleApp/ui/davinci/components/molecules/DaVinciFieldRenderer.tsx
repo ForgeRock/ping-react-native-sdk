@@ -9,6 +9,7 @@ import React, { memo } from 'react';
 import DaVinciBooleanField from './DaVinciBooleanField';
 import DaVinciDeviceField from './DaVinciDeviceField';
 import DaVinciFlowButton from './DaVinciFlowButton';
+import DaVinciFidoField from './DaVinciFidoField';
 import DaVinciIdpField from './DaVinciIdpField';
 import DaVinciLabelField from './DaVinciLabelField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
@@ -21,6 +22,8 @@ import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
 import DaVinciTextField from './DaVinciTextField';
 import DaVinciUnsupportedField from './DaVinciUnsupportedField';
+import { fidoCollectorType } from '@ping-identity/rn-fido';
+import { socialLoginCollectorType } from '@ping-identity/rn-external-idp';
 import type { DaVinciCollectorRendererProps } from './types';
 
 /**
@@ -65,9 +68,13 @@ function DaVinciFieldRenderer(
     case 'DEVICE_REGISTRATION':
     case 'DEVICE_AUTHENTICATION':
       return <DaVinciDeviceField {...props} />;
-    case 'SOCIAL_LOGIN_BUTTON':
+    case socialLoginCollectorType:
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
+      );
+    case fidoCollectorType:
+      return (
+        <DaVinciFidoField {...props} onFidoCeremony={props.onFidoCeremony} />
       );
     case 'PROTECT':
       return null;

@@ -11,9 +11,6 @@ import PingLogger
 import PingOidc
 import PingStorage
 import RNPingCore
-#if canImport(PingOneProtect)
-import PingOneProtect
-#endif
 
 /// Builds native DaVinci workflow instances from parsed JS payloads.
 final class DaVinciClientFactory {
@@ -76,24 +73,7 @@ final class DaVinciClientFactory {
         }
       }
 
-      #if canImport(PingOneProtect)
-      if let protect = payload.protect {
-        config.module(ProtectLifecycleModule.config) { protectConfig in
-          protectConfig.envId = protect.envId
-          protectConfig.isBehavioralDataCollection = protect.isBehavioralDataCollection
-          protectConfig.isLazyMetadata = protect.isLazyMetadata
-          if let customHost = protect.customHost {
-            protectConfig.customHost = customHost
-          }
-          protectConfig.isConsoleLogEnabled = protect.isConsoleLogEnabled
-          if !protect.deviceAttributesToIgnore.isEmpty {
-            protectConfig.deviceAttributesToIgnore = protect.deviceAttributesToIgnore
-          }
-          protectConfig.pauseBehavioralDataOnSuccess = protect.pauseBehavioralDataOnSuccess
-          protectConfig.resumeBehavioralDataOnStart = protect.resumeBehavioralDataOnStart
-        }
-      }
-      #endif
+      CoreRuntime.invokeDaVinciModuleHooks(with: config)
     }
   }
 

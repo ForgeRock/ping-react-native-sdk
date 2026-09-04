@@ -13,6 +13,13 @@ public typealias JourneyCallbackResolver = @Sendable (String) async -> [Any]?
 /// A closure that returns the collectors for a running DaVinci instance.
 public typealias DaVinciCollectorResolver = @Sendable (String) async -> [Any]?
 
+/// A closure invoked inside the DaVinci builder to register a plugin-provided native module.
+public typealias DaVinciModuleHook = @Sendable (Any) -> Void
+
+/// A closure that serializes a plugin collector (e.g. IdpCollector) to a bridge payload map.
+/// Returns `nil` when the collector type is not handled.
+public typealias DaVinciCollectorSerializer = @Sendable (Any) -> [String: Any]?
+
 /// Thread-safe storage for the optional Journey callback resolver.
 ///
 /// - Note: `@unchecked Sendable` is used because this class stores a mutable
@@ -33,6 +40,54 @@ private final class JourneyCallbackResolverStore: @unchecked Sendable {
         let current = resolver
         lock.unlock()
         return current
+    }
+}
+
+/// Thread-safe keyed store for DaVinci module hooks.
+///
+/// - Note: `@unchecked Sendable` — mutable dictionary guarded by `NSLock`.
+private final class DaVinciModuleHookStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var hooks: [String: DaVinciModuleHook] = [:]
+
+    func set(key: String, hook: @escaping DaVinciModuleHook) {
+        lock.lock()
+        hooks[key] = hook
+        lock.unlock()
+    }
+
+    func all() -> [DaVinciModuleHook] {
+        lock.lock()
+        let current = Array(hooks.values)
+        lock.unlock()
+        return current
+    }
+}
+
+/// Thread-safe list store for DaVinci collector serializers.
+///
+/// - Note: `@unchecked Sendable` — mutable array guarded by `NSLock`.
+private final class DaVinciCollectorSerializerStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var serializers: [DaVinciCollectorSerializer] = []
+
+    func add(_ serializer: @escaping DaVinciCollectorSerializer) {
+        lock.lock()
+        serializers.append(serializer)
+        lock.unlock()
+    }
+
+    func all() -> [DaVinciCollectorSerializer] {
+        lock.lock()
+        let current = serializers
+        lock.unlock()
+        return current
+    }
+
+    func clear() {
+        lock.lock()
+        serializers.removeAll()
+        lock.unlock()
     }
 }
 
@@ -104,6 +159,12 @@ public enum CoreRuntime {
     /// Internal DaVinci collector resolver store.
     private static let davinciCollectorResolverStore = DaVinciCollectorResolverStore()
 
+    /// Internal store for DaVinci module hooks.
+    private static let davinciModuleHookStore = DaVinciModuleHookStore()
+
+    /// Internal store for DaVinci collector serializers.
+    private static let davinciCollectorSerializerStore = DaVinciCollectorSerializerStore()
+
     /// Registers or clears the resolver that exposes Journey callbacks to other packages.
     ///
     /// Packages that need Journey callbacks (binding, fido, device-profile) cannot depend
@@ -123,6 +184,51 @@ public enum CoreRuntime {
             return nil
         }
         return await resolver(journeyId)
+    }
+
+    /// Registers or replaces a plugin module hook for the given key.
+    ///
+    /// Hooks are invoked by `invokeDaVinciModuleHooks` inside the DaVinci builder at
+    /// `configureDaVinci` time. Using a keyed store prevents accumulation when the same
+    /// plugin re-registers on each `createDaVinciClient` call.
+    ///
+    /// - Parameters:
+    ///   - key: Stable hook identity.
+    ///   - hook: Closure that receives the DaVinci builder instance.
+    public static func registerDaVinciModuleHook(key: String, _ hook: @escaping DaVinciModuleHook) {
+        davinciModuleHookStore.set(key: key, hook: hook)
+    }
+
+    /// Invokes all registered module hooks with the given DaVinci builder instance.
+    ///
+    /// - Parameter builder: Native DaVinci builder instance (type-erased).
+    public static func invokeDaVinciModuleHooks(with builder: Any) {
+        davinciModuleHookStore.all().forEach { $0(builder) }
+    }
+
+    /// Registers a collector serializer.
+    ///
+    /// Serializers are polled in registration order; the first non-`nil` result wins.
+    /// Register at module init time — not per DaVinci instance.
+    ///
+    /// - Parameter serializer: Closure that serializes a collector, or returns `nil` when not handled.
+    public static func registerDaVinciCollectorSerializer(_ serializer: @escaping DaVinciCollectorSerializer) {
+        davinciCollectorSerializerStore.add(serializer)
+    }
+
+    /// Clears all registered DaVinci collector serializers.
+    ///
+    /// - Note: Test-only seam for hermetic unit tests; not part of the public API.
+    internal static func resetDaVinciCollectorSerializersForTesting() {
+        davinciCollectorSerializerStore.clear()
+    }
+
+    /// Serializes a collector using the first registered serializer that handles it.
+    ///
+    /// - Parameter collector: Collector instance to serialize.
+    /// - Returns: Bridge payload map, or `nil` when no serializer handles the type.
+    public static func serializeDaVinciCollector(_ collector: Any) -> [String: Any]? {
+        return davinciCollectorSerializerStore.all().lazy.compactMap { $0(collector) }.first
     }
 
     /// Registers or clears the resolver that exposes DaVinci collectors to other packages.

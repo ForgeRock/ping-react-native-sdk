@@ -18,10 +18,25 @@
 export {};
 
 type NativeFidoMock = {
+  registerDaVinciSerializer: jest.Mock;
   registerCredential: jest.Mock;
   authenticateCredential: jest.Mock;
   registerCredentialForJourney: jest.Mock;
   authenticateCredentialForJourney: jest.Mock;
+  registerCredentialForDaVinci?: jest.Mock;
+  authenticateCredentialForDaVinci?: jest.Mock;
+};
+
+type NativeDaVinciMock = {
+  configureDaVinci: jest.Mock;
+  start: jest.Mock;
+  next: jest.Mock;
+  getSession: jest.Mock;
+  refresh: jest.Mock;
+  revoke: jest.Mock;
+  userinfo: jest.Mock;
+  logout: jest.Mock;
+  dispose: jest.Mock;
 };
 
 type NativeJourneyMock = {
@@ -41,9 +56,11 @@ type NativeJourneyMock = {
 type JourneyClient = import('@ping-identity/rn-journey').JourneyClient;
 type JourneyNode = import('@ping-identity/rn-journey').JourneyNode;
 type FidoClient = import('@ping-identity/rn-fido').FidoClient;
+type DaVinciClient = import('@ping-identity/rn-davinci').DaVinciClient;
 
 function makeMock(overrides: Partial<NativeFidoMock> = {}): NativeFidoMock {
   return {
+    registerDaVinciSerializer: jest.fn(() => undefined),
     registerCredential: jest.fn(async () => ({
       credentialId: 'mock-credential-id',
     })),
@@ -129,6 +146,68 @@ async function loadJourneyAndFido(
   return { journey, fidoClient };
 }
 
+function makeDaVinciMock(
+  overrides: Partial<NativeDaVinciMock> = {},
+): NativeDaVinciMock {
+  return {
+    configureDaVinci: jest.fn(async () => 'davinci-id-fido-mock'),
+    start: jest.fn(async () => ({ type: 'ContinueNode', collectors: [] })),
+    next: jest.fn(async () => ({
+      type: 'SuccessNode',
+      session: { value: 'session-mock' },
+    })),
+    getSession: jest.fn(async () => null),
+    refresh: jest.fn(async () => null),
+    revoke: jest.fn(async () => true),
+    userinfo: jest.fn(async () => null),
+    logout: jest.fn(async () => undefined),
+    dispose: jest.fn(async () => undefined),
+    ...overrides,
+  };
+}
+
+async function loadDaVinciAndFido(
+  nativeDaVinciMock: NativeDaVinciMock,
+  nativeFidoMock: Required<NativeFidoMock>,
+): Promise<{
+  davinci: typeof import('@ping-identity/rn-davinci');
+  fidoClient: FidoClient;
+  daVinciClient: DaVinciClient;
+}> {
+  jest.resetModules();
+  jest.doMock('../../../packages/davinci/src/NativeRNPingDavinci', () => ({
+    __esModule: true,
+    default: nativeDaVinciMock,
+  }));
+  jest.doMock('../../../packages/fido/src/NativeRNPingFido', () => ({
+    __esModule: true,
+    getNativeModule: jest.fn(() => nativeFidoMock),
+    toNativeConfigOptions: jest.fn((options: unknown) => options),
+    toNativeRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeAuthenticationOptions: jest.fn((options: unknown) => options),
+    fromNativeRegistrationResult: jest.fn((result: unknown) => result),
+    fromNativeAuthenticationResult: jest.fn((result: unknown) => result),
+    toNativeJourneyRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeJourneyAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
+    fromNativeJourneyResult: jest.fn((result: unknown) => result),
+    toNativeDaVinciRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeDaVinciAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
+    fromNativeDaVinciResult: jest.fn((result: unknown) => result),
+  }));
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const davinci = require('@ping-identity/rn-davinci');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const fido = require('@ping-identity/rn-fido');
+  const fidoClient = fido.createFidoClient();
+  const daVinciClient = davinci.createDaVinciClient(VALID_DAVINCI_CONFIG);
+  return { davinci, fidoClient, daVinciClient };
+}
+
 function getTypeIndexMap(
   callbacks: Array<{ type?: string }>,
 ): Record<string, number> {
@@ -189,6 +268,18 @@ const VALID_JOURNEY_CONFIG = {
   serverUrl: 'https://openam.example.com/openam',
   realmPath: '/alpha',
   tree: 'RN-WebAuthn',
+};
+
+const VALID_DAVINCI_CONFIG = {
+  modules: {
+    oidc: {
+      discoveryEndpoint:
+        'https://auth.example.com/.well-known/openid-configuration',
+      clientId: 'davinci-client-id',
+      redirectUri: 'org.forgerock.demo://oauth2redirect',
+      scopes: ['openid', 'profile'],
+    },
+  },
 };
 
 describe('@ping-identity/rn-fido — integration', () => {
@@ -456,6 +547,159 @@ describe('@ping-identity/rn-fido — integration', () => {
         'journey-id-rn-webauthn',
         '',
         {},
+      );
+    });
+  });
+
+  describe('DaVinci ceremony orchestration', () => {
+    it('registerForDaVinci then next submits without the FIDO key', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      const result = await fidoClient.registerForDaVinci(daVinciClient, {
+        index: 0,
+      });
+
+      expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { index: 0 },
+        {
+          loggerId: undefined,
+          useFido2Client: undefined,
+        },
+      );
+      expect(result).toEqual({ attestationValue: { id: 'cred-1' } });
+
+      // Submission happens natively through the collector's payload() —
+      // the caller advances the flow with an empty collectors array.
+      await daVinciClient.next({ collectors: [] });
+
+      expect(nativeDaVinciMock.next).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { collectors: [] },
+      );
+    });
+
+    it('authenticateForDaVinci then next submits without the FIDO key', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      const result = await fidoClient.authenticateForDaVinci(daVinciClient, {
+        index: 0,
+      });
+
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { index: 0 },
+        {
+          loggerId: undefined,
+          useFido2Client: undefined,
+        },
+      );
+      expect(result).toEqual({ assertionValue: { id: 'cred-1' } });
+
+      await daVinciClient.next({ collectors: [] });
+
+      expect(nativeDaVinciMock.next).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { collectors: [] },
+      );
+    });
+
+    it('propagates FIDO_AUTHENTICATE_CANCELLED from authenticateForDaVinci', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_AUTHENTICATE_CANCELLED',
+            message: 'Cancelled by user',
+            type: 'cancelled',
+          };
+        }),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.authenticateForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_AUTHENTICATE_CANCELLED',
+        message: 'Cancelled by user',
+      });
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates FIDO_COLLECTOR_NOT_FOUND from registerForDaVinci', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_COLLECTOR_NOT_FOUND',
+            message:
+              'No active FIDO registration collector found for DaVinci davinci-id-fido-mock at index 0.',
+            type: 'state_error',
+          };
+        }),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.registerForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_COLLECTOR_NOT_FOUND',
+        type: 'state_error',
+      });
+      expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledTimes(
+        1,
       );
     });
   });

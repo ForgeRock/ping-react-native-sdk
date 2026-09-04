@@ -19,6 +19,7 @@ import type {
   DaVinciNormalizedCollector,
   DaVinciSubmitIssue,
 } from './types';
+import { integrationCollectorTypes } from '@ping-identity/rn-types';
 
 const manualCollectorTypes = new Set<string>([
   'TEXT',
@@ -79,21 +80,24 @@ export const flowCollectorTypes = new Set<string>([
 ]);
 
 /**
- * Collector type strings handled entirely by an external integration package
- * (e.g. `rn-external-idp`, `rn-fido`, `rn-device-client` / Protect).
+ * Collector type strings handled entirely by an external integration package.
  *
  * @remarks
- * Each integration ticket registers its own type strings here when the matching
- * native collector is added:
- * - IdP collector → `'SOCIAL_LOGIN_BUTTON'` (SDKS-5128)
- * - Protect collector → `'PROTECT'` (SDKS-5129)
- * - FIDO collectors → `'FIDO_REGISTRATION'` / `'FIDO_AUTHENTICATION'`
+ * Each integration registers its own type string when the matching native
+ * collector is added. The base DaVinci package only supplies the generic
+ * classification mechanism.
  *
  * @public
  */
-export const integrationRequiredCollectorTypes = new Set<
-  DaVinciCollector['type']
->(['SOCIAL_LOGIN_BUTTON', 'PROTECT']);
+export const integrationRequiredCollectorTypes = integrationCollectorTypes;
+
+/**
+ * Registers a collector type handled by an external integration package.
+ *
+ * @param type - Integration-owned collector type string.
+ * @returns Void.
+ * @public
+ */
 
 const textFieldKindTypes = new Set<string>(['TEXT', 'HIDDEN']);
 const passwordFieldKindTypes = new Set<string>(['PASSWORD', 'PASSWORD_VERIFY']);
@@ -146,7 +150,7 @@ const flowFieldKindTypes = new Set<string>([
  * @public
  */
 export function resolveExecutionMode(type: string): DaVinciExecutionMode {
-  if (integrationRequiredCollectorTypes.has(type as DaVinciCollector['type'])) {
+  if (integrationRequiredCollectorTypes.has(type)) {
     return 'integration_required';
   }
   if (manualCollectorTypes.has(type)) {
@@ -184,7 +188,7 @@ export function resolveExecutionMode(type: string): DaVinciExecutionMode {
  * @public
  */
 export function resolveFieldKind(type: string): DaVinciFieldKind {
-  if (integrationRequiredCollectorTypes.has(type as DaVinciCollector['type'])) {
+  if (integrationRequiredCollectorTypes.has(type)) {
     return 'integration';
   }
   if (textFieldKindTypes.has(type)) {
@@ -422,7 +426,7 @@ export function normalizeCollectors(
  * @param node - Current DaVinci node. Returns a `NO_ACTIVE_CONTINUE_NODE` issue when absent.
  * @param values - Form values keyed by collector key.
  * @param handledCollectorTypes - Collector types the app has already
- *   processed via native integration (e.g. IdP, FIDO, Protect). Matching
+ *   processed via native integration (e.g. IdP or FIDO). Matching
  *   `integration_required` collectors are excluded from submit issues so
  *   `canSubmit` reflects true readiness.
  * @param flowKey - Optional FlowCollector key to submit immediately.

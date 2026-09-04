@@ -27,8 +27,8 @@ import com.pingidentity.davinci.collector.SingleSelectCollector
 import com.pingidentity.davinci.collector.SubmitCollector
 import com.pingidentity.davinci.collector.TextCollector
 import com.pingidentity.davinci.plugin.Collector
-import com.pingidentity.idp.davinci.IdpCollector
 import com.pingidentity.logger.Logger
+import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.orchestrate.ContinueNode
 import com.pingidentity.orchestrate.ErrorNode
 import com.pingidentity.orchestrate.FailureNode
@@ -46,8 +46,6 @@ import kotlinx.serialization.json.jsonPrimitive
 internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
-    internal const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
-    internal const val PROTECT = "PROTECT"
     private const val QR_CODE = "QR_CODE"
 
     /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollInterval` fails to parse. */
@@ -185,9 +183,6 @@ internal object DaVinciNodeMapper {
                     ?: fieldJson["type"]?.jsonPrimitive?.content
                     ?: continue
 
-                // SOCIAL_LOGIN_BUTTON fields are always handled via IdpCollector — exclude them.
-                if (resolvedType == SOCIAL_LOGIN_BUTTON) continue
-
                 if (resolvedType == QR_CODE && hasRegisteredQrCode) continue
 
                 // A field is supported when the SDK instantiated a collector for its key.
@@ -219,7 +214,6 @@ internal object DaVinciNodeMapper {
         if (collector is QRCodeCollector) return mapQRCodeCollector(collector)
 
         val payload = when (collector) {
-            is IdpCollector -> mapIdpCollector(collector)
             is TextCollector -> mapTextCollector(collector)
             is PasswordCollector -> mapPasswordCollector(collector, node, logger)
             is SubmitCollector -> mapBaseCollector(collector)
@@ -234,48 +228,37 @@ internal object DaVinciNodeMapper {
             is ReadOnlyTextCollector -> mapReadOnlyTextCollector(collector)
             is PollingCollector -> mapPollingCollector(collector, logger)
             else -> {
-                when (resolvedFormFieldType(collector, node, logger)) {
-                    PROTECT -> linkedMapOf("key" to collector.id(), "type" to PROTECT)
-                    else -> {
-                        logWarning(
-                            logger,
-                            "Skipping unsupported collector type: ${collector::class.java.simpleName}",
-                            UnsupportedOperationException("Unsupported collector: ${collector::class.java.name}")
-                        )
-                        null
-                    }
+                // Try registered plugin serializers before generic server-type fallback.
+                val serialized = CoreRuntime.serializeDaVinciCollector(collector)
+                if (serialized != null) {
+                    val fieldKey = serialized["key"] as? String ?: return null
+                    return applyRawField(serialized, fieldKey, node, logger)
+                }
+                val resolvedType = resolvedFormFieldType(collector, node, logger)
+                if (resolvedType != null) {
+                    // No registered serializer handled this collector, so it falls back to the
+                    // generic {key, type} payload (top-level fields like `action` are dropped).
+                    // This is the exact failure mode diagnosed in SDKS-5302: an integration
+                    // collector type whose native serializer never registered.
+                    logWarning(
+                        logger,
+                        "No serializer registered for collector type=$resolvedType (key=${collector.id()}); " +
+                            "falling back to generic {key, type} payload",
+                        IllegalStateException("Unserialized collector type: $resolvedType")
+                    )
+                    linkedMapOf("key" to collector.id(), "type" to resolvedType)
+                } else {
+                    logWarning(
+                        logger,
+                        "Skipping unsupported collector type: ${collector::class.java.simpleName}",
+                        UnsupportedOperationException("Unsupported collector: ${collector::class.java.name}")
+                    )
+                    null
                 }
             }
         } ?: return null
-        val fieldKey = rawFieldKey(collector) ?: return null
+        val fieldKey = collector.id() ?: return null
         return applyRawField(payload, fieldKey, node, logger)
-    }
-
-    /**
-     * Returns the stable raw-field key for a collector.
-     *
-     * Most collectors use [Collector.id] which equals the server `key` field. Collectors that
-     * do not extend [FieldCollector] (e.g. [IdpCollector]) override with their own stable identifier.
-     * Add a new branch here for any future collector whose id() does not match its form field key.
-     */
-    private fun rawFieldKey(collector: Collector<*>): String? = when (collector) {
-        is IdpCollector -> collector.idpId
-        else -> collector.id()
-    }
-
-    private fun mapIdpCollector(collector: IdpCollector): MutableMap<String, Any?> {
-        val map = linkedMapOf<String, Any?>(
-            "key" to collector.idpId,
-            "type" to SOCIAL_LOGIN_BUTTON,
-            "label" to collector.label,
-            "idpId" to collector.idpId,
-            "idpType" to collector.idpType,
-            "idpEnabled" to collector.idpEnabled,
-        )
-        // link is a plain Java field — typed non-null in Kotlin but starts as null at the JVM level
-        // until init() runs. runCatching guards the UninitializedPropertyAccessException on test doubles.
-        runCatching { collector.link.toString() }.getOrNull()?.let { map["link"] = it }
-        return map
     }
 
     /**
@@ -411,14 +394,14 @@ internal object DaVinciNodeMapper {
      * type, by reading `inputType` (preferred) or `type` from the matching form field in
      * `node.input.form.components.fields[]`.
      *
-     * Used to detect collectors from optional SDK packages (e.g. ProtectCollector from
-     * PingOneProtect) without importing those packages. The field type is what the server sent,
-     * so this remains correct regardless of SDK renames or package restructuring.
+     * Used to detect collectors from optional SDK packages without importing those packages.
+     * The field type is what the server sent, so this remains correct regardless of SDK renames
+     * or package restructuring.
      *
      * @param collector Collector whose class was not matched by the primary `when` branches.
      * @param node Parent continue node providing form field context.
      * @param logger Optional Ping logger for non-fatal navigation warnings.
-     * @return The resolved field type string (e.g. `"PROTECT"`), or `null` if the field is absent.
+     * @return The resolved field type string, or `null` if the field is absent.
      */
     internal fun resolvedFormFieldType(
         collector: Collector<*>,

@@ -19,7 +19,26 @@
  * - dispose() cleans up the native instance
  */
 
+import type {
+  DaVinciConfig,
+  DaVinciNormalizedCollector,
+  DaVinciNode,
+} from '@ping-identity/rn-davinci';
+
 export {};
+
+type ContinueNode = Extract<DaVinciNode, { type: 'ContinueNode' }>;
+
+function asContinueNode(node: DaVinciNode): ContinueNode {
+  if (node.type !== 'ContinueNode') {
+    throw new Error(`Expected ContinueNode, received ${node.type}`);
+  }
+  return node;
+}
+
+function getCollectorValue(collector: DaVinciNormalizedCollector): unknown {
+  return 'value' in collector ? collector.value : undefined;
+}
 
 type NativeDaVinciMock = {
   configureDaVinci: jest.Mock;
@@ -83,8 +102,22 @@ async function loadDaVinci(nativeMock: NativeDaVinciMock) {
     __esModule: true,
     default: nativeMock,
   }));
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@ping-identity/rn-davinci');
+
+  // Plugin-owned collector types are normally registered when the corresponding
+  // integration package is initialized. Register them here because this test
+  // loads rn-davinci in isolation after every module reset.
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { registerIntegrationCollectorType } =
+    require('@ping-identity/rn-types') as {
+      registerIntegrationCollectorType: (type: string) => void;
+    };
+  registerIntegrationCollectorType('PROTECT');
+  registerIntegrationCollectorType('SOCIAL_LOGIN_BUTTON');
+  registerIntegrationCollectorType('FIDO2');
+
+  const module = require('@ping-identity/rn-davinci');
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  return module;
 }
 
 const VALID_CONFIG = {
@@ -147,7 +180,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
   describe('createDaVinciClient()', () => {
     it('throws when modules.oidc is missing', async () => {
       const mod = await loadDaVinci(makeMock());
-      expect(() => mod.createDaVinciClient({})).toThrow(
+      expect(() => mod.createDaVinciClient({} as DaVinciConfig)).toThrow(
         /modules\.oidc\.discoveryEndpoint/,
       );
     });
@@ -210,7 +243,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         'logoutUser',
         'dispose',
       ];
-      for (const m of methods) {
+      for (const m of methods as Array<keyof typeof client>) {
         expect(typeof client[m]).toBe('function');
       }
     });
@@ -228,7 +261,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       const mock = makeMock();
       const mod = await loadDaVinci(mock);
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       expect(mock.configureDaVinci).toHaveBeenCalledTimes(1);
       expect(node.type).toBe('ContinueNode');
       expect(Array.isArray(node.collectors)).toBe(true);
@@ -463,7 +496,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         executionMode: 'manual',
@@ -514,7 +547,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'PASSWORD',
@@ -607,7 +640,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'LABEL',
@@ -640,7 +673,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'SINGLE_SELECT',
@@ -705,7 +738,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         defaultCountryCode: 'US',
@@ -753,7 +786,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'DEVICE_REGISTRATION',
@@ -792,7 +825,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'DEVICE_AUTHENTICATION',
@@ -822,7 +855,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         key: 'protect.success',
@@ -941,9 +974,9 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
-      expect(collectors[0].value).toBe('true');
+      expect(getCollectorValue(collectors[0])).toBe('true');
       const plan = mod.buildNextInput(node, { 'protect.success': 'true' });
       expect(plan.input.collectors).toContainEqual({
         key: 'protect.success',
@@ -956,6 +989,112 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(mod.resolveExecutionMode('SOCIAL_LOGIN_BUTTON')).toBe(
         'integration_required',
       );
+    });
+
+    it('FIDO2 — ContinueNode exposes action-discriminated collector', async () => {
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+                publicKeyCredentialCreationOptions: {
+                  challenge: 'mock-challenge',
+                },
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors[0]).toMatchObject({
+        key: 'fido2.registration',
+        type: 'FIDO2',
+        action: 'REGISTER',
+        executionMode: 'integration_required',
+        requiresUserInput: false,
+        kind: 'integration',
+      });
+    });
+
+    it('FIDO2 — canSubmit is false without handledCollectorTypes (INTEGRATION_REQUIRED blocks)', async () => {
+      // FIDO2 is integration_required — without rn-fido running the ceremony,
+      // the issue is blocking and canSubmit must be false.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+              },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {});
+      expect(plan.canSubmit).toBe(false);
+      expect(plan.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'INTEGRATION_REQUIRED',
+          key: 'fido2.registration',
+        }),
+      );
+    });
+
+    it('FIDO2 — canSubmit is true when FIDO2 is in handledCollectorTypes', async () => {
+      // Simulates rn-fido having already run the passkey ceremony and passing
+      // 'FIDO2' as a handled type so buildNextInput does not block submission.
+      const mod = await loadDaVinci(
+        makeMock({
+          start: jest.fn(async () => ({
+            type: 'ContinueNode',
+            collectors: [
+              {
+                key: 'fido2.registration',
+                type: 'FIDO2',
+                action: 'REGISTER',
+                label: 'Register a passkey',
+                required: false,
+              },
+              {
+                key: 'submit',
+                type: 'SUBMIT_BUTTON',
+                label: 'Submit',
+                required: false,
+              },
+            ],
+          })),
+        }),
+      );
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = await client.start();
+      const plan = mod.buildNextInput(node, {}, new Set(['FIDO2']));
+      expect(plan.canSubmit).toBe(true);
+      expect(
+        plan.input.collectors.find(
+          (c: { key: string }) => c.key === 'fido2.registration',
+        ),
+      ).toBeUndefined();
     });
 
     it('unsupported collector — surfaces a non-blocking issue and excludes from payload', async () => {

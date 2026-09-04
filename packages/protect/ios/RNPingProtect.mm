@@ -34,15 +34,15 @@ RCT_EXPORT_MODULE()
                   options:(NSDictionary *)options
                    config:(NSDictionary *)config
                   resolve:(RCTPromiseResolveBlock)resolve
-                   reject:(RCTPromiseRejectBlock)rejecter
+                   reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] collectForDaVinci:davinciId options:options config:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] collectForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] collectForDaVinci:davinciId options:options config:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] collectForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
   });
 }
 
@@ -50,51 +50,51 @@ RCT_EXPORT_MODULE()
  Initializes the Protect SDK with the provided configuration.
  */
 - (void)initialize:(NSDictionary *)protectConfig
-            config:(NSDictionary *)config
+      clientConfig:(NSDictionary *)clientConfig
            resolve:(RCTPromiseResolveBlock)resolve
-            reject:(RCTPromiseRejectBlock)rejecter
+             reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] initialize:protectConfig config:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] initialize:protectConfig config:clientConfig resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] initialize:protectConfig config:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] initialize:protectConfig config:clientConfig resolve:resolve rejecter:reject];
   });
 }
 
 /**
  Pauses behavioral data collection.
  */
-- (void)pauseBehavioralData:(NSDictionary *)config
+- (void)pauseBehavioralData:(NSDictionary *)clientConfig
                     resolve:(RCTPromiseResolveBlock)resolve
-                     reject:(RCTPromiseRejectBlock)rejecter
+                      reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] pauseBehavioralData:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] pauseBehavioralData:clientConfig resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] pauseBehavioralData:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] pauseBehavioralData:clientConfig resolve:resolve rejecter:reject];
   });
 }
 
 /**
  Resumes behavioral data collection.
  */
-- (void)resumeBehavioralData:(NSDictionary *)config
+- (void)resumeBehavioralData:(NSDictionary *)clientConfig
                      resolve:(RCTPromiseResolveBlock)resolve
-                      reject:(RCTPromiseRejectBlock)rejecter
+                       reject:(RCTPromiseRejectBlock)reject
 {
   if ([NSThread isMainThread]) {
-    [[self swiftImpl] resumeBehavioralData:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] resumeBehavioralData:clientConfig resolve:resolve rejecter:reject];
     return;
   }
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    [[self swiftImpl] resumeBehavioralData:config resolve:resolve rejecter:rejecter];
+    [[self swiftImpl] resumeBehavioralData:clientConfig resolve:resolve rejecter:reject];
   });
 }
 

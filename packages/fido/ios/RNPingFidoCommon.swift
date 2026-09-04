@@ -8,8 +8,32 @@ import AuthenticationServices
 import Foundation
 import PingFido
 import PingJourneyPlugin
+import PingLogger
 import React
 import RNPingCore
+
+/// Thread-safe one-shot gate for process-wide registrations.
+///
+/// - Note: `@unchecked Sendable` because the `registered` flag is guarded by `NSLock`,
+///   so concurrent callers serialize and exactly one runs the action.
+private final class SerializerState: @unchecked Sendable {
+  private let lock = NSLock()
+  private var registered = false
+
+  func register(_ action: () -> Void) {
+    lock.lock()
+    defer { lock.unlock() }
+    guard !registered else { return }
+    registered = true
+    action()
+  }
+
+  func reset() {
+    lock.lock()
+    registered = false
+    lock.unlock()
+  }
+}
 
 /// Shared FIDO execution logic for React Native iOS bridges.
 @objcMembers
@@ -25,6 +49,87 @@ public class RNPingFidoCommon: NSObject {
     case authenticateCancelled = "FIDO_AUTHENTICATE_CANCELLED"
     case windowUnavailable = "FIDO_WINDOW_UNAVAILABLE"
     case callbackNotFound = "FIDO_CALLBACK_NOT_FOUND"
+    case collectorNotFound = "FIDO_COLLECTOR_NOT_FOUND"
+  }
+
+  /// Per-call FIDO runtime configuration parsed from the bridge payload.
+  private struct CallConfig {
+    let loggerId: String?
+  }
+
+  private static let fido2CollectorType = "FIDO2"
+  private static let serializerState = SerializerState()
+
+  /// Registers the FIDO2 collector serializer with CoreRuntime.
+  ///
+  /// The serializer emits the action-discriminated FIDO2 collector payload consumed by
+  /// `rn-davinci`'s node mapper. Options are pre-encoded through `JsonBridgeMapper` so
+  /// already-transformed base64 values survive the bridge untouched. Registration is
+  /// safe to call multiple times; subsequent calls are no-ops.
+  public static func registerDaVinciSerializer() {
+    serializerState.register {
+      CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
+        if let collector = collectorAny as? FidoRegistrationCollector {
+          return RNPingFidoCommon.serializeFidoCollector(
+            collector: collector,
+            action: FidoConstants.ACTION_REGISTER,
+            optionsKey: FidoConstants.FIELD_PUBLIC_KEY_CREDENTIAL_CREATION_OPTIONS,
+            options: collector.publicKeyCredentialCreationOptions
+          )
+        }
+        if let collector = collectorAny as? FidoAuthenticationCollector {
+          return RNPingFidoCommon.serializeFidoCollector(
+            collector: collector,
+            action: FidoConstants.ACTION_AUTHENTICATE,
+            optionsKey: FidoConstants.FIELD_PUBLIC_KEY_CREDENTIAL_REQUEST_OPTIONS,
+            options: collector.publicKeyCredentialRequestOptions
+          )
+        }
+        return nil
+      }
+    }
+  }
+
+  /// Resets the one-shot serializer registration guard.
+  ///
+  /// - Note: Test-only seam for hermetic unit tests; not part of the public API.
+  internal static func resetSerializerRegistrationForTesting() {
+    serializerState.reset()
+  }
+
+  /// Builds the bridge payload for a FIDO2 collector.
+  ///
+  /// - Parameters:
+  ///   - collector: Initialized native FIDO collector.
+  ///   - action: Ceremony action derived from the matched collector class.
+  ///   - optionsKey: Bridge payload key for the collector's WebAuthn options.
+  ///   - options: Transformed WebAuthn options; `[:]` when the collector was
+  ///     constructed without them (iOS `init` is non-throwing).
+  /// - Returns: Bridge payload map.
+  /// - Note: The `trigger` field is intentionally absent from this payload.
+  ///   TODO-PARITY (SDKS-5302): the iOS SDK's `AbstractFidoCollector` exposes no
+  ///   `trigger` property, unlike Android's base collector. The iOS SDK ships
+  ///   `trigger` in 2.2; add the field here when the dependency is upgraded.
+  private static func serializeFidoCollector(
+    collector: AbstractFidoCollector,
+    action: String,
+    optionsKey: String,
+    options: [String: Any]
+  ) -> [String: Any] {
+    var map: [String: Any] = [
+      "key": collector.key,
+      "type": fido2CollectorType,
+      "action": action,
+      "label": collector.label,
+      "required": collector.required
+    ]
+    if !options.isEmpty {
+      // TODO-PARITY (SDKS-5302): iOS emits standard padded base64 for option
+      // bytes while Android emits unpadded base64url (native SDK gap, R3). Do
+      // not normalise here; JS consumers must accept both flavours.
+      map[optionsKey] = JsonBridgeMapper.encodeJsonObject(options)
+    }
+    return map
   }
 
   /// Registers a new FIDO credential.
@@ -41,15 +146,18 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    executeFidoOperation(
-      options: options,
-      action: "registration",
-      methodErrorCode: .registerError,
-      handlers: handlers
-    ) { optionsMap, window, completion in
-      Fido.shared.register(options: optionsMap, window: window, completion: completion)
+    let callConfig = parseCallConfig(config)
+    Task { @MainActor in
+      let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      executeFidoOperation(
+        options: options,
+        action: "registration",
+        methodErrorCode: .registerError,
+        handlers: handlers
+      ) { optionsMap, window, completion in
+        Fido.shared.register(options: optionsMap, window: window, logger: logger, completion: completion)
+      }
     }
   }
 
@@ -67,15 +175,18 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    executeFidoOperation(
-      options: options,
-      action: "authentication",
-      methodErrorCode: .authenticateError,
-      handlers: handlers
-    ) { optionsMap, window, completion in
-      Fido.shared.authenticate(options: optionsMap, window: window, completion: completion)
+    let callConfig = parseCallConfig(config)
+    Task { @MainActor in
+      let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      executeFidoOperation(
+        options: options,
+        action: "authentication",
+        methodErrorCode: .authenticateError,
+        handlers: handlers
+      ) { optionsMap, window, completion in
+        Fido.shared.authenticate(options: optionsMap, window: window, logger: logger, completion: completion)
+      }
     }
   }
 
@@ -290,6 +401,184 @@ public class RNPingFidoCommon: NSObject {
     }
   }
 
+  /// Runs the native FIDO registration ceremony for an active DaVinci `FIDO2` registration collector.
+  ///
+  /// The attestation is stored on the native collector and reaches the server through
+  /// `collector.payload()` during `daVinci.next()`; the resolved payload is informational.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Ceremony options payload (index).
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolver: Promise resolver for the attestation payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public static func registerForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    _ = config
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    if davinciId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      handlers.reject(
+        GenericError(
+          type: .argumentError,
+          error: FidoErrorCode.collectorNotFound.rawValue,
+          message: "DaVinci id must not be empty for FIDO registration."
+        )
+      )
+      return
+    }
+
+    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
+      handlers.reject(
+        GenericError(
+          type: .fidoError,
+          error: FidoErrorCode.windowUnavailable.rawValue,
+          message: "No active application window is available for DaVinci FIDO registration."
+        )
+      )
+      return
+    }
+
+    let collectorIndex = parseCallbackIndex(options)
+
+    Task { @MainActor in
+      guard let collectors = await CoreRuntime.resolveDaVinciCollectors(davinciId) else {
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: FidoErrorCode.collectorNotFound.rawValue,
+            message: "No active DaVinci collectors found for id \(davinciId)."
+          )
+        )
+        return
+      }
+
+      let matching = collectors.compactMap { $0 as? FidoRegistrationCollector }
+      guard collectorIndex >= 0, collectorIndex < matching.count else {
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: FidoErrorCode.collectorNotFound.rawValue,
+            message: "No active FIDO registration collector found for DaVinci \(davinciId) at index \(collectorIndex)."
+          )
+        )
+        return
+      }
+
+      let result = await matching[collectorIndex].register(window: window)
+      switch result {
+      case .success(let payload):
+        handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
+      case .failure(let error):
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: FidoErrorCode.registerError.rawValue,
+            message: error.localizedDescription
+          ),
+          underlying: error as NSError
+        )
+      }
+    }
+  }
+
+  /// Runs the native FIDO authentication ceremony for an active DaVinci `FIDO2` authentication collector.
+  ///
+  /// The assertion is stored on the native collector and reaches the server through
+  /// `collector.payload()` during `daVinci.next()`; the resolved payload is informational.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Ceremony options payload (index).
+  ///   - config: Per-call runtime configuration payload.
+  ///   - resolver: Promise resolver for the assertion payload.
+  ///   - rejecter: Promise rejecter for errors.
+  @objc
+  @MainActor
+  public static func authenticateForDaVinci(
+    _ davinciId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    _ = config
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    if davinciId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      handlers.reject(
+        GenericError(
+          type: .argumentError,
+          error: FidoErrorCode.collectorNotFound.rawValue,
+          message: "DaVinci id must not be empty for FIDO authentication."
+        )
+      )
+      return
+    }
+
+    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
+      handlers.reject(
+        GenericError(
+          type: .fidoError,
+          error: FidoErrorCode.windowUnavailable.rawValue,
+          message: "No active application window is available for DaVinci FIDO authentication."
+        )
+      )
+      return
+    }
+
+    let collectorIndex = parseCallbackIndex(options)
+
+    Task { @MainActor in
+      guard let collectors = await CoreRuntime.resolveDaVinciCollectors(davinciId) else {
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: FidoErrorCode.collectorNotFound.rawValue,
+            message: "No active DaVinci collectors found for id \(davinciId)."
+          )
+        )
+        return
+      }
+
+      let matching = collectors.compactMap { $0 as? FidoAuthenticationCollector }
+      guard collectorIndex >= 0, collectorIndex < matching.count else {
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: FidoErrorCode.collectorNotFound.rawValue,
+            message: "No active FIDO authentication collector found for DaVinci \(davinciId) at index \(collectorIndex)."
+          )
+        )
+        return
+      }
+
+      let result = await matching[collectorIndex].authenticate(window: window)
+      switch result {
+      case .success(let payload):
+        handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
+      case .failure(let error):
+        let nsError = error as NSError
+        let code = isRecoverableFidoAuthenticationFailure(nsError)
+          ? FidoErrorCode.authenticateCancelled
+          : FidoErrorCode.authenticateError
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: code.rawValue,
+            message: error.localizedDescription
+          ),
+          underlying: nsError
+        )
+      }
+    }
+  }
+
   /// Resolves one registration callback from the active Journey callbacks exposed by core.
   ///
   /// - Parameters:
@@ -328,6 +617,30 @@ public class RNPingFidoCommon: NSObject {
       return nil
     }
     return matching[index]
+  }
+
+  /// Parses per-call bridge configuration from the React Native payload.
+  ///
+  /// - Parameter config: Raw bridge configuration dictionary.
+  /// - Returns: Trimmed call configuration values.
+  private static func parseCallConfig(_ config: NSDictionary) -> CallConfig {
+    let trimmed = (config["loggerId"] as? String)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return CallConfig(loggerId: (trimmed?.isEmpty == false) ? trimmed : nil)
+  }
+
+  /// Resolves a native logger from the shared Core logger registry.
+  ///
+  /// - Parameter loggerId: Logger handle identifier from JS.
+  /// - Returns: Native logger instance, or `nil` when missing/invalid.
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   `config.loggerId` forwarding contract.
+  static func resolveLoggerFromCore(_ loggerId: String?) async -> PingLogger.Logger? {
+    guard let loggerId, !loggerId.isEmpty else { return nil }
+    guard let handle = await CoreRuntime.loggerRegistry.resolve(loggerId) as? LoggerHandleContract else {
+      return nil
+    }
+    return handle.nativeLogger as? PingLogger.Logger
   }
 
   /// Parses callback index from Journey callback execution options.

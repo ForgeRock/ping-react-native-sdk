@@ -5,7 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import { noopLogger } from '@ping-identity/rn-types';
+import {
+  noopLogger,
+  registerIntegrationCollectorType,
+} from '@ping-identity/rn-types';
 import type { DaVinciInstance, LoggerInstance } from '@ping-identity/rn-types';
 import {
   getNativeModule,
@@ -52,6 +55,7 @@ async function withLogging<T>(
  * @public
  */
 export async function startProtect(config: ProtectConfig = {}): Promise<void> {
+  registerIntegrationCollectorType('PROTECT');
   const logger = config.logger ?? noopLogger;
   const loggerId = resolveLoggerId(config.logger);
   logger.debug(

@@ -35,6 +35,7 @@ import { JourneyProvider } from '@ping-identity/rn-journey';
 import { OidcProvider } from '@ping-identity/rn-oidc';
 import { DaVinciProvider } from '@ping-identity/rn-davinci';
 import { sampleAppClientProfiles, sampleDaVinciConfig } from './src/clients';
+import { startProtect } from '@ping-identity/rn-protect';
 import { configureBrowser } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -144,6 +145,7 @@ export default function App() {
   const [selectedOidcProfileKey, setSelectedOidcProfileKey] = useState<
     string | null
   >(null);
+  const [protectReady, setProtectReady] = useState(false);
 
   const journeyProfiles = useMemo(
     () =>
@@ -177,6 +179,15 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
+    void startProtect({ logger: logger({ level: 'debug' }) }).then(
+      () => {
+        if (isMounted) setProtectReady(true);
+      },
+      error => {
+        console.warn('Failed to initialize Protect', error);
+        if (isMounted) setProtectReady(true);
+      },
+    );
     const textComponent = Text as unknown as ComponentWithDefaultStyle;
     const textDefaults = textComponent.defaultProps ?? {};
     textComponent.defaultProps = {
@@ -250,6 +261,10 @@ export default function App() {
       isMounted = false;
     };
   }, [browserLogger, selectedJourneyProfile]);
+
+  if (!protectReady) {
+    return <Text>Initializing Protect...</Text>;
+  }
 
   if (initError) {
     // Fail fast with a clear startup error instead of crashing on first journey API call.

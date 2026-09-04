@@ -351,22 +351,20 @@ export type DeviceAuthenticationCollector = BaseCollector & {
 };
 
 /**
- * Risk/Protect collector — silently collects device and behavioral signals.
+ * Collector handled by an external integration package.
  *
  * @remarks
- * Corresponds to the native `PROTECT` server type. Has no `label`, `required`, or `value`
- * fields — `ProtectCollector` does not extend `FieldCollector` in the native SDK.
- *
- * Handled entirely by `@ping-identity/rn-protect` — appears as `executionMode:
- * 'integration_required'` and `kind: 'integration'` in normalized collectors.
- * Call `collectProtect(davinciClient)` from `@ping-identity/rn-protect` before `daVinci.next({})`.
+ * Integration collectors have a stable key and type but do not expose a common
+ * value shape. The owning package performs the native operation before `next()`.
  *
  * @public
  */
-export type ProtectCollector = {
+export type IntegrationCollector = {
   /** Unique collector key identifying this field in the form. */
   key: string;
-  type: 'PROTECT';
+  /** Integration-defined collector type string. */
+  type: string;
+  /** Raw server-side field JSON when available. */
   raw?: Record<string, unknown>;
 };
 
@@ -437,46 +435,6 @@ export type ReadOnlyTextCollector = {
    * @remarks
    * Populated by the native mapper.
    */
-  raw?: Record<string, unknown>;
-};
-
-/**
- * Social login / external IdP collector.
- *
- * @remarks
- * Corresponds to the native `SOCIAL_LOGIN_BUTTON` server type.
- *
- * The `key` field is set to `idpId` (the stable server-assigned identifier) rather than the
- * native collector's own `.id` property, which returns a new UUID on every access.
- *
- * Handled entirely by `@ping-identity/rn-external-idp` — appears as `executionMode:
- * 'integration_required'` and `kind: 'integration'` in normalized collectors.
- *
- * @public
- */
-export type IdpCollector = {
-  /** Stable server-assigned IdP identifier, used as the form field key. */
-  key: string;
-  type: 'SOCIAL_LOGIN_BUTTON';
-  /** Human-readable button label (e.g. 'Sign in with Google'). */
-  label: string;
-  /** Server IdP identifier (same as `key`). */
-  idpId: string;
-  /**
-   * Provider type string.
-   *
-   * @remarks
-   * Verified against iOS `DavinciPlugin/Constants.swift` and Android
-   * `IdpCollector` bytecode — the SDK registers `'GOOGLE'`, `'FACEBOOK'`,
-   * and `'APPLE'` (uppercase). `'APPLE'` is iOS-only; Android has no native
-   * Apple sign-in handler. The union is left open (`| string`) to accommodate
-   * future providers without a breaking change.
-   */
-  idpType: 'GOOGLE' | 'FACEBOOK' | 'APPLE' | string;
-  /** Whether the IdP is currently enabled. */
-  idpEnabled: boolean;
-  /** IdP authentication URL (informational — not used directly by JS). */
-  link?: string;
   raw?: Record<string, unknown>;
 };
 
@@ -569,10 +527,9 @@ export type DaVinciCollector =
   | PhoneNumberCollector
   | DeviceRegistrationCollector
   | DeviceAuthenticationCollector
-  | ProtectCollector
+  | IntegrationCollector
   | BooleanCollector
   | ReadOnlyTextCollector
-  | IdpCollector
   | PollingCollector
   | QRCodeCollector;
 

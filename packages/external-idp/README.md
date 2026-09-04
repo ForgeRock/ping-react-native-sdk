@@ -365,13 +365,38 @@ if (form.canSubmit) {
 
 ## DaVinci usage
 
-DaVinci flows represent each social login option as an `IdpCollector` with `type: 'SOCIAL_LOGIN_BUTTON'`. Unlike Journey, there is no `SelectIdpCallback` — each provider has its own button. The token flows through `daVinci.next()` via a `RequestInterceptor` inside the native SDK; `authorizeForDaVinci` returns `void`, not a token.
+DaVinci flows represent each social login option as an `IdpCollector` with `type: socialLoginCollectorType` (`'SOCIAL_LOGIN_BUTTON'`). Unlike Journey, there is no `SelectIdpCallback` — each provider has its own button. The token flows through `daVinci.next()` via a `RequestInterceptor` inside the native SDK; `authorizeForDaVinci` returns `void`, not a token.
 
 Install the DaVinci module alongside this package:
 
 ```bash
 yarn add @ping-identity/rn-davinci
 ```
+
+Create the External IdP client before the first DaVinci operation. The client registers
+`socialLoginCollectorType` with the generic form planner, and the native External IdP
+module must be linked and initialized before DaVinci maps the first node so its serializer
+can provide the stable `idpId` key and provider metadata.
+
+```ts
+const externalIdp = createExternalIdpClient({
+  redirectUri: 'com.example.app://callback',
+});
+
+const daVinci = createDaVinciClient({
+  modules: {
+    oidc: {
+      /* ... */
+    },
+  },
+});
+
+await daVinci.start();
+```
+
+Do not start the DaVinci flow before the External IdP integration is initialized. If the
+native External IdP package is not linked, social collectors may be surfaced only through
+the generic unsupported/integration path and cannot be authorized.
 
 ### Handle `IdpCollector` — authorize with an external provider
 
@@ -394,10 +419,11 @@ Pass `handledCollectorTypes` so IDP collectors are excluded from blocking submit
 
 ```ts
 import { useDaVinci, useDaVinciForm } from '@ping-identity/rn-davinci';
+import { socialLoginCollectorType } from '@ping-identity/rn-external-idp';
 
 const { node, next } = useDaVinci(daVinciClient);
 const form = useDaVinciForm(node, {
-  handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']),
+  handledCollectorTypes: new Set([socialLoginCollectorType]),
 });
 
 // When the user taps a social login button:

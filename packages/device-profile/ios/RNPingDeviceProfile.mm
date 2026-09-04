@@ -10,7 +10,11 @@
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/RCTTurboModule.h>
 
+#if __has_include("RNPingDeviceProfile-Swift.h")
 #import "RNPingDeviceProfile-Swift.h"
+#else
+#import <RNPingDeviceProfile/RNPingDeviceProfile-Swift.h>
+#endif
 
 @implementation RNPingDeviceProfile
 RCT_EXPORT_MODULE()

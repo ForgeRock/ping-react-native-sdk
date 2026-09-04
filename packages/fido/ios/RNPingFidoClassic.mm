@@ -46,6 +46,21 @@ RCT_EXPORT_MODULE(RNPingFidoClassic)
   });
 }
 
+#pragma mark - DaVinci Serializer Registration
+
+/**
+ * Registers the DaVinci FIDO2 collector serializer with CoreRuntime.
+ *
+ * Called from the JS FIDO client factory at client creation. Synchronous and
+ * thread-safe by design: registration is an idempotent in-memory registry
+ * append, so no main-thread dispatch is used — a dispatch would return before
+ * registration completes and reintroduce the timing race this method closes.
+ */
+RCT_EXPORT_METHOD(registerDaVinciSerializer)
+{
+  [RNPingFidoCommon registerDaVinciSerializer];
+}
+
 #pragma mark - FIDO Operations
 
 /**
@@ -99,6 +114,34 @@ RCT_EXPORT_METHOD(authenticateCredentialForJourney:(NSString *)journeyId
 {
   [self withSwiftImpl:^(RNPingFidoImpl *impl) {
     [impl authenticateForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+  }];
+}
+
+/**
+ * Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+ */
+RCT_EXPORT_METHOD(registerCredentialForDaVinci:(NSString *)davinciId
+                  options:(NSDictionary *)options
+                  config:(NSDictionary *)config
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl registerForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
+  }];
+}
+
+/**
+ * Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+ */
+RCT_EXPORT_METHOD(authenticateCredentialForDaVinci:(NSString *)davinciId
+                  options:(NSDictionary *)options
+                  config:(NSDictionary *)config
+                  resolve:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingFidoImpl *impl) {
+    [impl authenticateForDaVinci:davinciId options:options config:config resolve:resolve rejecter:reject];
   }];
 }
 

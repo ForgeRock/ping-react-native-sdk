@@ -18,6 +18,7 @@ public final class RNPingExternalIdpImpl: NSObject, Sendable {
   /// Creates a singleton bridge implementation instance.
   @objc private override init() {
     super.init()
+    RNPingExternalIdpCommon.registerDaVinciSerializer()
   }
 
   /// Launches the external IdP authorization flow for an active Journey `IdpCallback`.

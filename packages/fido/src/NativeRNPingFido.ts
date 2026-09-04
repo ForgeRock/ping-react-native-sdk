@@ -10,6 +10,9 @@ import type {
   FidoClientConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
+  FidoDaVinciAuthenticationOptions,
+  FidoDaVinciRegistrationOptions,
+  FidoDaVinciResult,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
@@ -75,6 +78,48 @@ export interface Spec extends TurboModule {
     options: Object,
     config: Object,
   ): Promise<Object>;
+
+  /**
+   * Runs the native FIDO registration ceremony for an active DaVinci FIDO2
+   * registration collector resolved from a DaVinci instance id.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Registration ceremony options.
+   * @param config Per-client FIDO runtime configuration payload.
+   * @returns A promise that resolves to the WebAuthn attestation payload.
+   */
+  registerCredentialForDaVinci(
+    davinciId: string,
+    options: Object,
+    config: Object,
+  ): Promise<Object>;
+
+  /**
+   * Runs the native FIDO authentication ceremony for an active DaVinci FIDO2
+   * authentication collector resolved from a DaVinci instance id.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Authentication ceremony options.
+   * @param config Per-client FIDO runtime configuration payload.
+   * @returns A promise that resolves to the WebAuthn assertion payload.
+   */
+  authenticateCredentialForDaVinci(
+    davinciId: string,
+    options: Object,
+    config: Object,
+  ): Promise<Object>;
+
+  /**
+   * Registers the DaVinci FIDO2 collector serializer on the native side.
+   *
+   * @remarks
+   * Idempotent: repeat calls are no-ops once registered. Internal activation
+   * method invoked by the FIDO client factory; not part of the public API.
+   * Synchronous by design: serializer registration is an in-memory registry
+   * append with no I/O, so no promise round-trip is needed and the factory
+   * call completes the registration within client creation itself.
+   */
+  registerDaVinciSerializer(): void;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
@@ -189,4 +234,29 @@ export function toNativeJourneyAuthenticationOptions(
  */
 export function fromNativeJourneyResult(result: object): FidoJourneyResult {
   return result as unknown as FidoJourneyResult;
+}
+
+/**
+ * Casts DaVinci registration options to a codegen-compatible object.
+ */
+export function toNativeDaVinciRegistrationOptions(
+  options: FidoDaVinciRegistrationOptions,
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts DaVinci authentication options to a codegen-compatible object.
+ */
+export function toNativeDaVinciAuthenticationOptions(
+  options: FidoDaVinciAuthenticationOptions,
+): Record<string, unknown> {
+  return options as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts the native payload to a DaVinci ceremony result type.
+ */
+export function fromNativeDaVinciResult(result: object): FidoDaVinciResult {
+  return result as unknown as FidoDaVinciResult;
 }

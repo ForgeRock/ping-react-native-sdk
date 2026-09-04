@@ -11,5 +11,5 @@ export {
   pauseBehavioralData,
   resumeBehavioralData,
 } from './protect';
-export { ProtectError } from './types';
+export { ProtectError, protectCollectorType } from './types';
 export type { ProtectConfig, ProtectErrorCode } from './types';
