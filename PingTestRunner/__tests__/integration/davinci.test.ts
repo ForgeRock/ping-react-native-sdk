@@ -238,7 +238,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(Array.isArray(node.collectors)).toBe(true);
     });
 
-    it('forwards an omitted par value as undefined', async () => {
+    it('omits par from the configure payload when not provided', async () => {
       const mock = makeMock();
       const mod = await loadDaVinci(mock);
       const client = mod.createDaVinciClient({
@@ -255,9 +255,8 @@ describe('@ping-identity/rn-davinci — integration', () => {
 
       await client.start();
 
-      expect(mock.configureDaVinci).toHaveBeenCalledWith(
-        expect.objectContaining({ par: undefined }),
-      );
+      const payload = mock.configureDaVinci.mock.calls[0][0];
+      expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
     });
 
     it('start() does not reconfigure on subsequent calls', async () => {

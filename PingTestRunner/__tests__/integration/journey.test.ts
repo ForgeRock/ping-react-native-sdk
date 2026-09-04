@@ -184,7 +184,7 @@ describe('@ping-identity/rn-journey — integration', () => {
       );
     });
 
-    it('forwards an omitted par value as undefined', async () => {
+    it('omits par from the configure payload when not provided', async () => {
       const mock = makeMock();
       const mod = await loadJourney(mock);
       const client = mod.createJourneyClient({
@@ -202,9 +202,8 @@ describe('@ping-identity/rn-journey — integration', () => {
 
       await client.init();
 
-      expect(mock.configureJourney).toHaveBeenCalledWith(
-        expect.objectContaining({ par: undefined }),
-      );
+      const payload = mock.configureJourney.mock.calls[0][0];
+      expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
     });
 
     it('start() returns a ContinueNode with callbacks array', async () => {
