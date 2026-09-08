@@ -17,6 +17,26 @@ import PingOneProtect
 
 /// Builds native DaVinci workflow instances from parsed JS payloads.
 final class DaVinciClientFactory {
+  /// Resolved OIDC configuration used to construct the native OIDC module.
+  private struct ResolvedOidcConfig: Sendable {
+    let discoveryEndpoint: String
+    let clientId: String
+    let redirectUri: String
+    let par: Bool?
+    let scopes: [String]
+    let storageId: String?
+    let signOutRedirectUri: String?
+    let loginHint: String?
+    let nonce: String?
+    let state: String?
+    let prompt: String?
+    let display: String?
+    let uiLocales: String?
+    let acrValues: String?
+    let refreshThreshold: Int64?
+    let additionalParameters: [String: String]
+  }
+
   /// Builds a DaVinci workflow from parsed configuration.
   ///
   /// - Parameter payload: Parsed DaVinci payload.
@@ -24,7 +44,8 @@ final class DaVinciClientFactory {
   /// - Throws: `DaVinciBridgeError.argument` when shared registries cannot resolve handles.
   func build(_ payload: DaVinciClientPayload) async throws -> DaVinci {
     let resolvedLogger = await resolveLoggerFromCore(payload.loggerId)
-    let oidcStorage = try await Self.buildOidcStorageDelegate(payload.storageId)
+    let resolvedOidcConfig = resolveOidcConfig(payload)
+    let oidcStorage = try await Self.buildOidcStorageDelegate(resolvedOidcConfig.storageId)
 
     return DaVinci.createDaVinci { config in
       if let resolvedLogger {
@@ -35,42 +56,45 @@ final class DaVinciClientFactory {
       }
 
       config.module(PingDavinci.OidcModule.config) { oidcConfig in
-        oidcConfig.discoveryEndpoint = payload.discoveryEndpoint
-        oidcConfig.clientId = payload.clientId
-        oidcConfig.redirectUri = payload.redirectUri
-        oidcConfig.scopes = Set(payload.scopes)
+        oidcConfig.discoveryEndpoint = resolvedOidcConfig.discoveryEndpoint
+        oidcConfig.clientId = resolvedOidcConfig.clientId
+        oidcConfig.redirectUri = resolvedOidcConfig.redirectUri
+        if let par = resolvedOidcConfig.par {
+          oidcConfig.par = par
+        }
+        oidcConfig.scopes = Set(resolvedOidcConfig.scopes)
 
-        if let loginHint = payload.loginHint {
+        if let loginHint = resolvedOidcConfig.loginHint {
           oidcConfig.loginHint = loginHint
         }
-        if let nonce = payload.nonce {
+        if let nonce = resolvedOidcConfig.nonce {
           oidcConfig.nonce = nonce
         }
-        if let state = payload.state {
+        if let state = resolvedOidcConfig.state {
           oidcConfig.state = state
         }
-        if let prompt = payload.prompt {
+        if let prompt = resolvedOidcConfig.prompt {
           oidcConfig.prompt = prompt
         }
-        if let display = payload.display {
+        if let display = resolvedOidcConfig.display {
           oidcConfig.display = display
         }
-        if let uiLocales = payload.uiLocales {
+        if let uiLocales = resolvedOidcConfig.uiLocales {
           oidcConfig.uiLocales = uiLocales
         }
-        if let acrValues = payload.acrValues {
+        if let acrValues = resolvedOidcConfig.acrValues {
           oidcConfig.acrValues = acrValues
         }
-        if let refreshThreshold = payload.refreshThreshold {
+        if let refreshThreshold = resolvedOidcConfig.refreshThreshold {
           oidcConfig.refreshThreshold = refreshThreshold
         }
-        if !payload.additionalParameters.isEmpty {
-          oidcConfig.additionalParameters = payload.additionalParameters
+        if !resolvedOidcConfig.additionalParameters.isEmpty {
+          oidcConfig.additionalParameters = resolvedOidcConfig.additionalParameters
         }
         if let oidcStorage {
           oidcConfig.storage = oidcStorage
         }
-        if payload.signOutRedirectUri != nil {
+        if resolvedOidcConfig.signOutRedirectUri != nil {
           // TODO-SDK-PARITY: OidcClientConfig currently does not expose
           // `signOutRedirectUri` on iOS. Android supports this field.
         }
@@ -95,6 +119,32 @@ final class DaVinciClientFactory {
       }
       #endif
     }
+  }
+
+  /// Resolves the direct OIDC configuration for native module construction.
+  ///
+  /// - Parameter payload: Parsed DaVinci payload.
+  /// - Returns: Resolved DaVinci OIDC configuration.
+  private func resolveOidcConfig(_ payload: DaVinciClientPayload) -> ResolvedOidcConfig {
+    let oidc = payload.oidc
+    return ResolvedOidcConfig(
+      discoveryEndpoint: oidc.discoveryEndpoint,
+      clientId: oidc.clientId,
+      redirectUri: oidc.redirectUri,
+      par: oidc.par,
+      scopes: oidc.scopes,
+      storageId: oidc.storageId,
+      signOutRedirectUri: oidc.signOutRedirectUri,
+      loginHint: oidc.loginHint,
+      nonce: oidc.nonce,
+      state: oidc.state,
+      prompt: oidc.prompt,
+      display: oidc.display,
+      uiLocales: oidc.uiLocales,
+      acrValues: oidc.acrValues,
+      refreshThreshold: oidc.refreshThreshold,
+      additionalParameters: oidc.additionalParameters
+    )
   }
 
   /// Resolve a native logger from the shared Core logger registry.

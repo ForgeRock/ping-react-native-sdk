@@ -21,8 +21,10 @@ export type NativeOidcClientConfig = {
     endSessionEndpoint?: string;
     pingEndIdpSessionEndpoint?: string;
     revocationEndpoint?: string;
+    pushedAuthorizationRequestEndpoint?: string;
   };
   redirectUri: string;
+  par?: boolean;
   scopes: string[];
   /**
    * Storage configuration id resolved from the Storage module.

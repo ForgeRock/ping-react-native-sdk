@@ -16,8 +16,10 @@ import {
  * Serialised native DaVinci configuration payload.
  *
  * @remarks
- * All OIDC fields are flat (no nesting). Passed to `configureDaVinci` after
- * JS validation and storage/logger handle resolution.
+ * The JavaScript bridge payload remains flat (no nesting) and is passed to
+ * `configureDaVinci` after JS validation and storage/logger handle resolution.
+ * Native parsers may group OIDC values internally without changing this wire
+ * shape.
  *
  * @internal
  */
@@ -44,6 +46,8 @@ export type NativeDaVinciConfig = {
   prompt?: string;
   /** Display parameter for the authorization request. */
   display?: string;
+  /** Whether to use the native PAR flow from the shared OIDC contract. */
+  par?: boolean;
   /** Space-separated preferred UI locales. */
   uiLocales?: string;
   /** Authentication context class reference values. */

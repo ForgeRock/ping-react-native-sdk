@@ -8,6 +8,7 @@
 package com.pingidentity.rnjourney
 
 import com.facebook.react.bridge.ReadableMap
+import com.pingidentity.rncore.utils.readBoolean
 import com.pingidentity.rncore.utils.readStringMap
 import com.pingidentity.rncore.utils.readStringArray
 import com.pingidentity.rncore.utils.requireString
@@ -44,6 +45,8 @@ internal data class JourneyOidcPayload(
     val redirectUri: String?,
     /** Optional OIDC scopes requested for token exchanges. */
     val scopes: List<String>,
+    /** Optional OIDC PAR enablement flag. */
+    val par: Boolean?,
     /** Optional OpenID endpoint override settings. */
     val openId: JourneyOpenIdPayload?,
     /** Optional ACR values passed to OIDC authorization. */
@@ -81,7 +84,8 @@ internal data class JourneyOpenIdPayload(
     val userinfoEndpoint: String,
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
-    val revocationEndpoint: String?
+    val revocationEndpoint: String?,
+    val pushedAuthorizationRequestEndpoint: String?
 )
 
 /**
@@ -109,6 +113,7 @@ internal object JourneyConfigParser {
         }
         val redirectUri = if (config.hasKey("redirectUri")) config.getString("redirectUri") else null
         val scopes = readStringArray(config.getArray("scopes"))
+        val par = readBoolean(config, "par")
         val openId = parseOpenId(config)
         val acrValues = if (config.hasKey("acrValues")) config.getString("acrValues") else null
         val signOutRedirectUri = if (config.hasKey("signOutRedirectUri")) {
@@ -177,6 +182,7 @@ internal object JourneyConfigParser {
                 discoveryEndpoint = discoveryEndpoint,
                 redirectUri = redirectUri,
                 scopes = scopes,
+                par = par,
                 openId = openId,
                 acrValues = acrValues,
                 signOutRedirectUri = signOutRedirectUri,
@@ -233,6 +239,11 @@ internal object JourneyConfigParser {
             },
             revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
                 openIdMap.getString("revocationEndpoint")
+            } else {
+                null
+            },
+            pushedAuthorizationRequestEndpoint = if (openIdMap.hasKey("pushedAuthorizationRequestEndpoint")) {
+                openIdMap.getString("pushedAuthorizationRequestEndpoint")
             } else {
                 null
             }

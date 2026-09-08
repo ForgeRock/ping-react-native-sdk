@@ -27,6 +27,7 @@ final class OidcConfigParserTests: XCTestCase {
       "loginHint": "user@example.com",
       "display": "page",
       "prompt": "login",
+      "par": true,
       "additionalParameters": ["foo": "bar"],
       "openId": [
         "authorizationEndpoint": "https://example.com/oauth2/authorize",
@@ -57,6 +58,7 @@ final class OidcConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.loginHint, "user@example.com")
     XCTAssertEqual(payload.display, "page")
     XCTAssertEqual(payload.prompt, "login")
+    XCTAssertEqual(payload.par, true)
     XCTAssertEqual(payload.additionalParameters, ["foo": "bar"])
     XCTAssertEqual(payload.browserType, "authSession")
     XCTAssertEqual(payload.browserMode, "login")
@@ -64,6 +66,19 @@ final class OidcConfigParserTests: XCTestCase {
     XCTAssertEqual(payload.openId?.tokenEndpoint, "https://example.com/oauth2/token")
     XCTAssertEqual(payload.openId?.userinfoEndpoint, "https://example.com/oauth2/userinfo")
     XCTAssertEqual(payload.openId?.endSessionEndpoint, "https://example.com/oauth2/logout")
+  }
+
+  func testParseClientConfigOmitsParWhenNotProvided() throws {
+    let config: NSDictionary = [
+      "clientId": "client-id",
+      "discoveryEndpoint": "https://example.com/.well-known/openid-configuration",
+      "redirectUri": "com.example.app://callback",
+      "scopes": ["openid"]
+    ]
+
+    let payload = try OidcConfigParser.parseClientConfig(config)
+
+    XCTAssertNil(payload.par)
   }
 
   func testParseClientConfigRequiresDiscoveryOrOpenId() {

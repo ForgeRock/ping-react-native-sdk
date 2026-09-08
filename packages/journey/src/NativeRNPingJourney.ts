@@ -87,6 +87,8 @@ export type NativeJourneyConfig = {
   discoveryEndpoint?: string;
   /** Optional OIDC redirect URI. */
   redirectUri?: string;
+  /** Whether to use the native PAR flow from the shared OIDC contract. */
+  par?: boolean;
   /** Optional OIDC scopes. */
   scopes?: string[];
   /** Optional OpenID endpoint override. */
@@ -103,6 +105,8 @@ export type NativeJourneyConfig = {
     pingEndIdpSessionEndpoint?: string;
     /** Optional token revocation endpoint URL. */
     revocationEndpoint?: string;
+    /** Optional Pushed Authorization Request endpoint URL. */
+    pushedAuthorizationRequestEndpoint?: string;
   };
   /** Optional ACR values. */
   acrValues?: string;

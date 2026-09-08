@@ -235,8 +235,11 @@ describe('Journey JS API', () => {
             authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
             tokenEndpoint: 'https://example.com/am/oauth2/token',
             userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
+            pushedAuthorizationRequestEndpoint:
+              'https://example.com/am/oauth2/par',
           },
           scopes: ['openid', 'profile'],
+          par: true,
           acrValues: 'loa-2',
           signOutRedirectUri: 'com.example.app://signed-out',
           state: 'state-123',
@@ -263,8 +266,11 @@ describe('Journey JS API', () => {
           authorizationEndpoint: 'https://example.com/am/oauth2/authorize',
           tokenEndpoint: 'https://example.com/am/oauth2/token',
           userinfoEndpoint: 'https://example.com/am/oauth2/userinfo',
+          pushedAuthorizationRequestEndpoint:
+            'https://example.com/am/oauth2/par',
         },
         scopes: ['openid', 'profile'],
+        par: true,
         acrValues: 'loa-2',
         signOutRedirectUri: 'com.example.app://signed-out',
         state: 'state-123',
@@ -279,6 +285,29 @@ describe('Journey JS API', () => {
         },
       }),
     );
+  });
+
+  it('omits par when it is not provided in OIDC config', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+
+    const client = createJourneyClient({
+      serverUrl: 'https://example.com',
+      modules: {
+        oidc: {
+          clientId: 'rn-client',
+          discoveryEndpoint:
+            'https://example.com/am/oauth2/.well-known/openid-configuration',
+          redirectUri: 'com.example.app://oauth2redirect',
+          scopes: ['openid'],
+        },
+      },
+    });
+
+    await client.init();
+
+    const payload = native.configureJourney.mock.calls[0][0];
+    expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
   });
 
   it('passes oidc storage id from nested OIDC config', async () => {

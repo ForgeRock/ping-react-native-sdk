@@ -50,6 +50,7 @@ class OidcConfigParserTest {
       putString("loginHint", "user@example.com")
       putString("display", "page")
       putString("prompt", "login")
+      putBoolean("par", true)
       putMap("additionalParameters", additional)
       putMap("openId", openId)
     }
@@ -71,6 +72,7 @@ class OidcConfigParserTest {
     assertEquals("user@example.com", payload.loginHint)
     assertEquals("page", payload.display)
     assertEquals("login", payload.prompt)
+    assertEquals(true, payload.par)
     assertEquals(mapOf("foo" to "bar", "baz" to "qux"), payload.additionalParameters)
     assertNotNull(payload.openId)
     assertEquals("https://example.com/oauth2/authorize", payload.openId?.authorizationEndpoint)
@@ -105,6 +107,7 @@ class OidcConfigParserTest {
     assertNull(payload.loginHint)
     assertNull(payload.display)
     assertNull(payload.prompt)
+    assertNull(payload.par)
     assertEquals(emptyMap<String, String>(), payload.additionalParameters)
     assertNull(payload.openId)
   }
