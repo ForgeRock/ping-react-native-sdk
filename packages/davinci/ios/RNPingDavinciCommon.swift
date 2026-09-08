@@ -103,6 +103,17 @@ public final class RNPingDavinciCommon: NSObject {
   }
 
 #if DEBUG
+  /// Test-only seam awaiting full completion of shared-state cleanup.
+  ///
+  /// - Note: `cleanup()` is fire-and-forget (its `@objc` signature must stay
+  ///   synchronous for the RN bridge invalidation lifecycle), so tests that call it
+  ///   from `setUp`/`tearDown` without awaiting can race the next test's
+  ///   `_setContinueNodeForTesting` write against this test's still-pending
+  ///   `stateStore.removeAll()`. Await this instead in test lifecycle methods.
+  static func _cleanupForTesting() async {
+    await cleanupAsync()
+  }
+
   /// Registers a `ContinueNode` for `davinciId` without a full `configureDaVinci` call.
   ///
   /// - Note: Test-only seam so `pollDaVinci` tests can install a fake `PollingCollector`
