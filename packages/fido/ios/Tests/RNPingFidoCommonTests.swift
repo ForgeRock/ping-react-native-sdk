@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import AuthenticationServices
 import XCTest
 import PingFido
 import PingLogger
@@ -198,6 +199,38 @@ final class RNPingFidoCommonTests: XCTestCase {
 
     XCTAssertNil(blankResult)
     XCTAssertNil(nilResult)
+  }
+
+  // MARK: - Authentication Cancel Classification Tests
+
+  func testCancelClassificationMatchesRawASAuthorizationCancellation() {
+    let error = ASAuthorizationError(.canceled)
+
+    XCTAssertTrue(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(error))
+  }
+
+  /// DaVinci collectors transform `ASAuthorizationError.canceled` into
+  /// `FidoError.unsupportedAction(ERROR_NOT_ALLOWED_MESSAGE)` via the SDK's
+  /// `handleError`; the classifier must treat that shape as cancellation too.
+  func testCancelClassificationMatchesDaVinciTransformedUnsupportedAction() {
+    let error = FidoError.unsupportedAction(FidoConstants.ERROR_NOT_ALLOWED_MESSAGE)
+
+    XCTAssertTrue(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(error))
+  }
+
+  func testCancelClassificationRejectsNonCancelUnsupportedAction() {
+    let error = FidoError.unsupportedAction("Operation not supported")
+
+    XCTAssertFalse(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(error))
+  }
+
+  func testCancelClassificationRejectsOtherFidoErrors() {
+    XCTAssertFalse(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(FidoError.invalidChallenge))
+    XCTAssertFalse(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(FidoError.timeout))
+  }
+
+  func testCancelClassificationRejectsOtherASAuthorizationErrors() {
+    XCTAssertFalse(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(ASAuthorizationError(.unknown)))
   }
 
   // MARK: - Helpers

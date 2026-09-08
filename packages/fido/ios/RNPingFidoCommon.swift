@@ -327,8 +327,7 @@ public class RNPingFidoCommon: NSObject {
       case .success:
         handlers.resolve(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        let nsError = error as NSError
-        let code = isRecoverableFidoAuthenticationFailure(nsError)
+        let code = isRecoverableFidoAuthenticationFailure(error)
           ? FidoErrorCode.authenticateCancelled
           : FidoErrorCode.authenticateError
         handlers.reject(
@@ -337,7 +336,7 @@ public class RNPingFidoCommon: NSObject {
             error: code.rawValue,
             message: error.localizedDescription
           ),
-          underlying: nsError
+          underlying: error as NSError
         )
       }
     }
@@ -563,8 +562,7 @@ public class RNPingFidoCommon: NSObject {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
       case .failure(let error):
-        let nsError = error as NSError
-        let code = isRecoverableFidoAuthenticationFailure(nsError)
+        let code = isRecoverableFidoAuthenticationFailure(error)
           ? FidoErrorCode.authenticateCancelled
           : FidoErrorCode.authenticateError
         handlers.reject(
@@ -573,7 +571,7 @@ public class RNPingFidoCommon: NSObject {
             error: code.rawValue,
             message: error.localizedDescription
           ),
-          underlying: nsError
+          underlying: error as NSError
         )
       }
     }
@@ -685,24 +683,37 @@ public class RNPingFidoCommon: NSObject {
 
   /// Determines whether a FIDO authentication failure is recoverable cancellation.
   ///
+  /// Handles both raw `ASAuthorizationError.canceled` (Journey callbacks return the
+  /// native error unchanged) and the DaVinci collectors' transformed
+  /// `FidoError.unsupportedAction(FidoConstants.ERROR_NOT_ALLOWED_MESSAGE)`, which the
+  /// SDK's `handleError` substitutes for `ASAuthorizationError.canceled`.
+  ///
   /// - Parameter error: Native error from FIDO authenticate.
   /// - Returns: `true` for cancellation/no-credential outcomes.
-  private static func isRecoverableFidoAuthenticationFailure(_ error: NSError) -> Bool {
-    if error.domain == ASAuthorizationError.errorDomain,
-       error.code == ASAuthorizationError.canceled.rawValue {
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   cancel-classification contract, mirroring `resolveLoggerFromCore`.
+  static func isRecoverableFidoAuthenticationFailure(_ error: Error) -> Bool {
+    if let fidoError = error as? FidoError,
+       case .unsupportedAction(let message) = fidoError,
+       message == FidoConstants.ERROR_NOT_ALLOWED_MESSAGE {
       return true
     }
-    if let underlyingError = error.userInfo[NSUnderlyingErrorKey] as? NSError,
+    let nsError = error as NSError
+    if nsError.domain == ASAuthorizationError.errorDomain,
+       nsError.code == ASAuthorizationError.canceled.rawValue {
+      return true
+    }
+    if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError,
        underlyingError.domain == ASAuthorizationError.errorDomain,
        underlyingError.code == ASAuthorizationError.canceled.rawValue {
       return true
     }
     let text = [
-      error.domain,
-      error.localizedDescription,
-      String(error.code),
-      (error.userInfo["message"] as? String) ?? "",
-      (error.userInfo["error"] as? String) ?? "",
+      nsError.domain,
+      nsError.localizedDescription,
+      String(nsError.code),
+      (nsError.userInfo["message"] as? String) ?? "",
+      (nsError.userInfo["error"] as? String) ?? "",
     ].joined(separator: " ").lowercased()
 
     return text.contains("asauthorizationerror") &&
