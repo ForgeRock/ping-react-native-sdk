@@ -96,8 +96,9 @@ export type JourneyFieldRef = {
  * `raw` is the original native callback payload and serves as the escape hatch
  * to access any field not surfaced by the specific field type.
  *
- * Use `field.type` (shorthand for `field.ref.type`) as the discriminant to
- * narrow to a specific field subtype.
+ * `type` is intentionally not declared here: every member of
+ * {@link JourneyNormalizedField} declares its own discriminant, which is what
+ * makes the union narrow without casts.
  */
 export type JourneyBaseField = {
   /**
@@ -111,13 +112,6 @@ export type JourneyBaseField = {
    * Typed callback reference for this field.
    */
   ref: JourneyFieldRef;
-  /**
-   * Callback type shorthand — equivalent to `ref.type`.
-   *
-   * @remarks
-   * Use this as the discriminant to narrow the field to a specific subtype.
-   */
-  type: JourneyCallbackType;
   /**
    * Prompt text provided by the native callback payload.
    *
@@ -417,31 +411,16 @@ export type JourneySelectIdpField = JourneyBaseField & {
 };
 
 /**
- * Normalized callback field shape used by headless callback helpers.
+ * Union of every normalized field with a dedicated subtype.
  *
  * @remarks
- * A discriminated union narrowed by `field.type`. Known callback types expose
- * named typed fields directly on the field (for example `JourneyChoiceField`
- * has `choices: string[]` and `defaultChoice: number`). Callbacks from other
- * SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`), device
- * profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
- * represented as marker types or typed variants where the bridge emits named
- * fields. All other types fall through to `JourneyBaseField`.
- *
- * `field.raw` is the original native callback payload and is preserved as an
- * escape hatch on every variant.
- *
- * @example
- * ```ts
- * if (field.type === 'ChoiceCallback') {
- *   field.choices        // string[]
- *   field.defaultChoice  // number
- * }
- * ```
- *
- * @public
+ * The single source of truth for specialization: a callback type is
+ * "specialized" exactly when a member here carries it as its discriminant.
+ * Adding a new specialized field type to this union automatically extends
+ * {@link SpecializedCallbackType} — the catch-all's exclude list can never
+ * drift from the specialized members.
  */
-export type JourneyNormalizedField =
+type SpecializedField =
   | JourneyChoiceField
   | JourneyConfirmationField
   | JourneyKbaCreateField
@@ -457,8 +436,54 @@ export type JourneyNormalizedField =
   | JourneyDeviceSigningVerifierField
   | JourneyDeviceProfileField
   | JourneyIdpField
-  | JourneySelectIdpField
-  | JourneyBaseField;
+  | JourneySelectIdpField;
+
+/**
+ * Callback types claimed by a dedicated field subtype in
+ * {@link SpecializedField}.
+ */
+type SpecializedCallbackType = SpecializedField['type'];
+
+/**
+ * Catch-all normalized callback field for unrecognized or future callback
+ * types.
+ *
+ * @remarks
+ * `type` excludes the specialized literals above so those are always narrowed
+ * to their dedicated subtypes in {@link JourneyNormalizedField}.
+ *
+ * @public
+ */
+export type JourneyUnknownField = JourneyBaseField & {
+  type: Exclude<JourneyCallbackType, SpecializedCallbackType>;
+};
+
+/**
+ * Normalized callback field shape used by headless callback helpers.
+ *
+ * @remarks
+ * A discriminated union narrowed by `field.type`. Known callback types expose
+ * named typed fields directly on the field (for example `JourneyChoiceField`
+ * has `choices: string[]` and `defaultChoice: number`). Callbacks from other
+ * SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`), device
+ * profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
+ * represented as marker types or typed variants where the bridge emits named
+ * fields. All other types fall through to {@link JourneyUnknownField}.
+ *
+ * `field.raw` is the original native callback payload and is preserved as an
+ * escape hatch on every variant.
+ *
+ * @example
+ * ```ts
+ * if (field.type === 'ChoiceCallback') {
+ *   field.choices        // string[]
+ *   field.defaultChoice  // number
+ * }
+ * ```
+ *
+ * @public
+ */
+export type JourneyNormalizedField = SpecializedField | JourneyUnknownField;
 
 /**
  * Stable issue code surfaced by callback submit helper.
@@ -620,7 +645,8 @@ export type JourneyFormResult = {
    */
   clearValue: (fieldId: string) => void;
   /**
-   * Resets the full value map, then reapplies callback-provided defaults.
+   * Resets the full value map, reapplies callback-provided defaults, and
+   * clears the attempted flag.
    *
    * @param nextValues - Optional reset base values.
    * @returns Void.

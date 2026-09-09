@@ -14,9 +14,9 @@ describe('Journey callback helpers', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
-        { type: 'NameCallback', output: [] },
-        { type: 'NameCallback', output: [] },
-        { type: 'PasswordCallback', output: [] },
+        { type: 'NameCallback' },
+        { type: 'NameCallback' },
+        { type: 'PasswordCallback' },
       ],
     };
 
@@ -43,7 +43,6 @@ describe('Journey callback helpers', () => {
         {
           type: 'TextOutputCallback',
           message: 'Server message only',
-          output: [],
         },
       ],
     };
@@ -65,7 +64,6 @@ describe('Journey callback helpers', () => {
         {
           type: 'ChoiceCallback',
           options: [{ value: 'a' }, 'server-option'],
-          output: [],
         },
       ],
     };
@@ -86,7 +84,6 @@ describe('Journey callback helpers', () => {
         {
           type: 'ChoiceCallback',
           choices: ['email', 'sms'],
-          output: [],
         },
       ],
     };
@@ -103,7 +100,7 @@ describe('Journey callback helpers', () => {
   it('does not apply implicit selectedIndex default for choice callbacks', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'ChoiceCallback', options: ['A', 'B'], output: [] }],
+      callbacks: [{ type: 'ChoiceCallback', options: ['A', 'B'] }],
     };
 
     const fields = normalizeCallbacks(node);
@@ -115,7 +112,7 @@ describe('Journey callback helpers', () => {
   it('marks HiddenValueCallback as non-interactive manual field', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'HiddenValueCallback', value: 'false', output: [] }],
+      callbacks: [{ type: 'HiddenValueCallback', value: 'false' }],
     };
 
     const fields = normalizeCallbacks(node);
@@ -132,9 +129,7 @@ describe('Journey callback helpers', () => {
   it('does not treat negative selectedIndex as a default value', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'ConfirmationCallback', selectedIndex: -1, output: [] },
-      ],
+      callbacks: [{ type: 'ConfirmationCallback', selectedIndex: -1 }],
     };
 
     const fields = normalizeCallbacks(node);
@@ -146,9 +141,7 @@ describe('Journey callback helpers', () => {
   it('resolves required when callback payload uses isRequired key', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'TermsAndConditionsCallback', isRequired: true, output: [] },
-      ],
+      callbacks: [{ type: 'TermsAndConditionsCallback', isRequired: true }],
     };
 
     const fields = normalizeCallbacks(node);
@@ -161,9 +154,9 @@ describe('Journey callback helpers', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
-        { type: 'NameCallback', output: [] },
-        { type: 'PasswordCallback', output: [] },
-        { type: 'NumberAttributeInputCallback', output: [] },
+        { type: 'NameCallback' },
+        { type: 'PasswordCallback' },
+        { type: 'NumberAttributeInputCallback' },
       ],
     };
 
@@ -187,7 +180,7 @@ describe('Journey callback helpers', () => {
   it('does not coerce empty string number input to zero', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'NumberAttributeInputCallback', output: [] }],
+      callbacks: [{ type: 'NumberAttributeInputCallback' }],
     };
 
     const result = buildNextInput(node, {
@@ -209,7 +202,7 @@ describe('Journey callback helpers', () => {
   it('blocks canSubmit when DeviceProfileCallback is not in handledCallbackTypes', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
+      callbacks: [{ type: 'DeviceProfileCallback' }],
     };
 
     const result = buildNextInput(node, {});
@@ -229,7 +222,7 @@ describe('Journey callback helpers', () => {
   it('allows canSubmit when DeviceProfileCallback is listed in handledCallbackTypes', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'DeviceProfileCallback', output: [] }],
+      callbacks: [{ type: 'DeviceProfileCallback' }],
     };
 
     const result = buildNextInput(
@@ -246,9 +239,7 @@ describe('Journey callback helpers', () => {
   it('enforces required terms acceptance', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'TermsAndConditionsCallback', required: true, output: [] },
-      ],
+      callbacks: [{ type: 'TermsAndConditionsCallback', required: true }],
     };
 
     const result = buildNextInput(node, {
@@ -276,7 +267,6 @@ describe('Journey callback helpers', () => {
           message: 'Allow profile sharing',
           required: true,
           accepted: false,
-          output: [],
         },
       ],
     };
@@ -299,8 +289,8 @@ describe('Journey callback helpers', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
-        { type: 'FidoAuthenticationCallback', output: [] },
-        { type: 'ReCaptchaEnterpriseCallback', output: [] },
+        { type: 'FidoAuthenticationCallback' },
+        { type: 'ReCaptchaEnterpriseCallback' },
       ],
     };
 
@@ -320,10 +310,7 @@ describe('Journey callback helpers', () => {
   it('classifies external IdP callback casing variants as integration-required', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [
-        { type: 'IdPCallback', output: [] },
-        { type: 'IdpCallback', output: [] },
-      ],
+      callbacks: [{ type: 'IdPCallback' }, { type: 'IdpCallback' }],
     };
 
     const fields = normalizeCallbacks(node);
@@ -347,7 +334,6 @@ describe('Journey callback helpers', () => {
           type: 'ConsentMappingCallback',
           required: true,
           accepted: false,
-          output: [],
         },
       ],
     };
@@ -387,7 +373,7 @@ describe('Journey callback helpers', () => {
   it('does not force terms callback as required when payload does not mark it required', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'TermsAndConditionsCallback', output: [] }],
+      callbacks: [{ type: 'TermsAndConditionsCallback' }],
     };
 
     const result = buildNextInput(node, {
@@ -410,7 +396,7 @@ describe('Journey callback helpers', () => {
   it('enforces required text callback value', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'NameCallback', required: true, output: [] }],
+      callbacks: [{ type: 'NameCallback', required: true }],
     };
 
     const result = buildNextInput(node, {
@@ -431,7 +417,7 @@ describe('Journey callback helpers', () => {
   it('enforces required KBA question and answer', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'KbaCreateCallback', required: true, output: [] }],
+      callbacks: [{ type: 'KbaCreateCallback', required: true }],
     };
 
     const result = buildNextInput(node, {
@@ -461,7 +447,6 @@ describe('Journey callback helpers', () => {
         {
           type: 'ChoiceCallback',
           choices: ['email', 'sms'],
-          output: [],
         },
       ],
     };
@@ -488,12 +473,11 @@ describe('normalizeCallbacks — typed named fields', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
-        { type: 'NameCallback', output: [] },
+        { type: 'NameCallback' },
         {
           type: 'ChoiceCallback',
           choices: ['a', 'b'],
           defaultChoice: 0,
-          output: [],
         },
       ],
     };
@@ -512,7 +496,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           choices: ['email', 'sms', 'totp'],
           defaultChoice: 1,
           selectedIndex: 0,
-          output: [],
         },
       ],
     };
@@ -532,7 +515,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           type: 'KbaCreateCallback',
           predefinedQuestions: ['What is your pet?', 'What city?'],
           allowUserDefinedQuestions: true,
-          output: [],
         },
       ],
     };
@@ -556,7 +538,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           version: '1.0',
           terms: 'By using this service...',
           createDate: '2026-01-01',
-          output: [],
         },
       ],
     };
@@ -572,7 +553,7 @@ describe('normalizeCallbacks — typed named fields', () => {
   it('adds waitTime to PollingWaitCallback fields', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'PollingWaitCallback', waitTime: 3000, output: [] }],
+      callbacks: [{ type: 'PollingWaitCallback', waitTime: 3000 }],
     };
     const [field] = normalizeCallbacks(node);
     expect(field.type).toBe('PollingWaitCallback');
@@ -589,7 +570,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           type: 'TextOutputCallback',
           messageType: 'ERROR',
           message: 'Oops',
-          output: [],
         },
       ],
     };
@@ -608,7 +588,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           type: 'HiddenValueCallback',
           id: 'csrf-token',
           value: 'abc123',
-          output: [],
         },
       ],
     };
@@ -629,7 +608,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           options: ['OK', 'Cancel'],
           selectedIndex: 0,
           defaultOption: 'POSITIVE',
-          output: [],
         },
       ],
     };
@@ -649,7 +627,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           type: 'SuspendedTextOutputCallback',
           messageType: 'WARNING',
           message: 'Session paused',
-          output: [],
         },
       ],
     };
@@ -670,7 +647,6 @@ describe('normalizeCallbacks — typed named fields', () => {
           displayName: 'Read Profile',
           icon: 'profile-icon',
           accessLevel: 'READ',
-          output: [],
         },
       ],
     };
@@ -691,7 +667,6 @@ describe('normalizeCallbacks — typed named fields', () => {
         {
           type: 'ConsentMappingCallback',
           name: 'minimal-consent',
-          output: [],
         },
       ],
     };
@@ -716,7 +691,6 @@ describe('normalizeCallbacks — typed named fields', () => {
         {
           type: 'FidoRegistrationCallback',
           value: credentialOptions,
-          output: [],
         },
       ],
     };
@@ -730,7 +704,7 @@ describe('normalizeCallbacks — typed named fields', () => {
   it('omits value from FidoRegistrationCallback fields when absent', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'FidoRegistrationCallback', output: [] }],
+      callbacks: [{ type: 'FidoRegistrationCallback' }],
     };
     const [field] = normalizeCallbacks(node);
     expect(field.type).toBe('FidoRegistrationCallback');
@@ -747,7 +721,6 @@ describe('normalizeCallbacks — typed named fields', () => {
         {
           type: 'FidoAuthenticationCallback',
           value: assertionOptions,
-          output: [],
         },
       ],
     };

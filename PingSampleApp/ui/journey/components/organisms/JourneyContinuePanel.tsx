@@ -155,14 +155,13 @@ export default function JourneyContinuePanel(
     () =>
       Array.from(
         new Set(
-          form.issues
-            .filter(
-              issue =>
-                issue.code === 'INTEGRATION_REQUIRED' &&
-                issue.callbackType != null &&
-                !isAutoHandledIntegrationCallback(issue.callbackType),
-            )
-            .map(issue => issue.callbackType as JourneyCallbackType),
+          form.issues.flatMap(issue =>
+            issue.code === 'INTEGRATION_REQUIRED' &&
+            issue.callbackType != null &&
+            !isAutoHandledIntegrationCallback(issue.callbackType)
+              ? [issue.callbackType]
+              : [],
+          ),
         ),
       ),
     [form.issues, isAutoHandledIntegrationCallback],
@@ -198,6 +197,22 @@ export default function JourneyContinuePanel(
         )
         .map(issue => issue.message),
     [form.issues, isAutoHandledIntegrationCallback],
+  );
+
+  // Validation issues (missing consent, invalid values) only render after the
+  // user has attempted submission — form.attempted gates premature errors.
+  const validationIssueMessages = useMemo<string[]>(
+    () =>
+      form.attempted
+        ? form.issues
+            .filter(
+              issue =>
+                issue.code === 'REQUIRED_CONSENT_MISSING' ||
+                issue.code === 'INVALID_VALUE',
+            )
+            .map(issue => issue.message)
+        : [],
+    [form.attempted, form.issues],
   );
 
   // True when every field is silently handled by a registered integration —
@@ -271,6 +286,12 @@ export default function JourneyContinuePanel(
       {blockingIssueMessages.length > 0 ? (
         <Text style={styles.blockingNote}>
           Blocking reasons: {blockingIssueMessages.join(' | ')}
+        </Text>
+      ) : null}
+
+      {validationIssueMessages.length > 0 ? (
+        <Text style={styles.blockingNote}>
+          {validationIssueMessages.join(' | ')}
         </Text>
       ) : null}
 

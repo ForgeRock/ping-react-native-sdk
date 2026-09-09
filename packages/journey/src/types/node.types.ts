@@ -36,11 +36,13 @@ export type JourneyCallbackType =
  * Shared base fields present on every Journey callback payload.
  *
  * @remarks
- * `output` is the AM-level output array (escape hatch to raw AM data).
+ * The native bridge does not emit an AM-level `output` array on callback
+ * payloads. The raw AM callback JSON — including its `output` array — is
+ * available via `raw` (escape hatch to raw AM data).
  * The index signature preserves backwards-compatible access to any property
  * not listed in a specific callback type.
  */
-type JourneyCallbackBase = Omit<NodeCallback, 'type'> & {
+type JourneyCallbackBase = Omit<NodeCallback, 'type' | 'output'> & {
   /** Optional user-facing prompt string emitted by native. */
   prompt?: string;
   /** Optional user-facing message emitted by native. */
@@ -306,39 +308,16 @@ export type JourneySelectIdpCallback = JourneyCallbackBase & {
 };
 
 /**
- * Catch-all callback payload for unrecognized or future callback types.
- *
- * @public
- */
-export type JourneyUnknownCallback = JourneyCallbackBase & {
-  type: JourneyCallbackType;
-};
-
-/**
- * Native callback payload surfaced to JavaScript.
+ * Union of every callback payload with a dedicated subtype.
  *
  * @remarks
- * A discriminated union narrowed by `type`. Known callback types expose named
- * typed fields (for example `JourneyChoiceCallback` has `choices: string[]`).
- * Callbacks from other SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`),
- * device profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
- * represented as marker types or typed variants where the bridge emits named fields.
- * Unrecognized types fall through to `JourneyUnknownCallback`.
- *
- * `callback.output` (the AM output array from `NodeCallback`) and the index
- * signature are preserved on every member as backwards-compatible escape hatches.
- *
- * @example
- * ```ts
- * if (callback.type === 'ChoiceCallback') {
- *   callback.choices        // string[]
- *   callback.defaultChoice  // number
- * }
- * ```
- *
- * @public
+ * The single source of truth for specialization: a callback type is
+ * "specialized" exactly when a member here carries it as its discriminant.
+ * Adding a new specialized callback type to this union automatically extends
+ * {@link SpecializedCallbackType} — the catch-all's exclude list can never
+ * drift from the specialized members.
  */
-export type JourneyCallback =
+type SpecializedCallback =
   | JourneyChoiceCallback
   | JourneyConfirmationCallback
   | JourneyKbaCreateCallback
@@ -354,8 +333,53 @@ export type JourneyCallback =
   | JourneyDeviceSigningVerifierCallback
   | JourneyDeviceProfileCallback
   | JourneyIdpCallback
-  | JourneySelectIdpCallback
-  | JourneyUnknownCallback;
+  | JourneySelectIdpCallback;
+
+/**
+ * Callback types claimed by a dedicated callback payload subtype in
+ * {@link SpecializedCallback}.
+ */
+type SpecializedCallbackType = SpecializedCallback['type'];
+
+/**
+ * Catch-all callback payload for unrecognized or future callback types.
+ *
+ * @remarks
+ * `type` excludes the specialized callback literals so those are always
+ * narrowed to their dedicated subtypes in {@link JourneyCallback}.
+ *
+ * @public
+ */
+export type JourneyUnknownCallback = JourneyCallbackBase & {
+  type: Exclude<JourneyCallbackType, SpecializedCallbackType>;
+};
+
+/**
+ * Native callback payload surfaced to JavaScript.
+ *
+ * @remarks
+ * A discriminated union narrowed by `type`. Known callback types expose named
+ * typed fields (for example `JourneyChoiceCallback` has `choices: string[]`).
+ * Callbacks from other SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`),
+ * device profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
+ * represented as marker types or typed variants where the bridge emits named fields.
+ * Unrecognized types fall through to `JourneyUnknownCallback`.
+ *
+ * `callback.raw` (the full AM callback JSON, including its `output` array)
+ * and the index signature are preserved on every member as
+ * backwards-compatible escape hatches.
+ *
+ * @example
+ * ```ts
+ * if (callback.type === 'ChoiceCallback') {
+ *   callback.choices        // string[]
+ *   callback.defaultChoice  // number
+ * }
+ * ```
+ *
+ * @public
+ */
+export type JourneyCallback = SpecializedCallback | JourneyUnknownCallback;
 
 /**
  * Journey node payload returned by native execution.

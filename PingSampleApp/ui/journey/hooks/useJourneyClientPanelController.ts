@@ -978,6 +978,9 @@ export function useJourneyClientPanelController(
   });
 
   const onSubmit = useCallback(async (): Promise<void> => {
+    // Marks submission intent so UI gated on form.attempted (for example
+    // validation error display) becomes visible after this attempt.
+    form.markAttempted();
     if (runner.hasUnhandledIntegrationIssue(form)) {
       appendDebug('Submit blocked: unhandled integration callback', {
         callbackTypes: form.issues

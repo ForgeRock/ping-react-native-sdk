@@ -76,7 +76,7 @@ export const TEST_JOURNEY_NAME_SUGGESTIONS = [
  * Keep this `false` for normal sample usage and flip to `true` only when
  * running callback/test-journey validation.
  */
-export const ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV = false;
+export const ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV = true;
 
 /**
  * Runtime flag used by Journey route UI to decide whether test journeys are shown.
@@ -192,8 +192,9 @@ export function resolvePollingWaitMs(
   fields: JourneyNormalizedField[],
 ): number | null {
   const pollingField = fields.find(
-    field => field.type === 'PollingWaitCallback',
-  ) as JourneyPollingWaitField | undefined;
+    (field): field is JourneyPollingWaitField =>
+      field.type === 'PollingWaitCallback',
+  );
   if (!pollingField) {
     return null;
   }

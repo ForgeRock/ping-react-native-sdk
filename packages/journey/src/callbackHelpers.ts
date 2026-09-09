@@ -428,7 +428,6 @@ export function normalizeCallbacks(
         type,
         typeIndex,
       },
-      type,
       prompt,
       message: message.length > 0 ? message : undefined,
       required,
@@ -443,6 +442,7 @@ export function normalizeCallbacks(
     if (type === callbackType.ChoiceCallback) {
       return {
         ...base,
+        type: callbackType.ChoiceCallback,
         choices: readArray(callback.choices).map((c) => readString(c, '')),
         defaultChoice: readNumber(callback.defaultChoice, 0),
       };
@@ -451,6 +451,7 @@ export function normalizeCallbacks(
     if (type === callbackType.KbaCreateCallback) {
       return {
         ...base,
+        type: callbackType.KbaCreateCallback,
         predefinedQuestions: readArray(callback.predefinedQuestions).map((q) =>
           readString(q, ''),
         ),
@@ -464,6 +465,7 @@ export function normalizeCallbacks(
     if (type === callbackType.TermsAndConditionsCallback) {
       return {
         ...base,
+        type: callbackType.TermsAndConditionsCallback,
         version: readString(callback.version, ''),
         terms: readString(callback.terms, ''),
         createDate: readString(callback.createDate, ''),
@@ -473,6 +475,7 @@ export function normalizeCallbacks(
     if (type === nativeExtensionCallbackType.ConsentMappingCallback) {
       return {
         ...base,
+        type: nativeExtensionCallbackType.ConsentMappingCallback,
         name: readString(callback.name, ''),
         displayName: hasCallbackKey(callback, 'displayName')
           ? readString(callback.displayName, '')
@@ -492,6 +495,7 @@ export function normalizeCallbacks(
     if (type === callbackType.PollingWaitCallback) {
       return {
         ...base,
+        type: callbackType.PollingWaitCallback,
         waitTime: readNumber(callback.waitTime, 0),
       };
     }
@@ -499,6 +503,7 @@ export function normalizeCallbacks(
     if (type === callbackType.TextOutputCallback) {
       return {
         ...base,
+        type: callbackType.TextOutputCallback,
         messageType: readString(callback.messageType, ''),
       };
     }
@@ -506,6 +511,7 @@ export function normalizeCallbacks(
     if (type === callbackType.SuspendedTextOutputCallback) {
       return {
         ...base,
+        type: callbackType.SuspendedTextOutputCallback,
         messageType: readString(callback.messageType, ''),
       };
     }
@@ -513,6 +519,7 @@ export function normalizeCallbacks(
     if (type === callbackType.HiddenValueCallback) {
       return {
         ...base,
+        type: callbackType.HiddenValueCallback,
         callbackId: readString(callback.id, ''),
       };
     }
@@ -520,6 +527,7 @@ export function normalizeCallbacks(
     if (type === callbackType.ConfirmationCallback) {
       return {
         ...base,
+        type: callbackType.ConfirmationCallback,
         selectedIndex: hasCallbackKey(callback, 'selectedIndex')
           ? readNumber(callback.selectedIndex, -1)
           : undefined,
@@ -541,13 +549,34 @@ export function normalizeCallbacks(
     ) {
       return {
         ...base,
+        type,
         value: hasCallbackKey(callback, 'value')
           ? (callback.value as Record<string, unknown>)
           : undefined,
       };
     }
 
-    return base;
+    if (type === nativeExtensionCallbackType.DeviceBindingCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.DeviceSigningVerifierCallback) {
+      return { ...base, type };
+    }
+
+    if (type === callbackType.DeviceProfileCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.IdpCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.SelectIdpCallback) {
+      return { ...base, type };
+    }
+
+    return { ...base, type };
   });
 }
 

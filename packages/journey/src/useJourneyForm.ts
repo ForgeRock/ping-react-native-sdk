@@ -201,7 +201,11 @@ export function useJourneyForm(
     attempted: boolean;
   }>(() => ({ values: hydrateValues(fields, {}), attempted: false }));
 
-  // Adjust state during render when fields change (node switch resets form values and attempted).
+  // Adjust state during render when fields change (node switch resets form
+  // values and attempted). This is React's documented "adjusting state when a
+  // prop changes" pattern — setting derived state from an effect instead
+  // would commit an extra render with stale values and trip the
+  // react-compiler cascading-render lint rule. Same pattern as useDavinciForm.
   if (prevFields !== fields) {
     setPrevFields(fields);
     setFormState({ values: hydrateValues(fields, {}), attempted: false });
@@ -294,16 +298,20 @@ export function useJourneyForm(
   /**
    * Resets form values and reapplies callback defaults.
    *
+   * @remarks
+   * Also resets `attempted` to `false` so UI gated on it (for example
+   * validation error display) treats the cleared form as untouched.
+   *
    * @param nextValues - Optional value map applied before default hydration.
    */
   const reset = useCallback(
     (nextValues: JourneyFormValues = {}): void => {
       setFormState((previous) => {
         const hydrated = hydrateValues(fields, { ...nextValues });
-        if (isSameValueMap(previous.values, hydrated)) {
+        if (isSameValueMap(previous.values, hydrated) && !previous.attempted) {
           return previous;
         }
-        return { ...previous, values: hydrated };
+        return { ...previous, values: hydrated, attempted: false };
       });
     },
     [fields],
