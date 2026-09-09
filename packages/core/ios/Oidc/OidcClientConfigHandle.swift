@@ -25,6 +25,8 @@ public struct OidcOpenIdConfig: Sendable {
   public let pingEndIdpSessionEndpoint: String?
   /// Optional token revocation endpoint URL.
   public let revocationEndpoint: String?
+  /// Optional device authorization endpoint URL.
+  public let deviceAuthorizationEndpoint: String?
 
   public init(
     authorizationEndpoint: String?,
@@ -32,7 +34,8 @@ public struct OidcOpenIdConfig: Sendable {
     userinfoEndpoint: String?,
     endSessionEndpoint: String?,
     pingEndIdpSessionEndpoint: String?,
-    revocationEndpoint: String?
+    revocationEndpoint: String?,
+    deviceAuthorizationEndpoint: String? = nil
   ) {
     self.authorizationEndpoint = authorizationEndpoint
     self.tokenEndpoint = tokenEndpoint
@@ -40,6 +43,7 @@ public struct OidcOpenIdConfig: Sendable {
     self.endSessionEndpoint = endSessionEndpoint
     self.pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint
     self.revocationEndpoint = revocationEndpoint
+    self.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
   }
 }
 

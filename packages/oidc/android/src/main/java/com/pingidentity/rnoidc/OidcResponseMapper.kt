@@ -47,6 +47,16 @@ internal object OidcResponseMapper {
    */
   fun encodeUserinfo(userinfo: JsonObject) = JsonBridgeMapper.encodeJsonObject(userinfo)
 
+  /**
+   * Convert native device-flow status into a React Native map.
+   *
+   * @param status Native device-flow status
+   * @return React Native bridge map of status values
+   *
+   * Unit contract: `nextPollAt` is epoch milliseconds on both platforms.
+   * The Android SDK returns milliseconds directly, while iOS converts its
+   * `Date` via `timeIntervalSince1970 * 1000`.
+   */
   fun encodeDeviceStatus(status: DeviceFlowStatus): WritableMap {
     val payload = Arguments.createMap()
     when (status) {

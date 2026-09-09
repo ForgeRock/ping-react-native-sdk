@@ -177,14 +177,27 @@ public class RNPingOidcCommon: NSObject {
         }
         await deviceTasks.remove(subscriptionId)
       }
-      await deviceTasks.set(task, for: subscriptionId)
+      await deviceTasks.set(task, for: subscriptionId, deviceClientId: deviceClientId)
       resolver(["subscriptionId": subscriptionId])
     }
   }
 
+  /// Cancel an active device authorization flow.
+  ///
+  /// Only the task whose stored device client id matches `deviceClientId` is
+  /// cancelled; an unknown or already-finished subscriptionId is a no-op and
+  /// the resolver is still called so cancellation stays idempotent.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - subscriptionId: Identifier returned by `deviceAuthorize`.
+  ///   - resolver: Resolver called when cancellation is attempted.
+  ///   - rejecter: Rejecter called with a `GenericError`.
   @objc
   public static func cancelDeviceAuthorization(_ deviceClientId: String, subscriptionId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
-    Task { (await deviceTasks.remove(subscriptionId))?.cancel() }
+    Task {
+      await deviceTasks.remove(subscriptionId, ownedBy: deviceClientId)?.cancel()
+    }
     resolver()
   }
 
@@ -243,9 +256,19 @@ public class RNPingOidcCommon: NSObject {
     }
   }
 
+  /// Dispose the device client and cancel any active authorization flow.
+  ///
+  /// Cancels every device-flow task owned by `deviceClientId` before removing
+  /// the client from the registry, mirroring the Android implementation.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called on success.
+  ///   - rejecter: Rejecter called with a `GenericError`.
   @objc
   public static func disposeOidcDeviceClient(_ deviceClientId: String, resolver: @escaping @Sendable () -> Void, rejecter: @escaping @Sendable (String, String, NSError?) -> Void) {
     Task {
+      await deviceTasks.cancelAll(for: deviceClientId)
       await deviceRegistry.remove(deviceClientId)
       resolver()
     }
@@ -324,6 +347,16 @@ public class RNPingOidcCommon: NSObject {
     }
   }
 
+  /// Encode a native device-flow status and emit it to JS.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - subscriptionId: Identifier returned by `deviceAuthorize`.
+  ///   - status: Native device-flow status.
+  ///
+  /// - Note: `nextPollAt` is epoch milliseconds on both platforms. The iOS SDK
+  ///   returns a `Date`, converted via `timeIntervalSince1970 * 1000`; the
+  ///   Android SDK returns milliseconds directly.
   private static func emitDeviceStatus(deviceClientId: String, subscriptionId: String, status: DeviceFlowStatus) {
     var body: [String: Any] = ["deviceClientId": deviceClientId, "subscriptionId": subscriptionId]
     switch status {

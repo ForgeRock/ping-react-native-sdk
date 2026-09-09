@@ -196,6 +196,57 @@ RCT_EXPORT_MODULE()
   dict[@"scopes"] = scopes;
   if (config.storageId()) dict[@"storageId"] = config.storageId();
   if (config.loggerId()) dict[@"loggerId"] = config.loggerId();
+
+  NSString *acrValues = config.acrValues();
+  if (acrValues != nil) {
+    dict[@"acrValues"] = acrValues;
+  }
+
+  NSString *signOutRedirectUri = config.signOutRedirectUri();
+  if (signOutRedirectUri != nil) {
+    dict[@"signOutRedirectUri"] = signOutRedirectUri;
+  }
+
+  NSString *state = config.state();
+  if (state != nil) {
+    dict[@"state"] = state;
+  }
+
+  NSString *nonce = config.nonce();
+  if (nonce != nil) {
+    dict[@"nonce"] = nonce;
+  }
+
+  NSString *uiLocales = config.uiLocales();
+  if (uiLocales != nil) {
+    dict[@"uiLocales"] = uiLocales;
+  }
+
+  auto refreshThreshold = config.refreshThreshold();
+  if (refreshThreshold.has_value()) {
+    dict[@"refreshThreshold"] = @(refreshThreshold.value());
+  }
+
+  NSString *loginHint = config.loginHint();
+  if (loginHint != nil) {
+    dict[@"loginHint"] = loginHint;
+  }
+
+  NSString *display = config.display();
+  if (display != nil) {
+    dict[@"display"] = display;
+  }
+
+  NSString *prompt = config.prompt();
+  if (prompt != nil) {
+    dict[@"prompt"] = prompt;
+  }
+
+  id<NSObject> additionalParameters = config.additionalParameters();
+  if (additionalParameters != nil) {
+    dict[@"additionalParameters"] = additionalParameters;
+  }
+
   auto openId = config.openId();
   if (openId.has_value()) {
     auto value = openId.value();

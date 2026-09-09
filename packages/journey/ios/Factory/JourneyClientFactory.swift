@@ -222,7 +222,8 @@ final class JourneyClientFactory {
       userinfoEndpoint: payload.userinfoEndpoint,
       endSessionEndpoint: payload.endSessionEndpoint,
       pingEndIdpSessionEndpoint: payload.pingEndIdpSessionEndpoint,
-      revocationEndpoint: payload.revocationEndpoint
+      revocationEndpoint: payload.revocationEndpoint,
+      deviceAuthorizationEndpoint: payload.deviceAuthorizationEndpoint
     )
   }
 
@@ -251,6 +252,9 @@ final class JourneyClientFactory {
       }
       if let pingEnd = openId.pingEndIdpSessionEndpoint {
         config.pingEndsessionEndpoint = pingEnd
+      }
+      if let deviceAuthorizationEndpoint = openId.deviceAuthorizationEndpoint {
+        config.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
       }
     }
   }

@@ -81,7 +81,8 @@ internal data class JourneyOpenIdPayload(
     val userinfoEndpoint: String?,
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
-    val revocationEndpoint: String?
+    val revocationEndpoint: String?,
+    val deviceAuthorizationEndpoint: String?
 )
 
 /**
@@ -245,6 +246,11 @@ internal object JourneyConfigParser {
             },
             revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
                 openIdMap.getString("revocationEndpoint")
+            } else {
+                null
+            },
+            deviceAuthorizationEndpoint = if (openIdMap.hasKey("deviceAuthorizationEndpoint")) {
+                openIdMap.getString("deviceAuthorizationEndpoint")
             } else {
                 null
             }

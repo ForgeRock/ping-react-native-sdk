@@ -31,6 +31,8 @@ import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
 import com.pingidentity.rncore.error.reject
 import com.pingidentity.rncore.registry.NativeHandle
+import com.pingidentity.rncore.registry.Registry
+import com.pingidentity.rncore.registry.SimpleRegistry
 import com.pingidentity.rncore.utils.launchBridge
 import com.pingidentity.utils.Result
 import kotlinx.coroutines.CancellationException
@@ -71,12 +73,22 @@ object RNPingOidcCommon {
   private val clientFactory = OidcClientFactory(oidcStorageRegistry) { id ->
     resolveLoggerFromCore(id)
   }
+  /**
+   * Handle for a registered OIDC device client.
+   *
+   * @property payload Parsed JS client configuration payload
+   * @property client Native OIDC device client instance
+   * @property user User bound to the device client
+   */
   private data class OidcDeviceHandle(
     val payload: OidcClientPayload,
     val client: OidcDeviceClient,
     val user: OidcUser,
   ) : NativeHandle
-  private val deviceRegistry = ConcurrentHashMap<String, OidcDeviceHandle>()
+
+  /** Registry storing OIDC device clients. */
+  private val deviceRegistry: Registry = SimpleRegistry()
+  /** Active device-flow poll jobs, keyed by subscriptionId to deviceClientId. */
   private val deviceJobs = ConcurrentHashMap<String, Pair<String, Job>>()
   /** Cached React context for resolving activity when needed. */
   private var appContext: ReactApplicationContext? = null
@@ -125,7 +137,8 @@ object RNPingOidcCommon {
           userinfoEndpoint = it.userinfoEndpoint,
           endSessionEndpoint = it.endSessionEndpoint,
           pingEndIdpSessionEndpoint = it.pingEndIdpSessionEndpoint,
-          revocationEndpoint = it.revocationEndpoint
+          revocationEndpoint = it.revocationEndpoint,
+          deviceAuthorizationEndpoint = it.deviceAuthorizationEndpoint
         )
       }
 
@@ -196,7 +209,7 @@ object RNPingOidcCommon {
     webRegistry.removeAll()
     deviceJobs.values.forEach { it.second.cancel() }
     deviceJobs.clear()
-    deviceRegistry.clear()
+    deviceRegistry.removeAll()
     scopeJob.cancel()
     scopeJob = SupervisorJob()
     scope = CoroutineScope(scopeJob + Dispatchers.Default)
@@ -216,8 +229,18 @@ object RNPingOidcCommon {
     return clientRegistry.register(OidcClientHandle(parsed, client, user))
   }
 
+  /**
+   * Start an OIDC device authorization flow and emit status events.
+   *
+   * Status updates are emitted on the `RNPingOidc_DeviceFlowStatus` event until
+   * the flow reaches a terminal state, is cancelled, or the client is disposed.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved with the subscriptionId or rejected with GenericError
+   * @return Unit
+   */
   fun deviceAuthorize(deviceClientId: String, promise: Promise) {
-    val handle = deviceRegistry[deviceClientId]
+    val handle = deviceRegistry.resolve(deviceClientId) as? OidcDeviceHandle
     if (handle == null) {
       promise.reject(GenericError(
         type = ErrorType.STATE_ERROR,
@@ -271,8 +294,21 @@ object RNPingOidcCommon {
     promise.resolve(result)
   }
 
+  /**
+   * Cancel an active device authorization flow.
+   *
+   * Only the job whose stored device client id matches [deviceClientId] is
+   * cancelled; an unknown or already-finished subscriptionId is a no-op and
+   * the promise still resolves so cancellation stays idempotent.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param subscriptionId Identifier returned by [deviceAuthorize]
+   * @param promise Bridge promise resolved when cancellation is attempted
+   * @return Unit
+   */
   fun cancelDeviceAuthorization(deviceClientId: String, subscriptionId: String, promise: Promise) {
-    deviceJobs.remove(subscriptionId)?.second?.cancel()
+    deviceJobs[subscriptionId]?.takeIf { it.first == deviceClientId }?.second?.cancel()
+    deviceJobs.remove(subscriptionId)
     promise.resolve(null)
   }
 
@@ -290,7 +326,7 @@ object RNPingOidcCommon {
    * @return Unit
    */
   fun deviceOpenVerificationUrl(deviceClientId: String, verificationUri: String, promise: Promise) {
-    val handle = deviceRegistry[deviceClientId]
+    val handle = deviceRegistry.resolve(deviceClientId) as? OidcDeviceHandle
     if (handle == null) {
       promise.reject(GenericError(
         type = ErrorType.STATE_ERROR,
@@ -319,8 +355,15 @@ object RNPingOidcCommon {
     }
   }
 
+  /**
+   * Resolve whether a user is available for the given device client.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved with a boolean or rejected with GenericError
+   * @return Unit
+   */
   fun deviceHasUser(deviceClientId: String, promise: Promise) {
-    val handle = deviceRegistry[deviceClientId]
+    val handle = deviceRegistry.resolve(deviceClientId) as? OidcDeviceHandle
     if (handle == null) {
       promise.reject(GenericError(ErrorType.STATE_ERROR, OidcErrorCodes.OIDC_DEVICE_USER_ERROR, "No OIDC device client found for id $deviceClientId"))
       return
@@ -330,8 +373,32 @@ object RNPingOidcCommon {
     }
   }
 
+  /**
+   * Resolve the current device client user's tokens.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
+   */
   fun deviceToken(deviceClientId: String, promise: Promise) = deviceUserOperation(deviceClientId, promise, OidcErrorCodes.OIDC_DEVICE_TOKEN_ERROR) { it.token() }
+
+  /**
+   * Force-refresh the current device client user's tokens.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved with token map or rejected with GenericError
+   * @return Unit
+   */
   fun deviceRefresh(deviceClientId: String, promise: Promise) = deviceUserOperation(deviceClientId, promise, OidcErrorCodes.OIDC_DEVICE_REFRESH_ERROR) { it.refresh() }
+
+  /**
+   * Fetch user profile data from the userinfo endpoint for the device client.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param cache When true, return cached userinfo if available
+   * @param promise Bridge promise resolved with userinfo map or rejected with GenericError
+   * @return Unit
+   */
   fun deviceUserinfo(deviceClientId: String, cache: Boolean, promise: Promise) = deviceUserOperation(deviceClientId, promise, OidcErrorCodes.OIDC_DEVICE_USERINFO_ERROR) { it.userinfo(cache) }
 
   private fun deviceUserOperation(
@@ -340,7 +407,7 @@ object RNPingOidcCommon {
     errorCode: String,
     operation: suspend (OidcUser) -> Any?,
   ) {
-    val handle = deviceRegistry[deviceClientId]
+    val handle = deviceRegistry.resolve(deviceClientId) as? OidcDeviceHandle
     if (handle == null) {
       promise.reject(GenericError(ErrorType.STATE_ERROR, errorCode, "No OIDC device client found for id $deviceClientId"))
       return
@@ -364,11 +431,26 @@ object RNPingOidcCommon {
     }
   }
 
+  /**
+   * Revoke tokens for the current device client user.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved on success or rejected with GenericError
+   * @return Unit
+   */
   fun deviceRevoke(deviceClientId: String, promise: Promise) = deviceUnitOperation(deviceClientId, promise, OidcErrorCodes.OIDC_DEVICE_REVOKE_ERROR) { it.revoke() }
+
+  /**
+   * Logout the current device client user session.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved with end-session status or rejected with GenericError
+   * @return Unit
+   */
   fun deviceLogout(deviceClientId: String, promise: Promise) = deviceUnitOperation(deviceClientId, promise, OidcErrorCodes.OIDC_DEVICE_LOGOUT_ERROR) { it.logout() }
 
   private fun deviceUnitOperation(deviceClientId: String, promise: Promise, errorCode: String, operation: suspend (OidcUser) -> Unit) {
-    val handle = deviceRegistry[deviceClientId]
+    val handle = deviceRegistry.resolve(deviceClientId) as? OidcDeviceHandle
     if (handle == null) {
       promise.reject(GenericError(ErrorType.STATE_ERROR, errorCode, "No OIDC device client found for id $deviceClientId"))
       return
@@ -379,6 +461,16 @@ object RNPingOidcCommon {
     }
   }
 
+  /**
+   * Dispose the device client and cancel any active authorization flow.
+   *
+   * Cancels every device-flow job registered for [deviceClientId] before
+   * removing the client from the registry.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Bridge promise resolved on success or rejected with GenericError
+   * @return Unit
+   */
   fun disposeOidcDeviceClient(deviceClientId: String, promise: Promise) {
     deviceJobs.entries.removeIf { entry ->
       if (entry.value.first == deviceClientId) {
@@ -399,14 +491,19 @@ object RNPingOidcCommon {
    * @return Stable identifier for the created web client
    * @throws IllegalArgumentException when the client id is unknown
    */
+  /**
+   * Create a native-backed OIDC device client and return its identifier.
+   *
+   * @param config JS-provided config map
+   * @return Stable identifier for the stored device client
+   * @throws IllegalArgumentException when required configuration is missing or invalid
+   */
   fun createOidcDeviceClient(config: ReadableMap): String {
     val parsed = OidcConfigParser.parseClientConfig(config)
     val nativeConfig = clientFactory.buildOidcClientConfig(parsed)
     val client = OidcDeviceClient(nativeConfig)
     val user = OidcUser(nativeConfig)
-    val id = UUID.randomUUID().toString()
-    deviceRegistry[id] = OidcDeviceHandle(parsed, client, user)
-    return id
+    return deviceRegistry.register(OidcDeviceHandle(parsed, client, user))
   }
 
   fun createWebClient(clientId: String): String {

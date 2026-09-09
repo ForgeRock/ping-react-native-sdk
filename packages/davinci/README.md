@@ -140,6 +140,29 @@ await client.logoutUser();
 await client.dispose();
 ```
 
+Handle node states explicitly in your UI flow:
+
+```ts
+const node = await client.start();
+
+switch (node.type) {
+  case 'ContinueNode':
+    await client.next({
+      collectors: [{ key: 'user', value: 'demo-user' }],
+    });
+    break;
+  case 'ErrorNode':
+    console.log(node.message);
+    break;
+  case 'FailureNode':
+    console.log(node.cause ?? node.message);
+    break;
+  case 'SuccessNode':
+    console.log('Authenticated — session:', node.session.value);
+    break;
+}
+```
+
 ### Approving a device authorization grant
 
 When this device is acting as the approving device in an RFC 8628 device

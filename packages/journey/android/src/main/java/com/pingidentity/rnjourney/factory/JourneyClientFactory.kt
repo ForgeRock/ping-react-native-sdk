@@ -104,7 +104,8 @@ internal class JourneyClientFactory(
                                 userinfoEndpoint = openIdConfig.userinfoEndpoint ?: "",
                                 endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
                                 pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
-                                revocationEndpoint = openIdConfig.revocationEndpoint ?: ""
+                                revocationEndpoint = openIdConfig.revocationEndpoint ?: "",
+                                deviceAuthorizationEndpoint = openIdConfig.deviceAuthorizationEndpoint ?: ""
                             )
                         } else {
                             openIdOverride = {
@@ -114,6 +115,7 @@ internal class JourneyClientFactory(
                                 openIdConfig.endSessionEndpoint?.let { endSessionEndpoint = it }
                                 openIdConfig.pingEndIdpSessionEndpoint?.let { pingEndIdpSessionEndpoint = it }
                                 openIdConfig.revocationEndpoint?.let { revocationEndpoint = it }
+                                openIdConfig.deviceAuthorizationEndpoint?.let { deviceAuthorizationEndpoint = it }
                             }
                         }
                     }
@@ -218,7 +220,8 @@ internal class JourneyClientFactory(
             userinfoEndpoint = userinfoEndpoint,
             endSessionEndpoint = endSessionEndpoint,
             pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint,
-            revocationEndpoint = revocationEndpoint
+            revocationEndpoint = revocationEndpoint,
+            deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
         )
     }
 

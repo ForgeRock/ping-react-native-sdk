@@ -166,6 +166,38 @@ await client.dispose();
 
 `useJourney` does not auto-advance nodes. Progression policy is app-controlled via explicit `next(...)` calls.
 
+Start options are supported when initiating a journey:
+
+```ts
+const node = await client.start('Login', {
+  forceAuth: true,
+  noSession: true,
+});
+```
+
+Handle node states explicitly in your UI flow:
+
+```ts
+const node = await client.start('Login');
+
+switch (node.type) {
+  case 'ContinueNode':
+    await client.next({
+      callbacks: [{ type: 'NameCallback', value: 'demo-user' }],
+    });
+    break;
+  case 'ErrorNode':
+    console.log(node.message);
+    break;
+  case 'FailureNode':
+    console.log(node.cause ?? node.message);
+    break;
+  case 'SuccessNode':
+    console.log('Authenticated');
+    break;
+}
+```
+
 ### Approving a device authorization grant
 
 When this device is acting as the approving device in an RFC 8628 device
