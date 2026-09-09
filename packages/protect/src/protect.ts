@@ -55,12 +55,25 @@ async function withLogging<T>(
  * @public
  */
 export async function startProtect(config: ProtectConfig = {}): Promise<void> {
-  registerIntegrationCollectorType('PROTECT');
   const logger = config.logger ?? noopLogger;
   const loggerId = resolveLoggerId(config.logger);
   logger.debug(
     `Protect startProtect config ${JSON.stringify({ hasLogger: Boolean(loggerId) }, null, 2)}`,
   );
+
+  // Register the native DaVinci serializer eagerly so a PROTECT collector on a
+  // DaVinci node serializes fully even before the first native call.
+  // Fire-and-forget — older native binaries without this method must not fail
+  // client creation.
+  try {
+    void getNativeModule()
+      .registerDaVinciSerializer()
+      .catch(() => {});
+  } catch {
+    // Native module unavailable — DaVinci Protect serialization is simply not
+    // supported in this build.
+  }
+
   return withLogging('startProtect', logger, async () => {
     await getNativeModule().initialize(
       toNativeProtectConfig(config),
@@ -71,6 +84,9 @@ export async function startProtect(config: ProtectConfig = {}): Promise<void> {
         toNativeConfig({ loggerId }),
       );
     }
+    // Register only after initialization (and any requested resume) succeed, so
+    // a failed startup does not leave PROTECT marked as supported.
+    registerIntegrationCollectorType('PROTECT');
   });
 }
 

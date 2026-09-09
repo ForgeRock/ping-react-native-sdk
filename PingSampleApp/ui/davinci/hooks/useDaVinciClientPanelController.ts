@@ -183,7 +183,9 @@ export function useDaVinciClientPanelController(
   });
 
   const onProtectCollect = useCallback(async (): Promise<void> => {
-    const protectFields = form.fields.filter(f => f.type === 'PROTECT');
+    const protectFields = form.fields.filter(
+      f => f.type === protectCollectorType,
+    );
     if (protectFields.length === 0) {
       return;
     }
@@ -234,7 +236,7 @@ export function useDaVinciClientPanelController(
       // Determine which index this collector occupies among IDP collectors on the
       // current node so the native side can resolve the right IdpCollector.
       const idpFields = form.fields.filter(
-        f => f.type === 'SOCIAL_LOGIN_BUTTON',
+        f => f.type === socialLoginCollectorType,
       );
       const index = idpFields.findIndex(f => f.key === collector.key);
       try {

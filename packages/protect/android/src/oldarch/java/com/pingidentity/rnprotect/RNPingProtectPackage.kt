@@ -25,6 +25,7 @@ class RNPingProtectPackage : BaseReactPackage() {
    * @return Protect classic module instance when the name matches, otherwise null.
    */
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
+    RNPingProtectCommon.registerDaVinciSerializer()
     return if (name == RNPingProtectClassicModule.NAME) {
       RNPingProtectClassicModule(reactContext)
     } else {

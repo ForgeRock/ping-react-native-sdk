@@ -81,4 +81,14 @@ RCT_EXPORT_METHOD(authorizeForDaVinci:(NSString *)davinciId
   }];
 }
 
+/**
+ * Registers the External IdP collector serializer with the shared DaVinci mapper.
+ */
+RCT_EXPORT_METHOD(registerDaVinciSerializer:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingExternalIdpCommon registerDaVinciSerializer];
+  resolve([NSNull null]);
+}
+
 @end

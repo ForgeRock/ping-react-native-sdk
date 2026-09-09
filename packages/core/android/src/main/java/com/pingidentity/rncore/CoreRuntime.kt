@@ -80,6 +80,19 @@ object CoreRuntime {
     }
 
     /**
+     * Removes the plugin module hook registered under the given key.
+     *
+     * Called by plugin packages on module teardown (React context invalidation)
+     * so a hook capturing stale per-initialization config does not outlive its
+     * module across dev reloads or catalyst restarts.
+     *
+     * @param key Stable hook identity passed to `registerDaVinciModuleHook`.
+     */
+    fun unregisterDaVinciModuleHook(key: String) {
+        synchronized(davinciModuleHooks) { davinciModuleHooks.remove(key) }
+    }
+
+    /**
      * Invokes all registered module hooks with the given DaVinci builder instance.
      *
      * @param builder Native DaVinci builder instance (type-erased to avoid coupling).

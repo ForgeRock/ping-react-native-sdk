@@ -60,6 +60,13 @@ export interface Spec extends TurboModule {
    * @returns A promise that resolves to void.
    */
   resumeBehavioralData(clientConfig: Object): Promise<void>;
+
+  /**
+   * Registers the Protect collector serializer with the shared native DaVinci mapper.
+   *
+   * @returns A promise that resolves once registration completes. Idempotent.
+   */
+  registerDaVinciSerializer(): Promise<null>;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 

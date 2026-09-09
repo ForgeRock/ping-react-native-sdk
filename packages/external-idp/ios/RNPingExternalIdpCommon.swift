@@ -83,7 +83,7 @@ public class RNPingExternalIdpCommon: NSObject {
   /// Registers the `IdpCollector` serializer with CoreRuntime.
   ///
   /// Safe to call multiple times — subsequent calls are no-ops.
-  public static func registerDaVinciSerializer() {
+  @objc public static func registerDaVinciSerializer() {
     serializerState.register {
       CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
         guard let collector = collectorAny as? IdpCollector else { return nil }

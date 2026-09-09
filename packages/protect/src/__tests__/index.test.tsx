@@ -27,6 +27,26 @@ describe('Protect API', () => {
 
   // ─── startProtect() ───────────────────────────────────────────────────────
 
+  it('startProtect() eagerly registers the native DaVinci serializer', async () => {
+    const registerSerializerNative = jest.fn().mockResolvedValue(null);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initialize: jest.fn().mockResolvedValue(undefined),
+      registerDaVinciSerializer: registerSerializerNative,
+    });
+
+    await startProtect({});
+
+    expect(registerSerializerNative).toHaveBeenCalledTimes(1);
+  });
+
+  it('startProtect() does not fail when the serializer method is missing', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initialize: jest.fn().mockResolvedValue(undefined),
+    });
+
+    await expect(startProtect({})).resolves.toBeUndefined();
+  });
+
   it('startProtect() calls native initialize with the protect config', async () => {
     const initializeNative = jest.fn().mockResolvedValue(undefined);
     (getNativeModule as jest.Mock).mockReturnValue({
@@ -144,6 +164,38 @@ describe('Protect API', () => {
     });
 
     await expect(startProtect({})).rejects.toThrow('PROTECT_INITIALIZE_ERROR');
+  });
+
+  it('startProtect() does not register PROTECT when initialization fails', async () => {
+    const { integrationCollectorTypes } = jest.requireActual(
+      '@ping-identity/rn-types',
+    ) as typeof import('@ping-identity/rn-types');
+    integrationCollectorTypes.delete('PROTECT');
+
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initialize: jest.fn().mockRejectedValue(new Error('init failed')),
+    });
+
+    await expect(startProtect({})).rejects.toThrow('init failed');
+
+    expect(integrationCollectorTypes.has('PROTECT')).toBe(false);
+    integrationCollectorTypes.delete('PROTECT');
+  });
+
+  it('startProtect() registers PROTECT after initialization succeeds', async () => {
+    const { integrationCollectorTypes } = jest.requireActual(
+      '@ping-identity/rn-types',
+    ) as typeof import('@ping-identity/rn-types');
+    integrationCollectorTypes.delete('PROTECT');
+
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initialize: jest.fn().mockResolvedValue(undefined),
+    });
+
+    await startProtect({});
+
+    expect(integrationCollectorTypes.has('PROTECT')).toBe(true);
+    integrationCollectorTypes.delete('PROTECT');
   });
 
   it('startProtect() logs operation lifecycle on success', async () => {

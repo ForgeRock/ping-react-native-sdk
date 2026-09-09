@@ -98,6 +98,16 @@ RCT_EXPORT_MODULE()
   });
 }
 
+/**
+ Registers the Protect collector serializer with the shared DaVinci mapper.
+ */
+- (void)registerDaVinciSerializer:(RCTPromiseResolveBlock)resolve
+                           reject:(RCTPromiseRejectBlock)reject
+{
+  [RNPingProtectCommon registerDaVinciSerializer];
+  resolve([NSNull null]);
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

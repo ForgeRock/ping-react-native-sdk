@@ -91,14 +91,6 @@ export const flowCollectorTypes = new Set<string>([
  */
 export const integrationRequiredCollectorTypes = integrationCollectorTypes;
 
-/**
- * Registers a collector type handled by an external integration package.
- *
- * @param type - Integration-owned collector type string.
- * @returns Void.
- * @public
- */
-
 const textFieldKindTypes = new Set<string>(['TEXT', 'HIDDEN']);
 const passwordFieldKindTypes = new Set<string>(['PASSWORD', 'PASSWORD_VERIFY']);
 const booleanFieldKindTypes = new Set<string>(['SINGLE_CHECKBOX']);

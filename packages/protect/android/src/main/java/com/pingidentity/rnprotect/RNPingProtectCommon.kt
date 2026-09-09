@@ -33,6 +33,9 @@ import kotlinx.coroutines.cancel
 object RNPingProtectCommon {
   private const val LOGGER_ID_KEY = "loggerId"
 
+  /** Stable registry key identifying the Protect DaVinci lifecycle module. */
+  private const val PROTECT_LIFECYCLE_KEY = "protect"
+
   /** Indicates whether shared runtime wiring has been initialized. */
   private var configured = false
 
@@ -111,6 +114,12 @@ object RNPingProtectCommon {
     scope.cancel()
     scope = createScope()
     configured = false
+    // Drop the lifecycle hook registered with the last initialize() config so a
+    // re-initialized module does not inherit stale Protect settings. The
+    // collector serializer is intentionally retained — it is stateless
+    // ({key, type} only) and the registry has no removal API; leaving it
+    // registered keeps DaVinci collector mapping working across re-inits.
+    CoreRuntime.unregisterDaVinciModuleHook(PROTECT_LIFECYCLE_KEY)
     // TODO: call Protect SDK teardown here once a public cleanup API is available.
     // Verified against com.pingidentity.sdks:protect:2.1.0: public API is config(), initialize(),
     // data(), pauseBehavioralData(), resumeBehavioralData() — no shutdown method. Re-evaluate when
@@ -206,7 +215,7 @@ object RNPingProtectCommon {
    * Registers the Protect lifecycle module with the generic DaVinci hook registry.
    */
   private fun registerDaVinciModuleHook(config: ProtectInitConfig) {
-    CoreRuntime.registerDaVinciModuleHook("protect") { builderAny ->
+    CoreRuntime.registerDaVinciModuleHook(PROTECT_LIFECYCLE_KEY) { builderAny ->
       val builder = builderAny as? com.pingidentity.davinci.DaVinciConfig
         ?: return@registerDaVinciModuleHook
       builder.module(com.pingidentity.protect.ProtectLifecycle) {

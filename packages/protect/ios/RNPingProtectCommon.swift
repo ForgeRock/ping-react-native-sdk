@@ -49,6 +49,9 @@ public class RNPingProtectCommon: NSObject {
   private static let loggerIdKey = "loggerId"
   private static let serializerState = SerializerState()
 
+  /// Stable registry key identifying the Protect DaVinci lifecycle module.
+  private static let protectLifecycleKey = "protect"
+
   /// Stable error codes emitted by the Protect module.
   ///
   /// Keep these in sync with JS `ProtectErrorCode` and Android `ProtectErrorCodes`.
@@ -59,7 +62,7 @@ public class RNPingProtectCommon: NSObject {
   }
 
   /// Registers the Protect collector serializer with the generic DaVinci mapper.
-  public static func registerDaVinciSerializer() {
+  @objc public static func registerDaVinciSerializer() {
     serializerState.register {
       CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
         guard let collector = collectorAny as? ProtectCollector else { return nil }
@@ -211,7 +214,7 @@ public class RNPingProtectCommon: NSObject {
 
   /// Registers the Protect lifecycle module with the generic DaVinci hook registry.
   private static func registerDaVinciModuleHook(_ config: ProtectInitConfig) {
-    CoreRuntime.registerDaVinciModuleHook(key: "protect") { builder in
+    CoreRuntime.registerDaVinciModuleHook(key: protectLifecycleKey) { builder in
       guard let configBuilder = builder as? DaVinciConfig else { return }
       configBuilder.module(ProtectLifecycleModule.config) { lifecycleConfig in
         lifecycleConfig.envId = config.envId

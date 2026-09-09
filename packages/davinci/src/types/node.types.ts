@@ -357,13 +357,19 @@ export type DeviceAuthenticationCollector = BaseCollector & {
  * Integration collectors have a stable key and type but do not expose a common
  * value shape. The owning package performs the native operation before `next()`.
  *
+ * `type` is integration-owned — packages register their own type strings, so it
+ * cannot be a closed literal union here. The `string & {}` intersection keeps
+ * every string assignable while preventing integration members from matching
+ * literal `type` comparisons, so `switch (collector.type)` narrowing still
+ * works on `DaVinciNormalizedCollector`.
+ *
  * @public
  */
 export type IntegrationCollector = {
   /** Unique collector key identifying this field in the form. */
   key: string;
   /** Integration-defined collector type string. */
-  type: string;
+  type: string & {};
   /** Raw server-side field JSON when available. */
   raw?: Record<string, unknown>;
 };

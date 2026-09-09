@@ -84,9 +84,12 @@ final class OathErrorMapperTests: XCTestCase {
   }
 
   func test_mapOathError_policyViolation() {
-    let mapped = OathErrorMapper.mapError(OathError.policyViolation("lockout", "too many attempts"))
+    // iOS SDK signature is `policyViolation(message, credentialId)`.
+    let mapped = OathErrorMapper.mapError(OathError.policyViolation("lockout", "cred-1"))
     XCTAssertEqual(mapped.type, .stateError)
     XCTAssertEqual(mapped.error, OathErrorCodes.policyViolation.rawValue)
+    XCTAssertEqual(mapped.message, "lockout")
+    XCTAssertEqual(mapped.extras?["credentialId"], "cred-1")
   }
 
   func test_mapOathError_initializationFailed() {

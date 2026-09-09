@@ -105,12 +105,17 @@ internal enum OathErrorMapper {
         error: OathErrorCodes.codeGenerationFailed.rawValue,
         message: message
       )
-    case .policyViolation(let policy, let message):
+    case .policyViolation(let message, let credentialId):
+      // TODO-PARITY: iOS `OathError.policyViolation(message, credentialId)` does not
+      // carry the violated policy name as data (Android's MfaPolicyViolationException
+      // exposes it via `policy.getName()`); the iOS SDK embeds the policy name inside
+      // the message string only. Emit `credentialId` as a stable extra and surface
+      // `violatedPolicy` once the iOS SDK exposes it (Ping SDK defect: TBD).
       return GenericError(
         type: .stateError,
         error: OathErrorCodes.policyViolation.rawValue,
         message: message,
-        extras: ["violatedPolicy": policy]
+        extras: ["credentialId": credentialId]
       )
     case .initializationFailed(let message, _):
       return GenericError(

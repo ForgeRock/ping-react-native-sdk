@@ -56,6 +56,12 @@ private final class DaVinciModuleHookStore: @unchecked Sendable {
         lock.unlock()
     }
 
+    func remove(key: String) {
+        lock.lock()
+        hooks.removeValue(forKey: key)
+        lock.unlock()
+    }
+
     func all() -> [DaVinciModuleHook] {
         lock.lock()
         let current = Array(hooks.values)
@@ -191,6 +197,17 @@ public enum CoreRuntime {
     ///   - hook: Closure that receives the DaVinci builder instance.
     public static func registerDaVinciModuleHook(key: String, _ hook: @escaping DaVinciModuleHook) {
         davinciModuleHookStore.set(key: key, hook: hook)
+    }
+
+    /// Removes the plugin module hook registered under the given key.
+    ///
+    /// Called by plugin packages on module teardown (React context invalidation)
+    /// so a hook capturing stale per-initialization config does not outlive its
+    /// module across dev reloads or catalyst restarts.
+    ///
+    /// - Parameter key: Stable hook identity passed to `registerDaVinciModuleHook`.
+    public static func unregisterDaVinciModuleHook(key: String) {
+        davinciModuleHookStore.remove(key: key)
     }
 
     /// Invokes all registered module hooks with the given DaVinci builder instance.

@@ -98,6 +98,17 @@ class RNPingExternalIdpClassicModule(
     RNPingExternalIdpCommon.authorizeForDaVinci(davinciId, options, config, promise)
   }
 
+  /**
+   * Registers the External IdP collector serializer with the shared DaVinci mapper.
+   *
+   * @param promise React Native promise resolved after registration completes.
+   */
+  @ReactMethod
+  fun registerDaVinciSerializer(promise: Promise) {
+    RNPingExternalIdpCommon.registerDaVinciSerializer()
+    promise.resolve(null)
+  }
+
   companion object {
     const val NAME = "RNPingExternalIdpClassic"
   }

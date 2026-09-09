@@ -91,6 +91,20 @@ export function createExternalIdpClient(
   config: ExternalIdpConfig,
 ): ExternalIdpClient {
   registerIntegrationCollectorType(socialLoginCollectorType);
+
+  // Register the native DaVinci serializer eagerly so a SOCIAL_LOGIN_BUTTON
+  // collector on a DaVinci node serializes fully even before the first native
+  // call. Fire-and-forget — older native binaries without this method must not
+  // fail client creation.
+  try {
+    void getNativeModule()
+      .registerDaVinciSerializer()
+      .catch(() => {});
+  } catch {
+    // Native module unavailable — DaVinci IdP serialization is simply not
+    // supported in this build.
+  }
+
   const redirectUri = normalizeRedirectUri(config.redirectUri);
 
   const logger = config.logger ?? noopLogger;

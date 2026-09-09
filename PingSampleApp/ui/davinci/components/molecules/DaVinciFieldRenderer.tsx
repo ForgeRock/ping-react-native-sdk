@@ -22,6 +22,7 @@ import DaVinciSubmitButton from './DaVinciSubmitButton';
 import DaVinciTextField from './DaVinciTextField';
 import DaVinciUnsupportedField from './DaVinciUnsupportedField';
 import { socialLoginCollectorType } from '@ping-identity/rn-external-idp';
+import { protectCollectorType } from '@ping-identity/rn-protect';
 import type { DaVinciCollectorRendererProps } from './types';
 
 /**
@@ -70,7 +71,7 @@ function DaVinciFieldRenderer(
       return (
         <DaVinciIdpField {...props} onIdpAuthorize={props.onIdpAuthorize} />
       );
-    case 'PROTECT':
+    case protectCollectorType:
       return null;
     case 'POLLING':
       return <DaVinciPollingField {...props} />;
