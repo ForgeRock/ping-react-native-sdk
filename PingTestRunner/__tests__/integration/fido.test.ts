@@ -384,8 +384,12 @@ describe('@ping-identity/rn-fido — integration', () => {
       const startNode: JourneyNode = {
         type: 'ContinueNode',
         callbacks: [
-          { type: 'FidoRegistrationCallback', output: [] },
-          { type: 'HiddenValueCallback', output: [], value: 'false' },
+          { type: 'FidoRegistrationCallback' },
+          {
+            type: 'HiddenValueCallback',
+            id: 'test-hidden-value',
+            value: 'false',
+          },
         ],
       };
       const nativeJourneyMock = makeJourneyMock(startNode);
@@ -420,7 +424,7 @@ describe('@ping-identity/rn-fido — integration', () => {
     it('continues the journey after authentication cancellation', async () => {
       const startNode: JourneyNode = {
         type: 'ContinueNode',
-        callbacks: [{ type: 'FidoAuthenticationCallback', output: [] }],
+        callbacks: [{ type: 'FidoAuthenticationCallback' }],
       };
       const nativeJourneyMock = makeJourneyMock(startNode);
       const nativeFidoMock = makeMock({

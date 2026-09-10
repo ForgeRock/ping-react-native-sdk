@@ -103,6 +103,7 @@ internal object DaVinciCollectorValueApplier {
                 val map = asStringMap(value)
                 map["countryCode"]?.let { collector.countryCode = it }
                 map["phoneNumber"]?.let { collector.phoneNumber = it }
+                map["extension"]?.let { collector.extension = it }
             }
             is DeviceRegistrationCollector -> {
                 val map = asStringMap(value)

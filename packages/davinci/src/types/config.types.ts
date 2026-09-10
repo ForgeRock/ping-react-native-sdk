@@ -15,48 +15,30 @@ import type {
  * OIDC module configuration nested under {@link DaVinciModules}.
  *
  * @remarks
- * Extends {@link OidcCoreConfig} from `@ping-identity/rn-types` with DaVinci-specific
- * overrides: `discoveryEndpoint` is required (DaVinci does not support manual
- * endpoint override via `openId`), and `scopes` is optional (defaults to
- * `['openid', 'profile']` when omitted).
- *
- * Native SDK source of truth: `OidcClientConfig` on both Android and iOS.
- *
- * @remarks
- * `signOutRedirectUri` maps to `OidcClientConfig.signOutRedirectUri` on Android.
- * Not available on iOS `OidcClientConfig` in 2.0.1 — silently ignored on iOS
- * until the iOS SDK exposes it.
+ * Uses the shared OIDC contract for the fields supported by DaVinci. The
+ * discovery endpoint is required because DaVinci's current native OIDC path
+ * requires it. `scopes` is optional because the native `OidcClientConfig`
+ * property DaVinci's factory sets it through defaults to an empty scope set
+ * on both platforms. `openId` is intentionally omitted because DaVinci's
+ * native OIDC path does not expose endpoint overrides.
  *
  * @public
  */
 export type DaVinciOidcModuleConfig = Omit<
   OidcCoreConfig,
-  'discoveryEndpoint' | 'scopes' | 'openId'
+  'discoveryEndpoint' | 'openId' | 'scopes'
 > & {
-  /**
-   * OIDC discovery endpoint URL.
-   *
-   * @remarks
-   * Required for DaVinci — manual endpoint override via `openId` is not
-   * supported. Usually the `.well-known/openid-configuration` base URL of
-   * your PingOne tenant.
-   */
+  /** OIDC discovery endpoint URL required by DaVinci's native OIDC path. */
   discoveryEndpoint: string;
-
   /**
    * OAuth2 scopes to request.
    *
    * @remarks
-   * Defaults to `['openid', 'profile']` when omitted.
+   * Optional. The native `OidcClientConfig.scopes` property defaults to an
+   * empty scope set on both platforms when omitted.
    */
   scopes?: string[];
-
-  /**
-   * Optional OIDC token storage handle created by the storage module.
-   *
-   * @remarks
-   * Must be created by `@ping-identity/rn-storage` (`configureOidcStorage()`).
-   */
+  /** Optional OIDC token storage handle created by the storage module. */
   storage?: OidcStorageHandle;
 };
 
@@ -109,6 +91,7 @@ export type DaVinciModules = {
  *       discoveryEndpoint: 'https://auth.example.com/.well-known/openid-configuration',
  *       clientId: 'my-client-id',
  *       redirectUri: 'myapp://callback',
+ *       scopes: ['openid', 'profile'],
  *       storage: configureOidcStorage({ android: { keyAlias: 'davinci_key' } }),
  *     },
  *   },
@@ -152,6 +135,23 @@ export type DaVinciCollectorInput = {
   key: string;
   /** Value to apply to the collector. */
   value: unknown;
+};
+
+/**
+ * Optional flags when starting a DaVinci flow.
+ *
+ * @public
+ */
+export type DaVinciStartOptions = {
+  /**
+   * RFC 8628 `verification_uri_complete` URL from a device authorization
+   * response. Set this when the current device is acting as the approving
+   * device: the DaVinci flow extracts the `user_code` from this URL and
+   * approves the requesting device.
+   *
+   * @remarks Requires native SDK 2.1.0 or later on both platforms.
+   */
+  verificationUri?: string;
 };
 
 /**

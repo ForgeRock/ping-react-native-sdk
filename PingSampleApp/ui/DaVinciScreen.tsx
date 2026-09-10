@@ -23,7 +23,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'DaVinci'>;
  * @returns DaVinci screen element.
  */
 export default function DaVinciScreen(props: Props): React.ReactElement {
-  const { navigation } = props;
+  const { navigation, route } = props;
+  const verificationUri = route.params?.verificationUri;
   const handleAuthenticated = useCallback((): void => {
     navigation.navigate('Home');
   }, [navigation]);
@@ -40,6 +41,7 @@ export default function DaVinciScreen(props: Props): React.ReactElement {
       <DaVinciClientPanel
         onAuthenticated={handleAuthenticated}
         onUserProfile={handleUserProfile}
+        verificationUri={verificationUri}
       />
     </ScrollView>
   );

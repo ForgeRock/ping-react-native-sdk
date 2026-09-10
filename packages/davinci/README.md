@@ -1,10 +1,3 @@
-<!--
-Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-
-This software may be modified and distributed under the terms
-of the MIT license. See the LICENSE file for details.
--->
-
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native DaVinci
@@ -49,6 +42,7 @@ const client = createDaVinciClient({
       discoveryEndpoint:
         'https://auth.pingone.com/<env-id>/as/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
+      scopes: ['openid', 'profile'],
     },
   },
 });
@@ -58,6 +52,14 @@ const client = createDaVinciClient({
 
 Add `modules.oidc.storage` when you need native-backed OIDC token persistence.
 Configure it only if you need persistent token storage; otherwise omit storage values.
+
+Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
+SDK reads the PAR endpoint from the provider's OIDC discovery document.
+
+> **Warning:** If the provider's discovery document does not advertise a PAR endpoint, the
+> native SDK sends the authorization request to an empty URL instead of failing fast. DaVinci's
+> OIDC config does not expose an endpoint override, so confirm PAR support in your provider's
+> discovery document before enabling `par: true`.
 
 ```ts
 import { createDaVinciClient } from '@ping-identity/rn-davinci';
@@ -86,6 +88,7 @@ const client = createDaVinciClient({
         'https://auth.pingone.com/<env-id>/as/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid', 'profile', 'email'],
+      par: true,
       storage: oidcStorage,
     },
   },
@@ -163,6 +166,16 @@ switch (node.type) {
 }
 ```
 
+### Approving a device authorization grant
+
+When this device is acting as the approving device in an RFC 8628 device
+authorization grant, pass the `verification_uri_complete` URL from the device
+authorization response to `start()`. The DaVinci flow extracts the `user_code`
+from that URL and approves the requesting device.
+
+The `useDaVinci` hook exposes the option through its `start` action (see
+[Use the React hook](#use-the-react-hook)).
+
 ### Post Authentication Operations
 
 After a DaVinci flow completes successfully, use the following operations to inspect and manage the active user session:
@@ -202,6 +215,19 @@ if (node?.type === 'ContinueNode') {
   });
 }
 ```
+
+To approve an RFC 8628 device authorization grant, pass the `verificationUri`
+option to `start` (see [Approving a device authorization grant](#approving-a-device-authorization-grant)):
+
+```ts
+await start({
+  verificationUri: 'https://example.com/device?user_code=WDJB-MJHT',
+});
+```
+
+After the DaVinci flow authenticates the user, the native SDK extracts the
+`user_code` from that URL and approves the requesting device automatically;
+no extra submit step is required in the app.
 
 ### Share DaVinci state across multiple screens (optional)
 
@@ -253,6 +279,22 @@ if (form.canSubmit) {
 
 `useDaVinciForm` is headless. It manages normalized collectors and submit planning, but does not render UI and does not auto-run collectors.
 
+#### Validate a collector without advancing the flow
+
+Use `validate(collectorKey, value)` to validate one active collector, such as when a field loses focus. It returns that collector's validation errors without calling `next()`:
+
+```ts
+const { validate } = useDaVinci(client);
+
+const errors = await validate('email', 'not-an-email');
+
+if (errors.length > 0) {
+  // Example: [{ code: 'REGEX_ERROR', message: 'Invalid email' }]
+}
+```
+
+`validate()` applies `value` to the active native collector before checking it. The value remains on the collector and is included in a later `next()` call. An empty array means the value has no validation errors or that the collector has no native validator.
+
 Each normalized collector includes `executionMode` and `requiresUserInput`.
 
 | `executionMode`        | Meaning                                                                                  | `requiresUserInput` default |
@@ -278,29 +320,29 @@ await form.submitFlow('forgot-password');
 
 The following collector types are supported on Android and iOS:
 
-| Collector Type          | Description                                                                            | Input Handling |
-| ----------------------- | -------------------------------------------------------------------------------------- | -------------- |
-| `TEXT`                  | Single-line text input.                                                                | Manual input   |
-| `PASSWORD`              | Masked password input.                                                                 | Manual input   |
-| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                           | Manual input   |
-| `SINGLE_SELECT`         | Single-select input.                                                                   | Manual input   |
-| `DROPDOWN`              | Single-select dropdown.                                                                | Manual input   |
-| `RADIO`                 | Single-select radio group.                                                             | Manual input   |
-| `MULTI_SELECT`          | Multi-select input.                                                                    | Manual input   |
-| `COMBOBOX`              | Multi-select combobox.                                                                 | Manual input   |
-| `CHECKBOX`              | Multi-select checkbox group.                                                           | Manual input   |
-| `PHONE_NUMBER`          | Phone number input with country code.                                                  | Manual input   |
-| `DEVICE_REGISTRATION`   | Device picker for registration.                                                        | Manual input   |
-| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                      | Manual input   |
-| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                  | Immediate      |
-| `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
-| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
-| `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
-| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                             | Manual input   |
-| `LABEL`                 | Read-only display content.                                                             | Output-only    |
-| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
-| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
-| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
+| Collector Type          | Description                                                                                                       | Input Handling |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------- |
+| `TEXT`                  | Single-line text input.                                                                                           | Manual input   |
+| `PASSWORD`              | Masked password input with optional server validation and password policy; results are returned after submission. | Manual input   |
+| `PASSWORD_VERIFY`       | Password-confirmation variant with the same validation, policy, and submission-result behavior as `PASSWORD`.     | Manual input   |
+| `SINGLE_SELECT`         | Single-select input.                                                                                              | Manual input   |
+| `DROPDOWN`              | Single-select dropdown.                                                                                           | Manual input   |
+| `RADIO`                 | Single-select radio group.                                                                                        | Manual input   |
+| `MULTI_SELECT`          | Multi-select input.                                                                                               | Manual input   |
+| `COMBOBOX`              | Multi-select combobox.                                                                                            | Manual input   |
+| `CHECKBOX`              | Multi-select checkbox group.                                                                                      | Manual input   |
+| `PHONE_NUMBER`          | Phone input with country code and optional extension, `showExtension`, and `extensionLabel` configuration.        | Manual input   |
+| `DEVICE_REGISTRATION`   | Device picker for registration.                                                                                   | Manual input   |
+| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                                                 | Manual input   |
+| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                                             | Immediate      |
+| `ACTION`                | Action button that advances the flow immediately.                                                                 | Immediate      |
+| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                                                   | Immediate      |
+| `FLOW_LINK`             | Flow link that advances the flow immediately.                                                                     | Immediate      |
+| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                                                        | Manual input   |
+| `LABEL`                 | Read-only display content with optional templated `richContent`.                                                  | Output-only    |
+| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                                               | Output-only    |
+| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows).                            | Output-only    |
+| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).                               | Output-only    |
 
 Integration-dependent collectors are surfaced in node payloads with
 `executionMode: 'integration_required'`. Their minimum generic shape is `key`,
@@ -354,6 +396,7 @@ Stable DaVinci error codes:
 - `DAVINCI_CONFIG_ERROR`
 - `DAVINCI_START_ERROR`
 - `DAVINCI_NEXT_ERROR`
+- `DAVINCI_VALIDATE_ERROR`
 - `DAVINCI_COLLECTOR_APPLY_ERROR`
 - `DAVINCI_SESSION_ERROR`
 - `DAVINCI_LOGOUT_ERROR`

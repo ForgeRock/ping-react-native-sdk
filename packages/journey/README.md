@@ -1,10 +1,3 @@
-<!--
-Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-
-This software may be modified and distributed under the terms
-of the MIT license. See the LICENSE file for details.
--->
-
 [![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
 
 # Ping Identity React Native Journey
@@ -56,6 +49,15 @@ Add `modules.oidc` when your Journey flow needs OIDC token/session operations (f
 Storage inside `modules.oidc.storage` and `modules.session.storage` is optional. Configure it only
 if you need native-backed persistence; otherwise omit storage values.
 
+Set `modules.oidc.par` to `true` to enable the Pushed Authorization Request flow. The native
+SDK reads the PAR endpoint from the provider's OIDC discovery document. To override it, set
+`modules.oidc.openId.pushedAuthorizationRequestEndpoint`.
+
+> **Warning:** If the provider's discovery document does not advertise a PAR endpoint and no
+> override is set, the native SDK sends the authorization request to an empty URL instead of
+> failing fast. Confirm PAR support in your provider's discovery document, or set
+> `pushedAuthorizationRequestEndpoint` explicitly, before enabling `par: true`.
+
 ```ts
 import { createJourneyClient } from '@ping-identity/rn-journey';
 import {
@@ -104,6 +106,7 @@ const client = createJourneyClient({
         'https://example.com/am/oauth2/alpha/.well-known/openid-configuration',
       redirectUri: 'com.example.app://callback',
       scopes: ['openid', 'profile', 'email'],
+      par: true,
       storage: oidcStorage,
     },
     session: {
@@ -198,6 +201,15 @@ switch (node.type) {
 }
 ```
 
+### Approving a device authorization grant
+
+When this device is acting as the approving device in an RFC 8628 device
+authorization grant, pass the `verification_uri_complete` URL from the device
+authorization response as the `verificationUri` start option of the
+[`useJourney` hook](#use-the-react-hook). After the Journey flow authenticates
+the user, the native SDK extracts the `user_code` from that URL and approves
+the requesting device.
+
 ### Post Authentication Operations
 
 After a Journey login succeeds, use the following operations to inspect and manage the active user session:
@@ -237,6 +249,28 @@ if (node?.type === 'ContinueNode') {
   });
 }
 ```
+
+Start options are supported when initiating a journey:
+
+```ts
+const node = await actions.start('Login', {
+  forceAuth: true,
+  noSession: true,
+});
+```
+
+To approve an RFC 8628 device authorization grant, pass the `verificationUri`
+start option (see [Approving a device authorization grant](#approving-a-device-authorization-grant)):
+
+```ts
+await actions.start('Login', {
+  verificationUri: 'https://example.com/device?user_code=WDJB-MJHT',
+});
+```
+
+After the Journey flow authenticates the user, the native SDK extracts the
+`user_code` from that URL and approves the requesting device automatically;
+no extra submit step is required in the app.
 
 ### Share Journey state across multiple screens (optional)
 

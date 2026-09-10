@@ -1,10 +1,3 @@
-<!--
-Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
-
-This software may be modified and distributed under the terms
-of the MIT license. See the LICENSE file for details.
--->
-
 # DaVinci Sample UI Documentation
 
 This folder contains the helper-only DaVinci sample implementation used by the sample app.

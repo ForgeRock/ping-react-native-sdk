@@ -271,6 +271,7 @@ function resolveDefaultValue(
     const phone = collector as {
       countryCode?: string;
       phoneNumber?: string;
+      extension?: string;
     };
     if (phone.countryCode === undefined && phone.phoneNumber === undefined) {
       return undefined;
@@ -278,6 +279,7 @@ function resolveDefaultValue(
     return {
       countryCode: phone.countryCode ?? '',
       phoneNumber: phone.phoneNumber ?? '',
+      extension: phone.extension ?? '',
     };
   }
 

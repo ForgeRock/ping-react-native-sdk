@@ -8,6 +8,7 @@
 package com.pingidentity.rnoidc
 
 import com.facebook.react.bridge.ReadableMap
+import com.pingidentity.rncore.utils.readBoolean
 import com.pingidentity.rncore.utils.readStringMap
 import com.pingidentity.rncore.utils.requireString
 import com.pingidentity.rncore.utils.requireStringArray
@@ -21,6 +22,7 @@ internal data class OidcClientPayload(
   val openId: OpenIdPayload?,
   val redirectUri: String,
   val scopes: List<String>,
+  val par: Boolean?,
   val storageId: String?,
   val loggerId: String?,
   val acrValues: String?,
@@ -39,12 +41,14 @@ internal data class OidcClientPayload(
  * Optional OpenID configuration override supplied by JS.
  */
 internal data class OpenIdPayload(
-  val authorizationEndpoint: String,
-  val tokenEndpoint: String,
-  val userinfoEndpoint: String,
+  val authorizationEndpoint: String?,
+  val tokenEndpoint: String?,
+  val userinfoEndpoint: String?,
   val endSessionEndpoint: String?,
   val pingEndIdpSessionEndpoint: String?,
-  val revocationEndpoint: String?
+  val revocationEndpoint: String?,
+  val pushedAuthorizationRequestEndpoint: String?,
+  val deviceAuthorizationEndpoint: String?
 )
 
 /**
@@ -74,6 +78,7 @@ internal object OidcConfigParser {
       openId = openId,
       redirectUri = redirectUri,
       scopes = scopes,
+      par = readBoolean(config, "par"),
       storageId = if (config.hasKey("storageId")) config.getString("storageId") else null,
       loggerId = if (config.hasKey("loggerId")) config.getString("loggerId") else null,
       acrValues = if (config.hasKey("acrValues")) config.getString("acrValues") else null,
@@ -110,9 +115,21 @@ internal object OidcConfigParser {
     }
     val openIdMap = config.getMap("openId") ?: return null
     return OpenIdPayload(
-      authorizationEndpoint = requireString(openIdMap, "authorizationEndpoint"),
-      tokenEndpoint = requireString(openIdMap, "tokenEndpoint"),
-      userinfoEndpoint = requireString(openIdMap, "userinfoEndpoint"),
+      authorizationEndpoint = if (openIdMap.hasKey("authorizationEndpoint")) {
+        openIdMap.getString("authorizationEndpoint")
+      } else {
+        null
+      },
+      tokenEndpoint = if (openIdMap.hasKey("tokenEndpoint")) {
+        openIdMap.getString("tokenEndpoint")
+      } else {
+        null
+      },
+      userinfoEndpoint = if (openIdMap.hasKey("userinfoEndpoint")) {
+        openIdMap.getString("userinfoEndpoint")
+      } else {
+        null
+      },
       endSessionEndpoint = if (openIdMap.hasKey("endSessionEndpoint")) {
         openIdMap.getString("endSessionEndpoint")
       } else {
@@ -125,6 +142,16 @@ internal object OidcConfigParser {
       },
       revocationEndpoint = if (openIdMap.hasKey("revocationEndpoint")) {
         openIdMap.getString("revocationEndpoint")
+      } else {
+        null
+      },
+      pushedAuthorizationRequestEndpoint = if (openIdMap.hasKey("pushedAuthorizationRequestEndpoint")) {
+        openIdMap.getString("pushedAuthorizationRequestEndpoint")
+      } else {
+        null
+      },
+      deviceAuthorizationEndpoint = if (openIdMap.hasKey("deviceAuthorizationEndpoint")) {
+        openIdMap.getString("deviceAuthorizationEndpoint")
       } else {
         null
       }

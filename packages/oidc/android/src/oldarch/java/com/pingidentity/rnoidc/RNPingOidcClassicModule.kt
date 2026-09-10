@@ -57,6 +57,17 @@ class RNPingOidcClassicModule(
   }
 
   /**
+   * Create a native-backed OIDC device client and return its identifier.
+   *
+   * @param config JS-provided client configuration
+   * @return Stable device client identifier
+   */
+  @ReactMethod(isBlockingSynchronousMethod = true)
+  fun createOidcDeviceClient(config: ReadableMap): String {
+    return RNPingOidcCommon.createOidcDeviceClient(config)
+  }
+
+  /**
    * Create a native-backed OIDC web client from an existing client id.
    *
    * @param clientId Identifier returned by [createClient]
@@ -68,11 +79,107 @@ class RNPingOidcClassicModule(
   }
 
   /**
-   * Resolve the current client's tokens.
+   * Start an OIDC device authorization flow for the device client.
    *
-   * @param clientId Identifier returned by [createClient]
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved with the subscriptionId or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceAuthorize(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceAuthorize(deviceClientId, promise)
+  }
+
+  /**
+   * Resolve whether a user is available for the given device client.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved with a boolean or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceHasUser(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceHasUser(deviceClientId, promise)
+  }
+
+  /**
+   * Resolve the current device client user's tokens.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
    * @param promise Promise resolved with token payload or rejected with GenericError
    */
+  @ReactMethod
+  fun deviceToken(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceToken(deviceClientId, promise)
+  }
+
+  /**
+   * Force-refresh the current device client user's tokens.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved with token payload or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceRefresh(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRefresh(deviceClientId, promise)
+  }
+
+  /**
+   * Fetch user profile data from the userinfo endpoint for the device client.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param cache When true, return cached userinfo if available
+   * @param promise Promise resolved with userinfo payload or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceUserinfo(deviceClientId: String, cache: Boolean, promise: Promise) {
+    RNPingOidcCommon.deviceUserinfo(deviceClientId, cache, promise)
+  }
+
+  /**
+   * Revoke tokens for the current device client user.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved on success or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceRevoke(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceRevoke(deviceClientId, promise)
+  }
+
+  /**
+   * Logout the current device client user session.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved with end-session status or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceLogout(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.deviceLogout(deviceClientId, promise)
+  }
+
+  /**
+   * Cancel an active device authorization flow.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param subscriptionId Identifier returned by [deviceAuthorize]
+   * @param promise Promise resolved on success or rejected with GenericError
+   */
+  @ReactMethod
+  fun cancelDeviceAuthorization(deviceClientId: String, subscriptionId: String, promise: Promise) {
+    RNPingOidcCommon.cancelDeviceAuthorization(deviceClientId, subscriptionId, promise)
+  }
+
+  /**
+   * Open a device authorization verification URL in the on-device browser.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param verificationUri Verification URI (prefer `verification_uri_complete`)
+   * @param promise Promise resolved with success/cancel or rejected with GenericError
+   */
+  @ReactMethod
+  fun deviceOpenVerificationUrl(deviceClientId: String, verificationUri: String, promise: Promise) {
+    RNPingOidcCommon.deviceOpenVerificationUrl(deviceClientId, verificationUri, promise)
+  }
+
   @ReactMethod
   fun clientToken(clientId: String, promise: Promise) {
     RNPingOidcCommon.clientToken(clientId, promise)
@@ -200,6 +307,17 @@ class RNPingOidcClassicModule(
   @ReactMethod
   fun logout(webClientId: String, promise: Promise) {
     RNPingOidcCommon.logout(webClientId, promise)
+  }
+
+  /**
+   * Dispose the device client and cancel any active authorization flow.
+   *
+   * @param deviceClientId Identifier returned by [createOidcDeviceClient]
+   * @param promise Promise resolved on success or rejected with GenericError
+   */
+  @ReactMethod
+  fun disposeOidcDeviceClient(deviceClientId: String, promise: Promise) {
+    RNPingOidcCommon.disposeOidcDeviceClient(deviceClientId, promise)
   }
 
   @ReactMethod

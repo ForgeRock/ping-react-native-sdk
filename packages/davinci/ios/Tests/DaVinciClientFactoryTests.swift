@@ -23,23 +23,20 @@ final class DaVinciClientFactoryTests: XCTestCase {
 
   func testBuildSucceedsWithRequiredFieldsOnly() async throws {
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: ["openid"],
-      storageId: nil,
+      oidc: makePayload(),
       loggerId: nil,
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
+    )
+
+    let davinci = try await DaVinciClientFactory().build(payload)
+    XCTAssertNotNil(davinci)
+  }
+
+  func testBuildWithParEnabledSucceeds() async throws {
+    let payload = DaVinciClientPayload(
+      oidc: makePayload(par: true),
+      loggerId: nil,
+      timeout: nil,
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -48,23 +45,9 @@ final class DaVinciClientFactoryTests: XCTestCase {
 
   func testBuildWithoutPluginPayloadDoesNotThrow() async throws {
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: ["openid"],
-      storageId: nil,
+      oidc: makePayload(),
       loggerId: nil,
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -77,23 +60,9 @@ final class DaVinciClientFactoryTests: XCTestCase {
     )
 
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: [],
-      storageId: storageId,
+      oidc: makePayload(scopes: [], storageId: storageId),
       loggerId: nil,
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -106,23 +75,9 @@ final class DaVinciClientFactoryTests: XCTestCase {
     )
 
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: [],
-      storageId: storageId,
+      oidc: makePayload(scopes: [], storageId: storageId),
       loggerId: nil,
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -131,23 +86,9 @@ final class DaVinciClientFactoryTests: XCTestCase {
 
   func testBuildThrowsForUnknownStorageId() async {
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: [],
-      storageId: "missing-storage-handle",
+      oidc: makePayload(scopes: [], storageId: "missing-storage-handle"),
       loggerId: nil,
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
     )
 
     do {
@@ -164,23 +105,9 @@ final class DaVinciClientFactoryTests: XCTestCase {
 
   func testBuildIgnoresUnknownLoggerId() async throws {
     let payload = DaVinciClientPayload(
-      discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
-      clientId: "my-client",
-      redirectUri: "com.example.app://oauth2redirect",
-      scopes: [],
-      storageId: nil,
+      oidc: makePayload(scopes: []),
       loggerId: "missing-logger-handle",
       timeout: nil,
-      signOutRedirectUri: nil,
-      loginHint: nil,
-      nonce: nil,
-      state: nil,
-      prompt: nil,
-      display: nil,
-      uiLocales: nil,
-      acrValues: nil,
-      refreshThreshold: nil,
-      additionalParameters: [:]
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -193,13 +120,27 @@ final class DaVinciClientFactoryTests: XCTestCase {
     )
 
     let payload = DaVinciClientPayload(
+      oidc: makePayload(scopes: []),
+      loggerId: loggerId,
+      timeout: nil,
+    )
+
+    let davinci = try await DaVinciClientFactory().build(payload)
+    XCTAssertNotNil(davinci)
+  }
+
+  private func makePayload(
+    par: Bool? = nil,
+    scopes: [String] = ["openid"],
+    storageId: String? = nil
+  ) -> DaVinciOidcPayload {
+    DaVinciOidcPayload(
       discoveryEndpoint: "https://auth.example.com/.well-known/openid-configuration",
       clientId: "my-client",
       redirectUri: "com.example.app://oauth2redirect",
-      scopes: [],
-      storageId: nil,
-      loggerId: loggerId,
-      timeout: nil,
+      scopes: scopes,
+      par: par,
+      storageId: storageId,
       signOutRedirectUri: nil,
       loginHint: nil,
       nonce: nil,
@@ -211,9 +152,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       refreshThreshold: nil,
       additionalParameters: [:]
     )
-
-    let davinci = try await DaVinciClientFactory().build(payload)
-    XCTAssertNotNil(davinci)
   }
 }
 

@@ -134,10 +134,14 @@ public final class RNPingJourneyCommon: NSObject {
   /// Starts a configured Journey by name.
   ///
   /// - Parameters:
+  ///
+  /// - Parameters:
   ///   - journeyId: Native Journey instance id.
   ///   - journeyName: Journey/tree name to execute.
   ///   - forceAuth: Whether to force AM authentication despite active sessions.
   ///   - noSession: Whether to avoid creating/updating an AM session.
+  ///   - verificationUri: Optional RFC 8628 `verification_uri_complete` URL used when this
+  ///     device approves a device authorization grant; empty string means absent.
   ///   - resolver: Promise resolver called with first node payload.
   ///   - rejecter: Promise rejecter called with `GenericError`.
   @objc
@@ -146,6 +150,7 @@ public final class RNPingJourneyCommon: NSObject {
     journeyName: String,
     forceAuth: Bool,
     noSession: Bool,
+    verificationUri: String,
     resolver: @escaping NodeResolver,
     rejecter: @escaping PromiseRejecter
   ) {
@@ -160,6 +165,9 @@ public final class RNPingJourneyCommon: NSObject {
       return
     }
 
+    let trimmedVerificationUri = verificationUri.trimmingCharacters(
+      in: .whitespacesAndNewlines
+    )
     Task { @MainActor in
       guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
@@ -174,6 +182,9 @@ public final class RNPingJourneyCommon: NSObject {
       let node = await journey.start(journeyName) { startOptions in
         startOptions.forceAuth = forceAuth
         startOptions.noSession = noSession
+        if let url = URL(string: trimmedVerificationUri) {
+          startOptions.verificationUriComplete = url
+        }
       }
       stateStore.setNode(journeyId: journeyId, node: node)
       promise.resolve(JourneyNodeMapper.mapNode(node))

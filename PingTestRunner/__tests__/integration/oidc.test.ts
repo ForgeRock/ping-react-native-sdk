@@ -18,12 +18,14 @@
  */
 
 import { createOidcClient, createOidcWebClient } from '@ping-identity/rn-oidc';
+import { getNativeModule } from '../../../packages/oidc/src/NativeRNPingOidc';
 
 const VALID_CONFIG = {
   discoveryEndpoint: 'https://example.com/.well-known/openid-configuration',
   clientId: 'test-client',
   redirectUri: 'org.forgerock.demo://oauth2redirect',
   scopes: ['openid', 'profile'],
+  par: true,
 };
 
 describe('@ping-identity/rn-oidc — integration', () => {
@@ -53,6 +55,13 @@ describe('@ping-identity/rn-oidc — integration', () => {
       expect(client).toBeDefined();
       expect(typeof client.id).toBe('string');
       expect(client.id.length).toBeGreaterThan(0);
+    });
+
+    it('delegates par: true to the native createClient payload', () => {
+      createOidcClient(VALID_CONFIG);
+      expect(getNativeModule().createClient).toHaveBeenCalledWith(
+        expect.objectContaining({ par: true }),
+      );
     });
 
     it('returned client has the correct method surface', () => {

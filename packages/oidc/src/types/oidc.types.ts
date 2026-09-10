@@ -83,6 +83,61 @@ export type OidcClientConfig = Omit<OidcCoreConfig, 'signOutRedirectUri'> & {
 export type OidcOpenIdConfiguration = SharedOidcOpenIdConfiguration;
 
 /**
+ * Response returned when an OIDC device authorization flow starts.
+ */
+export type OidcDeviceAuthorizationResponse = {
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  verificationUriComplete?: string;
+  expiresIn: number;
+  interval: number;
+};
+
+/**
+ * Normalized status emitted while an OIDC device authorization flow runs.
+ */
+export type OidcDeviceFlowStatus =
+  | {
+      type: 'started';
+      response: OidcDeviceAuthorizationResponse;
+    }
+  | {
+      type: 'polling';
+      pollCount: number;
+      pollInterval: number;
+      nextPollAt: number;
+    }
+  | { type: 'success' }
+  | { type: 'expired' }
+  | { type: 'accessDenied' }
+  | {
+      type: 'failure';
+      error: {
+        message: string;
+        code?: string;
+        status?: number;
+      };
+    };
+
+/**
+ * Authenticated user operations for an OIDC device client.
+ */
+export type OidcDeviceUser = OidcUser;
+
+/**
+ * Native-backed OIDC device authorization client.
+ */
+export type OidcDeviceClient = {
+  id: string;
+  authorize(
+    onStatus: (status: OidcDeviceFlowStatus) => void,
+  ): Promise<() => void>;
+  user(): Promise<OidcDeviceUser | null>;
+  dispose(): Promise<void>;
+};
+
+/**
  * Optional overrides when launching an authorization request.
  */
 export type OidcAuthorizeOptions = {

@@ -371,6 +371,27 @@ function CollectorField({
     );
   }
 
+  if (collector.type === 'SINGLE_CHECKBOX') {
+    return (
+      <Switch
+        testID={testID}
+        value={typeof value === 'boolean' ? value : collector.value}
+        onValueChange={onValueChange}
+      />
+    );
+  }
+
+  if (collector.type === 'READ_ONLY_TEXT') {
+    return (
+      <Text testID={testID}>
+        {collector.titleEnabled && collector.title
+          ? `${collector.title}\n`
+          : ''}
+        {collector.content}
+      </Text>
+    );
+  }
+
   if (collector.type === 'SUBMIT_BUTTON') {
     const submitCollector = collector as Extract<
       DaVinciNormalizedCollector,
@@ -473,8 +494,9 @@ function CollectorField({
 
   if (collector.type === 'PHONE_NUMBER') {
     const phone =
-      (value as { countryCode?: string; phoneNumber?: string } | undefined) ??
-      {};
+      (value as
+        | { countryCode?: string; phoneNumber?: string; extension?: string }
+        | undefined) ?? {};
     return (
       <View testID={testID}>
         <TextInput
@@ -484,6 +506,7 @@ function CollectorField({
             onValueChange({
               countryCode: t,
               phoneNumber: phone.phoneNumber ?? '',
+              extension: phone.extension ?? collector.extension ?? '',
             })
           }
           placeholder="Country code"
@@ -496,6 +519,7 @@ function CollectorField({
             onValueChange({
               countryCode: phone.countryCode ?? collector.countryCode ?? '',
               phoneNumber: t,
+              extension: phone.extension ?? collector.extension ?? '',
             })
           }
           placeholder="Phone number"

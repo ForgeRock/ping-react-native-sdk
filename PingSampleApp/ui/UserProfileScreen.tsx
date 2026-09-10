@@ -19,9 +19,11 @@ import AuthSourceTabs from './components/molecules/AuthSourceTabs';
 import UserProfileJourneyPanel from './userProfile/components/organisms/UserProfileJourneyPanel';
 import UserProfileOidcPanel from './userProfile/components/organisms/UserProfileOidcPanel';
 import UserProfileDaVinciPanel from './userProfile/components/organisms/UserProfileDaVinciPanel';
+import UserProfileAuthGrantPanel from './userProfile/components/organisms/UserProfileAuthGrantPanel';
+import { useDeviceAuthGrant } from '@ping-identity/rn-oidc';
 
-type UserProfileTab = 'Journey' | 'OIDC' | 'DaVinci';
-const USER_PROFILE_TABS = ['Journey', 'OIDC', 'DaVinci'] as const;
+type UserProfileTab = 'Journey' | 'OIDC' | 'DaVinci' | 'Auth Grant';
+const USER_PROFILE_TABS = ['Journey', 'OIDC', 'DaVinci', 'Auth Grant'] as const;
 
 type UserProfileNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -60,10 +62,19 @@ export default function UserProfileScreen({
   const [davinciError, setDavinciError] = useState<string | null>(null);
   const [showRawDavinciUserInfo, setShowRawDavinciUserInfo] =
     useState<boolean>(false);
+  const [showRawAuthGrantUserInfo, setShowRawAuthGrantUserInfo] =
+    useState<boolean>(false);
+  const [authGrantUserInfo, setAuthGrantUserInfo] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [authGrantLoading, setAuthGrantLoading] = useState(false);
+  const [authGrantError, setAuthGrantError] = useState<string | null>(null);
 
   const [, journeyActions] = useJourney();
   const [oidcState, oidcActions] = useOidc();
   const davinciActions = useDaVinci();
+  const [, deviceActions] = useDeviceAuthGrant();
 
   const refreshJourneySession = useCallback(async (): Promise<void> => {
     setJourneyLoading(true);
@@ -97,6 +108,22 @@ export default function UserProfileScreen({
     }
   }, [oidcActions]);
 
+  const refreshAuthGrantSession = useCallback(async (): Promise<void> => {
+    setAuthGrantLoading(true);
+    setAuthGrantError(null);
+    setShowRawAuthGrantUserInfo(false);
+    try {
+      const user = await deviceActions.restore();
+      const userInfo = user ? await deviceActions.userinfo(false) : null;
+      setAuthGrantUserInfo(userInfo);
+    } catch (cause) {
+      setAuthGrantUserInfo(null);
+      setAuthGrantError(formatError(cause));
+    } finally {
+      setAuthGrantLoading(false);
+    }
+  }, [deviceActions]);
+
   const refreshDavinciSession = useCallback(async (): Promise<void> => {
     setDavinciLoading(true);
     setDavinciError(null);
@@ -128,6 +155,8 @@ export default function UserProfileScreen({
         void refreshOidcSession();
       } else if (activeTab === 'DaVinci') {
         void refreshDavinciSession();
+      } else if (activeTab === 'Auth Grant') {
+        void refreshAuthGrantSession();
       }
       return undefined;
     }, [
@@ -135,6 +164,7 @@ export default function UserProfileScreen({
       refreshJourneySession,
       refreshOidcSession,
       refreshDavinciSession,
+      refreshAuthGrantSession,
     ]),
   );
 
@@ -154,6 +184,9 @@ export default function UserProfileScreen({
     }
     if (tab !== 'DaVinci') {
       setShowRawDavinciUserInfo(false);
+    }
+    if (tab !== 'Auth Grant') {
+      setShowRawAuthGrantUserInfo(false);
     }
   }, []);
 
@@ -199,6 +232,19 @@ export default function UserProfileScreen({
                 Alert.alert('OIDC start failed', formatError(cause));
               }
             }}
+          />
+        ) : null}
+
+        {activeTab === 'Auth Grant' ? (
+          <UserProfileAuthGrantPanel
+            loading={authGrantLoading}
+            userInfo={authGrantUserInfo}
+            error={authGrantError}
+            showRawUserInfo={showRawAuthGrantUserInfo}
+            onToggleRawUserInfo={() =>
+              setShowRawAuthGrantUserInfo(value => !value)
+            }
+            onStartAuthGrant={() => navigation.navigate('DeviceAuthorization')}
           />
         ) : null}
 

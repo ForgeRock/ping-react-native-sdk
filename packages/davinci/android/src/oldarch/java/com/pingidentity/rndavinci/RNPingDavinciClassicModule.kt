@@ -57,11 +57,12 @@ class RNPingDavinciClassicModule(
    * Start the DaVinci flow.
    *
    * @param davinciId Native DaVinci client id.
+   * @param options Optional start options (for example `verificationUri`).
    * @param promise Promise resolved with the first node payload.
    */
   @ReactMethod
-  fun start(davinciId: String, promise: Promise) {
-    RNPingDavinciCommon.start(davinciId, promise)
+  fun start(davinciId: String, options: ReadableMap?, promise: Promise) {
+    RNPingDavinciCommon.start(davinciId, options, promise)
   }
 
   /**
@@ -74,6 +75,24 @@ class RNPingDavinciClassicModule(
   @ReactMethod
   fun next(davinciId: String, input: ReadableMap, promise: Promise) {
     RNPingDavinciCommon.next(davinciId, input, promise)
+  }
+
+  /**
+   * Validate one active DaVinci collector without advancing the flow.
+   *
+   * @param davinciId Native DaVinci client id.
+   * @param collectorKey Collector key to update and validate.
+   * @param input Single-entry collector mutation payload.
+   * @param promise Promise resolved with encoded validation errors.
+   */
+  @ReactMethod
+  fun validate(
+    davinciId: String,
+    collectorKey: String,
+    input: ReadableMap,
+    promise: Promise,
+  ) {
+    RNPingDavinciCommon.validate(davinciId, collectorKey, input, promise)
   }
 
   /**

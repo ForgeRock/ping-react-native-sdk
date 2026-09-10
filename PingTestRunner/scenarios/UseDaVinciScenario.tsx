@@ -309,10 +309,37 @@ function HookCollectorInput({
 }: HookCollectorInputProps): React.JSX.Element | null {
   const testID = `use-davinci-field-${collector.key}`;
 
-  if (collector.kind === 'output') {
+  if (collector.kind === 'boolean') {
+    const booleanCollector = collector as {
+      value?: boolean;
+    };
     return (
-      <Text testID={`use-davinci-label-${collector.key}`}>
-        {(collector as { content?: string }).content ?? ''}
+      <Switch
+        testID={testID}
+        value={
+          typeof value === 'boolean' ? value : (booleanCollector.value ?? false)
+        }
+        onValueChange={onValueChange}
+      />
+    );
+  }
+
+  if (collector.kind === 'output') {
+    const outputCollector = collector as {
+      content?: string;
+      title?: string;
+      titleEnabled?: boolean;
+    };
+    const outputTestID =
+      collector.type === 'READ_ONLY_TEXT'
+        ? testID
+        : `use-davinci-label-${collector.key}`;
+    return (
+      <Text testID={outputTestID}>
+        {outputCollector.titleEnabled && outputCollector.title
+          ? `${outputCollector.title}\n`
+          : ''}
+        {outputCollector.content ?? ''}
       </Text>
     );
   }
@@ -397,9 +424,11 @@ function HookCollectorInput({
 
   if (collector.kind === 'phone') {
     const phone =
-      (value as { countryCode?: string; phoneNumber?: string } | undefined) ??
-      {};
+      (value as
+        | { countryCode?: string; phoneNumber?: string; extension?: string }
+        | undefined) ?? {};
     const countryCode = (collector as { countryCode?: string }).countryCode;
+    const extension = (collector as { extension?: string }).extension;
     return (
       <View testID={testID}>
         <TextInput
@@ -409,6 +438,7 @@ function HookCollectorInput({
             onValueChange({
               countryCode: t,
               phoneNumber: phone.phoneNumber ?? '',
+              extension: phone.extension ?? extension ?? '',
             })
           }
           placeholder="Country code"
@@ -421,6 +451,7 @@ function HookCollectorInput({
             onValueChange({
               countryCode: phone.countryCode ?? countryCode ?? '',
               phoneNumber: t,
+              extension: phone.extension ?? extension ?? '',
             })
           }
           placeholder="Phone number"

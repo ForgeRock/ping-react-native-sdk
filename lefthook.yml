@@ -19,6 +19,10 @@ pre-commit:
       glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp}'
       run: scripts/check-copyright.sh {staged_files}
 
+    - name: native-sdk-versions
+      glob: '*.{gradle,podspec}'
+      run: node scripts/check-native-sdk-versions.mjs
+
 pre-push:
   jobs:
     - name: prettier
