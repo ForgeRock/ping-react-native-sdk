@@ -258,9 +258,17 @@ no extra submit step is required in the app.</p>
 </tr>
 </tbody>
 </table>
-<p>Integration-dependent collectors (for example, social IdP, FIDO, or PingOne Protect) are
-surfaced in node payloads and require client-side integration before submission
-(<code>executionMode: 'integration_required'</code>).</p>
+<p>Integration-dependent collectors are surfaced in node payloads with
+<code>executionMode: 'integration_required'</code>. Their minimum generic shape is <code>key</code>,
+<code>type</code>, and optional <code>raw</code>; the owning integration package may provide additional
+fields and the operation needed before <code>next()</code>. Use the integration package's
+exported collector type/constant and pass its type in <code>handledCollectorTypes</code>:</p>
+<pre><code class="ts"><span class="hl-5">import</span><span class="hl-1"> { </span><span class="hl-3">socialLoginCollectorType</span><span class="hl-1"> } </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-external-idp&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">form</span><span class="hl-1"> = </span><span class="hl-0">useDaVinciForm</span><span class="hl-1">(</span><span class="hl-3">node</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-3">handledCollectorTypes:</span><span class="hl-1"> </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Set</span><span class="hl-1">([</span><span class="hl-3">socialLoginCollectorType</span><span class="hl-1">]),</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<p>Known collector-specific fields should be accessed only after narrowing with the
+owning package's type or helper. Generic integration collectors do not guarantee
+fields such as <code>label</code>, <code>options</code>, or <code>value</code>.</p>
 <h3 id="unsupported-fields" class="tsd-anchor-link">Unsupported fields<a href="#unsupported-fields" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <p>When the native SDK cannot instantiate a collector from the server payload, the bridge surfaces it in <code>ContinueNode.unsupportedFields</code>:</p>
 <pre><code class="ts"><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">type</span><span class="hl-1"> === </span><span class="hl-2">&#39;ContinueNode&#39;</span><span class="hl-1"> &amp;&amp; </span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">unsupportedFields</span><span class="hl-1">?.</span><span class="hl-3">length</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">warn</span><span class="hl-1">(</span><span class="hl-2">&#39;Unsupported fields present:&#39;</span><span class="hl-1">, </span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">unsupportedFields</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
