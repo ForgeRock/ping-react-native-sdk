@@ -104,6 +104,10 @@ RCT_EXPORT_MODULE()
     if (revocationEndpoint != nil) {
       openIdDict[@"revocationEndpoint"] = revocationEndpoint;
     }
+    NSString *pushedAuthorizationRequestEndpoint = openIdValue.pushedAuthorizationRequestEndpoint();
+    if (pushedAuthorizationRequestEndpoint != nil) {
+      openIdDict[@"pushedAuthorizationRequestEndpoint"] = pushedAuthorizationRequestEndpoint;
+    }
     NSString *deviceAuthorizationEndpoint = openIdValue.deviceAuthorizationEndpoint();
     if (deviceAuthorizationEndpoint != nil) {
       openIdDict[@"deviceAuthorizationEndpoint"] = deviceAuthorizationEndpoint;
@@ -114,6 +118,10 @@ RCT_EXPORT_MODULE()
   NSString *redirectUri = config.redirectUri();
   if (redirectUri != nil) {
     dict[@"redirectUri"] = redirectUri;
+  }
+
+  if (config.par().has_value()) {
+    dict[@"par"] = @(config.par().value());
   }
 
   NSMutableArray<NSString *> *scopes = [NSMutableArray new];
@@ -194,6 +202,9 @@ RCT_EXPORT_MODULE()
   NSMutableArray *scopes = [NSMutableArray new];
   for (auto scope : config.scopes()) [scopes addObject:scope];
   dict[@"scopes"] = scopes;
+  if (config.par().has_value()) {
+    dict[@"par"] = @(config.par().value());
+  }
   if (config.storageId()) dict[@"storageId"] = config.storageId();
   if (config.loggerId()) dict[@"loggerId"] = config.loggerId();
 
@@ -257,6 +268,7 @@ RCT_EXPORT_MODULE()
     if (value.endSessionEndpoint()) openIdDict[@"endSessionEndpoint"] = value.endSessionEndpoint();
     if (value.pingEndIdpSessionEndpoint()) openIdDict[@"pingEndIdpSessionEndpoint"] = value.pingEndIdpSessionEndpoint();
     if (value.revocationEndpoint()) openIdDict[@"revocationEndpoint"] = value.revocationEndpoint();
+    if (value.pushedAuthorizationRequestEndpoint()) openIdDict[@"pushedAuthorizationRequestEndpoint"] = value.pushedAuthorizationRequestEndpoint();
     if (value.deviceAuthorizationEndpoint()) openIdDict[@"deviceAuthorizationEndpoint"] = value.deviceAuthorizationEndpoint();
     dict[@"openId"] = openIdDict;
   }

@@ -25,6 +25,8 @@ public struct OidcOpenIdConfig: Sendable {
   public let pingEndIdpSessionEndpoint: String?
   /// Optional token revocation endpoint URL.
   public let revocationEndpoint: String?
+  /// Optional PAR endpoint URL.
+  public let pushedAuthorizationRequestEndpoint: String?
   /// Optional device authorization endpoint URL.
   public let deviceAuthorizationEndpoint: String?
 
@@ -35,6 +37,7 @@ public struct OidcOpenIdConfig: Sendable {
     endSessionEndpoint: String?,
     pingEndIdpSessionEndpoint: String?,
     revocationEndpoint: String?,
+    pushedAuthorizationRequestEndpoint: String? = nil,
     deviceAuthorizationEndpoint: String? = nil
   ) {
     self.authorizationEndpoint = authorizationEndpoint
@@ -43,6 +46,7 @@ public struct OidcOpenIdConfig: Sendable {
     self.endSessionEndpoint = endSessionEndpoint
     self.pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint
     self.revocationEndpoint = revocationEndpoint
+    self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
     self.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
   }
 }
@@ -67,6 +71,9 @@ public protocol OidcClientConfigHandle: NativeHandle {
 
   /// Optional OpenID endpoint override configuration.
   var openId: OidcOpenIdConfig? { get }
+
+  /// Optional PAR enablement flag.
+  var par: Bool? { get }
 
   /// Optional ACR values.
   var acrValues: String? { get }

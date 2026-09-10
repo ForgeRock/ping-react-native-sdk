@@ -11,7 +11,9 @@ import {
   useDaVinciContext,
   useDaVinciForm,
   type DaVinciError,
+  type DaVinciFieldValidationError,
   type DaVinciFormResult,
+  type DaVinciFormValue,
   type DaVinciNode,
   type IdpCollector,
   type PollingCollector,
@@ -49,6 +51,17 @@ export type UseDaVinciClientPanelControllerResult = {
    * Submits the current form by calling `next` with the planned payload.
    */
   onSubmit: () => void;
+  /**
+   * Validates the current value for a collector.
+   *
+   * @param collectorKey Collector key to validate.
+   * @param value Current rendered value for the collector.
+   * @returns Validation errors for the collector.
+   */
+  onValidate: (
+    collectorKey: string,
+    value: DaVinciFormValue,
+  ) => Promise<DaVinciFieldValidationError[]>;
   /**
    * Submits a flow collector (`SUBMIT_BUTTON`, `ACTION`, `FLOW_BUTTON`,
    * `FLOW_LINK`) by key.
@@ -119,8 +132,17 @@ export function useDaVinciClientPanelController(
 ): UseDaVinciClientPanelControllerResult {
   const { onAuthenticated, verificationUri } = options;
   const davinciContext = useDaVinciContext();
-  const { node, loading, error, start, next, user, logoutUser, pollStatus } =
-    useDaVinci();
+  const {
+    node,
+    loading,
+    error,
+    start,
+    next,
+    validate,
+    user,
+    logoutUser,
+    pollStatus,
+  } = useDaVinci();
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdp = useMemo(
     () =>
@@ -214,6 +236,14 @@ export function useDaVinciClientPanelController(
         console.warn(`[DaVinci] onSubmit failed: ${msg}`);
       });
   }, [form, loading, next, onProtectCollect]);
+
+  const onValidate = useCallback(
+    (
+      collectorKey: string,
+      value: DaVinciFormValue,
+    ): Promise<DaVinciFieldValidationError[]> => validate(collectorKey, value),
+    [validate],
+  );
 
   const onIdpAuthorize = useCallback(
     async (collector: IdpCollector): Promise<void> => {
@@ -311,6 +341,7 @@ export function useDaVinciClientPanelController(
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,
+    onValidate,
     onFlowAction,
     onIdpAuthorize,
     onPollStatus,

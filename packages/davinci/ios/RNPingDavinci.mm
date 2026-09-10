@@ -99,6 +99,10 @@ RCT_EXPORT_MODULE()
   dict[@"clientId"] = config.clientId();
   dict[@"redirectUri"] = config.redirectUri();
 
+  if (config.par().has_value()) {
+    dict[@"par"] = @(config.par().value());
+  }
+
   auto scopes = config.scopes();
   if (scopes.has_value()) {
     NSMutableArray<NSString *> *scopeArray = [NSMutableArray new];
@@ -189,6 +193,16 @@ RCT_EXPORT_MODULE()
       reject:(RCTPromiseRejectBlock)reject
 {
   [[self swiftImpl] next:davinciId input:input resolver:resolve rejecter:reject];
+}
+
+/// Bridges `validate(davinciId, collectorKey, input)`.
+- (void)validate:(NSString *)davinciId
+     collectorKey:(NSString *)collectorKey
+            input:(NSDictionary *)input
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject
+{
+  [[self swiftImpl] validate:davinciId collectorKey:collectorKey input:input resolver:resolve rejecter:reject];
 }
 
 /// Bridges `getSession(davinciId)`.

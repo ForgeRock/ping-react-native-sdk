@@ -16,6 +16,7 @@ import {
   refreshDaVinciSession,
   revokeDaVinciSession,
   startDaVinci,
+  validateDaVinci,
 } from './davinciMethods';
 import { DaVinciEvents } from './events';
 import type { NativeDaVinciConfig } from './NativeRNPingDavinci';
@@ -96,6 +97,7 @@ function resolveOidcStorageId(value: unknown): string | undefined {
  *       discoveryEndpoint: 'https://auth.example.com/.well-known/openid-configuration',
  *       clientId: 'my-client-id',
  *       redirectUri: 'myapp://callback',
+ *       scopes: ['openid', 'profile'],
  *     },
  *   },
  * });
@@ -165,6 +167,7 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
     state: oidcConfig.state,
     prompt: oidcConfig.prompt,
     display: oidcConfig.display,
+    ...(oidcConfig.par !== undefined ? { par: oidcConfig.par } : {}),
     uiLocales: oidcConfig.uiLocales,
     acrValues: oidcConfig.acrValues,
     refreshThreshold: oidcConfig.refreshThreshold,
@@ -301,6 +304,34 @@ export function createDaVinciClient(config: DaVinciConfig): DaVinciClient {
         return node;
       } catch (error) {
         logError('DaVinci next failed', error, { davinciId: id });
+        throw error;
+      }
+    },
+
+    /**
+     * Validates one active collector without advancing the flow.
+     *
+     * @param collectorKey - Collector key to update and validate.
+     * @param value - Candidate value to apply to the collector before validating.
+     * @returns Validation errors for the collector, or an empty array when valid.
+     * @throws {DaVinciError} When value application or validation fails.
+     */
+    async validate(collectorKey: string, value: unknown) {
+      const id = await ensureConfigured();
+      logDebug('DaVinci validate requested', { davinciId: id, collectorKey });
+      try {
+        const errors = await validateDaVinci(id, collectorKey, value);
+        logInfo('DaVinci validate succeeded', {
+          davinciId: id,
+          collectorKey,
+          errorCount: errors.length,
+        });
+        return errors;
+      } catch (error) {
+        logError('DaVinci validate failed', error, {
+          davinciId: id,
+          collectorKey,
+        });
         throw error;
       }
     },

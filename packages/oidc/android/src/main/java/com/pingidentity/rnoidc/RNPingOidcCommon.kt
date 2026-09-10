@@ -138,9 +138,13 @@ object RNPingOidcCommon {
           endSessionEndpoint = it.endSessionEndpoint,
           pingEndIdpSessionEndpoint = it.pingEndIdpSessionEndpoint,
           revocationEndpoint = it.revocationEndpoint,
+          pushedAuthorizationRequestEndpoint = it.pushedAuthorizationRequestEndpoint,
           deviceAuthorizationEndpoint = it.deviceAuthorizationEndpoint
         )
       }
+
+    override val par: Boolean?
+      get() = payload.par
 
     override val acrValues: String?
       get() = payload.acrValues

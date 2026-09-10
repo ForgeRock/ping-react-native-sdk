@@ -15,6 +15,7 @@ struct JourneyOpenIdPayload: Sendable {
   let endSessionEndpoint: String?
   let pingEndIdpSessionEndpoint: String?
   let revocationEndpoint: String?
+  let pushedAuthorizationRequestEndpoint: String?
   let deviceAuthorizationEndpoint: String?
 }
 
@@ -28,6 +29,8 @@ struct JourneyOidcPayload: Sendable {
   let redirectUri: String?
   /// Optional OIDC scopes requested for token exchanges.
   let scopes: [String]
+  /// Optional OIDC PAR enablement flag.
+  let par: Bool?
   /// Optional OpenID endpoint override settings.
   let openId: JourneyOpenIdPayload?
   /// Optional ACR values passed to OIDC authorization.
@@ -86,6 +89,7 @@ extension JourneyClientPayload {
     discoveryEndpoint: String?,
     redirectUri: String?,
     scopes: [String],
+    par: Bool? = nil,
     openId: JourneyOpenIdPayload?,
     acrValues: String?,
     signOutRedirectUri: String?,
@@ -131,6 +135,7 @@ extension JourneyClientPayload {
           discoveryEndpoint: discoveryEndpoint,
           redirectUri: redirectUri,
           scopes: scopes,
+          par: par,
           openId: openId,
           acrValues: acrValues,
           signOutRedirectUri: signOutRedirectUri,

@@ -19,6 +19,8 @@ internal object DaVinciErrorCodes {
     const val START = "DAVINCI_START_ERROR"
     /** Flow progression failure. */
     const val NEXT = "DAVINCI_NEXT_ERROR"
+    /** Standalone collector validation failure. */
+    const val VALIDATE = "DAVINCI_VALIDATE_ERROR"
     /** Collector value application failure. */
     const val COLLECTOR_APPLY = "DAVINCI_COLLECTOR_APPLY_ERROR"
     /** Unsupported collector mutation request. */

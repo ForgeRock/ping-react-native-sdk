@@ -70,6 +70,7 @@ export default function DaVinciClientPanel(
     hasActiveSession,
     isSessionCheckRunning,
     onSubmit,
+    onValidate,
     onFlowAction,
     onIdpAuthorize,
     onPollStatus,
@@ -92,6 +93,7 @@ export default function DaVinciClientPanel(
             form={form}
             loading={loading}
             onSubmit={onSubmit}
+            onValidate={onValidate}
             onFlowAction={onFlowAction}
             onIdpAuthorize={onIdpAuthorize}
             onPollStatus={onPollStatus}

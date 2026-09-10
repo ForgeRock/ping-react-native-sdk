@@ -6,6 +6,7 @@
  */
 
 import type {
+  DaVinciFieldValidationError,
   DaVinciFormValue,
   DaVinciNormalizedCollector,
   IdpCollector,
@@ -35,6 +36,17 @@ export type DaVinciCollectorRendererProps = {
    * Submits the current form. Used by submit buttons and flow links.
    */
   onSubmit: () => void;
+  /**
+   * Validates the current value for a collector.
+   *
+   * @param collectorKey Collector key to validate.
+   * @param value Current rendered value for the collector.
+   * @returns Validation errors for the collector.
+   */
+  onValidate: (
+    collectorKey: string,
+    value: DaVinciFormValue,
+  ) => Promise<DaVinciFieldValidationError[]>;
   /**
    * Immediately advances the flow using a specific {@link FlowCollector} key.
    *

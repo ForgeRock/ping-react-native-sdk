@@ -17,6 +17,7 @@ import { DaVinciError } from './types/error.types';
 import type {
   DaVinciClient,
   DaVinciConfig,
+  DaVinciFieldValidationError,
   DaVinciNextInput,
   DaVinciNode,
   DaVinciPollStatusOptions,
@@ -49,6 +50,18 @@ export type DaVinciHookActions = {
    */
   next: (input: DaVinciNextInput) => Promise<DaVinciNode>;
 
+  /**
+   * Validate one active collector without advancing the flow.
+   *
+   * @param collectorKey - Collector key to update and validate.
+   * @param value - Candidate value to apply to the collector before validating.
+   * @returns Validation errors for the collector, or an empty array when valid.
+   * @throws {DaVinciError} When value application or validation fails.
+   */
+  validate: (
+    collectorKey: string,
+    value: unknown,
+  ) => Promise<DaVinciFieldValidationError[]>;
   /**
    * Resolve the active user session.
    *
@@ -157,6 +170,9 @@ const missingDaVinciClient: DaVinciClient = {
   async next(): Promise<DaVinciNode> {
     throw missingDaVinciClientError;
   },
+  async validate(): Promise<DaVinciFieldValidationError[]> {
+    throw missingDaVinciClientError;
+  },
   async user(): Promise<DaVinciUserSession | null> {
     throw missingDaVinciClientError;
   },
@@ -241,6 +257,15 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
     [client, node],
   );
 
+  const validate = useCallback(
+    async (
+      collectorKey: string,
+      value: unknown,
+    ): Promise<DaVinciFieldValidationError[]> =>
+      await client.validate(collectorKey, value),
+    [client],
+  );
+
   const user = useCallback(
     async (): Promise<DaVinciUserSession | null> => await client.user(),
     [client],
@@ -288,6 +313,7 @@ function useDaVinciState(client: DaVinciClient): DaVinciHookResult {
     node,
     start,
     next,
+    validate,
     user,
     refresh,
     revoke,

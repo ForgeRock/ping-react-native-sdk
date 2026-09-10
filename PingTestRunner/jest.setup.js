@@ -112,6 +112,13 @@ jest.mock('../packages/davinci/src/NativeRNPingDavinci', () => {
         assertActive('next', id);
         return { type: 'SuccessNode', session: { value: 'session-mock' } };
       }),
+      // Joins the global mock rather than following pollDaVinci's per-test
+      // precedent: validate is exercised broadly (scenario wiring, other
+      // integration suites), matching the majority of methods here.
+      validate: jest.fn(async (id) => {
+        assertActive('validate', id);
+        return [];
+      }),
       getSession: jest.fn(async (id) => {
         assertActive('getSession', id);
         return { accessToken: 'mock-access-token' };
@@ -228,9 +235,8 @@ jest.mock('../packages/logger/src/NativeRNPingLogger', () => ({
 }));
 
 // ---------- rn-oidc ----------
-jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
-  __esModule: true,
-  getNativeModule: jest.fn(() => ({
+jest.mock('../packages/oidc/src/NativeRNPingOidc', () => {
+  const nativeModule = {
     createClient: jest.fn(() => 'oidc-client-id-mock'),
     createWebClient: jest.fn(() => 'oidc-web-client-id-mock'),
     clientToken: jest.fn(async () => ({
@@ -263,8 +269,12 @@ jest.mock('../packages/oidc/src/NativeRNPingOidc', () => ({
     userinfo: jest.fn(async () => ({ sub: 'web-user-mock' })),
     revoke: jest.fn(async () => undefined),
     logout: jest.fn(async () => undefined),
-  })),
-}));
+  };
+  return {
+    __esModule: true,
+    getNativeModule: jest.fn(() => nativeModule),
+  };
+});
 
 // ---------- rn-external-idp ----------
 jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({

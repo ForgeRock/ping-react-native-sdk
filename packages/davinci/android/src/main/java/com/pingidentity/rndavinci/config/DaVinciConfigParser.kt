@@ -8,51 +8,10 @@
 package com.pingidentity.rndavinci.config
 
 import com.facebook.react.bridge.ReadableMap
+import com.pingidentity.rncore.utils.readBoolean
 import com.pingidentity.rncore.utils.readStringArray
 import com.pingidentity.rncore.utils.readStringMap
 import com.pingidentity.rncore.utils.requireString
-
-/**
- * Parsed DaVinci client configuration supplied by JavaScript.
- */
-internal data class DaVinciClientPayload(
-    /** OIDC discovery endpoint URL — required. */
-    val discoveryEndpoint: String,
-    /** OAuth2 client identifier — required. */
-    val clientId: String,
-    /** OAuth2 redirect URI — required. */
-    val redirectUri: String,
-    /** OAuth2 scopes to request. */
-    val scopes: List<String>,
-    /** Optional OIDC storage handle id. */
-    val storageId: String?,
-    /** Optional logger handle id. */
-    val loggerId: String?,
-    /** Optional network timeout in milliseconds. */
-    val timeout: Long?,
-    /** Optional sign-out redirect URI (TODO-SDK-PARITY: Android only in 2.0.1. iOS ignores it). */
-    val signOutRedirectUri: String?,
-    /** Optional login hint. */
-    val loginHint: String?,
-    /** Optional nonce parameter. */
-    val nonce: String?,
-    /** Optional state parameter. */
-    val state: String?,
-    /** Optional prompt parameter. */
-    val prompt: String?,
-    /** Optional display parameter. */
-    val display: String?,
-    /** Optional UI locales. */
-    val uiLocales: String?,
-    /** Optional ACR values. */
-    val acrValues: String?,
-    /** Optional proactive token refresh threshold in seconds. */
-    val refreshThreshold: Long?,
-    /** Optional additional authorization parameters. */
-    val additionalParameters: Map<String, String>,
-    /** Optional protect lifecycle module configuration. Present only when modules.protect is provided. */
-    val protect: ProtectLifecyclePayload?,
-)
 
 /**
  * Parses and validates JS configuration maps into strongly typed DaVinci payloads.
@@ -71,7 +30,12 @@ internal object DaVinciConfigParser {
         val clientId = requireString(config, "clientId")
         val redirectUri = requireString(config, "redirectUri")
 
-        val scopes = readStringArray(config.getArray("scopes"))
+        val scopes = if (config.hasKey("scopes")) {
+            readStringArray(config.getArray("scopes"))
+        } else {
+            emptyList()
+        }
+        val par = readBoolean(config, "par")
         val storageId = if (config.hasKey("storageId")) config.getString("storageId") else null
         val loggerId = if (config.hasKey("loggerId")) config.getString("loggerId") else null
         val timeout = if (config.hasKey("timeout")) config.getDouble("timeout").toLong() else null
@@ -105,23 +69,26 @@ internal object DaVinciConfigParser {
         }
 
         return DaVinciClientPayload(
-            discoveryEndpoint = discoveryEndpoint,
-            clientId = clientId,
-            redirectUri = redirectUri,
-            scopes = scopes,
-            storageId = storageId,
+            oidc = DaVinciOidcPayload(
+                discoveryEndpoint = discoveryEndpoint,
+                clientId = clientId,
+                redirectUri = redirectUri,
+                scopes = scopes,
+                par = par,
+                storageId = storageId,
+                signOutRedirectUri = signOutRedirectUri,
+                loginHint = loginHint,
+                nonce = nonce,
+                state = state,
+                prompt = prompt,
+                display = display,
+                uiLocales = uiLocales,
+                acrValues = acrValues,
+                refreshThreshold = refreshThreshold,
+                additionalParameters = additionalParameters,
+            ),
             loggerId = loggerId,
             timeout = timeout,
-            signOutRedirectUri = signOutRedirectUri,
-            loginHint = loginHint,
-            nonce = nonce,
-            state = state,
-            prompt = prompt,
-            display = display,
-            uiLocales = uiLocales,
-            acrValues = acrValues,
-            refreshThreshold = refreshThreshold,
-            additionalParameters = additionalParameters,
             protect = protect,
         )
     }

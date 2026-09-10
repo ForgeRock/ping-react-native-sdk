@@ -13,6 +13,7 @@ import com.pingidentity.rncore.registry.NativeHandle
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import com.pingidentity.rndavinci.config.DaVinciClientPayload
+import com.pingidentity.rndavinci.config.DaVinciOidcPayload
 import com.pingidentity.rndavinci.config.ProtectLifecyclePayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -217,23 +218,26 @@ class DaVinciClientFactoryTest {
 
         val workflow = factory.build(
             DaVinciClientPayload(
-                discoveryEndpoint = "https://example.com/.well-known/openid-configuration",
-                clientId = "rn-client",
-                redirectUri = "com.example.app://oauth2redirect",
-                scopes = listOf("openid", "profile"),
-                storageId = "oidc-storage-1",
+                oidc = DaVinciOidcPayload(
+                    discoveryEndpoint = "https://example.com/.well-known/openid-configuration",
+                    clientId = "rn-client",
+                    redirectUri = "com.example.app://oauth2redirect",
+                    scopes = listOf("openid", "profile"),
+                    par = true,
+                    storageId = "oidc-storage-1",
+                    signOutRedirectUri = "com.example.app://logout",
+                    loginHint = "user@example.com",
+                    nonce = "nonce-value",
+                    state = "state-value",
+                    prompt = "login",
+                    display = "page",
+                    uiLocales = "en",
+                    acrValues = "urn:mfa",
+                    refreshThreshold = 60L,
+                    additionalParameters = mapOf("custom" to "value"),
+                ),
                 loggerId = "logger-1",
                 timeout = 30_000L,
-                signOutRedirectUri = "com.example.app://logout",
-                loginHint = "user@example.com",
-                nonce = "nonce-value",
-                state = "state-value",
-                prompt = "login",
-                display = "page",
-                uiLocales = "en",
-                acrValues = "urn:mfa",
-                refreshThreshold = 60L,
-                additionalParameters = mapOf("custom" to "value"),
                 protect = null,
             )
         )
@@ -249,23 +253,26 @@ class DaVinciClientFactoryTest {
         protect: ProtectLifecyclePayload? = null,
     ): DaVinciClientPayload {
         return DaVinciClientPayload(
-            discoveryEndpoint = "https://example.com/.well-known/openid-configuration",
-            clientId = "rn-client",
-            redirectUri = "com.example.app://oauth2redirect",
-            scopes = listOf("openid"),
-            storageId = storageId,
+            oidc = DaVinciOidcPayload(
+                discoveryEndpoint = "https://example.com/.well-known/openid-configuration",
+                clientId = "rn-client",
+                redirectUri = "com.example.app://oauth2redirect",
+                scopes = listOf("openid"),
+                par = null,
+                storageId = storageId,
+                signOutRedirectUri = null,
+                loginHint = null,
+                nonce = null,
+                state = null,
+                prompt = null,
+                display = null,
+                uiLocales = null,
+                acrValues = null,
+                refreshThreshold = null,
+                additionalParameters = emptyMap(),
+            ),
             loggerId = loggerId,
             timeout = null,
-            signOutRedirectUri = null,
-            loginHint = null,
-            nonce = null,
-            state = null,
-            prompt = null,
-            display = null,
-            uiLocales = null,
-            acrValues = null,
-            refreshThreshold = null,
-            additionalParameters = emptyMap(),
             protect = protect,
         )
     }

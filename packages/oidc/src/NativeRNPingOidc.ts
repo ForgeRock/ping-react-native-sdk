@@ -19,9 +19,11 @@ export type NativeOidcClientConfig = {
     endSessionEndpoint?: string;
     pingEndIdpSessionEndpoint?: string;
     revocationEndpoint?: string;
+    pushedAuthorizationRequestEndpoint?: string;
     deviceAuthorizationEndpoint?: string;
   };
   redirectUri: string;
+  par?: boolean;
   scopes: string[];
   storageId?: string;
   loggerId?: string;

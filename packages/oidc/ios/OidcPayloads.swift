@@ -18,6 +18,7 @@ struct OpenIdPayload {
   let endSessionEndpoint: String?
   let pingEndIdpSessionEndpoint: String?
   let revocationEndpoint: String?
+  let pushedAuthorizationRequestEndpoint: String?
   let deviceAuthorizationEndpoint: String?
 }
 
@@ -28,6 +29,7 @@ struct OidcClientPayload {
   let openId: OpenIdPayload?
   let redirectUri: String
   let scopes: [String]
+  let par: Bool?
   let storageId: String?
   let loggerId: String?
   let browserType: String?

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
  *
@@ -30,6 +31,7 @@ enum JourneyConfigParser {
     let discoveryEndpoint = readOptionalString(config["discoveryEndpoint"])
     let redirectUri = readOptionalString(config["redirectUri"])
     let scopes = ReadableMapUtils.readStringArray(config["scopes"] as? NSArray)
+    let par = try ReadableMapUtils.readBoolean(config, key: "par")
     let openId = parseOpenId(config["openId"])
     let acrValues = readOptionalString(config["acrValues"])
     let signOutRedirectUri = readOptionalString(config["signOutRedirectUri"])
@@ -83,6 +85,7 @@ enum JourneyConfigParser {
       discoveryEndpoint: discoveryEndpoint,
       redirectUri: redirectUri,
       scopes: scopes,
+      par: par,
       openId: openId,
       acrValues: acrValues,
       signOutRedirectUri: signOutRedirectUri,
@@ -130,6 +133,7 @@ enum JourneyConfigParser {
       endSessionEndpoint: readOptionalString(map["endSessionEndpoint"]),
       pingEndIdpSessionEndpoint: readOptionalString(map["pingEndIdpSessionEndpoint"]),
       revocationEndpoint: readOptionalString(map["revocationEndpoint"]),
+      pushedAuthorizationRequestEndpoint: readOptionalString(map["pushedAuthorizationRequestEndpoint"]),
       deviceAuthorizationEndpoint: readOptionalString(map["deviceAuthorizationEndpoint"])
     )
   }

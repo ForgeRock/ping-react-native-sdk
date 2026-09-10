@@ -42,6 +42,7 @@ internal class JourneyClientFactory(
         val discoveryEndpoint: String?,
         val redirectUri: String,
         val scopes: List<String>,
+        val par: Boolean?,
         val openId: OidcOpenIdConfig?,
         val acrValues: String?,
         val signOutRedirectUri: String?,
@@ -79,6 +80,7 @@ internal class JourneyClientFactory(
                     oidcConfig.discoveryEndpoint?.let { discoveryEndpoint = it }
                     redirectUri = oidcConfig.redirectUri
                     scopes = oidcConfig.scopes.toMutableSet()
+                    oidcConfig.par?.let { par = it }
                     acrValues = oidcConfig.acrValues
                     signOutRedirectUri = oidcConfig.signOutRedirectUri
                     state = oidcConfig.state
@@ -105,6 +107,9 @@ internal class JourneyClientFactory(
                                 endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
                                 pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
                                 revocationEndpoint = openIdConfig.revocationEndpoint ?: "",
+                                // NOTE: native property has no "ed" (pushAuthorizationRequestEndpoint), unlike the JS/iOS
+                                // key pushedAuthorizationRequestEndpoint.
+                                pushAuthorizationRequestEndpoint = openIdConfig.pushedAuthorizationRequestEndpoint ?: "",
                                 deviceAuthorizationEndpoint = openIdConfig.deviceAuthorizationEndpoint ?: ""
                             )
                         } else {
@@ -115,6 +120,7 @@ internal class JourneyClientFactory(
                                 openIdConfig.endSessionEndpoint?.let { endSessionEndpoint = it }
                                 openIdConfig.pingEndIdpSessionEndpoint?.let { pingEndIdpSessionEndpoint = it }
                                 openIdConfig.revocationEndpoint?.let { revocationEndpoint = it }
+                                openIdConfig.pushedAuthorizationRequestEndpoint?.let { pushAuthorizationRequestEndpoint = it }
                                 openIdConfig.deviceAuthorizationEndpoint?.let { deviceAuthorizationEndpoint = it }
                             }
                         }
@@ -156,6 +162,7 @@ internal class JourneyClientFactory(
             discoveryEndpoint = oidcPayload.discoveryEndpoint?.trim(),
             redirectUri = oidcPayload.redirectUri!!,
             scopes = oidcPayload.scopes,
+            par = oidcPayload.par,
             openId = oidcPayload.openId?.toCoreOpenIdConfig(),
             acrValues = oidcPayload.acrValues,
             signOutRedirectUri = oidcPayload.signOutRedirectUri,
@@ -194,6 +201,7 @@ internal class JourneyClientFactory(
             discoveryEndpoint = discoveryEndpoint,
             redirectUri = handle.redirectUri,
             scopes = handle.scopes,
+            par = handle.par,
             openId = handle.openId,
             acrValues = handle.acrValues,
             signOutRedirectUri = handle.signOutRedirectUri,
@@ -221,6 +229,7 @@ internal class JourneyClientFactory(
             endSessionEndpoint = endSessionEndpoint,
             pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint,
             revocationEndpoint = revocationEndpoint,
+            pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint,
             deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
         )
     }

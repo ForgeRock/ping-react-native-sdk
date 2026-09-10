@@ -5,9 +5,12 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
-import type { PasswordCollector } from '@ping-identity/rn-davinci';
+import type {
+  DaVinciFieldValidationError,
+  PasswordCollector,
+} from '@ping-identity/rn-davinci';
 import PingTextInput from '../../../components/atoms/PingTextInput';
 import DaVinciErrorList from '../atoms/DaVinciErrorList';
 import DaVinciPasswordRequirements from './DaVinciPasswordRequirements';
@@ -23,7 +26,10 @@ import type { DaVinciCollectorRendererProps } from './types';
 export default function DaVinciPasswordField(
   props: DaVinciCollectorRendererProps,
 ): React.ReactElement {
-  const { collector, value, onChange } = props;
+  const { collector, value, onChange, onValidate } = props;
+  const [validationErrors, setValidationErrors] = useState<
+    DaVinciFieldValidationError[] | null
+  >(null);
   const passwordCollector = collector as PasswordCollector;
   const stringValue = typeof value === 'string' ? value : '';
 
@@ -36,7 +42,17 @@ export default function DaVinciPasswordField(
             : passwordCollector.label
         }
         value={stringValue}
-        onChangeText={onChange}
+        onChangeText={value => {
+          setValidationErrors(null);
+          onChange(value);
+        }}
+        onBlur={() => {
+          onValidate(collector.key, stringValue)
+            .then(setValidationErrors)
+            .catch(error => {
+              console.warn('[DaVinci] Password validation failed:', error);
+            });
+        }}
         secureTextEntry
         allowPasswordToggle
         autoCapitalize="none"
@@ -48,7 +64,7 @@ export default function DaVinciPasswordField(
           value={stringValue}
         />
       ) : null}
-      <DaVinciErrorList />
+      <DaVinciErrorList errors={validationErrors ?? undefined} />
     </View>
   );
 }

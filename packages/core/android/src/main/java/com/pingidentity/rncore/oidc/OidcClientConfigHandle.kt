@@ -22,6 +22,7 @@ import com.pingidentity.rncore.registry.NativeHandle
  * @property userinfoEndpoint Optional userinfo endpoint URL.
  * @property endSessionEndpoint Optional end-session endpoint URL.
  * @property pingEndIdpSessionEndpoint Optional Ping end-session endpoint URL.
+ * @property pushedAuthorizationRequestEndpoint Optional PAR endpoint URL.
  * @property revocationEndpoint Optional token revocation endpoint URL.
  * @property deviceAuthorizationEndpoint Optional device authorization endpoint URL.
  */
@@ -32,6 +33,7 @@ data class OidcOpenIdConfig(
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
     val revocationEndpoint: String?,
+    val pushedAuthorizationRequestEndpoint: String? = null,
     val deviceAuthorizationEndpoint: String? = null
 )
 
@@ -68,6 +70,11 @@ interface OidcClientConfigHandle : NativeHandle {
      * Optional OpenID endpoint override configuration.
      */
     val openId: OidcOpenIdConfig?
+
+    /**
+     * Optional PAR enablement flag.
+     */
+    val par: Boolean?
 
     /**
      * Optional ACR values.

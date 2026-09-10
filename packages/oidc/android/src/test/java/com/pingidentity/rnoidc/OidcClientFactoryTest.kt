@@ -75,6 +75,24 @@ class OidcClientFactoryTest {
   }
 
   @Test
+  fun buildOidcClient_appliesPar() {
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+
+    val config = factory.buildOidcClient(basePayload().copy(par = true)).extractConfig()
+
+    assertEquals(true, config.par)
+  }
+
+  @Test
+  fun buildOidcClient_defaultsParToFalse() {
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+
+    val config = factory.buildOidcClient(basePayload()).extractConfig()
+
+    assertEquals(false, config.par)
+  }
+
+  @Test
   fun buildOidcClient_appliesOpenIdDirectlyWhenNoDiscoveryEndpoint() {
     // With no discoveryEndpoint, there is nothing for the openId payload to
     // merge onto: it becomes the complete configuration, and any endpoint
@@ -90,6 +108,7 @@ class OidcClientFactoryTest {
         endSessionEndpoint = null,
         pingEndIdpSessionEndpoint = null,
         revocationEndpoint = null,
+        pushedAuthorizationRequestEndpoint = null,
         deviceAuthorizationEndpoint = null
       )
     )
@@ -122,6 +141,7 @@ class OidcClientFactoryTest {
         endSessionEndpoint = null,
         pingEndIdpSessionEndpoint = null,
         revocationEndpoint = null,
+        pushedAuthorizationRequestEndpoint = null,
         deviceAuthorizationEndpoint = "https://example.com/device/code"
       )
     )
@@ -169,6 +189,7 @@ class OidcClientFactoryTest {
       openId = null,
       redirectUri = "com.example.app://callback",
       scopes = listOf("openid"),
+      par = null,
       storageId = storageId,
       loggerId = loggerId,
       acrValues = null,

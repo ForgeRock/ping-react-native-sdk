@@ -24,10 +24,12 @@ final class OidcClientFactoryTests: XCTestCase {
         endSessionEndpoint: nil,
         pingEndIdpSessionEndpoint: nil,
         revocationEndpoint: nil,
+        pushedAuthorizationRequestEndpoint: nil,
         deviceAuthorizationEndpoint: nil
       ),
       redirectUri: "com.example.app://callback",
       scopes: ["openid"],
+      par: nil,
       storageId: nil,
       loggerId: nil,
       browserType: nil,
@@ -82,10 +84,12 @@ final class OidcClientFactoryTests: XCTestCase {
         endSessionEndpoint: nil,
         pingEndIdpSessionEndpoint: nil,
         revocationEndpoint: nil,
+        pushedAuthorizationRequestEndpoint: nil,
         deviceAuthorizationEndpoint: "https://example.com/device/code"
       ),
       redirectUri: "com.example.app://callback",
       scopes: ["openid"],
+      par: nil,
       storageId: nil,
       loggerId: nil,
       browserType: nil,
@@ -117,6 +121,20 @@ final class OidcClientFactoryTests: XCTestCase {
     XCTAssertEqual(discovered.tokenEndpoint, "https://discovered.example.com/token")
     XCTAssertEqual(discovered.userinfoEndpoint, "https://discovered.example.com/userinfo")
     XCTAssertEqual(discovered.deviceAuthorizationEndpoint, "https://example.com/device/code")
+  }
+
+  func testBuildOidcClientAppliesPar() {
+    let payload = basePayload().withPar(true)
+
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
+
+    XCTAssertTrue(config.par)
+  }
+
+  func testBuildOidcClientDefaultsParToFalse() {
+    let config = OidcClientFactory.buildOidcClient(basePayload(), logger: nil)
+
+    XCTAssertFalse(config.par)
   }
 
   func testBuildWebClientMapsBrowserOptions() {
@@ -208,6 +226,7 @@ final class OidcClientFactoryTests: XCTestCase {
       openId: nil,
       redirectUri: "com.example.app://callback",
       scopes: ["openid"],
+      par: nil,
       storageId: nil,
       loggerId: nil,
       browserType: browserType,
@@ -239,6 +258,31 @@ final class OidcClientFactoryTests: XCTestCase {
 }
 
 private extension OidcClientPayload {
+  func withPar(_ par: Bool?) -> OidcClientPayload {
+    return OidcClientPayload(
+      clientId: clientId,
+      discoveryEndpoint: discoveryEndpoint,
+      openId: openId,
+      redirectUri: redirectUri,
+      scopes: scopes,
+      par: par,
+      storageId: storageId,
+      loggerId: loggerId,
+      browserType: browserType,
+      browserMode: browserMode,
+      acrValues: acrValues,
+      signOutRedirectUri: signOutRedirectUri,
+      state: state,
+      nonce: nonce,
+      uiLocales: uiLocales,
+      refreshThreshold: refreshThreshold,
+      loginHint: loginHint,
+      display: display,
+      prompt: prompt,
+      additionalParameters: additionalParameters
+    )
+  }
+
   func withStorageId(_ storageId: String?) -> OidcClientPayload {
     return OidcClientPayload(
       clientId: clientId,
@@ -246,6 +290,7 @@ private extension OidcClientPayload {
       openId: openId,
       redirectUri: redirectUri,
       scopes: scopes,
+      par: nil,
       storageId: storageId,
       loggerId: loggerId,
       browserType: browserType,

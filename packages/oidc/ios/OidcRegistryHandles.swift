@@ -43,9 +43,12 @@ final class OidcClientHandle: OidcClientConfigHandle, @unchecked Sendable {
       endSessionEndpoint: openId.endSessionEndpoint,
       pingEndIdpSessionEndpoint: openId.pingEndIdpSessionEndpoint,
       revocationEndpoint: openId.revocationEndpoint,
+      pushedAuthorizationRequestEndpoint: openId.pushedAuthorizationRequestEndpoint,
       deviceAuthorizationEndpoint: openId.deviceAuthorizationEndpoint
     )
   }
+  /// Optional PAR enablement flag.
+  var par: Bool? { payload.par }
   var acrValues: String? { payload.acrValues }
   var signOutRedirectUri: String? { payload.signOutRedirectUri }
   var state: String? { payload.state }

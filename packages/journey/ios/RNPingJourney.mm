@@ -65,6 +65,10 @@ RCT_EXPORT_MODULE()
     dict[@"redirectUri"] = redirectUri;
   }
 
+  if (config.par().has_value()) {
+    dict[@"par"] = @(config.par().value());
+  }
+
   auto scopes = config.scopes();
   if (scopes.has_value()) {
     NSMutableArray<NSString *> *scopeArray = [NSMutableArray new];
