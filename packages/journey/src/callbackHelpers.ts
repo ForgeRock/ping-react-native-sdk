@@ -42,10 +42,12 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   nativeExtensionCallbackType.BindingCallback,
   nativeExtensionCallbackType.DeviceBindingCallback,
   nativeExtensionCallbackType.DeviceSigningVerifierCallback,
+  // DeviceProfileCallback requires rn-device-profile to collect and submit data;
+  // it is not output-only.
+  callbackType.DeviceProfileCallback,
 ]);
 
 const outputOnlyCallbackTypes = new Set<JourneyCallbackType>([
-  callbackType.DeviceProfileCallback,
   callbackType.TextOutputCallback,
   callbackType.SuspendedTextOutputCallback,
   callbackType.MetadataCallback,
@@ -420,7 +422,7 @@ export function normalizeCallbacks(
     const message = readString(callback.message, '');
     const required = resolveRequired(callback);
 
-    return {
+    const base = {
       id: callbackKey(type, typeIndex),
       ref: {
         type,
@@ -436,6 +438,145 @@ export function normalizeCallbacks(
       options: options.length > 0 ? options : undefined,
       raw: callback,
     };
+
+    if (type === callbackType.ChoiceCallback) {
+      return {
+        ...base,
+        type: callbackType.ChoiceCallback,
+        choices: readArray(callback.choices).map((c) => readString(c, '')),
+        defaultChoice: readNumber(callback.defaultChoice, 0),
+      };
+    }
+
+    if (type === callbackType.KbaCreateCallback) {
+      return {
+        ...base,
+        type: callbackType.KbaCreateCallback,
+        predefinedQuestions: readArray(callback.predefinedQuestions).map((q) =>
+          readString(q, ''),
+        ),
+        allowUserDefinedQuestions: readBoolean(
+          callback.allowUserDefinedQuestions,
+          false,
+        ),
+      };
+    }
+
+    if (type === callbackType.TermsAndConditionsCallback) {
+      return {
+        ...base,
+        type: callbackType.TermsAndConditionsCallback,
+        version: readString(callback.version, ''),
+        terms: readString(callback.terms, ''),
+        createDate: readString(callback.createDate, ''),
+      };
+    }
+
+    if (type === nativeExtensionCallbackType.ConsentMappingCallback) {
+      return {
+        ...base,
+        type: nativeExtensionCallbackType.ConsentMappingCallback,
+        name: readString(callback.name, ''),
+        displayName: hasCallbackKey(callback, 'displayName')
+          ? readString(callback.displayName, '')
+          : undefined,
+        icon: hasCallbackKey(callback, 'icon')
+          ? readString(callback.icon, '')
+          : undefined,
+        accessLevel: hasCallbackKey(callback, 'accessLevel')
+          ? readString(callback.accessLevel, '')
+          : undefined,
+        fields: hasCallbackKey(callback, 'fields')
+          ? readArray(callback.fields)
+          : undefined,
+      };
+    }
+
+    if (type === callbackType.PollingWaitCallback) {
+      return {
+        ...base,
+        type: callbackType.PollingWaitCallback,
+        waitTime: readNumber(callback.waitTime, 0),
+      };
+    }
+
+    if (type === callbackType.TextOutputCallback) {
+      return {
+        ...base,
+        type: callbackType.TextOutputCallback,
+        messageType: readString(callback.messageType, ''),
+      };
+    }
+
+    if (type === callbackType.SuspendedTextOutputCallback) {
+      return {
+        ...base,
+        type: callbackType.SuspendedTextOutputCallback,
+        messageType: readString(callback.messageType, ''),
+      };
+    }
+
+    if (type === callbackType.HiddenValueCallback) {
+      return {
+        ...base,
+        type: callbackType.HiddenValueCallback,
+        callbackId: readString(callback.id, ''),
+      };
+    }
+
+    if (type === callbackType.ConfirmationCallback) {
+      return {
+        ...base,
+        type: callbackType.ConfirmationCallback,
+        selectedIndex: hasCallbackKey(callback, 'selectedIndex')
+          ? readNumber(callback.selectedIndex, -1)
+          : undefined,
+        defaultOption: hasCallbackKey(callback, 'defaultOption')
+          ? readString(callback.defaultOption, '')
+          : undefined,
+        optionType: hasCallbackKey(callback, 'optionType')
+          ? readString(callback.optionType, '')
+          : undefined,
+        messageType: hasCallbackKey(callback, 'messageType')
+          ? readString(callback.messageType, '')
+          : undefined,
+      };
+    }
+
+    if (
+      type === nativeExtensionCallbackType.FidoRegistrationCallback ||
+      type === nativeExtensionCallbackType.FidoAuthenticationCallback
+    ) {
+      return {
+        ...base,
+        type,
+        value: hasCallbackKey(callback, 'value')
+          ? (callback.value as Record<string, unknown>)
+          : undefined,
+      };
+    }
+
+    if (type === nativeExtensionCallbackType.DeviceBindingCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.DeviceSigningVerifierCallback) {
+      return { ...base, type };
+    }
+
+    if (type === callbackType.DeviceProfileCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.IdpCallback) {
+      return { ...base, type };
+    }
+
+    if (type === nativeExtensionCallbackType.SelectIdpCallback) {
+      return { ...base, type };
+    }
+
+    return { ...base, type };
   });
 }
 

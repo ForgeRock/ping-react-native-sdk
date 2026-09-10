@@ -91,7 +91,7 @@ describe('useJourney', () => {
   it('does not auto-advance PollingWaitCallback nodes', async () => {
     const pollingNode: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200, output: [] }],
+      callbacks: [{ type: 'PollingWaitCallback', waitTime: 1200 }],
     };
     const nextSpy = jest.fn(
       async () => ({ type: 'SuccessNode' }) as JourneyNode,
@@ -167,7 +167,7 @@ describe('useJourney', () => {
   it('advances only when next() is called explicitly', async () => {
     const continueNode: JourneyNode = {
       type: 'ContinueNode',
-      callbacks: [{ type: 'NameCallback', output: [] }],
+      callbacks: [{ type: 'NameCallback' }],
     };
     const successNode: JourneyNode = { type: 'SuccessNode' };
     const nextSpy = jest.fn(async () => successNode);

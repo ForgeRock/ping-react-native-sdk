@@ -5,7 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { JourneyNormalizedField } from '@ping-identity/rn-journey';
+import type {
+  JourneyNormalizedField,
+  JourneyPollingWaitField,
+} from '@ping-identity/rn-journey';
 import Config from 'react-native-config';
 
 /**
@@ -73,7 +76,7 @@ export const TEST_JOURNEY_NAME_SUGGESTIONS = [
  * Keep this `false` for normal sample usage and flip to `true` only when
  * running callback/test-journey validation.
  */
-export const ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV = false;
+export const ENABLE_AM_TEST_JOURNEY_SUGGESTIONS_IN_DEV = true;
 
 /**
  * Runtime flag used by Journey route UI to decide whether test journeys are shown.
@@ -189,27 +192,13 @@ export function resolvePollingWaitMs(
   fields: JourneyNormalizedField[],
 ): number | null {
   const pollingField = fields.find(
-    field => field.ref.type === 'PollingWaitCallback',
+    (field): field is JourneyPollingWaitField =>
+      field.type === 'PollingWaitCallback',
   );
   if (!pollingField) {
     return null;
   }
-
-  const waitTime = pollingField.raw.waitTime;
-  if (
-    typeof waitTime === 'number' &&
-    Number.isFinite(waitTime) &&
-    waitTime > 0
-  ) {
-    return waitTime;
-  }
-  if (typeof waitTime === 'string') {
-    const parsed = Number(waitTime);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-  return null;
+  return pollingField.waitTime > 0 ? pollingField.waitTime : null;
 }
 
 /**
@@ -309,7 +298,7 @@ export function resolveContinueNodeAutomationPolicy(
   const hasBlockingUserInput = fields.some(
     field =>
       field.requiresUserInput &&
-      !(hasPollingWaitCallback && field.ref.type === 'ConfirmationCallback'),
+      !(hasPollingWaitCallback && field.type === 'ConfirmationCallback'),
   );
   const hasAutoCapableCallback = fields.some(
     field => field.executionMode === 'auto_capable',

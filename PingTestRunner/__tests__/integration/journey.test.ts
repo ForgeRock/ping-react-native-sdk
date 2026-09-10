@@ -483,10 +483,7 @@ describe('@ping-identity/rn-journey — integration', () => {
       const mod = await loadJourney(makeMock());
       const node = {
         type: 'ContinueNode',
-        callbacks: [
-          { type: 'NameCallback', output: [] },
-          { type: 'PasswordCallback', output: [] },
-        ],
+        callbacks: [{ type: 'NameCallback' }, { type: 'PasswordCallback' }],
       };
       const fields = mod.normalizeCallbacks(node);
       expect(fields).toHaveLength(2);
