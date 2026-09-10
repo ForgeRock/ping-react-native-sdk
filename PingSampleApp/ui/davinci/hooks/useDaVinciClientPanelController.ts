@@ -284,13 +284,13 @@ export function useDaVinciClientPanelController(
       });
   }, [form, loading, next, onProtectCollect]);
 
-
   const onValidate = useCallback(
     (
       collectorKey: string,
       value: DaVinciFormValue,
     ): Promise<DaVinciFieldValidationError[]> => validate(collectorKey, value),
     [validate],
+  );
 
   const onFidoCeremony = useCallback(
     async (collector: FidoCollector): Promise<void> => {
