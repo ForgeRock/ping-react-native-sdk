@@ -109,11 +109,12 @@ RCT_EXPORT_METHOD(configureDaVinci:(NSDictionary *)config
 
 /// Starts a DaVinci flow.
 RCT_EXPORT_METHOD(start:(NSString *)davinciId
+                  options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
-    [impl start:davinciId resolver:resolve rejecter:reject];
+    [impl start:davinciId options:options resolver:resolve rejecter:reject];
   }];
 }
 
@@ -125,6 +126,18 @@ RCT_EXPORT_METHOD(next:(NSString *)davinciId
 {
   [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
     [impl next:davinciId input:input resolver:resolve rejecter:reject];
+  }];
+}
+
+/// Validates a single collector value without advancing the DaVinci flow.
+RCT_EXPORT_METHOD(validate:(NSString *)davinciId
+                  collectorKey:(NSString *)collectorKey
+                  input:(NSDictionary *)input
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
+    [impl validate:davinciId collectorKey:collectorKey input:input resolver:resolve rejecter:reject];
   }];
 }
 

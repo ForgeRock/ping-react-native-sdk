@@ -34,6 +34,150 @@ public class RNPingOidcImpl: NSObject, @unchecked Sendable {
     return RNPingOidcCommon.createClient(config)
   }
 
+  /// Create a native-backed OIDC device client.
+  ///
+  /// - Parameter config: JS client configuration payload.
+  /// - Returns: Registered device client identifier.
+  public func createOidcDeviceClient(_ config: NSDictionary) -> String {
+    return RNPingOidcCommon.createOidcDeviceClient(config)
+  }
+
+  /// Start an OIDC device authorization flow for the device client.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called with the subscriptionId.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceAuthorize(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceAuthorize(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Cancel an active device authorization flow.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - subscriptionId: Identifier returned by `deviceAuthorize`.
+  ///   - resolver: Resolver called on success.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func cancelDeviceAuthorization(
+    _ deviceClientId: String,
+    subscriptionId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.cancelDeviceAuthorization(deviceClientId, subscriptionId: subscriptionId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Open a device authorization verification URL in the on-device browser.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - verificationUri: Verification URI (prefer `verification_uri_complete`).
+  ///   - resolver: Resolver called with a `success`/`cancel` payload.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceOpenVerificationUrl(
+    _ deviceClientId: String,
+    verificationUri: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceOpenVerificationUrl(deviceClientId, verificationUri: verificationUri, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolve whether a user is available for the given device client.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called with a boolean.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceHasUser(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (Bool) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.deviceHasUser(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Resolve the current device client user's tokens.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called with token payload.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceToken(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceToken(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  /// Force-refresh the current device client user's tokens.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called with token payload.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceRefresh(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceRefresh(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  /// Fetch user profile data from the userinfo endpoint for the device client.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - cache: When true, return cached userinfo if available.
+  ///   - resolver: Resolver called with userinfo payload.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceUserinfo(
+    _ deviceClientId: String,
+    cache: Bool,
+    resolver: @escaping @Sendable (NSDictionary) -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceUserinfo(deviceClientId, cache: cache, resolver: resolver, rejecter: rejecter) }
+
+  /// Revoke tokens for the current device client user.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called on success.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceRevoke(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceRevoke(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  /// Logout the current device client user session.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called with end-session status.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func deviceLogout(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) { RNPingOidcCommon.deviceLogout(deviceClientId, resolver: resolver, rejecter: rejecter) }
+
+  /// Dispose the device client and cancel any active authorization flow.
+  ///
+  /// - Parameters:
+  ///   - deviceClientId: Identifier returned by `createOidcDeviceClient`.
+  ///   - resolver: Resolver called on success.
+  ///   - rejecter: Rejecter called with a `GenericError`.
+  public func disposeOidcDeviceClient(
+    _ deviceClientId: String,
+    resolver: @escaping @Sendable () -> Void,
+    rejecter: @escaping @Sendable (String, String, NSError?) -> Void
+  ) {
+    RNPingOidcCommon.disposeOidcDeviceClient(deviceClientId, resolver: resolver, rejecter: rejecter)
+  }
+
   /// Create a native-backed OIDC web client.
   ///
   /// - Parameter clientId: Identifier returned by `createClient`.

@@ -16,8 +16,10 @@ import {
  * Serialised native DaVinci configuration payload.
  *
  * @remarks
- * All OIDC fields are flat (no nesting). Passed to `configureDaVinci` after
- * JS validation and storage/logger handle resolution.
+ * The JavaScript bridge payload remains flat (no nesting) and is passed to
+ * `configureDaVinci` after JS validation and storage/logger handle resolution.
+ * Native parsers may group OIDC values internally without changing this wire
+ * shape.
  *
  * @internal
  */
@@ -44,6 +46,8 @@ export type NativeDaVinciConfig = {
   prompt?: string;
   /** Display parameter for the authorization request. */
   display?: string;
+  /** Whether to use the native PAR flow from the shared OIDC contract. */
+  par?: boolean;
   /** Space-separated preferred UI locales. */
   uiLocales?: string;
   /** Authentication context class reference values. */
@@ -85,9 +89,11 @@ export interface Spec extends TurboModule {
    * Start the DaVinci flow.
    *
    * @param davinciId - Native DaVinci instance identifier.
+   * @param options - Optional start options; supports `verificationUri` (RFC 8628
+   *   `verification_uri_complete`) when this device approves a device flow.
    * @returns Serialised first flow node.
    */
-  start(davinciId: string): Promise<Object>;
+  start(davinciId: string, options?: Object): Promise<Object>;
 
   /**
    * Advance the active DaVinci flow node.
@@ -97,6 +103,20 @@ export interface Spec extends TurboModule {
    * @returns Serialised next flow node.
    */
   next(davinciId: string, input: Object): Promise<Object>;
+
+  /**
+   * Validate one active collector without advancing the flow.
+   *
+   * @param davinciId - Native DaVinci instance identifier.
+   * @param collectorKey - Collector key to update and validate.
+   * @param input - Single-entry collector mutation payload.
+   * @returns Encoded validation errors.
+   */
+  validate(
+    davinciId: string,
+    collectorKey: string,
+    input: Object,
+  ): Promise<Object>;
 
   /**
    * Resolve the active user session.
@@ -211,11 +231,14 @@ const NativeRNPingDavinci: Spec = {
   configureDaVinci(config) {
     return getNativeModule().configureDaVinci(config);
   },
-  start(davinciId) {
-    return getNativeModule().start(davinciId);
+  start(davinciId, options) {
+    return getNativeModule().start(davinciId, options);
   },
   next(davinciId, input) {
     return getNativeModule().next(davinciId, input);
+  },
+  validate(davinciId, collectorKey, input) {
+    return getNativeModule().validate(davinciId, collectorKey, input);
   },
   getSession(davinciId) {
     return getNativeModule().getSession(davinciId);

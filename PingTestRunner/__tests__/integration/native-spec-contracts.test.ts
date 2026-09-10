@@ -62,22 +62,23 @@ type _BrowserMockedMethods = Pick<BrowserSpec, 'configure' | 'reset' | 'open'>;
 type _DeviceClientMockedMethods = Pick<
   DeviceClientSpec,
   'create' | 'get' | 'update' | 'deleteDevice' | 'dispose'
-  >;
+>;
 // ─── rn-davinci ─────────────────────────────────────────────────────────────
-// jest.setup.js mocks: configureDaVinci, start, next, getSession, refresh,
-//                      revoke, userinfo, logout, dispose
+// jest.setup.js mocks: configureDaVinci, start, next, validate, getSession,
+//                      refresh, revoke, userinfo, logout, dispose
 type _DaVinciMockedMethods = Pick<
   DaVinciSpec,
   | 'configureDaVinci'
   | 'start'
   | 'next'
+  | 'validate'
   | 'getSession'
   | 'refresh'
   | 'revoke'
   | 'userinfo'
   | 'logout'
   | 'dispose'
-  >;
+>;
 
 // ─── rn-device-id ───────────────────────────────────────────────────────────
 // jest.setup.js mocks: getDefaultDeviceId

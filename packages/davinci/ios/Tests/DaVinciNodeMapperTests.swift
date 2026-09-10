@@ -192,20 +192,15 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertEqual(first?["clearPassword"] as? Bool, false)
   }
 
-  func testMapPasswordCollectorIncludesPasswordPolicyFromFormField() {
-    let input: [String: Any] = [
-      "form": [
-        "components": [
-          "fields": [
-            [
-              "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
-              "passwordPolicy": ["name": "strong", "length": ["min": 8, "max": 64]]
-            ]
-          ]
-        ]
-      ]
-    ]
-    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+  func testMapPasswordCollectorUsesNativePasswordPolicyAccessor() {
+    // `passwordPolicy()` resolves the field-level policy first — the same JSON the
+    // collector itself was constructed from — rather than a raw-JSON traversal of
+    // node.input.form.components.fields[].
+    let collector = PasswordCollector(with: [
+      "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
+      "passwordPolicy": ["name": "strong", "length": ["min": 8, "max": 64]]
+    ])
+    let node = makeContinueNode(collectors: [collector])
 
     let payload = DaVinciNodeMapper.mapNodePayload(node)
     let first = (payload["collectors"] as? [[String: Any]])?.first
@@ -215,17 +210,29 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertEqual(policy?["name"] as? String, "strong")
   }
 
-  func testMapPasswordCollectorOmitsPasswordPolicyWhenAbsentFromFormField() {
-    let input: [String: Any] = [
-      "form": [
-        "components": [
-          "fields": [
-            ["key": "password", "type": "PASSWORD", "label": "Password", "required": false]
-          ]
-        ]
-      ]
-    ]
-    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+  func testMapPasswordCollectorFallsBackToNodeRootPasswordPolicy() {
+    // When no field-level policy is present, `passwordPolicy()` falls back to
+    // `continueNode.input["passwordPolicy"]` (node-root scope).
+    let collector = PasswordCollector(with: [
+      "key": "password", "type": "PASSWORD", "label": "Password", "required": false
+    ])
+    let node = makeContinueNode(
+      collectors: [collector],
+      input: ["passwordPolicy": ["name": "Global Policy", "maxAgeDays": 30]]
+    )
+    collector.continueNode = node
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+    let policy = first?["passwordPolicy"] as? NSDictionary
+
+    XCTAssertNotNil(policy)
+    XCTAssertEqual(policy?["name"] as? String, "Global Policy")
+    XCTAssertEqual(policy?["maxAgeDays"] as? Int, 30)
+  }
+
+  func testMapPasswordCollectorOmitsPasswordPolicyWhenAbsent() {
+    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")])
 
     let payload = DaVinciNodeMapper.mapNodePayload(node)
     let first = (payload["collectors"] as? [[String: Any]])?.first
@@ -233,27 +240,52 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(first?["passwordPolicy"])
   }
 
-  func testMapPasswordCollectorOmitsPasswordPolicyOnDecodeError() {
-    // "length" must be a keyed container but receives a String, so JSONDecoder throws
-    // DecodingError.typeMismatch — the catch block returns nil and policy is omitted.
-    let input: [String: Any] = [
-      "form": [
-        "components": [
-          "fields": [
-            [
-              "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
-              "passwordPolicy": ["length": "not-a-dict"]
-            ]
-          ]
-        ]
-      ]
-    ]
-    let node = makeContinueNode(collectors: [makePasswordCollector(key: "password")], input: input)
+  func testMapPasswordCollectorIncludesValidationRegexWhenPresent() {
+    let node = makeContinueNode(collectors: [
+      PasswordCollector(with: [
+        "key": "password", "type": "PASSWORD", "label": "Password", "required": false,
+        "validation": ["regex": "^.{8,}$", "errorMessage": "Password is too short"]
+      ])
+    ])
 
     let payload = DaVinciNodeMapper.mapNodePayload(node)
     let first = (payload["collectors"] as? [[String: Any]])?.first
+    let validation = first?["validation"] as? [String: Any]
 
-    XCTAssertNil(first?["passwordPolicy"])
+    XCTAssertNotNil(validation)
+    XCTAssertNotNil(validation?["regex"])
+  }
+
+  // MARK: - Validation error encoding
+
+  func testMapValidationErrorsIncludesRequiredAndRegex() {
+    let required = DaVinciNodeMapper.encodeValidationError(.required)
+    XCTAssertEqual(required["code"] as? String, "REQUIRED")
+
+    let regex = DaVinciNodeMapper.encodeValidationError(.regexError(message: "Invalid value"))
+    XCTAssertEqual(regex["code"] as? String, "REGEX_ERROR")
+    XCTAssertEqual(regex["message"] as? String, "Invalid value")
+  }
+
+  func testMapPasswordValidationErrorsIncludesPolicyConstraints() {
+    let errors = DaVinciNodeMapper.encodeValidationErrors([
+      .invalidLength(min: 8, max: 64),
+      .uniqueCharacter(min: 3),
+      .maxRepeat(max: 2),
+      .minCharacters(character: "digit", min: 1)
+    ])
+
+    XCTAssertEqual(errors.count, 4)
+    XCTAssertEqual(errors[0]["code"] as? String, "INVALID_LENGTH")
+    XCTAssertEqual(errors[0]["min"] as? Int, 8)
+    XCTAssertEqual(errors[0]["max"] as? Int, 64)
+    XCTAssertEqual(errors[1]["code"] as? String, "UNIQUE_CHARACTER")
+    XCTAssertEqual(errors[1]["min"] as? Int, 3)
+    XCTAssertEqual(errors[2]["code"] as? String, "MAX_REPEAT")
+    XCTAssertEqual(errors[2]["max"] as? Int, 2)
+    XCTAssertEqual(errors[3]["code"] as? String, "MIN_CHARACTERS")
+    XCTAssertEqual(errors[3]["character"] as? String, "digit")
+    XCTAssertEqual(errors[3]["min"] as? Int, 1)
   }
 
   func testMapSubmitCollectorIncludesBaseFields() {
@@ -290,6 +322,48 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
     XCTAssertEqual(first?["type"] as? String, "LABEL")
     XCTAssertEqual(first?["content"] as? String, "Sign In")
+  }
+
+  func testMapLabelCollectorIncludesRichContentWhenPresent() {
+    let node = makeContinueNode(collectors: [
+      LabelCollector(with: [
+        "key": "terms",
+        "content": "Read the terms",
+        "richContent": [
+          "content": "Read the {{terms}}",
+          "replacements": [
+            "terms": [
+              "value": "terms",
+              "href": "https://example.com/terms",
+              "type": "link",
+              "target": "_blank"
+            ]
+          ]
+        ]
+      ])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+    let rc = first?["richContent"] as? [String: Any]
+
+    XCTAssertNotNil(rc)
+    XCTAssertEqual(rc?["content"] as? String, "Read the {{terms}}")
+    let replacements = rc?["replacements"] as? [String: Any]
+    let termsReplacement = replacements?["terms"] as? [String: Any]
+    XCTAssertEqual(termsReplacement?["href"] as? String, "https://example.com/terms")
+    XCTAssertEqual(termsReplacement?["target"] as? String, "_blank")
+  }
+
+  func testMapLabelCollectorOmitsRichContentWhenAbsent() {
+    let node = makeContinueNode(collectors: [
+      LabelCollector(with: ["key": "title", "content": "Sign In"])
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["richContent"])
   }
 
   func testMapSingleSelectCollectorIncludesOptionsAndValue() {
@@ -347,6 +421,23 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertEqual(first?["countryCode"] as? String, "+44")
     XCTAssertEqual(first?["phoneNumber"] as? String, "07000000000")
     XCTAssertEqual(first?["validatePhoneNumber"] as? Bool, true)
+  }
+
+  func testMapPhoneNumberCollectorIncludesExtensionFields() {
+    let collector = PhoneNumberCollector(with: [
+      "key": "phone", "type": "PHONE", "label": "Phone", "required": false,
+      "defaultCountryCode": "+1", "validatePhoneNumber": true,
+      "showExtension": true, "extensionLabel": "Extension"
+    ])
+    collector.extension = "99"
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["extension"] as? String, "99")
+    XCTAssertEqual(first?["showExtension"] as? Bool, true)
+    XCTAssertEqual(first?["extensionLabel"] as? String, "Extension")
   }
 
   func testMapDeviceRegistrationCollectorIncludesDevices() {

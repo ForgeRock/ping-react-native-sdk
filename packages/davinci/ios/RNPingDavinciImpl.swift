@@ -24,6 +24,8 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   public typealias VoidResolver = @Sendable () -> Void
   /// Promise resolver for poll subscription payloads.
   public typealias PollResolver = @Sendable (NSDictionary) -> Void
+  /// Promise resolver for validation error array payloads.
+  public typealias ErrorsResolver = @Sendable (NSArray) -> Void
   /// Promise rejecter closure type used by the DaVinci Swift bridge.
   public typealias PromiseRejecter = @Sendable (String, String, NSError?) -> Void
 
@@ -59,15 +61,23 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
   ///
   /// - Parameters:
   ///   - davinciId: Native DaVinci instance id.
+  ///   - options: Optional start options dictionary; supports `verificationUri`.
   ///   - resolver: Promise resolver called with the first node payload.
   ///   - rejecter: Promise rejecter called with `GenericError`.
-  @objc(start:resolver:rejecter:)
+  @objc(start:options:resolver:rejecter:)
   public func start(
     _ davinciId: String,
+    options: NSDictionary?,
     resolver: @escaping NodeResolver,
     rejecter: @escaping PromiseRejecter
   ) {
-    RNPingDavinciCommon.start(davinciId, resolver: resolver, rejecter: rejecter)
+    let verificationUri = options?["verificationUri"] as? String ?? ""
+    RNPingDavinciCommon.start(
+      davinciId,
+      verificationUri: verificationUri,
+      resolver: resolver,
+      rejecter: rejecter
+    )
   }
 
   /// Applies collector input and advances DaVinci to the next node.
@@ -85,6 +95,31 @@ public final class RNPingDavinciImpl: NSObject, @unchecked Sendable {
     rejecter: @escaping PromiseRejecter
   ) {
     RNPingDavinciCommon.next(davinciId, input: input, resolver: resolver, rejecter: rejecter)
+  }
+
+  /// Validates a single collector value without submitting the form via `next()`.
+  ///
+  /// - Parameters:
+  ///   - davinciId: Native DaVinci instance id.
+  ///   - collectorKey: Key of the collector to validate.
+  ///   - input: Bridge input in the same `{ collectors: [{ key, value }] }` shape `next()` uses.
+  ///   - resolver: Promise resolver called with the collector's validation error array.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(validate:collectorKey:input:resolver:rejecter:)
+  public func validate(
+    _ davinciId: String,
+    collectorKey: String,
+    input: NSDictionary,
+    resolver: @escaping ErrorsResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    RNPingDavinciCommon.validate(
+      davinciId,
+      collectorKey: collectorKey,
+      input: input,
+      resolver: resolver,
+      rejecter: rejecter
+    )
   }
 
   /// Resolves session details for an active DaVinci user.

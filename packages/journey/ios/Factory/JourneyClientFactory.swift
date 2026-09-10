@@ -20,6 +20,7 @@ final class JourneyClientFactory {
     let discoveryEndpoint: String?
     let redirectUri: String
     let scopes: [String]
+    let par: Bool?
     let openId: OidcOpenIdConfig?
     let acrValues: String?
     let signOutRedirectUri: String?
@@ -73,6 +74,9 @@ final class JourneyClientFactory {
             module.discoveryEndpoint = discoveryEndpoint
           }
           module.redirectUri = oidcConfig.redirectUri
+          if let par = oidcConfig.par {
+            module.par = par
+          }
           module.scopes = Set(oidcConfig.scopes)
           module.acrValues = oidcConfig.acrValues
           module.state = oidcConfig.state
@@ -158,6 +162,7 @@ final class JourneyClientFactory {
       discoveryEndpoint: oidcPayload.discoveryEndpoint,
       redirectUri: redirectUri,
       scopes: oidcPayload.scopes,
+      par: oidcPayload.par,
       openId: coreOpenId,
       acrValues: oidcPayload.acrValues,
       signOutRedirectUri: oidcPayload.signOutRedirectUri,
@@ -197,6 +202,7 @@ final class JourneyClientFactory {
       discoveryEndpoint: discoveryEndpoint,
       redirectUri: handle.redirectUri,
       scopes: handle.scopes,
+      par: handle.par,
       openId: handle.openId,
       acrValues: handle.acrValues,
       signOutRedirectUri: handle.signOutRedirectUri,
@@ -222,7 +228,9 @@ final class JourneyClientFactory {
       userinfoEndpoint: payload.userinfoEndpoint,
       endSessionEndpoint: payload.endSessionEndpoint,
       pingEndIdpSessionEndpoint: payload.pingEndIdpSessionEndpoint,
-      revocationEndpoint: payload.revocationEndpoint
+      revocationEndpoint: payload.revocationEndpoint,
+      pushedAuthorizationRequestEndpoint: payload.pushedAuthorizationRequestEndpoint,
+      deviceAuthorizationEndpoint: payload.deviceAuthorizationEndpoint
     )
   }
 
@@ -234,9 +242,15 @@ final class JourneyClientFactory {
     for openId: OidcOpenIdConfig
   ) -> (inout OpenIdConfiguration) -> Void {
     return { config in
-      config.authorizationEndpoint = openId.authorizationEndpoint
-      config.tokenEndpoint = openId.tokenEndpoint
-      config.userinfoEndpoint = openId.userinfoEndpoint
+      if let authorizationEndpoint = openId.authorizationEndpoint {
+        config.authorizationEndpoint = authorizationEndpoint
+      }
+      if let tokenEndpoint = openId.tokenEndpoint {
+        config.tokenEndpoint = tokenEndpoint
+      }
+      if let userinfoEndpoint = openId.userinfoEndpoint {
+        config.userinfoEndpoint = userinfoEndpoint
+      }
       if let endSessionEndpoint = openId.endSessionEndpoint {
         config.endSessionEndpoint = endSessionEndpoint
       }
@@ -245,6 +259,12 @@ final class JourneyClientFactory {
       }
       if let pingEnd = openId.pingEndIdpSessionEndpoint {
         config.pingEndsessionEndpoint = pingEnd
+      }
+      if let pushedEndpoint = openId.pushedAuthorizationRequestEndpoint {
+        config.pushedAuthorizationRequestEndpoint = pushedEndpoint
+      }
+      if let deviceAuthorizationEndpoint = openId.deviceAuthorizationEndpoint {
+        config.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
       }
     }
   }

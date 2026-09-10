@@ -18,8 +18,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Configuration'> & {
   profiles: readonly SampleAppClientProfile[];
   selectedJourneyProfileKey: string | null;
   selectedOidcProfileKey: string | null;
+  selectedDeviceAuthProfileKey: string | null;
   onSelectJourneyProfile: (profileKey: string) => void;
   onSelectOidcProfile: (profileKey: string) => void;
+  onSelectDeviceAuthProfile: (profileKey: string) => void;
 };
 
 /**
@@ -56,11 +58,18 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
     profiles,
     selectedJourneyProfileKey,
     selectedOidcProfileKey,
+    selectedDeviceAuthProfileKey,
     onSelectJourneyProfile,
     onSelectOidcProfile,
+    onSelectDeviceAuthProfile,
   } = props;
 
-  const groupedProfiles = groupProfilesBySection(profiles);
+  const deviceAuthProfiles = profiles.filter(
+    profile => profile.group === 'Auth Grant',
+  );
+  const groupedProfiles = groupProfilesBySection(
+    profiles.filter(profile => profile.group !== 'Auth Grant'),
+  );
 
   return (
     <ScrollView
@@ -68,6 +77,44 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
       contentContainerStyle={commonStyles.configScreenContent}
       showsVerticalScrollIndicator={false}
     >
+      <View style={commonStyles.configSection}>
+        <Text style={commonStyles.configSectionTitle}>
+          Device Authorization Grant
+        </Text>
+        {deviceAuthProfiles.map(profile => {
+          const selected = profile.key === selectedDeviceAuthProfileKey;
+          const iconName = selected ? 'check' : 'check-box-outline-blank';
+          const config = profile.deviceAuthConfig;
+          return (
+            <TouchableOpacity
+              key={profile.key}
+              style={commonStyles.configOptionRow}
+              onPress={() => onSelectDeviceAuthProfile(profile.key)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+            >
+              <View style={commonStyles.configOptionTextBlock}>
+                <Text style={commonStyles.configOptionName}>
+                  {config?.display || profile.name}
+                </Text>
+                <Text style={commonStyles.configOptionMeta}>
+                  {config?.discoveryEndpoint ||
+                    'Discovery endpoint not configured'}
+                </Text>
+                <Text style={commonStyles.configOptionMeta}>
+                  {config?.clientId || 'Client ID not configured'} ·{' '}
+                  {config?.scopes.join(', ') || 'No scopes configured'}
+                </Text>
+              </View>
+              <MaterialIcon
+                name={iconName}
+                size={28}
+                color={selected ? colors.primary : colors.textDark}
+              />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
       {[...groupedProfiles.entries()].map(([group, items]) => (
         <View key={group} style={commonStyles.configSection}>
           <Text style={commonStyles.configSectionTitle}>{group}</Text>
