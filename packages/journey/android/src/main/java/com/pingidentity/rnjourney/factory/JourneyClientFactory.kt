@@ -94,17 +94,36 @@ internal class JourneyClientFactory(
                         additionalParameters = oidcConfig.additionalParameters
                     }
                     oidcConfig.openId?.let { openIdConfig ->
-                        openId = OpenIdConfiguration(
-                            authorizationEndpoint = openIdConfig.authorizationEndpoint,
-                            tokenEndpoint = openIdConfig.tokenEndpoint,
-                            userinfoEndpoint = openIdConfig.userinfoEndpoint,
-                            endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
-                            pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
-                            revocationEndpoint = openIdConfig.revocationEndpoint ?: "",
-                            // NOTE: native property has no "ed" (pushAuthorizationRequestEndpoint), unlike the JS/iOS
-                            // key pushedAuthorizationRequestEndpoint.
-                            pushAuthorizationRequestEndpoint = openIdConfig.pushedAuthorizationRequestEndpoint ?: ""
-                        )
+                        // When a discovery endpoint is also configured, apply the
+                        // override on top of discovery instead of pre-empting it, so
+                        // a partial override (e.g. only deviceAuthorizationEndpoint on
+                        // the underlying OidcClientConfig) does not blank out endpoints
+                        // discovery would otherwise resolve.
+                        if (oidcConfig.discoveryEndpoint.isNullOrBlank()) {
+                            openId = OpenIdConfiguration(
+                                authorizationEndpoint = openIdConfig.authorizationEndpoint ?: "",
+                                tokenEndpoint = openIdConfig.tokenEndpoint ?: "",
+                                userinfoEndpoint = openIdConfig.userinfoEndpoint ?: "",
+                                endSessionEndpoint = openIdConfig.endSessionEndpoint ?: "",
+                                pingEndIdpSessionEndpoint = openIdConfig.pingEndIdpSessionEndpoint ?: "",
+                                revocationEndpoint = openIdConfig.revocationEndpoint ?: "",
+                                // NOTE: native property has no "ed" (pushAuthorizationRequestEndpoint), unlike the JS/iOS
+                                // key pushedAuthorizationRequestEndpoint.
+                                pushAuthorizationRequestEndpoint = openIdConfig.pushedAuthorizationRequestEndpoint ?: "",
+                                deviceAuthorizationEndpoint = openIdConfig.deviceAuthorizationEndpoint ?: ""
+                            )
+                        } else {
+                            openIdOverride = {
+                                openIdConfig.authorizationEndpoint?.let { authorizationEndpoint = it }
+                                openIdConfig.tokenEndpoint?.let { tokenEndpoint = it }
+                                openIdConfig.userinfoEndpoint?.let { userinfoEndpoint = it }
+                                openIdConfig.endSessionEndpoint?.let { endSessionEndpoint = it }
+                                openIdConfig.pingEndIdpSessionEndpoint?.let { pingEndIdpSessionEndpoint = it }
+                                openIdConfig.revocationEndpoint?.let { revocationEndpoint = it }
+                                openIdConfig.pushedAuthorizationRequestEndpoint?.let { pushAuthorizationRequestEndpoint = it }
+                                openIdConfig.deviceAuthorizationEndpoint?.let { deviceAuthorizationEndpoint = it }
+                            }
+                        }
                     }
                     applyOidcStorageIfPresent(payload.oidc?.storageId)
                 }
@@ -210,7 +229,8 @@ internal class JourneyClientFactory(
             endSessionEndpoint = endSessionEndpoint,
             pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint,
             revocationEndpoint = revocationEndpoint,
-            pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
+            pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint,
+            deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
         )
     }
 

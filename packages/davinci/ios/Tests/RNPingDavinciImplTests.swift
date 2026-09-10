@@ -77,6 +77,7 @@ final class RNPingDavinciImplTests: XCTestCase {
     ) { rejecter, resolver in
       RNPingDavinciImpl.shared.start(
         "missing",
+        options: nil,
         resolver: resolver,
         rejecter: rejecter
       )
@@ -125,6 +126,7 @@ final class RNPingDavinciImplTests: XCTestCase {
     ) { rejecter, resolver in
       RNPingDavinciImpl.shared.start(
         "any-id",
+        options: nil,
         resolver: resolver,
         rejecter: rejecter
       )

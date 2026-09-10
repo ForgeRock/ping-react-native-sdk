@@ -173,6 +173,16 @@ switch (node.type) {
 }
 ```
 
+### Approving a device authorization grant
+
+When this device is acting as the approving device in an RFC 8628 device
+authorization grant, pass the `verification_uri_complete` URL from the device
+authorization response to `start()`. The DaVinci flow extracts the `user_code`
+from that URL and approves the requesting device.
+
+The `useDaVinci` hook exposes the option through its `start` action (see
+[Use the React hook](#use-the-react-hook)).
+
 ### Post Authentication Operations
 
 After a DaVinci flow completes successfully, use the following operations to inspect and manage the active user session:
@@ -212,6 +222,19 @@ if (node?.type === 'ContinueNode') {
   });
 }
 ```
+
+To approve an RFC 8628 device authorization grant, pass the `verificationUri`
+option to `start` (see [Approving a device authorization grant](#approving-a-device-authorization-grant)):
+
+```ts
+await start({
+  verificationUri: 'https://example.com/device?user_code=WDJB-MJHT',
+});
+```
+
+After the DaVinci flow authenticates the user, the native SDK extracts the
+`user_code` from that URL and approves the requesting device automatically;
+no extra submit step is required in the app.
 
 ### Share DaVinci state across multiple screens (optional)
 

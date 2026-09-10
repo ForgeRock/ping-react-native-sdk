@@ -143,6 +143,20 @@ final class RNPingOidcCommonTests: XCTestCase {
     }
   }
 
+  func testDeviceOpenVerificationUrlRejectsWhenDeviceClientMissing() {
+    assertClientRejects(
+      expectedCode: OidcErrorCodes.authorizeError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingOidcCommon.deviceOpenVerificationUrl(
+        "missing-device",
+        verificationUri: "https://example.com/verify",
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
   private func assertClientRejects(
     expectedCode: String,
     expectedType: ErrorType,

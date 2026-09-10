@@ -30,6 +30,9 @@ import { LaunchArguments } from 'react-native-launch-arguments';
 // evaluated when actually needed, keeping the default bundle small.
 const JourneyScenario = React.lazy(() => import('./scenarios/JourneyScenario'));
 const OidcScenario = React.lazy(() => import('./scenarios/OidcScenario'));
+const OidcDeviceFlowScenario = React.lazy(
+  () => import('./scenarios/OidcDeviceFlowScenario'),
+);
 const DeviceIdScenario = React.lazy(
   () => import('./scenarios/DeviceIdScenario'),
 );
@@ -68,6 +71,8 @@ function ScenarioContent(): React.JSX.Element {
     case 'oidc':
     case 'oidc-failure':
       return <OidcScenario testScenario={PING_TEST_SCENARIO} />;
+    case 'oidc-device':
+      return <OidcDeviceFlowScenario />;
     case 'device-id':
       return <DeviceIdScenario />;
     case 'device-profile':

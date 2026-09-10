@@ -158,6 +158,7 @@ final class RNPingJourneyCommonTests: XCTestCase {
         journeyName: "Login",
         forceAuth: false,
         noSession: false,
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )
@@ -174,6 +175,7 @@ final class RNPingJourneyCommonTests: XCTestCase {
         journeyName: "   ",
         forceAuth: false,
         noSession: false,
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )
@@ -372,6 +374,7 @@ final class RNPingJourneyCommonTests: XCTestCase {
         journeyName: "Login",
         forceAuth: false,
         noSession: false,
+        verificationUri: "",
         resolver: resolver,
         rejecter: rejecter
       )

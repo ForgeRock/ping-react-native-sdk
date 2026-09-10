@@ -109,11 +109,12 @@ RCT_EXPORT_METHOD(configureDaVinci:(NSDictionary *)config
 
 /// Starts a DaVinci flow.
 RCT_EXPORT_METHOD(start:(NSString *)davinciId
+                  options:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   [self withSwiftImpl:^(RNPingDavinciImpl *impl) {
-    [impl start:davinciId resolver:resolve rejecter:reject];
+    [impl start:davinciId options:options resolver:resolve rejecter:reject];
   }];
 }
 

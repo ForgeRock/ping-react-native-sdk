@@ -208,6 +208,15 @@ switch (node.type) {
 }
 ```
 
+### Approving a device authorization grant
+
+When this device is acting as the approving device in an RFC 8628 device
+authorization grant, pass the `verification_uri_complete` URL from the device
+authorization response as the `verificationUri` start option of the
+[`useJourney` hook](#use-the-react-hook). After the Journey flow authenticates
+the user, the native SDK extracts the `user_code` from that URL and approves
+the requesting device.
+
 ### Post Authentication Operations
 
 After a Journey login succeeds, use the following operations to inspect and manage the active user session:
@@ -247,6 +256,28 @@ if (node?.type === 'ContinueNode') {
   });
 }
 ```
+
+Start options are supported when initiating a journey:
+
+```ts
+const node = await actions.start('Login', {
+  forceAuth: true,
+  noSession: true,
+});
+```
+
+To approve an RFC 8628 device authorization grant, pass the `verificationUri`
+start option (see [Approving a device authorization grant](#approving-a-device-authorization-grant)):
+
+```ts
+await actions.start('Login', {
+  verificationUri: 'https://example.com/device?user_code=WDJB-MJHT',
+});
+```
+
+After the Journey flow authenticates the user, the native SDK extracts the
+`user_code` from that URL and approves the requesting device automatically;
+no extra submit step is required in the app.
 
 ### Share Journey state across multiple screens (optional)
 

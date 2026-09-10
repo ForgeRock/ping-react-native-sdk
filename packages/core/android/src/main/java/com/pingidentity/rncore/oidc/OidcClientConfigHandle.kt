@@ -12,22 +12,29 @@ import com.pingidentity.rncore.registry.NativeHandle
 /**
  * OpenID endpoint override values used by the native OIDC module.
  *
- * @property authorizationEndpoint Authorization endpoint URL.
- * @property tokenEndpoint Token endpoint URL.
- * @property userinfoEndpoint Userinfo endpoint URL.
+ * @remarks
+ * Every field is independently optional: it is applied as an override on
+ * top of the values OIDC discovery returns, leaving any field left unset
+ * here at its discovered value.
+ *
+ * @property authorizationEndpoint Optional authorization endpoint URL.
+ * @property tokenEndpoint Optional token endpoint URL.
+ * @property userinfoEndpoint Optional userinfo endpoint URL.
  * @property endSessionEndpoint Optional end-session endpoint URL.
  * @property pingEndIdpSessionEndpoint Optional Ping end-session endpoint URL.
  * @property pushedAuthorizationRequestEndpoint Optional PAR endpoint URL.
  * @property revocationEndpoint Optional token revocation endpoint URL.
+ * @property deviceAuthorizationEndpoint Optional device authorization endpoint URL.
  */
 data class OidcOpenIdConfig(
-    val authorizationEndpoint: String,
-    val tokenEndpoint: String,
-    val userinfoEndpoint: String,
+    val authorizationEndpoint: String?,
+    val tokenEndpoint: String?,
+    val userinfoEndpoint: String?,
     val endSessionEndpoint: String?,
     val pingEndIdpSessionEndpoint: String?,
     val revocationEndpoint: String?,
-    val pushedAuthorizationRequestEndpoint: String? = null
+    val pushedAuthorizationRequestEndpoint: String? = null,
+    val deviceAuthorizationEndpoint: String? = null
 )
 
 /**

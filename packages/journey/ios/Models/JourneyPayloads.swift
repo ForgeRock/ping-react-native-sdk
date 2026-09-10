@@ -9,13 +9,14 @@ import Foundation
 
 /// Optional OpenID endpoint override settings for Journey OIDC composition.
 struct JourneyOpenIdPayload: Sendable {
-  let authorizationEndpoint: String
-  let tokenEndpoint: String
-  let userinfoEndpoint: String
+  let authorizationEndpoint: String?
+  let tokenEndpoint: String?
+  let userinfoEndpoint: String?
   let endSessionEndpoint: String?
   let pingEndIdpSessionEndpoint: String?
   let revocationEndpoint: String?
   let pushedAuthorizationRequestEndpoint: String?
+  let deviceAuthorizationEndpoint: String?
 }
 
 /// Optional OIDC module configuration parsed from Journey config.

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
  *
@@ -31,7 +32,7 @@ enum JourneyConfigParser {
     let redirectUri = readOptionalString(config["redirectUri"])
     let scopes = ReadableMapUtils.readStringArray(config["scopes"] as? NSArray)
     let par = try ReadableMapUtils.readBoolean(config, key: "par")
-    let openId = try parseOpenId(config["openId"])
+    let openId = parseOpenId(config["openId"])
     let acrValues = readOptionalString(config["acrValues"])
     let signOutRedirectUri = readOptionalString(config["signOutRedirectUri"])
     let state = readOptionalString(config["state"])
@@ -113,36 +114,27 @@ enum JourneyConfigParser {
 
   /// Parses optional OpenID endpoint override payload.
   ///
+  /// Every field is an independently-optional override applied on top of
+  /// discovery, so a payload supplying only one endpoint (for example
+  /// `deviceAuthorizationEndpoint` for a provider whose discovery document
+  /// omits it) must not be rejected just because the others are absent.
+  ///
   /// - Parameter value: Journey `openId` payload from JS.
   /// - Returns: Parsed OpenID payload, or `nil` when omitted.
-  /// - Throws: `JourneyBridgeError.argument` when required endpoint values are missing.
-  private static func parseOpenId(_ value: Any?) throws -> JourneyOpenIdPayload? {
+  private static func parseOpenId(_ value: Any?) -> JourneyOpenIdPayload? {
     guard let map = value as? NSDictionary else {
       return nil
     }
 
-    let authorizationEndpoint: String
-    let tokenEndpoint: String
-    let userinfoEndpoint: String
-
-    do {
-      authorizationEndpoint = try ReadableMapUtils.requireString(map, key: "authorizationEndpoint")
-      tokenEndpoint = try ReadableMapUtils.requireString(map, key: "tokenEndpoint")
-      userinfoEndpoint = try ReadableMapUtils.requireString(map, key: "userinfoEndpoint")
-    } catch {
-      throw JourneyBridgeError.argument(
-        "openId.authorizationEndpoint, openId.tokenEndpoint, and openId.userinfoEndpoint are required"
-      )
-    }
-
     return JourneyOpenIdPayload(
-      authorizationEndpoint: authorizationEndpoint,
-      tokenEndpoint: tokenEndpoint,
-      userinfoEndpoint: userinfoEndpoint,
+      authorizationEndpoint: readOptionalString(map["authorizationEndpoint"]),
+      tokenEndpoint: readOptionalString(map["tokenEndpoint"]),
+      userinfoEndpoint: readOptionalString(map["userinfoEndpoint"]),
       endSessionEndpoint: readOptionalString(map["endSessionEndpoint"]),
       pingEndIdpSessionEndpoint: readOptionalString(map["pingEndIdpSessionEndpoint"]),
       revocationEndpoint: readOptionalString(map["revocationEndpoint"]),
-      pushedAuthorizationRequestEndpoint: readOptionalString(map["pushedAuthorizationRequestEndpoint"])
+      pushedAuthorizationRequestEndpoint: readOptionalString(map["pushedAuthorizationRequestEndpoint"]),
+      deviceAuthorizationEndpoint: readOptionalString(map["deviceAuthorizationEndpoint"])
     )
   }
 

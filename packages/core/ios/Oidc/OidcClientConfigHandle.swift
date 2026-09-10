@@ -8,13 +8,17 @@
 import Foundation
 
 /// OpenID endpoint override values exposed by the native OIDC module.
+///
+/// - Note: Every field is independently optional: it is applied as an
+///   override on top of the values OIDC discovery returns, leaving any
+///   field left unset here at its discovered value.
 public struct OidcOpenIdConfig: Sendable {
-  /// Authorization endpoint URL.
-  public let authorizationEndpoint: String
-  /// Token endpoint URL.
-  public let tokenEndpoint: String
-  /// Userinfo endpoint URL.
-  public let userinfoEndpoint: String
+  /// Optional authorization endpoint URL.
+  public let authorizationEndpoint: String?
+  /// Optional token endpoint URL.
+  public let tokenEndpoint: String?
+  /// Optional userinfo endpoint URL.
+  public let userinfoEndpoint: String?
   /// Optional end-session endpoint URL.
   public let endSessionEndpoint: String?
   /// Optional Ping end-session endpoint URL.
@@ -23,15 +27,18 @@ public struct OidcOpenIdConfig: Sendable {
   public let revocationEndpoint: String?
   /// Optional PAR endpoint URL.
   public let pushedAuthorizationRequestEndpoint: String?
+  /// Optional device authorization endpoint URL.
+  public let deviceAuthorizationEndpoint: String?
 
   public init(
-    authorizationEndpoint: String,
-    tokenEndpoint: String,
-    userinfoEndpoint: String,
+    authorizationEndpoint: String?,
+    tokenEndpoint: String?,
+    userinfoEndpoint: String?,
     endSessionEndpoint: String?,
     pingEndIdpSessionEndpoint: String?,
     revocationEndpoint: String?,
-    pushedAuthorizationRequestEndpoint: String? = nil
+    pushedAuthorizationRequestEndpoint: String? = nil,
+    deviceAuthorizationEndpoint: String? = nil
   ) {
     self.authorizationEndpoint = authorizationEndpoint
     self.tokenEndpoint = tokenEndpoint
@@ -40,6 +47,7 @@ public struct OidcOpenIdConfig: Sendable {
     self.pingEndIdpSessionEndpoint = pingEndIdpSessionEndpoint
     self.revocationEndpoint = revocationEndpoint
     self.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint
+    self.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint
   }
 }
 
