@@ -5,7 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Pressable, Text, TextInput, View } from 'react-native';
@@ -41,6 +41,7 @@ import {
   sampleAppClientProfiles,
   sampleDaVinciConfig,
 } from './src/clients';
+import { startProtect } from '@ping-identity/rn-protect';
 import { configureBrowser } from '@ping-identity/rn-browser';
 import { logger } from '@ping-identity/rn-logger';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -154,6 +155,12 @@ export default function App() {
   >(null);
   const [selectedDeviceAuthProfileKey, setSelectedDeviceAuthProfileKey] =
     useState<string | null>(null);
+  /** True once Protect has initialized successfully (mount-only). */
+  const [protectReady, setProtectReady] = useState(false);
+  /** Protect startup failure message — blocks DaVinci flows until retried. */
+  const [protectError, setProtectError] = useState<string | null>(null);
+  /** Guard so the mount-only Protect effect never re-runs native initialize. */
+  const protectStartRef = useRef(false);
 
   const journeyProfiles = useMemo(
     () =>
@@ -200,6 +207,35 @@ export default function App() {
     selectedOidcProfile?.oidcClient ?? oidcProfiles[0]?.oidcClient;
   const deviceAuthProviderClient =
     selectedDeviceAuthProfile?.deviceAuthClient ?? deviceAuthClient;
+
+  // Mount-only Protect startup — PingOne Protect does not guarantee idempotent
+  // client initialization, so `selectedJourneyProfile` changes must never
+  // re-fire native `initialize`. Readiness is consumed by the DaVinci gate
+  // below, not by the root render, so Journey/OIDC screens stay independent.
+  useEffect(() => {
+    if (protectStartRef.current) {
+      return;
+    }
+    protectStartRef.current = true;
+    const isMounted = true;
+    void startProtect({ logger: logger({ level: 'debug' }) }).then(
+      () => {
+        if (isMounted) setProtectReady(true);
+      },
+      error => {
+        console.warn('Failed to initialize Protect', error);
+        if (isMounted) {
+          // Keep `protectReady` false — the DaVinci gate blocks flows instead
+          // of letting them run against an uninitialized Protect SDK.
+          setProtectError(
+            error instanceof Error
+              ? error.message
+              : 'Failed to initialize Protect',
+          );
+        }
+      },
+    );
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -276,6 +312,18 @@ export default function App() {
       isMounted = false;
     };
   }, [browserLogger, selectedJourneyProfile]);
+
+  // Protect startup gates only the DaVinci flow — Journey/OIDC demos are
+  // unaffected. Failure keeps the gate closed (see the mount-only effect).
+  const davinciGate: React.ReactNode = protectReady ? null : (
+    <View style={commonStyles.container}>
+      <Text style={commonStyles.textError}>
+        {protectError
+          ? `Protect failed to initialize: ${protectError}`
+          : 'Initializing Protect...'}
+      </Text>
+    </View>
+  );
 
   if (initError) {
     // Fail fast with a clear startup error instead of crashing on first journey API call.
@@ -484,9 +532,10 @@ export default function App() {
                   />
                   <Stack.Screen
                     name="DaVinci"
-                    component={DaVinciScreen}
                     options={{ title: 'DaVinci Flow' }}
-                  />
+                  >
+                    {props => davinciGate ?? <DaVinciScreen {...props} />}
+                  </Stack.Screen>
                 </Stack.Navigator>
               </NavigationContainer>
             </PushNotificationProvider>

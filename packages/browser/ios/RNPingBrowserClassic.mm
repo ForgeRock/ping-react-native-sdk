@@ -9,7 +9,11 @@
 //
 
 #import <React/RCTBridgeModule.h>
+#if __has_include("RNPingBrowser-Swift.h")
 #import "RNPingBrowser-Swift.h"
+#else
+#import <RNPingBrowser/RNPingBrowser-Swift.h>
+#endif
 
 /// React Native bridge module for classic (non-TurboModule) access.
 @interface RNPingBrowserClassic : NSObject <RCTBridgeModule>

@@ -2409,7 +2409,6 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
-    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -2446,7 +2445,6 @@ PODS:
     - hermes-engine
     - PingDavinci (= 2.1.0)
     - PingDavinciPlugin (= 2.1.0)
-    - PingExternalIdP (= 2.1.0)
     - PingLogger (= 2.1.0)
     - PingOidc (= 2.1.0)
     - PingOrchestrate (= 2.1.0)
@@ -2792,7 +2790,6 @@ PODS:
     - glog
     - hermes-engine
     - PingDavinciPlugin (= 2.1.0)
-    - PingFido (= 2.1.0)
     - PingJourney (= 2.1.0)
     - PingJourneyPlugin (= 2.1.0)
     - PingLogger (= 2.1.0)
@@ -3061,6 +3058,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinci (= 2.1.0)
+    - PingDavinciPlugin (= 2.1.0)
     - PingOneProtect (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
@@ -3092,6 +3091,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
+    - PingDavinci (= 2.1.0)
+    - PingDavinciPlugin (= 2.1.0)
     - PingOneProtect (= 2.1.0)
     - RCT-Folly
     - RCT-Folly/Fabric
@@ -3665,17 +3666,17 @@ SPEC CHECKSUMS:
   RNPingBinding: 42c5def9f466be00bbefb4528f64b60230bd567e
   RNPingBrowser: 7c0711fae1acb825477f655c947a805d6118ecf4
   RNPingCore: 1b0525ac7164f9ddb61b686c45b67f19530bb481
-  RNPingDavinci: 83102b5584c37e400ae5ced9386e85d0f533f3c9
+  RNPingDavinci: 45c7d41b6f183d83ae0f4a19bd5c2f83d2429abf
   RNPingDeviceClient: 826fb04701ac0e409d38bf999e18415e6d64e22b
   RNPingDeviceId: ff1d33d171c008a9c98b2d7eb2d46032869fad33
   RNPingDeviceProfile: 428761e9cfac17cd657e1747b2854a93db6572bd
   RNPingExternalIdp: 9fd15d2f7576223beee2055441e9fd29645348e2
   RNPingFido: b09295c6b13600591387a57b1930a538d4a7f1e0
-  RNPingJourney: 39ef0f0f8e5cff492c6509d39e9b3ce91be581ce
+  RNPingJourney: 7eacfa031b070c725ed8368df5fc6ac6710d5b70
   RNPingLogger: f7620710037e956ca367b5e2a1477a9c6c4f0b5a
   RNPingOath: bd50b98c9d435fb3fde8e80b966306a9fcd2e2d5
   RNPingOidc: 38cea6333efa07545e3798b64d10a1536484b655
-  RNPingProtect: 189e997debdf3e1f37a19bc1ef48db44fd2516ce
+  RNPingProtect: 45a4780c53561556254ba1c3dfbbe158dae5a378
   RNPingPush: 0072c47bce5d54317145f32090b58b7689825655
   RNPingStorage: 653ee9fa2b7abc8cc3a923cd084cdfd9a35e1123
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

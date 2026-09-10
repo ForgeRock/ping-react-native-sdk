@@ -37,6 +37,8 @@ Pod::Spec.new do |s|
 
   s.dependency "RNPingCore"
   s.dependency "PingOneProtect", '2.1.0'
+  s.dependency "PingDavinci", '2.1.0'
+  s.dependency "PingDavinciPlugin", '2.1.0'
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"

@@ -3,7 +3,6 @@
 //  This software may be modified and distributed under the terms
 //  of the MIT license. See the LICENSE file for details.
 #import "RNPingOidc.h"
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 
 #import <Foundation/Foundation.h>
 #import <React/RCTBridgeModule.h>
@@ -17,7 +16,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 #import "RNPingOidcEventEmitterGate.h"
 
+#if __has_include("RNPingOidc-Swift.h")
 #import "RNPingOidc-Swift.h"
+#else
+#import <RNPingOidc/RNPingOidc-Swift.h>
+#endif
 
 @implementation RNPingOidc
 @synthesize callableJSModules = _callableJSModules;

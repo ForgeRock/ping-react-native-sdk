@@ -7,7 +7,11 @@
  
 #import <React/RCTBridgeModule.h>
 #import <React/RCTLog.h>
+#if __has_include("RNPingLogger-Swift.h")
 #import "RNPingLogger-Swift.h"
+#else
+#import <RNPingLogger/RNPingLogger-Swift.h>
+#endif
 
 /**
  * @interface RNPingLoggerClassic

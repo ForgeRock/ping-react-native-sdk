@@ -94,6 +94,17 @@ class RNPingProtectClassicModule(
     RNPingProtectCommon.resumeBehavioralData(config, promise)
   }
 
+  /**
+   * Registers the Protect collector serializer with the shared DaVinci mapper.
+   *
+   * @param promise React Native promise resolved after registration completes.
+   */
+  @ReactMethod
+  fun registerDaVinciSerializer(promise: Promise) {
+    RNPingProtectCommon.registerDaVinciSerializer()
+    promise.resolve(null)
+  }
+
   companion object {
     const val NAME = "RNPingProtectClassic"
   }

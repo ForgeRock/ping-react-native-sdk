@@ -11,14 +11,13 @@ import com.pingidentity.davinci.DaVinci
 import com.pingidentity.davinci.module.Oidc
 import com.pingidentity.oidc.OidcClientConfig
 import com.pingidentity.orchestrate.Workflow
+import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.logger.LoggerHandleContract
 import com.pingidentity.rncore.registry.Registry
 import com.pingidentity.rncore.storage.StorageConfigHandleContract
 import com.pingidentity.rndavinci.config.DaVinciClientPayload
 import com.pingidentity.storage.CacheStrategy
 import com.pingidentity.storage.EncryptedDataStoreStorageConfig
-// ProtectLifecycle is compileOnly (provided by rn-protect); guarded at runtime with NoClassDefFoundError.
-import com.pingidentity.protect.ProtectLifecycle
 
 /**
  * Builds native DaVinci workflow instances from parsed JS payloads.
@@ -107,24 +106,7 @@ internal class DaVinciClientFactory(
                 applyOidcStorageIfPresent(resolvedOidcConfig.storageId)
             }
 
-            payload.protect?.let { protect ->
-                try {
-                    module(ProtectLifecycle) {
-                        protect.envId?.let { envId = it }
-                        isBehavioralDataCollection = protect.isBehavioralDataCollection
-                        isLazyMetadata = protect.isLazyMetadata
-                        protect.customHost?.let { customHost = it }
-                        isConsoleLogEnabled = protect.isConsoleLogEnabled
-                        if (protect.deviceAttributesToIgnore.isNotEmpty()) {
-                            deviceAttributesToIgnore = protect.deviceAttributesToIgnore
-                        }
-                        pauseBehavioralDataOnSuccess = protect.pauseBehavioralDataOnSuccess
-                        resumeBehavioralDataOnStart = protect.resumeBehavioralDataOnStart
-                    }
-                } catch (e: NoClassDefFoundError) {
-                    logger?.e("modules.protect was configured but the PingOne Protect SDK is not on the classpath; ProtectLifecycle was NOT registered. Add com.pingidentity.sdks:protect.", e)
-                }
-            }
+            CoreRuntime.invokeDaVinciModuleHooks(this)
         }
     }
 

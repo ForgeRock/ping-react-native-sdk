@@ -25,6 +25,25 @@ describe('ExternalIdp API', () => {
     jest.clearAllMocks();
   });
 
+  it('createExternalIdpClient eagerly registers the native DaVinci serializer', async () => {
+    const registerSerializerNative = jest.fn().mockResolvedValue(null);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: registerSerializerNative,
+    });
+
+    createExternalIdpClient({ redirectUri: 'com.app://cb' });
+
+    expect(registerSerializerNative).toHaveBeenCalledTimes(1);
+  });
+
+  it('createExternalIdpClient does not fail when the serializer method is missing', () => {
+    (getNativeModule as jest.Mock).mockReturnValue({});
+
+    expect(() =>
+      createExternalIdpClient({ redirectUri: 'com.app://cb' }),
+    ).not.toThrow();
+  });
+
   it('authorizeForJourney success — returns ExternalIdpResult', async () => {
     const nativeResult = { token: 'tok', additionalParameters: { foo: 'bar' } };
     const authorizeNative = jest.fn().mockResolvedValue(nativeResult);

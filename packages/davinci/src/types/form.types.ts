@@ -6,7 +6,24 @@
  */
 
 import type { DaVinciNextInput } from './config.types';
-import type { DaVinciCollector, DaVinciNode } from './node.types';
+import type {
+  BooleanCollector,
+  DaVinciNode,
+  DeviceAuthenticationCollector,
+  DeviceRegistrationCollector,
+  FlowCollector,
+  IntegrationCollector,
+  LabelCollector,
+  MultiSelectCollector,
+  PasswordCollector,
+  PhoneNumberCollector,
+  PollingCollector,
+  QRCodeCollector,
+  ReadOnlyTextCollector,
+  SingleSelectCollector,
+  SubmitCollector,
+  TextCollector,
+} from './node.types';
 
 /**
  * Headless collector form helper type contracts.
@@ -23,8 +40,7 @@ import type { DaVinciCollector, DaVinciNode } from './node.types';
  * - `immediate`            — activating the collector immediately advances the flow
  *                            without waiting for other field values
  *                            (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
- * - `integration_required` — collector is handled entirely by an external package
- *                            (e.g. `rn-external-idp` driving `IdpCollector`).
+ * - `integration_required` — collector is handled entirely by an external package.
  *                            The bridge serialises the collector data; the external
  *                            package performs its action and then calls `next()`.
  *                            No base-registry collector maps to this mode in 2.0.1 —
@@ -88,7 +104,7 @@ export type DaVinciFieldKind =
  *
  * @public
  */
-export type DaVinciNormalizedCollector = DaVinciCollector & {
+type DaVinciNormalizedMetadata<K extends DaVinciFieldKind> = {
   /** Execution mode classification for this collector. */
   executionMode: DaVinciExecutionMode;
   /**
@@ -101,23 +117,39 @@ export type DaVinciNormalizedCollector = DaVinciCollector & {
    * direct user input into the form.
    */
   requiresUserInput: boolean;
-  /**
-   * UI-oriented field kind resolved from the collector type.
-   *
-   * @remarks
-   * Parallels `kind` on {@link JourneyNormalizedField}.
-   */
-  kind: DaVinciFieldKind;
-  /**
-   * Server-seeded default value for this collector, when present.
-   *
-   * @remarks
-   * Parallels `defaultValue` on {@link JourneyNormalizedField}. Used by
-   * `useDaVinciForm` to hydrate form state on first render and after a node
-   * switch.
-   */
+  /** UI-oriented field kind resolved from the collector type. */
+  kind: K;
+  /** Server-seeded default value for this collector, when present. */
   defaultValue?: DaVinciFormValue;
 };
+
+/**
+ * Collector enriched with UI-helper metadata.
+ *
+ * @remarks
+ * The `kind` discriminant separates known native collectors from generic
+ * integration/unknown collectors. Narrow on `kind` before accessing fields
+ * that are not part of the generic integration contract.
+ *
+ * @public
+ */
+export type DaVinciNormalizedCollector =
+  | (TextCollector & DaVinciNormalizedMetadata<'text'>)
+  | (PasswordCollector & DaVinciNormalizedMetadata<'password'>)
+  | (SubmitCollector & DaVinciNormalizedMetadata<'flow'>)
+  | (FlowCollector & DaVinciNormalizedMetadata<'flow'>)
+  | (LabelCollector & DaVinciNormalizedMetadata<'output'>)
+  | (SingleSelectCollector & DaVinciNormalizedMetadata<'singleSelect'>)
+  | (MultiSelectCollector & DaVinciNormalizedMetadata<'multiSelect'>)
+  | (PhoneNumberCollector & DaVinciNormalizedMetadata<'phone'>)
+  | (DeviceRegistrationCollector & DaVinciNormalizedMetadata<'device'>)
+  | (DeviceAuthenticationCollector & DaVinciNormalizedMetadata<'device'>)
+  | (BooleanCollector & DaVinciNormalizedMetadata<'boolean'>)
+  | (ReadOnlyTextCollector & DaVinciNormalizedMetadata<'output'>)
+  | (PollingCollector & DaVinciNormalizedMetadata<'polling'>)
+  | (QRCodeCollector & DaVinciNormalizedMetadata<'qrCode'>)
+  | (IntegrationCollector & DaVinciNormalizedMetadata<'integration'>)
+  | (IntegrationCollector & DaVinciNormalizedMetadata<'unknown'>);
 
 /**
  * Flat form value union covering all manual collector value shapes.
@@ -196,14 +228,12 @@ export type DaVinciFormMeta = {
    * Stub for parity with {@link JourneyFormMeta.hasAutoCapable}. No collector
    * type in the DaVinci 2.0.1 iOS/Android SDKs resolves to an `auto_capable`
    * execution mode (see `resolveExecutionMode` in `collectorHelpers.ts`) — this
-   * flag will be wired to live collector presence by future IdP/Protect
-   * integration stories (SDKS-5128 and follow-ons) once such a collector type
-   * is registered.
+   * flag will be wired to live collector presence by future integration
+   * stories once such a collector type is registered.
    */
   hasAutoCapable: boolean;
   /**
-   * True when at least one collector requires an external package integration
-   * (e.g. `rn-external-idp` handling an `IdpCollector`).
+   * True when at least one collector requires an external package integration.
    */
   hasIntegrationRequired: boolean;
   /** True when at least one unsupported (unknown-type) collector is present. */
@@ -227,7 +257,7 @@ export type DaVinciFormValuesUpdater =
 export type DaVinciFormOptions = {
   /**
    * Collector types that the app has already handled via native integration
-   * (for example IdP, FIDO, or Protect). When provided, matching
+   * (for example IdP or FIDO). When provided, matching
    * `integration_required` collectors are excluded from submit issues so that
    * `canSubmit` reflects true readiness.
    */

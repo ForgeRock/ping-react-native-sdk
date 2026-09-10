@@ -81,8 +81,7 @@ class OathErrorMapperTest {
   @Test
   fun mapThrowable_mfaPolicyViolationException_mapsToStateError() {
     // MfaPolicy is an abstract Java class; use relaxed = true so MockK stubs
-    // abstract members automatically. The mapper does not access policy.name,
-    // so no explicit every { } stub is needed.
+    // abstract members automatically, including getName().
     val policy = mockk<MfaPolicy>(relaxed = true)
     val error = MfaPolicyViolationException("policy violation occurred", policy)
 
@@ -90,6 +89,7 @@ class OathErrorMapperTest {
 
     assertEquals(ErrorType.STATE_ERROR, mapped.type)
     assertEquals(OathErrorCodes.OATH_POLICY_VIOLATION, mapped.error)
+    assertEquals("", mapped.extras["violatedPolicy"])
     assertNotNull(mapped.message)
   }
 

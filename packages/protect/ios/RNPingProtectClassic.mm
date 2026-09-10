@@ -89,4 +89,14 @@ RCT_EXPORT_METHOD(resumeBehavioralData:(NSDictionary *)config
   }];
 }
 
+/**
+ * Registers the Protect collector serializer with the shared DaVinci mapper.
+ */
+RCT_EXPORT_METHOD(registerDaVinciSerializer:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [RNPingProtectCommon registerDaVinciSerializer];
+  resolve([NSNull null]);
+}
+
 @end

@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -205,6 +206,21 @@ class RNPingProtectTest {
   }
 
   /**
+   * Ensures cleanup removes the Protect lifecycle module from the shared registry
+   * so a re-initialized module does not inherit stale per-initialization config.
+   */
+  @Test
+  fun cleanupRemovesDaVinciModuleHook() {
+    val lifecycleKey = "protect"
+    CoreRuntime.registerDaVinciModuleHook(lifecycleKey) { }
+    assertTrue(readRegisteredHookKeys().contains(lifecycleKey))
+
+    invokeCleanup()
+
+    assertFalse(readRegisteredHookKeys().contains(lifecycleKey))
+  }
+
+  /**
    * Waits for a promise rejection and returns its shared error payload.
    */
   private fun captureReject(promise: TestPromise): WritableMap {
@@ -230,6 +246,17 @@ class RNPingProtectTest {
     configuredField.isAccessible = true
     configuredField.setBoolean(RNPingProtectCommon, true)
     RNPingProtectCommon.cleanup()
+  }
+
+  /**
+   * Reflectively reads the registered DaVinci module hook keys from CoreRuntime.
+   */
+  private fun readRegisteredHookKeys(): Set<String> {
+    val field = CoreRuntime::class.java.getDeclaredField("davinciModuleHooks")
+    field.isAccessible = true
+    @Suppress("UNCHECKED_CAST")
+    val hooks = field.get(CoreRuntime) as Map<String, Any>
+    return hooks.keys
   }
 }
 

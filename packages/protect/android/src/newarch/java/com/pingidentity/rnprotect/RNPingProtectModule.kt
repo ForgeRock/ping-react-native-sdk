@@ -7,8 +7,8 @@
 package com.pingidentity.rnprotect
 
 import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.module.annotations.ReactModule
 
 /**
@@ -66,6 +66,14 @@ class RNPingProtectModule(reactContext: ReactApplicationContext) :
    */
   override fun resumeBehavioralData(config: ReadableMap, promise: Promise) {
     RNPingProtectCommon.resumeBehavioralData(config, promise)
+  }
+
+  /**
+   * Registers the Protect collector serializer with the shared DaVinci mapper.
+   */
+  override fun registerDaVinciSerializer(promise: Promise) {
+    RNPingProtectCommon.registerDaVinciSerializer()
+    promise.resolve(null)
   }
 
   companion object {

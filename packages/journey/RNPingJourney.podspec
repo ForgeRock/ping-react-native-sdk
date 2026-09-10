@@ -41,7 +41,6 @@ Pod::Spec.new do |s|
   s.dependency "PingLogger", '2.1.0'
   s.dependency "PingJourney", '2.1.0'
   s.dependency "PingJourneyPlugin", '2.1.0'
-  s.dependency "PingFido", '2.1.0'
   s.dependency "PingDavinciPlugin", '2.1.0'
   s.dependency "PingOidc", '2.1.0'
   s.dependency "PingOrchestrate", '2.1.0'

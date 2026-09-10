@@ -85,6 +85,16 @@ RCT_EXPORT_MODULE()
   });
 }
 
+/**
+ Registers the External IdP collector serializer with the shared DaVinci mapper.
+ */
+- (void)registerDaVinciSerializer:(RCTPromiseResolveBlock)resolve
+                           reject:(RCTPromiseRejectBlock)rejecter
+{
+  [RNPingExternalIdpCommon registerDaVinciSerializer];
+  resolve([NSNull null]);
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

@@ -8,12 +8,12 @@
 #import <RNPingLoggerSpec/RNPingLoggerSpec.h>
 
 /**
- * @interface Logger
+ * @interface RNPingLogger
  * @brief Turbo Module implementation for PingLogger
  *
  * This interface defines the native logger module for React Native's New Architecture.
  * It conforms to the NativeRNPingLoggerSpec protocol generated from the TurboModule spec.
  */
-@interface Logger : NSObject <NativeRNPingLoggerSpec>
+@interface RNPingLogger : NSObject <NativeRNPingLoggerSpec>
 
 @end

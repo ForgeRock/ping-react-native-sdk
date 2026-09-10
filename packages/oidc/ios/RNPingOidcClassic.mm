@@ -17,7 +17,11 @@
 @end
 #endif
 #import "RNPingOidcEventEmitterGate.h"
+#if __has_include("RNPingOidc-Swift.h")
 #import "RNPingOidc-Swift.h"
+#else
+#import <RNPingOidc/RNPingOidc-Swift.h>
+#endif
 
 /// React Native bridge module for classic (non-TurboModule) access.
 @interface RNPingOidcClassic : NSObject <RCTBridgeModule>

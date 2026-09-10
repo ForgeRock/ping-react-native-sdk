@@ -8,11 +8,11 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Config from 'react-native-config';
+import type { IdpCollector } from '@ping-identity/rn-external-idp';
 import type {
   ContinueNode,
   DaVinciFormResult,
   DaVinciNormalizedCollector,
-  IdpCollector,
   PollingCollector,
   PollingStatus,
   UnsupportedDaVinciField,

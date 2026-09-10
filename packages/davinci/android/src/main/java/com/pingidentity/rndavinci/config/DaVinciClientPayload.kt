@@ -13,11 +13,9 @@ package com.pingidentity.rndavinci.config
  * @param oidc Required OIDC module configuration.
  * @param timeout Optional network timeout in milliseconds.
  * @param loggerId Optional logger handle id.
- * @param protect Optional Protect lifecycle module configuration.
  */
 internal data class DaVinciClientPayload(
     val oidc: DaVinciOidcPayload,
     val timeout: Long?,
     val loggerId: String?,
-    val protect: ProtectLifecyclePayload?,
 )

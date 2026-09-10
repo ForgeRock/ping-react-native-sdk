@@ -9,7 +9,7 @@ The Ping Protect library integrates PingOne Protect behavioral data collection i
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Automatic initialization with the ProtectLifecycle module](#automatic-initialization-with-the-protectlifecycle-module)
+  - [DaVinci lifecycle integration](#davinci-lifecycle-integration)
   - [Manual initialization](#manual-initialization)
 - [API reference](#api-reference)
 - [Errors](#errors)
@@ -40,16 +40,27 @@ yarn add @ping-identity/rn-logger
 
 ## Usage
 
-### Automatic initialization with the ProtectLifecycle module
+### DaVinci lifecycle integration
 
-Pass `modules.protect` to `createDaVinciClient` to wire the Protect SDK into the DaVinci workflow lifecycle automatically. The native SDK initializes on workflow start, resumes behavioral data collection at the beginning of each node, and pauses it on success — without any manual `startProtect()` call.
+Initialize Protect before the first DaVinci operation. `createDaVinciClient` remains responsible only for DaVinci configuration; `startProtect` owns Protect initialization and lifecycle registration.
 
 ```ts
 import { createDaVinciClient } from '@ping-identity/rn-davinci';
+import { startProtect } from '@ping-identity/rn-protect';
 import { logger } from '@ping-identity/rn-logger';
 
+const protectLogger = logger({ level: 'debug' });
+
+await startProtect({
+  envId: 'your-pingone-environment-id',
+  isBehavioralDataCollection: true,
+  pauseBehavioralDataOnSuccess: true,
+  resumeBehavioralDataOnStart: true,
+  logger: protectLogger,
+});
+
 const client = createDaVinciClient({
-  logger: logger({ level: 'debug' }),
+  logger: protectLogger,
   modules: {
     oidc: {
       clientId: 'rn-client',
@@ -58,20 +69,15 @@ const client = createDaVinciClient({
       redirectUri: 'com.example.app://callback',
       scopes: ['openid'],
     },
-    protect: {
-      envId: 'your-pingone-environment-id',
-      isBehavioralDataCollection: true,
-      pauseBehavioralDataOnSuccess: true,
-      resumeBehavioralDataOnStart: true,
-      logger: logger({ level: 'debug' }), // optional — scoped to Protect operations
-    },
   },
 });
+
+await client.start();
 ```
 
-All `protect` fields are optional. If `@ping-identity/rn-protect` is not installed, the `modules.protect` value is silently ignored at runtime.
+The DaVinci client may be created before `startProtect`, because configuration is lazy, but `startProtect` must resolve before `client.start()` or any other DaVinci operation.
 
-When the lifecycle module is active, call `collectProtect` from `@ping-identity/rn-protect` before advancing the flow:
+When the lifecycle integration is active, call `collectProtect` from `@ping-identity/rn-protect` before advancing the flow:
 
 ```ts
 import { collectProtect } from '@ping-identity/rn-protect';
@@ -114,7 +120,7 @@ await startProtect({
 
 ### 2. Collect for a DaVinci flow
 
-When `modules.protect` is configured on `createDaVinciClient`, import `collectProtect` from `@ping-identity/rn-protect` and pass the DaVinci client:
+Import `collectProtect` from `@ping-identity/rn-protect` and pass the DaVinci client:
 
 ```ts
 import { collectProtect } from '@ping-identity/rn-protect';
@@ -159,11 +165,14 @@ Pass `handledCollectorTypes` so PROTECT collectors are excluded from blocking su
 
 ```ts
 import { useDaVinci, useDaVinciForm } from '@ping-identity/rn-davinci';
-import { collectProtect } from '@ping-identity/rn-protect';
+import {
+  collectProtect,
+  protectCollectorType,
+} from '@ping-identity/rn-protect';
 
 const { node, next } = useDaVinci(daVinciClient);
 const form = useDaVinciForm(node, {
-  handledCollectorTypes: new Set(['PROTECT']),
+  handledCollectorTypes: new Set([protectCollectorType]),
 });
 
 // Before submitting the form, run collection:
@@ -183,16 +192,15 @@ import {
   useDaVinciForm,
   createDaVinciClient,
 } from '@ping-identity/rn-davinci';
-import { collectProtect } from '@ping-identity/rn-protect';
+import {
+  collectProtect,
+  protectCollectorType,
+} from '@ping-identity/rn-protect';
 
 const daVinciClient = createDaVinciClient({
   modules: {
     oidc: {
       /* ... */
-    },
-    protect: {
-      envId: 'your-pingone-environment-id',
-      resumeBehavioralDataOnStart: true,
     },
   },
 });
@@ -200,12 +208,14 @@ const daVinciClient = createDaVinciClient({
 function LoginScreen() {
   const { node, next } = useDaVinci(daVinciClient);
   const form = useDaVinciForm(node, {
-    handledCollectorTypes: new Set(['PROTECT']),
+    handledCollectorTypes: new Set([protectCollectorType]),
   });
 
   useEffect(() => {
     if (node?.type !== 'ContinueNode') return;
-    const hasProtect = node.collectors.some((c) => c.type === 'PROTECT');
+    const hasProtect = node.collectors.some(
+      (c) => c.type === protectCollectorType,
+    );
     if (!hasProtect) return;
 
     collectProtect(daVinciClient).catch(console.error);

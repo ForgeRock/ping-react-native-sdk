@@ -92,12 +92,10 @@ internal object RNPingDavinciCommon {
      *
      * @property workflow Native DaVinci workflow.
      * @property loggerId Optional logger handle id from JS (DaVinci-level).
-     * @property protectLoggerId Optional logger handle id scoped to Protect operations.
      */
     private data class DaVinciHandle(
         val workflow: Workflow,
         val loggerId: String?,
-        val protectLoggerId: String? = null,
     ) : NativeHandle
 
     /**
@@ -261,7 +259,7 @@ internal object RNPingDavinciCommon {
         try {
             val workflow = clientFactory.build(payload)
             val davinciId = davinciRegistry.register(
-                DaVinciHandle(workflow, payload.loggerId, payload.protect?.loggerId)
+                DaVinciHandle(workflow, payload.loggerId)
             )
             promise.resolve(davinciId)
         } catch (error: Exception) {

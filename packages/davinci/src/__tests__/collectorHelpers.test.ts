@@ -5,6 +5,7 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
 import {
   buildNextInput,
   computeFormMeta,
@@ -35,6 +36,7 @@ const manualTypes = [
 ];
 
 const immediateTypes = ['SUBMIT_BUTTON', 'ACTION', 'FLOW_BUTTON', 'FLOW_LINK'];
+const integrationType = 'TEST_INTEGRATION_COLLECTOR';
 
 const baseField = (
   key: string,
@@ -88,8 +90,9 @@ describe('resolveExecutionMode', () => {
     });
   });
 
-  it('returns integration_required for SOCIAL_LOGIN_BUTTON', () => {
-    expect(resolveExecutionMode('SOCIAL_LOGIN_BUTTON')).toBe(
+  it('returns integration_required for a registered integration type', () => {
+    registerIntegrationCollectorType('TEST_INTEGRATION_COLLECTOR');
+    expect(resolveExecutionMode('TEST_INTEGRATION_COLLECTOR')).toBe(
       'integration_required',
     );
   });
@@ -147,8 +150,9 @@ describe('resolveFieldKind', () => {
     },
   );
 
-  it('returns integration for SOCIAL_LOGIN_BUTTON', () => {
-    expect(resolveFieldKind('SOCIAL_LOGIN_BUTTON')).toBe('integration');
+  it('returns integration for a registered integration type', () => {
+    registerIntegrationCollectorType('TEST_INTEGRATION_FIELD');
+    expect(resolveFieldKind('TEST_INTEGRATION_FIELD')).toBe('integration');
   });
 
   it('returns unknown for unrecognised types', () => {
@@ -493,10 +497,11 @@ describe('buildNextInput — no active node', () => {
 });
 
 describe('buildNextInput — integration_required path', () => {
+  beforeAll(() => registerIntegrationCollectorType(integrationType));
   it('omits handled integration collectors silently when type is in the set', () => {
-    const handled = new Set(['SOCIAL_LOGIN_BUTTON']);
+    const handled = new Set([integrationType]);
     const result = buildNextInput(
-      makeNode([baseField('idp', 'SOCIAL_LOGIN_BUTTON')]),
+      makeNode([baseField('idp', integrationType)]),
       {},
       handled,
     );
@@ -507,7 +512,7 @@ describe('buildNextInput — integration_required path', () => {
 
   it('emits INTEGRATION_REQUIRED issue and blocks submit when type is not in the set', () => {
     const result = buildNextInput(
-      makeNode([baseField('idp', 'SOCIAL_LOGIN_BUTTON')]),
+      makeNode([baseField('idp', integrationType)]),
       {},
       new Set(),
     );
@@ -523,7 +528,7 @@ describe('buildNextInput — integration_required path', () => {
 
   it('emits INTEGRATION_REQUIRED issue when handledCollectorTypes is omitted', () => {
     const result = buildNextInput(
-      makeNode([baseField('idp', 'SOCIAL_LOGIN_BUTTON')]),
+      makeNode([baseField('idp', integrationType)]),
       {},
     );
     expect(result.canSubmit).toBe(false);
@@ -826,7 +831,7 @@ describe('buildNextInput — excluded modes', () => {
   });
 
   it('excludes integration_required collectors from payload and blocks submit when unhandled', () => {
-    const node = makeNode([baseField('idp', 'SOCIAL_LOGIN_BUTTON')]);
+    const node = makeNode([baseField('idp', integrationType)]);
     const result = buildNextInput(node, {});
 
     expect(result.input.collectors).toEqual([]);
@@ -884,7 +889,7 @@ describe('computeFormMeta', () => {
 
   it('flags hasIntegrationRequired when a plugin collector is present', () => {
     const integrationCollector: DaVinciNormalizedCollector = {
-      ...baseField('idp', 'SOCIAL_LOGIN_BUTTON'),
+      ...baseField('idp', integrationType),
       executionMode: 'integration_required',
       requiresUserInput: false,
     } as DaVinciNormalizedCollector;
@@ -921,21 +926,19 @@ describe('computeFormMeta', () => {
 describe('IDP collector (SDKS-5128)', () => {
   const idpCollector: DaVinciCollector = {
     key: 'google-idp-123',
-    type: 'SOCIAL_LOGIN_BUTTON',
+    type: integrationType,
     label: 'Sign in with Google',
     idpId: 'google-idp-123',
     idpType: 'GOOGLE',
     idpEnabled: true,
   } as DaVinciCollector;
 
-  it("resolveExecutionMode('SOCIAL_LOGIN_BUTTON') returns integration_required", () => {
-    expect(resolveExecutionMode('SOCIAL_LOGIN_BUTTON')).toBe(
-      'integration_required',
-    );
+  it('resolveExecutionMode(integrationType) returns integration_required', () => {
+    expect(resolveExecutionMode(integrationType)).toBe('integration_required');
   });
 
-  it("resolveFieldKind('SOCIAL_LOGIN_BUTTON') returns integration", () => {
-    expect(resolveFieldKind('SOCIAL_LOGIN_BUTTON')).toBe('integration');
+  it('resolveFieldKind(integrationType) returns integration', () => {
+    expect(resolveFieldKind(integrationType)).toBe('integration');
   });
 
   it('normalizeCollectors gives IDP collector kind:integration and executionMode:integration_required', () => {
@@ -962,7 +965,7 @@ describe('IDP collector (SDKS-5128)', () => {
     const { canSubmit, issues } = buildNextInput(
       node,
       {},
-      new Set(['SOCIAL_LOGIN_BUTTON']),
+      new Set([integrationType]),
     );
     expect(canSubmit).toBe(true);
     expect(issues).toHaveLength(0);

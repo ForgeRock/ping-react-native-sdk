@@ -75,7 +75,6 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertTrue(payload.oidc.scopes.isEmpty)
     XCTAssertNil(payload.oidc.par)
     XCTAssertTrue(payload.oidc.additionalParameters.isEmpty)
-    XCTAssertNil(payload.protect)
   }
 
   /// Verifies that parsing rejects a non-Boolean PAR value.
@@ -90,96 +89,21 @@ final class DaVinciConfigParserTests: XCTestCase {
     XCTAssertThrowsError(try DaVinciConfigParser.parse(config))
   }
 
-  // MARK: - Protect lifecycle parsing
+  // MARK: - Legacy plugin configuration is not parsed
 
-  func testParseProtectAbsentReturnsNilProtect() throws {
-    let config: NSDictionary = [
-      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
-      "clientId": "my-client",
-      "redirectUri": "com.example.app://oauth2redirect"
-    ]
-
-    let payload = try DaVinciConfigParser.parse(config)
-
-    XCTAssertNil(payload.protect)
-  }
-
-  func testParseProtectDefaultsWhenEmpty() throws {
+  func testIgnoresPluginSpecificConfiguration() throws {
     let config: NSDictionary = [
       "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
       "clientId": "my-client",
       "redirectUri": "com.example.app://oauth2redirect",
-      "protect": NSDictionary()
+      "plugin": ["type": "external-integration"] as NSDictionary
     ]
 
     let payload = try DaVinciConfigParser.parse(config)
-    let protect = try XCTUnwrap(payload.protect)
-
-    XCTAssertNil(protect.envId)
-    XCTAssertTrue(protect.isBehavioralDataCollection)
-    XCTAssertFalse(protect.isLazyMetadata)
-    XCTAssertNil(protect.customHost)
-    XCTAssertFalse(protect.isConsoleLogEnabled)
-    XCTAssertTrue(protect.deviceAttributesToIgnore.isEmpty)
-    XCTAssertFalse(protect.pauseBehavioralDataOnSuccess)
-    XCTAssertFalse(protect.resumeBehavioralDataOnStart)
+    XCTAssertEqual(payload.oidc.clientId, "my-client")
   }
 
-  func testParseProtectAllFieldsMapped() throws {
-    let config: NSDictionary = [
-      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
-      "clientId": "my-client",
-      "redirectUri": "com.example.app://oauth2redirect",
-      "protect": [
-        "envId": "env-abc",
-        "isBehavioralDataCollection": false,
-        "isLazyMetadata": true,
-        "customHost": "https://custom.host",
-        "isConsoleLogEnabled": true,
-        "deviceAttributesToIgnore": ["deviceId", "screen"],
-        "pauseBehavioralDataOnSuccess": true,
-        "resumeBehavioralDataOnStart": true
-      ] as NSDictionary
-    ]
-
-    let payload = try DaVinciConfigParser.parse(config)
-    let protect = try XCTUnwrap(payload.protect)
-
-    XCTAssertEqual(protect.envId, "env-abc")
-    XCTAssertFalse(protect.isBehavioralDataCollection)
-    XCTAssertTrue(protect.isLazyMetadata)
-    XCTAssertEqual(protect.customHost, "https://custom.host")
-    XCTAssertTrue(protect.isConsoleLogEnabled)
-    XCTAssertEqual(protect.deviceAttributesToIgnore, ["deviceId", "screen"])
-    XCTAssertTrue(protect.pauseBehavioralDataOnSuccess)
-    XCTAssertTrue(protect.resumeBehavioralDataOnStart)
-  }
-
-  func testParseProtectLoggerIdForwarded() throws {
-    let config: NSDictionary = [
-      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
-      "clientId": "my-client",
-      "redirectUri": "com.example.app://oauth2redirect",
-      "protect": ["loggerId": "protect-logger-1"] as NSDictionary
-    ]
-
-    let payload = try DaVinciConfigParser.parse(config)
-
-    XCTAssertEqual(payload.protect?.loggerId, "protect-logger-1")
-  }
-
-  func testParseProtectLoggerIdIsNilWhenAbsent() throws {
-    let config: NSDictionary = [
-      "discoveryEndpoint": "https://auth.example.com/.well-known/openid-configuration",
-      "clientId": "my-client",
-      "redirectUri": "com.example.app://oauth2redirect",
-      "protect": NSDictionary()
-    ]
-
-    let payload = try DaVinciConfigParser.parse(config)
-
-    XCTAssertNil(payload.protect?.loggerId)
-  }
+  // MARK: - Legacy plugin configuration is not parsed
 
   func testParseThrowsWhenDiscoveryEndpointMissing() {
     let config: NSDictionary = [

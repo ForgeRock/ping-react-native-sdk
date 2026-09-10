@@ -12,7 +12,10 @@ import {
   toNativeConfig,
   toNativeSelectOptions,
 } from './NativeRNPingExternalIdp';
-import { noopLogger } from '@ping-identity/rn-types';
+import {
+  noopLogger,
+  registerIntegrationCollectorType,
+} from '@ping-identity/rn-types';
 import type {
   DaVinciInstance,
   ExternalIdpAuthorizeOptions,
@@ -23,7 +26,10 @@ import type {
   JourneyInstance,
 } from './types';
 import { ExternalIdpError } from './types/externalIdp.types';
-import type { ExternalIdpClientConfig } from './types/externalIdp.types';
+import {
+  socialLoginCollectorType,
+  type ExternalIdpClientConfig,
+} from './types/externalIdp.types';
 
 /**
  * Resolve an optional redirect URI and reject values that cannot be used by Auth Tabs.
@@ -84,6 +90,21 @@ function normalizeProvider(provider: string): string {
 export function createExternalIdpClient(
   config: ExternalIdpConfig,
 ): ExternalIdpClient {
+  registerIntegrationCollectorType(socialLoginCollectorType);
+
+  // Register the native DaVinci serializer eagerly so a SOCIAL_LOGIN_BUTTON
+  // collector on a DaVinci node serializes fully even before the first native
+  // call. Fire-and-forget — older native binaries without this method must not
+  // fail client creation.
+  try {
+    void getNativeModule()
+      .registerDaVinciSerializer()
+      .catch(() => {});
+  } catch {
+    // Native module unavailable — DaVinci IdP serialization is simply not
+    // supported in this build.
+  }
+
   const redirectUri = normalizeRedirectUri(config.redirectUri);
 
   const logger = config.logger ?? noopLogger;

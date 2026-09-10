@@ -60,6 +60,13 @@ export interface Spec extends TurboModule {
    * @returns A promise that resolves to void.
    */
   resumeBehavioralData(clientConfig: Object): Promise<void>;
+
+  /**
+   * Registers the Protect collector serializer with the shared native DaVinci mapper.
+   *
+   * @returns A promise that resolves once registration completes. Idempotent.
+   */
+  registerDaVinciSerializer(): Promise<null>;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
@@ -109,9 +116,7 @@ export function toNativeConfig(
 }
 
 /**
- * Maps Protect SDK initialization fields from `ProtectConfig` to a native-compatible payload.
- * Logger, lifecycle flags (`pauseBehavioralDataOnSuccess`, `resumeBehavioralDataOnStart`) are
- * intentionally excluded — they are not forwarded to the native initialize call.
+ * Maps Protect SDK initialization and lifecycle fields from `ProtectConfig` to a native-compatible payload.
  */
 export function toNativeProtectConfig(
   config: ProtectConfig,
@@ -128,6 +133,11 @@ export function toNativeProtectConfig(
     payload['isConsoleLogEnabled'] = config.isConsoleLogEnabled;
   if (config.deviceAttributesToIgnore !== undefined)
     payload['deviceAttributesToIgnore'] = config.deviceAttributesToIgnore;
+  if (config.pauseBehavioralDataOnSuccess !== undefined)
+    payload['pauseBehavioralDataOnSuccess'] =
+      config.pauseBehavioralDataOnSuccess;
+  if (config.resumeBehavioralDataOnStart !== undefined)
+    payload['resumeBehavioralDataOnStart'] = config.resumeBehavioralDataOnStart;
   return payload;
 }
 

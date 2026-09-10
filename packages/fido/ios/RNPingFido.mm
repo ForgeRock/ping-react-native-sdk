@@ -6,8 +6,6 @@
  */
  
 #import <string>
-// TODO(cleanup): Remove this scaffold import in a cross-module iOS bridge cleanup pass.
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingFido.h"
 
 #import <Foundation/Foundation.h>
@@ -15,7 +13,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
+#if __has_include("RNPingFido-Swift.h")
 #import "RNPingFido-Swift.h"
+#else
+#import <RNPingFido/RNPingFido-Swift.h>
+#endif
 
 @implementation RNPingFido
 RCT_EXPORT_MODULE()

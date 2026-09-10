@@ -6,12 +6,19 @@
  */
 
 import React, { useEffect } from 'react';
+import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
+
+const integrationType = 'TEST_INTEGRATION_COLLECTOR';
 import { render, act } from '@testing-library/react-native';
 import { useDaVinciForm } from '../useDavinciForm';
 
 type ContinueNode = import('../types').ContinueNode;
 type DaVinciNode = import('../types').DaVinciNode;
 type DaVinciFormResult = import('../types').DaVinciFormResult;
+
+beforeAll(() => {
+  registerIntegrationCollectorType(integrationType);
+});
 
 type Harness = {
   node: DaVinciNode | null | undefined;
@@ -160,7 +167,7 @@ describe('useDaVinciForm — meta', () => {
       collectors: [
         {
           key: 'idp',
-          type: 'SOCIAL_LOGIN_BUTTON',
+          type: 'TEST_INTEGRATION_COLLECTOR',
           label: 'IdP',
           required: false,
         },
@@ -554,7 +561,7 @@ describe('useDaVinciForm — handledCollectorTypes', () => {
       collectors: [
         {
           key: 'idp',
-          type: 'SOCIAL_LOGIN_BUTTON',
+          type: 'TEST_INTEGRATION_COLLECTOR',
           label: 'IdP',
           required: false,
         },
@@ -571,7 +578,9 @@ describe('useDaVinciForm — handledCollectorTypes', () => {
     render(
       <FormHarness
         node={node}
-        options={{ handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']) }}
+        options={{
+          handledCollectorTypes: new Set(['TEST_INTEGRATION_COLLECTOR']),
+        }}
         onResult={(r) => {
           latest = r;
         }}
@@ -588,7 +597,7 @@ describe('useDaVinciForm — handledCollectorTypes', () => {
       collectors: [
         {
           key: 'idp',
-          type: 'SOCIAL_LOGIN_BUTTON',
+          type: 'TEST_INTEGRATION_COLLECTOR',
           label: 'IdP',
           required: false,
         },

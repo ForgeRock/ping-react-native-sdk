@@ -37,13 +37,15 @@ enum class ErrorType(val rawValue: String) {
  * - `type` classifies the error for app-level branching.
  * - `error` is a stable, module-specific code (e.g. BROWSER_OPEN_ERROR).
  * - `message`, `code`, and `status` provide extra diagnostics when available.
+ * - `extras` carries module-specific key/value pairs serialised into the JS userInfo map.
  */
 data class GenericError(
     val type: ErrorType,
     val error: String,
     val message: String? = null,
     val code: Any? = null,
-    val status: Any? = null
+    val status: Any? = null,
+    val extras: Map<String, String> = emptyMap()
 ) {
     /**
      * Convert to a JS-friendly map for promise rejections.
@@ -55,6 +57,7 @@ data class GenericError(
         message?.let { map.putString("message", it) }
         code?.let { putValue(map, "code", it) }
         status?.let { putValue(map, "status", it) }
+        extras.forEach { (k, v) -> map.putString(k, v) }
         return map
     }
 

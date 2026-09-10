@@ -40,8 +40,6 @@ Pod::Spec.new do |s|
   s.dependency "RNPingCore"
   s.dependency "PingDavinci", '2.1.0'
   s.dependency "PingDavinciPlugin", '2.1.0'
-  # Required: IdpCollector is defined in PingExternalIdP. The JS authorizeForDaVinci API is optional but this native dep is not.
-  s.dependency "PingExternalIdP", '2.1.0'
   s.dependency "PingLogger", '2.1.0'
   s.dependency "PingOidc", '2.1.0'
   s.dependency "PingOrchestrate", '2.1.0'
@@ -50,7 +48,6 @@ Pod::Spec.new do |s|
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
     test_spec.dependency "PingDavinci", '2.1.0'
-    test_spec.dependency "PingExternalIdP", '2.1.0'
     test_spec.dependency "PingOrchestrate", '2.1.0'
     test_spec.dependency "RNPingCore"
   end

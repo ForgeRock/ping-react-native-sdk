@@ -33,8 +33,14 @@ import kotlinx.coroutines.cancel
 object RNPingProtectCommon {
   private const val LOGGER_ID_KEY = "loggerId"
 
+  /** Stable registry key identifying the Protect DaVinci lifecycle module. */
+  private const val PROTECT_LIFECYCLE_KEY = "protect"
+
   /** Indicates whether shared runtime wiring has been initialized. */
   private var configured = false
+
+  /** Guards one-time collector serializer registration. */
+  private var serializerRegistered = false
 
   /** Coroutine scope for executing Protect operations asynchronously on the IO dispatcher. */
   private var scope: CoroutineScope = createScope()
@@ -63,6 +69,8 @@ object RNPingProtectCommon {
     val customHost: String?,
     val isConsoleLogEnabled: Boolean,
     val deviceAttributesToIgnore: List<String>,
+    val pauseBehavioralDataOnSuccess: Boolean,
+    val resumeBehavioralDataOnStart: Boolean,
   )
 
   /**
@@ -72,9 +80,24 @@ object RNPingProtectCommon {
   @Synchronized
   fun configure(reactContext: ReactApplicationContext) {
     ContextProvider.init(reactContext.applicationContext)
+    registerDaVinciSerializer()
     if (!configured) {
       scope = createScope()
       configured = true
+    }
+  }
+
+  /**
+   * Registers the Protect collector serializer with the generic DaVinci mapper.
+   */
+  @JvmStatic
+  @Synchronized
+  fun registerDaVinciSerializer() {
+    if (serializerRegistered) return
+    serializerRegistered = true
+    CoreRuntime.registerDaVinciCollectorSerializer { collectorAny ->
+      val collector = collectorAny as? ProtectCollector ?: return@registerDaVinciCollectorSerializer null
+      linkedMapOf("key" to collector.id(), "type" to "PROTECT")
     }
   }
 
@@ -91,8 +114,16 @@ object RNPingProtectCommon {
     scope.cancel()
     scope = createScope()
     configured = false
+    // Drop the lifecycle hook registered with the last initialize() config so a
+    // re-initialized module does not inherit stale Protect settings. The
+    // collector serializer is intentionally retained — it is stateless
+    // ({key, type} only) and the registry has no removal API; leaving it
+    // registered keeps DaVinci collector mapping working across re-inits.
+    CoreRuntime.unregisterDaVinciModuleHook(PROTECT_LIFECYCLE_KEY)
     // TODO: call Protect SDK teardown here once a public cleanup API is available.
-    // Currently com.pingidentity.protect.Protect exposes no shutdown method.
+    // Verified against com.pingidentity.sdks:protect:2.1.0: public API is config(), initialize(),
+    // data(), pauseBehavioralData(), resumeBehavioralData() — no shutdown method. Re-evaluate when
+    // upgrading the Protect SDK.
   }
 
   /**
@@ -174,8 +205,31 @@ object RNPingProtectCommon {
         deviceAttributesToIgnore = initConfig.deviceAttributesToIgnore
       }
       Protect.initialize()
+      registerDaVinciModuleHook(initConfig)
       logger?.d("Protect initialize succeeded")
       promise.resolve(null)
+    }
+  }
+
+  /**
+   * Registers the Protect lifecycle module with the generic DaVinci hook registry.
+   */
+  private fun registerDaVinciModuleHook(config: ProtectInitConfig) {
+    CoreRuntime.registerDaVinciModuleHook(PROTECT_LIFECYCLE_KEY) { builderAny ->
+      val builder = builderAny as? com.pingidentity.davinci.DaVinciConfig
+        ?: return@registerDaVinciModuleHook
+      builder.module(com.pingidentity.protect.ProtectLifecycle) {
+        config.envId?.let { envId = it }
+        isBehavioralDataCollection = config.isBehavioralDataCollection
+        isLazyMetadata = config.isLazyMetadata
+        config.customHost?.let { customHost = it }
+        isConsoleLogEnabled = config.isConsoleLogEnabled
+        if (config.deviceAttributesToIgnore.isNotEmpty()) {
+          deviceAttributesToIgnore = config.deviceAttributesToIgnore
+        }
+        pauseBehavioralDataOnSuccess = config.pauseBehavioralDataOnSuccess
+        resumeBehavioralDataOnStart = config.resumeBehavioralDataOnStart
+      }
     }
   }
 
@@ -287,6 +341,12 @@ object RNPingProtectCommon {
       val arr: ReadableArray? = config.getArray("deviceAttributesToIgnore")
       arr?.let { a -> (0 until a.size()).mapNotNull { if (a.getType(it) == ReadableType.String) a.getString(it) else null } } ?: emptyList()
     } else emptyList()
+    val pauseBehavioralDataOnSuccess = if (config.hasKey("pauseBehavioralDataOnSuccess") &&
+      config.getType("pauseBehavioralDataOnSuccess") == ReadableType.Boolean)
+      config.getBoolean("pauseBehavioralDataOnSuccess") else false
+    val resumeBehavioralDataOnStart = if (config.hasKey("resumeBehavioralDataOnStart") &&
+      config.getType("resumeBehavioralDataOnStart") == ReadableType.Boolean)
+      config.getBoolean("resumeBehavioralDataOnStart") else false
     return ProtectInitConfig(
       envId = envId,
       isBehavioralDataCollection = isBehavioralDataCollection,
@@ -294,6 +354,8 @@ object RNPingProtectCommon {
       customHost = customHost,
       isConsoleLogEnabled = isConsoleLogEnabled,
       deviceAttributesToIgnore = deviceAttributesToIgnore,
+      pauseBehavioralDataOnSuccess = pauseBehavioralDataOnSuccess,
+      resumeBehavioralDataOnStart = resumeBehavioralDataOnStart,
     )
   }
 

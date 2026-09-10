@@ -26,7 +26,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -38,19 +37,17 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(par: true),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
     XCTAssertNotNil(davinci)
   }
 
-  func testBuildWithNullProtectPayloadDoesNotThrow() async throws {
+  func testBuildWithoutPluginPayloadDoesNotThrow() async throws {
     let payload = DaVinciClientPayload(
       oidc: makePayload(),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -66,7 +63,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(scopes: [], storageId: storageId),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -82,7 +78,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(scopes: [], storageId: storageId),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -94,7 +89,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(scopes: [], storageId: "missing-storage-handle"),
       loggerId: nil,
       timeout: nil,
-      protect: nil
     )
 
     do {
@@ -114,7 +108,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(scopes: []),
       loggerId: "missing-logger-handle",
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)
@@ -130,7 +123,6 @@ final class DaVinciClientFactoryTests: XCTestCase {
       oidc: makePayload(scopes: []),
       loggerId: loggerId,
       timeout: nil,
-      protect: nil
     )
 
     let davinci = try await DaVinciClientFactory().build(payload)

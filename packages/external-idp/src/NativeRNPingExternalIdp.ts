@@ -81,6 +81,13 @@ export interface Spec extends TurboModule {
     options: Object,
     config: Object,
   ): Promise<void>;
+
+  /**
+   * Registers the External IdP collector serializer with the shared native DaVinci mapper.
+   *
+   * @returns A promise that resolves once registration completes. Idempotent.
+   */
+  registerDaVinciSerializer(): Promise<null>;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 

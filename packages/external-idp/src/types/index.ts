@@ -5,7 +5,10 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export { ExternalIdpError } from './externalIdp.types';
+export {
+  ExternalIdpError,
+  socialLoginCollectorType,
+} from './externalIdp.types';
 export type {
   DaVinciInstance,
   ExternalIdpAuthorizeOptions,
@@ -14,5 +17,6 @@ export type {
   ExternalIdpErrorCode,
   ExternalIdpResult,
   ExternalIdpSelectOptions,
+  IdpCollector,
   JourneyInstance,
 } from './externalIdp.types';

@@ -98,7 +98,7 @@ dependencies {
   implementation("com.pingidentity.sdks:android:2.1.0")
   implementation("com.pingidentity.sdks:logger:2.1.0")
   implementation("com.pingidentity.sdks:protect:2.1.0")
-  compileOnly("com.pingidentity.sdks:davinci:2.1.0") // CoreRuntime.resolveDaVinciCollectors requires davinci on classpath; compileOnly — linked transitively via rn-davinci
+  compileOnly("com.pingidentity.sdks:davinci:2.1.0") // CoreRuntime.resolveDaVinciCollectors and lifecycle hook APIs are provided by rn-davinci
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))
 

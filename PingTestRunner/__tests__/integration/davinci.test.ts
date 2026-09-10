@@ -19,7 +19,26 @@
  * - dispose() cleans up the native instance
  */
 
+import type {
+  DaVinciConfig,
+  DaVinciNormalizedCollector,
+  DaVinciNode,
+} from '@ping-identity/rn-davinci';
+
 export {};
+
+type ContinueNode = Extract<DaVinciNode, { type: 'ContinueNode' }>;
+
+function asContinueNode(node: DaVinciNode): ContinueNode {
+  if (node.type !== 'ContinueNode') {
+    throw new Error(`Expected ContinueNode, received ${node.type}`);
+  }
+  return node;
+}
+
+function getCollectorValue(collector: DaVinciNormalizedCollector): unknown {
+  return 'value' in collector ? collector.value : undefined;
+}
 
 type NativeDaVinciMock = {
   configureDaVinci: jest.Mock;
@@ -85,8 +104,21 @@ async function loadDaVinci(nativeMock: NativeDaVinciMock) {
     __esModule: true,
     default: nativeMock,
   }));
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@ping-identity/rn-davinci');
+
+  // Plugin-owned collector types are normally registered when the corresponding
+  // integration package is initialized. Register them here because this test
+  // loads rn-davinci in isolation after every module reset.
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { registerIntegrationCollectorType } =
+    require('@ping-identity/rn-types') as {
+      registerIntegrationCollectorType: (type: string) => void;
+    };
+  registerIntegrationCollectorType('PROTECT');
+  registerIntegrationCollectorType('SOCIAL_LOGIN_BUTTON');
+
+  const module = require('@ping-identity/rn-davinci');
+  /* eslint-enable @typescript-eslint/no-require-imports */
+  return module;
 }
 
 const VALID_CONFIG = {
@@ -150,7 +182,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
   describe('createDaVinciClient()', () => {
     it('throws when modules.oidc is missing', async () => {
       const mod = await loadDaVinci(makeMock());
-      expect(() => mod.createDaVinciClient({})).toThrow(
+      expect(() => mod.createDaVinciClient({} as DaVinciConfig)).toThrow(
         /modules\.oidc\.discoveryEndpoint/,
       );
     });
@@ -214,7 +246,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         'logoutUser',
         'dispose',
       ];
-      for (const m of methods) {
+      for (const m of methods as Array<keyof typeof client>) {
         expect(typeof client[m]).toBe('function');
       }
     });
@@ -232,7 +264,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
       const mock = makeMock();
       const mod = await loadDaVinci(mock);
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       expect(mock.configureDaVinci).toHaveBeenCalledTimes(1);
       expect(mock.configureDaVinci).toHaveBeenCalledWith(
         expect.objectContaining({ par: true }),
@@ -535,7 +567,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         executionMode: 'manual',
@@ -665,7 +697,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'PASSWORD',
@@ -775,7 +807,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'LABEL',
@@ -809,7 +841,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'SINGLE_SELECT',
@@ -877,7 +909,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         defaultCountryCode: 'US',
@@ -935,7 +967,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'DEVICE_REGISTRATION',
@@ -974,7 +1006,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         type: 'DEVICE_AUTHENTICATION',
@@ -1004,7 +1036,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
       expect(collectors[0]).toMatchObject({
         key: 'protect.success',
@@ -1123,9 +1155,9 @@ describe('@ping-identity/rn-davinci — integration', () => {
         }),
       );
       const client = mod.createDaVinciClient(VALID_CONFIG);
-      const node = await client.start();
+      const node = asContinueNode(await client.start());
       const collectors = mod.normalizeCollectors(node.collectors);
-      expect(collectors[0].value).toBe('true');
+      expect(getCollectorValue(collectors[0])).toBe('true');
       const plan = mod.buildNextInput(node, { 'protect.success': 'true' });
       expect(plan.input.collectors).toContainEqual({
         key: 'protect.success',

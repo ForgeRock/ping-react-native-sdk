@@ -7,6 +7,9 @@
 
 import { PingError, type LoggerInstance } from '@ping-identity/rn-types';
 
+/** Collector type emitted by PingOne Protect in DaVinci flows. */
+export const protectCollectorType = 'PROTECT' as const;
+
 /**
  * Configuration for creating a Protect client.
  *

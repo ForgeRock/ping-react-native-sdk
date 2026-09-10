@@ -13,7 +13,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 /// Auto-generated Swift header.
+#if __has_include("RNPingOath-Swift.h")
 #import "RNPingOath-Swift.h"
+#else
+#import <RNPingOath/RNPingOath-Swift.h>
+#endif
 
 @implementation RNPingOath
 RCT_EXPORT_MODULE()

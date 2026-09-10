@@ -5,11 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
+import type { IdpCollector } from '@ping-identity/rn-external-idp';
 import type {
   DaVinciFieldValidationError,
   DaVinciFormValue,
   DaVinciNormalizedCollector,
-  IdpCollector,
   PollingCollector,
   PollingStatus,
 } from '@ping-identity/rn-davinci';

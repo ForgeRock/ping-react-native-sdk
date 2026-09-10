@@ -6,7 +6,6 @@
  */
 
 #import <string>
-#import "RCTDefaultReactNativeFactoryDelegate.h"
 #import "RNPingJourney.h"
 
 #import <Foundation/Foundation.h>
@@ -14,7 +13,11 @@
 #import <ReactCommon/RCTTurboModule.h>
 
 // Auto-generated Swift header for the module's Swift implementation.
+#if __has_include("RNPingJourney-Swift.h")
 #import "RNPingJourney-Swift.h"
+#else
+#import <RNPingJourney/RNPingJourney-Swift.h>
+#endif
 
 @implementation RNPingJourney
 RCT_EXPORT_MODULE()

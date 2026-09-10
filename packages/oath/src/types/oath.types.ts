@@ -433,16 +433,55 @@ export type OathClient = {
  *
  * @remarks
  * Matches the shared native/JS error contract defined in `@ping-identity/rn-types`.
+ *
+ * When `code` is `'OATH_POLICY_VIOLATION'`, the `violatedPolicy` field identifies
+ * which policy blocked the operation, enabling callers to react programmatically
+ * without a second round-trip or message string parsing.
  */
 export class OathError extends PingError {
-  constructor(message: string, code: string, type: string, status?: number) {
+  /**
+   * The name of the policy that caused a `OATH_POLICY_VIOLATION` error.
+   *
+   * Typed as `OathMfaPolicy['kind'] | (string & {})` to accept well-known values
+   * (`'biometricAvailable'`, `'deviceTampering'`) while remaining open to future
+   * policy kinds added by the native SDK.
+   *
+   * `undefined` for all other error codes.
+   */
+  readonly violatedPolicy?: OathMfaPolicy['kind'] | (string & {});
+
+  constructor(
+    message: string,
+    code: string,
+    type: string,
+    status?: number,
+    violatedPolicy?: string,
+  ) {
     super(message, code, type, status);
     this.name = 'OathError';
+    if (violatedPolicy !== undefined) this.violatedPolicy = violatedPolicy;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 
   static from(raw: unknown): OathError {
-    return PingError.fromAs(raw, OathError);
+    if (raw instanceof OathError) return raw;
+    const base = PingError.from(raw);
+    const r = raw as Record<string, unknown>;
+    const u =
+      r?.userInfo && typeof r.userInfo === 'object'
+        ? (r.userInfo as Record<string, unknown>)
+        : null;
+    const violatedPolicy =
+      typeof u?.violatedPolicy === 'string' ? u.violatedPolicy : undefined;
+    const err = new OathError(
+      base.message,
+      base.code,
+      base.type,
+      base.status,
+      violatedPolicy,
+    );
+    if (raw instanceof Error && raw.stack) err.stack = raw.stack;
+    return err;
   }
 }
 
@@ -451,6 +490,9 @@ export class OathError extends PingError {
  *
  * @remarks
  * Keep these in sync with the native error constants on both iOS and Android.
+ *
+ * When the code is `'OATH_POLICY_VIOLATION'`, inspect {@link OathError.violatedPolicy}
+ * for the name of the policy that blocked the operation.
  */
 export type OathErrorCode =
   | 'OATH_INVALID_URI'
