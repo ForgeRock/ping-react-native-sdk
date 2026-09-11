@@ -88,7 +88,7 @@ jobs:
   e2e-android-journey-davinci:
     name: E2E — Android BrowserStack (journey & davinci)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     defaults:
       run:
         working-directory: PingTestRunner
