@@ -96,6 +96,50 @@ class RNPingFidoClassicModule(
     RNPingFidoCommon.authenticateForJourney(journeyId, options, config, promise)
   }
 
+  /**
+   * Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Registration ceremony options.
+   * @param config Per-call configuration payload.
+   * @param promise React Native promise resolved with the attestation payload.
+   */
+  @ReactMethod
+  fun registerCredentialForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.registerForDaVinci(davinciId, options, config, promise)
+  }
+
+  /**
+   * Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Authentication ceremony options.
+   * @param config Per-call configuration payload.
+   * @param promise React Native promise resolved with the assertion payload.
+   */
+  @ReactMethod
+  fun authenticateCredentialForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingFidoCommon.authenticateForDaVinci(davinciId, options, config, promise)
+  }
+
+  /**
+   * Registers the DaVinci FIDO2 collector serializer with CoreRuntime.
+   */
+  @ReactMethod
+  fun registerDaVinciSerializer() {
+    RNPingFidoCommon.registerDaVinciSerializer()
+  }
+
   companion object {
     const val NAME = "RNPingFidoClassic"
   }

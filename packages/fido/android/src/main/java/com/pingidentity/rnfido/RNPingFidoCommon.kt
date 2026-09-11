@@ -12,8 +12,12 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReactApplicationContext
 import com.pingidentity.android.ContextProvider
+import com.pingidentity.fido.Constants
 import com.pingidentity.fido.FidoClient
 import com.pingidentity.fido.FidoClientConfig
+import com.pingidentity.fido.davinci.AbstractFidoCollector
+import com.pingidentity.fido.davinci.FidoAuthenticationCollector
+import com.pingidentity.fido.davinci.FidoRegistrationCollector
 import com.pingidentity.fido.journey.FidoAuthenticationCallback
 import com.pingidentity.fido.journey.FidoRegistrationCallback
 import com.pingidentity.logger.Logger
@@ -39,6 +43,9 @@ import kotlinx.serialization.json.put
 object RNPingFidoCommon {
   private const val LOGGER_ID_KEY = "loggerId"
   private const val USE_FIDO2_CLIENT_KEY = "useFido2Client"
+  private const val FIDO2_COLLECTOR_TYPE = "FIDO2"
+  private const val ACTION_REGISTER = "REGISTER"
+  private const val ACTION_AUTHENTICATE = "AUTHENTICATE"
 
   /** Coroutine scope for executing FIDO operations asynchronously on the IO dispatcher. */
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -50,6 +57,9 @@ object RNPingFidoCommon {
     val loggerId: String?,
     val useFido2Client: Boolean?
   )
+
+  /** Guards one-time DaVinci collector serializer registration. */
+  private var serializerRegistered = false
 
   /**
    * Activity availability provider used by runtime checks and overridable in tests.
@@ -67,6 +77,94 @@ object RNPingFidoCommon {
   @JvmStatic
   fun configure(reactContext: ReactApplicationContext) {
     ContextProvider.init(reactContext.applicationContext)
+  }
+
+  /**
+   * Registers the DaVinci FIDO2 collector serializer with CoreRuntime.
+   *
+   * The serializer emits the action-discriminated FIDO2 collector payload consumed by
+   * `rn-davinci`'s node mapper. Read options through [JsonBridgeMapper.encodeJsonElement]
+   * so already-transformed base64 values survive the bridge untouched. Registration is
+   * safe to call multiple times; subsequent calls are no-ops.
+   */
+  @JvmStatic
+  @Synchronized
+  fun registerDaVinciSerializer() {
+    if (serializerRegistered) return
+    serializerRegistered = true
+    CoreRuntime.registerDaVinciCollectorSerializer { collectorAny ->
+      when (collectorAny) {
+        is FidoRegistrationCollector -> serializeFidoCollector(
+          collector = collectorAny,
+          action = ACTION_REGISTER,
+          optionsKey = Constants.FIELD_PUBLIC_KEY_CREDENTIAL_CREATION_OPTIONS,
+          // Set synchronously inside init(); a collector missing the field fails
+          // init and never reaches this serializer.
+          options = collectorAny.publicKeyCredentialCreationOptions
+        )
+        is FidoAuthenticationCollector -> serializeFidoCollector(
+          collector = collectorAny,
+          action = ACTION_AUTHENTICATE,
+          optionsKey = Constants.FIELD_PUBLIC_KEY_CREDENTIAL_REQUEST_OPTIONS,
+          options = collectorAny.publicKeyCredentialRequestOptions
+        )
+        else -> null
+      }
+    }
+  }
+
+  /**
+   * Resets the one-shot DaVinci serializer registration guard.
+   *
+   * Test-only: lets each test start from an unregistered state so registration
+   * behavior is asserted hermetically regardless of test order.
+   */
+  @VisibleForTesting
+  @JvmSynthetic
+  @Synchronized
+  internal fun resetSerializerRegistrationForTesting() {
+    serializerRegistered = false
+  }
+
+  /**
+   * Builds the bridge payload for a FIDO2 collector.
+   *
+   * @param collector Initialized native FIDO collector.
+   * @param action Ceremony action derived from the matched collector class.
+   * @param optionsKey Bridge payload key for the collector's WebAuthn options.
+   * @param options Transformed WebAuthn options. Always present on a live
+   *   collector: the native collector sets the field synchronously inside `init()`,
+   *   which throws `IllegalArgumentException` when the field is missing from the
+   *   server payload, so an uninitialised collector never reaches this serializer.
+   * @return Bridge payload map.
+   *
+   * TODO-PARITY (SDKS-5302): on a malformed FIDO2 payload the native `init()`
+   * throws `IllegalArgumentException` (missing or unsupported action, or missing
+   * options); the exception escapes `CollectorFactory.collector()` uncaught and
+   * Orchestrate's top-level catch turns the whole node into a `FailureNode`.
+   * iOS degrades per collector instead: its factory closure is `try?`-wrapped
+   * (an unconstructible collector is dropped) and its non-throwing
+   * `init(with:)` leaves the options empty. Track an Android SDK fix to fail
+   * per collector, not per node.
+   */
+  private fun serializeFidoCollector(
+    collector: AbstractFidoCollector,
+    action: String,
+    optionsKey: String,
+    options: JsonObject
+  ): Map<String, Any?> {
+    val map = linkedMapOf<String, Any?>(
+      "key" to collector.key,
+      "type" to FIDO2_COLLECTOR_TYPE,
+      "action" to action,
+      "label" to collector.label,
+      "required" to collector.required,
+      "trigger" to collector.trigger
+    )
+    // TODO-PARITY (SDKS-5302): Android emits base64url without padding while iOS
+    // emits standard padded base64 for the same option bytes (native SDK gap).
+    map[optionsKey] = JsonBridgeMapper.encodeJsonElement(options)
+    return map
   }
 
   /**
@@ -317,6 +415,169 @@ object RNPingFidoCommon {
         }
       )
     }
+  }
+
+  /**
+   * Runs the native FIDO registration ceremony for an active DaVinci FIDO2 registration collector.
+   *
+   * The attestation is stored on the native collector and reaches the server through
+   * `collector.payload()` during `daVinci.next()`; the resolved payload is informational.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Ceremony options payload (index).
+   * @param config Per-call configuration payload.
+   * @param promise React Native promise resolved with the attestation payload or rejected on error.
+   */
+  @JvmStatic
+  fun registerForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    if (davinciId.isBlank()) {
+      rejectWithError(
+        promise = promise,
+        code = FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND,
+        message = "DaVinci id must not be empty for FIDO registration.",
+        type = ErrorType.ARGUMENT_ERROR
+      )
+      return
+    }
+    if (!hasForegroundActivity()) {
+      rejectWithError(
+        promise = promise,
+        code = FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE,
+        message = "No foreground activity is available for DaVinci FIDO registration."
+      )
+      return
+    }
+
+    scope.launchBridge(promise, FidoErrorCodes.FIDO_REGISTER_ERROR) {
+      val index = parseCallbackIndex(options)
+      val collector = resolveDaVinciRegistrationCollector(davinciId, index)
+      if (collector == null) {
+        rejectWithError(
+          promise = promise,
+          code = FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND,
+          message = "No active FIDO registration collector found for DaVinci $davinciId at index $index.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+
+      collector.register().fold(
+        onSuccess = { payload ->
+          promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
+        },
+        onFailure = { error ->
+          rejectWithError(
+            promise = promise,
+            code = FidoErrorCodes.FIDO_REGISTER_ERROR,
+            message = error.localizedMessage
+              ?: "DaVinci FIDO registration ceremony failed.",
+            throwable = error
+          )
+        }
+      )
+    }
+  }
+
+  /**
+   * Runs the native FIDO authentication ceremony for an active DaVinci FIDO2 authentication collector.
+   *
+   * The assertion is stored on the native collector and reaches the server through
+   * `collector.payload()` during `daVinci.next()`; the resolved payload is informational.
+   *
+   * @param davinciId Native DaVinci instance id.
+   * @param options Ceremony options payload (index).
+   * @param config Per-call configuration payload.
+   * @param promise React Native promise resolved with the assertion payload or rejected on error.
+   */
+  @JvmStatic
+  fun authenticateForDaVinci(
+    davinciId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    if (davinciId.isBlank()) {
+      rejectWithError(
+        promise = promise,
+        code = FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND,
+        message = "DaVinci id must not be empty for FIDO authentication.",
+        type = ErrorType.ARGUMENT_ERROR
+      )
+      return
+    }
+    if (!hasForegroundActivity()) {
+      rejectWithError(
+        promise = promise,
+        code = FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE,
+        message = "No foreground activity is available for DaVinci FIDO authentication."
+      )
+      return
+    }
+
+    scope.launchBridge(promise, FidoErrorCodes.FIDO_AUTHENTICATE_ERROR) {
+      val index = parseCallbackIndex(options)
+      val collector = resolveDaVinciAuthenticationCollector(davinciId, index)
+      if (collector == null) {
+        rejectWithError(
+          promise = promise,
+          code = FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND,
+          message = "No active FIDO authentication collector found for DaVinci $davinciId at index $index.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+
+      collector.authenticate().fold(
+        onSuccess = { payload ->
+          promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
+        },
+        onFailure = { error ->
+          if (isRecoverableFidoAuthenticationFailure(error)) {
+            rejectWithError(
+              promise = promise,
+              code = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
+              message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
+              throwable = error
+            )
+            return@fold
+          }
+          rejectWithError(
+            promise = promise,
+            code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
+            message = error.localizedMessage
+              ?: "DaVinci FIDO authentication ceremony failed.",
+            throwable = error
+          )
+        }
+      )
+    }
+  }
+
+  /**
+   * Resolves a registration collector from core-exposed DaVinci collectors by davinciId and type index.
+   */
+  private suspend fun resolveDaVinciRegistrationCollector(
+    davinciId: String,
+    index: Int
+  ): FidoRegistrationCollector? {
+    val collectors = CoreRuntime.resolveDaVinciCollectors(davinciId) ?: return null
+    return collectors.filterIsInstance<FidoRegistrationCollector>().getOrNull(index)
+  }
+
+  /**
+   * Resolves an authentication collector from core-exposed DaVinci collectors by davinciId and type index.
+   */
+  private suspend fun resolveDaVinciAuthenticationCollector(
+    davinciId: String,
+    index: Int
+  ): FidoAuthenticationCollector? {
+    val collectors = CoreRuntime.resolveDaVinciCollectors(davinciId) ?: return null
+    return collectors.filterIsInstance<FidoAuthenticationCollector>().getOrNull(index)
   }
 
   /**

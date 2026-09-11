@@ -6,6 +6,7 @@
  */
 package com.pingidentity.rnfido
 
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
@@ -14,7 +15,11 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.soloader.SoLoader
 import com.facebook.soloader.nativeloader.NativeLoader
 import com.facebook.soloader.nativeloader.SystemDelegate
+import com.pingidentity.fido.davinci.FidoAuthenticationCollector
+import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.rncore.DaVinciCollectorResolver
 import com.pingidentity.rncore.utils.JsonBridgeMapper
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -40,6 +45,8 @@ import org.robolectric.annotation.Config
 @Config(sdk = [29])
 class RNPingFidoTest {
 
+  private var originalDaVinciCollectorResolver: DaVinciCollectorResolver? = null
+
   @Before
   fun setUp() {
     runCatching { SoLoader.init(RuntimeEnvironment.getApplication(), false) }
@@ -48,11 +55,14 @@ class RNPingFidoTest {
     every { Arguments.createMap() } answers { JavaOnlyMap() }
     every { Arguments.createArray() } answers { JavaOnlyArray() }
     RNPingFidoCommon.foregroundActivityProvider = { true }
+    originalDaVinciCollectorResolver = CoreRuntime.davinciCollectorResolver
+    CoreRuntime.davinciCollectorResolver = null
   }
 
   @After
   fun tearDown() {
     RNPingFidoCommon.foregroundActivityProvider = { true }
+    CoreRuntime.davinciCollectorResolver = originalDaVinciCollectorResolver
     unmockkStatic(Arguments::class)
     unmockkObject(JsonBridgeMapper)
   }
@@ -246,6 +256,96 @@ class RNPingFidoTest {
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_CALLBACK_NOT_FOUND, promise.rejectedCode)
+  }
+
+  // MARK: - DaVinci ceremony bridge
+
+  /**
+   * Ensures DaVinci registration rejects when no matching collector is resolved.
+   */
+  @Test
+  fun registerForDaVinciRejectsWhenCollectorNotFound() {
+    CoreRuntime.davinciCollectorResolver = { emptyList() }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.registerForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND, promise.rejectedCode)
+  }
+
+  /**
+   * Ensures DaVinci authentication rejects when no matching collector is resolved.
+   */
+  @Test
+  fun authenticateForDaVinciRejectsWhenCollectorNotFound() {
+    CoreRuntime.davinciCollectorResolver = { emptyList() }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND, promise.rejectedCode)
+  }
+
+  /**
+   * Ensures DaVinci registration rejects a blank DaVinci id before resolving collectors.
+   */
+  @Test
+  fun registerForDaVinciRejectsWhenDaVinciIdBlank() {
+    val promise = TestPromise()
+
+    RNPingFidoCommon.registerForDaVinci("", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_COLLECTOR_NOT_FOUND, promise.rejectedCode)
+  }
+
+  /**
+   * Ensures DaVinci registration rejects when no foreground activity is available.
+   */
+  @Test
+  fun registerForDaVinciRejectsWhenActivityUnavailable() {
+    RNPingFidoCommon.foregroundActivityProvider = { false }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.registerForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE, promise.rejectedCode)
+  }
+
+  /**
+   * Ensures DaVinci authentication rejects when no foreground activity is available.
+   */
+  @Test
+  fun authenticateForDaVinciRejectsWhenActivityUnavailable() {
+    RNPingFidoCommon.foregroundActivityProvider = { false }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE, promise.rejectedCode)
+  }
+
+  /**
+   * Ensures DaVinci authentication maps a user cancellation to the stable
+   * cancelled code rather than the generic authentication error.
+   */
+  @Test
+  fun authenticateForDaVinciRejectsWithCancelledWhenUserCancels() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      GetCredentialCancellationException("Cancelled by user")
+    )
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
   }
 
   /**

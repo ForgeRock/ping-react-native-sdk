@@ -17,6 +17,7 @@ import java.util.HashMap
  * Registers the FIDO classic module package for Old Architecture builds.
  */
 class RNPingFidoPackage : BaseReactPackage() {
+
   /**
    * Creates the module instance when React Native requests it by name.
    *

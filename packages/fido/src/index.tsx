@@ -6,30 +6,40 @@
  */
 import {
   fromNativeAuthenticationResult,
+  fromNativeDaVinciResult,
   fromNativeJourneyResult,
   fromNativeRegistrationResult,
   getNativeModule,
   toNativeConfigOptions,
   toNativeAuthenticationOptions,
+  toNativeDaVinciAuthenticationOptions,
+  toNativeDaVinciRegistrationOptions,
   toNativeJourneyAuthenticationOptions,
   toNativeJourneyRegistrationOptions,
   toNativeRegistrationOptions,
 } from './NativeRNPingFido';
-import { noopLogger } from '@ping-identity/rn-types';
+import {
+  noopLogger,
+  registerIntegrationCollectorType,
+} from '@ping-identity/rn-types';
 import type {
   FidoClient,
   FidoClientConfig,
   FidoConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
+  FidoDaVinciAuthenticationOptions,
+  FidoDaVinciRegistrationOptions,
+  FidoDaVinciResult,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
   FidoRegistrationOptions,
   FidoRegistrationResult,
   JourneyInstance,
+  DaVinciInstance,
 } from './types';
-import { FidoError } from './types';
+import { FidoError, fidoCollectorType } from './types';
 
 /**
  * Creates a reusable FIDO client instance.
@@ -43,9 +53,17 @@ import { FidoError } from './types';
  *
  * Current runtime behavior:
  * - Android applies `useFido2Client` for standalone FIDO operations.
- * - iOS accepts this config shape, but no iOS-native client-level config is applied yet.
+ * - The native logger id forwards to standalone iOS operations; Journey and
+ *   DaVinci collector ceremonies keep their workflow-configured native logger.
+ * - This call also registers `FIDO2` as an integration collector type, so
+ *   DaVinci integration collectors activate as soon as a FIDO client exists.
+ * - Client creation activates the FIDO integration, including native DaVinci
+ *   serializer registration, so FIDO2 collectors serialize with their full
+ *   payload as soon as a client exists.
  */
 export function createFidoClient(config: FidoConfig = {}): FidoClient {
+  registerIntegrationCollectorType(fidoCollectorType);
+  getNativeModule().registerDaVinciSerializer();
   const logger = config.logger ?? noopLogger;
   const resolvedConfig: FidoClientConfig = {
     loggerId: logger.nativeHandle?.id?.trim() || undefined,
@@ -165,23 +183,92 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
         throw FidoError.from(error);
       }
     },
+    /**
+     * Runs the native FIDO passkey ceremony for an active DaVinci `FIDO2` registration collector.
+     *
+     * @param daVinci Active DaVinci instance.
+     * @param options Optional registration ceremony options.
+     * @returns A promise that resolves to the WebAuthn attestation payload. Informational
+     * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
+     * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+     * @remarks Unlike the standalone `register`, no per-call logger override applies
+     * here: the client-level `config` is threaded to native but both platforms discard
+     * it for DaVinci ceremonies, which keep the workflow-configured native logger.
+     */
+    async registerForDaVinci(
+      daVinci: DaVinciInstance,
+      options: FidoDaVinciRegistrationOptions = {},
+    ): Promise<FidoDaVinciResult> {
+      logger.info('FIDO registerForDaVinci requested');
+      try {
+        const davinciId = await daVinci.getId();
+        const result = await getNativeModule().registerCredentialForDaVinci(
+          davinciId,
+          toNativeDaVinciRegistrationOptions(options),
+          toNativeConfigOptions(resolvedConfig),
+        );
+        logger.debug('FIDO registerForDaVinci success');
+        return fromNativeDaVinciResult(result);
+      } catch (error) {
+        logger.error('FIDO registerForDaVinci failed');
+        throw FidoError.from(error);
+      }
+    },
+    /**
+     * Runs the native FIDO passkey ceremony for an active DaVinci `FIDO2` authentication collector.
+     *
+     * @param daVinci Active DaVinci instance.
+     * @param options Optional authentication ceremony options.
+     * @returns A promise that resolves to the WebAuthn assertion payload. Informational
+     * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
+     * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+     * @remarks Unlike the standalone `authenticate`, no per-call logger override applies
+     * here: the client-level `config` is threaded to native but both platforms discard
+     * it for DaVinci ceremonies, which keep the workflow-configured native logger.
+     */
+    async authenticateForDaVinci(
+      daVinci: DaVinciInstance,
+      options: FidoDaVinciAuthenticationOptions = {},
+    ): Promise<FidoDaVinciResult> {
+      logger.info('FIDO authenticateForDaVinci requested');
+      try {
+        const davinciId = await daVinci.getId();
+        const result = await getNativeModule().authenticateCredentialForDaVinci(
+          davinciId,
+          toNativeDaVinciAuthenticationOptions(options),
+          toNativeConfigOptions(resolvedConfig),
+        );
+        logger.debug('FIDO authenticateForDaVinci success');
+        return fromNativeDaVinciResult(result);
+      } catch (error) {
+        logger.error('FIDO authenticateForDaVinci failed');
+        throw FidoError.from(error);
+      }
+    },
   };
 }
 
-export { FidoError } from './types';
+export { FidoError, fidoCollectorType } from './types';
 export type {
   FidoAndroidConfig,
   FidoClient,
   FidoClientConfig,
   FidoConfig,
+  FidoAuthenticationCollector,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
+  FidoCollector,
+  FidoDaVinciAuthenticationOptions,
+  FidoDaVinciRegistrationOptions,
+  FidoDaVinciResult,
   FidoErrorCode,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
   FidoJsonValue,
+  FidoRegistrationCollector,
   FidoRegistrationOptions,
   FidoRegistrationResult,
+  DaVinciInstance,
   JourneyInstance,
 } from './types';

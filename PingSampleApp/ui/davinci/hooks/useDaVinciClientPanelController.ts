@@ -24,6 +24,11 @@ import {
   type IdpCollector,
 } from '@ping-identity/rn-external-idp';
 import {
+  createFidoClient,
+  fidoCollectorType,
+  type FidoCollector,
+} from '@ping-identity/rn-fido';
+import {
   collectProtect,
   protectCollectorType,
 } from '@ping-identity/rn-protect';
@@ -47,6 +52,8 @@ export type UseDaVinciClientPanelControllerResult = {
   error: DaVinciError | null;
   /** Last IdP-authorize error message (cleared on next start). */
   idpError: string | null;
+  /** Last FIDO ceremony error message (cleared on next start). */
+  fidoError: string | null;
   /** Last Protect collect error message (cleared on next start). */
   protectError: string | null;
   /** True when a session is confirmed active for the current DaVinci client. */
@@ -87,6 +94,13 @@ export type UseDaVinciClientPanelControllerResult = {
    */
   onIdpAuthorize: (collector: IdpCollector) => Promise<void>;
   /**
+   * Runs the native passkey ceremony for a FIDO collector, then advances the
+   * DaVinci flow.
+   *
+   * @param collector - The FIDO collector to process.
+   */
+  onFidoCeremony: (collector: FidoCollector) => Promise<void>;
+  /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector},
    * automatically advancing the flow via `next()` once a terminal status
    * (`complete`, `timedOut`, `expired`, `error`) is observed.
@@ -122,6 +136,20 @@ export type UseDaVinciClientPanelControllerOptions = {
 };
 
 /**
+ * Returns true when the supplied error represents a user-cancelled FIDO
+ * authentication prompt.
+ *
+ * @param error Error returned by the FIDO client.
+ * @returns Whether the error is the native authentication cancellation code.
+ */
+function isFidoAuthenticationCancelled(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  return (error as { code?: unknown }).code === 'FIDO_AUTHENTICATE_CANCELLED';
+}
+
+/**
  * Composes DaVinci sample panel behavior into a single controller hook.
  *
  * @remarks
@@ -150,6 +178,11 @@ export function useDaVinciClientPanelController(
     pollStatus,
   } = useDaVinci();
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
+  const fidoLogger = useMemo(() => logger({ level: 'debug' }), []);
+  const fido = useMemo(
+    () => createFidoClient({ logger: fidoLogger }),
+    [fidoLogger],
+  );
   const externalIdp = useMemo(
     () =>
       createExternalIdpClient({
@@ -162,10 +195,12 @@ export function useDaVinciClientPanelController(
     handledCollectorTypes: new Set([
       socialLoginCollectorType,
       protectCollectorType,
+      fidoCollectorType,
     ]),
   });
 
   const [idpError, setIdpError] = useState<string | null>(null);
+  const [fidoError, setFidoError] = useState<string | null>(null);
   const [protectError, setProtectError] = useState<string | null>(null);
   const [idpJustAuthorized, setIdpJustAuthorized] = useState<boolean>(false);
 
@@ -177,6 +212,7 @@ export function useDaVinciClientPanelController(
 
   const onStart = useCallback(async (): Promise<boolean> => {
     setIdpError(null);
+    setFidoError(null);
     setProtectError(null);
     try {
       await start(verificationUri ? { verificationUri } : undefined);
@@ -254,6 +290,54 @@ export function useDaVinciClientPanelController(
       value: DaVinciFormValue,
     ): Promise<DaVinciFieldValidationError[]> => validate(collectorKey, value),
     [validate],
+  );
+
+  const onFidoCeremony = useCallback(
+    async (collector: FidoCollector): Promise<void> => {
+      if (loading) {
+        return;
+      }
+      setFidoError(null);
+      const davinciClient = davinciContext?.client;
+      if (!davinciClient) {
+        console.warn('[DaVinci] FIDO ceremony: no DaVinci client in context');
+        return;
+      }
+      // Native resolvers index collectors per concrete ceremony class
+      // (registration vs. authentication), so the index must be computed
+      // within the ceremony-matched subset, not across all FIDO collectors.
+      const fidoFields = form.fields.filter(
+        f =>
+          f.type === fidoCollectorType &&
+          (f as unknown as FidoCollector).action === collector.action,
+      );
+      const index = fidoFields.findIndex(f => f.key === collector.key);
+      const collectorIndex = index >= 0 ? index : 0;
+      try {
+        if (collector.action === 'REGISTER') {
+          await fido.registerForDaVinci(davinciClient, {
+            index: collectorIndex,
+          });
+        } else {
+          await fido.authenticateForDaVinci(davinciClient, {
+            index: collectorIndex,
+          });
+        }
+        await next({ collectors: [] });
+      } catch (fidoErrorValue) {
+        if (isFidoAuthenticationCancelled(fidoErrorValue)) {
+          setFidoError('Passkey authentication was canceled.');
+          return;
+        }
+        console.warn('[DaVinci] FIDO ceremony failed:', fidoErrorValue);
+        const msg =
+          fidoErrorValue instanceof Error
+            ? fidoErrorValue.message
+            : String(fidoErrorValue);
+        setFidoError(msg);
+      }
+    },
+    [davinciContext?.client, fido, form.fields, loading, next],
   );
 
   const onIdpAuthorize = useCallback(
@@ -348,6 +432,7 @@ export function useDaVinciClientPanelController(
     loading,
     error,
     idpError,
+    fidoError,
     protectError,
     hasActiveSession,
     isSessionCheckRunning,
@@ -355,6 +440,7 @@ export function useDaVinciClientPanelController(
     onValidate,
     onFlowAction,
     onIdpAuthorize,
+    onFidoCeremony,
     onPollStatus,
     onStart: onStartAction,
     onLogout,

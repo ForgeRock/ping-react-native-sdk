@@ -100,13 +100,16 @@ type _ExternalIdpMockedMethods = Pick<
 
 // ─── rn-fido ────────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerCredential, authenticateCredential,
-//                      registerCredentialForJourney, authenticateCredentialForJourney
+//                      registerCredentialForJourney, authenticateCredentialForJourney,
+//                      registerCredentialForDaVinci, authenticateCredentialForDaVinci
 type _FidoMockedMethods = Pick<
   FidoSpec,
   | 'registerCredential'
   | 'authenticateCredential'
   | 'registerCredentialForJourney'
   | 'authenticateCredentialForJourney'
+  | 'registerCredentialForDaVinci'
+  | 'authenticateCredentialForDaVinci'
 >;
 
 // ─── rn-journey ─────────────────────────────────────────────────────────────

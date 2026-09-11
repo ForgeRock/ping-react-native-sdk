@@ -5,20 +5,27 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-export { FidoError } from './fido.types';
+export { FidoError, fidoCollectorType } from './fido.types';
 export type {
   FidoAndroidConfig,
   FidoClient,
   FidoClientConfig,
   FidoConfig,
+  FidoAuthenticationCollector,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
+  FidoCollector,
+  FidoDaVinciAuthenticationOptions,
+  FidoDaVinciRegistrationOptions,
+  FidoDaVinciResult,
   FidoErrorCode,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
   FidoJsonValue,
+  FidoRegistrationCollector,
   FidoRegistrationOptions,
   FidoRegistrationResult,
+  DaVinciInstance,
   JourneyInstance,
 } from './fido.types';

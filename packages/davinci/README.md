@@ -320,29 +320,30 @@ await form.submitFlow('forgot-password');
 
 The following collector types are supported on Android and iOS:
 
-| Collector Type          | Description                                                                                                       | Input Handling |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------- |
-| `TEXT`                  | Single-line text input.                                                                                           | Manual input   |
-| `PASSWORD`              | Masked password input with optional server validation and password policy; results are returned after submission. | Manual input   |
-| `PASSWORD_VERIFY`       | Password-confirmation variant with the same validation, policy, and submission-result behavior as `PASSWORD`.     | Manual input   |
-| `SINGLE_SELECT`         | Single-select input.                                                                                              | Manual input   |
-| `DROPDOWN`              | Single-select dropdown.                                                                                           | Manual input   |
-| `RADIO`                 | Single-select radio group.                                                                                        | Manual input   |
-| `MULTI_SELECT`          | Multi-select input.                                                                                               | Manual input   |
-| `COMBOBOX`              | Multi-select combobox.                                                                                            | Manual input   |
-| `CHECKBOX`              | Multi-select checkbox group.                                                                                      | Manual input   |
-| `PHONE_NUMBER`          | Phone input with country code and optional extension, `showExtension`, and `extensionLabel` configuration.        | Manual input   |
-| `DEVICE_REGISTRATION`   | Device picker for registration.                                                                                   | Manual input   |
-| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                                                 | Manual input   |
-| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                                             | Immediate      |
-| `ACTION`                | Action button that advances the flow immediately.                                                                 | Immediate      |
-| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                                                   | Immediate      |
-| `FLOW_LINK`             | Flow link that advances the flow immediately.                                                                     | Immediate      |
-| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                                                        | Manual input   |
-| `LABEL`                 | Read-only display content with optional templated `richContent`.                                                  | Output-only    |
-| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                                               | Output-only    |
-| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows).                            | Output-only    |
-| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).                               | Output-only    |
+| Collector Type          | Description                                                                            | Input Handling |
+| ----------------------- | -------------------------------------------------------------------------------------- | -------------- |
+| `TEXT`                  | Single-line text input.                                                                | Manual input   |
+| `PASSWORD`              | Masked password input.                                                                 | Manual input   |
+| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                           | Manual input   |
+| `SINGLE_SELECT`         | Single-select input.                                                                   | Manual input   |
+| `DROPDOWN`              | Single-select dropdown.                                                                | Manual input   |
+| `RADIO`                 | Single-select radio group.                                                             | Manual input   |
+| `MULTI_SELECT`          | Multi-select input.                                                                    | Manual input   |
+| `COMBOBOX`              | Multi-select combobox.                                                                 | Manual input   |
+| `CHECKBOX`              | Multi-select checkbox group.                                                           | Manual input   |
+| `PHONE_NUMBER`          | Phone number input with country code.                                                  | Manual input   |
+| `DEVICE_REGISTRATION`   | Device picker for registration.                                                        | Manual input   |
+| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                      | Manual input   |
+| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                  | Immediate      |
+| `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
+| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
+| `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
+| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                             | Manual input   |
+| `LABEL`                 | Read-only display content.                                                             | Output-only    |
+| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
+| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
+| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
+| `FIDO2`                 | FIDO passkey registration or authentication; narrow by `action`.                       | Integration    |
 
 Integration-dependent collectors are surfaced in node payloads with
 `executionMode: 'integration_required'`. Their minimum generic shape is `key`,
@@ -361,6 +362,41 @@ const form = useDaVinciForm(node, {
 Known collector-specific fields should be accessed only after narrowing with the
 owning package's type or helper. Generic integration collectors do not guarantee
 fields such as `label`, `options`, or `value`.
+
+FIDO2 is owned by `@ping-identity/rn-fido`. It is one collector type, with
+`action: 'REGISTER'` for `publicKeyCredentialCreationOptions` or
+`action: 'AUTHENTICATE'` for `publicKeyCredentialRequestOptions`. Create a FIDO
+client before the node is normalized so it registers `FIDO2` with the integration
+registry, and include the type in `handledCollectorTypes`:
+
+```ts
+import {
+  createFidoClient,
+  fidoCollectorType,
+  type FidoCollector,
+} from '@ping-identity/rn-fido';
+
+const fido = createFidoClient();
+const form = useDaVinciForm(node, {
+  handledCollectorTypes: new Set([fidoCollectorType]),
+});
+
+for (const collector of node.collectors) {
+  const fidoCollector = collector as FidoCollector;
+  if (fidoCollector.action === 'REGISTER') {
+    await fido.registerForDaVinci(daVinci, { index: 0 });
+  } else if (fidoCollector.action === 'AUTHENTICATE') {
+    await fido.authenticateForDaVinci(daVinci, { index: 0 });
+  }
+}
+
+// The native collector retains the ceremony result for submission.
+await daVinci.next({ collectors: [] });
+```
+
+The ceremony must be completed before calling `next`, and the FIDO collector key
+must not be passed in `next` input. These DaVinci methods use native ceremony
+defaults; no React Native ceremony customization options are exposed.
 
 ### Unsupported fields
 
