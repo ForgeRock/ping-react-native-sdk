@@ -158,12 +158,12 @@ no extra submit step is required in the app.</p>
 </tr>
 <tr>
 <td><code>PASSWORD</code></td>
-<td>Masked password input with optional server validation and password policy; results are returned after submission.</td>
+<td>Masked password input.</td>
 <td>Manual input</td>
 </tr>
 <tr>
 <td><code>PASSWORD_VERIFY</code></td>
-<td>Password-confirmation variant with the same validation, policy, and submission-result behavior as <code>PASSWORD</code>.</td>
+<td>Password-confirmation variant of <code>PASSWORD</code>.</td>
 <td>Manual input</td>
 </tr>
 <tr>
@@ -198,7 +198,7 @@ no extra submit step is required in the app.</p>
 </tr>
 <tr>
 <td><code>PHONE_NUMBER</code></td>
-<td>Phone input with country code and optional extension, <code>showExtension</code>, and <code>extensionLabel</code> configuration.</td>
+<td>Phone number input with country code.</td>
 <td>Manual input</td>
 </tr>
 <tr>
@@ -238,7 +238,7 @@ no extra submit step is required in the app.</p>
 </tr>
 <tr>
 <td><code>LABEL</code></td>
-<td>Read-only display content with optional templated <code>richContent</code>.</td>
+<td>Read-only display content.</td>
 <td>Output-only</td>
 </tr>
 <tr>
@@ -256,6 +256,11 @@ no extra submit step is required in the app.</p>
 <td>Display-only QR code — see <a href="#polling-and-qr-code-flows">Polling and QR code flows</a>.</td>
 <td>Output-only</td>
 </tr>
+<tr>
+<td><code>FIDO2</code></td>
+<td>FIDO passkey registration or authentication; narrow by <code>action</code>.</td>
+<td>Integration</td>
+</tr>
 </tbody>
 </table>
 <p>Integration-dependent collectors are surfaced in node payloads with
@@ -269,6 +274,17 @@ exported collector type/constant and pass its type in <code>handledCollectorType
 <p>Known collector-specific fields should be accessed only after narrowing with the
 owning package's type or helper. Generic integration collectors do not guarantee
 fields such as <code>label</code>, <code>options</code>, or <code>value</code>.</p>
+<p>FIDO2 is owned by <code>@ping-identity/rn-fido</code>. It is one collector type, with
+<code>action: 'REGISTER'</code> for <code>publicKeyCredentialCreationOptions</code> or
+<code>action: 'AUTHENTICATE'</code> for <code>publicKeyCredentialRequestOptions</code>. Create a FIDO
+client before the node is normalized so it registers <code>FIDO2</code> with the integration
+registry, and include the type in <code>handledCollectorTypes</code>:</p>
+<pre><code class="ts"><span class="hl-5">import</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-3">createFidoClient</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-3">fidoCollectorType</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-5">type</span><span class="hl-1"> </span><span class="hl-3">FidoCollector</span><span class="hl-1">,</span><br/><span class="hl-1">} </span><span class="hl-5">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@ping-identity/rn-fido&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">fido</span><span class="hl-1"> = </span><span class="hl-0">createFidoClient</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">form</span><span class="hl-1"> = </span><span class="hl-0">useDaVinciForm</span><span class="hl-1">(</span><span class="hl-3">node</span><span class="hl-1">, {</span><br/><span class="hl-1">  </span><span class="hl-3">handledCollectorTypes:</span><span class="hl-1"> </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">Set</span><span class="hl-1">([</span><span class="hl-3">fidoCollectorType</span><span class="hl-1">]),</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-5">for</span><span class="hl-1"> (</span><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">collector</span><span class="hl-1"> </span><span class="hl-6">of</span><span class="hl-1"> </span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">collectors</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">fidoCollector</span><span class="hl-1"> = </span><span class="hl-3">collector</span><span class="hl-1"> </span><span class="hl-5">as</span><span class="hl-1"> </span><span class="hl-9">FidoCollector</span><span class="hl-1">;</span><br/><span class="hl-1">  </span><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-3">fidoCollector</span><span class="hl-1">.</span><span class="hl-3">action</span><span class="hl-1"> === </span><span class="hl-2">&#39;REGISTER&#39;</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">fido</span><span class="hl-1">.</span><span class="hl-0">registerForDaVinci</span><span class="hl-1">(</span><span class="hl-3">daVinci</span><span class="hl-1">, { </span><span class="hl-3">index:</span><span class="hl-1"> </span><span class="hl-8">0</span><span class="hl-1"> });</span><br/><span class="hl-1">  } </span><span class="hl-5">else</span><span class="hl-1"> </span><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-3">fidoCollector</span><span class="hl-1">.</span><span class="hl-3">action</span><span class="hl-1"> === </span><span class="hl-2">&#39;AUTHENTICATE&#39;</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">fido</span><span class="hl-1">.</span><span class="hl-0">authenticateForDaVinci</span><span class="hl-1">(</span><span class="hl-3">daVinci</span><span class="hl-1">, { </span><span class="hl-3">index:</span><span class="hl-1"> </span><span class="hl-8">0</span><span class="hl-1"> });</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-4">// The native collector retains the ceremony result for submission.</span><br/><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">daVinci</span><span class="hl-1">.</span><span class="hl-0">next</span><span class="hl-1">({ </span><span class="hl-3">collectors:</span><span class="hl-1"> [] });</span>
+</code><button type="button">Copy</button></pre>
+
+<p>The ceremony must be completed before calling <code>next</code>, and the FIDO collector key
+must not be passed in <code>next</code> input. These DaVinci methods use native ceremony
+defaults; no React Native ceremony customization options are exposed.</p>
 <h3 id="unsupported-fields" class="tsd-anchor-link">Unsupported fields<a href="#unsupported-fields" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <p>When the native SDK cannot instantiate a collector from the server payload, the bridge surfaces it in <code>ContinueNode.unsupportedFields</code>:</p>
 <pre><code class="ts"><span class="hl-5">if</span><span class="hl-1"> (</span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">type</span><span class="hl-1"> === </span><span class="hl-2">&#39;ContinueNode&#39;</span><span class="hl-1"> &amp;&amp; </span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">unsupportedFields</span><span class="hl-1">?.</span><span class="hl-3">length</span><span class="hl-1">) {</span><br/><span class="hl-1">  </span><span class="hl-3">console</span><span class="hl-1">.</span><span class="hl-0">warn</span><span class="hl-1">(</span><span class="hl-2">&#39;Unsupported fields present:&#39;</span><span class="hl-1">, </span><span class="hl-3">node</span><span class="hl-1">.</span><span class="hl-3">unsupportedFields</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
