@@ -41,10 +41,6 @@ jobs:
   mend-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      # Pruned workspace generated under the runner temp dir (outside the repo checkout so
-      # the SAST scan of the repo root never sees it).
-      SCAN_DIR: ${{ runner.temp }}/mend-scan
 
     steps:
       # Full history for Mend's git-aware analysis.
@@ -53,6 +49,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      # SCAN_DIR is set here (rather than job-level env) because the `runner` context is
+      # not available in jobs.<job_id>.env - only in steps. Exporting via GITHUB_ENV makes
+      # it available to every later step. Pruned workspace lives under the runner temp dir
+      # (outside the repo checkout) so the SAST scan of the repo root never sees it.
+      - name: Set SCAN_DIR
+        run: echo "SCAN_DIR=${RUNNER_TEMP}/mend-scan" >> "$GITHUB_ENV"
 
       - name: Setup Node
         uses: actions/setup-node@v6
