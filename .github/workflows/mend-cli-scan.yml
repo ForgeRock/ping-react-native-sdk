@@ -37,15 +37,14 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Pruned workspace generated under the runner temp dir (outside the repo checkout so
-  # the SAST scan of the repo root never sees it).
-  SCAN_DIR: ${{ runner.temp }}/mend-scan
-
 jobs:
   mend-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # Pruned workspace generated under the runner temp dir (outside the repo checkout so
+      # the SAST scan of the repo root never sees it).
+      SCAN_DIR: ${{ runner.temp }}/mend-scan
 
     steps:
       # Full history for Mend's git-aware analysis.
@@ -60,18 +59,34 @@ jobs:
         with:
           node-version-file: package.json
 
-      - name: Install Mend CLI
+      # Install to /usr/local/bin (already on PATH, writable on hosted runners), matching
+      # the reference ping-android-sdk workflows. Cached on the binary's hash so a Mend
+      # CLI release re-downloads and older versions stay pinned per runner cache entry.
+      - name: Download and cache the Mend CLI executable
+        id: cache-mend
+        uses: actions/cache@v4
+        env:
+          mend-cache-name: cache-mend-executable
+        with:
+          path: /usr/local/bin/mend
+          key: ${{ runner.os }}-${{ env.mend-cache-name }}-${{ hashFiles('/usr/local/bin/mend') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.mend-cache-name }}-
+
+      - if: ${{ steps.cache-mend.outputs.cache-hit != 'true' }}
+        name: Download Mend CLI executable (cache miss...)
+        continue-on-error: true
+        shell: bash
         run: |
-          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend -o "${RUNNER_TEMP}/mend"
-          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend.sha256 -o "${RUNNER_TEMP}/mend.sha256"
-          expected="$(tr -d '[:space:]' < "${RUNNER_TEMP}/mend.sha256" | grep -oE '^[0-9a-f]{64}')"
-          actual="$(sha256sum "${RUNNER_TEMP}/mend" | awk '{print $1}')"
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend.sha256 -o /tmp/mend.sha256
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend -o /usr/local/bin/mend
+          expected="$(awk '{print $1}' /tmp/mend.sha256)"
+          actual="$(sha256sum /usr/local/bin/mend | awk '{print $1}')"
           if [ "${actual}" != "${expected}" ]; then
             echo "::error::Mend CLI checksum mismatch: expected ${expected}, got ${actual}"
             exit 1
           fi
-          chmod +x "${RUNNER_TEMP}/mend"
-          echo "${RUNNER_TEMP}" >> "$GITHUB_PATH"
+          chmod +x /usr/local/bin/mend
 
       # Build the pruned workspace: packages/* only, with a generated root manifest that
       # preserves packageManager, engines, and resolutions from the real root. The real
