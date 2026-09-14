@@ -1,0 +1,154 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Mend Security Scan
+
+# Replaces the Mend GitHub App integration (retired after this workflow is validated).
+#
+# SCA scans a pruned workspace containing only packages/* (the published SDKs), NOT the
+# full monorepo. The sample app and test runner are build/test tooling: their runtime
+# dependency tree (react-native, metro, and everything transitively reachable from them,
+# e.g. image-size) does not ship to consumers, so it is out of scope for the SDK's
+# dependency inventory. The pruned workspace is generated in the runner's temp directory
+# from the real yarn.lock so resolved versions stay identical to what CI tests.
+#
+# SAST + secrets scanning replaces the GitHub App's .whitesource scanSettingsSAST
+# (enableScan / enableSecretsScan / scanPullRequests). The standalone CLI does not
+# read .mendsastcli-config.json (that file is an SCM-integration artifact), so the
+# path exclusions are passed via the MEND_SAST_PATH_EXCLUSIONS repo variable.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+# Prevent multiple CI runs for the same PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Pruned workspace generated under the runner temp dir (outside the repo checkout so
+  # the SAST scan of the repo root never sees it).
+  SCAN_DIR: ${{ runner.temp }}/mend-scan
+
+jobs:
+  mend-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # Full history for Mend's git-aware analysis.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      - name: Install Mend CLI
+        run: |
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend -o "${RUNNER_TEMP}/mend"
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend.sha256 -o "${RUNNER_TEMP}/mend.sha256"
+          expected="$(tr -d '[:space:]' < "${RUNNER_TEMP}/mend.sha256" | grep -oE '^[0-9a-f]{64}')"
+          actual="$(sha256sum "${RUNNER_TEMP}/mend" | awk '{print $1}')"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::Mend CLI checksum mismatch: expected ${expected}, got ${actual}"
+            exit 1
+          fi
+          chmod +x "${RUNNER_TEMP}/mend"
+          echo "${RUNNER_TEMP}" >> "$GITHUB_PATH"
+
+      # Build the pruned workspace: packages/* only, with a generated root manifest that
+      # preserves packageManager, engines, and resolutions from the real root. The real
+      # yarn.lock is copied over and pruned by the install below, keeping the exact
+      # resolved versions CI tests against — no version drift between the two graphs.
+      - name: Prepare pruned workspace
+        run: |
+          mkdir -p "${SCAN_DIR}/.yarn/releases"
+          cp -R packages "${SCAN_DIR}/packages"
+          cp .yarnrc.yml "${SCAN_DIR}/.yarnrc.yml"
+          cp .yarn/releases/*.cjs "${SCAN_DIR}/.yarn/releases/"
+          cp yarn.lock "${SCAN_DIR}/yarn.lock"
+          node -e '
+            const fs = require("fs");
+            const root = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const scan = {
+              name: "ping-sdk-mend-scan",
+              private: true,
+              packageManager: root.packageManager,
+              engines: root.engines,
+              resolutions: root.resolutions,
+              workspaces: { packages: ["packages/*"] },
+            };
+            fs.writeFileSync(process.env.SCAN_DIR + "/package.json", JSON.stringify(scan, null, 2) + "\n");
+          '
+
+      # --mode=update-lockfile resolves the pruned workspace and garbage-collects the
+      # lockfile entries no longer referenced (the entire app/test-runner tree) without
+      # fetching or linking packages.
+      - name: Resolve pruned lockfile
+        run: |
+          cd "${SCAN_DIR}"
+          yarn install --mode=update-lockfile
+
+      # --no-default-exclusions is required: Mend's built-in exclusions drop any
+      # directory named "packages", which is exactly where our workspaces live.
+      # Scoped to production dependencies only (no --dev), matching the reference
+      # ping-android-sdk workflow's scan scope.
+      - name: Scan dependencies
+        env:
+          MEND_URL: ${{ secrets.MEND_URL }}
+          MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+          MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+          MEND_ORGANIZATION: ${{ secrets.MEND_ORGANIZATION }}
+          MEND_SCOPE: ${{ vars.MEND_PROJECT_SCOPE }}
+        run: |
+          if [ -z "${MEND_SCOPE}" ]; then
+            echo "::error::Repository variable MEND_PROJECT_SCOPE is not set. Set it to the Mend target scope (org//product//project)."
+            exit 1
+          fi
+          mend dependencies \
+            --dir "${SCAN_DIR}" \
+            --no-default-exclusions \
+            --update \
+            --scope "${MEND_SCOPE}"
+
+      # SAST + secrets on the real repo root. Path exclusions come from the
+      # MEND_SAST_PATH_EXCLUSIONS repository variable (comma-separated regex list,
+      # single line, no spaces) and exclude the sample app, test runner, and test
+      # sources. --no-default-exclusions is required because Mend's built-in list
+      # drops any directory named "packages", which would exclude exactly the SDK
+      # source we want scanned. Legacy command alias: mend sast.
+      - name: Scan code and secrets
+        env:
+          MEND_URL: ${{ secrets.MEND_URL }}
+          MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+          MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+          MEND_ORGANIZATION: ${{ secrets.MEND_ORGANIZATION }}
+          MEND_SCOPE: ${{ vars.MEND_PROJECT_SCOPE }}
+          MEND_SAST_PATH_EXCLUSIONS: ${{ vars.MEND_SAST_PATH_EXCLUSIONS }}
+        run: |
+          if [ -z "${MEND_SCOPE}" ]; then
+            echo "::error::Repository variable MEND_PROJECT_SCOPE is not set. Set it to the Mend target scope (org//product//project)."
+            exit 1
+          fi
+          if [ -z "${MEND_SAST_PATH_EXCLUSIONS}" ]; then
+            echo "::error::Repository variable MEND_SAST_PATH_EXCLUSIONS is not set. Set it to a comma-separated regex list of SAST path exclusions."
+            exit 1
+          fi
+          mend code --no-default-exclusions --secrets-detection --scope "${MEND_SCOPE}"
