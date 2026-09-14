@@ -1,7 +1,6 @@
 {
   "name": "@ping-identity/rn-davinci",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.0",
   "description": "Ping Identity DaVinci orchestration for React Native",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
