@@ -376,4 +376,4 @@ All CI workflows live under `.github/workflows/`. `ci.yml` is the top-level PR c
 | `preview-docs.yml`                        | PR opened / updated          | Publishes docs preview to GitHub Pages for the PR                       |
 | `publish-docs.yml`                        | Push to `main`               | Publishes final docs to GitHub Pages                                    |
 | `cleanup-docs-preview.yml`                | PR closed                    | Removes the PR docs preview from GitHub Pages                           |
-| `mend-cli-scan.yml`                       | Scheduled                    | Mend (WhiteSource) security and dependency vulnerability scan           |
+| `mend-cli-scan.yml`                       | PRs / push to `main`         | Mend CLI scan — SCA on pruned `packages/*` workspace + SAST/secrets     |
