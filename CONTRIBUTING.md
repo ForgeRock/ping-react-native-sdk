@@ -187,6 +187,34 @@ To verify all packages are at the same version (catches accidental manual edits)
 yarn release:check-lockstep
 ```
 
+#### Beta releases
+
+Beta (prerelease) releases publish `x.y.z-beta.N` versions to the npm `beta` dist-tag — `latest` is never touched. Beta versions are set manually on the branch; changesets prerelease mode (`.changeset/pre.json`) is **not** used (it routes publish through its own tag mechanics and applies dependents-cascade bumps — see [changesets prereleases docs](https://github.com/changesets/changesets/blob/main/docs/prereleases.md) for the mode we intentionally skip).
+
+**1. Cut a beta (repeat as needed):**
+
+Merge PRs with changeset files as usual, then bump all package versions to the beta number by hand:
+
+```sh
+# bump every @ping-identity/* package version to x.y.z-beta.N (e.g. 1.1.0-beta.0)
+# — edit each packages/*/package.json, or loop with a one-liner
+yarn install           # update lockfile
+git add -A && git commit -m "chore: version packages (beta)" && git push
+```
+
+Then trigger the [Release Beta workflow](../../actions/workflows/release-beta.yml) via `workflow_dispatch` in GitHub Actions. It verifies every package is at an `x.y.z-beta.N` version and in lockstep, builds, publishes to the `beta` dist-tag (`changeset publish --tag beta`), and creates a `v<version>` git tag and a GitHub release marked as prerelease. Use the `dry_run` input to validate the run (checks + build only, no publish/tag).
+
+**2. Go stable:**
+
+Bump every package version from `x.y.z-beta.N` to the final `x.y.z` (running `yarn release:version` consumes the accumulated changeset files and writes the CHANGELOG entries), then:
+
+```sh
+yarn install           # update lockfile
+git add -A && git commit -m "chore: release x.y.z" && git push
+```
+
+Then trigger the regular [Release workflow](../../actions/workflows/release.yml) — it publishes to the `latest` dist-tag as usual.
+
 ### Sending A Pull Request
 
 When you are sending a pull request:
