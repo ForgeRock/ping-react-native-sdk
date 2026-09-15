@@ -41,11 +41,11 @@ if (existsSync(preStatePath)) {
     console.error('✗ Failed to parse .changeset/pre.json: ' + err.message);
     process.exit(1);
   }
-  if (preState.mode === 'pre') {
+  if (preState.mode !== 'exit') {
     console.error(
-      '✗ .changeset/pre.json is in pre mode (tag "' +
-        preState.tag +
-        '"). This workflow publishes with --tag ' +
+      '✗ .changeset/pre.json is in unsupported mode "' +
+        preState.mode +
+        '" (expected "exit" or absent). This workflow publishes with --tag ' +
         expectedTag +
         ' directly.\n' +
         '  Run: yarn changeset pre exit (then commit the pre.json removal)',

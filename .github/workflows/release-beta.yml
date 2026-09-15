@@ -138,14 +138,13 @@ jobs:
             if (!notes) {
               try {
                 const dir = '.changeset';
-                const file = fs.readdirSync(dir)
+                const files = fs.readdirSync(dir)
                   .filter(f => f.endsWith('.md') && f !== 'config.json' && f !== 'README.md')
-                  .sort()[0];
-                if (file) {
-                  const raw = fs.readFileSync(dir + '/' + file, 'utf8');
-                  const body = raw.split(/^---$/m).pop().trim();
-                  notes = body || 'See CHANGELOG.md for details.';
-                }
+                  .sort();
+                const bodies = files
+                  .map(f => fs.readFileSync(dir + '/' + f, 'utf8').split(/^---$/m).pop().trim())
+                  .filter(Boolean);
+                notes = bodies.join('\n\n');
               } catch {}
             }
             process.stdout.write(notes || 'See CHANGELOG.md for details.');
