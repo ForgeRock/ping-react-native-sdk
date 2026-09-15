@@ -21,6 +21,13 @@ name: Mend SAST Scan
 # published there; the full output is uploaded as a short-retention artifact.
 on:
   workflow_call:
+    secrets:
+      MEND_EMAIL:
+        description: Mend account email used for CLI authentication
+        required: true
+      MEND_USER_KEY:
+        description: Mend user key (Organization > User Settings in the Mend UI)
+        required: true
 
 permissions:
   contents: read
