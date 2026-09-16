@@ -85,6 +85,14 @@ jobs:
         # published through this workflow onto the latest dist-tag.
         run: node scripts/check-prerelease.mjs beta
 
+      - name: Verify release branch
+        # Publishing (tag push, npm publish) is only allowed from main.
+        # dry_run stays available from any branch for validation.
+        if: ${{ !inputs.dry_run && github.ref_name != 'main' }}
+        run: |
+          echo "::error::Release Beta publishes only from main (got: ${{ github.ref_name }}). Use dry_run to validate from a feature branch."
+          exit 1
+
       - name: Check lockstep
         run: yarn release:check-lockstep
 
