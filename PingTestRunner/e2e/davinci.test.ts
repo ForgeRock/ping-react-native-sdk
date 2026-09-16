@@ -110,7 +110,9 @@ describe('DaVinci — happy path', () => {
 
     await element(USERNAME_INPUT).typeText(DAVINCI_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText(DAVINCI_ENV.testPassword);
-    await element(by.id('davinci-submit-btn')).tap();
+    // The login screen carries several submit buttons (Sign On / Register /
+    // Trouble); target Sign On by its rendered label.
+    await element(by.text('Sign On')).tap();
     await waitFor(element(by.id('davinci-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);

@@ -45,6 +45,24 @@ on:
       PING_CALLBACK_TREES_ENABLED:
         description: Flag enabling callback tree coverage in BrowserStack E2E tests
         required: false
+      PINGONE_DISCOVERY_ENDPOINT:
+        description: PingOne DaVinci OIDC discovery endpoint
+        required: false
+      PINGONE_CLIENT_ID:
+        description: PingOne DaVinci OIDC client identifier
+        required: false
+      PINGONE_REDIRECT_URI:
+        description: PingOne DaVinci OIDC redirect URI
+        required: false
+      PINGONE_ACR_VALUES:
+        description: ACR values to route to the correct DaVinci flow
+        required: false
+      PINGONE_USERNAME:
+        description: PingOne DaVinci test account username
+        required: false
+      PINGONE_PASSWORD:
+        description: PingOne DaVinci test account password
+        required: false
       CERTIFICATES_FILE_BASE64:
         description: Apple signing certificate exported as base64 encoded .p12
         required: true
@@ -98,6 +116,12 @@ jobs:
       PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
       PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
       PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+      PINGONE_DISCOVERY_ENDPOINT: ${{ secrets.PINGONE_DISCOVERY_ENDPOINT }}
+      PINGONE_CLIENT_ID: ${{ secrets.PINGONE_CLIENT_ID }}
+      PINGONE_REDIRECT_URI: ${{ secrets.PINGONE_REDIRECT_URI }}
+      PINGONE_ACR_VALUES: ${{ secrets.PINGONE_ACR_VALUES }}
+      PINGONE_USERNAME: ${{ secrets.PINGONE_USERNAME }}
+      PINGONE_PASSWORD: ${{ secrets.PINGONE_PASSWORD }}
 
     steps:
       - name: Download IPA artifact
@@ -195,6 +219,12 @@ jobs:
               --arg pingClientId "$PING_CLIENT_ID" \
               --arg pingRedirectUri "$PING_REDIRECT_URI" \
               --arg pingCallbackTreesEnabled "$PING_CALLBACK_TREES_ENABLED" \
+              --arg pingoneDiscoveryEndpoint "$PINGONE_DISCOVERY_ENDPOINT" \
+              --arg pingoneClientId "$PINGONE_CLIENT_ID" \
+              --arg pingoneRedirectUri "$PINGONE_REDIRECT_URI" \
+              --arg pingoneAcrValues "$PINGONE_ACR_VALUES" \
+              --arg pingoneUsername "$PINGONE_USERNAME" \
+              --arg pingonePassword "$PINGONE_PASSWORD" \
               '{
                 app: $app,
                 testSuite: $testSuite,
@@ -215,7 +245,13 @@ jobs:
                   PING_DISCOVERY_ENDPOINT: $pingDiscoveryEndpoint,
                   PING_CLIENT_ID: $pingClientId,
                   PING_REDIRECT_URI: $pingRedirectUri,
-                  PING_CALLBACK_TREES_ENABLED: $pingCallbackTreesEnabled
+                  PING_CALLBACK_TREES_ENABLED: $pingCallbackTreesEnabled,
+                  PINGONE_DISCOVERY_ENDPOINT: $pingoneDiscoveryEndpoint,
+                  PINGONE_CLIENT_ID: $pingoneClientId,
+                  PINGONE_REDIRECT_URI: $pingoneRedirectUri,
+                  PINGONE_ACR_VALUES: $pingoneAcrValues,
+                  PINGONE_USERNAME: $pingoneUsername,
+                  PINGONE_PASSWORD: $pingonePassword
                 }
               }'
           )"

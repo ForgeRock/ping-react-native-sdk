@@ -36,7 +36,7 @@
  *   use-davinci-logged-out              → visible after logout
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Switch, Text, TextInput, View } from 'react-native';
 import { LaunchArguments } from 'react-native-launch-arguments';
 import {
@@ -48,6 +48,7 @@ import type {
   DaVinciFormValue,
   DaVinciNormalizedCollector,
 } from '@ping-identity/rn-davinci';
+import { logger } from '@ping-identity/rn-logger';
 
 // ─── launch args ─────────────────────────────────────────────────────────────
 
@@ -57,6 +58,10 @@ interface DaVinciLaunchArgs {
   PING_REDIRECT_URI?: string;
   PING_SCOPES?: string;
   PING_TIMEOUT?: string;
+  PING_ACR_VALUES?: string;
+  PING_CLEAR_STORAGE?: string;
+  PING_LOG_LEVEL?: string;
+  PING_AUTOSTART?: string;
 }
 
 const args = LaunchArguments.value<DaVinciLaunchArgs>();
@@ -69,6 +74,10 @@ const SCOPES = (args.PING_SCOPES ?? 'openid profile email')
   .map((s) => s.trim())
   .filter(Boolean);
 const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
+const ACR_VALUES = args.PING_ACR_VALUES ?? undefined;
+// PING_CLEAR_STORAGE is consumed natively (AppDelegate): the wipe completes
+// before the RN bundle boots, so start() reaches the login form instead of
+// resuming a stale SSO session. No JS-side gate is needed.
 
 // ─── component ───────────────────────────────────────────────────────────────
 
@@ -76,12 +85,18 @@ export default function UseDaVinciScenario(): React.JSX.Element {
   const client = useMemo(
     () =>
       createDaVinciClient({
+        // Debug logging so E2E failures show the actual flow responses in the
+        // device log (visible via `log show` on the simulator).
+        ...(args.PING_LOG_LEVEL
+          ? { logger: logger({ level: args.PING_LOG_LEVEL as 'debug' }) }
+          : {}),
         modules: {
           oidc: {
             discoveryEndpoint: DISCOVERY_ENDPOINT,
             clientId: CLIENT_ID,
             redirectUri: REDIRECT_URI,
             scopes: SCOPES,
+            ...(ACR_VALUES !== undefined ? { acrValues: ACR_VALUES } : {}),
           },
         },
         ...(TIMEOUT !== undefined ? { timeout: TIMEOUT } : {}),
@@ -108,6 +123,10 @@ export default function UseDaVinciScenario(): React.JSX.Element {
   const [refreshed, setRefreshed] = useState(false);
   const [revoked, setRevoked] = useState(false);
   const [loggedOut, setLoggedOut] = useState(false);
+  // Survives the node being cleared: useDaVinci.revoke()/logoutUser() call
+  // setNode(null), which would unmount a panel gated on node.type — hiding the
+  // very markers these actions are meant to reveal.
+  const [successReached, setSuccessReached] = useState(false);
 
   const fetchToken = useCallback(async () => {
     try {
@@ -124,6 +143,7 @@ export default function UseDaVinciScenario(): React.JSX.Element {
     try {
       const firstNode = await start();
       if (firstNode.type === 'SuccessNode') {
+        setSuccessReached(true);
         await fetchToken();
       }
     } catch {
@@ -131,10 +151,24 @@ export default function UseDaVinciScenario(): React.JSX.Element {
     }
   }, [start, fetchToken]);
 
+  // Debug aid: with -PING_AUTOSTART true the flow starts on mount without
+  // waiting for the Start button, so flow traffic can be observed via
+  // `log stream` on the simulator without a UI driver tapping the button.
+  useEffect(() => {
+    if (args.PING_AUTOSTART !== 'true') {
+      return;
+    }
+    // Intentional mount-time trigger of the external auth system; the rule
+    // flags the hook's internal setLoading(true) inside start().
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    handleStart();
+  }, [handleStart]);
+
   const handleSubmit = useCallback(async () => {
     try {
       const nextNode = await next(form.input);
       if (nextNode.type === 'SuccessNode') {
+        setSuccessReached(true);
         await fetchToken();
       }
     } catch {
@@ -205,16 +239,22 @@ export default function UseDaVinciScenario(): React.JSX.Element {
 
       {node?.type === 'ContinueNode' && !loading && (
         <View>
-          {form.fields.map((field) => (
-            <HookCollectorInput
-              key={field.key}
-              collector={field}
-              value={form.values[field.key]}
-              onValueChange={(val) => form.setValue(field.key, val)}
-              onFlow={handleFlow}
-              onSubmit={handleSubmit}
-            />
-          ))}
+          {(() => {
+            const firstSubmitIndex = form.fields.findIndex(
+              (f) => f.type === 'SUBMIT_BUTTON',
+            );
+            return form.fields.map((field, index) => (
+              <HookCollectorInput
+                key={field.key}
+                collector={field}
+                value={form.values[field.key]}
+                onValueChange={(val) => form.setValue(field.key, val)}
+                onFlow={handleFlow}
+                onSubmit={handleSubmit}
+                isFirstSubmitButton={index === firstSubmitIndex}
+              />
+            ));
+          })()}
           {!form.fields.some((f) => f.type === 'SUBMIT_BUTTON') && (
             <Button
               testID="use-davinci-submit-btn"
@@ -225,7 +265,7 @@ export default function UseDaVinciScenario(): React.JSX.Element {
         </View>
       )}
 
-      {node?.type === 'SuccessNode' && (
+      {successReached && (
         <View>
           <Text testID="use-davinci-success">Success</Text>
           {tokenResult !== null && (
@@ -298,6 +338,7 @@ interface HookCollectorInputProps {
   onValueChange: (val: DaVinciFormValue) => void;
   onFlow: (flowKey: string) => void;
   onSubmit: () => void;
+  isFirstSubmitButton: boolean;
 }
 
 function HookCollectorInput({
@@ -306,6 +347,7 @@ function HookCollectorInput({
   onValueChange,
   onFlow,
   onSubmit,
+  isFirstSubmitButton,
 }: HookCollectorInputProps): React.JSX.Element | null {
   const testID = `use-davinci-field-${collector.key}`;
 
@@ -346,10 +388,21 @@ function HookCollectorInput({
 
   if (collector.kind === 'flow') {
     if (collector.type === 'SUBMIT_BUTTON') {
+      const label = (collector as { label?: string }).label || 'Submit';
+      // A flow screen can carry several submit buttons (e.g. Sign On /
+      // Register / Trouble) and tests must target one specifically, so give
+      // every button a label-derived testID (lowercase alphanumerics). The
+      // first additionally keeps the shared alias so single-button flows
+      // work with the generic use-davinci-submit-btn testID.
+      const labelKey = label.toLowerCase().replace(/[^a-z0-9]+/g, '');
       return (
         <Button
-          testID="use-davinci-submit-btn"
-          title={(collector as { label?: string }).label || 'Submit'}
+          testID={
+            isFirstSubmitButton
+              ? 'use-davinci-submit-btn'
+              : `use-davinci-submit-${labelKey}`
+          }
+          title={label}
           onPress={onSubmit}
         />
       );
