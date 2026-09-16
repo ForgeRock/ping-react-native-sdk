@@ -1,7 +1,6 @@
 {
   "name": "@ping-identity/rn-davinci",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.1.0-beta.0",
   "description": "Ping Identity DaVinci orchestration for React Native",
   "homepage": "https://www.pingidentity.com/",
   "license": "MIT",
@@ -34,10 +33,10 @@
     "android"
   ],
   "dependencies": {
-    "@ping-identity/rn-types": "workspace:*"
+    "@ping-identity/rn-types": "workspace:^"
   },
   "peerDependencies": {
-    "@ping-identity/rn-core": "workspace:*",
+    "@ping-identity/rn-core": "workspace:^",
     "react": "*",
     "react-native": "*"
   },

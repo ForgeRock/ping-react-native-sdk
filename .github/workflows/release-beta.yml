@@ -1,0 +1,164 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+# Release Beta Workflow
+# ----------------
+# Triggered manually via GitHub Actions UI (Actions → Release Beta → Run workflow).
+#
+# Publishes x.y.z-beta.N prereleases of all @ping-identity/* packages to the
+# npm `beta` dist-tag (never `latest`). Beta versions are set manually on the
+# branch before dispatch (see CONTRIBUTING.md "Beta releases").
+#
+# Steps:
+#   1. Checks out the repo using the built-in GITHUB_TOKEN.
+#   2. Installs Node 22 and yarn dependencies.
+#   3. Verifies prerelease state (all versions end in -beta.N, pre mode inactive).
+#   4. Verifies all packages are at the same version (lockstep check).
+#   5. Replaces workspace: references with real versions (changeset publish calls npm
+#      directly and bypasses yarn's workspace: rewriting — this script fills that gap).
+#   6. Verifies no workspace: references remain before publishing.
+#   7. Builds all packages and publishes them to npm via OIDC (no token required),
+#      explicitly with --tag beta.
+#   8. Creates a single repo-level prerelease tag (e.g. v1.1.0-beta.0) and GitHub release.
+#
+# Prerequisites:
+#   - Version bump must be done manually before triggering this workflow:
+#       (merge PRs with changesets as usual)
+#       bump all package versions to x.y.z-beta.N (see CONTRIBUTING.md)
+#       yarn install         # update lockfile
+#       git add -A && git commit && git push
+#   - npm Trusted Publishing must be configured for each @ping-identity/* package on
+#     npmjs.com, pointing to this repo and this workflow file (release-beta.yml).
+#   - Use the dry_run input to validate the run (checks + build only, no publish/tag).
+#
+name: Release Beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Validate only — skip publish, tag, and GitHub release'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  id-token: write # required for npm provenance signing
+
+concurrency:
+  group: release-beta
+  cancel-in-progress: false
+
+jobs:
+  release-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Verify prerelease state
+        # Hard fail unless every package version ends in -beta.N and changesets
+        # pre mode is not active — keeps a stable version from ever being
+        # published through this workflow onto the latest dist-tag.
+        run: node scripts/check-prerelease.mjs beta
+
+      - name: Verify release branch
+        # Publishing (tag push, npm publish) is only allowed from main.
+        # dry_run stays available from any branch for validation.
+        if: ${{ !inputs.dry_run && github.ref_name != 'main' }}
+        run: |
+          echo "::error::Release Beta publishes only from main (got: ${{ github.ref_name }}). Use dry_run to validate from a feature branch."
+          exit 1
+
+      - name: Check lockstep
+        run: yarn release:check-lockstep
+
+      - name: Replace workspace refs with real versions
+        run: node scripts/replace-workspace-refs.mjs
+
+      - name: Check no workspace refs remain
+        run: node scripts/check-workspace-refs.mjs
+
+      - name: Build packages
+        # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
+        run: yarn packages:build
+        env:
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Publish to beta dist-tag
+        if: ${{ !inputs.dry_run }}
+        # Explicit --tag beta: publishes under the beta dist-tag, leaving the
+        # latest tag on the current stable release.
+        run: yarn changeset publish --no-git-tag --tag beta
+        env:
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: Tag release
+        if: ${{ !inputs.dry_run }}
+        # All packages version in lockstep — create a single repo-level tag
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Create GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          NOTES=$(VERSION="$VERSION" node -e "
+            const fs = require('fs');
+            const v = process.env.VERSION;
+            // Prefer the CHANGELOG section for this version (present when
+            // versions were bumped via 'changeset version'); fall back to the
+            // body of the first pending changeset file (manual-bump flow).
+            let notes = '';
+            try {
+              const log = fs.readFileSync('packages/core/CHANGELOG.md', 'utf8');
+              const sections = log.split(/\n## /);
+              const section = sections.find(s => s.startsWith(v));
+              if (section) notes = section.split('\n').slice(1).join('\n').trim();
+            } catch {}
+            if (!notes) {
+              try {
+                const dir = '.changeset';
+                const files = fs.readdirSync(dir)
+                  .filter(f => f.endsWith('.md') && f !== 'config.json' && f !== 'README.md')
+                  .sort();
+                const bodies = files
+                  .map(f => fs.readFileSync(dir + '/' + f, 'utf8').split(/^---$/m).pop().trim())
+                  .filter(Boolean);
+                notes = bodies.join('\n\n');
+              } catch {}
+            }
+            process.stdout.write(notes || 'See CHANGELOG.md for details.');
+          ")
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes "$NOTES" \
+            --prerelease \
+            --verify-tag
