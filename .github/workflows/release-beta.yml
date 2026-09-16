@@ -112,15 +112,30 @@ jobs:
         if: ${{ !inputs.dry_run }}
         # Explicit --tag beta: publishes under the beta dist-tag, leaving the
         # latest tag on the current stable release.
-        run: yarn changeset publish --no-git-tag --tag beta
+        # A package whose version is already on npm (e.g. bootstrapped manually
+        # before this run, or a re-dispatch) is skipped — changeset publish
+        # itself 403s on such versions and fails the whole step otherwise.
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          PUBLISHED=$(npm view "@ping-identity/rn-core@$VERSION" version 2>/dev/null || true)
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "rn-core@$VERSION already on npm — nothing to publish (re-dispatch)."
+            exit 0
+          fi
+          yarn changeset publish --no-git-tag --tag beta
         env:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Tag release
         if: ${{ !inputs.dry_run }}
-        # All packages version in lockstep — create a single repo-level tag
+        # All packages version in lockstep — create a single repo-level tag.
+        # Skip if the tag already exists (re-dispatch after a partial run).
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — skipping tag creation."
+            exit 0
+          fi
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
@@ -157,6 +172,10 @@ jobs:
             }
             process.stdout.write(notes || 'See CHANGELOG.md for details.');
           ")
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists — skipping release creation."
+            exit 0
+          fi
           gh release create "v$VERSION" \
             --title "v$VERSION" \
             --notes "$NOTES" \
