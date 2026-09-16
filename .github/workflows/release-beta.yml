@@ -112,7 +112,17 @@ jobs:
         if: ${{ !inputs.dry_run }}
         # Explicit --tag beta: publishes under the beta dist-tag, leaving the
         # latest tag on the current stable release.
-        run: yarn changeset publish --no-git-tag --tag beta
+        # A package whose version is already on npm (e.g. bootstrapped manually
+        # before this run, or a re-dispatch) is skipped — changeset publish
+        # itself 403s on such versions and fails the whole step otherwise.
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          PUBLISHED=$(npm view "@ping-identity/rn-core@$VERSION" version 2>/dev/null || true)
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "rn-core@$VERSION already on npm — nothing to publish (re-dispatch)."
+            exit 0
+          fi
+          yarn changeset publish --no-git-tag --tag beta
         env:
           NPM_CONFIG_PROVENANCE: true
 
