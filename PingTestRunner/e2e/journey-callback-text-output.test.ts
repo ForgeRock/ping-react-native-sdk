@@ -19,7 +19,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import {
   assertAppReady,
@@ -95,6 +95,10 @@ describe('Journey — TextOutputCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit username → surfaces PasswordCallback field (step 2 — separate node)', async () => {
@@ -109,6 +113,10 @@ describe('Journey — TextOutputCallback', () => {
     await waitFor(element(by.id('journey-field-PasswordCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-PasswordCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit password → surfaces TextOutputCallback display text (step 3)', async () => {
@@ -123,6 +131,10 @@ describe('Journey — TextOutputCallback', () => {
     await waitFor(element(by.id('journey-field-output-TextOutputCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-output-TextOutputCallback:0')),
+    ).toBeVisible();
     const attrs = await element(
       by.id('journey-field-output-TextOutputCallback:0'),
     ).getAttributes();
@@ -140,5 +152,7 @@ describe('Journey — TextOutputCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

@@ -19,7 +19,7 @@
  * Using testUsername would fail the VALID_USERNAME policy and loop back to step 1.
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -30,25 +30,21 @@ import {
 const TREE = 'ValidatedUsernameCallbackTest';
 const SKIP_REASON =
   'Callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
-const NET_TIMEOUT = 30000;
+const NET_TIMEOUT = 45000;
 
 describe('Journey — ValidatedCreateUsernameCallback', () => {
-  const ensureLoginFormVisible = async (): Promise<void> => {
-    try {
-      await waitFor(element(by.id('journey-field-NameCallback:0')))
-        .toBeVisible()
-        .withTimeout(1500);
-      return;
-    } catch {
-      // Continue with start/validated-username flow.
-    }
-
-    await element(by.id('journey-start-btn')).tap();
+  const ensureUsernameStepVisible = async (): Promise<void> => {
+    await element(by.id('journey-start-btn')).atIndex(0).tap();
     await waitFor(
       element(by.id('journey-field-ValidatedCreateUsernameCallback:0')),
     )
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+  };
+
+  const ensureLoginFormVisible = async (): Promise<void> => {
+    await ensureUsernameStepVisible();
+    // Must be unique — reusing testUsername fails the VALID_USERNAME policy
     const uniqueUsername = `e2enew${Date.now()}`;
     await element(
       by.id('journey-field-ValidatedCreateUsernameCallback:0'),
@@ -73,6 +69,10 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
     await device.disableSynchronization();
   });
 
+  beforeEach(async () => {
+    await device.reloadReactNative();
+  });
+
   afterAll(async () => {
     await device.terminateApp();
   });
@@ -86,12 +86,11 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
       console.warn(SKIP_REASON);
       return;
     }
-    await element(by.id('journey-start-btn')).tap();
-    await waitFor(
+    await ensureUsernameStepVisible();
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
       element(by.id('journey-field-ValidatedCreateUsernameCallback:0')),
-    )
-      .toBeVisible()
-      .withTimeout(NET_TIMEOUT);
+    ).toBeVisible();
   });
 
   it('submit unique new username → surfaces login form (step 2)', async () => {
@@ -99,6 +98,7 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
       console.warn(SKIP_REASON);
       return;
     }
+    await ensureUsernameStepVisible();
     // Must be unique — reusing testUsername fails the VALID_USERNAME policy
     const uniqueUsername = `e2enew${Date.now()}`;
     await element(
@@ -108,6 +108,10 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit credentials → reaches SuccessNode (live)', async () => {
@@ -126,5 +130,7 @@ describe('Journey — ValidatedCreateUsernameCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });
