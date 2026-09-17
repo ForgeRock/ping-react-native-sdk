@@ -59,16 +59,16 @@ describe('DaVinci — happy path', () => {
       launchArgs: {
         PING_TEST_SCENARIO: 'davinci',
         ...(DAVINCI_ENV.discoveryEndpoint
-          ? { PING_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint }
+          ? { PINGONE_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint }
           : {}),
         ...(DAVINCI_ENV.clientId
-          ? { PING_CLIENT_ID: DAVINCI_ENV.clientId }
+          ? { PINGONE_CLIENT_ID: DAVINCI_ENV.clientId }
           : {}),
         ...(DAVINCI_ENV.redirectUri
-          ? { PING_REDIRECT_URI: DAVINCI_ENV.redirectUri }
+          ? { PINGONE_REDIRECT_URI: DAVINCI_ENV.redirectUri }
           : {}),
         ...(DAVINCI_ENV.acrValues
-          ? { PING_ACR_VALUES: DAVINCI_ENV.acrValues }
+          ? { PINGONE_ACR_VALUES: DAVINCI_ENV.acrValues }
           : {}),
       },
     });

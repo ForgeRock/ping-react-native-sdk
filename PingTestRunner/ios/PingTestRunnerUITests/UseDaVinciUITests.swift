@@ -17,17 +17,16 @@ final class UseDaVinciUITests: BaseTestCase {
     override func setUp() {
         super.setUp()
         var extras: [String: String] = [
-            "PING_DISCOVERY_ENDPOINT": env.daVinciDiscoveryEndpoint,
-            "PING_CLIENT_ID":          env.daVinciClientId,
-            "PING_REDIRECT_URI":       env.daVinciRedirectUri,
+            "PINGONE_DISCOVERY_ENDPOINT": env.daVinciDiscoveryEndpoint,
+            "PINGONE_CLIENT_ID":          env.daVinciClientId,
+            "PINGONE_REDIRECT_URI":       env.daVinciRedirectUri,
             // Storage survives app relaunches on the simulator; without this a
             // session from a previous test makes start() return SuccessNode
             // immediately (server sends authorizeResponse), skipping the form.
             "PING_CLEAR_STORAGE":      "true",
-            "PING_LOG_LEVEL":          "debug",
         ]
         if !env.daVinciAcrValues.isEmpty {
-            extras["PING_ACR_VALUES"] = env.daVinciAcrValues
+            extras["PINGONE_ACR_VALUES"] = env.daVinciAcrValues
         }
         launchApp(scenario: "use-davinci", extras: extras)
     }
@@ -45,7 +44,10 @@ final class UseDaVinciUITests: BaseTestCase {
 
     // MARK: - Tests
 
-    func testAppLaunchesInUseDaVinciScenario() {
+    func testAppLaunchesInUseDaVinciScenario() throws {
+        // A valid launch requires live DaVinci configuration; without it the
+        // scenario renders its error panel rather than the flow UI.
+        try skipIfNoDaVinciEnv()
         assertAppReady()
     }
 
@@ -115,20 +117,22 @@ final class UseDaVinciErrorUITests: BaseTestCase {
     override func setUp() {
         super.setUp()
         var extras: [String: String] = [
-            "PING_DISCOVERY_ENDPOINT": env.daVinciDiscoveryEndpoint,
-            "PING_CLIENT_ID":          env.daVinciClientId,
-            "PING_REDIRECT_URI":       env.daVinciRedirectUri,
+            "PINGONE_DISCOVERY_ENDPOINT": env.daVinciDiscoveryEndpoint,
+            "PINGONE_CLIENT_ID":          env.daVinciClientId,
+            "PINGONE_REDIRECT_URI":       env.daVinciRedirectUri,
             // Same fresh-session requirement as UseDaVinciUITests.setUp.
             "PING_CLEAR_STORAGE":      "true",
-            "PING_LOG_LEVEL":          "debug",
         ]
         if !env.daVinciAcrValues.isEmpty {
-            extras["PING_ACR_VALUES"] = env.daVinciAcrValues
+            extras["PINGONE_ACR_VALUES"] = env.daVinciAcrValues
         }
         launchApp(scenario: "use-davinci", extras: extras)
     }
 
-    func testAppLaunchesInUseDaVinciScenario() {
+    func testAppLaunchesInUseDaVinciScenario() throws {
+        // A valid launch requires live DaVinci configuration; without it the
+        // scenario renders its error panel rather than the flow UI.
+        try skipIfNoDaVinciEnv()
         assertAppReady()
     }
 

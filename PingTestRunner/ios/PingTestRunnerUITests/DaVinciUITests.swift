@@ -23,16 +23,16 @@ final class DaVinciUITests: BaseTestCase {
             "PING_CLEAR_STORAGE": "true",
         ]
         if !env.daVinciDiscoveryEndpoint.isEmpty {
-            extras["PING_DISCOVERY_ENDPOINT"] = env.daVinciDiscoveryEndpoint
+            extras["PINGONE_DISCOVERY_ENDPOINT"] = env.daVinciDiscoveryEndpoint
         }
         if !env.daVinciClientId.isEmpty {
-            extras["PING_CLIENT_ID"] = env.daVinciClientId
+            extras["PINGONE_CLIENT_ID"] = env.daVinciClientId
         }
         if !env.daVinciRedirectUri.isEmpty {
-            extras["PING_REDIRECT_URI"] = env.daVinciRedirectUri
+            extras["PINGONE_REDIRECT_URI"] = env.daVinciRedirectUri
         }
         if !env.daVinciAcrValues.isEmpty {
-            extras["PING_ACR_VALUES"] = env.daVinciAcrValues
+            extras["PINGONE_ACR_VALUES"] = env.daVinciAcrValues
         }
         launchApp(scenario: "davinci", extras: extras)
     }

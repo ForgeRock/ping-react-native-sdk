@@ -52,13 +52,15 @@ function hasDaVinciEnv(): boolean {
 
 const DAVINCI_LAUNCH_ARGS = {
   PING_TEST_SCENARIO: 'use-davinci',
-  PING_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint,
-  PING_CLIENT_ID: DAVINCI_ENV.clientId,
-  PING_REDIRECT_URI: DAVINCI_ENV.redirectUri,
+  PINGONE_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint,
+  PINGONE_CLIENT_ID: DAVINCI_ENV.clientId,
+  PINGONE_REDIRECT_URI: DAVINCI_ENV.redirectUri,
   // Clear a persisted SSO session at mount so start() reaches the login form
   // instead of returning SuccessNode from a session left by a previous run.
   PING_CLEAR_STORAGE: 'true',
-  ...(DAVINCI_ENV.acrValues ? { PING_ACR_VALUES: DAVINCI_ENV.acrValues } : {}),
+  ...(DAVINCI_ENV.acrValues
+    ? { PINGONE_ACR_VALUES: DAVINCI_ENV.acrValues }
+    : {}),
 };
 
 const NET_TIMEOUT = 30000;

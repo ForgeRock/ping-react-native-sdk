@@ -53,25 +53,25 @@ import type {
 // ─── launch args ─────────────────────────────────────────────────────────────
 
 interface DaVinciLaunchArgs {
-  PING_DISCOVERY_ENDPOINT?: string;
-  PING_CLIENT_ID?: string;
-  PING_REDIRECT_URI?: string;
-  PING_SCOPES?: string;
-  PING_TIMEOUT?: string;
-  PING_ACR_VALUES?: string;
+  PINGONE_DISCOVERY_ENDPOINT?: string;
+  PINGONE_CLIENT_ID?: string;
+  PINGONE_REDIRECT_URI?: string;
+  PINGONE_SCOPES?: string;
+  PINGONE_TIMEOUT?: string;
+  PINGONE_ACR_VALUES?: string;
 }
 
 const args = LaunchArguments.value<DaVinciLaunchArgs>();
-const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
-const CLIENT_ID = args.PING_CLIENT_ID ?? '';
+const DISCOVERY_ENDPOINT = args.PINGONE_DISCOVERY_ENDPOINT ?? '';
+const CLIENT_ID = args.PINGONE_CLIENT_ID ?? '';
 const REDIRECT_URI =
-  args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
-const SCOPES = (args.PING_SCOPES ?? 'openid profile email')
+  args.PINGONE_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+const SCOPES = (args.PINGONE_SCOPES ?? 'openid profile email')
   .split(' ')
   .map((s) => s.trim())
   .filter(Boolean);
-const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
-const ACR_VALUES = args.PING_ACR_VALUES ?? undefined;
+const TIMEOUT = args.PINGONE_TIMEOUT ? Number(args.PINGONE_TIMEOUT) : undefined;
+const ACR_VALUES = args.PINGONE_ACR_VALUES ?? undefined;
 
 // ─── state ───────────────────────────────────────────────────────────────────
 

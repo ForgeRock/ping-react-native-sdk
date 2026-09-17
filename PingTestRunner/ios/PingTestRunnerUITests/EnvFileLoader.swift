@@ -17,8 +17,8 @@ import Foundation
 /// Lookup order (first existing file wins):
 /// 1. `PING_TEST_ENV_FILE` from the process environment (explicit override)
 /// 2. `.env` in the PingTestRunner root, derived from this source file's
-///    compile-time path (`<repo>/PingTestRunner/ios/PingTestRunnerUITests/DotEnv.swift`)
-enum DotEnv {
+///    compile-time path (`<repo>/PingTestRunner/ios/PingTestRunnerUITests/EnvFileLoader.swift`)
+enum EnvFileLoader {
 
     // MARK: - Loading
 
@@ -55,7 +55,7 @@ enum DotEnv {
             candidates.append(URL(fileURLWithPath: override))
         }
 
-        // DotEnv.swift -> PingTestRunnerUITests -> ios -> PingTestRunner
+        // EnvFileLoader.swift -> PingTestRunnerUITests -> ios -> PingTestRunner
         let runnerRoot = URL(fileURLWithPath: sourceFile)
             .deletingLastPathComponent()
             .deletingLastPathComponent()

@@ -45,51 +45,52 @@ import {
   useDaVinciForm,
 } from '@ping-identity/rn-davinci';
 import type {
+  DaVinciClient,
   DaVinciFormValue,
   DaVinciNormalizedCollector,
 } from '@ping-identity/rn-davinci';
-import { logger } from '@ping-identity/rn-logger';
+import { DaVinciError } from '@ping-identity/rn-davinci';
 
 // ─── launch args ─────────────────────────────────────────────────────────────
 
 interface DaVinciLaunchArgs {
-  PING_DISCOVERY_ENDPOINT?: string;
-  PING_CLIENT_ID?: string;
-  PING_REDIRECT_URI?: string;
-  PING_SCOPES?: string;
-  PING_TIMEOUT?: string;
-  PING_ACR_VALUES?: string;
+  PINGONE_DISCOVERY_ENDPOINT?: string;
+  PINGONE_CLIENT_ID?: string;
+  PINGONE_REDIRECT_URI?: string;
+  PINGONE_SCOPES?: string;
+  PINGONE_TIMEOUT?: string;
+  PINGONE_ACR_VALUES?: string;
   PING_CLEAR_STORAGE?: string;
-  PING_LOG_LEVEL?: string;
   PING_AUTOSTART?: string;
 }
 
 const args = LaunchArguments.value<DaVinciLaunchArgs>();
-const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
-const CLIENT_ID = args.PING_CLIENT_ID ?? '';
+const DISCOVERY_ENDPOINT = args.PINGONE_DISCOVERY_ENDPOINT ?? '';
+const CLIENT_ID = args.PINGONE_CLIENT_ID ?? '';
 const REDIRECT_URI =
-  args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
-const SCOPES = (args.PING_SCOPES ?? 'openid profile email')
+  args.PINGONE_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+const SCOPES = (args.PINGONE_SCOPES ?? 'openid profile email')
   .split(' ')
   .map((s) => s.trim())
   .filter(Boolean);
-const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
-const ACR_VALUES = args.PING_ACR_VALUES ?? undefined;
+const TIMEOUT = args.PINGONE_TIMEOUT ? Number(args.PINGONE_TIMEOUT) : undefined;
+const ACR_VALUES = args.PINGONE_ACR_VALUES ?? undefined;
 // PING_CLEAR_STORAGE is consumed natively (AppDelegate): the wipe completes
 // before the RN bundle boots, so start() reaches the login form instead of
 // resuming a stale SSO session. No JS-side gate is needed.
 
 // ─── component ───────────────────────────────────────────────────────────────
 
-export default function UseDaVinciScenario(): React.JSX.Element {
-  const client = useMemo(
-    () =>
-      createDaVinciClient({
-        // Debug logging so E2E failures show the actual flow responses in the
-        // device log (visible via `log show` on the simulator).
-        ...(args.PING_LOG_LEVEL
-          ? { logger: logger({ level: args.PING_LOG_LEVEL as 'debug' }) }
-          : {}),
+// createDaVinciClient throws (argument_error) on empty discoveryEndpoint /
+// clientId / redirectUri. Throwing from render would tear down the whole RN
+// tree — including ping-test-runner-root — and break the app-launch test, so
+// an invalid config is caught here and surfaced through the use-davinci-error
+// testID instead. A placeholder-configured client keeps the useDaVinci hooks
+// valid; it is never used because handleStart() bails when configError is set.
+function createClientOrError(): { client: DaVinciClient; configError: string } {
+  try {
+    return {
+      client: createDaVinciClient({
         modules: {
           oidc: {
             discoveryEndpoint: DISCOVERY_ENDPOINT,
@@ -101,8 +102,30 @@ export default function UseDaVinciScenario(): React.JSX.Element {
         },
         ...(TIMEOUT !== undefined ? { timeout: TIMEOUT } : {}),
       }),
-    [],
-  );
+      configError: '',
+    };
+  } catch (err) {
+    return {
+      client: createDaVinciClient({
+        modules: {
+          oidc: {
+            discoveryEndpoint: 'https://placeholder.invalid',
+            clientId: 'placeholder',
+            redirectUri: REDIRECT_URI,
+            scopes: SCOPES,
+          },
+        },
+      }),
+      configError:
+        err instanceof DaVinciError
+          ? err.message
+          : `Failed to create DaVinci client: ${String(err)}`,
+    };
+  }
+}
+
+export default function UseDaVinciScenario(): React.JSX.Element {
+  const { client, configError } = useMemo(() => createClientOrError(), []);
 
   const {
     node,
@@ -140,6 +163,9 @@ export default function UseDaVinciScenario(): React.JSX.Element {
   }, [user]);
 
   const handleStart = useCallback(async () => {
+    if (configError !== '') {
+      return;
+    }
     try {
       const firstNode = await start();
       if (firstNode.type === 'SuccessNode') {
@@ -149,7 +175,7 @@ export default function UseDaVinciScenario(): React.JSX.Element {
     } catch {
       // error updated by hook
     }
-  }, [start, fetchToken]);
+  }, [configError, start, fetchToken]);
 
   // Debug aid: with -PING_AUTOSTART true the flow starts on mount without
   // waiting for the Start button, so flow traffic can be observed via
@@ -158,8 +184,8 @@ export default function UseDaVinciScenario(): React.JSX.Element {
     if (args.PING_AUTOSTART !== 'true') {
       return;
     }
-    // Intentional mount-time trigger of the external auth system; the rule
-    // flags the hook's internal setLoading(true) inside start().
+    // Intentional mount-time trigger of the external auth system; start()
+    // internally calls setLoading(true) synchronously, which the rule flags.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     handleStart();
   }, [handleStart]);
@@ -225,6 +251,10 @@ export default function UseDaVinciScenario(): React.JSX.Element {
 
   return (
     <View>
+      {configError !== '' && (
+        <Text testID="use-davinci-error">{configError}</Text>
+      )}
+
       <Button
         testID="use-davinci-start-btn"
         title="Start"

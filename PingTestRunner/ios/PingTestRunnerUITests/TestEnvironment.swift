@@ -12,7 +12,7 @@ import Foundation
 /// Values are read from the test-runner process environment. When running on
 /// BrowserStack the `environmentVariables` key in the build API payload populates
 /// ProcessInfo.processInfo.environment for the XCUITest runner process. For local
-/// runs the runner reads the PingTestRunner `.env` file directly (see `DotEnv`);
+/// runs the runner reads the PingTestRunner `.env` file directly (see `EnvFileLoader`);
 /// process environment values take precedence over `.env` entries.
 
 struct TestEnvironment {
@@ -37,7 +37,7 @@ struct TestEnvironment {
     let daVinciPassword:          String
     let daVinciAcrValues:         String
 
-    private static let fileValues: [String: String] = DotEnv.load()
+    private static let fileValues: [String: String] = EnvFileLoader.load()
 
     private init() {
         serverUrl         = Self.readValue("PING_SERVER_URL")          ?? ""
