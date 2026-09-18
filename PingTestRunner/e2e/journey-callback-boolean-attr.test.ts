@@ -16,7 +16,7 @@
  *   3. Toggle and submit   → SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -91,6 +91,10 @@ describe('Journey — BooleanAttributeInputCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit credentials → surfaces BooleanAttributeInputCallback (step 2)', async () => {
@@ -110,6 +114,10 @@ describe('Journey — BooleanAttributeInputCallback', () => {
     )
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-BooleanAttributeInputCallback:0')),
+    ).toBeVisible();
   });
 
   it('toggle switch and submit → reaches SuccessNode (live)', async () => {
@@ -123,5 +131,7 @@ describe('Journey — BooleanAttributeInputCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

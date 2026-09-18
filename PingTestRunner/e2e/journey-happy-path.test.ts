@@ -102,6 +102,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(PASSWORD_INPUT))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(PASSWORD_INPUT)).toBeVisible();
   });
 
   it('next() with valid credentials returns SuccessNode (live)', async () => {
@@ -116,6 +118,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 
   it('access token is available and non-empty after successful login (live)', async () => {
@@ -127,6 +131,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-token-result')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-token-result'))).toBeVisible();
     const attrs = await element(by.id('journey-token-result')).getAttributes();
     const token = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(token.length).toBeGreaterThan(0);
@@ -144,6 +150,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-userinfo-result')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-userinfo-result'))).toBeVisible();
     const attrs = await element(
       by.id('journey-userinfo-result'),
     ).getAttributes();
@@ -161,6 +169,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-refreshed')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-refreshed'))).toBeVisible();
   });
 
   it('revoke() invalidates the session (live)', async () => {
@@ -173,6 +183,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-revoked')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-revoked'))).toBeVisible();
   });
 
   it('logoutUser() clears the session (live)', async () => {
@@ -185,6 +197,8 @@ describe('Journey — happy path', () => {
     await waitFor(element(by.id('journey-logged-out')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-logged-out'))).toBeVisible();
   });
 });
 

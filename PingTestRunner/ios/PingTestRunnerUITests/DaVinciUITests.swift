@@ -16,18 +16,23 @@ final class DaVinciUITests: BaseTestCase {
 
     override func setUp() {
         super.setUp()
-        var extras: [String: String] = [:]
+        var extras: [String: String] = [
+            // Storage survives app relaunches on the simulator; without this a
+            // session from a previous test makes start() return SuccessNode
+            // immediately (server sends authorizeResponse), skipping the form.
+            "PING_CLEAR_STORAGE": "true",
+        ]
         if !env.daVinciDiscoveryEndpoint.isEmpty {
-            extras["PING_DISCOVERY_ENDPOINT"] = env.daVinciDiscoveryEndpoint
+            extras["PINGONE_DISCOVERY_ENDPOINT"] = env.daVinciDiscoveryEndpoint
         }
         if !env.daVinciClientId.isEmpty {
-            extras["PING_CLIENT_ID"] = env.daVinciClientId
+            extras["PINGONE_CLIENT_ID"] = env.daVinciClientId
         }
         if !env.daVinciRedirectUri.isEmpty {
-            extras["PING_REDIRECT_URI"] = env.daVinciRedirectUri
+            extras["PINGONE_REDIRECT_URI"] = env.daVinciRedirectUri
         }
         if !env.daVinciAcrValues.isEmpty {
-            extras["PING_ACR_VALUES"] = env.daVinciAcrValues
+            extras["PINGONE_ACR_VALUES"] = env.daVinciAcrValues
         }
         launchApp(scenario: "davinci", extras: extras)
     }
@@ -62,7 +67,7 @@ final class DaVinciUITests: BaseTestCase {
         waitForElementWithTestID("davinci-field-username", timeout: netTimeout)
         elementWithTestID("davinci-field-username").typeTextWhenReady(env.daVinciUsername)
         elementWithTestID("davinci-field-password").typeTextWhenReady(env.daVinciPassword)
-        elementWithTestID("davinci-submit-btn").tapWhenReady()
+        buttonWithLabel("Sign On").tapWhenReady()
         XCTAssertTrue(
             elementWithTestID("davinci-success").waitForExistence(timeout: netTimeout),
             "Expected davinci-success after valid credentials"
@@ -118,12 +123,18 @@ final class DaVinciUITests: BaseTestCase {
 
     // MARK: - Helpers
 
+    /// Delay before each login so back-to-back tests do not authenticate the
+    /// shared test account in rapid succession; consecutive logins spaced only
+    /// seconds apart have hung the flow with no node rendered.
+    private static let loginSpacing: TimeInterval = 10
+
     private func loginWithValidCredentials() {
+        Thread.sleep(forTimeInterval: Self.loginSpacing)
         elementWithTestID("davinci-start-btn").tapWhenReady()
         waitForElementWithTestID("davinci-field-username", timeout: netTimeout)
         elementWithTestID("davinci-field-username").typeTextWhenReady(env.daVinciUsername)
         elementWithTestID("davinci-field-password").typeTextWhenReady(env.daVinciPassword)
-        elementWithTestID("davinci-submit-btn").tapWhenReady()
+        buttonWithLabel("Sign On").tapWhenReady()
         waitForElementWithTestID("davinci-success", timeout: netTimeout)
     }
 }

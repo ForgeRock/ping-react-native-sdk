@@ -16,7 +16,7 @@
  *   3. Flow pauses for resume → no submit in this tree
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -73,5 +73,9 @@ describe('Journey — SuspendedTextOutputCallback', () => {
     )
       .toExist()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-output-SuspendedTextOutputCallback:0')),
+    ).toExist();
   });
 });
