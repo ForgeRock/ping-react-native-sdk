@@ -38,18 +38,18 @@ const DAVINCI_PASSWORD_KEY =
 
 const USERNAME_INPUT = by.id(`davinci-field-${DAVINCI_USERNAME_KEY}`);
 const PASSWORD_INPUT = by.id(`davinci-field-${DAVINCI_PASSWORD_KEY}`);
-// The login screen carries several submit buttons (Sign On / Register /
-// Trouble); target Sign On by its rendered label. Falls back to the shared
-// testID for single-button flows.
-const SIGNON_BUTTON = by.text('Sign On');
-const SUBMIT_FALLBACK = by.id('davinci-submit-btn');
+// Detox runs only the Android e2e path (iOS e2e is XCUITest). Android
+// uppercases rendered button text, so by.text('Sign On') never matches; the
+// first SUBMIT_BUTTON collector keeps the shared davinci-submit-btn alias,
+// which is the Sign On button in this flow.
+const SUBMIT_BUTTON = by.id('davinci-submit-btn');
+// Consecutive logins to the shared DaVinci test account spaced seconds apart
+// hang the flow with no node rendered; pause before each login the way the
+// iOS XCUITest suite does with its loginSpacing delay.
+const LOGIN_SPACING_MS = 10000;
 
-async function tapSubmitButton(): Promise<void> {
-  try {
-    await element(SIGNON_BUTTON).tap();
-  } catch {
-    await element(SUBMIT_FALLBACK).tap();
-  }
+async function pauseBeforeLogin(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, LOGIN_SPACING_MS));
 }
 
 const SKIP_REASON =
@@ -125,7 +125,8 @@ describe('DaVinci — happy path', () => {
 
     await element(USERNAME_INPUT).typeText(DAVINCI_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText(DAVINCI_ENV.testPassword);
-    await tapSubmitButton();
+    await pauseBeforeLogin();
+    await element(SUBMIT_BUTTON).tap();
     await waitFor(element(by.id('davinci-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
