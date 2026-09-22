@@ -241,6 +241,28 @@ RCT_EXPORT_MODULE()
   [[self swiftImpl] resume:journeyId uri:uri resolver:resolve rejecter:reject];
 }
 
+// Bridges `startBackchannel(journeyId, backchannelUri, options)`.
+// Converts optional start flags into a dictionary payload for Swift.
+- (void)startBackchannel:(NSString *)journeyId
+          backchannelUri:(NSString *)backchannelUri
+                 options:(JS::NativeRNPingJourney::JourneyOptions &)options
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject {
+  NSMutableDictionary *opts = [NSMutableDictionary new];
+  if (options.forceAuth().has_value()) {
+    opts[@"forceAuth"] = @(options.forceAuth().value());
+  }
+  if (options.noSession().has_value()) {
+    opts[@"noSession"] = @(options.noSession().value());
+  }
+
+  [[self swiftImpl] startBackchannel:journeyId
+                        redirectUri:backchannelUri
+                            options:opts
+                           resolver:resolve
+                           rejecter:reject];
+}
+
 // Bridges `getSession(journeyId)`.
 - (void)getSession:(NSString *)journeyId
            resolve:(RCTPromiseResolveBlock)resolve

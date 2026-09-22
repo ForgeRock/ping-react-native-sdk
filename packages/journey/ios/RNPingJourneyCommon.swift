@@ -292,6 +292,87 @@ public final class RNPingJourneyCommon: NSObject {
     }
   }
 
+  /// Starts a Journey from an AM/AIC backchannel (transactional) redirect URI.
+  ///
+  /// Delegates to the native `Journey.start(backchannelUri:)` (ping-ios-sdk
+  /// SDKS-5156): URI validation (host match against `JourneyConfig.serverUrl`,
+  /// non-blank `authIndexType`/`authIndexValue`) runs inside the native method
+  /// and surfaces as a `FailureNode` payload without a network call, so the
+  /// promise is resolved with that payload rather than rejected.
+  /// Bridge-level argument/state errors (blank URI, unknown journey instance)
+  /// still reject, mirroring `start`/`resume`.
+  ///
+  /// - Note: The native method requires a ping-ios-sdk build containing
+  ///   SDKS-5156. The sample/test-runner Podfiles temporarily pin the Ping
+  ///   pods to a develop commit; once the pod release containing SDKS-5156
+  ///   ships, remove the Podfile overrides.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - redirectUri: Gateway-provided backchannel redirect URI.
+  ///   - forceAuth: Whether to force AM authentication despite active sessions.
+  ///   - noSession: Whether to avoid creating/updating an AM session.
+  ///   - resolver: Promise resolver called with first node payload.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc
+  public static func startBackchannel(
+    _ journeyId: String,
+    redirectUri: String,
+    forceAuth: Bool,
+    noSession: Bool,
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let promise = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    if redirectUri.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      promise.reject(
+        JourneyErrorMapper.argument(
+          code: .startError,
+          message: "Backchannel URI must not be empty"
+        )
+      )
+      return
+    }
+
+    guard let backchannelUrl = URL(
+      string: redirectUri.trimmingCharacters(in: .whitespacesAndNewlines)
+    ) else {
+      // Mirror the native start(backchannelUri:) contract: validation failures
+      // surface as FailureNode payloads, never rejections. The native method
+      // cannot be reached with an unparseable URL, so the bridge resolves the
+      // same FailureNode shape native produces for malformed input.
+      let failureNode = FailureNode(
+        cause: ApiError.error(
+          400,
+          [:],
+          "Invalid URI or missing authIndexType/authIndexValue"
+        )
+      )
+      stateStore.setNode(journeyId: journeyId, node: failureNode)
+      promise.resolve(JourneyNodeMapper.mapNode(failureNode))
+      return
+    }
+
+    Task { @MainActor in
+      guard let journey = await resolveJourney(journeyId) else {
+        promise.reject(
+          JourneyErrorMapper.state(
+            code: .stateError,
+            message: "Journey instance not found for id=\(journeyId)"
+          )
+        )
+        return
+      }
+
+      let node = await journey.start(backchannelUri: backchannelUrl) {
+        $0.forceAuth = forceAuth
+        $0.noSession = noSession
+      }
+      stateStore.setNode(journeyId: journeyId, node: node)
+      promise.resolve(JourneyNodeMapper.mapNode(node))
+    }
+  }
+
   /// Resolves active session data for a Journey user.
   ///
   /// - Parameters:

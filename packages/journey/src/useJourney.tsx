@@ -14,6 +14,7 @@ import React, {
 } from 'react';
 import { JourneyError } from './types/error.types';
 import type {
+  JourneyBackchannelOptions,
   JourneyClient,
   JourneyNextInput,
   JourneyNode,
@@ -38,6 +39,24 @@ export type JourneyHookActions = {
   start: (
     journeyName: string,
     options?: JourneyStartOptions,
+  ) => Promise<JourneyNode>;
+
+  /**
+   * Start a Journey from an AM/AIC backchannel (transactional) redirect URI.
+   *
+   * @param uri - Gateway-provided `redirectUri` value carrying
+   * `authIndexType`/`authIndexValue` query parameters.
+   * @param options - Optional backchannel flags (`forceAuth`, `noSession`),
+   * both defaulting to `false`.
+   * @returns First Journey node. URI validation failures resolve as
+   * `FailureNode` payloads without a network call; AM 4xx outcomes surface
+   * AM's message on an `ErrorNode`.
+   * @throws {JourneyError} With `argument_error` when the URI is empty or
+   * whitespace-only, and for bridge-level failures.
+   */
+  startBackchannel: (
+    uri: string,
+    options?: JourneyBackchannelOptions,
   ) => Promise<JourneyNode>;
 
   /**
@@ -154,6 +173,9 @@ const missingJourneyClient: JourneyClient = {
     throw missingJourneyClientError;
   },
   async start(): Promise<JourneyNode> {
+    throw missingJourneyClientError;
+  },
+  async startBackchannel(): Promise<JourneyNode> {
     throw missingJourneyClientError;
   },
   async next(): Promise<JourneyNode> {
@@ -304,6 +326,28 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
     [client],
   );
 
+  const startBackchannel = useCallback(
+    async (
+      uri: string,
+      options: JourneyBackchannelOptions = {},
+    ): Promise<JourneyNode> => {
+      try {
+        setLoading(true);
+        setError(null);
+        const backchannelNode = await client.startBackchannel(uri, options);
+        setNode(backchannelNode);
+        return backchannelNode;
+      } catch (err) {
+        const typed = JourneyError.from(err);
+        setError(typed);
+        throw typed;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [client],
+  );
+
   const user = useCallback(async (): Promise<JourneyUserSession | null> => {
     return await client.user();
   }, [client]);
@@ -340,6 +384,7 @@ function useJourneyState(client: JourneyClient): JourneyHookResult {
     node,
     {
       start,
+      startBackchannel,
       next,
       resume,
       user,

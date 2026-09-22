@@ -16,9 +16,11 @@ import {
   refreshSession,
   revokeSession,
   resumeJourney,
+  startBackchannelJourney,
   startJourney,
 } from './journeyMethods';
 import type {
+  JourneyBackchannelOptions,
   JourneyClient,
   JourneyConfig,
   JourneyNextInput,
@@ -256,6 +258,27 @@ export function createJourneyClient(config: JourneyConfig): JourneyClient {
         return node;
       } catch (error) {
         logError('Journey resume failed', error, { journeyId: id });
+        throw error;
+      }
+    },
+
+    async startBackchannel(uri: string, options?: JourneyBackchannelOptions) {
+      if (!uri.trim()) {
+        throw new JourneyError(
+          'Backchannel URI must not be empty.',
+          'JOURNEY_START_ERROR',
+          'argument_error',
+        );
+      }
+
+      const id = await ensureConfigured();
+      logDebug('Journey backchannel start requested');
+      try {
+        const node = await startBackchannelJourney(id, uri, options);
+        logInfo('Journey backchannel start succeeded', { journeyId: id });
+        return node;
+      } catch (error) {
+        logError('Journey backchannel start failed', error, { journeyId: id });
         throw error;
       }
     },

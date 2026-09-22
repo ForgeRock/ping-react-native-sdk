@@ -43,11 +43,20 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.util.Locale
 
 /**
  * Unit tests for Journey node and callback mapping.
+ *
+ * Robolectric is required (not plain JUnit) because journey 2.2's stage
+ * localization reads `android.os.LocaleList.getAdjustedDefault()`, which only
+ * behaves under a Robolectric sandbox.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [29])
 class JourneyNodeMapperTest {
 
     private lateinit var originalLocale: Locale
@@ -140,7 +149,9 @@ class JourneyNodeMapperTest {
     @Test
     fun mapContinueNodeResolvesSubmitButtonTextByExactLocaleMatch() {
         Locale.setDefault(Locale.forLanguageTag("en-CA"))
-        val stageJson = """{"submitButtonText":{"en_ca":"Continue CA","fr_fr":"Continuer FR"}}"""
+        // journey 2.2 stage matching compares hyphen-normalized language tags,
+        // so the stage keys use hyphen case (underscore keys no longer match).
+        val stageJson = """{"submitButtonText":{"en-ca":"Continue CA","fr-fr":"Continuer FR"}}"""
         val node = continueNode(buildJsonObject { put("stage", stageJson) })
 
         val map = JourneyNodeMapper.mapNodePayload(node)

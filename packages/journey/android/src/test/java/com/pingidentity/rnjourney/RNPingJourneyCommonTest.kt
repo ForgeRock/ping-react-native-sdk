@@ -19,7 +19,9 @@ import com.pingidentity.oidc.OidcError
 import com.pingidentity.oidc.User
 import com.pingidentity.orchestrate.Action
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.FlowContext
+import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
@@ -49,6 +51,23 @@ class RNPingJourneyCommonTest {
 
   @Before
   fun setUp() {
+    // The production mapper constructs native-backed bridge maps, which cannot
+    // initialize in the Robolectric sandbox; resolve-path tests use the pure
+    // Kotlin payload mapper wrapped in a JavaOnlyMap instead.
+    RNPingJourneyCommon.mapNodeForBridge = { node, logger ->
+      val map = JavaOnlyMap()
+      JourneyNodeMapper.mapNodePayload(node, logger).forEach { (key, value) ->
+        when (value) {
+          null -> map.putNull(key)
+          is Boolean -> map.putBoolean(key, value)
+          is Int -> map.putInt(key, value)
+          is Double -> map.putDouble(key, value)
+          is String -> map.putString(key, value)
+          else -> map.putString(key, value.toString())
+        }
+      }
+      map
+    }
     RNPingJourneyCommon.configure()
   }
 
@@ -104,6 +123,186 @@ class RNPingJourneyCommonTest {
     val error = captureReject(promise)
     assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
     assertEquals(JourneyErrorCodes.RESUME, error.getString("error"))
+  }
+
+  @Test
+  fun startBackchannel_rejectsWhenJourneyMissing() {
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      "missing",
+      backchannelUri(),
+      null,
+      promise
+    )
+
+    val error = captureReject(promise)
+    assertEquals(ErrorType.STATE_ERROR.rawValue, error.getString("type"))
+    assertEquals(JourneyErrorCodes.STATE, error.getString("error"))
+  }
+
+  @Test
+  fun startBackchannel_rejectsWhenUriIsBlank() {
+    val workflow = Workflow(WorkflowConfig())
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(journeyId, "   ", null, promise)
+
+    val error = captureReject(promise)
+    assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
+    assertEquals(JourneyErrorCodes.START, error.getString("error"))
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenConfigMissing() {
+    val workflow = Workflow(WorkflowConfig())
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(journeyId, backchannelUri(), null, promise)
+
+    promise.await()
+    assertEquals(null, promise.rejectCode)
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    // Native start(backchannelUri:) reports a bare WorkflowConfig as
+    // "JourneyConfig missing" (config as? JourneyConfig == null).
+    assertTrue(node.cause.message?.contains("JourneyConfig") == true)
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenServerUrlUnset() {
+    // JourneyConfig with serverUrl never assigned: the lateinit read inside
+    // native start(backchannelUri:) surfaces its "serverUrl" failure message.
+    val journeyId = registerWorkflow(Workflow(com.pingidentity.journey.JourneyConfig()))
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(journeyId, backchannelUri(), null, promise)
+
+    promise.await()
+    assertEquals(null, promise.rejectCode)
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    assertTrue(node.cause.message?.contains("serverUrl") == true)
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenHostMismatch() {
+    val workflow = Workflow(journeyConfig(serverUrl = "https://tenant.example.com"))
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      backchannelUri(host = "evil.example.com"),
+      null,
+      promise
+    )
+
+    promise.await()
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    assertTrue(node.cause.message?.contains("does not match") == true)
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenAuthIndexParamsMissing() {
+    val workflow = Workflow(journeyConfig(serverUrl = "https://tenant.example.com"))
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      backchannelUri(withParams = false),
+      null,
+      promise
+    )
+
+    promise.await()
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    // Native message (SDKS-5157): "Missing authIndexType or authIndexValue".
+    assertTrue(node.cause.message?.contains("authIndex") == true)
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenParamsWhitespaceOnly() {
+    val workflow = Workflow(journeyConfig(serverUrl = "https://tenant.example.com"))
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      backchannelUri(authIndexValue = "%20%20"),
+      null,
+      promise
+    )
+
+    promise.await()
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    assertTrue(node.cause.message?.contains("authIndex") == true)
+  }
+
+  @Test
+  fun startBackchannel_resolvesFailureNodeWhenUriNotHierarchical() {
+    val workflow = Workflow(journeyConfig(serverUrl = "https://tenant.example.com"))
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      "mailto:transaction-only-opaque",
+      null,
+      promise
+    )
+
+    promise.await()
+    val node = checkNotNull(capturedNode(journeyId) as? FailureNode) {
+      "Expected FailureNode, got ${capturedNode(journeyId)}"
+    }
+    assertTrue(node.cause.message?.contains("hierarchical") == true)
+  }
+
+  @Test
+  fun startBackchannel_doesNotRejectValidationFailures() {
+    val workflow = Workflow(journeyConfig(serverUrl = "https://tenant.example.com"))
+    val journeyId = registerWorkflow(workflow)
+    val promise = TestPromise()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      backchannelUri(host = "evil.example.com"),
+      null,
+      promise
+    )
+
+    promise.await()
+    assertEquals(null, promise.rejectThrowable)
+    assertEquals(null, promise.rejectCode)
+    assertTrue(capturedNode(journeyId) is FailureNode)
+  }
+
+  private fun journeyConfig(serverUrl: String?): com.pingidentity.journey.JourneyConfig {
+    return com.pingidentity.journey.JourneyConfig().apply { this.serverUrl = serverUrl ?: "" }
+  }
+
+  private fun backchannelUri(
+    host: String = "tenant.example.com",
+    withParams: Boolean = true,
+    authIndexValue: String = "tx-abc-123",
+  ): String {
+    val base = "https://$host/am/UI/Login?realm=%2Falpha"
+    if (!withParams) {
+      return base
+    }
+    return "$base&authIndexType=transaction&authIndexValue=$authIndexValue"
   }
 
   @Test
@@ -345,6 +544,15 @@ class RNPingJourneyCommonTest {
     map[journeyId] = continueNode
   }
 
+  /** Reads the bridge's stored node state for assertions without native maps. */
+  private fun capturedNode(journeyId: String): Node? {
+    val field = RNPingJourneyCommon::class.java.getDeclaredField("nodeMap")
+    field.isAccessible = true
+    @Suppress("UNCHECKED_CAST")
+    val map = field.get(RNPingJourneyCommon) as MutableMap<String, Node>
+    return map[journeyId]
+  }
+
   private fun registerWorkflow(workflow: Workflow): String {
     val clazz = Class.forName("com.pingidentity.rnjourney.RNPingJourneyCommon\$JourneyHandle")
     val ctor = clazz.getDeclaredConstructor(Workflow::class.java, String::class.java)
@@ -457,6 +665,7 @@ private open class BaseCallback : Callback {
 
 private class UnsupportedCustomCallback : BaseCallback()
 
+
 private class DeviceProfileCallback : BaseCallback()
 
 private class DummyContinueNode(
@@ -471,3 +680,5 @@ private class DummyContinueNode(
     throw UnsupportedOperationException("DummyContinueNode.asRequest should not be called in this test")
   }
 }
+
+

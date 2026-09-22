@@ -118,6 +118,34 @@ public final class RNPingJourneyImpl: NSObject, @unchecked Sendable {
     RNPingJourneyCommon.resume(journeyId, uri: uri, resolver: resolver, rejecter: rejecter)
   }
 
+  /// Starts a Journey from an AM/AIC backchannel (transactional) redirect URI.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey id.
+  ///   - redirectUri: Gateway-provided backchannel redirect URI.
+  ///   - options: Optional start flags (`forceAuth`, `noSession`).
+  ///   - resolver: Promise resolver called with first node payload.
+  ///   - rejecter: Promise rejecter called with `GenericError`.
+  @objc(startBackchannel:redirectUri:options:resolver:rejecter:)
+  public func startBackchannel(
+    _ journeyId: String,
+    redirectUri: String,
+    options: NSDictionary?,
+    resolver: @escaping NodeResolver,
+    rejecter: @escaping PromiseRejecter
+  ) {
+    let forceAuth = options?["forceAuth"] as? Bool ?? false
+    let noSession = options?["noSession"] as? Bool ?? false
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      redirectUri: redirectUri,
+      forceAuth: forceAuth,
+      noSession: noSession,
+      resolver: resolver,
+      rejecter: rejecter
+    )
+  }
+
   /// Resolves session details for an active Journey user.
   ///
   /// - Parameters:

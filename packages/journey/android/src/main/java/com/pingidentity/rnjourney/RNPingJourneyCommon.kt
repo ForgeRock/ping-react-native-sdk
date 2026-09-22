@@ -11,6 +11,7 @@ import android.net.Uri
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
+import com.pingidentity.exception.ApiException
 import com.pingidentity.journey.plugin.callbacks
 import com.pingidentity.journey.resume
 import com.pingidentity.journey.session
@@ -20,6 +21,7 @@ import com.pingidentity.logger.Logger
 import com.pingidentity.oidc.Token
 import com.pingidentity.oidc.module.VERIFICATION_URI_COMPLETE
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.orchestrate.FailureNode
 import com.pingidentity.orchestrate.Node
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.utils.Result
@@ -59,6 +61,15 @@ internal object RNPingJourneyCommon {
 
   /** Coroutine scope used for all async bridge work. */
   private var scope: CoroutineScope = createScope()
+  /**
+   * Node-to-bridge mapper seam. Defaults to the production
+   * [JourneyNodeMapper.mapNode]; JVM tests override it because the production
+   * mapper constructs native-backed bridge maps that cannot initialize in
+   * Robolectric's sandbox.
+   */
+  internal var mapNodeForBridge: (Node, Logger?) -> Any = { node, logger ->
+    JourneyNodeMapper.mapNode(node, logger)
+  }
   /** Core registry storing Journey workflow handles. */
   private val journeyRegistry = CoreRuntime.journeyRegistry
   /** Last known node for each active journey id. */
@@ -264,7 +275,74 @@ internal object RNPingJourneyCommon {
         }
       }
       setNodeState(journeyId, node)
-      promise.resolve(JourneyNodeMapper.mapNode(node, resolveJourneyLogger(journeyId)))
+      promise.resolve(mapNodeForBridge(node, resolveJourneyLogger(journeyId)))
+    }
+  }
+
+  /**
+   * Start a Journey from an AM/AIC backchannel (transactional) redirect URI.
+   *
+   * Delegates to the native `Journey.start(backchannelUri:)` (ping-android-sdk
+   * SDKS-5157, available since journey 2.2.0): URI validation (hierarchical
+   * form, host match against `JourneyConfig.serverUrl`, non-blank
+   * `authIndexType`/`authIndexValue`) runs inside the native method and
+   * surfaces as a `FailureNode` payload without a network call, so the promise
+   * is resolved with that payload rather than rejected. Bridge-level
+   * argument/state errors (blank URI, unknown journey instance) still reject,
+   * mirroring `start`/`resume`.
+   *
+   * @param journeyId Native journey instance id.
+   * @param backchannelUri Gateway-provided redirect URI carrying
+   * `authIndexType`/`authIndexValue` query parameters.
+   * @param options Optional start flags (`forceAuth`, `noSession`).
+   * @param promise Promise resolved with the first node payload.
+   */
+  fun startBackchannel(journeyId: String, backchannelUri: String, options: ReadableMap?, promise: Promise) {
+    val workflow = resolveWorkflow(journeyId)
+    if (workflow == null) {
+      promise.reject(
+        JourneyErrorMapper.state(
+          JourneyErrorCodes.STATE,
+          "Journey instance not found for id=$journeyId"
+        )
+      )
+      return
+    }
+
+    if (backchannelUri.isBlank()) {
+      promise.reject(
+        JourneyErrorMapper.argument(
+          JourneyErrorCodes.START,
+          "Backchannel URI must not be empty"
+        )
+      )
+      return
+    }
+
+    val parsedUri = runCatching { Uri.parse(backchannelUri.trim()) }.getOrNull()
+    if (parsedUri == null) {
+      // Uri.parse is permissive; a null here means a malformed input the
+      // native API would also reject — surface it as a FailureNode payload.
+      val failureNode = FailureNode(
+        ApiException(400, "Invalid URI or missing authIndexType/authIndexValue")
+      )
+      setNodeState(journeyId, failureNode)
+      promise.resolve(
+        mapNodeForBridge(failureNode, resolveJourneyLogger(journeyId))
+      )
+      return
+    }
+
+    val forceAuthFlag = getBooleanOption(options, "forceAuth")
+    val noSessionFlag = getBooleanOption(options, "noSession")
+
+    scope.launchBridge(promise, JourneyErrorCodes.START) {
+      val node = workflow.start(parsedUri) {
+        forceAuth = forceAuthFlag
+        noSession = noSessionFlag
+      }
+      setNodeState(journeyId, node)
+      promise.resolve(mapNodeForBridge(node, resolveJourneyLogger(journeyId)))
     }
   }
 
@@ -346,7 +424,7 @@ internal object RNPingJourneyCommon {
         }
         val nextNode = currentNode.next()
         setNodeState(journeyId, nextNode)
-        promise.resolve(JourneyNodeMapper.mapNode(nextNode, resolveJourneyLogger(journeyId)))
+        promise.resolve(mapNodeForBridge(nextNode, resolveJourneyLogger(journeyId)))
       } catch (error: JourneyCallbackValueApplier.MissingIntegrationException) {
         promise.reject(
           GenericError(
@@ -410,7 +488,7 @@ internal object RNPingJourneyCommon {
     scope.launchBridge(promise, JourneyErrorCodes.RESUME) {
       val resumedNode = workflow.resume(Uri.parse(uri))
       setNodeState(journeyId, resumedNode)
-      promise.resolve(JourneyNodeMapper.mapNode(resumedNode, resolveJourneyLogger(journeyId)))
+      promise.resolve(mapNodeForBridge(resumedNode, resolveJourneyLogger(journeyId)))
     }
   }
 

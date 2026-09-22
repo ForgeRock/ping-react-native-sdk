@@ -27,12 +27,17 @@ type Props = NativeStackScreenProps<RootStackParamList, 'JourneyHelper'> & {
 /**
  * Renders the helper-driven Journey sample screen.
  *
+ * When opened with `backchannelEntry`, the screen presents the AM/AIC
+ * transactional backchannel entry (gateway redirect URI input), mirroring
+ * the native sample app's dedicated Backchannel Auth screen.
+ *
  * @param props - Native stack screen props.
  * @returns Journey helper screen element.
  */
 export default function JourneyHelperScreen(props: Props): React.ReactElement {
   const initialJourneyName = props.route.params?.journeyName?.trim() ?? '';
   const verificationUri = props.route.params?.verificationUri;
+  const backchannelEntry = props.route.params?.backchannelEntry === true;
   const { externalIdpRedirectUri, journeyClient } = props;
   const onAuthenticated = useCallback((): void => {
     props.navigation.reset({
@@ -48,6 +53,7 @@ export default function JourneyHelperScreen(props: Props): React.ReactElement {
         initialJourneyName={initialJourneyName}
         startOptions={verificationUri ? { verificationUri } : undefined}
         autoStartOnMount={initialJourneyName.length > 0}
+        backchannelEntry={backchannelEntry}
         onAuthenticated={onAuthenticated}
         requireSuccessConfirmation
       />

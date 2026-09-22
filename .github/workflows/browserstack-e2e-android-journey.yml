@@ -62,6 +62,12 @@ on:
       PING_CALLBACK_TREES_ENABLED:
         description: Flag enabling callback tree coverage in BrowserStack E2E tests
         required: false
+      PING_BACKCHANNEL_CLIENT_ID:
+        description: Backchannel gateway OAuth2 client id for transactional backchannel E2E
+        required: false
+      PING_BACKCHANNEL_CLIENT_SECRET:
+        description: Backchannel gateway OAuth2 client secret for transactional backchannel E2E
+        required: false
       PINGONE_DISCOVERY_ENDPOINT:
         description: PingOne DaVinci OIDC discovery endpoint
         required: false
@@ -109,6 +115,8 @@ jobs:
       PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
       PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
       PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+      PING_BACKCHANNEL_CLIENT_ID: ${{ secrets.PING_BACKCHANNEL_CLIENT_ID }}
+      PING_BACKCHANNEL_CLIENT_SECRET: ${{ secrets.PING_BACKCHANNEL_CLIENT_SECRET }}
       PINGONE_DISCOVERY_ENDPOINT: ${{ secrets.PINGONE_DISCOVERY_ENDPOINT }}
       PINGONE_CLIENT_ID: ${{ secrets.PINGONE_CLIENT_ID }}
       PINGONE_REDIRECT_URI: ${{ secrets.PINGONE_REDIRECT_URI }}
