@@ -14,7 +14,7 @@
  *   testNoneLogger    → level 'none' logger creates without throwing
  */
 
-import { device, element, by, expect as detoxExpect } from 'detox';
+import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 import { assertAppReady } from './setup';
 
 describe('Logger — bridge verification', () => {
@@ -35,21 +35,33 @@ describe('Logger — bridge verification', () => {
 
   it('logger({ level: debug }) creates without throwing', async () => {
     await element(by.id('logger-create-btn')).tap();
+    await waitFor(element(by.id('logger-ready')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('logger-ready'))).toBeVisible();
   });
 
   it('debug(), info(), warn(), error() all callable without throwing', async () => {
     await element(by.id('logger-log-btn')).tap();
+    await waitFor(element(by.id('logger-logged')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('logger-logged'))).toBeVisible();
   });
 
   it('changeLevel(warn) completes without throwing', async () => {
     await element(by.id('logger-change-level-btn')).tap();
+    await waitFor(element(by.id('logger-level-changed')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('logger-level-changed'))).toBeVisible();
   });
 
   it('logger({ level: none }) creates without throwing', async () => {
     await element(by.id('logger-none-btn')).tap();
+    await waitFor(element(by.id('logger-none-ready')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('logger-none-ready'))).toBeVisible();
   });
 
