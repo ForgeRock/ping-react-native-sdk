@@ -12,6 +12,7 @@ import type {
   DeviceAuthenticationCollector,
   DeviceRegistrationCollector,
   FlowCollector,
+  ImageCollector,
   IntegrationCollector,
   LabelCollector,
   MultiSelectCollector,
@@ -75,6 +76,7 @@ export type DaVinciExecutionMode =
  * - `output`       — display-only content (LABEL, READ_ONLY_TEXT)
  * - `polling`      — async out-of-band polling status (POLLING), driven by `pollStatus`
  * - `qrCode`       — display-only QR code image (QR_CODE)
+ * - `image`        — display-only image (IMAGE)
  * - `flow`         — immediate-submit action (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
  * - `integration`  — handled by an external integration package (future collectors)
  * - `unknown`      — unrecognised type
@@ -92,6 +94,7 @@ export type DaVinciFieldKind =
   | 'output'
   | 'polling'
   | 'qrCode'
+  | 'image'
   | 'flow'
   | 'integration'
   | 'unknown';
@@ -148,6 +151,7 @@ export type DaVinciNormalizedCollector =
   | (ReadOnlyTextCollector & DaVinciNormalizedMetadata<'output'>)
   | (PollingCollector & DaVinciNormalizedMetadata<'polling'>)
   | (QRCodeCollector & DaVinciNormalizedMetadata<'qrCode'>)
+  | (ImageCollector & DaVinciNormalizedMetadata<'image'>)
   | (IntegrationCollector & DaVinciNormalizedMetadata<'integration'>)
   | (IntegrationCollector & DaVinciNormalizedMetadata<'unknown'>);
 
