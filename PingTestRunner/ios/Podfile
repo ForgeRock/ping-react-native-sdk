@@ -46,6 +46,10 @@ target 'PingTestRunner' do
     PingStorage PingTamperDetector
   ].each { |name| pod name, ping_ios_develop }
 
+  # AppCheckCore -> GoogleUtilities/RecaptchaInterop: neither defines a module,
+  # which Swift requires to import them under static linkage.
+  pod 'RecaptchaInterop', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
 
   # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
   pod 'RNPingBrowser',

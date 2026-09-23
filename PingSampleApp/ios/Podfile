@@ -47,8 +47,7 @@ target 'PingSampleApp' do
     PingNetwork PingOath PingOidc PingOneProtect PingOrchestrate PingPush
     PingStorage PingTamperDetector
   ].each { |name| pod name, ping_ios_develop }
-
-
+  
   pod 'RNPingCore', :path => '../../packages/core'
   pod 'RNPingPush',
   :path => '../../node_modules/@ping-identity/rn-push'
