@@ -543,6 +543,55 @@ export type QRCodeCollector = {
 };
 
 /**
+ * Display-only image collector — surfaces an image in a DaVinci form.
+ *
+ * @remarks
+ * Does not extend {@link BaseCollector} — like {@link QRCodeCollector}, the
+ * native `ImageCollector` (Android: `Collector<Nothing>`; iOS: `Collector`)
+ * does not implement `FieldCollector` and therefore has no `label`,
+ * `required`, or mutable value.
+ *
+ * Does not participate in form submission — native `payload()` always returns
+ * `nil`/`null` on both platforms, and the submit helper excludes it via its
+ * `output_only` execution mode.
+ *
+ * Field names, optionality, and defaults mirror the native 2.2
+ * `ImageCollector` exactly (iOS `Davinci/Davinci/collector/ImageCollector.swift`,
+ * Android `davinci/src/main/kotlin/com/pingidentity/davinci/collector/ImageCollector.kt`):
+ * `key`, `imageUrl`, and `description` default to `""` when the server omits
+ * them; `hyperlinkUrl` is absent when the server omits it. The SDK never
+ * downloads, caches, renders, or opens these URLs — the app renders the image
+ * and handles the hyperlink itself.
+ *
+ * @public
+ */
+export type ImageCollector = {
+  /** Unique collector key identifying this field in the form. */
+  key: string;
+  type: 'IMAGE';
+  /** URL of the image to display (surfaced as received, no transformation). */
+  imageUrl: string;
+  /** Description / alt text for the image. */
+  description: string;
+  /**
+   * Optional hyperlink URL associated with the image.
+   *
+   * @remarks
+   * Omitted from the bridge payload when the server does not send
+   * `hyperlinkUrl` (native default `nil`/`null`).
+   */
+  hyperlinkUrl?: string;
+  /**
+   * Raw server-side field JSON from `node.input.form.components.fields[]`.
+   *
+   * @remarks
+   * Populated by the native mapper via the shared `raw` lookup (both platforms'
+   * native `ImageCollector.id` returns the stable `key`).
+   */
+  raw?: Record<string, unknown>;
+};
+
+/**
  * Discriminated union of all collector types returned by the DaVinci bridge.
  *
  * @public
@@ -562,7 +611,8 @@ export type DaVinciCollector =
   | BooleanCollector
   | ReadOnlyTextCollector
   | PollingCollector
-  | QRCodeCollector;
+  | QRCodeCollector
+  | ImageCollector;
 
 /**
  * Discriminated union of streamed polling status events emitted by

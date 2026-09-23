@@ -19,9 +19,13 @@ pre-commit:
       glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp}'
       run: scripts/check-copyright.sh {staged_files}
 
-    - name: native-sdk-versions
-      glob: '*.{gradle,podspec}'
-      run: node scripts/check-native-sdk-versions.mjs
+    # TEMPORARY (SDKS-5380): disabled while journey pins 2.2.0-beta2 on
+    # Android (unreleased backchannel method) — iOS pods have no 2.2.0 yet,
+    # so the all-packages single-version rule cannot hold. Re-enable for the
+    # 1.2 release once native pins converge on 2.2.0.
+    # - name: native-sdk-versions
+    #   glob: '*.{gradle,podspec}'
+    #   run: node scripts/check-native-sdk-versions.mjs
 
 pre-push:
   jobs:

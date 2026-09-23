@@ -83,6 +83,10 @@ describe('resolveExecutionMode', () => {
     expect(resolveExecutionMode('QR_CODE')).toBe('output_only');
   });
 
+  it('returns output_only for IMAGE', () => {
+    expect(resolveExecutionMode('IMAGE')).toBe('output_only');
+  });
+
   it('never returns integration_required for any base-registry type', () => {
     const allKnownTypes = [...manualTypes, 'LABEL', ...immediateTypes];
     allKnownTypes.forEach((type) => {
@@ -166,6 +170,10 @@ describe('resolveFieldKind', () => {
 
   it('returns qrCode for QR_CODE', () => {
     expect(resolveFieldKind('QR_CODE')).toBe('qrCode');
+  });
+
+  it('returns image for IMAGE', () => {
+    expect(resolveFieldKind('IMAGE')).toBe('image');
   });
 });
 
@@ -469,6 +477,47 @@ describe('normalizeCollectors — POLLING and QR_CODE', () => {
       requiresUserInput: false,
       kind: 'qrCode',
     });
+  });
+});
+
+describe('normalizeCollectors — IMAGE', () => {
+  const imageCollector: DaVinciCollector = {
+    key: 'img-1',
+    type: 'IMAGE',
+    imageUrl: 'https://cdn.example.com/hero.png',
+    description: 'Hero image',
+    hyperlinkUrl: 'https://example.com',
+  } as DaVinciCollector;
+
+  const imageCollectorWithoutHyperlink: DaVinciCollector = {
+    key: 'img-1',
+    type: 'IMAGE',
+    imageUrl: 'https://cdn.example.com/hero.png',
+    description: 'Hero image',
+  } as DaVinciCollector;
+
+  it('classifies IMAGE as output_only with kind image and no required input', () => {
+    const [normalized] = normalizeCollectors([imageCollector]);
+    expect(normalized).toMatchObject({
+      key: 'img-1',
+      executionMode: 'output_only',
+      requiresUserInput: false,
+      kind: 'image',
+    });
+    // Locks the resolveDefaultValue fall-through: IMAGE matches no branch
+    // there and intentionally gets no default-value branch.
+    expect(normalized.defaultValue).toBeUndefined();
+
+    const [withoutHyperlink] = normalizeCollectors([
+      imageCollectorWithoutHyperlink,
+    ]);
+    expect(withoutHyperlink).toMatchObject({
+      key: 'img-1',
+      executionMode: 'output_only',
+      requiresUserInput: false,
+      kind: 'image',
+    });
+    expect(withoutHyperlink.defaultValue).toBeUndefined();
   });
 });
 
@@ -830,6 +879,24 @@ describe('buildNextInput — excluded modes', () => {
     expect(result.issues).toEqual([]);
   });
 
+  it('excludes IMAGE collectors from payload entirely and canSubmit stays true', () => {
+    const node = makeNode([
+      {
+        key: 'img-1',
+        type: 'IMAGE',
+        imageUrl: 'https://cdn.example.com/hero.png',
+        description: 'Hero image',
+        hyperlinkUrl: 'https://example.com',
+      } as DaVinciCollector,
+    ]);
+
+    const result = buildNextInput(node, {});
+
+    expect(result.input.collectors).toEqual([]);
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+  });
+
   it('excludes integration_required collectors from payload and blocks submit when unhandled', () => {
     const node = makeNode([baseField('idp', integrationType)]);
     const result = buildNextInput(node, {});
@@ -880,6 +947,22 @@ describe('computeFormMeta', () => {
       { key: 'l', type: 'LABEL', content: 'x' } as DaVinciCollector,
     ]);
     expect(computeFormMeta(collectors).hasOutputOnly).toBe(true);
+  });
+
+  it('reports hasOutputOnly and no manual input for an image-only form', () => {
+    const collectors = normalizeCollectors([
+      {
+        key: 'img-1',
+        type: 'IMAGE',
+        imageUrl: 'https://cdn.example.com/hero.png',
+        description: 'Hero image',
+        hyperlinkUrl: 'https://example.com',
+      } as DaVinciCollector,
+    ]);
+
+    const meta = computeFormMeta(collectors);
+    expect(meta.hasOutputOnly).toBe(true);
+    expect(meta.hasManual).toBe(false);
   });
 
   it('flags hasUnsupported when an unknown collector is present', () => {

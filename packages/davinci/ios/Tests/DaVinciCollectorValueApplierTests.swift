@@ -357,6 +357,23 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     XCTAssertFalse(result.isFlowTrigger)
   }
 
+  // MARK: - apply - ImageCollector (display-only)
+
+  func testApplyThrowsForImageCollectorValue() {
+    // ImageCollector is not a SingleValueCollector, so the applier's unsupported
+    // guard rejects any value sent for its key; the display-only collector never
+    // participates in submissions.
+    let collector = makeImageCollector(key: "img-field")
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [DaVinciCollectorValueApplier.CollectorMutation(key: collector.key, value: "v")]
+    XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
+      guard case let DaVinciBridgeError.unsupportedCollector(message) = error else {
+        return XCTFail("Expected unsupportedCollector error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("is not supported by the bridge"))
+    }
+  }
+
   // MARK: - Helpers
 
   private func makeContinueNode(collectors: [any Collector]) -> ContinueNode {
@@ -415,6 +432,13 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     return BooleanCollector(with: [
       "key": key, "type": "SINGLE_CHECKBOX", "inputType": "BOOLEAN",
       "label": "I agree", "required": true, "appearance": "CHECKBOX", "errorMessage": "Required."
+    ])
+  }
+
+  private func makeImageCollector(key: String) -> ImageCollector {
+    return ImageCollector(with: [
+      "key": key,
+      "imageUrl": "https://example.com/image.png"
     ])
   }
 
