@@ -67,7 +67,13 @@ export type RootStackParamList = {
   Configuration: undefined;
   Storage: undefined;
   JourneyRoute: { verificationUri?: string } | undefined;
-  JourneyHelper: { journeyName?: string; verificationUri?: string } | undefined;
+  JourneyHelper:
+    | {
+        journeyName?: string;
+        verificationUri?: string;
+        backchannelEntry?: boolean;
+      }
+    | undefined;
   JourneyFull: undefined;
   Browser: undefined;
   Logger: undefined;

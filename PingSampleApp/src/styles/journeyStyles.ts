@@ -299,6 +299,14 @@ export const journeyClientPanelStyles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
+  backchannelEntryTitle: {
+    color: colors.textDark,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
   successActionsContainer: {
     marginTop: 10,
   },

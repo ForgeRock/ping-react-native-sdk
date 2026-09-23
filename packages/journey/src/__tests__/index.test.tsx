@@ -8,6 +8,7 @@
 type NativeJourneyModuleMock = {
   configureJourney: jest.Mock;
   start: jest.Mock;
+  startBackchannel: jest.Mock;
   next: jest.Mock;
   resume: jest.Mock;
   getSession: jest.Mock;
@@ -26,6 +27,11 @@ const createNativeMock = (
     configureJourney: jest.fn(async () => 'journey-id-1'),
     start: jest.fn(async () => ({
       id: 'n1',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
+    startBackchannel: jest.fn(async () => ({
+      id: 'n4',
       type: 'ContinueNode',
       callbacks: [],
     })),
@@ -452,6 +458,93 @@ describe('Journey JS API', () => {
     expect((err as Error).name).toBe('JourneyError');
     expect((err as { code: string }).code).toBe('JOURNEY_RESUME_ERROR');
     expect((err as { type: string }).type).toBe('argument_error');
+  });
+
+  it('delegates startBackchannel to native with journey id, uri, and options', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    const node = await client.startBackchannel(
+      'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      { noSession: true },
+    );
+
+    expect(node).toEqual({ id: 'n4', type: 'ContinueNode', callbacks: [] });
+    expect(native.startBackchannel).toHaveBeenCalledWith(
+      'journey-id-1',
+      'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      { noSession: true },
+    );
+  });
+
+  it('passes no options to native startBackchannel when omitted', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    await client.startBackchannel(
+      'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+    );
+
+    expect(native.startBackchannel).toHaveBeenCalledWith(
+      'journey-id-1',
+      'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      undefined,
+    );
+  });
+
+  it('surfaces native validation failures as resolved FailureNode payloads', async () => {
+    const native = createNativeMock({
+      startBackchannel: jest.fn(async () => ({
+        type: 'FailureNode',
+        message: 'Backchannel URI host does not match configured serverUrl',
+        cause: 'Backchannel URI host does not match configured serverUrl',
+      })),
+    });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    const node = await client.startBackchannel(
+      'https://evil.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+    );
+
+    expect(node.type).toBe('FailureNode');
+    expect((node as { message: string }).message).toContain(
+      'host does not match',
+    );
+  });
+
+  it('maps native startBackchannel rejections to JourneyError', async () => {
+    const native = createNativeMock({
+      startBackchannel: jest.fn(async () => {
+        throw new Error('native boom');
+      }),
+    });
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    const err = await client
+      .startBackchannel(
+        'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      )
+      .catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('JourneyError');
+  });
+
+  it('throws argument error when backchannel uri is empty', async () => {
+    const native = createNativeMock();
+    const { createJourneyClient } = await loadModule(native);
+    const client = createJourneyClient({ serverUrl: 'https://example.com' });
+
+    const err = await client.startBackchannel('   ').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).name).toBe('JourneyError');
+    expect((err as { code: string }).code).toBe('JOURNEY_START_ERROR');
+    expect((err as { type: string }).type).toBe('argument_error');
+    expect(native.startBackchannel).not.toHaveBeenCalled();
   });
 
   it('forwards user, refresh, revoke, userinfo, ssoToken, and logout calls to native', async () => {

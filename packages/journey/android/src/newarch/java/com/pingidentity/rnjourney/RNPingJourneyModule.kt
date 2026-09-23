@@ -61,6 +61,18 @@ class RNPingJourneyModule(reactContext: ReactApplicationContext) :
   }
 
   /**
+   * Start a Journey from an AM/AIC backchannel (transactional) redirect URI.
+   *
+   * @param journeyId Native journey client id.
+   * @param backchannelUri Gateway-provided redirect URI.
+   * @param options Optional start flags.
+   * @param promise Promise resolved with the first node payload.
+   */
+  override fun startBackchannel(journeyId: String, backchannelUri: String, options: ReadableMap?, promise: Promise) {
+    RNPingJourneyCommon.startBackchannel(journeyId, backchannelUri, options, promise)
+  }
+
+  /**
    * Progress an active Journey node.
    *
    * @param journeyId Native journey client id.

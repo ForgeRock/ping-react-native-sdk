@@ -126,6 +126,31 @@ RCT_EXPORT_METHOD(resume:(NSString *)journeyId
 }
 
 /**
+ * Starts a Journey from an AM/AIC backchannel (transactional) redirect URI.
+ *
+ * - Parameters:
+ *   - journeyId: Journey client identifier.
+ *   - backchannelUri: Gateway-provided redirect URI.
+ *   - options: Optional start options dictionary.
+ *   - resolve: Promise resolver.
+ *   - reject: Promise rejecter.
+ */
+RCT_EXPORT_METHOD(startBackchannel:(NSString *)journeyId
+                  backchannelUri:(NSString *)backchannelUri
+                  options:(NSDictionary *)options
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  [self withSwiftImpl:^(RNPingJourneyImpl *impl) {
+    [impl startBackchannel:journeyId
+              redirectUri:backchannelUri
+                  options:options
+                 resolver:resolve
+                 rejecter:reject];
+  }];
+}
+
+/**
  * Returns session details for the Journey client.
  *
  * - Parameters:

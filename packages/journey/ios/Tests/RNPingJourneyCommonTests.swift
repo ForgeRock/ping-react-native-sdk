@@ -238,6 +238,38 @@ final class RNPingJourneyCommonTests: XCTestCase {
     }
   }
 
+  func testStartBackchannelRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.startBackchannel(
+        "missing",
+        redirectUri: "https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123",
+        forceAuth: false,
+        noSession: false,
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testStartBackchannelRejectsWhenUriIsBlank() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.startError.rawValue,
+      expectedType: .argumentError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.startBackchannel(
+        "any-id",
+        redirectUri: "   ",
+        forceAuth: false,
+        noSession: false,
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
   func testGetSessionRejectsWhenJourneyMissing() {
     assertReject(
       expectedCode: JourneyErrorCodes.stateError.rawValue,

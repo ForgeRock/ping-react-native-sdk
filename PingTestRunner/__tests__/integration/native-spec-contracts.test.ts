@@ -121,6 +121,7 @@ type _JourneyMockedMethods = Pick<
   | 'start'
   | 'next'
   | 'resume'
+  | 'startBackchannel'
   | 'getSession'
   | 'refresh'
   | 'revoke'
