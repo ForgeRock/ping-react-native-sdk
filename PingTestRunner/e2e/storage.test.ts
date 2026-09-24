@@ -36,6 +36,10 @@ describe('Storage — bridge verification', () => {
 
   it('configureSessionStorage returns a handle with kind=session', async () => {
     await element(by.id('storage-session-btn')).tap();
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await waitFor(element(by.id('storage-session-result')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('storage-session-result'))).toBeVisible();
     const attrs = await element(
       by.id('storage-session-result'),
@@ -46,6 +50,10 @@ describe('Storage — bridge verification', () => {
 
   it('configureOidcStorage returns a handle with kind=oidc', async () => {
     await element(by.id('storage-oidc-btn')).tap();
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await waitFor(element(by.id('storage-oidc-result')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('storage-oidc-result'))).toBeVisible();
     const attrs = await element(by.id('storage-oidc-result')).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';

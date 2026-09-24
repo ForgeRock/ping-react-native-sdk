@@ -42,7 +42,19 @@ extension XCUIElement {
         tap()
     }
 
-    /// Asserts the element exists and is hittable within `timeout` seconds, taps it, then types `text`.
+    /// Pacing between tapping a text field and typing into it. Without it the first
+    /// keystroke can race the field's focus registration and be silently swallowed
+    /// (observed as "rn-cicd-user" landing as "r-cicd-user"), which the server then
+    /// rejects with "Invalid username and/or password".
+    private static let typePacing: TimeInterval = 1.0
+
+    /// Asserts the element exists and is hittable within `timeout` seconds, taps it,
+    /// pauses briefly to let focus settle, then types `text`.
+    ///
+    /// For non-secure fields the landed value is verified and typing is retried up to
+    /// 3 times if the first keystroke was swallowed. Secure text fields skip
+    /// verification: XCUITest reports a SecureTextField's `value` as '' (masked), so
+    /// verification cannot distinguish a dropped keystroke from a complete value.
     func typeTextWhenReady(
         _ text: String,
         timeout: TimeInterval = 10,
@@ -61,7 +73,31 @@ extension XCUIElement {
             file: file,
             line: line
         )
-        tap()
-        typeText(text)
+        guard elementType != .secureTextField else {
+            tap()
+            Thread.sleep(forTimeInterval: Self.typePacing)
+            typeText(text)
+            return
+        }
+        var landedText = ""
+        for _ in 1...3 {
+            tap()
+            Thread.sleep(forTimeInterval: Self.typePacing)
+            typeText(text)
+            landedText = value as? String ?? ""
+            if landedText == text {
+                return
+            }
+            // First keystroke was swallowed: clear the field and retry.
+            let backspaces = String(repeating: XCUIKeyboardKey.delete.rawValue, count: landedText.count)
+            typeText(backspaces)
+        }
+        // Report the value as it landed on the final attempt, not the field's
+        // current state: the retry above has already backspaced the field clear.
+        XCTFail(
+            "Failed to type text into element after 3 attempts: value was '\(landedText)', expected '\(text)'",
+            file: file,
+            line: line
+        )
     }
 }

@@ -16,7 +16,7 @@
  *   3. Select Yes and submit → SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -87,6 +87,10 @@ describe('Journey — MetadataCallback', () => {
     await waitFor(element(by.id('journey-field-output-MetadataCallback:0')))
       .toExist()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-output-MetadataCallback:0')),
+    ).toExist();
   });
 
   it('select Yes and submit → reaches SuccessNode (live)', async () => {
@@ -100,5 +104,7 @@ describe('Journey — MetadataCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

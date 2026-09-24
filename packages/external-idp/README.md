@@ -21,12 +21,12 @@ This library abstracts away the complexities of dealing with different IDP proto
 
 ## Overview
 
-The library supports native authentication through provider-specific SDKs (Google, Facebook, Apple) for an integrated in-app login flow when used with AIC Journey orchestration.
+The library supports native authentication through provider-specific SDKs (Google, Facebook, Apple) for an integrated in-app login flow.
 
-Supported authentication experiences:
+Supported authentication experiences differ by orchestration type:
 
-- **Native:** uses provider-specific SDKs (Google, Facebook, Apple) for an integrated in-app login flow.
-- **Browser-based:** coming in a future release.
+- **Journey (AIC):** native-only. Uses provider-specific SDKs (Google, Facebook, Apple) for an integrated in-app login flow, with one exception — Apple Sign-In on Android has no native SDK and must fall back to the browser. There is no browser fallback for Google or Facebook on either platform, or for Apple on iOS.
+- **DaVinci:** falls back to the browser when a native provider SDK is not linked. Link the native SDK for each provider you want to support to guarantee the native sign-in experience.
 
 ## Installation
 
@@ -493,7 +493,7 @@ Stable error codes:
 
 ## Known limitations
 
-- **AIC with Journey orchestration: browser fallback is not supported on Android or iOS.** The native Android and iOS SDKs do not provide a browser-based fallback for `IdpCallback` Journey flows. Native provider SDKs must be linked for each target platform: Google or Facebook on Android, and Google, Facebook, or Apple on iOS. When the required native provider SDK is absent, `authorizeForJourney` rejects with `EXTERNAL_IDP_UNSUPPORTED_PROVIDER`.
+- **AIC with Journey orchestration is native-only; there is no browser fallback**, except for Apple Sign-In on Android. Native provider SDKs must be linked for each target platform: Google or Facebook on Android, and Google, Facebook, or Apple on iOS. When the required native provider SDK is absent, `authorizeForJourney` rejects with `EXTERNAL_IDP_UNSUPPORTED_PROVIDER` — the sole exception is Apple Sign-In on Android, which has no native SDK and always uses the browser.
 
 ---
 

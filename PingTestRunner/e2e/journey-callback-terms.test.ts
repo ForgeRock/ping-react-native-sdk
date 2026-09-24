@@ -17,7 +17,7 @@
  *   4. SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -90,6 +90,10 @@ describe('Journey — TermsAndConditionsCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit credentials → surfaces TermsAndConditionsCallback toggle (step 2)', async () => {
@@ -107,6 +111,10 @@ describe('Journey — TermsAndConditionsCallback', () => {
     await waitFor(element(by.id('journey-field-TermsAndConditionsCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-TermsAndConditionsCallback:0')),
+    ).toBeVisible();
   });
 
   it('accept terms and submit → reaches SuccessNode (live)', async () => {
@@ -120,5 +128,7 @@ describe('Journey — TermsAndConditionsCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

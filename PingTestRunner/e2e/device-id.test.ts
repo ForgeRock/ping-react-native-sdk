@@ -17,7 +17,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { device, element, by, expect as detoxExpect } from 'detox';
+import { device, element, by, expect as detoxExpect, waitFor } from 'detox';
 import { expect as jestExpect } from '@jest/globals';
 import { assertAppReady } from './setup';
 
@@ -39,11 +39,18 @@ describe('Device ID — bridge verification', () => {
 
   it('getDeviceId() returns a non-empty string', async () => {
     await element(by.id('device-id-get-btn')).tap();
-    // result element only mounts when getDeviceId() returns a non-empty string
+    // First getDeviceId() generates a 2048-bit RSA key in KeyStore, and
+    // BrowserStack runs with synchronization disabled, so wait explicitly.
+    await waitFor(element(by.id('device-id-result')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('device-id-result'))).toBeVisible();
   });
 
   it('getDeviceId() result is a 64-char hex string (SHA-256 format)', async () => {
+    await waitFor(element(by.id('device-id-result')))
+      .toBeVisible()
+      .withTimeout(10000);
     const attrs = await element(by.id('device-id-result')).getAttributes();
     const text = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(text).toMatch(/^[0-9a-f]{64}$/i);
@@ -51,7 +58,13 @@ describe('Device ID — bridge verification', () => {
 
   it('getDeviceId() returns the same value on second call (consistency)', async () => {
     await element(by.id('device-id-get-again-btn')).tap();
+    await waitFor(element(by.id('device-id-result-2')))
+      .toBeVisible()
+      .withTimeout(10000);
     await detoxExpect(element(by.id('device-id-result-2'))).toBeVisible();
+    await waitFor(element(by.id('device-id-result')))
+      .toBeVisible()
+      .withTimeout(10000);
     const attrs1 = await element(by.id('device-id-result')).getAttributes();
     const attrs2 = await element(by.id('device-id-result-2')).getAttributes();
     const id1 = (attrs1 as any).text ?? (attrs1 as any).label ?? '';

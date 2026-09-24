@@ -184,6 +184,12 @@ jobs:
       PING_CLIENT_ID: ${{ secrets.PING_CLIENT_ID }}
       PING_REDIRECT_URI: ${{ secrets.PING_REDIRECT_URI }}
       PING_CALLBACK_TREES_ENABLED: ${{ secrets.PING_CALLBACK_TREES_ENABLED }}
+      PINGONE_DISCOVERY_ENDPOINT: ${{ secrets.PINGONE_DISCOVERY_ENDPOINT }}
+      PINGONE_CLIENT_ID: ${{ secrets.PINGONE_CLIENT_ID }}
+      PINGONE_REDIRECT_URI: ${{ secrets.PINGONE_REDIRECT_URI }}
+      PINGONE_ACR_VALUES: ${{ secrets.PINGONE_ACR_VALUES }}
+      PINGONE_USERNAME: ${{ secrets.PINGONE_USERNAME }}
+      PINGONE_PASSWORD: ${{ secrets.PINGONE_PASSWORD }}
       CERTIFICATES_FILE_BASE64: ${{ secrets.CERTIFICATES_FILE_BASE64 }}
       CERTIFICATES_PASSWORD: ${{ secrets.CERTIFICATES_PASSWORD }}
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
@@ -202,3 +208,35 @@ jobs:
     uses: ./.github/workflows/preview-docs.yml
     with:
       pr_number: ${{ github.event.pull_request.number }}
+
+  # Mend security scans replace the retired Mend GitHub App integration.
+  # All three jobs are skipped for fork PRs: repository secrets (MEND_EMAIL,
+  # MEND_USER_KEY) are never exposed to workflows from forks, so the scans would
+  # either fail or run unauthenticated - same guard the reference ping-android-sdk
+  # ci.yaml applies to its Mend jobs. Scan credentials are passed explicitly,
+  # never via secrets: inherit, so the exposure surface stays visible here.
+  mend-prepare-workspace:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/mend-prepare-workspace.yml
+
+  mend-sca-scan:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: mend-prepare-workspace
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/mend-sca-scan.yml
+    secrets:
+      MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+      MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+
+  mend-sast-scan:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: mend-prepare-workspace
+    permissions:
+      contents: read
+      checks: write
+    uses: ./.github/workflows/mend-sast-scan.yml
+    secrets:
+      MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+      MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
