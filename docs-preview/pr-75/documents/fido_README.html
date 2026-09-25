@@ -109,13 +109,14 @@ blocking submit issues. Run each integration, then submit when <code>form.canSub
 </ul>
 <h2 id="platform-notes" class="tsd-anchor-link">Platform notes<a href="#platform-notes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <ul>
-<li><code>android.useFido2Client</code> is an Android-only override.
+<li><code>android.useFido2Client</code> is an Android-only override for the standalone <code>register</code> / <code>authenticate</code> operations.
 <ul>
 <li><code>undefined</code> (default): native SDK auto-detection/default behavior.</li>
 <li><code>true</code>: force Google Play Services FIDO2 APIs.</li>
 <li><code>false</code>: force Android Credential Manager APIs.</li>
 </ul>
 </li>
+<li>Journey and DaVinci ceremony methods (<code>registerForJourney</code>, <code>authenticateForJourney</code>, <code>registerForDaVinci</code>, <code>authenticateForDaVinci</code>) currently ignore the client-level config on both platforms: ceremonies keep the workflow-configured native logger and native client defaults, so <code>android.useFido2Client</code> and the client-level logger id have no effect there.</li>
 <li>iOS accepts the same config shape for API parity, but does not currently apply native client-level config.</li>
 <li>Journey callback execution currently follows native SDK behavior; Android Journey callback APIs do not currently accept injected custom native <code>FidoClient</code> configuration.</li>
 <li>Android requires a foreground <code>Activity</code> for FIDO calls.</li>
