@@ -34,9 +34,17 @@ export default function DaVinciImageField(
   const imageCollector = collector as ImageCollector;
   const [failed, setFailed] = React.useState(false);
 
+  // A reused component instance must retry the new image, so clear a stale
+  // load failure whenever the collector presents a different URL.
+  React.useEffect(() => {
+    setFailed(false);
+  }, [imageCollector.imageUrl]);
+
   const openHyperlink = (): void => {
-    if (imageCollector.hyperlinkUrl) {
-      Linking.openURL(imageCollector.hyperlinkUrl).catch(() => {});
+    const hyperlinkUrl = imageCollector.hyperlinkUrl;
+    // Only http(s) URLs are opened; other schemes are ignored.
+    if (hyperlinkUrl && /^https?:\/\//i.test(hyperlinkUrl)) {
+      Linking.openURL(hyperlinkUrl).catch(() => {});
     }
   };
 
