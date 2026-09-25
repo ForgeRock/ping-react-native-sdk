@@ -11,6 +11,7 @@ import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.ImageCollector
 import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MaxRepeat
@@ -1228,5 +1229,157 @@ class DaVinciNodeMapperTest {
 
         assertEquals("", c["content"])
         assertEquals("", c["fallbackText"])
+    }
+
+    // ---- ImageCollector ----
+
+    @Test
+    fun mapImageCollectorEmitsAllFields() {
+        // Long query-string URL mirrors the native ImageCollectorTest fixture; locks
+        // the no-transformation requirement for the imageUrl round-trip (AC5).
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "image")
+                put("description", "New Image")
+                put("imageUrl", "https://travel.destinationcanada.com/_next/image?url=https%3A%2F%2Fadmin.destinationcanada.com%2Fsites%2Fdefault%2Ffiles%2F2023-06%2FQC-Montreal-Skyline_hero.jpg&w=1920&q=75")
+                put("hyperlinkUrl", "https://www.pingidentity.com/en.html")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("IMAGE", c["type"])
+        assertEquals("image", c["key"])
+        assertEquals("https://travel.destinationcanada.com/_next/image?url=https%3A%2F%2Fadmin.destinationcanada.com%2Fsites%2Fdefault%2Ffiles%2F2023-06%2FQC-Montreal-Skyline_hero.jpg&w=1920&q=75", c["imageUrl"])
+        assertEquals("New Image", c["description"])
+        assertEquals("https://www.pingidentity.com/en.html", c["hyperlinkUrl"])
+    }
+
+    @Test
+    fun mapImageCollectorOmitsHyperlinkUrlWhenAbsent() {
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "image")
+                put("description", "No link")
+                put("imageUrl", "https://example.com/image.png")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertFalse(c.containsKey("hyperlinkUrl"))
+    }
+
+    @Test
+    fun mapImageCollectorDefaultsToEmptyStringsWhenFieldsAbsent() {
+        val collector = ImageCollector().apply {
+            init(buildJsonObject { })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["key"])
+        assertEquals("", c["imageUrl"])
+        assertEquals("", c["description"])
+    }
+
+    @Test
+    fun mapImageCollectorHandlesMissingUrlWhenFormEntryPresent() {
+        // Native init coerces a missing/non-string imageUrl to "", so the
+        // empty-URL warning can fire while a matching raw form entry exists;
+        // the payload must emit the documented default alongside the raw field.
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "img-field")
+                put("description", "Alt")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "img-field")
+                            put("type", "IMAGE")
+                            put("imageUrl", "https://example.com/image.png")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["imageUrl"])
+        assertNotNull(c["raw"])
+    }
+
+    @Test
+    fun mapImageCollectorIncludesRawFieldWhenFormInputPresent() {
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "img-field")
+                put("type", "IMAGE")
+                put("imageUrl", "https://example.com/image.png")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "img-field")
+                            put("type", "IMAGE")
+                            put("imageUrl", "https://example.com/image.png")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        // Android 2.2 ImageCollector.id() returns the stable key, so the shared
+        // raw lookup applies (unlike 2.1.0 QR_CODE's random-UUID id()).
+        assertNotNull(c["raw"])
+    }
+
+    @Test
+    fun mapImageCollectorNotReportedAsUnsupported() {
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "img-field")
+                put("type", "IMAGE")
+                put("imageUrl", "https://example.com/image.png")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "img-field")
+                            put("type", "IMAGE")
+                            put("imageUrl", "https://example.com/image.png")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertFalse(result.containsKey("unsupportedFields"))
     }
 }

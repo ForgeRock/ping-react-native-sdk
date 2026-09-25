@@ -343,6 +343,7 @@ The following collector types are supported on Android and iOS:
 | `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
 | `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
 | `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
+| `IMAGE`                 | Display-only image with optional hyperlink.                                            | Output-only    |
 | `FIDO2`                 | FIDO passkey registration or authentication; narrow by `action`.                       | Integration    |
 
 Integration-dependent collectors are surfaced in node payloads with

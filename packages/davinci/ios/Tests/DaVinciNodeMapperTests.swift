@@ -872,6 +872,136 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNotNil(first?["raw"])
   }
 
+  // MARK: - ImageCollector serialization
+
+  func testMapImageCollectorEmitsAllFields() {
+    // Long query-string URL mirrors the native ImageCollectorTest fixture; locks
+    // the no-transformation requirement for the imageUrl round-trip (AC5).
+    let node = makeContinueNode(collectors: [
+      makeImageCollector(
+        key: "image",
+        imageUrl: "https://travel.destinationcanada.com/_next/image?url=https%3A%2F%2Fadmin.destinationcanada.com%2Fsites%2Fdefault%2Ffiles%2F2023-06%2FQC-Montreal-Skyline_hero.jpg&w=1920&q=75",
+        description: "New Image",
+        hyperlinkUrl: "https://www.pingidentity.com/en.html"
+      )
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["type"] as? String, "IMAGE")
+    XCTAssertEqual(first?["key"] as? String, "image")
+    XCTAssertEqual(first?["imageUrl"] as? String, "https://travel.destinationcanada.com/_next/image?url=https%3A%2F%2Fadmin.destinationcanada.com%2Fsites%2Fdefault%2Ffiles%2F2023-06%2FQC-Montreal-Skyline_hero.jpg&w=1920&q=75")
+    XCTAssertEqual(first?["description"] as? String, "New Image")
+    XCTAssertEqual(first?["hyperlinkUrl"] as? String, "https://www.pingidentity.com/en.html")
+  }
+
+  func testMapImageCollectorOmitsHyperlinkUrlWhenAbsent() {
+    let node = makeContinueNode(collectors: [
+      makeImageCollector(
+        key: "image",
+        imageUrl: "https://example.com/image.png",
+        description: "No link",
+        hyperlinkUrl: nil
+      )
+    ])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNil(first?["hyperlinkUrl"])
+  }
+
+  func testMapImageCollectorDefaultsToEmptyStringWhenUrlAbsent() {
+    let collector = ImageCollector(with: ["key": "img", "description": "Alt"])
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["imageUrl"] as? String, "")
+  }
+
+  func testMapImageCollectorHandlesMissingUrlWhenFormEntryPresent() {
+    // Native init coerces a missing imageUrl to "", so the empty-URL warning
+    // can fire while a matching raw form entry exists; the payload must emit
+    // the documented default alongside the raw field.
+    let collector = ImageCollector(with: ["key": "img-field", "description": "Alt"])
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "img-field", "type": "IMAGE", "imageUrl": "https://example.com/image.png"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [collector], input: input)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["imageUrl"] as? String, "")
+    XCTAssertNotNil(first?["raw"])
+  }
+
+  func testMapImageCollectorIncludesRawFieldWhenFormInputPresent() {
+    // iOS ImageCollector.id returns the stable key, so the shared raw lookup
+    // applies (same contract as the Android 2.2 mapper).
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "img-field", "type": "IMAGE", "imageUrl": "https://example.com/image.png"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [
+        makeImageCollector(
+          key: "img-field",
+          imageUrl: "https://example.com/image.png",
+          description: "",
+          hyperlinkUrl: nil
+        )
+      ],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNotNil(first?["raw"])
+  }
+
+  func testMapImageCollectorNotReportedAsUnsupportedField() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "img-field", "type": "IMAGE", "imageUrl": "https://example.com/image.png"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [
+        makeImageCollector(
+          key: "img-field",
+          imageUrl: "https://example.com/image.png",
+          description: "",
+          hyperlinkUrl: nil
+        )
+      ],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNil(payload["unsupportedFields"])
+  }
+
   // MARK: - ReadOnlyTextCollector serialization
 
   func testMapReadOnlyTextCollectorIncludesAllFields() {
@@ -980,6 +1110,23 @@ final class DaVinciNodeMapperTests: XCTestCase {
       "content": content,
       "fallbackText": fallbackText
     ])
+  }
+
+  private func makeImageCollector(
+    key: String,
+    imageUrl: String,
+    description: String,
+    hyperlinkUrl: String?
+  ) -> ImageCollector {
+    var json: [String: Any] = [
+      "key": key,
+      "imageUrl": imageUrl,
+      "description": description
+    ]
+    if let hyperlinkUrl {
+      json["hyperlinkUrl"] = hyperlinkUrl
+    }
+    return ImageCollector(with: json)
   }
 
   private func makeDaVinciSuccessNode(sessionValue: String) -> SuccessNode {

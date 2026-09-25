@@ -16,6 +16,7 @@ import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.ImageCollector
 import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MaxRepeat
@@ -55,6 +56,7 @@ internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
     private const val QR_CODE = "QR_CODE"
+    private const val IMAGE = "IMAGE"
 
     /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollInterval` fails to parse. */
     private const val DEFAULT_POLL_INTERVAL = 2000
@@ -265,6 +267,7 @@ internal object DaVinciNodeMapper {
             is BooleanCollector -> mapBooleanCollector(collector)
             is ReadOnlyTextCollector -> mapReadOnlyTextCollector(collector)
             is PollingCollector -> mapPollingCollector(collector, logger)
+            is ImageCollector -> mapImageCollector(collector, node, logger)
             else -> {
                 // Try registered plugin serializers before generic server-type fallback.
                 val serialized = CoreRuntime.serializeDaVinciCollector(collector)
@@ -535,6 +538,46 @@ internal object DaVinciNodeMapper {
             "content" to collector.content,
             "fallbackText" to collector.fallbackText
         )
+    }
+
+    /**
+     * Serialize a native [ImageCollector] to a payload map.
+     *
+     * The collector is display-only: it never contributes to submissions and the
+     * bridge never applies values to it (the value applier's unknown-collector
+     * guard rejects IMAGE keys). `hyperlinkUrl` is omitted from the payload when
+     * the native collector holds `null`, mirroring the optional TS field.
+     *
+     * @param collector Native image collector.
+     * @param node Parent continue node (raw field lookup for the `raw` payload).
+     * @param logger Optional Ping logger for non-fatal mapping warnings.
+     * @return Serialized image collector map.
+     */
+    private fun mapImageCollector(
+        collector: ImageCollector,
+        node: ContinueNode,
+        logger: Logger? = null
+    ): Map<String, Any?> {
+        if (collector.imageUrl.isEmpty()) {
+            // No-silent-failure: native init() coerces a missing/non-string
+            // imageUrl to "" (native 2.2 default). Surface the offending raw
+            // server value before emitting the documented default.
+            val rawUrl = findFieldJson(node, collector.key, logger)?.get("imageUrl")
+            logWarning(
+                logger,
+                "IMAGE collector key='${collector.key}' has no usable imageUrl after " +
+                    "native init (server value: ${rawUrl ?: "absent"}); emitting empty string",
+                IllegalStateException("Missing imageUrl for IMAGE collector '${collector.key}'")
+            )
+        }
+        val map = linkedMapOf(
+            "key" to collector.key,
+            "type" to IMAGE,
+            "imageUrl" to collector.imageUrl,
+            "description" to collector.description
+        )
+        collector.hyperlinkUrl?.let { map["hyperlinkUrl"] = it }
+        return map
     }
 
     private fun mapSingleSelectCollector(collector: SingleSelectCollector): Map<String, Any?> {

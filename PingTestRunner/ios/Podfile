@@ -27,6 +27,30 @@ target 'PingTestRunner' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # TEMPORARY: pin the Ping native pods to ping-ios-sdk develop so the
+  # unreleased backchannel method (SDKS-5156) is exercisable. Only the
+  # develop podspec version (2.1.0) satisfies the RN podspec pins; trunk
+  # 2.1.1 does NOT contain start(backchannelUri:). Remove this block when
+  # the iOS pod release containing SDKS-5156 ships (TODO-PARITY SDKS-5380)
+  # and the RN podspec delegates to the native method.
+  ping_ios_develop = {
+    :git => 'https://github.com/ForgeRock/ping-ios-sdk.git',
+    :commit => 'df0acc60c0d4d699aa3fab78c43934f3b1344bdb'
+  }
+  %w[
+    PingAuthMigration PingBinding PingBrowser PingCommons PingDavinci
+    PingDavinciPlugin PingDeviceClient PingDeviceId PingDeviceProfile
+    PingExternalIdP PingExternalIdPApple PingExternalIdPFacebook
+    PingExternalIdPGoogle PingFido PingJourney PingJourneyPlugin PingLogger
+    PingNetwork PingOath PingOidc PingOneProtect PingOrchestrate PingPush
+    PingStorage PingTamperDetector
+  ].each { |name| pod name, ping_ios_develop }
+
+  # AppCheckCore -> GoogleUtilities/RecaptchaInterop: neither defines a module,
+  # which Swift requires to import them under static linkage.
+  pod 'RecaptchaInterop', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+
   # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
   pod 'RNPingBrowser',
     :path => '../../node_modules/@ping-identity/rn-browser',

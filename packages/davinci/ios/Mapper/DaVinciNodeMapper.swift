@@ -16,6 +16,7 @@ import RNPingCore
 enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
   private static let qrCode = "QR_CODE"
+  private static let image = "IMAGE"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -287,6 +288,8 @@ enum DaVinciNodeMapper {
       // extend FieldCollector — no `label`/`required` — so it's fully serialized here and
       // returned early rather than routed through `applyRawField` below.
       return mapQRCodeCollector(qrCodeCollector, node: node, logger: logger)
+    case let imageCollector as ImageCollector:
+      map = mapImageCollector(imageCollector, node: node, logger: logger)
     default:
       // Try registered plugin serializers before generic server-type fallback.
       if let serialized = CoreRuntime.serializeDaVinciCollector(collector) {
@@ -571,6 +574,47 @@ enum DaVinciNodeMapper {
     ]
     if let field {
       map["raw"] = JsonBridgeMapper.encodeJsonObject(field)
+    }
+    return map
+  }
+
+  /// Serializes an `ImageCollector` to a bridge map.
+  ///
+  /// - Note: The collector is display-only: native `payload()` always returns
+  ///   `nil`, and the bridge never applies values to it. `hyperlinkUrl` is
+  ///   omitted from the payload when the native collector holds `nil`, matching
+  ///   the optional TS field. iOS `ImageCollector.id` returns the stable `key`,
+  ///   so the shared `raw` lookup applies.
+  ///
+  /// - Parameters:
+  ///   - collector: ImageCollector instance.
+  ///   - node: Active continue node providing form field context for the `raw` lookup.
+  ///   - logger: Optional Ping logger for non-fatal mapping warnings.
+  /// - Returns: Serialized image collector map.
+  private static func mapImageCollector(
+    _ collector: ImageCollector,
+    node: ContinueNode,
+    logger: Logger?
+  ) -> [String: Any] {
+    if collector.imageUrl.isEmpty {
+      // No-silent-failure: native init coerces a missing/non-string imageUrl
+      // to "" (native 2.2 default). Surface the offending raw server value.
+      let rawUrl = findFieldJson(collector.key, node: node, logger: logger)?["imageUrl"]
+      logger?.w(
+        "[\(logTag)] IMAGE collector key='\(collector.key)' has no usable imageUrl after " +
+          "native init (server value: \(rawUrl.map { String(describing: $0) } ?? "absent")); " +
+          "emitting empty string",
+        error: nil
+      )
+    }
+    var map: [String: Any] = [
+      "key": collector.key,
+      "type": image,
+      "imageUrl": collector.imageUrl,
+      "description": collector.description
+    ]
+    if let hyperlinkUrl = collector.hyperlinkUrl {
+      map["hyperlinkUrl"] = hyperlinkUrl
     }
     return map
   }
