@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Image, Linking, Text, View } from 'react-native';
+import { Alert, Image, Linking, Text, View } from 'react-native';
 import type { ImageCollector } from '@ping-identity/rn-davinci';
 import { colors } from '../../../../src/styles/colors';
 import { davinciFieldStyles } from '../../../../src/styles/davinciStyles';
@@ -22,7 +22,8 @@ import type { DaVinciCollectorRendererProps } from './types';
  * opens these URLs. Follows the single-fallback pattern of
  * `DaVinciQrCodeField`: the description shows as a caption under the image
  * when the image renders, and alone when the image failed to load or the URL
- * is empty. The hyperlink, when present, opens via `Linking` on tap.
+ * is empty. The hyperlink, when present, opens via `Linking` on tap; if the
+ * OS cannot open it, a warning is logged and an alert tells the user.
  *
  * @param props Renderer props.
  * @returns Image field element.
@@ -44,7 +45,13 @@ export default function DaVinciImageField(
     const hyperlinkUrl = imageCollector.hyperlinkUrl;
     // Only http(s) URLs are opened; other schemes are ignored.
     if (hyperlinkUrl && /^https?:\/\//i.test(hyperlinkUrl)) {
-      Linking.openURL(hyperlinkUrl).catch(() => {});
+      Linking.openURL(hyperlinkUrl).catch((error: unknown) => {
+        console.warn('[DaVinci] Failed to open hyperlink:', error);
+        Alert.alert(
+          'Unable to open link',
+          `The link could not be opened: ${hyperlinkUrl}`,
+        );
+      });
     }
   };
 
