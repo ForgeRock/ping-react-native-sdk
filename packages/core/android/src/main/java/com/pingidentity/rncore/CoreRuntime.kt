@@ -127,6 +127,17 @@ object CoreRuntime {
     }
 
     /**
+     * Clears all registered DaVinci collector serializers.
+     *
+     * Test-only seam for hermetic unit tests; not part of the public API.
+     * Public visibility lets other packages' unit tests reset state, mirroring
+     * `CoreRuntime.resetDaVinciCollectorSerializersForTesting` on iOS.
+     */
+    fun resetDaVinciCollectorSerializersForTesting() {
+        synchronized(davinciCollectorSerializers) { davinciCollectorSerializers.clear() }
+    }
+
+    /**
      * Resolves callbacks for the provided Journey id via the registered resolver.
      *
      * Packages that need Journey callbacks (binding, fido, device-profile) cannot depend

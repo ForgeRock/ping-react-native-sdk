@@ -40,6 +40,8 @@ import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.SuccessNode
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
+import com.pingidentity.rncore.CoreRuntime
+import java.util.UUID
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -489,6 +491,73 @@ class DaVinciNodeMapperTest {
 
         val result = DaVinciNodeMapper.mapNodePayload(node)
         assertFalse(result.containsKey("unsupportedFields"))
+    }
+
+    @Test
+    fun mapContinueNodeExcludesSocialLoginWhenIdpCollectorSerialized() {
+        // IdpCollector.id() falls back to a random UUID (external-idp 2.1.0), so the
+        // server field key never matches registeredKeys. When the registered CoreRuntime
+        // serializer emits type=SOCIAL_LOGIN_BUTTON for a collector, the field must not
+        // be reported as unsupported. A stand-in collector mimics that serializer contract.
+        val idpLikeCollector = object : Collector<String> {
+            override fun id(): String = UUID.randomUUID().toString()
+            override fun init(json: JsonObject): Collector<String> = this
+            override fun payload(): String = ""
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "social-login-google")
+                            put("type", "SOCIAL_LOGIN_BUTTON")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, idpLikeCollector)
+        CoreRuntime.registerDaVinciCollectorSerializer { collectorAny ->
+            if (collectorAny === idpLikeCollector) {
+                mapOf("key" to "social-login-google", "type" to "SOCIAL_LOGIN_BUTTON")
+            } else {
+                null
+            }
+        }
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertFalse(result.containsKey("unsupportedFields"))
+        val collectors = result.asList("collectors")!!
+        assertEquals(1, collectors.size)
+        assertEquals("SOCIAL_LOGIN_BUTTON", collectors[0]["type"])
+
+        CoreRuntime.resetDaVinciCollectorSerializersForTesting()
+    }
+
+    @Test
+    fun mapContinueNodeKeepsSocialLoginWhenNoIdpCollectorSerialized() {
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "social-login-google")
+                            put("type", "SOCIAL_LOGIN_BUTTON")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        val unsupported = result.asList("unsupportedFields")
+        assertNotNull(unsupported)
+        assertEquals(1, unsupported!!.size)
+        assertEquals("social-login-google", unsupported[0]["key"])
+        assertEquals("SOCIAL_LOGIN_BUTTON", unsupported[0]["type"])
     }
 
     @Test

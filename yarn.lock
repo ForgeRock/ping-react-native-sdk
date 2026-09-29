@@ -3114,7 +3114,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ping-identity/rn-fido@workspace:*, @ping-identity/rn-fido@workspace:packages/fido":
+"@ping-identity/rn-fido@workspace:*, @ping-identity/rn-fido@workspace:^, @ping-identity/rn-fido@workspace:packages/fido":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-fido@workspace:packages/fido"
   dependencies:
@@ -11533,6 +11533,7 @@ __metadata:
     "@changesets/cli": "npm:^2.30.0"
     "@eslint/compat": "npm:^2.0.5"
     "@eslint/js": "npm:^10.0.1"
+    "@ping-identity/rn-fido": "workspace:^"
     "@react-native/codegen": "npm:^0.82.1"
     "@react-native/eslint-config": "npm:0.80.1"
     "@types/jest": "npm:^29.5.14"
