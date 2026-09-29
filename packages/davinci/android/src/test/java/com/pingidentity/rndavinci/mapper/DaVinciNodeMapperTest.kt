@@ -50,6 +50,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Test
 
 class DaVinciNodeMapperTest {
@@ -58,6 +59,13 @@ class DaVinciNodeMapperTest {
         buildJsonObject { put("form", buildJsonObject { }) },
         *actions
     )
+
+    @After
+    fun tearDown() {
+        // Failure-safe: runs even when an assertion fails, so a registered fake
+        // serializer never leaks into other tests (mirrors iOS `defer { ... }`).
+        CoreRuntime.resetDaVinciCollectorSerializersForTesting()
+    }
 
     private fun makeNode(input: JsonObject, vararg actions: Action): ContinueNode {
         val node = object : ContinueNode(
@@ -531,8 +539,6 @@ class DaVinciNodeMapperTest {
         val collectors = result.asList("collectors")!!
         assertEquals(1, collectors.size)
         assertEquals("SOCIAL_LOGIN_BUTTON", collectors[0]["type"])
-
-        CoreRuntime.resetDaVinciCollectorSerializersForTesting()
     }
 
     @Test
