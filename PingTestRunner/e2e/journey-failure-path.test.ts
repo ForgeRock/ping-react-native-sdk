@@ -9,7 +9,7 @@
  * E2E — Journey invalid-credential and failure handling paths.
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import { assertAppReady, hasJourneyEnv, E2E_ENV } from './setup';
 
 const NET_TIMEOUT = 30000; // ms to wait for network-dependent elements
@@ -68,22 +68,25 @@ describe('Journey — invalid-credential handling', () => {
       by.id('journey-failure-message'),
     ];
 
-    let matched = false;
+    let matchedMatcher: (typeof messageMatchers)[number] | undefined;
     for (const matcher of messageMatchers) {
       try {
         await waitFor(element(matcher)).toBeVisible().withTimeout(5000);
-        matched = true;
+        matchedMatcher = matcher;
         break;
       } catch {
         // Try the next acceptable message variant.
       }
     }
 
-    if (!matched) {
+    if (!matchedMatcher) {
       throw new Error(
         'Expected a failure message for invalid credentials, but none matched.',
       );
     }
+
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(matchedMatcher)).toBeVisible();
   });
 
   it('revoke() and re-login succeeds after session expiry (live)', async () => {
@@ -130,5 +133,7 @@ describe('Journey — invalid-credential handling', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

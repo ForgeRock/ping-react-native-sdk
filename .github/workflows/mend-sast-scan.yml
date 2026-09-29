@@ -1,0 +1,254 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Mend SAST Scan
+
+# SAST + secrets scanning of the pruned workspace produced by
+# mend-prepare-workspace.yml (packages/* only - same scope as mend-sca-scan.yml).
+# Replaces the Mend GitHub App's .whitesource scanSettingsSAST (enableScan /
+# enableSecretsScan / scanPullRequests). The standalone CLI does not read
+# .mendsastcli-config.json (that file is an SCM-integration artifact), so path
+# exclusions (e.g. test sources within packages/*) are passed via the
+# MEND_SAST_PATH_EXCLUSIONS repo variable.
+#
+# Raw scan output is never rendered in the job summary or Check run text: with
+# --secrets-detection enabled, the CLI output can contain the matched secret
+# value/snippet, and both the summary and Check output are readable by anyone
+# with repo read access. Only severity counts and the Mend report link are
+# published there; the full output is uploaded as a short-retention artifact.
+on:
+  workflow_call:
+    secrets:
+      MEND_EMAIL:
+        description: Mend account email used for CLI authentication
+        required: true
+      MEND_USER_KEY:
+        description: Mend user key (Organization > User Settings in the Mend UI)
+        required: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  mend-sast-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Set SCAN_DIR
+        run: echo "SCAN_DIR=${RUNNER_TEMP}/mend-scan" >> "$GITHUB_ENV"
+
+      - name: Download pruned workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: mend-scan-workspace
+          path: ${{ env.SCAN_DIR }}
+
+      # No Setup Node step: this workflow never checks out the repo (the pruned
+      # workspace arrives as an artifact, so node-version-file's package.json is
+      # not in the runner workspace) and nothing here needs Node - the CLI is a
+      # self-contained binary and parsing uses jq/grep.
+
+      # Fetch just the checksum first (a few bytes) so the cache key reflects the
+      # CLI version Mend is currently serving. Keying on hashFiles of the
+      # executable itself doesn't work: that file doesn't exist yet on a fresh
+      # runner, so hashFiles() always resolved to the same empty hash, the cache
+      # key never changed, and the first binary ever cached was reused forever -
+      # a Mend CLI release would never actually get picked up.
+      - name: Fetch Mend CLI checksum
+        run: curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend.sha256 -o mend.sha256
+
+      # Install to /usr/local/bin (already on PATH, writable on hosted runners), matching
+      # the reference ping-android-sdk workflows. Cached on the checksum so a new Mend
+      # CLI release busts the cache and re-downloads.
+      - name: Download and cache the Mend CLI executable
+        id: cache-mend
+        uses: actions/cache@v4
+        env:
+          mend-cache-name: cache-mend-executable
+        with:
+          path: /usr/local/bin/mend
+          key: ${{ runner.os }}-${{ env.mend-cache-name }}-${{ hashFiles('mend.sha256') }}
+
+      - if: ${{ steps.cache-mend.outputs.cache-hit != 'true' }}
+        name: Download Mend CLI executable (cache miss...)
+        shell: bash
+        run: |
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend -o /usr/local/bin/mend
+          expected="$(awk '{print $1}' mend.sha256)"
+          actual="$(sha256sum /usr/local/bin/mend | awk '{print $1}')"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::Mend CLI checksum mismatch: expected ${expected}, got ${actual}"
+            exit 1
+          fi
+          chmod +x /usr/local/bin/mend
+
+      # SAST + secrets on the pruned workspace (packages/* only - matches
+      # mend-sca-scan.yml's scope, so sample-app/test-runner code never enters the
+      # SDK's SAST inventory). Path exclusions come from the
+      # MEND_SAST_PATH_EXCLUSIONS repository variable (comma-separated regex list,
+      # single line, no spaces) and target test sources within packages/*.
+      # --no-default-exclusions is required because Mend's built-in list drops any
+      # directory named "packages", which is exactly where the pruned workspace's
+      # source lives. Legacy command alias: mend sast. --report with --formats
+      # json produces the machine-readable report parsed below; stdout is
+      # redirected to a file for counting only - see the summary/Check steps
+      # below for why its contents are never rendered in either.
+      - name: Scan code and secrets
+        env:
+          MEND_URL: ${{ vars.MEND_SERVER_URL }}
+          MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+          MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+          MEND_PRODUCT_NAME: ${{ vars.MEND_PRODUCT_NAME }}
+          MEND_PROJECT_NAME: ${{ vars.MEND_PROJECT_NAME }}
+          MEND_SAST_PATH_EXCLUSIONS: ${{ vars.MEND_SAST_PATH_EXCLUSIONS }}
+        continue-on-error: true
+        run: |
+          if [ -z "${MEND_PRODUCT_NAME}" ] || [ -z "${MEND_PROJECT_NAME}" ]; then
+            echo "::error::Repository variables MEND_PRODUCT_NAME and MEND_PROJECT_NAME are not set. Set them to the Mend product and project names (scope: product//project)."
+            exit 1
+          fi
+          if [ -z "${MEND_SAST_PATH_EXCLUSIONS}" ]; then
+            echo "::error::Repository variable MEND_SAST_PATH_EXCLUSIONS is not set. Set it to a comma-separated regex list of SAST path exclusions."
+            exit 1
+          fi
+          mend code --report --filename mend-sast-report --formats json --non-interactive --no-default-exclusions --secrets-detection --dir "${SCAN_DIR}" -s "${MEND_PRODUCT_NAME}//${MEND_PROJECT_NAME}" > mend-sast-scan-result.txt
+
+      # Extract severity counts from the JSON report (jq, as in the reference
+      # ping-android-sdk mend-sast-scan.yaml) and the report URL from stdout.
+      - name: Parse SAST scan results
+        if: always()
+        shell: bash
+        run: |
+          MEND_SAST_SCAN_URL=$(grep -Eo '(http|https)://saas\.whitesourcesoftware\.com[^ ]+' mend-sast-scan-result.txt | head -n 1)
+
+          # The report is a top-level array; element [0] carries the run stats.
+          if [ -f mend-sast-report.json ]; then
+            MEND_SAST_TOTAL_VULNERABILITIES_COUNT=$(jq '.[0].stats.totalVulnerabilities' mend-sast-report.json)
+            MEND_SAST_CRITICAL_COUNT=$(jq '.[0].stats.critical' mend-sast-report.json)
+            MEND_SAST_HIGH_COUNT=$(jq '.[0].stats.high' mend-sast-report.json)
+            MEND_SAST_MEDIUM_COUNT=$(jq '.[0].stats.medium' mend-sast-report.json)
+            MEND_SAST_LOW_COUNT=$(jq '.[0].stats.low' mend-sast-report.json)
+          else
+            echo "::warning::mend-sast-report.json not found; counts default to 0 (scan step may have failed - check its output above)"
+            MEND_SAST_TOTAL_VULNERABILITIES_COUNT=0
+            MEND_SAST_CRITICAL_COUNT=0
+            MEND_SAST_HIGH_COUNT=0
+            MEND_SAST_MEDIUM_COUNT=0
+            MEND_SAST_LOW_COUNT=0
+          fi
+
+          if [ ! -z "$MEND_SAST_SCAN_URL" ]; then
+            echo "MEND_SAST_SCAN_URL=$MEND_SAST_SCAN_URL" >> $GITHUB_ENV
+          fi
+          echo "MEND_SAST_TOTAL_VULNERABILITIES_COUNT=$MEND_SAST_TOTAL_VULNERABILITIES_COUNT" >> $GITHUB_ENV
+          echo "MEND_SAST_CRITICAL_COUNT=$MEND_SAST_CRITICAL_COUNT" >> $GITHUB_ENV
+          echo "MEND_SAST_HIGH_COUNT=$MEND_SAST_HIGH_COUNT" >> $GITHUB_ENV
+          echo "MEND_SAST_MEDIUM_COUNT=$MEND_SAST_MEDIUM_COUNT" >> $GITHUB_ENV
+          echo "MEND_SAST_LOW_COUNT=$MEND_SAST_LOW_COUNT" >> $GITHUB_ENV
+
+      # Badge + severity table + report link into the job summary. Deliberately
+      # omits the raw CLI output (see the note at the top of this file) - this is
+      # an intentional deviation from the reference ping-android-sdk
+      # mend-sast-scan.yaml's summary block, which does include it.
+      - name: Show the SAST Report in Summary
+        if: always()
+        shell: bash
+        run: |
+          # Pick badge color based on severity counts
+          if [ "$MEND_SAST_CRITICAL_COUNT" -gt 0 ]; then
+            BADGE_COLOR="red"
+            BADGE_TEXT="${MEND_SAST_CRITICAL_COUNT}_critical"
+          elif [ "$MEND_SAST_HIGH_COUNT" -gt 0 ]; then
+            BADGE_COLOR="orange"
+            BADGE_TEXT="${MEND_SAST_HIGH_COUNT}_high"
+          elif [ "$MEND_SAST_MEDIUM_COUNT" -gt 0 ]; then
+            BADGE_COLOR="yellow"
+            BADGE_TEXT="${MEND_SAST_MEDIUM_COUNT}_medium"
+          elif [ "$MEND_SAST_LOW_COUNT" -gt 0 ]; then
+            BADGE_COLOR="blue"
+            BADGE_TEXT="${MEND_SAST_LOW_COUNT}_low"
+          else
+            BADGE_COLOR="brightgreen"
+            BADGE_TEXT="clean"
+          fi
+
+          BADGE_URL="https://img.shields.io/badge/SAST-${BADGE_TEXT}-${BADGE_COLOR}"
+
+          echo "## Mend SAST Report ![SAST Badge](${BADGE_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show counts in a table
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔴 Critical | $MEND_SAST_CRITICAL_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟠 High     | $MEND_SAST_HIGH_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟡 Medium   | $MEND_SAST_MEDIUM_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔵 Low      | $MEND_SAST_LOW_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Add Mend report link if available
+          if [ -n "$MEND_SAST_SCAN_URL" ]; then
+            echo "**🔗 [View Full Mend SAST Report]($MEND_SAST_SCAN_URL)**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Raw CLI output is deliberately not rendered here: with
+          # --secrets-detection enabled it can contain the matched secret
+          # value/snippet, and this summary is readable by anyone with repo read
+          # access. See "Upload SAST scan report" for the full output, kept as a
+          # short-retention artifact instead.
+          echo "Full CLI output is available in the mend-sast-report artifact for this run (1-day retention)." >> $GITHUB_STEP_SUMMARY
+
+      # Step 1: Decide Check Conclusion
+      - name: Determine Mend SAST Check Conclusion
+        id: sast_conclusion
+        if: always()
+        shell: bash
+        run: |
+          if [ "$MEND_SAST_CRITICAL_COUNT" -gt 0 ] || [ "$MEND_SAST_HIGH_COUNT" -gt 0 ]; then
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 2: Publish Mend SAST Check
+      # Deliberately does not attach the raw CLI output as Check text: with
+      # --secrets-detection enabled that output can contain the matched secret
+      # value/snippet, and Check run output is readable by anyone with repo read
+      # access. Counts only; the full output lives in the short-retention
+      # artifact uploaded below.
+      - name: Publish Mend SAST Check
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Mend SAST Report",
+              head_sha: '${{ github.event.pull_request.head.sha || github.sha }}',
+              status: "completed",
+              conclusion: "${{ steps.sast_conclusion.outputs.conclusion }}",
+              output: {
+                title: "Mend SAST Report",
+                summary: `Critical: ${process.env.MEND_SAST_CRITICAL_COUNT}, High: ${process.env.MEND_SAST_HIGH_COUNT}, Medium: ${process.env.MEND_SAST_MEDIUM_COUNT}, Low: ${process.env.MEND_SAST_LOW_COUNT}`
+              }
+            });
+
+      # Short retention: this artifact can contain matched secret values/snippets
+      # when --secrets-detection fires, so it should not linger past what's
+      # needed to investigate the current run.
+      - name: Upload SAST scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mend-sast-report
+          path: |
+            mend-sast-scan-result.txt
+            mend-sast-report.json
+          retention-days: 1

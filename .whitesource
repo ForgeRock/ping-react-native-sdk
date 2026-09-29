@@ -26,7 +26,8 @@
   },
   "issueSettings": {
     "minSeverityLevel": "LOW",
-    "issueType": "DEPENDENCY"
+    "issueType": "DEPENDENCY",
+    "reopenClosedIssues": true
   },
   "issueSettingsSAST": {
     "minSeverityLevel": "high",

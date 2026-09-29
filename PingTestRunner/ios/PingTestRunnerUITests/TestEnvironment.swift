@@ -7,11 +7,13 @@
 
 import Foundation
 
-/// XCUITest environment variables for CI. 
-/// 
+/// XCUITest environment variables for CI and local runs.
+///
 /// Values are read from the test-runner process environment. When running on
 /// BrowserStack the `environmentVariables` key in the build API payload populates
-/// ProcessInfo.processInfo.environment for the XCUITest runner process.
+/// ProcessInfo.processInfo.environment for the XCUITest runner process. For local
+/// runs the runner reads the PingTestRunner `.env` file directly (see `EnvFileLoader`);
+/// process environment values take precedence over `.env` entries.
 
 struct TestEnvironment {
     static let shared = TestEnvironment()
@@ -35,25 +37,34 @@ struct TestEnvironment {
     let daVinciPassword:          String
     let daVinciAcrValues:         String
 
-    private init() {
-        let e = ProcessInfo.processInfo.environment
-        serverUrl         = e["PING_SERVER_URL"]          ?? ""
-        realmPath         = e["PING_REALM_PATH"]          ?? "alpha"
-        cookieName        = e["PING_COOKIE_NAME"]         ?? "iPlanetDirectoryPro"
-        journeyName       = e["PING_JOURNEY_NAME"]        ?? "Login"
-        testUsername      = e["PING_TEST_USERNAME"]       ?? ""
-        testPassword      = e["PING_TEST_PASSWORD"]       ?? ""
-        discoveryEndpoint = e["PING_DISCOVERY_ENDPOINT"]  ?? ""
-        clientId          = e["PING_CLIENT_ID"]           ?? ""
-        redirectUri       = e["PING_REDIRECT_URI"]        ?? "org.forgerock.demo://oauth2redirect"
-        callbackTreesEnabled = e["PING_CALLBACK_TREES_ENABLED"] != "false"
+    private static let fileValues: [String: String] = EnvFileLoader.load()
 
-        daVinciDiscoveryEndpoint = e["PINGONE_DISCOVERY_ENDPOINT"] ?? ""
-        daVinciClientId          = e["PINGONE_CLIENT_ID"]          ?? ""
-        daVinciRedirectUri       = e["PINGONE_REDIRECT_URI"]       ?? "org.forgerock.demo://oauth2redirect"
-        daVinciUsername          = e["PINGONE_USERNAME"]           ?? ""
-        daVinciPassword          = e["PINGONE_PASSWORD"]           ?? ""
-        daVinciAcrValues         = e["PINGONE_ACR_VALUES"]         ?? ""
+    private init() {
+        serverUrl         = Self.readValue("PING_SERVER_URL")          ?? ""
+        realmPath         = Self.readValue("PING_REALM_PATH")          ?? "alpha"
+        cookieName        = Self.readValue("PING_COOKIE_NAME")         ?? "iPlanetDirectoryPro"
+        journeyName       = Self.readValue("PING_JOURNEY_NAME")        ?? "Login"
+        testUsername      = Self.readValue("PING_TEST_USERNAME")       ?? ""
+        testPassword      = Self.readValue("PING_TEST_PASSWORD")       ?? ""
+        discoveryEndpoint = Self.readValue("PING_DISCOVERY_ENDPOINT")  ?? ""
+        clientId          = Self.readValue("PING_CLIENT_ID")           ?? ""
+        redirectUri       = Self.readValue("PING_REDIRECT_URI")        ?? "org.forgerock.demo://oauth2redirect"
+        callbackTreesEnabled = Self.readValue("PING_CALLBACK_TREES_ENABLED") != "false"
+
+        daVinciDiscoveryEndpoint = Self.readValue("PINGONE_DISCOVERY_ENDPOINT") ?? ""
+        daVinciClientId          = Self.readValue("PINGONE_CLIENT_ID")          ?? ""
+        daVinciRedirectUri       = Self.readValue("PINGONE_REDIRECT_URI")       ?? "org.forgerock.demo://oauth2redirect"
+        daVinciUsername          = Self.readValue("PINGONE_USERNAME")           ?? ""
+        daVinciPassword          = Self.readValue("PINGONE_PASSWORD")           ?? ""
+        daVinciAcrValues         = Self.readValue("PINGONE_ACR_VALUES")         ?? ""
+    }
+
+    /// Reads a variable from the process environment, falling back to the
+    /// parsed `.env` file. Static so the initializer can use it before
+    /// stored properties are fully initialized.
+    private static func readValue(_ key: String) -> String? {
+        let processValue = ProcessInfo.processInfo.environment[key]
+        return processValue ?? fileValues[key]
     }
 
     /// True when all vars required for Journey Tier 2 tests are set.

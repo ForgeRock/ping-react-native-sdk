@@ -24,6 +24,10 @@ module.exports = {
       config: 'e2e/jest.config.js',
     },
     retries: process.env.CI ? 4 : 0,
+    // Without this, Detox CLI's own retry keeps the original --testPathPattern
+    // alongside the failed-file paths it appends, so every retry re-matches and
+    // reruns the whole batch instead of just the suites that failed.
+    noRetryArgs: ['shard', 'testPathPattern'],
     jest: {
       setupTimeout: 300000,
       retries: process.env.CI ? 4 : 0,

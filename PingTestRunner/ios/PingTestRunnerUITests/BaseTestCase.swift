@@ -96,6 +96,14 @@ class BaseTestCase: XCTestCase {
         app.descendants(matching: .any).matching(identifier: testID).firstMatch
     }
 
+    /// Returns the first button with the given rendered label, mirroring the Detox
+    /// suite's `element(by.text(label))` selector. A DaVinci login screen can render
+    /// several SUBMIT_BUTTON collectors (Sign On / Register / Trouble signing on)
+    /// sharing the same testID, so the label is the only reliable way to target one.
+    func buttonWithLabel(_ label: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     /// Waits for the element with the given testID to exist and fails the test if it doesn't.
     @discardableResult
     func waitForElementWithTestID(

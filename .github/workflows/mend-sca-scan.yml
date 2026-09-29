@@ -1,0 +1,242 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Mend SCA Scan
+
+# Dependency (SCA) scan of the pruned workspace produced by mend-prepare-workspace.yml.
+# Command shape and report parsing follow the reference ping-android-sdk
+# mend-sca-scan.yaml workflow: MEND_URL/MEND_EMAIL/MEND_USER_KEY auth with the target
+# expressed as MEND_PRODUCT_NAME//MEND_PROJECT_NAME. Results are parsed into severity
+# counts, rendered in the job summary, published as the "Mend SCA Report" check run,
+# and uploaded as an artifact.
+on:
+  workflow_call:
+    secrets:
+      MEND_EMAIL:
+        description: Mend account email used for CLI authentication
+        required: true
+      MEND_USER_KEY:
+        description: Mend user key (Organization > User Settings in the Mend UI)
+        required: true
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  mend-sca-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Set SCAN_DIR
+        run: echo "SCAN_DIR=${RUNNER_TEMP}/mend-scan" >> "$GITHUB_ENV"
+
+      # No Setup Node step: this workflow never checks out the repo (the pruned
+      # workspace arrives as an artifact, so node-version-file's package.json is
+      # not in the runner workspace) and nothing here needs Node - the CLI is a
+      # self-contained binary and parsing uses jq/grep.
+
+      # Fetch just the checksum first (a few bytes) so the cache key reflects the
+      # CLI version Mend is currently serving. Keying on hashFiles of the
+      # executable itself doesn't work: that file doesn't exist yet on a fresh
+      # runner, so hashFiles() always resolved to the same empty hash, the cache
+      # key never changed, and the first binary ever cached was reused forever -
+      # a Mend CLI release would never actually get picked up.
+      - name: Fetch Mend CLI checksum
+        run: curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend.sha256 -o mend.sha256
+
+      # Install to /usr/local/bin (already on PATH, writable on hosted runners), matching
+      # the reference ping-android-sdk workflows. Cached on the checksum so a new Mend
+      # CLI release busts the cache and re-downloads.
+      - name: Download and cache the Mend CLI executable
+        id: cache-mend
+        uses: actions/cache@v4
+        env:
+          mend-cache-name: cache-mend-executable
+        with:
+          path: /usr/local/bin/mend
+          key: ${{ runner.os }}-${{ env.mend-cache-name }}-${{ hashFiles('mend.sha256') }}
+
+      - if: ${{ steps.cache-mend.outputs.cache-hit != 'true' }}
+        name: Download Mend CLI executable (cache miss...)
+        shell: bash
+        run: |
+          curl -fsSL https://downloads.mend.io/cli/linux_amd64/mend -o /usr/local/bin/mend
+          expected="$(awk '{print $1}' mend.sha256)"
+          actual="$(sha256sum /usr/local/bin/mend | awk '{print $1}')"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::Mend CLI checksum mismatch: expected ${expected}, got ${actual}"
+            exit 1
+          fi
+          chmod +x /usr/local/bin/mend
+
+      - name: Download pruned workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: mend-scan-workspace
+          path: ${{ env.SCAN_DIR }}
+
+      # Recreate the yarn shim lost in artifact compression (see mend-prepare-workspace.yml).
+      - name: Restore yarn shim
+        run: ln -sf "${SCAN_DIR}/.yarn/releases/yarn-4.11.0.cjs" /usr/local/bin/yarn
+
+      # --no-default-exclusions is required: Mend's built-in exclusions drop any
+      # directory named "packages", which is exactly where our workspaces live.
+      # Scoped to production dependencies only (no --dev), matching the reference
+      # ping-android-sdk workflow's scan scope. Output is teed to a file so the
+      # report/summary steps below can parse severities even if the scan exits
+      # non-zero; the step itself is continue-on-error so a policy violation does
+      # not mask the parsed summary (conclusion is decided in its own step).
+      - name: Scan dependencies
+        env:
+          MEND_URL: ${{ vars.MEND_SERVER_URL }}
+          MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+          MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+          MEND_PRODUCT_NAME: ${{ vars.MEND_PRODUCT_NAME }}
+          MEND_PROJECT_NAME: ${{ vars.MEND_PROJECT_NAME }}
+        continue-on-error: true
+        run: |
+          if [ -z "${MEND_PRODUCT_NAME}" ] || [ -z "${MEND_PROJECT_NAME}" ]; then
+            echo "::error::Repository variables MEND_PRODUCT_NAME and MEND_PROJECT_NAME are not set. Set them to the Mend product and project names (scope: product//project)."
+            exit 1
+          fi
+          mend dep --no-color -s "${MEND_PRODUCT_NAME}//${MEND_PROJECT_NAME}" -u --dir "${SCAN_DIR}" --no-default-exclusions 2>&1 | tee mend-sca-scan-result.txt
+
+      # Extract severity counts and the report URL from the teed scan output into
+      # env vars consumed by the summary/check steps below. Mirrors the parsing
+      # block of the reference ping-android-sdk mend-sca-scan.yaml.
+      - name: Parse SCA scan results
+        if: always()
+        shell: bash
+        run: |
+          # Extract scan results with more robust parsing
+          MEND_SCA_SCAN_URL=$(grep -Eo '(http|https)://saas\.whitesourcesoftware\.com[^ ]+' mend-sca-scan-result.txt | head -n 1)
+          MEND_SCA_SCAN_SUMMARY=$(grep -E "Detected.*vulnerabilities" mend-sca-scan-result.txt || echo 'No vulnerabilities detected')
+
+          # Initialize counts with default value of 0
+          MEND_SCA_CRITICAL_COUNT=0
+          MEND_SCA_HIGH_COUNT=0
+          MEND_SCA_MEDIUM_COUNT=0
+          MEND_SCA_LOW_COUNT=0
+
+          # Extract vulnerability counts with error handling
+          if grep -q "Critical" mend-sca-scan-result.txt; then
+            MEND_SCA_CRITICAL_COUNT=$(grep -Eo '[0-9]+ Critical' mend-sca-scan-result.txt | awk '{print $1}')
+          fi
+          if grep -q "High" mend-sca-scan-result.txt; then
+            MEND_SCA_HIGH_COUNT=$(grep -Eo '[0-9]+ High' mend-sca-scan-result.txt | awk '{print $1}')
+          fi
+          if grep -q "Medium" mend-sca-scan-result.txt; then
+            MEND_SCA_MEDIUM_COUNT=$(grep -Eo '[0-9]+ Medium' mend-sca-scan-result.txt | awk '{print $1}')
+          fi
+          if grep -q "Low" mend-sca-scan-result.txt; then
+            MEND_SCA_LOW_COUNT=$(grep -Eo '[0-9]+ Low' mend-sca-scan-result.txt | awk '{print $1}')
+          fi
+
+          # Set environment variables with error checking
+          if [ ! -z "$MEND_SCA_SCAN_URL" ]; then
+            echo "MEND_SCA_SCAN_URL=$MEND_SCA_SCAN_URL" >> $GITHUB_ENV
+          fi
+          echo "MEND_SCA_SCAN_SUMMARY=$MEND_SCA_SCAN_SUMMARY" >> $GITHUB_ENV
+          echo "MEND_SCA_CRITICAL_COUNT=$MEND_SCA_CRITICAL_COUNT" >> $GITHUB_ENV
+          echo "MEND_SCA_HIGH_COUNT=$MEND_SCA_HIGH_COUNT" >> $GITHUB_ENV
+          echo "MEND_SCA_MEDIUM_COUNT=$MEND_SCA_MEDIUM_COUNT" >> $GITHUB_ENV
+          echo "MEND_SCA_LOW_COUNT=$MEND_SCA_LOW_COUNT" >> $GITHUB_ENV
+
+      # Render a badge + severity table + collapsible raw output into the job
+      # summary. Mirrors the reference ping-android-sdk mend-sca-scan.yaml.
+      - name: Show the SCA Report in Summary
+        if: always()
+        shell: bash
+        run: |
+          # Pick badge color based on severity counts
+          if [ "$MEND_SCA_CRITICAL_COUNT" -gt 0 ]; then
+            BADGE_COLOR="red"
+            BADGE_TEXT="${MEND_SCA_CRITICAL_COUNT}_critical"
+          elif [ "$MEND_SCA_HIGH_COUNT" -gt 0 ]; then
+            BADGE_COLOR="orange"
+            BADGE_TEXT="${MEND_SCA_HIGH_COUNT}_high"
+          elif [ "$MEND_SCA_MEDIUM_COUNT" -gt 0 ]; then
+            BADGE_COLOR="yellow"
+            BADGE_TEXT="${MEND_SCA_MEDIUM_COUNT}_medium"
+          elif [ "$MEND_SCA_LOW_COUNT" -gt 0 ]; then
+            BADGE_COLOR="blue"
+            BADGE_TEXT="${MEND_SCA_LOW_COUNT}_low"
+          else
+            BADGE_COLOR="brightgreen"
+            BADGE_TEXT="clean"
+          fi
+
+          BADGE_URL="https://img.shields.io/badge/SCA-${BADGE_TEXT}-${BADGE_COLOR}"
+
+          echo "## Mend SCA Report ![SCA Badge](${BADGE_URL})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show counts in a table
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔴 Critical | $MEND_SCA_CRITICAL_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟠 High     | $MEND_SCA_HIGH_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🟡 Medium   | $MEND_SCA_MEDIUM_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔵 Low      | $MEND_SCA_LOW_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Add Mend report link if available
+          if [ -n "$MEND_SCA_SCAN_URL" ]; then
+            echo "**🔗 [View Full Mend SCA Report]($MEND_SCA_SCAN_URL)**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Expandable section for full output
+          echo "<details><summary>Expand for details</summary>" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat mend-sca-scan-result.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "</details>" >> $GITHUB_STEP_SUMMARY
+
+      # Step 1: Decide Check Conclusion
+      - name: Determine Mend SCA Check Conclusion
+        id: sca_conclusion
+        if: always()
+        shell: bash
+        run: |
+          if [ "$MEND_SCA_CRITICAL_COUNT" -gt 0 ] || [ "$MEND_SCA_HIGH_COUNT" -gt 0 ]; then
+            echo "conclusion=failure" >> $GITHUB_OUTPUT
+          else
+            echo "conclusion=success" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 2: Publish Mend SCA Check
+      - name: Publish Mend SCA Check
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('mend-sca-scan-result.txt', 'utf8');
+
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Mend SCA Report",
+              head_sha: '${{ github.event.pull_request.head.sha || github.sha }}',
+              status: "completed",
+              conclusion: "${{ steps.sca_conclusion.outputs.conclusion }}",
+              output: {
+                title: "Mend SCA Report",
+                summary: `Critical: ${process.env.MEND_SCA_CRITICAL_COUNT}, High: ${process.env.MEND_SCA_HIGH_COUNT}`,
+                text: "```\n" + body + "\n```"
+              }
+            });
+
+      - name: Upload SCA scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mend-sca-report
+          path: mend-sca-scan-result.txt

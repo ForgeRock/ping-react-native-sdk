@@ -20,7 +20,7 @@
  * PasswordCallback because ValidatedCreate* extends NameCallback/PasswordCallback in the SDK.
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -93,6 +93,10 @@ describe('Journey — KbaCreateCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit credentials → surfaces KbaCreateCallback fields (step 2)', async () => {
@@ -113,6 +117,10 @@ describe('Journey — KbaCreateCallback', () => {
     await waitFor(element(by.id('journey-field-KbaCreateCallback:0-answer')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-KbaCreateCallback:0-answer')),
+    ).toBeVisible();
   });
 
   it('fill in both KBA questions and answers and submit → reaches SuccessNode (live)', async () => {
@@ -137,5 +145,7 @@ describe('Journey — KbaCreateCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });
