@@ -21,7 +21,7 @@
 import React, { useCallback, useState } from 'react';
 import { Button, Text, TextInput, View } from 'react-native';
 import { LaunchArguments } from 'react-native-launch-arguments';
-import { createJourneyClient } from '@ping-identity/rn-journey';
+import { createJourneyClient, JourneyError } from '@ping-identity/rn-journey';
 import type { JourneyClient, JourneyNode } from '@ping-identity/rn-journey';
 
 // ─── launch args ────────────────────────────────────────────────────────────
@@ -30,10 +30,6 @@ interface BackchannelLaunchArgs {
   PING_SERVER_URL?: string;
   PING_REALM_PATH?: string;
   PING_BACKCHANNEL_REDIRECT_URI?: string;
-  PING_BACKCHANNEL_CLIENT_ID?: string;
-  PING_BACKCHANNEL_CLIENT_SECRET?: string;
-  PING_BACKCHANNEL_JOURNEY_NAME?: string;
-  PING_TEST_USERNAME?: string;
   PING_NO_SESSION?: string;
 }
 
@@ -43,60 +39,6 @@ const SERVER_URL = args.PING_SERVER_URL ?? '';
 const REALM_PATH = args.PING_REALM_PATH ?? '/alpha';
 const BACKCHANNEL_URI = args.PING_BACKCHANNEL_REDIRECT_URI ?? '';
 const NO_SESSION = args.PING_NO_SESSION === 'true';
-const GATEWAY_CLIENT_ID = args.PING_BACKCHANNEL_CLIENT_ID ?? '';
-const GATEWAY_CLIENT_SECRET = args.PING_BACKCHANNEL_CLIENT_SECRET ?? '';
-const GATEWAY_JOURNEY_NAME =
-  args.PING_BACKCHANNEL_JOURNEY_NAME ?? 'back-channel-authentication';
-const TEST_USERNAME = args.PING_TEST_USERNAME ?? '';
-
-/**
- * Simulates the gateway: client-credentials token + backchannel/initialize,
- * mirroring the native QA harness (BackchannelAuthenticationE2ETest).
- */
-async function initializeTransaction(): Promise<string> {
-  const realm = REALM_PATH.replace(/^\//, '');
-  const tokenUrl = `${SERVER_URL}/oauth2/${realm}/access_token`;
-  const tokenBody = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: GATEWAY_CLIENT_ID,
-    client_secret: GATEWAY_CLIENT_SECRET,
-    scope: 'back_channel_authentication',
-  });
-  const tokenResponse = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: tokenBody.toString(),
-  });
-  const tokenPayload = (await tokenResponse.json()) as {
-    access_token?: string;
-  };
-  if (!tokenResponse.ok || !tokenPayload.access_token) {
-    throw new Error(`access_token failed: HTTP ${tokenResponse.status}`);
-  }
-
-  const initUrl =
-    `${SERVER_URL}/json/realms/root/realms/${realm}` +
-    `/authenticate/backchannel/initialize`;
-  const initResponse = await fetch(initUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${tokenPayload.access_token}`,
-      'Accept-API-Version': 'resource=1, protocol=2.0',
-    },
-    body: JSON.stringify({
-      type: 'service',
-      value: GATEWAY_JOURNEY_NAME,
-      data: { username: TEST_USERNAME },
-      allowRetry: true,
-    }),
-  });
-  const initPayload = (await initResponse.json()) as { redirectUri?: string };
-  if (!initResponse.ok || !initPayload.redirectUri) {
-    throw new Error(`initialize failed: HTTP ${initResponse.status}`);
-  }
-  return initPayload.redirectUri;
-}
 
 // ─── state type ─────────────────────────────────────────────────────────────
 
@@ -163,9 +105,11 @@ export default function BackchannelScenario(): React.JSX.Element {
   const handleStart = useCallback(async () => {
     try {
       const journeyClient = await ensureClient();
-      const uri = uriInput.trim() || (await initializeTransaction());
-      if (!uriInput.trim()) {
-        setUriInput(uri);
+      const uri = uriInput.trim();
+      if (!uri) {
+        setResult('No backchannel URI provided');
+        setState('error');
+        return;
       }
       const startNode = await journeyClient.startBackchannel(uri, {
         noSession: NO_SESSION,
@@ -188,8 +132,14 @@ export default function BackchannelScenario(): React.JSX.Element {
         setState('failure');
         return;
       } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        if (!message.toLowerCase().includes('empty')) {
+        if (
+          !(
+            e instanceof JourneyError &&
+            e.type === 'argument_error' &&
+            e.code === 'JOURNEY_START_ERROR'
+          )
+        ) {
+          const message = e instanceof Error ? e.message : String(e);
           setResult(`blank URI threw unexpected error: ${message}`);
           setState('failure');
           return;
@@ -258,11 +208,7 @@ export default function BackchannelScenario(): React.JSX.Element {
       />
       <Button
         testID="backchannel-start-btn"
-        title={
-          uriInput.trim()
-            ? 'Start Backchannel'
-            : 'Initialize + Start Backchannel'
-        }
+        title="Start Backchannel"
         onPress={handleStart}
       />
       <Button

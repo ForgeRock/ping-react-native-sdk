@@ -36,17 +36,13 @@ const SKIP_REASON =
   'back_channel_authentication scope) to enable.';
 
 function gatewayLaunchArgs(): Record<string, string> {
+  // Only app configuration and the pre-initialized redirect URI reach the
+  // app. Gateway credentials stay in the test process (see
+  // backchannel-client.ts) — never passed through launch arguments.
   return {
     PING_TEST_SCENARIO: 'journey-backchannel',
     PING_SERVER_URL: E2E_ENV.serverUrl,
     PING_REALM_PATH: E2E_ENV.realmPath,
-    PING_TEST_USERNAME: E2E_ENV.testUsername,
-    PING_BACKCHANNEL_CLIENT_ID: process.env['PING_BACKCHANNEL_CLIENT_ID'] ?? '',
-    PING_BACKCHANNEL_CLIENT_SECRET:
-      process.env['PING_BACKCHANNEL_CLIENT_SECRET'] ?? '',
-    PING_BACKCHANNEL_JOURNEY_NAME:
-      process.env['PING_BACKCHANNEL_JOURNEY_NAME'] ??
-      'back-channel-authentication',
   };
 }
 

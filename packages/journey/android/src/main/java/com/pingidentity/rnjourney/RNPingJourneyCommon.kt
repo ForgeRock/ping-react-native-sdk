@@ -321,8 +321,12 @@ internal object RNPingJourneyCommon {
 
     val parsedUri = runCatching { Uri.parse(backchannelUri.trim()) }.getOrNull()
     if (parsedUri == null) {
-      // Uri.parse is permissive; a null here means a malformed input the
-      // native API would also reject — surface it as a FailureNode payload.
+      // NOTE: Uri.parse never returns null and practically never throws, so
+      // this branch is unreachable in practice — it exists solely to mirror
+      // iOS's URL(string:) guard (which genuinely can fail) and keep the
+      // resolve-FailureNode contract identical across platforms. Real
+      // malformed-URI handling happens inside the native
+      // start(backchannelUri:) call below.
       val failureNode = FailureNode(
         ApiException(400, "Invalid URI or missing authIndexType/authIndexValue")
       )

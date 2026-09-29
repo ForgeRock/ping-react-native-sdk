@@ -334,26 +334,9 @@ public final class RNPingJourneyCommon: NSObject {
       return
     }
 
-    guard let backchannelUrl = URL(
-      string: redirectUri.trimmingCharacters(in: .whitespacesAndNewlines)
-    ) else {
-      // Mirror the native start(backchannelUri:) contract: validation failures
-      // surface as FailureNode payloads, never rejections. The native method
-      // cannot be reached with an unparseable URL, so the bridge resolves the
-      // same FailureNode shape native produces for malformed input.
-      let failureNode = FailureNode(
-        cause: ApiError.error(
-          400,
-          [:],
-          "Invalid URI or missing authIndexType/authIndexValue"
-        )
-      )
-      stateStore.setNode(journeyId: journeyId, node: failureNode)
-      promise.resolve(JourneyNodeMapper.mapNode(failureNode))
-      return
-    }
-
     Task { @MainActor in
+      // Resolve the journey before any validation-failure state is stored, so
+      // an unknown journeyId never leaves an orphan FailureNode behind.
       guard let journey = await resolveJourney(journeyId) else {
         promise.reject(
           JourneyErrorMapper.state(
@@ -361,6 +344,25 @@ public final class RNPingJourneyCommon: NSObject {
             message: "Journey instance not found for id=\(journeyId)"
           )
         )
+        return
+      }
+
+      guard let backchannelUrl = URL(
+        string: redirectUri.trimmingCharacters(in: .whitespacesAndNewlines)
+      ) else {
+        // Mirror the native start(backchannelUri:) contract: validation failures
+        // surface as FailureNode payloads, never rejections. The native method
+        // cannot be reached with an unparseable URL, so the bridge resolves the
+        // same FailureNode shape native produces for malformed input.
+        let failureNode = FailureNode(
+          cause: ApiError.error(
+            400,
+            [:],
+            "Invalid URI or missing authIndexType/authIndexValue"
+          )
+        )
+        stateStore.setNode(journeyId: journeyId, node: failureNode)
+        promise.resolve(JourneyNodeMapper.mapNode(failureNode))
         return
       }
 
