@@ -37,19 +37,19 @@ target 'PingTestRunner' do
     :git => 'https://github.com/ForgeRock/ping-ios-sdk.git',
     :commit => 'df0acc60c0d4d699aa3fab78c43934f3b1344bdb'
   }
+  # Provider pods (PingExternalIdPApple/Facebook/Google) are intentionally not
+  # pinned: all four PingExternalIdP* podspecs declare the same 'External-idp'
+  # resource bundle, so including them together breaks the archive with
+  # "Multiple commands produce 'External-idp.bundle'". The TestRunner does not
+  # exercise a provider, and RNPingExternalIdp depends only on the base
+  # PingExternalIdP. Revisit once the native bundle names are uniqued.
   %w[
     PingAuthMigration PingBinding PingBrowser PingCommons PingDavinci
     PingDavinciPlugin PingDeviceClient PingDeviceId PingDeviceProfile
-    PingExternalIdP PingExternalIdPApple PingExternalIdPFacebook
-    PingExternalIdPGoogle PingFido PingJourney PingJourneyPlugin PingLogger
+    PingExternalIdP PingFido PingJourney PingJourneyPlugin PingLogger
     PingNetwork PingOath PingOidc PingOneProtect PingOrchestrate PingPush
     PingStorage PingTamperDetector
   ].each { |name| pod name, ping_ios_develop }
-
-  # AppCheckCore -> GoogleUtilities/RecaptchaInterop: neither defines a module,
-  # which Swift requires to import them under static linkage.
-  pod 'RecaptchaInterop', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
 
   # RN bridge pods — all with :testspecs to pick up ios/Tests/**/*.swift
   pod 'RNPingBrowser',
