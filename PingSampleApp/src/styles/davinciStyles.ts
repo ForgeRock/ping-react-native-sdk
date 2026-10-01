@@ -347,6 +347,19 @@ export const davinciFieldStyles = StyleSheet.create({
     height: 220,
     alignSelf: 'center',
   },
+  image: {
+    width: 280,
+    height: 180,
+    alignSelf: 'center',
+    borderRadius: 8,
+    resizeMode: 'contain',
+  },
+  imageCaption: {
+    marginTop: 6,
+    textAlign: 'center',
+    fontSize: 13,
+    color: colors.textDark,
+  },
   pollingStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',

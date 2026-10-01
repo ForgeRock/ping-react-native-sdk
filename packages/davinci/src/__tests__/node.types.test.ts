@@ -8,6 +8,7 @@
 import type {
   BooleanCollector,
   DaVinciFieldValidationError,
+  ImageCollector,
   LabelCollector,
   PasswordCollector,
   PhoneNumberCollector,
@@ -152,5 +153,30 @@ describe('PhoneNumberCollector', () => {
     };
 
     expect(collector.extension).toBeUndefined();
+  });
+});
+
+describe('ImageCollector', () => {
+  it('declares optional hyperlinkUrl and defaults mirroring the native model', () => {
+    const collector: ImageCollector = {
+      key: 'img-1',
+      type: 'IMAGE',
+      imageUrl: 'https://cdn.example.com/hero.png',
+      description: 'Hero image',
+      hyperlinkUrl: 'https://example.com',
+    };
+
+    const withoutHyperlink: ImageCollector = {
+      key: 'img-1',
+      type: 'IMAGE',
+      imageUrl: 'https://cdn.example.com/hero.png',
+      description: 'Hero image',
+    };
+
+    expect(collector.type).toBe('IMAGE');
+    expect(collector.imageUrl).toBe('https://cdn.example.com/hero.png');
+    expect(collector.description).toBe('Hero image');
+    expect(collector.hyperlinkUrl).toBe('https://example.com');
+    expect(withoutHyperlink.hyperlinkUrl).toBeUndefined();
   });
 });

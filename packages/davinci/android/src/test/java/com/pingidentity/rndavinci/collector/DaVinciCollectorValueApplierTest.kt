@@ -13,6 +13,7 @@ import com.pingidentity.davinci.collector.BooleanCollector
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.ImageCollector
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
@@ -510,5 +511,27 @@ class DaVinciCollectorValueApplierTest {
 
         assertEquals("username", text.value)
         assertEquals("pass123", password.value)
+    }
+
+    @Test
+    fun applyImageCollectorValueThrowsUnsupported() {
+        // ImageCollector is Collector<Nothing> (no SingleValueCollector), so the
+        // applier's unknown-collector guard rejects any value sent for its key;
+        // the display-only collector never participates in submissions.
+        val collector = ImageCollector().apply {
+            init(buildJsonObject {
+                put("key", "img-field")
+                put("type", "IMAGE")
+                put("imageUrl", "https://example.com/image.png")
+            })
+        }
+        val node = nodeWith(collector)
+
+        try {
+            DaVinciCollectorValueApplier.apply(node, inputWithCollectors("img-field" to "value"))
+            throw AssertionError("expected UnsupportedOperationException")
+        } catch (error: UnsupportedOperationException) {
+            assertTrue(error.message?.contains("is not supported by the bridge") == true)
+        }
     }
 }

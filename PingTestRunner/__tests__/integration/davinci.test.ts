@@ -295,6 +295,60 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(Object.prototype.hasOwnProperty.call(payload, 'par')).toBe(false);
     });
 
+    it('forwards the full config mapping to native configureDaVinci', async () => {
+      const mock = makeMock();
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient({
+        timeout: 20000,
+        modules: {
+          oidc: {
+            discoveryEndpoint:
+              'https://auth.example.com/.well-known/openid-configuration',
+            clientId: 'davinci-client-id',
+            redirectUri: 'org.forgerock.demo://oauth2redirect',
+            scopes: ['openid', 'profile'],
+            signOutRedirectUri: 'org.forgerock.demo://signout',
+            loginHint: 'alice@example.com',
+            nonce: 'nonce-1',
+            state: 'state-1',
+            prompt: 'login',
+            display: 'page',
+            par: false,
+            uiLocales: 'en fr',
+            acrValues: 'loa-2',
+            refreshThreshold: 300,
+            additionalParameters: { audience: 'urn:example:api' },
+          },
+        },
+      });
+
+      await client.start();
+
+      // Exact shape (toEqual, not objectContaining): the bridge payload must
+      // carry every mapped field and no extras.
+      expect(mock.configureDaVinci).toHaveBeenCalledWith({
+        discoveryEndpoint:
+          'https://auth.example.com/.well-known/openid-configuration',
+        clientId: 'davinci-client-id',
+        redirectUri: 'org.forgerock.demo://oauth2redirect',
+        scopes: ['openid', 'profile'],
+        storageId: undefined,
+        signOutRedirectUri: 'org.forgerock.demo://signout',
+        loginHint: 'alice@example.com',
+        nonce: 'nonce-1',
+        state: 'state-1',
+        prompt: 'login',
+        display: 'page',
+        par: false,
+        uiLocales: 'en fr',
+        acrValues: 'loa-2',
+        refreshThreshold: 300,
+        additionalParameters: { audience: 'urn:example:api' },
+        timeout: 20000,
+        loggerId: undefined,
+      });
+    });
+
     it('start() does not reconfigure on subsequent calls', async () => {
       const mock = makeMock();
       const mod = await loadDaVinci(mock);
@@ -435,6 +489,40 @@ describe('@ping-identity/rn-davinci — integration', () => {
       await client.dispose();
       await client.start();
       expect(mock.configureDaVinci).toHaveBeenCalledTimes(2);
+      // The second start() must forward the fresh id — a stale
+      // 'davinci-id-first' here means the client kept the disposed handle.
+      expect(mock.start).toHaveBeenLastCalledWith(
+        'davinci-id-second',
+        undefined,
+      );
+    });
+
+    it('concurrent start() and user() calls share a single configure', async () => {
+      const mock = makeMock();
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      await Promise.all([client.start(), client.start(), client.user()]);
+      expect(mock.configureDaVinci).toHaveBeenCalledTimes(1);
+    });
+
+    it('start() retries configure after a failed configure', async () => {
+      const mock = makeMock({
+        configureDaVinci: jest
+          .fn()
+          .mockRejectedValueOnce(new Error('transient'))
+          .mockResolvedValueOnce('davinci-id-second'),
+      });
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      await expect(client.start()).rejects.toMatchObject({
+        name: 'DaVinciError',
+      });
+      await client.start();
+      expect(mock.configureDaVinci).toHaveBeenCalledTimes(2);
+      expect(mock.start).toHaveBeenLastCalledWith(
+        'davinci-id-second',
+        undefined,
+      );
     });
   });
 
@@ -1315,6 +1403,73 @@ describe('@ping-identity/rn-davinci — integration', () => {
       expect(plan.input.collectors).toEqual([
         { key: 'username', value: 'alice' },
       ]);
+    });
+  });
+
+  // IMAGE classification (executionMode/kind/formMeta) is covered by
+  // packages/davinci/src/__tests__/collectorHelpers.test.ts — these tests pin
+  // what actually crosses the bridge instead of re-running the pure helpers.
+  describe('IMAGE collector — bridge payload', () => {
+    const imageCollector = {
+      key: 'img-1',
+      type: 'IMAGE',
+      imageUrl: 'https://cdn.example.com/hero.png',
+      description: 'Hero image',
+      hyperlinkUrl: 'https://example.com',
+    };
+
+    it('sends an empty collector payload to native when advancing an image-only node', async () => {
+      const mock = makeMock({
+        start: jest.fn(async () => ({
+          type: 'ContinueNode',
+          collectors: [imageCollector],
+        })),
+      });
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+
+      // Mirror the real submit path: buildNextInput decides what crosses the
+      // bridge, then client.next() hands it to native. Asserting received
+      // args pins the bridge payload, not just the helper's return value.
+      const plan = mod.buildNextInput(node, {});
+      await client.next(plan.input);
+
+      expect(mock.next).toHaveBeenCalledTimes(1);
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [],
+      });
+      expect(plan.canSubmit).toBe(true);
+      expect(plan.issues).toEqual([]);
+    });
+
+    it('sends only input-collector entries when the node mixes IMAGE with TEXT', async () => {
+      const mixedNode = {
+        type: 'ContinueNode',
+        collectors: [
+          imageCollector,
+          {
+            key: 'username',
+            type: 'TEXT',
+            label: 'Username',
+            required: true,
+            value: '',
+          },
+        ],
+      };
+      const mock = makeMock({
+        start: jest.fn(async () => mixedNode),
+      });
+      const mod = await loadDaVinci(mock);
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+
+      const plan = mod.buildNextInput(node, { username: 'alice' });
+      await client.next(plan.input);
+
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [{ key: 'username', value: 'alice' }],
+      });
     });
   });
 

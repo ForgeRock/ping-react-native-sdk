@@ -11,6 +11,7 @@ import DaVinciDeviceField from './DaVinciDeviceField';
 import DaVinciFlowButton from './DaVinciFlowButton';
 import DaVinciFidoField from './DaVinciFidoField';
 import DaVinciIdpField from './DaVinciIdpField';
+import DaVinciImageField from './DaVinciImageField';
 import DaVinciLabelField from './DaVinciLabelField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
 import DaVinciPasswordField from './DaVinciPasswordField';
@@ -83,6 +84,8 @@ function DaVinciFieldRenderer(
       return <DaVinciPollingField {...props} />;
     case 'QR_CODE':
       return <DaVinciQrCodeField {...props} />;
+    case 'IMAGE':
+      return <DaVinciImageField {...props} />;
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

@@ -42,16 +42,17 @@ const manualCollectorTypes = new Set<string>([
  *
  * @remarks
  * `POLLING` is driven by {@link DaVinciClient.pollStatus}, not by form
- * submission; `QR_CODE` is a display-only image. Both classify as
- * `output_only` for execution-mode purposes even though they represent very
- * different UI affordances (see {@link resolveFieldKind}, which distinguishes
- * them via the `polling`/`qrCode` kinds).
+ * submission; `QR_CODE` and `IMAGE` are display-only images. All three
+ * classify as `output_only` for execution-mode purposes even though they
+ * represent very different UI affordances (see {@link resolveFieldKind},
+ * which distinguishes them via the `polling`/`qrCode`/`image` kinds).
  */
 const outputOnlyCollectorTypes = new Set<string>([
   'LABEL',
   'READ_ONLY_TEXT',
   'POLLING',
   'QR_CODE',
+  'IMAGE',
 ]);
 
 const immediateCollectorTypes = new Set<string>([
@@ -112,6 +113,7 @@ const deviceFieldKindTypes = new Set<string>([
 const outputFieldKindTypes = new Set<string>(['LABEL', 'READ_ONLY_TEXT']);
 const pollingFieldKindTypes = new Set<string>(['POLLING']);
 const qrCodeFieldKindTypes = new Set<string>(['QR_CODE']);
+const imageFieldKindTypes = new Set<string>(['IMAGE']);
 const flowFieldKindTypes = new Set<string>([
   'SUBMIT_BUTTON',
   'ACTION',
@@ -174,6 +176,7 @@ export function resolveExecutionMode(type: string): DaVinciExecutionMode {
  * resolveFieldKind('SINGLE_SELECT'); // 'singleSelect'
  * resolveFieldKind('SUBMIT_BUTTON'); // 'flow'
  * resolveFieldKind('LABEL');         // 'output'
+ * resolveFieldKind('IMAGE');         // 'image'
  * resolveFieldKind('UNKNOWN_TYPE');  // 'unknown'
  * ```
  *
@@ -212,6 +215,9 @@ export function resolveFieldKind(type: string): DaVinciFieldKind {
   }
   if (qrCodeFieldKindTypes.has(type)) {
     return 'qrCode';
+  }
+  if (imageFieldKindTypes.has(type)) {
+    return 'image';
   }
   if (flowFieldKindTypes.has(type)) {
     return 'flow';

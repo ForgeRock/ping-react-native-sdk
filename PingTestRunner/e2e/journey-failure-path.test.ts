@@ -80,8 +80,23 @@ describe('Journey — invalid-credential handling', () => {
     }
 
     if (!matchedMatcher) {
+      // Diagnose rather than fail blind: distinguish "wrong message text" from
+      // "no message element at all" (errorMessage was null server-side). The
+      // journey-failure screen only renders the message element when the node
+      // payload carried text, so its absence points at the native payload.
+      let detail: string;
+      try {
+        const attrs = await element(
+          by.id('journey-failure-message'),
+        ).getAttributes();
+        const text = (attrs as { text?: string }).text;
+        detail = `journey-failure-message rendered text: ${JSON.stringify(text)}`;
+      } catch {
+        detail =
+          'journey-failure-message element not found: the failure payload carried no message text';
+      }
       throw new Error(
-        'Expected a failure message for invalid credentials, but none matched.',
+        `Expected a failure message for invalid credentials, but none matched. ${detail}`,
       );
     }
 
