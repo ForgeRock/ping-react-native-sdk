@@ -7,6 +7,11 @@
 package com.pingidentity.rnfido
 
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException
+import androidx.credentials.exceptions.domerrors.TimeoutError
+import androidx.credentials.exceptions.domerrors.InvalidStateError
+import androidx.credentials.exceptions.CreateCredentialCancellationException
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.JavaOnlyArray
 import com.facebook.react.bridge.JavaOnlyMap
@@ -16,6 +21,7 @@ import com.facebook.soloader.SoLoader
 import com.facebook.soloader.nativeloader.NativeLoader
 import com.facebook.soloader.nativeloader.SystemDelegate
 import com.pingidentity.fido.davinci.FidoAuthenticationCollector
+import com.pingidentity.fido.davinci.FidoRegistrationCollector
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.DaVinciCollectorResolver
 import com.pingidentity.rncore.utils.JsonBridgeMapper
@@ -26,9 +32,14 @@ import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.After
 import org.junit.Before
@@ -37,6 +48,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 /**
  * Unit tests for FIDO module metadata and bridge behavior.
@@ -331,7 +343,8 @@ class RNPingFidoTest {
 
   /**
    * Ensures DaVinci authentication maps a user cancellation to the stable
-   * cancelled code rather than the generic authentication error.
+   * cancelled code rather than the generic authentication error, forwarding the
+   * collector's recorded NotAllowedError as the clientError extra.
    */
   @Test
   fun authenticateForDaVinciRejectsWithCancelledWhenUserCancels() {
@@ -339,6 +352,8 @@ class RNPingFidoTest {
     coEvery { collector.authenticate(any()) } returns Result.failure(
       GetCredentialCancellationException("Cancelled by user")
     )
+    every { collector.errorCode } returns "NotAllowedError"
+    every { collector.logger } returns mockk(relaxed = true)
     CoreRuntime.davinciCollectorResolver = { listOf(collector) }
     val promise = TestPromise()
 
@@ -346,6 +361,312 @@ class RNPingFidoTest {
 
     assertTrue(promise.await())
     assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
+    assertEquals("NotAllowedError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  // MARK: - DaVinci clientError extras
+
+  /**
+   * Ensures a failed DaVinci registration rejection carries the collector's
+   * recorded client error code in the userInfo, with the stable register code unchanged.
+   */
+  @Test
+  fun registerForDaVinciRejectionCarriesClientError() {
+    val collector = mockk<FidoRegistrationCollector>()
+    coEvery { collector.register(any()) } returns Result.failure(
+      CreateCredentialCancellationException("Cancelled by user")
+    )
+    every { collector.errorCode } returns "NotAllowedError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.registerForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_REGISTER_ERROR, promise.rejectedCode)
+    assertEquals("NotAllowedError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  /**
+   * Ensures a cancelled DaVinci authentication keeps the stable cancelled code
+   * while carrying the collector's clientError extra.
+   */
+  @Test
+  fun authenticateForDaVinciCancelledKeepsCodeAndCarriesClientError() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      GetCredentialCancellationException("Cancelled by user")
+    )
+    every { collector.errorCode } returns "NotAllowedError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
+    assertEquals("NotAllowedError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  /**
+   * Ensures the NoCredentialException case (plan D8) keeps the bridge-local
+   * cancelled code while clientError reports the server-parity UnknownError that
+   * the native handleError fallback records; the two intentionally disagree.
+   */
+  @Test
+  fun authenticateForDaVinciNoCredentialMapsToCancelledWithUnknownError() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      NoCredentialException("No eligible passkey credential")
+    )
+    every { collector.errorCode } returns "UnknownError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
+    assertEquals("UnknownError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  /**
+   * Ensures a timed-out DaVinci authentication carries the OS-reported
+   * TimeoutError name (open Android set) as clientError under the stable
+   * authenticate error code.
+   */
+  @Test
+  fun authenticateForDaVinciTimeoutCarriesTimeoutError() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      GetPublicKeyCredentialDomException(TimeoutError())
+    )
+    every { collector.errorCode } returns "TimeoutError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_ERROR, promise.rejectedCode)
+    assertEquals("TimeoutError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  /**
+   * Ensures an invalid-state DaVinci authentication carries InvalidStateError as
+   * clientError with the generic authenticate error code unchanged.
+   */
+  @Test
+  fun authenticateForDaVinciInvalidStateCarriesInvalidStateError() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      GetPublicKeyCredentialDomException(InvalidStateError())
+    )
+    every { collector.errorCode } returns "InvalidStateError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_ERROR, promise.rejectedCode)
+    assertEquals("InvalidStateError", promise.rejectedUserInfo?.getString("clientError"))
+  }
+
+  /**
+   * Ensures a failure without a recorded client error code yields no clientError
+   * extra and logs a warning on the collector's logger (no-silent-failures rule).
+   */
+  @Test
+  fun daVinciRejectionWithoutErrorCodeHasNoClientErrorAndLogsWarning() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    val logger = mockk<com.pingidentity.logger.Logger>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      IllegalStateException("unexpected failure")
+    )
+    every { collector.errorCode } returns null
+    every { collector.logger } returns logger
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_ERROR, promise.rejectedCode)
+    assertNull(promise.rejectedUserInfo?.getString("clientError"))
+    verify(exactly = 1) {
+      logger.w(
+        "FIDO DaVinci ceremony failed but the collector recorded no client error code",
+        null
+      )
+    }
+  }
+
+  /**
+   * Ensures the bridge keeps no error state between calls: a failure followed by
+   * a success on the same mocked collector resolves the second call with the
+   * collector payload and no clientError leakage from the first call.
+   */
+  @Test
+  fun daVinciFailureThenSuccessOnSameCollectorResolvesWithoutClientError() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returnsMany listOf(
+      Result.failure(GetCredentialCancellationException("Cancelled by user")),
+      Result.success(
+        buildJsonObject { put("assertion", JsonPrimitive("assertion-value")) }
+      )
+    )
+    every { collector.errorCode } returnsMany listOf("NotAllowedError", null)
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+
+    val failurePromise = TestPromise()
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), failurePromise)
+    assertTrue(failurePromise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, failurePromise.rejectedCode)
+    assertEquals("NotAllowedError", failurePromise.rejectedUserInfo?.getString("clientError"))
+
+    val secondPromise = TestPromise()
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), secondPromise)
+    assertTrue(secondPromise.await())
+    assertNull(secondPromise.rejectedCode)
+    val resolved = secondPromise.resolvedValue as WritableMap
+    assertEquals("assertion-value", resolved.getString("assertion"))
+  }
+
+  /**
+   * Ensures a successful DaVinci authentication resolves with the collector
+   * payload and no clientError, pinning the happy path unchanged.
+   */
+  @Test
+  fun daVinciSuccessResolvesPayloadUnchanged() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.success(
+      buildJsonObject { put("assertion", JsonPrimitive("assertion-value")) }
+    )
+    every { collector.errorCode } returns null
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertNull(promise.rejectedCode)
+    assertNull(promise.rejectedUserInfo)
+    val resolved = promise.resolvedValue as WritableMap
+    assertEquals("assertion-value", resolved.getString("assertion"))
+  }
+
+  /**
+   * Ensures the fallback path inside rejectWithError is not silent: when the
+   * GenericError-based reject itself throws, the bridge logs a warning naming the
+   * dropped userInfo extras before falling back to the plain reject, which loses
+   * clientError.
+   */
+  @Test
+  fun daVinciRejectionFallbackLogsWarningWhenRejectFails() {
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(any()) } returns Result.failure(
+      GetCredentialCancellationException("Cancelled by user")
+    )
+    every { collector.errorCode } returns "NotAllowedError"
+    every { collector.logger } returns mockk(relaxed = true)
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    ShadowLog.setupLogging()
+    ShadowLog.clear()
+    val promise = ThrowingRejectPromise()
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
+
+    assertTrue(promise.await())
+    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
+    val warnings = ShadowLog.getLogsForTag("RNPingFidoCommon")
+      .filter { it.msg.contains("dropping userInfo extras (clientError)") }
+    assertTrue(warnings.isNotEmpty())
+  }
+
+  /**
+   * Promise test helper whose GenericError-based reject throws, forcing the
+   * rejectWithError fallback onto the plain 3-arg reject.
+   */
+  private class ThrowingRejectPromise : Promise {
+    private val latch = CountDownLatch(1)
+
+    var rejectedCode: String? = null
+      private set
+    var rejectedMessage: String? = null
+      private set
+    var rejectedThrowable: Throwable? = null
+      private set
+
+    fun await(timeoutMs: Long = 2_000): Boolean {
+      return latch.await(timeoutMs, TimeUnit.MILLISECONDS)
+    }
+
+    override fun resolve(value: Any?) = Unit
+
+    override fun reject(code: String, message: String?) {
+      rejectedCode = code
+      rejectedMessage = message
+      latch.countDown()
+    }
+
+    override fun reject(code: String, throwable: Throwable?) {
+      rejectedCode = code
+      rejectedThrowable = throwable
+      latch.countDown()
+    }
+
+    override fun reject(code: String, message: String?, throwable: Throwable?) {
+      rejectedCode = code
+      rejectedMessage = message
+      rejectedThrowable = throwable
+      latch.countDown()
+    }
+
+    override fun reject(throwable: Throwable) {
+      rejectedCode = "EUNSPECIFIED"
+      rejectedThrowable = throwable
+      latch.countDown()
+    }
+
+    override fun reject(throwable: Throwable, userInfo: WritableMap) {
+      throw IllegalStateException("Simulated registry failure")
+    }
+
+    override fun reject(code: String, userInfo: WritableMap) {
+      throw IllegalStateException("Simulated registry failure")
+    }
+
+    override fun reject(code: String, throwable: Throwable?, userInfo: WritableMap) {
+      throw IllegalStateException("Simulated registry failure")
+    }
+
+    override fun reject(code: String, message: String?, userInfo: WritableMap) {
+      throw IllegalStateException("Simulated registry failure")
+    }
+
+    override fun reject(
+      code: String?,
+      message: String?,
+      throwable: Throwable?,
+      userInfo: WritableMap?
+    ) {
+      throw IllegalStateException("Simulated registry failure")
+    }
+
+    @Suppress("DEPRECATION")
+    override fun reject(message: String) {
+      rejectedCode = "EUNSPECIFIED"
+      rejectedMessage = message
+      latch.countDown()
+    }
   }
 
   /**
@@ -361,6 +682,8 @@ class RNPingFidoTest {
     var rejectedMessage: String? = null
       private set
     var rejectedThrowable: Throwable? = null
+      private set
+    var rejectedUserInfo: WritableMap? = null
       private set
 
     fun await(timeoutMs: Long = 2_000): Boolean {
@@ -398,23 +721,27 @@ class RNPingFidoTest {
 
     override fun reject(throwable: Throwable, userInfo: WritableMap) {
       rejectedThrowable = throwable
+      rejectedUserInfo = userInfo
       latch.countDown()
     }
 
     override fun reject(code: String, userInfo: WritableMap) {
       rejectedCode = code
+      rejectedUserInfo = userInfo
       latch.countDown()
     }
 
     override fun reject(code: String, throwable: Throwable?, userInfo: WritableMap) {
       rejectedCode = code
       rejectedThrowable = throwable
+      rejectedUserInfo = userInfo
       latch.countDown()
     }
 
     override fun reject(code: String, message: String?, userInfo: WritableMap) {
       rejectedCode = code
       rejectedMessage = message
+      rejectedUserInfo = userInfo
       latch.countDown()
     }
 
@@ -427,6 +754,7 @@ class RNPingFidoTest {
       rejectedCode = code
       rejectedMessage = message
       rejectedThrowable = throwable
+      rejectedUserInfo = userInfo
       latch.countDown()
     }
 

@@ -19,9 +19,13 @@ pre-commit:
       glob: '*.{js,ts,jsx,tsx,mjs,swift,kt,kts,java,yml,yaml,sh,gradle,podspec,mm,m,h,cpp}'
       run: scripts/check-copyright.sh {staged_files}
 
-    - name: native-sdk-versions
-      glob: '*.{gradle,podspec}'
-      run: node scripts/check-native-sdk-versions.mjs
+    # TEMPORARY (SDKS-5380): disabled while native pins are mixed: rn-fido and
+    # rn-davinci consume Android SDK 2.2.0 while all other packages and all iOS
+    # pods remain on 2.1.0, so the all-packages single-version rule cannot
+    # hold. Re-enabling is tracked by SDKS-5380.
+    # - name: native-sdk-versions
+    #   glob: '*.{gradle,podspec}'
+    #   run: node scripts/check-native-sdk-versions.mjs
 
 pre-push:
   jobs:

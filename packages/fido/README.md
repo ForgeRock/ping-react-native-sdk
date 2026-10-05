@@ -197,6 +197,68 @@ The optional `index` selects among multiple FIDO2 collectors with the same
 action. The methods return the native attestation or assertion payload for
 informational use; the native collector submits it when the flow advances.
 
+### DaVinci ceremony failure propagation
+
+When a DaVinci ceremony fails, the native collector classifies the failure and
+the rejection carries `FidoError.clientError`, a WebAuthn DOMException name
+(for example `'NotAllowedError'` after a user cancellation). When
+`clientError` is defined, report the failure to the server by advancing the
+flow with `daVinci.next({ collectors: [] })` so the DaVinci flow can branch on
+it; without propagation the failure stays client-side and the server never
+observes it. Resolution failures such as `FIDO_COLLECTOR_NOT_FOUND` carry no
+`clientError` and must not be propagated; keep the node rendered for retry.
+
+Always advance with an empty collector input. Never submit the node's
+collectors after a failed ceremony: on a node that also contains a
+`SUBMIT_BUTTON`, the submit action shadows the FIDO error and the server
+receives a normal submit instead of the failure (the native event builder
+picks a submit or flow collector's action first, before any FIDO error
+action).
+
+```ts
+import { FidoError } from '@ping-identity/rn-fido';
+
+try {
+  if (collector.action === 'REGISTER') {
+    await fido.registerForDaVinci(daVinci, { index: 0 });
+  } else {
+    await fido.authenticateForDaVinci(daVinci, { index: 0 });
+  }
+  await daVinci.next({ collectors: [] });
+} catch (error) {
+  const err = FidoError.from(error);
+  if (err.clientError !== undefined) {
+    // The collector classified the failure; submit it so the flow can branch.
+    try {
+      await daVinci.next({ collectors: [] });
+    } catch (propagationError) {
+      // Advancing the flow also failed; surface it without losing the
+      // original ceremony failure.
+    }
+  }
+  // Handle the failure in place, for example by showing err.message. A
+  // failure without clientError is not propagatable; keep the node rendered
+  // for retry. Do not propagate twice: once submitted, the failure state is
+  // consumed.
+}
+```
+
+`FidoError.clientError` values and their typical outcomes:
+
+| `clientError`       | Typical outcome                                                        |
+| ------------------- | ---------------------------------------------------------------------- |
+| `NotAllowedError`   | User cancellation or dismissal of the passkey UI.                      |
+| `TimeoutError`      | The ceremony timed out.                                                |
+| `NotSupportedError` | Passkeys are unsupported on the device or blocked by policy.           |
+| `InvalidStateError` | The credential is invalid or already registered (excluded credential). |
+| `UnknownError`      | Any other failure, including an unrecognized native error.             |
+
+`NotAllowedError`, `TimeoutError`, `NotSupportedError`, `InvalidStateError`,
+and `UnknownError` are the only values iOS reports. Android reports an open
+set: credential exceptions map to their WebAuthn DOMException names, so other
+valid names (for example `SecurityError`) can appear. Unknown names pass
+through to the server unmodified.
+
 ## `useJourneyForm` integration
 
 When using `useJourneyForm`, pass `handledCallbackTypes` so FIDO fields are excluded from
@@ -293,6 +355,21 @@ Stable error codes:
 - `FIDO_WINDOW_UNAVAILABLE` (iOS)
 - `FIDO_CALLBACK_NOT_FOUND`
 - `FIDO_COLLECTOR_NOT_FOUND`
+
+DaVinci ceremony failures additionally carry `FidoError.clientError`, the
+WebAuthn DOMException name reported by the native collector, typed as
+`FidoClientErrorName`. The two fields classify the same failure at different
+layers and can intentionally disagree: `code` is the bridge-local
+classification (for example `FIDO_AUTHENTICATE_CANCELLED`), while
+`clientError` is the server-parity value the DaVinci flow branches on (for
+example, on Android a missing credential reports `clientError: 'UnknownError'`
+next to `code: 'FIDO_AUTHENTICATE_CANCELLED'`).
+
+`clientError` is defined only on DaVinci ceremony failures that the collector
+classified. Standalone and Journey rejections never carry it, and neither do
+resolution failures such as `FIDO_COLLECTOR_NOT_FOUND`. See
+[DaVinci ceremony failure propagation](#davinci-ceremony-failure-propagation)
+for the propagation contract and the full value table.
 
 ## Platform notes
 
