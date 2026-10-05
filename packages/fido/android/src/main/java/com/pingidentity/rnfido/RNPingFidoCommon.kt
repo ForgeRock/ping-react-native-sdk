@@ -6,6 +6,7 @@
  */
 package com.pingidentity.rnfido
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableMap
@@ -41,6 +42,7 @@ import kotlinx.serialization.json.put
  * Shared implementation for FIDO operations on Android.
  */
 object RNPingFidoCommon {
+  private const val TAG = "RNPingFidoCommon"
   private const val LOGGER_ID_KEY = "loggerId"
   private const val USE_FIDO2_CLIENT_KEY = "useFido2Client"
   private const val FIDO2_COLLECTOR_TYPE = "FIDO2"
@@ -196,7 +198,9 @@ object RNPingFidoCommon {
       errorCode = FidoErrorCodes.FIDO_REGISTER_ERROR,
       invalidOptionsMessage = "Invalid FIDO registration options payload.",
       defaultFailureMessage = "FIDO registration failed.",
-      operation = { client, input -> client.register(input) }
+      // Registration has no API selection in either SDK version; callConfig is
+      // unused and register always runs through Credential Manager.
+      operation = { client, input, _ -> client.register(input) }
     )
   }
 
@@ -229,7 +233,13 @@ object RNPingFidoCommon {
       errorCode = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
       invalidOptionsMessage = "Invalid FIDO authentication options payload.",
       defaultFailureMessage = "FIDO authentication failed.",
-      operation = { client, input -> client.authenticate(input) }
+      // NOTE: SDK 2.2.0 moved API selection from FidoClientConfig.useFido2Client
+      // to the per-call FidoAuthenticateCustomizer. Applying it here keeps the JS
+      // useFido2Client contract unchanged (true GMS FIDO2 API, false Credential
+      // Manager, undefined auto-detect via the customizer's GMS default).
+      operation = { client, input, callConfig ->
+        client.authenticate(input) { callConfig.useFido2Client?.let { useFido2ApiClient = it } }
+      }
     )
   }
 
@@ -243,7 +253,7 @@ object RNPingFidoCommon {
     errorCode: String,
     invalidOptionsMessage: String,
     defaultFailureMessage: String,
-    operation: suspend (client: FidoClient, input: JsonObject) -> Result<JsonObject>
+    operation: suspend (client: FidoClient, input: JsonObject, callConfig: CallConfig) -> Result<JsonObject>
   ) {
     scope.launchBridge(promise, errorCode) {
       val input = try {
@@ -257,8 +267,12 @@ object RNPingFidoCommon {
         )
         return@launchBridge
       }
-      val client = createFidoClient(parseCallConfig(config))
-      val result = operation(client, input)
+      // Each call builds a fresh client, so thread the parsed config through to
+      // the operation as well; per-call options (useFido2Client) are applied by
+      // the operation itself, not at client construction.
+      val callConfig = parseCallConfig(config)
+      val client = createFidoClient(callConfig)
+      val result = operation(client, input, callConfig)
       result.fold(
         onSuccess = { payload ->
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
@@ -471,12 +485,19 @@ object RNPingFidoCommon {
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
         onFailure = { error ->
+          // The collector's errorCode is a WebAuthn DOMException name (set by
+          // handleError inside register()'s own onFailure); forwarded as the
+          // clientError extra so apps can propagate it via next({collectors: []}).
+          val extras = FidoClientErrorMapper.extras(collector.errorCode) {
+            collector.logger.w(it, null)
+          }
           rejectWithError(
             promise = promise,
             code = FidoErrorCodes.FIDO_REGISTER_ERROR,
             message = error.localizedMessage
               ?: "DaVinci FIDO registration ceremony failed.",
-            throwable = error
+            throwable = error,
+            extras = extras
           )
         }
       )
@@ -537,12 +558,19 @@ object RNPingFidoCommon {
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
         onFailure = { error ->
+          // The collector's errorCode is a WebAuthn DOMException name (set by
+          // handleError inside authenticate()'s own onFailure); forwarded as the
+          // clientError extra so apps can propagate it via next({collectors: []}).
+          val extras = FidoClientErrorMapper.extras(collector.errorCode) {
+            collector.logger.w(it, null)
+          }
           if (isRecoverableFidoAuthenticationFailure(error)) {
             rejectWithError(
               promise = promise,
               code = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
               message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
-              throwable = error
+              throwable = error,
+              extras = extras
             )
             return@fold
           }
@@ -551,7 +579,8 @@ object RNPingFidoCommon {
             code = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
             message = error.localizedMessage
               ?: "DaVinci FIDO authentication ceremony failed.",
-            throwable = error
+            throwable = error,
+            extras = extras
           )
         }
       )
@@ -582,13 +611,17 @@ object RNPingFidoCommon {
 
   /**
    * Rejects a promise with the shared FIDO error contract.
+   *
+   * @param extras Module-specific key/value pairs placed at the top level of the
+   *   rejection userInfo (used for the DaVinci `clientError` extra).
    */
   private fun rejectWithError(
     promise: Promise,
     code: String,
     message: String,
     type: ErrorType = ErrorType.FIDO_ERROR,
-    throwable: Throwable? = null
+    throwable: Throwable? = null,
+    extras: Map<String, String> = emptyMap()
   ) {
     val mapped = throwable?.let { mapThrowableToGenericError(it, code) }
     val resolvedType = if (type == ErrorType.FIDO_ERROR) {
@@ -600,11 +633,22 @@ object RNPingFidoCommon {
     val error = GenericError(
       type = resolvedType,
       error = code,
-      message = resolvedMessage
+      message = resolvedMessage,
+      extras = extras
     )
     try {
       promise.reject(error, throwable)
     } catch (_: Throwable) {
+      // The registry itself may be the failure cause here; no logger is in scope.
+      Log.w(
+        TAG,
+        buildString {
+          append("FIDO rejection failed; falling back to plain reject")
+          if (extras.isNotEmpty()) {
+            append(", dropping userInfo extras (${extras.keys.joinToString()})")
+          }
+        }
+      )
       promise.reject(code, resolvedMessage, throwable)
     }
   }
@@ -621,11 +665,14 @@ object RNPingFidoCommon {
 
   /**
    * Builds a FIDO client using the currently configured runtime state.
+   *
+   * Only the logger is applied at construction: since SDK 2.2.0,
+   * `FidoClientConfig` has no `useFido2Client` property and API selection is a
+   * per-call authenticate customizer decision (see [authenticate]).
    */
   private fun createFidoClient(callConfig: CallConfig): FidoClient {
     val clientConfig = FidoClientConfig().apply {
       resolveLoggerFromCore(callConfig.loggerId)?.let { logger = it }
-      callConfig.useFido2Client?.let { useFido2Client = it }
     }
     return FidoClient(clientConfig)
   }
