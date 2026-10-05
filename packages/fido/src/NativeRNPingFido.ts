@@ -87,6 +87,9 @@ export interface Spec extends TurboModule {
    * @param options Registration ceremony options.
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the WebAuthn attestation payload.
+   * @remarks On ceremony failure the rejection carries an optional
+   * `userInfo.clientError` string with the WebAuthn DOMException name reported
+   * by the native collector. Absent for resolution failures.
    */
   registerCredentialForDaVinci(
     davinciId: string,
@@ -102,6 +105,9 @@ export interface Spec extends TurboModule {
    * @param options Authentication ceremony options.
    * @param config Per-client FIDO runtime configuration payload.
    * @returns A promise that resolves to the WebAuthn assertion payload.
+   * @remarks On ceremony failure the rejection carries an optional
+   * `userInfo.clientError` string with the WebAuthn DOMException name reported
+   * by the native collector. Absent for resolution failures.
    */
   authenticateCredentialForDaVinci(
     davinciId: string,

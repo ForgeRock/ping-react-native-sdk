@@ -13,6 +13,7 @@
  * - Forwards options to native registerCredential / authenticateCredential
  * - Returns the native result unchanged
  * - Propagates native rejections to the caller
+ * - Surfaces clientError on DaVinci ceremony rejections
  */
 
 export {};
@@ -705,6 +706,138 @@ describe('@ping-identity/rn-fido — integration', () => {
       expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledTimes(
         1,
       );
+    });
+
+    it('exposes clientError from authenticateForDaVinci rejection', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_AUTHENTICATE_CANCELLED',
+            message: 'Authentication failed.',
+            type: 'fido_error',
+            userInfo: { clientError: 'NotAllowedError' },
+          };
+        }),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.authenticateForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_AUTHENTICATE_CANCELLED',
+        clientError: 'NotAllowedError',
+      });
+      expect(
+        nativeFidoMock.authenticateCredentialForDaVinci,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('exposes clientError from registerForDaVinci rejection', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_REGISTER_ERROR',
+            message: 'Registration failed.',
+            type: 'fido_error',
+            userInfo: { clientError: 'InvalidStateError' },
+          };
+        }),
+        authenticateCredentialForDaVinci: jest.fn(async () => ({
+          assertionValue: { id: 'cred-1' },
+        })),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      await expect(
+        fidoClient.registerForDaVinci(daVinciClient, { index: 0 }),
+      ).rejects.toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_REGISTER_ERROR',
+        clientError: 'InvalidStateError',
+      });
+      expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledTimes(
+        1,
+      );
+    });
+
+    it('error then daVinci.next({collectors: []}) forwards an empty collectors array to native next', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_AUTHENTICATE_ERROR',
+            message: 'Authentication failed.',
+            type: 'fido_error',
+            userInfo: { clientError: 'TimeoutError' },
+          };
+        }),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      const err = await fidoClient
+        .authenticateForDaVinci(daVinciClient, { index: 0 })
+        .catch((e) => e);
+      expect(err.clientError).toBe('TimeoutError');
+
+      await daVinciClient.next({ collectors: [] });
+
+      expect(nativeDaVinciMock.next).toHaveBeenCalledWith(
+        'davinci-id-fido-mock',
+        { collectors: [] },
+      );
+    });
+
+    it('collector-not-found rejection has no clientError', async () => {
+      const nativeDaVinciMock = makeDaVinciMock();
+      const nativeFidoMock: Required<NativeFidoMock> = {
+        ...makeMock(),
+        registerCredentialForDaVinci: jest.fn(async () => ({
+          attestationValue: { id: 'cred-1' },
+        })),
+        authenticateCredentialForDaVinci: jest.fn(async () => {
+          throw {
+            error: 'FIDO_COLLECTOR_NOT_FOUND',
+            message: 'No active FIDO authentication collector found.',
+            type: 'state_error',
+          };
+        }),
+      };
+      const { fidoClient, daVinciClient } = await loadDaVinciAndFido(
+        nativeDaVinciMock,
+        nativeFidoMock,
+      );
+
+      const err = await fidoClient
+        .authenticateForDaVinci(daVinciClient, { index: 0 })
+        .catch((e) => e);
+
+      expect(err).toMatchObject({
+        name: 'FidoError',
+        code: 'FIDO_COLLECTOR_NOT_FOUND',
+        type: 'state_error',
+      });
+      expect(err.clientError).toBeUndefined();
     });
   });
 });

@@ -327,6 +327,34 @@ export interface FidoClient {
    * @returns A promise that resolves to the WebAuthn attestation payload. Informational
    * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
    * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+   * @remarks
+   * On ceremony failure the rejection carries `clientError`, the WebAuthn
+   * DOMException name reported by the native collector (see
+   * {@link FidoClientErrorName}). When `clientError` is defined, report the
+   * failure to the server by advancing the flow with
+   * `daVinci.next({ collectors: [] })` so the flow can branch on it; do not
+   * submit the node's collectors, a `SUBMIT_BUTTON` shadows the FIDO error.
+   * Without propagation the failure stays client-side and the server never
+   * observes it. Resolution failures such as `FIDO_COLLECTOR_NOT_FOUND` carry
+   * no `clientError` and must not be propagated.
+   * @example
+   * ```ts
+   * try {
+   *   await fido.registerForDaVinci(daVinci);
+   * } catch (error) {
+   *   const err = FidoError.from(error);
+   *   if (err.clientError !== undefined) {
+   *     // The collector classified the failure; submit it so the flow can branch.
+   *     try {
+   *       await daVinci.next({ collectors: [] });
+   *     } catch (propagationError) {
+   *       // Advancing the flow also failed; surface propagationError without
+   *       // losing the original ceremony failure.
+   *     }
+   *   }
+   *   throw err;
+   * }
+   * ```
    */
   registerForDaVinci(
     daVinci: DaVinciInstance,
@@ -340,6 +368,34 @@ export interface FidoClient {
    * @returns A promise that resolves to the WebAuthn assertion payload. Informational
    * only — submit natively by advancing the flow with `daVinci.next({ collectors: [] })`.
    * @throws FidoError when the ceremony fails or the collector cannot be resolved.
+   * @remarks
+   * On ceremony failure the rejection carries `clientError`, the WebAuthn
+   * DOMException name reported by the native collector (see
+   * {@link FidoClientErrorName}). When `clientError` is defined, report the
+   * failure to the server by advancing the flow with
+   * `daVinci.next({ collectors: [] })` so the flow can branch on it; do not
+   * submit the node's collectors, a `SUBMIT_BUTTON` shadows the FIDO error.
+   * Without propagation the failure stays client-side and the server never
+   * observes it. Resolution failures such as `FIDO_COLLECTOR_NOT_FOUND` carry
+   * no `clientError` and must not be propagated.
+   * @example
+   * ```ts
+   * try {
+   *   await fido.authenticateForDaVinci(daVinci);
+   * } catch (error) {
+   *   const err = FidoError.from(error);
+   *   if (err.clientError !== undefined) {
+   *     // The collector classified the failure; submit it so the flow can branch.
+   *     try {
+   *       await daVinci.next({ collectors: [] });
+   *     } catch (propagationError) {
+   *       // Advancing the flow also failed; surface propagationError without
+   *       // losing the original ceremony failure.
+   *     }
+   *   }
+   *   throw err;
+   * }
+   * ```
    */
   authenticateForDaVinci(
     daVinci: DaVinciInstance,
@@ -348,19 +404,91 @@ export interface FidoClient {
 }
 
 /**
+ * WebAuthn DOMException name reported by a failed DaVinci FIDO2 ceremony.
+ *
+ * @remarks
+ * Surfaced on DaVinci FIDO rejections only, as {@link FidoError.clientError}.
+ * Standalone and Journey FIDO rejections never carry it.
+ *
+ * Names are WebAuthn DOMException names as reported by the native collector.
+ * Android reports an open set: androidx credential exceptions map to their
+ * DOMException names, so any valid name can appear. iOS reports a closed set
+ * of exactly the five names listed. For example, Android classifies a missing
+ * credential as `UnknownError` while the bridge keeps the rejection `code` as
+ * `FIDO_AUTHENTICATE_CANCELLED`: `clientError` is the server-parity value and
+ * the two fields can intentionally disagree.
+ *
+ * @public
+ */
+export type FidoClientErrorName =
+  | 'NotAllowedError'
+  | 'TimeoutError'
+  | 'NotSupportedError'
+  | 'InvalidStateError'
+  | 'UnknownError'
+  | (string & {});
+
+/**
  * Error thrown when FIDO operations fail.
  *
  * Extends {@link PingError} to allow per-package `instanceof` narrowing.
+ *
+ * On DaVinci ceremony failures, `clientError` carries the WebAuthn
+ * DOMException name reported by the native collector; see
+ * {@link FidoClientErrorName}.
  */
 export class FidoError extends PingError {
-  constructor(message: string, code: string, type: string, status?: number) {
+  /**
+   * WebAuthn DOMException name reported by the native DaVinci FIDO collector
+   * when the ceremony failed, for example `'NotAllowedError'` after a user
+   * cancellation.
+   *
+   * @remarks
+   * Defined only on DaVinci ceremony failures that the native collector
+   * classified; `undefined` for standalone and Journey rejections and for
+   * resolution failures such as `FIDO_COLLECTOR_NOT_FOUND`. When defined, it
+   * marks the failure as propagatable to the DaVinci server with
+   * `daVinci.next({ collectors: [] })`. It is the server-parity value and can
+   * intentionally disagree with `code`, which is the bridge-local
+   * classification.
+   */
+  readonly clientError?: FidoClientErrorName;
+
+  constructor(
+    message: string,
+    code: string,
+    type: string,
+    status?: number,
+    clientError?: FidoClientErrorName,
+  ) {
     super(message, code, type, status);
     this.name = 'FidoError';
+    if (clientError !== undefined) this.clientError = clientError;
     Object.setPrototypeOf(this, new.target.prototype);
   }
 
   static from(raw: unknown): FidoError {
-    return PingError.fromAs(raw, FidoError);
+    if (raw instanceof FidoError) return raw;
+    const normalizedError = PingError.from(raw);
+    const rawRecord = raw as Record<string, unknown>;
+    const userInfo =
+      rawRecord?.userInfo && typeof rawRecord.userInfo === 'object'
+        ? (rawRecord.userInfo as Record<string, unknown>)
+        : null;
+    const clientError =
+      typeof userInfo?.clientError === 'string' &&
+      userInfo.clientError.trim().length > 0
+        ? userInfo.clientError
+        : undefined;
+    const fidoError = new FidoError(
+      normalizedError.message,
+      normalizedError.code,
+      normalizedError.type,
+      normalizedError.status,
+      clientError,
+    );
+    if (raw instanceof Error && raw.stack) fidoError.stack = raw.stack;
+    return fidoError;
   }
 }
 
