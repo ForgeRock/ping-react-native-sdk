@@ -41,6 +41,17 @@ enum OidcErrorMapper {
         message: message,
         status: status
       )
+    case .configurationError(let message):
+      // Added in ping-ios-sdk develop (OidcError.configurationError): a
+      // configuration/setup failure is an argument-level error.
+      // TODO(SDKS-5380): re-verify this mapping (and the sample/test-runner
+      // develop pins it depends on) once the PingJourney pod ships 2.2.0 and
+      // the pins are bumped to it.
+      return GenericError(
+        type: .argumentError,
+        error: code.rawValue,
+        message: message
+      )
     case .unknown(_, let message):
       return GenericError(
         type: .unknownError,

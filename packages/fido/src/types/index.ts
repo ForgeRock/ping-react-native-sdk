@@ -10,6 +10,7 @@ export type {
   FidoAndroidConfig,
   FidoClient,
   FidoClientConfig,
+  FidoClientErrorName,
   FidoConfig,
   FidoAuthenticationCollector,
   FidoAuthenticationOptions,

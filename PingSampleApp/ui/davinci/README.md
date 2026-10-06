@@ -117,6 +117,15 @@ Auto-starts the DaVinci flow once when no node and no active session are present
 1. `DaVinciContinueNodePanel` checks whether the collector list contains at least one `SUBMIT_BUTTON`, `ACTION`, or `FLOW_BUTTON`.
 2. If none are present, a fallback "Next" button is rendered to allow progression.
 
+### FIDO Ceremony Failure Propagation
+
+1. `DaVinciFidoField` invokes `onFidoCeremony`, which runs the native passkey ceremony and then advances the flow.
+2. On success and on collector-classified failures (rejections carrying `FidoError.clientError`), the flow is advanced with `next({ collectors: [] })` so the server can branch on the outcome.
+3. A classified failure is shown via `fidoError`; once the server's next node arrives, the failure card is cleared because that node is authoritative.
+4. Failures without `clientError` (for example `FIDO_COLLECTOR_NOT_FOUND` and state errors) are shown via `fidoError` but are not propagated, and the node stays rendered for retry.
+5. Propagation (`next`) failures are logged and surfaced via the hook-level `error`, kept distinct from the ceremony failure shown via `fidoError`.
+6. Submitting the node's collectors instead of an empty array would shadow the FIDO error with a `SUBMIT_BUTTON` action, so the empty-array form is the only propagation path.
+
 ## Security Notes
 
 - Collector values containing passwords or secrets are never logged by sample components.

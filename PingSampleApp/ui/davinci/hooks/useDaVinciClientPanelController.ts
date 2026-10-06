@@ -26,6 +26,7 @@ import {
 import {
   createFidoClient,
   fidoCollectorType,
+  FidoError,
   type FidoCollector,
 } from '@ping-identity/rn-fido';
 import {
@@ -97,6 +98,14 @@ export type UseDaVinciClientPanelControllerResult = {
    * Runs the native passkey ceremony for a FIDO collector, then advances the
    * DaVinci flow.
    *
+   * @remarks
+   * On success and on collector-classified failures (rejections carrying
+   * `clientError`), the flow is advanced with `next({ collectors: [] })` so
+   * the server can branch on the outcome; the failure is also shown via
+   * `fidoError`. Failures without `clientError` (for example
+   * `FIDO_COLLECTOR_NOT_FOUND`) are shown via `fidoError` but are not
+   * propagated, and the node stays rendered for retry.
+   *
    * @param collector - The FIDO collector to process.
    */
   onFidoCeremony: (collector: FidoCollector) => Promise<void>;
@@ -136,17 +145,16 @@ export type UseDaVinciClientPanelControllerOptions = {
 };
 
 /**
- * Returns true when the supplied error represents a user-cancelled FIDO
- * authentication prompt.
+ * Returns the display message for a failed FIDO ceremony.
  *
- * @param error Error returned by the FIDO client.
- * @returns Whether the error is the native authentication cancellation code.
+ * @param error Error thrown by the FIDO client.
+ * @returns Message naming the client-side failure outcome when the collector
+ * classified it, otherwise the raw error message.
  */
-function isFidoAuthenticationCancelled(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return (error as { code?: unknown }).code === 'FIDO_AUTHENTICATE_CANCELLED';
+function fidoCeremonyErrorMessage(error: FidoError): string {
+  return error.clientError !== undefined
+    ? `Passkey ceremony failed: ${error.clientError}.`
+    : error.message;
 }
 
 /**
@@ -324,17 +332,32 @@ export function useDaVinciClientPanelController(
           });
         }
         await next({ collectors: [] });
-      } catch (fidoErrorValue) {
-        if (isFidoAuthenticationCancelled(fidoErrorValue)) {
-          setFidoError('Passkey authentication was canceled.');
+      } catch (ceremonyError) {
+        const fidoErrorValue = FidoError.from(ceremonyError);
+        if (fidoErrorValue.clientError !== undefined) {
+          // The collector classified the failure; submit it so the flow can
+          // branch. Submitting the node's collectors instead would shadow the
+          // FIDO error with a SUBMIT_BUTTON action.
+          setFidoError(fidoCeremonyErrorMessage(fidoErrorValue));
+          try {
+            await next({ collectors: [] });
+            // The server's node is now authoritative; drop the failure card
+            // so it does not linger over the branch the server returned.
+            setFidoError(null);
+          } catch (propagationError) {
+            // Surfaces via the hook-level `error`, kept distinct from the
+            // ceremony failure already shown.
+            console.warn(
+              '[DaVinci] FIDO error propagation failed:',
+              propagationError,
+            );
+          }
           return;
         }
+        // Resolution failures (collector not found, state errors) carry no
+        // clientError and must not be propagated.
         console.warn('[DaVinci] FIDO ceremony failed:', fidoErrorValue);
-        const msg =
-          fidoErrorValue instanceof Error
-            ? fidoErrorValue.message
-            : String(fidoErrorValue);
-        setFidoError(msg);
+        setFidoError(fidoCeremonyErrorMessage(fidoErrorValue));
       }
     },
     [davinciContext?.client, fido, form.fields, loading, next],

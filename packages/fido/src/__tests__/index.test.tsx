@@ -526,6 +526,102 @@ describe('FIDO API', () => {
     expect(err.type).toBe('state_error');
   });
 
+  it('registerForDaVinci throws FidoError exposing clientError NotAllowedError', async () => {
+    const nativeError = {
+      error: 'FIDO_REGISTER_ERROR',
+      type: 'fido_error',
+      message: 'register failed',
+      userInfo: { clientError: 'NotAllowedError' },
+    };
+    const registerDaVinciNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      registerCredentialForDaVinci: registerDaVinciNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-123') };
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    const client = createFidoClient({ logger });
+
+    const err = await client
+      .registerForDaVinci(daVinci, { index: 0 })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_REGISTER_ERROR');
+    expect(err.clientError).toBe('NotAllowedError');
+    expect(logger.error).toHaveBeenCalledWith('FIDO registerForDaVinci failed');
+  });
+
+  it('authenticateForDaVinci keeps FIDO_AUTHENTICATE_CANCELLED and exposes clientError', async () => {
+    const nativeError = {
+      error: 'FIDO_AUTHENTICATE_CANCELLED',
+      type: 'fido_error',
+      message: 'authentication cancelled',
+      userInfo: { clientError: 'NotAllowedError' },
+    };
+    const authenticateDaVinciNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      authenticateCredentialForDaVinci: authenticateDaVinciNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-xyz') };
+    const client = createFidoClient();
+
+    const err = await client
+      .authenticateForDaVinci(daVinci, { index: 0 })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_AUTHENTICATE_CANCELLED');
+    expect(err.clientError).toBe('NotAllowedError');
+  });
+
+  it('DaVinci rejection without userInfo leaves clientError undefined', async () => {
+    const nativeError = {
+      error: 'FIDO_COLLECTOR_NOT_FOUND',
+      type: 'state_error',
+      message: 'No active FIDO authentication collector found',
+    };
+    const authenticateDaVinciNative = jest.fn().mockRejectedValue(nativeError);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      authenticateCredentialForDaVinci: authenticateDaVinciNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-xyz') };
+    const client = createFidoClient();
+
+    const err = await client
+      .authenticateForDaVinci(daVinci, { index: 0 })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.code).toBe('FIDO_COLLECTOR_NOT_FOUND');
+    expect(err.clientError).toBeUndefined();
+  });
+
+  it('successful DaVinci ceremony resolves unchanged', async () => {
+    const authenticateDaVinciNative = jest.fn().mockResolvedValue({
+      assertionValue: { authenticatorData: 'AAECAw' },
+    });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      authenticateCredentialForDaVinci: authenticateDaVinciNative,
+    });
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-xyz') };
+    const client = createFidoClient();
+
+    await expect(client.authenticateForDaVinci(daVinci)).resolves.toEqual({
+      assertionValue: { authenticatorData: 'AAECAw' },
+    });
+  });
+
   it('authenticateForDaVinci forwards a default empty options object', async () => {
     const authenticateDaVinciNative = jest.fn().mockResolvedValue({});
     (getNativeModule as jest.Mock).mockReturnValue({
