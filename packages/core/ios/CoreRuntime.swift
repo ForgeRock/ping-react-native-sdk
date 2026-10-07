@@ -236,7 +236,9 @@ public enum CoreRuntime {
     /// Clears all registered DaVinci collector serializers.
     ///
     /// - Note: Test-only seam for hermetic unit tests; not part of the public API.
-    internal static func resetDaVinciCollectorSerializersForTesting() {
+    ///   Public visibility lets other packages' unit tests reset state, mirroring
+    ///   `CoreRuntime.resetDaVinciCollectorSerializersForTesting` on Android.
+    public static func resetDaVinciCollectorSerializersForTesting() {
         davinciCollectorSerializerStore.clear()
     }
 

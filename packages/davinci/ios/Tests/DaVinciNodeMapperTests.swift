@@ -12,6 +12,7 @@ import XCTest
 import PingDavinci
 import PingDavinciPlugin
 import PingOrchestrate
+import RNPingCore
 @testable import RNPingDavinci
 
 final class DaVinciNodeMapperTests: XCTestCase {
@@ -547,6 +548,74 @@ final class DaVinciNodeMapperTests: XCTestCase {
     let payload = DaVinciNodeMapper.mapNodePayload(node)
 
     XCTAssertNil(payload["unsupportedFields"])
+  }
+
+  func testMapNodePayloadOmitsSocialLoginWhenIdpCollectorSerialized() {
+    // IdpCollector.id (PingExternalIdP 2.1.0) falls back to a fresh random UUID per
+    // call, so the server field key never matches registeredKeys. When the registered
+    // CoreRuntime serializer emits type=SOCIAL_LOGIN_BUTTON for a collector, the field
+    // must not be reported as unsupported. A stand-in class mimics that contract.
+    final class FakeIdpCollector: Collector, @unchecked Sendable {
+      typealias T = String
+      let id: String
+      init(key: String) { id = key }
+      init(with json: [String: Any]) { fatalError("Use init(key:) for tests") }
+      func initialize(with value: Any) {}
+      func payload() -> String? { nil }
+    }
+    CoreRuntime.registerDaVinciCollectorSerializer { collectorAny in
+      guard let fake = collectorAny as? FakeIdpCollector else { return nil }
+      return [
+        "key": fake.id,
+        "type": "SOCIAL_LOGIN_BUTTON",
+        "label": "Sign in with Google",
+        "idpId": fake.id,
+        "idpType": "GOOGLE",
+        "idpEnabled": true,
+      ]
+    }
+    defer { CoreRuntime.resetDaVinciCollectorSerializersForTesting() }
+
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "social-login-google", "type": "SOCIAL_LOGIN_BUTTON"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [FakeIdpCollector(key: "social-login-google")],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNil(payload["unsupportedFields"])
+    let collectors = payload["collectors"] as? [[String: Any]]
+    XCTAssertEqual(collectors?.count, 1)
+    XCTAssertEqual(collectors?[0]["type"] as? String, "SOCIAL_LOGIN_BUTTON")
+  }
+
+  func testMapNodePayloadKeepsSocialLoginWhenNoIdpCollectorSerialized() {
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "social-login-google", "type": "SOCIAL_LOGIN_BUTTON"]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(collectors: [], input: input)
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    let unsupported = payload["unsupportedFields"] as? [[String: Any]]
+    XCTAssertEqual(unsupported?.count, 1)
+    XCTAssertEqual(unsupported?[0]["key"] as? String, "social-login-google")
+    XCTAssertEqual(unsupported?[0]["type"] as? String, "SOCIAL_LOGIN_BUTTON")
   }
 
   func testMapNodePayloadSuccessNodeDoesNotEmitUnsupportedFields() {
