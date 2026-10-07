@@ -209,6 +209,17 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5EEDC0DEC0DE5EEDC0DEC0DE5EEDC0DE"
+               BuildableName = "RNPingRecaptcha-Unit-Tests.xctest"
+               BlueprintName = "RNPingRecaptcha-Unit-Tests"
+               ReferencedContainer = "container:Pods/Pods.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "18EADDB024B53881D9AAD62F28F030B5"
                BuildableName = "RNPingStorage-Unit-Tests.xctest"
                BlueprintName = "RNPingStorage-Unit-Tests"

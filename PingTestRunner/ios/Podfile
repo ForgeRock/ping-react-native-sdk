@@ -73,6 +73,9 @@ target 'PingTestRunner' do
   pod 'RNPingPush',
     :path => '../../node_modules/@ping-identity/rn-push',
     :testspecs => ['Tests']
+  pod 'RNPingRecaptcha',
+    :path => '../../node_modules/@ping-identity/rn-recaptcha',
+    :testspecs => ['Tests']
   pod 'RNPingStorage',
     :path => '../../node_modules/@ping-identity/rn-storage',
     :testspecs => ['Tests']

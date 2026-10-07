@@ -23,6 +23,7 @@ import {
   type UserKeyOption,
 } from '@ping-identity/rn-binding';
 import { createFidoClient } from '@ping-identity/rn-fido';
+import { createRecaptchaClient } from '@ping-identity/rn-recaptcha';
 import { createExternalIdpClient } from '@ping-identity/rn-external-idp';
 import { open as openBrowser } from '@ping-identity/rn-browser';
 import { PingError } from '@ping-identity/rn-types';
@@ -35,6 +36,7 @@ import {
 } from '../utils/clientPanel';
 import { bindingIntegration } from '../integrations/bindingIntegration';
 import { fidoIntegration } from '../integrations/fidoIntegration';
+import { recaptchaIntegration } from '../integrations/recaptchaIntegration';
 import { useJourneySessionController } from './useJourneySessionController';
 import { useJourneyResumeController } from './useJourneyResumeController';
 import { useJourneyDebugEntries } from './useJourneyDebugEntries';
@@ -48,13 +50,15 @@ const SELECT_IDP_CALLBACK_TYPE: string = 'SelectIdpCallback';
 const REDIRECT_CALLBACK_TYPE: string = 'RedirectCallback';
 const IDP_CALLBACK_TYPES = new Set<string>(['IdPCallback', 'IdpCallback']);
 
-// Callback types handled by the fido and binding integrations — passed to
-// useJourneyForm so canSubmit is not blocked on integration_required fields.
+// Callback types handled by the fido, binding, and recaptcha integrations —
+// passed to useJourneyForm so canSubmit is not blocked on integration_required
+// fields.
 const INTEGRATION_HANDLED_CALLBACK_TYPES = new Set<JourneyCallbackType>([
   'FidoRegistrationCallback',
   'FidoAuthenticationCallback',
   'DeviceBindingCallback',
   'DeviceSigningVerifierCallback',
+  'ReCaptchaEnterpriseCallback',
 ]);
 
 /**
@@ -402,6 +406,7 @@ export function useJourneyClientPanelController(
     [],
   );
   const fido = useMemo(() => createFidoClient({}), []);
+  const recaptcha = useMemo(() => createRecaptchaClient(), []);
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdpRedirectUriRef = useRef(externalIdpRedirectUri);
   const externalIdp = useMemo(
@@ -557,8 +562,15 @@ export function useJourneyClientPanelController(
         readDeviceNameInput,
         resolveDefaultDeviceName: resolveDefaultSystemDeviceName,
       }),
+      recaptchaIntegration(recaptcha),
     ],
-    [binding, fido, readDeviceNameInput, resolveDefaultSystemDeviceName],
+    [
+      binding,
+      fido,
+      recaptcha,
+      readDeviceNameInput,
+      resolveDefaultSystemDeviceName,
+    ],
   );
 
   const runner = useJourneyIntegrationRunner({

@@ -21,8 +21,8 @@ enum JourneyCallbackValueApplier {
     "PingOneProtectEvaluationCallback": "PingOne Protect integration",
     "SelectIdpCallback": "@ping-identity/rn-external-idp",
     "IdpCallback": "@ping-identity/rn-external-idp",
-    "ReCaptchaCallback": "ReCaptcha integration",
-    "ReCaptchaEnterpriseCallback": "ReCaptcha Enterprise integration",
+    "ReCaptchaCallback": "ReCaptchaCallback (v2/v3) has no native integration — ReCaptchaEnterpriseCallback via @ping-identity/rn-recaptcha is the supported option",
+    "ReCaptchaEnterpriseCallback": "@ping-identity/rn-recaptcha",
     "DeviceBindingCallback": "@ping-identity/rn-binding",
     "DeviceSigningVerifierCallback": "@ping-identity/rn-binding"
   ]

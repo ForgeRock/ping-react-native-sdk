@@ -15,6 +15,7 @@
       "@ping-identity/rn-journey": ["../packages/journey/src/index"],
       "@ping-identity/rn-logger": ["../packages/logger/src/index"],
       "@ping-identity/rn-oidc": ["../packages/oidc/src/index"],
+      "@ping-identity/rn-recaptcha": ["../packages/recaptcha/src/index"],
       "@ping-identity/rn-storage": ["../packages/storage/src/index"],
       "@ping-identity/rn-types": ["../packages/types/src/index"]
     }
