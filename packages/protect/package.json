@@ -28,11 +28,11 @@
     "prettier": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\" babel.config.js jest.config.js eslint.config.mjs"
   },
   "dependencies": {
-    "@ping-identity/rn-types": "^1.1.0"
+    "@ping-identity/rn-types": "workspace:^"
   },
   "peerDependencies": {
-    "@ping-identity/rn-core": "^1.1.0",
-    "@ping-identity/rn-davinci": "^1.1.0",
+    "@ping-identity/rn-core": "workspace:^",
+    "@ping-identity/rn-davinci": "workspace:^",
     "react": "*",
     "react-native": "*"
   },

@@ -24,10 +24,10 @@
     "clean": "rimraf lib"
   },
   "dependencies": {
-    "@ping-identity/rn-types": "^1.1.0"
+    "@ping-identity/rn-types": "workspace:^"
   },
   "peerDependencies": {
-    "@ping-identity/rn-core": "^1.1.0",
+    "@ping-identity/rn-core": "workspace:^",
     "react": "*",
     "react-native": "*"
   },
