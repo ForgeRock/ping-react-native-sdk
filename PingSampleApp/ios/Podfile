@@ -40,6 +40,8 @@ target 'PingSampleApp' do
   :path => '../../node_modules/@ping-identity/rn-binding'
   pod 'RNPingDeviceClient',
   :path => '../../node_modules/@ping-identity/rn-device-client'
+  pod 'RNPingRecaptcha',
+  :path => '../../node_modules/@ping-identity/rn-recaptcha'
   pod 'PingExternalIdPApple', '2.1.0'
   pod 'PingExternalIdPFacebook', '2.1.0'
   pod 'PingExternalIdPGoogle', '2.1.0'

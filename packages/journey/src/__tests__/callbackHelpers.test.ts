@@ -730,4 +730,124 @@ describe('normalizeCallbacks — typed named fields', () => {
       expect(field.value).toEqual(assertionOptions);
     }
   });
+
+  it('adds siteKey to ReCaptchaEnterpriseCallback fields from the raw output array', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ReCaptchaEnterpriseCallback',
+          raw: {
+            type: 'ReCaptchaEnterpriseCallback',
+            output: [{ name: 'recaptchaSiteKey', value: '6Lc-test-site-key' }],
+            input: [
+              { name: 'IDToken1token', value: '' },
+              { name: 'IDToken1action', value: '' },
+              { name: 'IDToken1clientError', value: '' },
+              { name: 'IDToken1payload', value: '{}' },
+            ],
+          },
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ReCaptchaEnterpriseCallback');
+    if (field.type === 'ReCaptchaEnterpriseCallback') {
+      expect(field.siteKey).toBe('6Lc-test-site-key');
+    }
+  });
+
+  it('falls back to a raw top-level recaptchaSiteKey when the output array omits it', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        {
+          type: 'ReCaptchaEnterpriseCallback',
+          raw: {
+            type: 'ReCaptchaEnterpriseCallback',
+            recaptchaSiteKey: '6Lc-top-level-key',
+            output: [],
+            input: [],
+          },
+        },
+      ],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ReCaptchaEnterpriseCallback');
+    if (field.type === 'ReCaptchaEnterpriseCallback') {
+      expect(field.siteKey).toBe('6Lc-top-level-key');
+    }
+  });
+
+  it('defaults siteKey to an empty string when the payload omits it', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'ReCaptchaEnterpriseCallback' }],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field.type).toBe('ReCaptchaEnterpriseCallback');
+    if (field.type === 'ReCaptchaEnterpriseCallback') {
+      expect(field.siteKey).toBe('');
+    }
+  });
+
+  it('classifies ReCaptchaEnterpriseCallback as integration-required with no user input', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'ReCaptchaEnterpriseCallback' }],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field).toMatchObject({
+      id: 'ReCaptchaEnterpriseCallback:0',
+      type: 'ReCaptchaEnterpriseCallback',
+      executionMode: 'integration_required',
+      requiresUserInput: false,
+      kind: 'unknown',
+    });
+  });
+
+  it('classifies ReCaptchaCallback as an unknown integration-required field without marker fields', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'ReCaptchaCallback' }],
+    };
+    const [field] = normalizeCallbacks(node);
+    expect(field).toMatchObject({
+      id: 'ReCaptchaCallback:0',
+      type: 'ReCaptchaCallback',
+      executionMode: 'integration_required',
+      requiresUserInput: false,
+    });
+    expect('siteKey' in field).toBe(false);
+  });
+});
+
+describe('buildNextInput — handledCallbackTypes integration handoff', () => {
+  it('clears the INTEGRATION_REQUIRED issue for ReCaptchaEnterpriseCallback when handled', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'ReCaptchaEnterpriseCallback' }],
+    };
+
+    const blocked = buildNextInput(node, {});
+    expect(blocked.canSubmit).toBe(false);
+    expect(blocked.issues).toEqual([
+      {
+        code: 'INTEGRATION_REQUIRED',
+        message:
+          'Callback "ReCaptchaEnterpriseCallback" requires additional integration.',
+        fieldId: 'ReCaptchaEnterpriseCallback:0',
+        callbackType: 'ReCaptchaEnterpriseCallback',
+      },
+    ]);
+
+    const handled = buildNextInput(
+      node,
+      {},
+      new Set(['ReCaptchaEnterpriseCallback'] as const),
+    );
+    expect(handled.canSubmit).toBe(true);
+    expect(handled.issues).toEqual([]);
+    expect(handled.input).toEqual({});
+  });
 });

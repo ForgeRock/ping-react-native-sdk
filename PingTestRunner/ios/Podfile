@@ -73,9 +73,17 @@ target 'PingTestRunner' do
   pod 'RNPingPush',
     :path => '../../node_modules/@ping-identity/rn-push',
     :testspecs => ['Tests']
+  pod 'RNPingRecaptcha',
+    :path => '../../node_modules/@ping-identity/rn-recaptcha',
+    :testspecs => ['Tests']
   pod 'RNPingStorage',
     :path => '../../node_modules/@ping-identity/rn-storage',
     :testspecs => ['Tests']
+
+  # PingReCaptchaEnterprise -> RecaptchaEnterprise -> RecaptchaInterop (Google);
+  # RecaptchaInterop defines no module map, which Swift requires to import under
+  # static linkage. Same workaround the sample app's Podfile carries.
+  pod 'RecaptchaInterop', :modular_headers => true
 
   post_install do |installer|
     react_native_post_install(

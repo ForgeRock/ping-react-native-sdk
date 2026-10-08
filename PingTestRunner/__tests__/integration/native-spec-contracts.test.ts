@@ -35,6 +35,7 @@ import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPi
 import type { Spec as OathSpec } from '../../../packages/oath/src/NativeRNPingOath';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
 import type { Spec as PushSpec } from '../../../packages/push/src/NativeRNPingPush';
+import type { Spec as RecaptchaSpec } from '../../../packages/recaptcha/src/NativeRNPingRecaptcha';
 import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRNPingStorage';
 
 // ─── rn-binding ─────────────────────────────────────────────────────────────
@@ -200,6 +201,10 @@ type _PushMockedMethods = Pick<
   | 'consumePendingMessages'
   | 'refreshToken'
 >;
+
+// ─── rn-recaptcha ───────────────────────────────────────────────────────────
+// jest.setup.js mocks: verifyForJourney
+type _RecaptchaMockedMethods = Pick<RecaptchaSpec, 'verifyForJourney'>;
 
 // ─── rn-storage ─────────────────────────────────────────────────────────────
 // jest.setup.js mocks: registerSessionStorage, configureSessionStorage,

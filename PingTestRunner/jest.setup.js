@@ -361,6 +361,20 @@ jest.mock('../packages/push/src/NativeRNPingPush', () => ({
   fromNativeToken: jest.fn((w) => w?.token ?? null),
 }));
 
+// ---------- rn-recaptcha ----------
+jest.mock('../packages/recaptcha/src/NativeRNPingRecaptcha', () => ({
+  __esModule: true,
+  getNativeModule: jest.fn(() => ({
+    verifyForJourney: jest.fn(async () => ({
+      type: 'success',
+      token: 'mock-recaptcha-token',
+    })),
+  })),
+  toNativeVerifyOptions: jest.fn((options) => options),
+  toNativeClientConfig: jest.fn((config) => config),
+  fromNativeVerifyResult: jest.fn((result) => result),
+}));
+
 // ---------- rn-storage ----------
 jest.mock('../packages/storage/src/NativeRNPingStorage', () => ({
   __esModule: true,

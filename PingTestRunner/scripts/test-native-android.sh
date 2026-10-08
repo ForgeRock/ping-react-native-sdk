@@ -24,4 +24,5 @@ cd "$(dirname "$0")/../android"
   :ping-identity_rn-oath:test \
   :ping-identity_rn-oidc:test \
   :ping-identity_rn-push:test \
+  :ping-identity_rn-recaptcha:test \
   :ping-identity_rn-storage:test

@@ -45,6 +45,9 @@ const BrowserScenario = React.lazy(() => import('./scenarios/BrowserScenario'));
 const UseJourneyScenario = React.lazy(
   () => import('./scenarios/UseJourneyScenario'),
 );
+const RecaptchaScenario = React.lazy(
+  () => import('./scenarios/RecaptchaScenario'),
+);
 const UseOidcScenario = React.lazy(() => import('./scenarios/UseOidcScenario'));
 const EnvScenario = React.lazy(() => import('./scenarios/EnvScenario'));
 const DaVinciScenario = React.lazy(() => import('./scenarios/DaVinciScenario'));
@@ -85,6 +88,8 @@ function ScenarioContent(): React.JSX.Element {
       return <BrowserScenario />;
     case 'use-journey':
       return <UseJourneyScenario />;
+    case 'recaptcha':
+      return <RecaptchaScenario />;
     case 'use-oidc':
       return <UseOidcScenario />;
     case 'use-oidc-error':
