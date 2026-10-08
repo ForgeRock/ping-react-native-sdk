@@ -64,6 +64,7 @@ jobs:
             :ping-identity_rn-oath:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-push:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-recaptcha:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \
             :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
 
