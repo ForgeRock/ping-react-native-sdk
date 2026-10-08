@@ -73,23 +73,45 @@ jobs:
         run: node scripts/check-workspace-refs.mjs
 
       - name: Build and publish
-        # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
-        run: yarn packages:build && yarn changeset publish --no-git-tag
+        # A package whose version is already on npm (e.g. published by an earlier
+        # partial run, or a re-dispatch) is skipped — changeset publish itself
+        # fails on such versions and would fail the whole step otherwise.
+        # changesets' npm info can also see stale registry data (npm CDN caches
+        # packuments for up to 5 minutes), so a re-dispatch right after a
+        # successful publish must not be treated as a failure.
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          PUBLISHED=$(npm view "@ping-identity/rn-core@$VERSION" version 2>/dev/null || true)
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "rn-core@$VERSION already on npm — nothing to publish (re-dispatch)."
+            exit 0
+          fi
+          yarn packages:build && yarn changeset publish --no-git-tag
         env:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Tag release
-        # All packages version in lockstep — create a single repo-level tag
+        # All packages version in lockstep — create a single repo-level tag.
+        # Skip if the tag already exists (re-dispatch after a partial run).
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — skipping tag creation."
+            exit 0
+          fi
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
       - name: Create GitHub release
+        # Skip if the release already exists (re-dispatch after a partial run).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists — skipping release creation."
+            exit 0
+          fi
           NOTES=$(VERSION="$VERSION" node -e "
             const fs = require('fs');
             const v = process.env.VERSION;
