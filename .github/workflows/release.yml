@@ -73,19 +73,23 @@ jobs:
         run: node scripts/check-workspace-refs.mjs
 
       - name: Build and publish
-        # A package whose version is already on npm (e.g. published by an earlier
-        # partial run, or a re-dispatch) is skipped — changeset publish itself
-        # fails on such versions and would fail the whole step otherwise.
-        # changesets' npm info can also see stale registry data (npm CDN caches
-        # packuments for up to 5 minutes), so a re-dispatch right after a
-        # successful publish must not be treated as a failure.
+        # Re-dispatch idempotency. changeset publish skips versions it sees
+        # already on npm and publishes the rest, so a partial publish resumes
+        # the missing packages; the gate below skips the whole step only when
+        # every publishable package is already published, avoiding a needless
+        # full build on a re-dispatch.
+        # Registry lookups can be stale (npm's CDN caches packuments for up to
+        # 5 minutes), so a re-dispatch right after a successful publish may
+        # still attempt republishes and fail; wait out the cache and re-dispatch
+        # again to take the skip path.
         run: |
-          VERSION=$(node -p "require('./packages/core/package.json').version")
-          PUBLISHED=$(npm view "@ping-identity/rn-core@$VERSION" version 2>/dev/null || true)
-          if [ "$PUBLISHED" = "$VERSION" ]; then
-            echo "rn-core@$VERSION already on npm — nothing to publish (re-dispatch)."
+          MISSING=$(node scripts/check-unpublished.mjs)
+          if [ -z "$MISSING" ]; then
+            echo "All packages already on npm: nothing to publish (re-dispatch)."
             exit 0
           fi
+          echo "Not yet published:"
+          echo "$MISSING"
           yarn packages:build && yarn changeset publish --no-git-tag
         env:
           NPM_CONFIG_PROVENANCE: true
