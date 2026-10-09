@@ -11,10 +11,7 @@ import androidx.credentials.exceptions.CreateCredentialUnsupportedException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.credentials.exceptions.domerrors.InvalidStateError
-import androidx.credentials.exceptions.domerrors.NotAllowedError
-import androidx.credentials.exceptions.domerrors.NotSupportedError
 import androidx.credentials.exceptions.domerrors.TimeoutError
-import androidx.credentials.exceptions.domerrors.UnknownError
 import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException
 import com.pingidentity.davinci.plugin.DaVinci
