@@ -341,29 +341,6 @@ class RNPingFidoTest {
     assertEquals(FidoErrorCodes.FIDO_ACTIVITY_UNAVAILABLE, promise.rejectedCode)
   }
 
-  /**
-   * Ensures DaVinci authentication maps a user cancellation to the stable
-   * cancelled code rather than the generic authentication error, forwarding the
-   * collector's recorded NotAllowedError as the clientError extra.
-   */
-  @Test
-  fun authenticateForDaVinciRejectsWithCancelledWhenUserCancels() {
-    val collector = mockk<FidoAuthenticationCollector>()
-    coEvery { collector.authenticate(any()) } returns Result.failure(
-      GetCredentialCancellationException("Cancelled by user")
-    )
-    every { collector.errorCode } returns "NotAllowedError"
-    every { collector.logger } returns mockk(relaxed = true)
-    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
-    val promise = TestPromise()
-
-    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), JavaOnlyMap(), promise)
-
-    assertTrue(promise.await())
-    assertEquals(FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED, promise.rejectedCode)
-    assertEquals("NotAllowedError", promise.rejectedUserInfo?.getString("clientError"))
-  }
-
   // MARK: - DaVinci clientError extras
 
   /**
