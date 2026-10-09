@@ -73,23 +73,49 @@ jobs:
         run: node scripts/check-workspace-refs.mjs
 
       - name: Build and publish
-        # NPM_CONFIG_PROVENANCE links each package to this workflow run and source commit
-        run: yarn packages:build && yarn changeset publish --no-git-tag
+        # Re-dispatch idempotency. changeset publish skips versions it sees
+        # already on npm and publishes the rest, so a partial publish resumes
+        # the missing packages; the gate below skips the whole step only when
+        # every publishable package is already published, avoiding a needless
+        # full build on a re-dispatch.
+        # Registry lookups can be stale (npm's CDN caches packuments for up to
+        # 5 minutes), so a re-dispatch right after a successful publish may
+        # still attempt republishes and fail; wait out the cache and re-dispatch
+        # again to take the skip path.
+        run: |
+          MISSING=$(node scripts/check-unpublished.mjs)
+          if [ -z "$MISSING" ]; then
+            echo "All packages already on npm: nothing to publish (re-dispatch)."
+            exit 0
+          fi
+          echo "Not yet published:"
+          echo "$MISSING"
+          yarn packages:build && yarn changeset publish --no-git-tag
         env:
           NPM_CONFIG_PROVENANCE: true
 
       - name: Tag release
-        # All packages version in lockstep — create a single repo-level tag
+        # All packages version in lockstep — create a single repo-level tag.
+        # Skip if the tag already exists (re-dispatch after a partial run).
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists — skipping tag creation."
+            exit 0
+          fi
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
       - name: Create GitHub release
+        # Skip if the release already exists (re-dispatch after a partial run).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./packages/core/package.json').version")
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists — skipping release creation."
+            exit 0
+          fi
           NOTES=$(VERSION="$VERSION" node -e "
             const fs = require('fs');
             const v = process.env.VERSION;
