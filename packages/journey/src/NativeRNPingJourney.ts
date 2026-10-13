@@ -170,6 +170,24 @@ export interface Spec extends TurboModule {
   ): Promise<NativeJourneyNode>;
 
   /**
+   * Start a Journey from an AM/AIC backchannel (transactional) redirect URI.
+   *
+   * @param journeyId Native journey instance identifier.
+   * @param backchannelUri Gateway-provided `redirectUri` carrying
+   * `authIndexType`/`authIndexValue` query parameters.
+   * @param options Optional start flags. `verificationUri` is ignored on this
+   * method; native backchannel does not support it.
+   * @returns First native node payload. URI validation failures resolve as
+   * `FailureNode` payloads (never rejections), mirroring the native
+   * `start(backchannelUri:)` return-value contract.
+   */
+  startBackchannel(
+    journeyId: string,
+    backchannelUri: string,
+    options?: JourneyOptions,
+  ): Promise<NativeJourneyNode>;
+
+  /**
    * Advance to the next Journey node.
    *
    * @param journeyId Native journey instance identifier.
@@ -292,6 +310,13 @@ const NativeRNPingJourney: Spec = {
   },
   start(journeyId, journeyName, options) {
     return getNativeModule().start(journeyId, journeyName, options);
+  },
+  startBackchannel(journeyId, backchannelUri, options) {
+    return getNativeModule().startBackchannel(
+      journeyId,
+      backchannelUri,
+      options,
+    );
   },
   next(journeyId, nodeId, input) {
     return getNativeModule().next(journeyId, nodeId, input);

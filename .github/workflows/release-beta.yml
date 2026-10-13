@@ -96,6 +96,13 @@ jobs:
       - name: Check lockstep
         run: yarn release:check-lockstep
 
+      - name: Check native SDK versions
+        # Mirror of the lefthook pre-commit check (scripts/check-native-sdk-versions.mjs):
+        # all com.pingidentity.sdks / Ping* native pins must be identical across packages.
+        # Guard here too so a release can never publish with divergent native pins —
+        # hooks only run locally and can be bypassed.
+        run: node scripts/check-native-sdk-versions.mjs
+
       - name: Replace workspace refs with real versions
         run: node scripts/replace-workspace-refs.mjs
 

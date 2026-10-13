@@ -24,6 +24,7 @@ type Props = {
 };
 type HomeScreenMenuItem = Omit<HomeMenuItem, 'onPress' | 'disabled'> & {
   screen?: keyof RootStackParamList;
+  params?: Record<string, unknown>;
 };
 
 /**
@@ -82,6 +83,13 @@ export default function HomeScreen({
       subtitle: 'Start or verify Device Auth',
       icon: 'phonelink-lock',
       screen: 'DeviceAuthorization',
+    },
+    {
+      title: 'Backchannel Auth',
+      subtitle: 'AM/AIC transactional backchannel auth',
+      icon: 'swap-horiz',
+      screen: 'JourneyHelper',
+      params: { backchannelEntry: true },
     },
   ];
 
@@ -184,7 +192,10 @@ export default function HomeScreen({
         comingSoon={item.comingSoon}
         disabled={isDisabled}
         onPress={() =>
-          navigation.navigate(item.screen as keyof RootStackParamList)
+          navigation.navigate(
+            item.screen as keyof RootStackParamList,
+            item.params as never,
+          )
         }
       />
     );

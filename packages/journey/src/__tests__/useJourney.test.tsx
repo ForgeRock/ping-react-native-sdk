@@ -65,6 +65,7 @@ function createJourneyClientMock(
     init: jest.fn(async () => 'journey-id'),
     getId: jest.fn(async () => 'journey-id'),
     start: jest.fn(async () => continueNode),
+    startBackchannel: jest.fn(async () => continueNode),
     next: jest.fn(async () => successNode),
     resume: jest.fn(async () => continueNode),
     user: jest.fn(async () => null),
@@ -195,5 +196,114 @@ describe('useJourney', () => {
     });
 
     expect(nextSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('startBackchannel sets node state and passes uri and options through', async () => {
+    const backchannelNode: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [{ type: 'NameCallback' }],
+    };
+    const startBackchannelSpy = jest.fn(async () => backchannelNode);
+    const client = createJourneyClientMock({
+      startBackchannel: startBackchannelSpy,
+    });
+
+    let latest: JourneyHookResult | null = null;
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      const node = await requireLatest(latest)[1].startBackchannel(
+        'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+        { noSession: true },
+      );
+      expect(node.type).toBe('ContinueNode');
+    });
+
+    expect(startBackchannelSpy).toHaveBeenCalledWith(
+      'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      { noSession: true },
+    );
+    expect(requireLatest(latest)[0]?.type).toBe('ContinueNode');
+    expect(requireLatest(latest)[1].loading).toBe(false);
+  });
+
+  it('sets hook error when startBackchannel fails and rethrows', async () => {
+    const failure = new Error('backchannel rejected');
+    const client = createJourneyClientMock({
+      startBackchannel: jest.fn(async () => {
+        throw failure;
+      }),
+    });
+
+    let latest: JourneyHookResult | null = null;
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+
+    let thrown: unknown = null;
+    await act(async () => {
+      thrown = await requireLatest(latest)[1]
+        .startBackchannel(
+          'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+        )
+        .catch((e: unknown) => e);
+    });
+
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toBe('backchannel rejected');
+    expect(requireLatest(latest)[1].error).not.toBeNull();
+    expect(requireLatest(latest)[1].loading).toBe(false);
+  });
+
+  it('startBackchannel keeps loading true while in flight and resets after', async () => {
+    let resolveStart: ((node: JourneyNode) => void) | undefined;
+    const client = createJourneyClientMock({
+      startBackchannel: jest.fn(
+        () =>
+          new Promise<JourneyNode>((resolve) => {
+            resolveStart = resolve;
+          }),
+      ),
+    });
+
+    let latest: JourneyHookResult | null = null;
+    render(
+      <JourneyHarness
+        client={client}
+        onResult={(result) => {
+          latest = result;
+        }}
+      />,
+    );
+
+    let pending!: Promise<JourneyNode>;
+    await act(async () => {
+      pending = requireLatest(latest)[1].startBackchannel(
+        'https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      );
+      await Promise.resolve();
+    });
+
+    expect(requireLatest(latest)[1].loading).toBe(true);
+
+    await act(async () => {
+      resolveStart?.({ type: 'SuccessNode' });
+      await pending;
+    });
+
+    expect(requireLatest(latest)[0]?.type).toBe('SuccessNode');
+    expect(requireLatest(latest)[1].loading).toBe(false);
   });
 });

@@ -26,6 +26,7 @@ type NativeJourneyMock = {
   start: jest.Mock;
   next: jest.Mock;
   resume: jest.Mock;
+  startBackchannel: jest.Mock;
   getSession: jest.Mock;
   refresh: jest.Mock;
   revoke: jest.Mock;
@@ -48,6 +49,11 @@ function makeMock(
     next: jest.fn(async () => ({ id: 'n2', type: 'SuccessNode' })),
     resume: jest.fn(async () => ({
       id: 'n3',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
+    startBackchannel: jest.fn(async () => ({
+      id: 'n4',
       type: 'ContinueNode',
       callbacks: [],
     })),
@@ -291,6 +297,51 @@ describe('@ping-identity/rn-journey — integration', () => {
       const node = await client.resume('https://example.com/callback?code=abc');
       expect(node).toBeDefined();
       expect(mock.resume).toHaveBeenCalledTimes(1);
+    });
+
+    it('startBackchannel() delegates the redirect URI to native', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const node = await client.startBackchannel(
+        'https://openam.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      );
+      expect(node).toBeDefined();
+      expect(mock.startBackchannel).toHaveBeenCalledTimes(1);
+      expect(mock.startBackchannel).toHaveBeenCalledWith(
+        'journey-id-mock',
+        'https://openam.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+        undefined,
+      );
+    });
+
+    it('startBackchannel() throws argument error on blank URI without calling native', async () => {
+      const mock = makeMock();
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      await expect(client.startBackchannel('   ')).rejects.toThrow(
+        /must not be empty/,
+      );
+      expect(mock.startBackchannel).not.toHaveBeenCalled();
+    });
+
+    it('startBackchannel() surfaces native FailureNode payloads without rejecting', async () => {
+      const mock = makeMock({
+        startBackchannel: jest.fn(async () => ({
+          id: 'n5',
+          type: 'FailureNode',
+          message: 'Backchannel URI host does not match configured serverUrl',
+        })),
+      });
+      const mod = await loadJourney(mock);
+      const client = mod.createJourneyClient(VALID_CONFIG);
+      await client.init();
+      const node = await client.startBackchannel(
+        'https://evil.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123',
+      );
+      expect(node.type).toBe('FailureNode');
     });
 
     it('revoke() resolves with a boolean', async () => {

@@ -37,6 +37,7 @@ import { bindingIntegration } from '../integrations/bindingIntegration';
 import { fidoIntegration } from '../integrations/fidoIntegration';
 import { useJourneySessionController } from './useJourneySessionController';
 import { useJourneyResumeController } from './useJourneyResumeController';
+import { useJourneyBackchannelController } from './useJourneyBackchannelController';
 import { useJourneyDebugEntries } from './useJourneyDebugEntries';
 import { useJourneyAutomationEffects } from './useJourneyAutomationEffects';
 import { useJourneyDebugEffects } from './useJourneyDebugEffects';
@@ -140,6 +141,18 @@ export type UseJourneyClientPanelControllerResult = {
    * Executes manual journey resume.
    */
   onResume: () => Promise<void>;
+  /**
+   * Backchannel redirect URI input value.
+   */
+  backchannelUri: string;
+  /**
+   * Backchannel URI input setter.
+   */
+  setBackchannelUri: (value: string) => void;
+  /**
+   * Executes backchannel journey start.
+   */
+  onStartBackchannel: () => Promise<void>;
   /**
    * Executes journey submit for current form state.
    */
@@ -413,8 +426,17 @@ export function useJourneyClientPanelController(
     [externalIdpLogger],
   );
   const [node, actions] = useJourney();
-  const { start, next, resume, user, logoutUser, dispose, loading, error } =
-    actions;
+  const {
+    start,
+    next,
+    resume,
+    startBackchannel,
+    user,
+    logoutUser,
+    dispose,
+    loading,
+    error,
+  } = actions;
   const form = useJourneyForm(node, {
     handledCallbackTypes: INTEGRATION_HANDLED_CALLBACK_TYPES,
   });
@@ -510,6 +532,12 @@ export function useJourneyClientPanelController(
     resume,
     appendDebug,
   });
+
+  const { backchannelUri, setBackchannelUri, onStartBackchannel } =
+    useJourneyBackchannelController({
+      startBackchannel,
+      appendDebug,
+    });
 
   const resolveDefaultSystemDeviceName =
     useCallback(async (): Promise<string> => {
@@ -1095,6 +1123,9 @@ export function useJourneyClientPanelController(
     resumeUrl,
     setResumeUrl,
     onResume,
+    backchannelUri,
+    setBackchannelUri,
+    onStartBackchannel,
     onSubmit,
     onSelectIdpProvider,
     onLogout,

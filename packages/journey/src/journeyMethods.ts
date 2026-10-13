@@ -8,10 +8,11 @@
 import NativeRNPingJourney from './NativeRNPingJourney';
 import type {
   JourneySSOToken,
+  JourneyBackchannelOptions,
   JourneyNextInput,
   JourneyNode,
-  JourneyUserInfo,
   JourneyStartOptions,
+  JourneyUserInfo,
   JourneyUserSession,
 } from './types';
 import { JourneyError } from './types/error.types';
@@ -50,6 +51,34 @@ export async function startJourney(
     const node = await NativeRNPingJourney.start(
       journeyId,
       journeyName,
+      options,
+    );
+    return node as unknown as JourneyNode;
+  } catch (error) {
+    throw JourneyError.from(error);
+  }
+}
+
+/**
+ * Start a Journey from an AM/AIC backchannel (transactional) redirect URI.
+ *
+ * @param journeyId - Native Journey instance identifier.
+ * @param backchannelUri - Gateway-provided `redirectUri` carrying
+ * `authIndexType`/`authIndexValue` query parameters.
+ * @param options - Optional backchannel flags (`forceAuth`, `noSession`).
+ * @returns First Journey node. URI validation failures resolve as
+ * `FailureNode` payloads, mirroring the native `start(backchannelUri:)`
+ * return-value contract.
+ */
+export async function startBackchannelJourney(
+  journeyId: string,
+  backchannelUri: string,
+  options?: JourneyBackchannelOptions,
+): Promise<JourneyNode> {
+  try {
+    const node = await NativeRNPingJourney.startBackchannel(
+      journeyId,
+      backchannelUri,
       options,
     );
     return node as unknown as JourneyNode;

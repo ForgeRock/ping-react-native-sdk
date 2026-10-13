@@ -123,6 +123,20 @@ export type JourneyStartOptions = {
 };
 
 /**
+ * Optional flags when starting a Journey from a backchannel (transactional)
+ * redirect URI.
+ *
+ * @remarks
+ * `verificationUri` is deliberately absent: the native backchannel entry
+ * points (SDKS-5156 iOS / SDKS-5157 Android) support only `forceAuth` and
+ * `noSession`. Both flags default to `false`, matching native behavior.
+ */
+export type JourneyBackchannelOptions = Pick<
+  JourneyStartOptions,
+  'forceAuth' | 'noSession'
+>;
+
+/**
  * Callback input value submitted to `next()`.
  */
 export type JourneyCallbackInputValue =
