@@ -47,6 +47,43 @@ RCT_EXPORT_MODULE()
 }
 
 /**
+ Runs PingOne Protect data collection for a Journey evaluation callback.
+ */
+- (void)collectForJourney:(NSString *)journeyId
+                  options:(NSDictionary *)options
+                   config:(NSDictionary *)config
+                  resolve:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] collectForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] collectForJourney:journeyId options:options config:config resolve:resolve rejecter:reject];
+  });
+}
+
+/**
+ Executes a Journey initialize callback using the configuration carried by the callback.
+ */
+- (void)initializeForJourney:(NSString *)journeyId
+                      config:(NSDictionary *)config
+                     resolve:(RCTPromiseResolveBlock)resolve
+                      reject:(RCTPromiseRejectBlock)reject
+{
+  if ([NSThread isMainThread]) {
+    [[self swiftImpl] initializeForJourney:journeyId config:config resolve:resolve rejecter:reject];
+    return;
+  }
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [[self swiftImpl] initializeForJourney:journeyId config:config resolve:resolve rejecter:reject];
+  });
+}
+
+/**
  Initializes the Protect SDK with the provided configuration.
  */
 - (void)initialize:(NSDictionary *)protectConfig
@@ -105,6 +142,16 @@ RCT_EXPORT_MODULE()
                            reject:(RCTPromiseRejectBlock)reject
 {
   [RNPingProtectCommon registerDaVinciSerializer];
+  resolve([NSNull null]);
+}
+
+/**
+ Registers the Protect callbacks with the native Journey callback registry.
+ */
+- (void)registerJourneyCallbacks:(RCTPromiseResolveBlock)resolve
+                          reject:(RCTPromiseRejectBlock)reject
+{
+  [RNPingProtectCommon registerJourneyCallbacks];
   resolve([NSNull null]);
 }
 

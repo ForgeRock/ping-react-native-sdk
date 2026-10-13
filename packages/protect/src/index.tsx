@@ -7,9 +7,18 @@
 
 export {
   collectProtect,
+  collectProtectForJourney,
+  initializeProtectForJourney,
   startProtect,
+  startProtectForJourney,
   pauseBehavioralData,
   resumeBehavioralData,
 } from './protect';
 export { ProtectError, protectCollectorType } from './types';
-export type { ProtectConfig, ProtectErrorCode } from './types';
+export type {
+  ProtectConfig,
+  ProtectErrorCode,
+  ProtectJourneyInitializeOptions,
+  ProtectJourneyOptions,
+  ProtectJourneyResult,
+} from './types';

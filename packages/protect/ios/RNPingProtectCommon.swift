@@ -31,6 +31,56 @@ struct ProtectInitConfig: Sendable {
   let resumeBehavioralDataOnStart: Bool
 }
 
+/// Identifies which bridge path completed the native Protect initialization.
+enum InitializationSource: String, Sendable {
+  /// Initialized through the bridge `initialize` method using app-supplied config.
+  case appConfig = "app config"
+  /// Initialized through `initializeForJourney` using the Journey tree's callback config.
+  case journeyTreeConfig = "Journey tree config"
+}
+
+/// Tracks which bridge path initialized the native Protect SDK.
+///
+/// The first successful source wins. A later success from a different source logs a
+/// warning and never rejects, matching native behavior where the second call returns success.
+///
+/// - Note: The state is never reset in production because native Protect state persists and
+///   has no teardown API. Initialization performed outside the bridge, for example by the
+///   DaVinci `ProtectCollector`, is invisible to this actor because the native SDK exposes no
+///   initialized accessor.
+actor ProtectInitializationState {
+  /// Shared process-wide instance.
+  static let shared = ProtectInitializationState()
+
+  /// Source that first completed initialization, or `nil` when none has been observed.
+  private(set) var initializedBy: InitializationSource?
+
+  /// Records a successful native initialization.
+  ///
+  /// - Parameters:
+  ///   - source: Bridge path that just completed initialization.
+  ///   - logger: Optional native logger used for the cross-source warning.
+  func markInitialized(from source: InitializationSource, logger: PingLogger.Logger?) {
+    guard let previous = initializedBy else {
+      initializedBy = source
+      return
+    }
+    guard previous != source else { return }
+    logger?.w(
+      "Protect already initialized by \(previous.rawValue); native initialize is once-only, "
+        + "so the identity config (envId, customHost, deviceAttributesToIgnore, consoleLogEnabled, "
+        + "lazyMetadata) from \(source.rawValue) was not applied; only behavioral-data "
+        + "resume/pause, where that path performs it, took effect",
+      error: nil
+    )
+  }
+
+  /// Clears the recorded source so tests can start from a clean state.
+  func resetForTesting() {
+    initializedBy = nil
+  }
+}
+
 /// Shared iOS implementation for the Ping Protect React Native module.
 private final class SerializerState: @unchecked Sendable {
   private let lock = NSLock()
@@ -59,6 +109,44 @@ public class RNPingProtectCommon: NSObject {
     case collectError = "PROTECT_COLLECT_ERROR"
     case collectorNotFound = "PROTECT_COLLECTOR_NOT_FOUND"
     case initializeError = "PROTECT_INITIALIZE_ERROR"
+    case notInitialized = "PROTECT_NOT_INITIALIZED"
+    case callbackNotFound = "PROTECT_CALLBACK_NOT_FOUND"
+    case argumentError = "PROTECT_ARGUMENT_ERROR"
+  }
+
+  /// Options key holding the zero-based Journey callback index.
+  private static let indexKey = "index"
+
+  /// Registers the PingOne Protect Journey callbacks with the native callback registry.
+  ///
+  /// - Note: The native `ProtectCallbacks` class is declared without `public`, so the bridge
+  ///   resolves it by name and invokes `registerCallbacks` through the Objective-C runtime.
+  ///   A missing class or selector logs a warning and leaves registration skipped.
+  // TODO-PARITY: iOS has no launch-time registration for Protect callbacks (Android registers
+  // at app launch via androidx.startup). Native Journey probes optional modules by name and its
+  // Protect probe does not match the class's module-qualified name ("PingProtect.ProtectCallbacks"
+  // vs the real "PingOneProtect.ProtectCallbacks"; the naming difference is intentional upstream
+  // as the PingProtect name is taken by the legacy iOS SDK), so native never registers Protect
+  // callbacks and the bridge does it here instead.
+  @objc public static func registerJourneyCallbacks() {
+    let className = "PingOneProtect.ProtectCallbacks"
+    let selector = NSSelectorFromString("registerCallbacks")
+    guard let cls = NSClassFromString(className) as? NSObject.Type else {
+      LogManager.standard.w(
+        "Protect Journey callbacks not registered: class \(className) not found in this build",
+        error: nil
+      )
+      return
+    }
+    guard cls.responds(to: selector) else {
+      LogManager.standard.w(
+        "Protect Journey callbacks not registered: class \(className) does not respond to "
+          + "selector '\(NSStringFromSelector(selector))'",
+        error: nil
+      )
+      return
+    }
+    cls.perform(selector)
   }
 
   /// Registers the Protect collector serializer with the generic DaVinci mapper.
@@ -162,6 +250,173 @@ public class RNPingProtectCommon: NSObject {
     }
   }
 
+  /// Runs PingOne Protect data collection for a Journey evaluation callback.
+  ///
+  /// The collected risk signal is written natively into the callback and is never returned
+  /// to JavaScript; the promise resolves with `["type": "success"]`.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - options: Per-call options payload (`index`).
+  ///   - config: Per-client runtime configuration payload (`loggerId`).
+  ///   - resolver: Promise resolver for the result payload.
+  ///   - rejecter: Promise rejecter for errors.
+  /// - Note: Rejects with `PROTECT_ARGUMENT_ERROR`, `PROTECT_CALLBACK_NOT_FOUND`,
+  ///   `PROTECT_NOT_INITIALIZED`, or `PROTECT_COLLECT_ERROR`. Initialization performed outside the bridge, for example by the
+  ///   DaVinci `ProtectCollector`, is not observable and results in `PROTECT_NOT_INITIALIZED`.
+  @objc
+  @MainActor
+  public static func collectForJourney(
+    _ journeyId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    let callConfig = parseCallConfig(config)
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    // `@objc` methods cannot be declared `async`, so a Task is required to
+    // enter the async context. The Task inherits @MainActor isolation from the
+    // enclosing function and does NOT run off the main actor.
+    // @MainActor is kept for consistency with the other Protect entry points, so the
+    // Protect SDK calls (which run the Signals data collection) are issued from a single
+    // serial context; the native Journey callback itself has no UI or Activity dependency.
+    // TODO-PARITY: Android runs collectForJourney on Dispatchers.IO; iOS runs on main actor.
+    Task {
+      let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        logger?.w("Protect collectForJourney rejected because Journey id was empty", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .argumentError,
+            error: ProtectErrorCode.argumentError.rawValue,
+            message: "Journey id must not be empty for Protect data collection."
+          )
+        )
+        return
+      }
+      logger?.i("Protect collectForJourney requested")
+
+      let callbackIndex = journeyIndex(options)
+
+      let callbacks = await CoreRuntime.resolveJourneyCallbacks(journeyId) ?? []
+      let matching = callbacks.compactMap { $0 as? PingOneProtectEvaluationCallback }
+      guard matching.indices.contains(callbackIndex) else {
+        logger?.w("Protect collectForJourney callback not found at index \(callbackIndex)", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: ProtectErrorCode.callbackNotFound.rawValue,
+            message: "No active Protect evaluation callback found for Journey \(journeyId) at index \(callbackIndex)."
+          )
+        )
+        return
+      }
+
+      guard await ProtectInitializationState.shared.initializedBy != nil else {
+        logger?.w("Protect collectForJourney rejected because Protect was not initialized by the bridge", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: ProtectErrorCode.notInitialized.rawValue,
+            message: "Protect has not been initialized. Call initializeProtectForJourney() before collecting."
+          )
+        )
+        return
+      }
+
+      let result = await matching[callbackIndex].collect()
+      switch result {
+      case .success:
+        logger?.d("Protect collectForJourney succeeded")
+        handlers.resolve(createJourneyResultPayload())
+
+      case .failure(let error):
+        logger?.e("Protect collectForJourney failed", error: error as NSError)
+        handlers.reject(
+          GenericError(
+            type: .authError,
+            error: ProtectErrorCode.collectError.rawValue,
+            message: error.localizedDescription
+          ),
+          underlying: error as NSError
+        )
+      }
+    }
+  }
+
+  /// Executes a Journey initialize callback using the configuration carried by the callback.
+  ///
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - config: Per-client runtime configuration payload (`loggerId`).
+  ///   - resolver: Promise resolver for the result payload.
+  ///   - rejecter: Promise rejecter for errors.
+  /// - Note: Rejects with `PROTECT_ARGUMENT_ERROR`, `PROTECT_CALLBACK_NOT_FOUND`, or
+  ///   `PROTECT_INITIALIZE_ERROR`. When Protect
+  ///   was already initialized by the other bridge path the call still succeeds and a warning is
+  ///   logged, because native initialization is once-only.
+  // NOTE: @MainActor keeps Protect initialization on the same serial context as `initialize`
+  // and `collectForJourney`; the native initialize callback has no UI dependency.
+  @objc
+  @MainActor
+  public static func initializeForJourney(
+    _ journeyId: String,
+    config: NSDictionary,
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    let callConfig = parseCallConfig(config)
+    let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
+    Task {
+      let logger = await resolveLoggerFromCore(callConfig.loggerId)
+      if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        logger?.w("Protect initializeForJourney rejected because Journey id was empty", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .argumentError,
+            error: ProtectErrorCode.argumentError.rawValue,
+            message: "Journey id must not be empty for Protect initialization."
+          )
+        )
+        return
+      }
+      logger?.i("Protect initializeForJourney requested")
+
+      let callbacks = await CoreRuntime.resolveJourneyCallbacks(journeyId) ?? []
+      guard let callback = callbacks.compactMap({ $0 as? PingOneProtectInitializeCallback }).first else {
+        logger?.w("Protect initializeForJourney callback not found", error: nil)
+        handlers.reject(
+          GenericError(
+            type: .stateError,
+            error: ProtectErrorCode.callbackNotFound.rawValue,
+            message: "No active Protect initialize callback found for Journey \(journeyId)."
+          )
+        )
+        return
+      }
+
+      let result = await callback.start()
+      switch result {
+      case .success:
+        await ProtectInitializationState.shared.markInitialized(from: .journeyTreeConfig, logger: logger)
+        logger?.d("Protect initializeForJourney succeeded")
+        handlers.resolve(createJourneyResultPayload())
+
+      case .failure(let error):
+        logger?.e("Protect initializeForJourney failed", error: error as NSError)
+        handlers.reject(
+          GenericError(
+            type: .authError,
+            error: ProtectErrorCode.initializeError.rawValue,
+            message: error.localizedDescription
+          ),
+          underlying: error as NSError
+        )
+      }
+    }
+  }
+
   /// Initializes the Protect SDK with the provided configuration.
   ///
   /// - Parameters:
@@ -195,6 +450,7 @@ public class RNPingProtectCommon: NSObject {
           c.deviceAttributesToIgnore = initConfig.deviceAttributesToIgnore
         }
         try await Protect.initialize()
+        await ProtectInitializationState.shared.markInitialized(from: .appConfig, logger: logger)
         registerDaVinciModuleHook(initConfig)
         logger?.d("Protect initialize succeeded")
         handlers.resolve(NSNull())
@@ -316,6 +572,25 @@ public class RNPingProtectCommon: NSObject {
       return nil
     }
     return handle.nativeLogger as? PingLogger.Logger
+  }
+
+  /// Reads the position of the evaluation callback within the node's callback list.
+  ///
+  /// The index is derived from the server callback list, not supplied by the app. A missing
+  /// or `NSNull` index defaults to 0, and an index outside the matching callbacks is reported
+  /// as callback-not-found by the caller.
+  ///
+  /// - Parameter options: Per-call options payload.
+  /// - Returns: The callback index, or 0 when none is present.
+  static func journeyIndex(_ options: NSDictionary) -> Int {
+    return (options[indexKey] as? NSNumber)?.intValue ?? 0
+  }
+
+  /// Builds the `["type": "success"]` Journey result payload.
+  ///
+  /// - Returns: NSDictionary payload for JS.
+  private static func createJourneyResultPayload() -> NSDictionary {
+    return ["type": "success"]
   }
 
   /// Parses per-call bridge configuration from the React Native payload.

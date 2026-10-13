@@ -130,6 +130,8 @@ export default function JourneyContinuePanel(
       type === 'DeviceBindingCallback' ||
       type === 'DeviceSigningVerifierCallback' ||
       type === 'ReCaptchaEnterpriseCallback',
+      type === 'PingOneProtectInitializeCallback' ||
+      type === 'PingOneProtectEvaluationCallback',
     [],
   );
 

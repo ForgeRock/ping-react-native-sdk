@@ -6,6 +6,7 @@
  */
 package com.pingidentity.rnprotect
 
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReadableArray
@@ -15,6 +16,8 @@ import com.pingidentity.android.ContextProvider
 import com.pingidentity.logger.Logger
 import com.pingidentity.protect.Protect
 import com.pingidentity.protect.davinci.ProtectCollector
+import com.pingidentity.protect.journey.PingOneProtectEvaluationCallback
+import com.pingidentity.protect.journey.PingOneProtectInitializeCallback
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.error.ErrorType
 import com.pingidentity.rncore.error.GenericError
@@ -26,12 +29,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Shared implementation for Protect operations on Android.
  */
 object RNPingProtectCommon {
+  /** TurboModule name exposed to the React Native bridge (new-arch source set). */
+  const val MODULE_NAME = "RNPingProtect"
+
   private const val LOGGER_ID_KEY = "loggerId"
+  private const val INDEX_KEY = "index"
 
   /** Stable registry key identifying the Protect DaVinci lifecycle module. */
   private const val PROTECT_LIFECYCLE_KEY = "protect"
@@ -42,16 +50,42 @@ object RNPingProtectCommon {
   /** Guards one-time collector serializer registration. */
   private var serializerRegistered = false
 
+  /**
+   * Records which path completed the native once-only Protect initialization.
+   *
+   * NOTE: Initialization performed outside the bridge (for example by the DaVinci
+   * `ProtectCollector`) is not observable here because the native SDK exposes no
+   * initialized accessor. The value is intentionally not reset by [cleanup] because native
+   * Protect state persists and has no teardown API.
+   */
+  private val initialized = AtomicReference<InitializationSource?>(null)
+
   /** Coroutine scope for executing Protect operations asynchronously on the IO dispatcher. */
   private var scope: CoroutineScope = createScope()
 
   /**
    * Creates an IO-backed coroutine scope used for native bridge operations.
    *
+   * NOTE: The native Protect SDK never switches dispatchers itself (`Protect.initialize` and
+   * `Protect.data` only wrap the PingOneSignals callbacks in `suspendCancellableCoroutine`), so
+   * the bridge scope is what keeps the PingOneSignals calls off the main thread. `Dispatchers.IO`
+   * is used so the closed source PingOneSignals implementation never blocks the calling thread,
+   * and was derived from the DaVinci path.
+   *
    * @return Fresh coroutine scope with supervisor semantics.
    */
   private fun createScope(): CoroutineScope {
     return CoroutineScope(SupervisorJob() + Dispatchers.IO)
+  }
+
+  /**
+   * Identifies which bridge path completed the native Protect initialization.
+   *
+   * @property description Human-readable label used in diagnostic log messages.
+   */
+  private enum class InitializationSource(val description: String) {
+    INITIALIZED_BY_APP("app config"),
+    INITIALIZED_BY_JOURNEY("Journey tree config"),
   }
 
   /**
@@ -179,6 +213,165 @@ object RNPingProtectCommon {
   }
 
   /**
+   * Runs PingOne Protect data collection for a Journey evaluation callback.
+   *
+   * The collected risk signal is written natively into the callback and is never returned
+   * to JavaScript; the promise resolves with `{ type: "success" }`. Failures reject with
+   * [ProtectErrorCodes.ARGUMENT_ERROR], [ProtectErrorCodes.CALLBACK_NOT_FOUND],
+   * [ProtectErrorCodes.NOT_INITIALIZED], or [ProtectErrorCodes.COLLECT_ERROR].
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Per-call options payload (index).
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @param promise React Native promise resolved on success or rejected on error.
+   */
+  @JvmStatic
+  fun collectForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    val callConfig = parseCallConfig(config)
+    val logger = resolveLoggerFromCore(callConfig.loggerId)
+    if (journeyId.isBlank()) {
+      logger?.w("Protect collectForJourney rejected because Journey id was empty", null)
+      rejectWithError(
+        promise = promise,
+        code = ProtectErrorCodes.ARGUMENT_ERROR,
+        message = "Journey id must not be empty for Protect data collection.",
+        type = ErrorType.ARGUMENT_ERROR
+      )
+      return
+    }
+
+    val index = journeyIndex(options)
+
+    scope.launchBridge(promise, ProtectErrorCodes.COLLECT_ERROR) {
+      logger?.i("Protect collectForJourney requested for callback index $index")
+      val callback = resolveEvaluationCallback(journeyId, index)
+      if (callback == null) {
+        logger?.w("Protect collectForJourney callback not found at index $index", null)
+        rejectWithError(
+          promise = promise,
+          code = ProtectErrorCodes.CALLBACK_NOT_FOUND,
+          message = "No active Protect evaluation callback found for Journey $journeyId at index $index.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+      if (initialized.get() == null) {
+        logger?.w("Protect collectForJourney rejected because Protect was not initialized by the bridge", null)
+        rejectWithError(
+          promise = promise,
+          code = ProtectErrorCodes.NOT_INITIALIZED,
+          message = "Protect has not been initialized. Call initializeProtectForJourney() before collecting.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+      callback.collect().fold(
+        onSuccess = {
+          logger?.d("Protect collectForJourney succeeded")
+          promise.resolve(createJourneyResultPayload())
+        },
+        onFailure = { error ->
+          logger?.e("Protect collectForJourney failed", error)
+          rejectWithError(
+            promise = promise,
+            code = ProtectErrorCodes.COLLECT_ERROR,
+            message = error.localizedMessage ?: "Protect data collection failed.",
+            type = ErrorType.AUTH_ERROR,
+            throwable = error
+          )
+        }
+      )
+    }
+  }
+
+  /**
+   * Executes a Journey initialize callback using the configuration carried by the callback.
+   *
+   * Failures reject with [ProtectErrorCodes.ARGUMENT_ERROR],
+   * [ProtectErrorCodes.CALLBACK_NOT_FOUND], or [ProtectErrorCodes.INITIALIZE_ERROR].
+   *
+   * @param journeyId Native Journey instance id.
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @param promise React Native promise resolved on success or rejected on error.
+   */
+  @JvmStatic
+  fun initializeForJourney(
+    journeyId: String,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    val callConfig = parseCallConfig(config)
+    val logger = resolveLoggerFromCore(callConfig.loggerId)
+    if (journeyId.isBlank()) {
+      logger?.w("Protect initializeForJourney rejected because Journey id was empty", null)
+      rejectWithError(
+        promise = promise,
+        code = ProtectErrorCodes.ARGUMENT_ERROR,
+        message = "Journey id must not be empty for Protect initialization.",
+        type = ErrorType.ARGUMENT_ERROR
+      )
+      return
+    }
+
+    scope.launchBridge(promise, ProtectErrorCodes.INITIALIZE_ERROR) {
+      logger?.i("Protect initializeForJourney requested")
+      val callback = resolveInitializeCallback(journeyId)
+      if (callback == null) {
+        logger?.w("Protect initializeForJourney callback not found", null)
+        rejectWithError(
+          promise = promise,
+          code = ProtectErrorCodes.CALLBACK_NOT_FOUND,
+          message = "No active Protect initialize callback found for Journey $journeyId.",
+          type = ErrorType.STATE_ERROR
+        )
+        return@launchBridge
+      }
+      callback.start().fold(
+        onSuccess = {
+          markInitialized(InitializationSource.INITIALIZED_BY_JOURNEY, logger)
+          logger?.d("Protect initializeForJourney succeeded")
+          promise.resolve(createJourneyResultPayload())
+        },
+        onFailure = { error ->
+          logger?.e("Protect initializeForJourney failed", error)
+          rejectWithError(
+            promise = promise,
+            code = ProtectErrorCodes.INITIALIZE_ERROR,
+            message = error.localizedMessage ?: "Protect initialization failed.",
+            type = ErrorType.AUTH_ERROR,
+            throwable = error
+          )
+        }
+      )
+    }
+  }
+
+  /**
+   * Records a successful native initialization and warns when a different bridge path
+   * had already initialized Protect.
+   *
+   * @param source Bridge path that just completed initialization.
+   * @param logger Optional native logger.
+   */
+  private fun markInitialized(source: InitializationSource, logger: Logger?) {
+    val previous = initialized.getAndUpdate { current -> current ?: source }
+    if (previous != null && previous != source) {
+      logger?.w(
+        "Protect already initialized by ${previous.description}; native initialize is once-only, " +
+          "so the identity config (envId, customHost, deviceAttributesToIgnore, consoleLogEnabled, " +
+          "lazyMetadata) from ${source.description} was not applied; only behavioral-data " +
+          "resume/pause, where that path performs it, took effect",
+        null
+      )
+    }
+  }
+
+  /**
    * Initializes the Protect SDK with the provided configuration.
    *
    * @param protectConfig Protect SDK initialization config payload.
@@ -205,6 +398,7 @@ object RNPingProtectCommon {
         deviceAttributesToIgnore = initConfig.deviceAttributesToIgnore
       }
       Protect.initialize()
+      markInitialized(InitializationSource.INITIALIZED_BY_APP, logger)
       registerDaVinciModuleHook(initConfig)
       logger?.d("Protect initialize succeeded")
       promise.resolve(null)
@@ -377,6 +571,50 @@ object RNPingProtectCommon {
   private suspend fun resolveProtectCollector(davinciId: String, index: Int): ProtectCollector? {
     val collectors = CoreRuntime.resolveDaVinciCollectors(davinciId) ?: return null
     return collectors.filterIsInstance<ProtectCollector>().getOrNull(index)
+  }
+
+  /**
+   * Resolves a `PingOneProtectEvaluationCallback` from core-exposed Journey callbacks by
+   * journeyId and type index.
+   */
+  private suspend fun resolveEvaluationCallback(
+    journeyId: String,
+    index: Int
+  ): PingOneProtectEvaluationCallback? {
+    val callbacks = CoreRuntime.resolveJourneyCallbacks(journeyId) ?: return null
+    return callbacks.filterIsInstance<PingOneProtectEvaluationCallback>().getOrNull(index)
+  }
+
+  /**
+   * Resolves the first `PingOneProtectInitializeCallback` from core-exposed Journey callbacks.
+   */
+  private suspend fun resolveInitializeCallback(
+    journeyId: String
+  ): PingOneProtectInitializeCallback? {
+    val callbacks = CoreRuntime.resolveJourneyCallbacks(journeyId) ?: return null
+    return callbacks.filterIsInstance<PingOneProtectInitializeCallback>().firstOrNull()
+  }
+
+  /**
+   * Reads the position of the evaluation callback within the node's callback list.
+   *
+   * The index is derived from the server callback list, not supplied by the app. A missing or
+   * null index defaults to 0, and an index outside the matching callbacks is reported as
+   * callback-not-found by the caller.
+   *
+   * @param options Per-call options payload.
+   * @return The callback index, or 0 when none is present.
+   */
+  private fun journeyIndex(options: ReadableMap): Int {
+    return options.takeIf { it.hasKey(INDEX_KEY) && !it.isNull(INDEX_KEY) }
+      ?.getInt(INDEX_KEY) ?: 0
+  }
+
+  /**
+   * Builds the `{ type: "success" }` Journey result payload.
+   */
+  private fun createJourneyResultPayload(): ReadableMap {
+    return Arguments.createMap().apply { putString("type", "success") }
   }
 
 }
