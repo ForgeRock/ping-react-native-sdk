@@ -18,6 +18,10 @@ type DaVinciFormResult = import('../types').DaVinciFormResult;
 
 beforeAll(() => {
   registerIntegrationCollectorType(integrationType);
+  // Matches the sample app: rn-external-idp registers SOCIAL_LOGIN_BUTTON when
+  // createExternalIdpClient() runs. Without it, the type classifies as
+  // 'unsupported' rather than 'integration_required'.
+  registerIntegrationCollectorType('SOCIAL_LOGIN_BUTTON');
 });
 
 type Harness = {
@@ -618,6 +622,96 @@ describe('useDaVinciForm — handledCollectorTypes', () => {
     expect(
       requireLatest(latest).issues.some(
         (i) => i.code === 'INTEGRATION_REQUIRED',
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('useDaVinciForm — unsupportedFields passthrough', () => {
+  it('surfaces native unsupportedFields so JS can detect dropped fields', () => {
+    // Mirrors what the native bridge sends when the SDK drops a field whose
+    // type is not registered (see DaVinciNodeMapper.unsupportedFields).
+    const node: ContinueNode = {
+      type: 'ContinueNode',
+      collectors: [
+        {
+          key: 'username',
+          type: 'TEXT',
+          label: 'U',
+          required: false,
+          value: '',
+        },
+      ],
+      unsupportedFields: [{ key: 'exotic-1', type: 'EXOTIC_FUTURE_TYPE' }],
+    };
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={node}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).fields.map((f) => f.key)).toEqual([
+      'username',
+    ]);
+    expect(node.unsupportedFields).toEqual([
+      { key: 'exotic-1', type: 'EXOTIC_FUTURE_TYPE' },
+    ]);
+  });
+
+  it('a node whose SOCIAL_LOGIN_BUTTON field was serialized by the IdP plugin carries no unsupportedFields', () => {
+    // Regression pin for the SOCIAL_LOGIN_BUTTON unsupportedFields false positive:
+    // IdpCollector.id (native SDKs 2.1.0) returns a random UUID instead of the
+    // server field key, so the native diff must exclude SOCIAL_LOGIN_BUTTON when
+    // the plugin serializer emitted an IdP collector. This pins the JS-visible
+    // contract the sample app and SDKS-5166 manual testing depend on: the field
+    // is handled, so unsupportedFields must be absent and submit must not be
+    // blocked by a phantom unsupported field.
+    const node: ContinueNode = {
+      type: 'ContinueNode',
+      collectors: [
+        {
+          key: 'social-login-google',
+          type: 'SOCIAL_LOGIN_BUTTON',
+          label: 'Sign in with Google',
+          idpId: 'social-login-google',
+          idpType: 'GOOGLE',
+          idpEnabled: true,
+        },
+        {
+          key: 'submit',
+          type: 'SUBMIT_BUTTON',
+          label: 'Sign On',
+          required: false,
+        },
+      ] as ContinueNode['collectors'],
+      // When the mapper fix is in place the bridge omits unsupportedFields
+      // entirely; the JS contract is that nothing blocks submit.
+    };
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={node}
+        options={{
+          handledCollectorTypes: new Set(['SOCIAL_LOGIN_BUTTON']),
+        }}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).canSubmit).toBe(true);
+    expect(requireLatest(latest).issues).toEqual([]);
+    // The IdP collector stays visible to the panel for DaVinciIdpField rendering.
+    expect(
+      requireLatest(latest).fields.some(
+        (f) => f.type === 'SOCIAL_LOGIN_BUTTON',
       ),
     ).toBe(true);
   });

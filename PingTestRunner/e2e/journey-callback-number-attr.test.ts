@@ -17,7 +17,7 @@
  *   4. SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -92,6 +92,10 @@ describe('Journey — NumberAttributeInputCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit credentials → surfaces NumberAttributeInputCallback field (step 2)', async () => {
@@ -111,6 +115,10 @@ describe('Journey — NumberAttributeInputCallback', () => {
     )
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NumberAttributeInputCallback:0')),
+    ).toBeVisible();
   });
 
   it('enter a number and submit → reaches SuccessNode (live)', async () => {
@@ -126,5 +134,7 @@ describe('Journey — NumberAttributeInputCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

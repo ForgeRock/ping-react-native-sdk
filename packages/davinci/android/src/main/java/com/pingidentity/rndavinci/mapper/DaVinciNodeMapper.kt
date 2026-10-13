@@ -55,6 +55,7 @@ internal object DaVinciNodeMapper {
 
     private const val TAG = "DaVinciNodeMapper"
     private const val QR_CODE = "QR_CODE"
+    private const val SOCIAL_LOGIN_BUTTON = "SOCIAL_LOGIN_BUTTON"
 
     /** Matches native `PollingCollector.pollStatus()`'s own fallback when `pollInterval` fails to parse. */
     private const val DEFAULT_POLL_INTERVAL = 2000
@@ -206,6 +207,16 @@ internal object DaVinciNodeMapper {
         // dropped/unsupported. Remove this exclusion once the native SDK reads `key`.
         val hasRegisteredQrCode = node.actions.filterIsInstance<QRCodeCollector>().isNotEmpty()
 
+        // TODO-SDK-PARITY: IdpCollector.id() (external-idp 2.1.0) falls back to the
+        // Collector interface default, which returns a fresh random UUID per call —
+        // it never matches the server field's real `key`. Detected via the registered
+        // CoreRuntime plugin serializer (which emits type=SOCIAL_LOGIN_BUTTON) so this
+        // module keeps no compile-time dependency on the external-idp SDK module.
+        // Remove this exclusion once the native SDK reads `key`.
+        val hasRegisteredIdp = node.actions.filterIsInstance<Collector<*>>().any { collector ->
+            CoreRuntime.serializeDaVinciCollector(collector)?.get("type") == SOCIAL_LOGIN_BUTTON
+        }
+
         return buildList {
             for (element in fields) {
                 val fieldJson = try {
@@ -222,6 +233,7 @@ internal object DaVinciNodeMapper {
                     ?: continue
 
                 if (resolvedType == QR_CODE && hasRegisteredQrCode) continue
+                if (resolvedType == SOCIAL_LOGIN_BUTTON && hasRegisteredIdp) continue
 
                 // A field is supported when the SDK instantiated a collector for its key.
                 if (registeredKeys.contains(key)) continue

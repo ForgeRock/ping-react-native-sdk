@@ -29,7 +29,13 @@ final class UseJourneyUITests: BaseTestCase {
 
     // MARK: - Helpers
 
+    /// Delay before each login so back-to-back tests do not authenticate the
+    /// shared test account in rapid succession; consecutive logins spaced only
+    /// seconds apart have hung the flow with no node rendered.
+    private static let loginSpacing: TimeInterval = 10
+
     private func loginWithValidCredentials() {
+        Thread.sleep(forTimeInterval: Self.loginSpacing)
         elementWithTestID("use-journey-start-btn").tapWhenReady()
         waitForElementWithTestID("use-journey-field-NameCallback:0", timeout: netTimeout)
         elementWithTestID("use-journey-field-NameCallback:0").typeTextWhenReady(env.testUsername)

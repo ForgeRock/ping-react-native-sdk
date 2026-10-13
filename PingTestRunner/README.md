@@ -276,6 +276,7 @@ PingTestRunner/
 │   ├── use-oidc.test.ts           # useOidc hook tests
 │   ├── oidc-happy-path.test.ts
 │   ├── davinci.test.ts            # DaVinci happy-path flow (PingOne DaVinci)
+│   ├── use-davinci.test.ts        # useDaVinci + useDaVinciForm hook tests
 │   ├── device-id.test.ts
 │   ├── device-profile.test.ts
 │   ├── storage.test.ts

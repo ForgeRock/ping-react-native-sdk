@@ -296,10 +296,11 @@ Stable error codes:
 
 ## Platform notes
 
-- `android.useFido2Client` is an Android-only override.
+- `android.useFido2Client` is an Android-only override for the standalone `register` / `authenticate` operations.
   - `undefined` (default): native SDK auto-detection/default behavior.
   - `true`: force Google Play Services FIDO2 APIs.
   - `false`: force Android Credential Manager APIs.
+- Journey and DaVinci ceremony methods (`registerForJourney`, `authenticateForJourney`, `registerForDaVinci`, `authenticateForDaVinci`) currently ignore the client-level config on both platforms: ceremonies keep the workflow-configured native logger and native client defaults, so `android.useFido2Client` and the client-level logger id have no effect there.
 - iOS accepts the same config shape for API parity, but does not currently apply native client-level config.
 - Journey callback execution currently follows native SDK behavior; Android Journey callback APIs do not currently accept injected custom native `FidoClient` configuration.
 - Android requires a foreground `Activity` for FIDO calls.

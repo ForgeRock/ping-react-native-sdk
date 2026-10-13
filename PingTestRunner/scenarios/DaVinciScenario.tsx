@@ -18,7 +18,8 @@
  *   davinci-field-{key}                     → per-collector input
  *   davinci-field-{key}-option-{value}      → option button for single/multi-select
  *   davinci-flow-{key}                      → FLOW_BUTTON / FLOW_LINK / ACTION
- *   davinci-submit-btn                      → SUBMIT_BUTTON (or fallback submit)
+ *   davinci-submit-btn                      → first SUBMIT_BUTTON (or fallback submit)
+ *   davinci-submit-{label}                  → additional SUBMIT_BUTTON collectors, keyed by label
  *   davinci-success                         → SuccessNode reached
  *   davinci-error                           → ErrorNode reached
  *   davinci-error-message                   → ErrorNode message
@@ -52,25 +53,25 @@ import type {
 // ─── launch args ─────────────────────────────────────────────────────────────
 
 interface DaVinciLaunchArgs {
-  PING_DISCOVERY_ENDPOINT?: string;
-  PING_CLIENT_ID?: string;
-  PING_REDIRECT_URI?: string;
-  PING_SCOPES?: string;
-  PING_TIMEOUT?: string;
-  PING_ACR_VALUES?: string;
+  PINGONE_DISCOVERY_ENDPOINT?: string;
+  PINGONE_CLIENT_ID?: string;
+  PINGONE_REDIRECT_URI?: string;
+  PINGONE_SCOPES?: string;
+  PINGONE_TIMEOUT?: string;
+  PINGONE_ACR_VALUES?: string;
 }
 
 const args = LaunchArguments.value<DaVinciLaunchArgs>();
-const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
-const CLIENT_ID = args.PING_CLIENT_ID ?? '';
+const DISCOVERY_ENDPOINT = args.PINGONE_DISCOVERY_ENDPOINT ?? '';
+const CLIENT_ID = args.PINGONE_CLIENT_ID ?? '';
 const REDIRECT_URI =
-  args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
-const SCOPES = (args.PING_SCOPES ?? 'openid profile email')
+  args.PINGONE_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
+const SCOPES = (args.PINGONE_SCOPES ?? 'openid profile email')
   .split(' ')
   .map((s) => s.trim())
   .filter(Boolean);
-const TIMEOUT = args.PING_TIMEOUT ? Number(args.PING_TIMEOUT) : undefined;
-const ACR_VALUES = args.PING_ACR_VALUES ?? undefined;
+const TIMEOUT = args.PINGONE_TIMEOUT ? Number(args.PINGONE_TIMEOUT) : undefined;
+const ACR_VALUES = args.PINGONE_ACR_VALUES ?? undefined;
 
 // ─── state ───────────────────────────────────────────────────────────────────
 
@@ -315,11 +316,13 @@ function ContinueNodeForm({
   onSubmit,
   onFlow,
 }: ContinueNodeFormProps): React.JSX.Element {
-  const hasSubmitButton = collectors.some((c) => c.type === 'SUBMIT_BUTTON');
+  const firstSubmitIndex = collectors.findIndex(
+    (c) => c.type === 'SUBMIT_BUTTON',
+  );
 
   return (
     <View>
-      {collectors.map((collector) => (
+      {collectors.map((collector, index) => (
         <CollectorField
           key={collector.key}
           collector={collector}
@@ -327,9 +330,10 @@ function ContinueNodeForm({
           onValueChange={(val) => onChange({ ...values, [collector.key]: val })}
           onFlow={onFlow}
           onSubmit={onSubmit}
+          isFirstSubmitButton={index === firstSubmitIndex}
         />
       ))}
-      {!hasSubmitButton && (
+      {firstSubmitIndex < 0 && (
         <Button testID="davinci-submit-btn" title="Submit" onPress={onSubmit} />
       )}
     </View>
@@ -344,6 +348,7 @@ interface CollectorFieldProps {
   onValueChange: (val: DaVinciFormValue) => void;
   onFlow: (flowKey: string) => void;
   onSubmit: () => void;
+  isFirstSubmitButton: boolean;
 }
 
 function CollectorField({
@@ -352,6 +357,7 @@ function CollectorField({
   onValueChange,
   onFlow,
   onSubmit,
+  isFirstSubmitButton,
 }: CollectorFieldProps): React.JSX.Element | null {
   const testID = `davinci-field-${collector.key}`;
 
@@ -397,10 +403,20 @@ function CollectorField({
       DaVinciNormalizedCollector,
       { type: 'SUBMIT_BUTTON' }
     >;
+    const label = submitCollector.label || 'Submit';
+    // A flow screen can carry several submit buttons (e.g. Sign On / Register /
+    // Trouble) and tests must target one specifically, so give every button a
+    // label-derived testID. The first additionally keeps the shared alias so
+    // single-button flows work with the generic davinci-submit-btn testID.
+    const labelKey = label.toLowerCase().replace(/[^a-z0-9]+/g, '');
     return (
       <Button
-        testID="davinci-submit-btn"
-        title={submitCollector.label || 'Submit'}
+        testID={
+          isFirstSubmitButton
+            ? 'davinci-submit-btn'
+            : `davinci-submit-${labelKey}`
+        }
+        title={label}
         onPress={onSubmit}
       />
     );

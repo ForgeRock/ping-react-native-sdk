@@ -38,6 +38,19 @@ const DAVINCI_PASSWORD_KEY =
 
 const USERNAME_INPUT = by.id(`davinci-field-${DAVINCI_USERNAME_KEY}`);
 const PASSWORD_INPUT = by.id(`davinci-field-${DAVINCI_PASSWORD_KEY}`);
+// Detox runs only the Android e2e path (iOS e2e is XCUITest). Android
+// uppercases rendered button text, so by.text('Sign On') never matches; the
+// first SUBMIT_BUTTON collector keeps the shared davinci-submit-btn alias,
+// which is the Sign On button in this flow.
+const SUBMIT_BUTTON = by.id('davinci-submit-btn');
+// Consecutive logins to the shared DaVinci test account spaced seconds apart
+// hang the flow with no node rendered; pause before each login the way the
+// iOS XCUITest suite does with its loginSpacing delay.
+const LOGIN_SPACING_MS = 10000;
+
+async function pauseBeforeLogin(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, LOGIN_SPACING_MS));
+}
 
 const SKIP_REASON =
   'Live DaVinci env vars not set — skipping DaVinci E2E tests. ' +
@@ -59,16 +72,16 @@ describe('DaVinci — happy path', () => {
       launchArgs: {
         PING_TEST_SCENARIO: 'davinci',
         ...(DAVINCI_ENV.discoveryEndpoint
-          ? { PING_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint }
+          ? { PINGONE_DISCOVERY_ENDPOINT: DAVINCI_ENV.discoveryEndpoint }
           : {}),
         ...(DAVINCI_ENV.clientId
-          ? { PING_CLIENT_ID: DAVINCI_ENV.clientId }
+          ? { PINGONE_CLIENT_ID: DAVINCI_ENV.clientId }
           : {}),
         ...(DAVINCI_ENV.redirectUri
-          ? { PING_REDIRECT_URI: DAVINCI_ENV.redirectUri }
+          ? { PINGONE_REDIRECT_URI: DAVINCI_ENV.redirectUri }
           : {}),
         ...(DAVINCI_ENV.acrValues
-          ? { PING_ACR_VALUES: DAVINCI_ENV.acrValues }
+          ? { PINGONE_ACR_VALUES: DAVINCI_ENV.acrValues }
           : {}),
       },
     });
@@ -100,6 +113,8 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(PASSWORD_INPUT))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(PASSWORD_INPUT)).toBeVisible();
   });
 
   it('next() with valid credentials returns SuccessNode (live)', async () => {
@@ -110,10 +125,13 @@ describe('DaVinci — happy path', () => {
 
     await element(USERNAME_INPUT).typeText(DAVINCI_ENV.testUsername);
     await element(PASSWORD_INPUT).typeText(DAVINCI_ENV.testPassword);
-    await element(by.id('davinci-submit-btn')).tap();
+    await pauseBeforeLogin();
+    await element(SUBMIT_BUTTON).tap();
     await waitFor(element(by.id('davinci-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-success'))).toBeVisible();
   });
 
   it('access token is available and non-empty after successful login (live)', async () => {
@@ -125,6 +143,8 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(by.id('davinci-token-result')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-token-result'))).toBeVisible();
     const attrs = await element(by.id('davinci-token-result')).getAttributes();
     const token = (attrs as any).text ?? (attrs as any).label ?? '';
     jestExpect(token.length).toBeGreaterThan(0);
@@ -142,6 +162,8 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(by.id('davinci-userinfo-result')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-userinfo-result'))).toBeVisible();
     const attrs = await element(
       by.id('davinci-userinfo-result'),
     ).getAttributes();
@@ -159,6 +181,8 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(by.id('davinci-refreshed')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-refreshed'))).toBeVisible();
   });
 
   it('revoke() invalidates the session (live)', async () => {
@@ -171,6 +195,8 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(by.id('davinci-revoked')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-revoked'))).toBeVisible();
   });
 
   it('logoutUser() clears the session (live)', async () => {
@@ -183,5 +209,7 @@ describe('DaVinci — happy path', () => {
     await waitFor(element(by.id('davinci-logged-out')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('davinci-logged-out'))).toBeVisible();
   });
 });

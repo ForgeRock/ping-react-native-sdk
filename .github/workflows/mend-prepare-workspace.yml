@@ -1,0 +1,89 @@
+#
+# Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license. See the LICENSE file for details.
+#
+name: Mend Pruned Workspace
+
+# Builds the pruned workspace scanned by mend-sca-scan.yml and publishes it as
+# the mend-scan-workspace artifact.
+#
+# SCA scans a pruned workspace containing only packages/* (the published SDKs), NOT the
+# full monorepo. The sample app and test runner are build/test tooling: their runtime
+# dependency tree (react-native, metro, and everything transitively reachable from them,
+# e.g. image-size) does not ship to consumers, so it is out of scope for the SDK's
+# dependency inventory. The pruned workspace is generated from the real yarn.lock so
+# resolved versions stay identical to what CI tests.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set SCAN_DIR
+        run: echo "SCAN_DIR=${RUNNER_TEMP}/mend-scan" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      # Build the pruned workspace: packages/* only, with a generated root manifest that
+      # preserves packageManager, engines, and resolutions from the real root. The real
+      # yarn.lock is copied over and pruned by the install below, keeping the exact
+      # resolved versions CI tests against — no version drift between the two graphs.
+      # The yarn release binary is symlinked onto PATH because the Mend CLI shells out
+      # to `yarn` to enumerate the dependency graph: hosted runners preinstall yarn 1.x,
+      # which ignores .yarnrc.yml's yarnPath and does not support the install flags used
+      # here; containers used for local workflow runs (act) may have no yarn at all.
+      - name: Prepare pruned workspace
+        run: |
+          mkdir -p "${SCAN_DIR}/.yarn/releases"
+          cp -R packages "${SCAN_DIR}/packages"
+          cp .yarnrc.yml "${SCAN_DIR}/.yarnrc.yml"
+          cp .yarn/releases/*.cjs "${SCAN_DIR}/.yarn/releases/"
+          cp yarn.lock "${SCAN_DIR}/yarn.lock"
+          chmod +x "${SCAN_DIR}/.yarn/releases/"*.cjs
+          ln -sf "${SCAN_DIR}/.yarn/releases/yarn-4.11.0.cjs" /usr/local/bin/yarn
+          node -e '
+            const fs = require("fs");
+            const root = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const scan = {
+              name: "ping-sdk-mend-scan",
+              private: true,
+              packageManager: root.packageManager,
+              engines: root.engines,
+              resolutions: root.resolutions,
+              workspaces: { packages: ["packages/*"] },
+            };
+            fs.writeFileSync(process.env.SCAN_DIR + "/package.json", JSON.stringify(scan, null, 2) + "\n");
+          '
+
+      # --mode=update-lockfile resolves the pruned workspace and garbage-collects the
+      # lockfile entries no longer referenced (the entire app/test-runner tree) without
+      # fetching or linking packages.
+      - name: Resolve pruned lockfile
+        run: |
+          cd "${SCAN_DIR}"
+          yarn install --mode=update-lockfile
+
+      # upload-artifact v4 zips the tree without preserving symlinks, so the consumer
+      # (mend-sca-scan.yml) recreates the yarn shim from the bundled release binary.
+      - name: Upload pruned workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: mend-scan-workspace
+          path: ${{ env.SCAN_DIR }}
+          retention-days: 1

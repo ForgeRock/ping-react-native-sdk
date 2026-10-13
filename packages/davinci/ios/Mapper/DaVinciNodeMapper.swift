@@ -16,6 +16,7 @@ import RNPingCore
 enum DaVinciNodeMapper {
   private static let logTag = "DaVinciNodeMapper"
   private static let qrCode = "QR_CODE"
+  private static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -150,6 +151,17 @@ enum DaVinciNodeMapper {
 
     let registeredKeys = Set(node.collectors.map { $0.id })
 
+    // TODO-SDK-PARITY: IdpCollector.id (PingExternalIdP 2.1.0) falls back to a fresh
+    // random UUID per call — it never matches the server field's real `key`. Excluding
+    // SOCIAL_LOGIN_BUTTON here avoids reporting a field the SDK *did* instantiate a
+    // collector for (and that the registered plugin serializer serialized) as
+    // dropped/unsupported. Remove this exclusion once the native SDK reads `key`.
+    let hasSerializedIdp = node.collectors.contains { collector in
+      guard CoreRuntime.serializeDaVinciCollector(collector)?["type"] as? String == socialLoginButton
+      else { return false }
+      return true
+    }
+
     var entries = [[String: Any]]()
     for field in fields {
       guard let key = field["key"] as? String else { continue }
@@ -158,6 +170,8 @@ enum DaVinciNodeMapper {
       guard let resolvedType = (field["inputType"] as? String) ?? (field["type"] as? String) else {
         continue
       }
+
+      if resolvedType == socialLoginButton && hasSerializedIdp { continue }
 
       // A field is supported when the SDK instantiated a collector for its key.
       guard !registeredKeys.contains(key) else { continue }

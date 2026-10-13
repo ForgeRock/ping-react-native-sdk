@@ -40,6 +40,8 @@ import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.SuccessNode
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
+import com.pingidentity.rncore.CoreRuntime
+import java.util.UUID
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -48,6 +50,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Test
 
 class DaVinciNodeMapperTest {
@@ -56,6 +59,13 @@ class DaVinciNodeMapperTest {
         buildJsonObject { put("form", buildJsonObject { }) },
         *actions
     )
+
+    @After
+    fun tearDown() {
+        // Failure-safe: runs even when an assertion fails, so a registered fake
+        // serializer never leaks into other tests (mirrors iOS `defer { ... }`).
+        CoreRuntime.resetDaVinciCollectorSerializersForTesting()
+    }
 
     private fun makeNode(input: JsonObject, vararg actions: Action): ContinueNode {
         val node = object : ContinueNode(
@@ -489,6 +499,71 @@ class DaVinciNodeMapperTest {
 
         val result = DaVinciNodeMapper.mapNodePayload(node)
         assertFalse(result.containsKey("unsupportedFields"))
+    }
+
+    @Test
+    fun mapContinueNodeExcludesSocialLoginWhenIdpCollectorSerialized() {
+        // IdpCollector.id() falls back to a random UUID (external-idp 2.1.0), so the
+        // server field key never matches registeredKeys. When the registered CoreRuntime
+        // serializer emits type=SOCIAL_LOGIN_BUTTON for a collector, the field must not
+        // be reported as unsupported. A stand-in collector mimics that serializer contract.
+        val idpLikeCollector = object : Collector<String> {
+            override fun id(): String = UUID.randomUUID().toString()
+            override fun init(json: JsonObject): Collector<String> = this
+            override fun payload(): String = ""
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "social-login-google")
+                            put("type", "SOCIAL_LOGIN_BUTTON")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, idpLikeCollector)
+        CoreRuntime.registerDaVinciCollectorSerializer { collectorAny ->
+            if (collectorAny === idpLikeCollector) {
+                mapOf("key" to "social-login-google", "type" to "SOCIAL_LOGIN_BUTTON")
+            } else {
+                null
+            }
+        }
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertFalse(result.containsKey("unsupportedFields"))
+        val collectors = result.asList("collectors")!!
+        assertEquals(1, collectors.size)
+        assertEquals("SOCIAL_LOGIN_BUTTON", collectors[0]["type"])
+    }
+
+    @Test
+    fun mapContinueNodeKeepsSocialLoginWhenNoIdpCollectorSerialized() {
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "social-login-google")
+                            put("type", "SOCIAL_LOGIN_BUTTON")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        val unsupported = result.asList("unsupportedFields")
+        assertNotNull(unsupported)
+        assertEquals(1, unsupported!!.size)
+        assertEquals("social-login-google", unsupported[0]["key"])
+        assertEquals("SOCIAL_LOGIN_BUTTON", unsupported[0]["type"])
     }
 
     @Test

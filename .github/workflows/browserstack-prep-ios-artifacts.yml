@@ -36,7 +36,7 @@ jobs:
   prepare-ios-bs-artifacts:
     name: Prepare iOS BrowserStack artifacts
     runs-on: macos-26-xlarge
-    timeout-minutes: 60
+    timeout-minutes: 65
 
     env:
       XCODE_VERSION: ${{ vars.XCODE_VERSION || '26.2' }}

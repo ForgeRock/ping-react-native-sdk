@@ -16,7 +16,7 @@
  *   3. Accept and submit    → SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -35,6 +35,10 @@ describe('Journey — ConsentMappingCallback', () => {
       await waitFor(element(by.id('journey-field-ConsentMappingCallback:0')))
         .toBeVisible()
         .withTimeout(1500);
+      // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+      await detoxExpect(
+        element(by.id('journey-field-ConsentMappingCallback:0')),
+      ).toBeVisible();
       return;
     } catch {
       // Continue with start/login flow.
@@ -54,6 +58,10 @@ describe('Journey — ConsentMappingCallback', () => {
     await waitFor(element(by.id('journey-field-ConsentMappingCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-ConsentMappingCallback:0')),
+    ).toBeVisible();
   };
 
   beforeAll(async () => {
@@ -97,5 +105,7 @@ describe('Journey — ConsentMappingCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });

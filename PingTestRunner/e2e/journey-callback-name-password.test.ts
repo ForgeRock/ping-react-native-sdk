@@ -16,7 +16,7 @@
  *   3. Submit password       → SuccessNode
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
@@ -84,6 +84,10 @@ describe('Journey — NamePasswordCallback', () => {
     await waitFor(element(by.id('journey-field-NameCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-NameCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit username → surfaces PasswordCallback', async () => {
@@ -98,6 +102,10 @@ describe('Journey — NamePasswordCallback', () => {
     await waitFor(element(by.id('journey-field-PasswordCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(
+      element(by.id('journey-field-PasswordCallback:0')),
+    ).toBeVisible();
   });
 
   it('submit password → reaches SuccessNode (live)', async () => {
@@ -113,5 +121,7 @@ describe('Journey — NamePasswordCallback', () => {
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    // Re-asserted via detoxExpect: BrowserStack derives the test verdict from explicit expect calls, not waitFor polling.
+    await detoxExpect(element(by.id('journey-success'))).toBeVisible();
   });
 });
