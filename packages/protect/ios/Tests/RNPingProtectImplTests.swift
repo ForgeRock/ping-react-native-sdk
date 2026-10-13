@@ -7,6 +7,7 @@
 
 import XCTest
 import PingOneProtect
+import React
 @testable import RNPingCore
 @testable import RNPingProtect
 
@@ -23,6 +24,7 @@ final class RNPingProtectImplTests: XCTestCase {
 
   override func tearDown() async throws {
     CoreRuntime.setDaVinciCollectorResolver(nil)
+    CoreRuntime.setJourneyCallbackResolver(nil)
     impl = nil
     try await super.tearDown()
   }
@@ -73,7 +75,44 @@ final class RNPingProtectImplTests: XCTestCase {
     try XCTSkip("ProtectCollector requires a host app bundle — not available in xctest agent")
   }
 
+  // MARK: - collectForJourney / initializeForJourney
+
+  func testCollectForJourneyRejectsWhenJourneyIdIsEmptyOrWhitespace() async {
+    for id in ["", "   "] {
+      let (code, type, _) = await invokeJourney { resolve, reject in
+        impl.collectForJourney(id, options: [:], config: [:], resolve: resolve, rejecter: reject)
+      }
+      XCTAssertEqual(code, "PROTECT_ARGUMENT_ERROR")
+      XCTAssertEqual(type, ErrorType.argumentError.rawValue)
+    }
+  }
+
+  func testInitializeForJourneyRejectsWhenJourneyIdIsEmptyOrWhitespace() async {
+    for id in ["", "   "] {
+      let (code, type, _) = await invokeJourney { resolve, reject in
+        impl.initializeForJourney(id, config: [:], resolve: resolve, rejecter: reject)
+      }
+      XCTAssertEqual(code, "PROTECT_ARGUMENT_ERROR")
+      XCTAssertEqual(type, ErrorType.argumentError.rawValue)
+    }
+  }
+
   // MARK: - Helpers
+
+  @MainActor
+  private func invokeJourney(
+    _ call: @MainActor (@escaping RCTPromiseResolveBlock, @escaping RCTPromiseRejectBlock) -> Void
+  ) async -> (String?, String?, String?) {
+    await withCheckedContinuation { (continuation: CheckedContinuation<(String?, String?, String?), Never>) in
+      call(
+        { _ in continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil, nil)) },
+        { code, message, error in
+          let type = (error as NSError?)?.userInfo["type"] as? String
+          continuation.resume(returning: (code, type, message))
+        }
+      )
+    }
+  }
 
   @MainActor
   private func invokeCollectForDaVinci(

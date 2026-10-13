@@ -34,6 +34,7 @@ import type { Spec as JourneySpec } from '../../../packages/journey/src/NativeRN
 import type { Spec as LoggerSpec } from '../../../packages/logger/src/NativeRNPingLogger';
 import type { Spec as OathSpec } from '../../../packages/oath/src/NativeRNPingOath';
 import type { Spec as OidcSpec } from '../../../packages/oidc/src/NativeRNPingOidc';
+import type { Spec as ProtectSpec } from '../../../packages/protect/src/NativeRNPingProtect';
 import type { Spec as PushSpec } from '../../../packages/push/src/NativeRNPingPush';
 import type { Spec as StorageSpec } from '../../../packages/storage/src/NativeRNPingStorage';
 
@@ -173,6 +174,20 @@ type _OidcMockedMethods = Pick<
   | 'userinfo'
   | 'revoke'
   | 'logout'
+>;
+
+// ─── rn-protect ─────────────────────────────────────────────────────────────
+// jest.setup.js mocks: collectForDaVinci, collectForJourney, initializeForJourney,
+//                      initialize, pauseBehavioralData, resumeBehavioralData, registerJourneyCallbacks
+type _ProtectMockedMethods = Pick<
+  ProtectSpec,
+  | 'collectForDaVinci'
+  | 'collectForJourney'
+  | 'initializeForJourney'
+  | 'initialize'
+  | 'pauseBehavioralData'
+  | 'resumeBehavioralData'
+  | 'registerJourneyCallbacks'
 >;
 
 // ─── rn-push ─────────────────────────────────────────────────────────────────

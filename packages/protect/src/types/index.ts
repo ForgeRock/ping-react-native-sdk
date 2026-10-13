@@ -10,4 +10,7 @@ export type {
   ProtectClientConfig,
   ProtectConfig,
   ProtectErrorCode,
+  ProtectJourneyInitializeOptions,
+  ProtectJourneyOptions,
+  ProtectJourneyResult,
 } from './protect.types';

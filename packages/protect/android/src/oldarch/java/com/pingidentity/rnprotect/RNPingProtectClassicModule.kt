@@ -61,6 +61,36 @@ class RNPingProtectClassicModule(
   }
 
   /**
+   * Runs PingOne Protect data collection for a Journey evaluation callback.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Per-call options payload (index).
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @param promise React Native promise resolved on success or rejected on error.
+   */
+  @ReactMethod
+  fun collectForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingProtectCommon.collectForJourney(journeyId, options, config, promise)
+  }
+
+  /**
+   * Executes a Journey initialize callback using the configuration carried by the callback.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @param promise React Native promise resolved on success or rejected on error.
+   */
+  @ReactMethod
+  fun initializeForJourney(journeyId: String, config: ReadableMap, promise: Promise) {
+    RNPingProtectCommon.initializeForJourney(journeyId, config, promise)
+  }
+
+  /**
    * Initializes the Protect SDK with the provided configuration.
    *
    * @param protectConfig Protect SDK initialization config payload.
@@ -102,6 +132,18 @@ class RNPingProtectClassicModule(
   @ReactMethod
   fun registerDaVinciSerializer(promise: Promise) {
     RNPingProtectCommon.registerDaVinciSerializer()
+    promise.resolve(null)
+  }
+
+  /**
+   * Resolves without action: the native Android SDK registers its Journey Protect callbacks
+   * at app launch through the `androidx.startup` initializer declared in its manifest.
+   * The method exists so the classic module matches the shared spec.
+   *
+   * @param promise React Native promise resolved immediately.
+   */
+  @ReactMethod
+  fun registerJourneyCallbacks(promise: Promise) {
     promise.resolve(null)
   }
 

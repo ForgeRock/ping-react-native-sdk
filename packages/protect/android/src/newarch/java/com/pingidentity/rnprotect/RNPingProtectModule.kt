@@ -48,6 +48,25 @@ class RNPingProtectModule(reactContext: ReactApplicationContext) :
   }
 
   /**
+   * Runs PingOne Protect data collection for a Journey evaluation callback.
+   */
+  override fun collectForJourney(
+    journeyId: String,
+    options: ReadableMap,
+    config: ReadableMap,
+    promise: Promise
+  ) {
+    RNPingProtectCommon.collectForJourney(journeyId, options, config, promise)
+  }
+
+  /**
+   * Executes a Journey initialize callback using the configuration carried by the callback.
+   */
+  override fun initializeForJourney(journeyId: String, config: ReadableMap, promise: Promise) {
+    RNPingProtectCommon.initializeForJourney(journeyId, config, promise)
+  }
+
+  /**
    * Initializes the Protect SDK with the provided configuration.
    */
   override fun initialize(protectConfig: ReadableMap, config: ReadableMap, promise: Promise) {
@@ -76,7 +95,16 @@ class RNPingProtectModule(reactContext: ReactApplicationContext) :
     promise.resolve(null)
   }
 
+  /**
+   * Resolves without action: the native Android SDK registers its Journey Protect callbacks
+   * at app launch through the `androidx.startup` initializer declared in its manifest.
+   * The method exists so the shared TurboModule spec is implemented on both platforms.
+   */
+  override fun registerJourneyCallbacks(promise: Promise) {
+    promise.resolve(null)
+  }
+
   companion object {
-    const val NAME = "RNPingProtect"
+    const val NAME = RNPingProtectCommon.MODULE_NAME
   }
 }

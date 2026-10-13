@@ -11,6 +11,7 @@ The Ping Protect library integrates PingOne Protect behavioral data collection i
 - [Usage](#usage)
   - [DaVinci lifecycle integration](#davinci-lifecycle-integration)
   - [Manual initialization](#manual-initialization)
+  - [Use with Journey](#use-with-journey)
 - [API reference](#api-reference)
 - [Errors](#errors)
 
@@ -232,18 +233,155 @@ function LoginScreen() {
 
 ---
 
+## Use with Journey
+
+When a Journey tree includes a `PingOneProtectInitializeCallback` or a
+`PingOneProtectEvaluationCallback`, both callbacks surface in the node payload
+with `executionMode: 'integration_required'`: they are not advanced by
+`next(...)` directly. The app executes them with this module's Journey-scoped
+functions, which run the native callbacks against the current Journey
+instance, then advances the flow.
+
+### Register the callbacks at startup
+
+Call `startProtectForJourney()` once at app startup, before the first Journey
+`start()` or `next()`:
+
+```ts
+import { startProtectForJourney } from '@ping-identity/rn-protect';
+
+await startProtectForJourney();
+```
+
+`startProtectForJourney()` does not initialize Protect, so the initialize
+callback in the journey still supplies the configuration. It is safe to call on
+Android, where it only resolves.
+
+### Initialize callback
+
+`PingOneProtectInitializeCallback` is executed with
+`initializeProtectForJourney(journey)`. The function takes no configuration
+argument by design: the native callback carries the journey's own configuration. A journey whose initialize callback
+carries no parseable configuration fails loudly as `PROTECT_INITIALIZE_ERROR`.
+There is no app-configuration fallback: substituting the app's own
+configuration would silently initialize PingOneSignals against the app's
+environment instead of the journey's.
+
+### Evaluation callback
+
+`PingOneProtectEvaluationCallback` is executed with
+`collectProtectForJourney(journey, { index })`. The optional `index` selects
+among multiple evaluation callbacks. The collected risk signal is written natively into the
+resolved callback, or into its sibling hidden-value fields on
+MetadataCallback-derived journeys.
+
+### Journey flow example
+
+```ts
+import { callbackType } from '@ping-identity/rn-types';
+import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
+import {
+  collectProtectForJourney,
+  initializeProtectForJourney,
+} from '@ping-identity/rn-protect';
+
+const [node, actions] = useJourney(client);
+const form = useJourneyForm(node, {
+  handledCallbackTypes: new Set([
+    callbackType.PingOneProtectInitializeCallback,
+    callbackType.PingOneProtectEvaluationCallback,
+  ]),
+});
+
+for (const field of form.fields) {
+  if (field.ref.type === callbackType.PingOneProtectInitializeCallback) {
+    await initializeProtectForJourney(journey);
+  }
+  if (field.ref.type === callbackType.PingOneProtectEvaluationCallback) {
+    await collectProtectForJourney(journey, { index: field.ref.typeIndex });
+  }
+}
+
+if (form.canSubmit) {
+  await actions.next(form.input);
+}
+```
+
+The Journey client returned by `createJourneyClient` satisfies
+`JourneyInstance`, which is what both functions accept. Declaring both
+callback types in `handledCallbackTypes` keeps `buildNextInput` from emitting
+blocking `INTEGRATION_REQUIRED` issues for them, and skips the managed
+hidden-value fields so a natively written signal is not overwritten with
+stale defaults.
+
+### Error handling for the Journey path
+
+| Code                         | Type             | Meaning                                                       | Remedy                                                                       |
+| ---------------------------- | ---------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `PROTECT_NOT_INITIALIZED`    | `state_error`    | Protect was not initialized by this module.                   | Call `initializeProtectForJourney()` before collecting.                      |
+| `PROTECT_CALLBACK_NOT_FOUND` | `state_error`    | No Protect callback at the requested index.                   | Check the journey; verify the `index` option.                                |
+| `PROTECT_ARGUMENT_ERROR`     | `argument_error` | Blank journey id.                                             | Fix the arguments before calling again.                                      |
+| `PROTECT_COLLECT_ERROR`      | `auth_error`     | Native risk-signal collection failed.                         | See the note below on advancing after failure.                               |
+| `PROTECT_INITIALIZE_ERROR`   | `auth_error`     | The initialize callback failed to configure or start Protect. | Verify the journey emits a valid initialize callback and check tenant setup. |
+
+After a collect failure, the native callback has already written the failure
+into its `clientError` input, so calling `next()` reports the failure to the
+server. Whether to advance and let the journey decide, or to surface the error in
+the app instead, is a decision to validate against your tenant; the native
+sample-app example surfaces the error and does not advance.
+
+The not-initialized guard tracks initialization performed through this module
+only. Initialization done by any other path is invisible to the guard, and a
+Journey collect after such an initialization rejects `PROTECT_NOT_INITIALIZED`.
+
+### Once-only initialization ordering
+
+Native Protect initialization is once-only. Whichever initialize path succeeds
+first wins. A later successful initialize from the other path applies only its
+behavioral-data resume/pause; its identity configuration (envId, customHost,
+deviceAttributesToIgnore, consoleLogEnabled, lazyMetadata) is not applied, and
+the bridge logs a warning naming both paths.
+
+Apps that use Protect through Journey must not call `startProtect()`: initialize
+configuration is server-driven, so the app cannot reproduce the tree's
+configuration reliably; call `startProtectForJourney()` at startup and let the
+journey initialize through `initializeProtectForJourney()` instead.
+
+### Marketplace and legacy trees
+
+Journeys that emit Protect callbacks as a `MetadataCallback` with
+`_type: "PingOneProtect"` are handled the same way: call
+`startProtectForJourney()` at startup, then execute the initialize
+callback with `initializeProtectForJourney()` (and the evaluation callback
+with `collectProtectForJourney()`), as described above. The native callback
+carries the server configuration in this form as well, and
+`initializeProtectForJourney()` both initializes Protect and applies it.
+
+---
+
 ## API reference
 
 ```ts
 import {
   collectProtect,
+  collectProtectForJourney,
+  initializeProtectForJourney,
   startProtect,
+  startProtectForJourney,
   pauseBehavioralData,
   resumeBehavioralData,
 } from '@ping-identity/rn-protect';
 import type {
+  DaVinciInstance,
+  JourneyInstance,
+  LoggerInstance,
+} from '@ping-identity/rn-types';
+import type {
   ProtectConfig,
   ProtectErrorCode,
+  ProtectJourneyInitializeOptions,
+  ProtectJourneyOptions,
+  ProtectJourneyResult,
 } from '@ping-identity/rn-protect';
 
 function collectProtect(daVinci: DaVinciInstance): Promise<void>;
@@ -254,6 +392,15 @@ function pauseBehavioralData(options?: {
 function resumeBehavioralData(options?: {
   logger?: LoggerInstance;
 }): Promise<void>;
+
+function initializeProtectForJourney(
+  journey: JourneyInstance,
+  options?: ProtectJourneyInitializeOptions,
+): Promise<ProtectJourneyResult>;
+function collectProtectForJourney(
+  journey: JourneyInstance,
+  options?: ProtectJourneyOptions,
+): Promise<ProtectJourneyResult>;
 
 interface ProtectConfig {
   /** Optional logger instance from @ping-identity/rn-logger. */
@@ -274,6 +421,23 @@ interface ProtectConfig {
   resumeBehavioralDataOnStart?: boolean;
   /** Documents intent to pause after success — call pauseBehavioralData() manually. Default: false. */
   pauseBehavioralDataOnSuccess?: boolean;
+}
+
+interface ProtectJourneyOptions {
+  /** Optional logger instance from @ping-identity/rn-logger. */
+  logger?: LoggerInstance;
+  /** Zero-based index of the evaluation callback when the node carries more than one. Default: 0. */
+  index?: number;
+}
+
+interface ProtectJourneyInitializeOptions {
+  /** Optional logger instance from @ping-identity/rn-logger. */
+  logger?: LoggerInstance;
+}
+
+interface ProtectJourneyResult {
+  /** Discriminated success outcome; the risk signal is written natively into the Journey callback and is never returned to JavaScript. */
+  type: 'success';
 }
 ```
 
@@ -297,9 +461,12 @@ try {
 
 Stable error codes:
 
-- `PROTECT_INITIALIZE_ERROR` — the native Protect SDK failed to initialize, pause, or resume.
-- `PROTECT_COLLECT_ERROR` — the native Protect SDK failed to collect signals.
-- `PROTECT_COLLECTOR_NOT_FOUND` — no active PROTECT collector was found for the current DaVinci flow.
+- `PROTECT_INITIALIZE_ERROR`: the native Protect SDK failed to initialize, pause, or resume.
+- `PROTECT_COLLECT_ERROR`: the native Protect SDK failed to collect signals.
+- `PROTECT_COLLECTOR_NOT_FOUND`: no active PROTECT collector was found for the current DaVinci flow.
+- `PROTECT_NOT_INITIALIZED`: Protect was not initialized by this module before a Journey collect; call `initializeProtectForJourney()` first.
+- `PROTECT_CALLBACK_NOT_FOUND`: no Journey Protect callback at the requested index.
+- `PROTECT_ARGUMENT_ERROR`: the Journey arguments were invalid (blank journey id, non-integer `index`).
 
 ---
 
