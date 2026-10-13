@@ -116,6 +116,13 @@ export default function JourneyScenario(): React.JSX.Element {
         return;
       }
       if (nextNode.type === 'FailureNode') {
+        // Surface the message the native bridge already delivers for FailureNode:
+        // both node mappers (JourneyNodeMapper.kt / JourneyNodeMapper.swift) populate
+        // `message` and `cause`. This branch previously dropped them, leaving
+        // errorMessage null so journey-failure-message never rendered, which made
+        // the BrowserStack E2E invalid-credential failure undiagnosable.
+        const failureNode = nextNode as { message?: string; cause?: string };
+        setErrorMessage(failureNode.message ?? failureNode.cause ?? null);
         setState('failure');
         return;
       }
