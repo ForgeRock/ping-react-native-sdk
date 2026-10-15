@@ -599,15 +599,17 @@ object RNPingProtectCommon {
    * Reads the position of the evaluation callback within the node's callback list.
    *
    * The index is derived from the server callback list, not supplied by the app. A missing or
-   * null index defaults to 0, and an index outside the matching callbacks is reported as
+   * null or non-numeric index defaults to 0, and an index outside the matching callbacks is reported as
    * callback-not-found by the caller.
    *
    * @param options Per-call options payload.
    * @return The callback index, or 0 when none is present.
    */
   private fun journeyIndex(options: ReadableMap): Int {
-    return options.takeIf { it.hasKey(INDEX_KEY) && !it.isNull(INDEX_KEY) }
-      ?.getInt(INDEX_KEY) ?: 0
+    if (!options.hasKey(INDEX_KEY) || options.getType(INDEX_KEY) != ReadableType.Number) {
+      return 0
+    }
+    return options.getDouble(INDEX_KEY).toInt()
   }
 
   /**
