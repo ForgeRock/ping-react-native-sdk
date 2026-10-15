@@ -280,6 +280,9 @@ export async function initializeProtectForJourney(
  * @param journey - Active Journey instance holding the Protect evaluation callback.
  * @param options - Optional callback index and logger.
  * @returns Resolves with `{ type: 'success' }` when collection completes.
+ * @throws {@link ProtectError} with code `PROTECT_ARGUMENT_ERROR` and type
+ * `argument_error` when `options.index` is negative or not an integer; the native
+ * module is not called in that case.
  * @throws {@link ProtectError} with codes `PROTECT_NOT_INITIALIZED`,
  * `PROTECT_CALLBACK_NOT_FOUND`, or `PROTECT_COLLECT_ERROR` on native failure.
  *
@@ -307,10 +310,19 @@ export async function collectProtectForJourney(
   const loggerId = resolveLoggerId(options.logger);
 
   return withLogging('collectProtectForJourney', logger, async () => {
+    const index = options.index ?? 0;
+    if (!Number.isInteger(index) || index < 0) {
+      throw new ProtectError(
+        `[@ping-identity/rn-protect] Invalid index ${String(index)}. Provide a non-negative integer.`,
+        'PROTECT_ARGUMENT_ERROR',
+        'argument_error',
+      );
+    }
+
     const journeyId = await journey.getId();
     const result = await getNativeModule().collectForJourney(
       journeyId,
-      { index: options.index ?? 0 },
+      { index },
       toNativeConfig({ loggerId }),
     );
     return fromNativeJourneyResult(result);

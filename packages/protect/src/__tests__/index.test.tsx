@@ -492,6 +492,27 @@ describe('Protect API', () => {
     );
   });
 
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    'collectProtectForJourney() rejects invalid index %s without calling getId() or native',
+    async (index) => {
+      const collectNative = jest.fn();
+      (getNativeModule as jest.Mock).mockReturnValue({
+        collectForJourney: collectNative,
+      });
+      const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+      const error = await collectProtectForJourney(journey, { index }).catch(
+        (caught) => caught,
+      );
+
+      expect(error).toBeInstanceOf(ProtectError);
+      expect(error.code).toBe('PROTECT_ARGUMENT_ERROR');
+      expect(error.type).toBe('argument_error');
+      expect(journey.getId).not.toHaveBeenCalled();
+      expect(collectNative).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([
     'PROTECT_NOT_INITIALIZED',
     'PROTECT_COLLECT_ERROR',

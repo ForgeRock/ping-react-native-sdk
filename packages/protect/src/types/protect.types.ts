@@ -106,7 +106,8 @@ export type ProtectJourneyOptions = {
    * Index of the evaluation callback to execute when a Journey node contains
    * multiple PingOne Protect evaluation callbacks. This is the callback's position among
    * the callbacks of its type on the node, for example `field.ref.typeIndex`, not an
-   * app-configured value.
+   * app-configured value. Must be a non-negative integer; anything else is rejected
+   * with `PROTECT_ARGUMENT_ERROR` before the native module is called.
    *
    * @defaultValue `0`
    */
