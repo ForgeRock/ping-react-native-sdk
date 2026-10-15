@@ -42,7 +42,7 @@ public class RNPingRecaptchaCommon: NSObject {
   /// Default verification timeout in milliseconds.
   ///
   /// Always passed explicitly to `verify(configBlock:)` so both platforms
-  /// behave identically; the JS layer forwards `timeoutMs` by default too.
+  /// behave identically.
   private static let defaultTimeoutMs: Double = 15000
 
   /// Executes the active Journey `ReCaptchaEnterpriseCallback`.
@@ -147,7 +147,10 @@ public class RNPingRecaptchaCommon: NSObject {
   ///   - logger: Optional native logger resolved from Core; upstream keeps
   ///     its `LogManager.logger` default when `nil`.
   ///   - config: Upstream configuration object to populate.
-  private static func applyOptions(
+  ///
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   config-forwarding contract.
+  static func applyOptions(
     _ options: VerifyOptions,
     logger: PingLogger.Logger?,
     to config: ReCaptchaEnterpriseConfig
@@ -166,7 +169,10 @@ public class RNPingRecaptchaCommon: NSObject {
   ///   - type: Discriminant: `"success"` or `"failure"`.
   ///   - token: Verification token (success only).
   /// - Returns: Payload dictionary for JS.
-  private static func createResultPayload(type: String, token: String) -> NSDictionary {
+  ///
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   payload-shape contract.
+  static func createResultPayload(type: String, token: String) -> NSDictionary {
     return ["type": type, "token": token]
   }
 
@@ -177,11 +183,17 @@ public class RNPingRecaptchaCommon: NSObject {
   ///
   /// - Parameter error: Native error from the `Result.failure` branch.
   /// - Returns: Payload dictionary for JS.
-  private static func createFailureResultPayload(error: Error) -> NSDictionary {
+  ///
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   payload-shape contract.
+  static func createFailureResultPayload(error: Error) -> NSDictionary {
     return [
       "type": "failure",
       "code": failureCode(error),
-      "message": error.localizedDescription,
+      // Mirrors Android's empty-message fallback so payloads stay identical.
+      "message": error.localizedDescription.isEmpty
+        ? "reCAPTCHA Enterprise verification failed."
+        : error.localizedDescription,
     ]
   }
 
@@ -190,6 +202,15 @@ public class RNPingRecaptchaCommon: NSObject {
   /// - Parameter error: Native error from the `Result.failure` branch.
   /// - Returns: The upstream constant when the native callback surfaces its
   ///   invalid-token sentinel, otherwise the shared `UNKNOWN_ERROR` fallback.
+  ///
+  /// - Note: Best-effort heuristic. Google's `RecaptchaEnterprise` error types
+  ///   are `internal import`-ed upstream (its `RecaptchaErrorCode` enum has no
+  ///   invalid-token case — that sentinel lives in Ping's
+  ///   `ReCaptchaEnterpriseConstants`), so a real Google error cannot be
+  ///   matched by domain/code here and the localizedDescription substring
+  ///   check only catches the upstream token rejection. Typed iOS codes
+  ///   require upstream to surface Google's errors; Android already does via
+  ///   the callback's failure fields.
   ///
   /// - Note: Internal (not `private`) for unit-test observability of the
   ///   failure-code contract.

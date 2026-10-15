@@ -33,10 +33,10 @@ export function recaptchaIntegration(
       if (field.type !== 'ReCaptchaEnterpriseCallback') {
         return {};
       }
-      const result = await recaptcha.verifyForJourney(journey, {
+      await recaptcha.verifyForJourney(journey, {
         index: field.ref.typeIndex,
       });
-      return { cancelled: false, result };
+      return {};
     },
   };
 }

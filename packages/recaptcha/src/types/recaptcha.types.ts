@@ -53,8 +53,13 @@ export type RecaptchaVerifyOptions = {
   timeoutMs?: number;
   /**
    * Optional custom risk-assessment metadata submitted with the verification.
+   *
+   * @remarks
+   * Object-only by design: both native parsers accept a JSON object
+   * (Android `customPayload: JsonObject?`, iOS `[String: Any]?`) and silently
+   * drop anything else, so the type matches the native contract exactly.
    */
-  payload?: RecaptchaJsonValue;
+  payload?: Record<string, RecaptchaJsonValue>;
 };
 
 /**
@@ -97,9 +102,7 @@ export type RecaptchaErrorCode =
  * Stable error codes emitted by the reCAPTCHA module.
  *
  * @remarks
- * Keep these in sync with native error constants:
- * - Android: `RecaptchaErrorCodes.kt` (Phase 3)
- * - iOS: `RecaptchaErrorCode` Swift enum (Phase 4)
+ * See {@link RecaptchaErrorCode} for the code list and the native sync note.
  */
 export const recaptchaErrorCodes = {
   /** Generic reCAPTCHA bridge failure. */

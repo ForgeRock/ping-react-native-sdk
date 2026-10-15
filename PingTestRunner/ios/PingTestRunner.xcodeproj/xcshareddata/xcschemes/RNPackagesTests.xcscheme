@@ -209,7 +209,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5EEDC0DEC0DE5EEDC0DEC0DE5EEDC0DE"
+               BlueprintIdentifier = "BB5B8B05A5C3C135C2138063F0EFFE1D"
                BuildableName = "RNPingRecaptcha-Unit-Tests.xctest"
                BlueprintName = "RNPingRecaptcha-Unit-Tests"
                ReferencedContainer = "container:Pods/Pods.xcodeproj">

@@ -145,9 +145,13 @@ verification failures:
   auto-submitted into the callback inputs.
 - `{ type: 'failure'; code: string; message: string }` — verification failed;
   the client error was auto-submitted into the callback inputs. `code` carries
-  the platform error taxonomy where available (for example `NETWORK_ERROR`,
-  `INVALID_SITEKEY`, `INVALID_ACTION`, `INVALID_TIMEOUT`, `INTERNAL_ERROR`),
-  falling back to `UNKNOWN_ERROR`.
+  a best-effort platform taxonomy: Android surfaces Google's error enum names
+  (for example `NETWORK_ERROR`, `INVALID_SITEKEY`, `INVALID_ACTION`,
+  `INVALID_TIMEOUT`, `INTERNAL_ERROR`) via the callback's failure fields.
+  iOS's Google SDK rethrows untyped errors, so its code is usually
+  `UNKNOWN_ERROR` (with an `INVALID_CAPTCHA_TOKEN` sentinel for the upstream
+  token rejection) — typed iOS codes depend on upstream mapping
+  (`TODO-PARITY` in `packages/recaptcha/ios/RNPingRecaptchaCommon.swift`).
 
 Both variants mean the callback inputs were mutated natively, so the app may
 proceed to `next()` in either case and let the server decide whether to
@@ -298,8 +302,12 @@ Error semantics summary:
 - **iOS** verification is headless — no window anchor or UI anchor is
   required.
 - reCAPTCHA Enterprise mobile verification is non-interactive; there is no
-  user-cancel primitive. Cancellation of the underlying operation propagates
-  as a rejection with `RECAPTCHA_VERIFY_ERROR`.
+  user-cancel primitive. **Cancellation parity:** if the Android module is
+  invalidated mid-verify, the in-flight coroutine is cancelled and the JS
+  promise is left unsettled (an intentional trade-off — the caller is tearing
+  down the bridge). On iOS an in-flight verification is not cancelled on
+  module teardown; it completes in the background and its result is dropped.
+  Neither platform rejects with `RECAPTCHA_VERIFY_ERROR` on cancellation.
 
 ## E2E testing note
 

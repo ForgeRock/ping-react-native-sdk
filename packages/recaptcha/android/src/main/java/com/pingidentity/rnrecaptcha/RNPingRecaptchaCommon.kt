@@ -72,7 +72,13 @@ internal object RNPingRecaptchaCommon {
      *
      * Cancelled and recreated on module invalidation so in-flight verifications
      * do not outlive the bridge module.
+     *
+     * NOTE: `@Volatile` so a `verifyForJourney` landing between `cleanup()`'s
+     * `cancel()` and scope reassignment either sees the cancelled scope (its
+     * work is cancelled, promise left unsettled — documented behavior) or the
+     * fresh scope; it never races on a torn read.
      */
+    @Volatile
     private var scope: CoroutineScope = createScope()
 
     /**
@@ -134,12 +140,13 @@ internal object RNPingRecaptchaCommon {
             } catch (e: RecaptchaException) {
                 // Surface Google's error taxonomy on the rejection path; the
                 // failure-inside-Result path resolves as a failure payload instead.
+                val mapped = RecaptchaErrorMapper.map(e, RecaptchaErrorCodes.RECAPTCHA_VERIFY_ERROR)
                 rejectWithError(
                     promise = promise,
-                    code = RecaptchaErrorCodes.RECAPTCHA_VERIFY_ERROR,
-                    message = e.errorMessage ?: e.message
+                    code = mapped.error,
+                    message = mapped.message
                         ?: "reCAPTCHA Enterprise verification failed.",
-                    type = ErrorType.INTERNAL_ERROR,
+                    type = mapped.type,
                     throwable = e
                 )
             }
@@ -295,19 +302,23 @@ internal object RNPingRecaptchaCommon {
      * Parses the verification timeout from the options payload.
      *
      * @param options Options map from JS.
-     * @return Timeout in milliseconds, or the default when absent or not a
-     *   number. A supplied negative value passes through so Google's SDK
-     *   surfaces its own `INVALID_TIMEOUT` taxonomy rather than the bridge
-     *   silently substituting the default.
+     * @return Timeout in milliseconds, or the default when absent or
+     *   unparseable. Mirrors the iOS parser by accepting numeric and
+     *   string-form values. A supplied negative value passes through so
+     *   Google's SDK surfaces its own `INVALID_TIMEOUT` taxonomy rather than
+     *   the bridge silently substituting the default.
      */
     private fun parseTimeoutMs(options: ReadableMap): Long {
         if (!options.hasKey(TIMEOUT_MS_KEY) || options.isNull(TIMEOUT_MS_KEY)) {
             return DEFAULT_TIMEOUT_MS
         }
-        if (options.getType(TIMEOUT_MS_KEY) != ReadableType.Number) {
-            return DEFAULT_TIMEOUT_MS
+        return when (options.getType(TIMEOUT_MS_KEY)) {
+            ReadableType.Number -> options.getDouble(TIMEOUT_MS_KEY).toLong()
+            ReadableType.String ->
+                options.getString(TIMEOUT_MS_KEY)?.toDoubleOrNull()?.toLong()
+                    ?: DEFAULT_TIMEOUT_MS
+            else -> DEFAULT_TIMEOUT_MS
         }
-        return options.getDouble(TIMEOUT_MS_KEY).toLong()
     }
 
     /**

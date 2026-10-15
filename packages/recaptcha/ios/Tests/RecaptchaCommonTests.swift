@@ -7,6 +7,8 @@
 
 import XCTest
 import PingLogger
+import PingReCaptchaEnterprise
+import React
 import RNPingCore
 @testable import RNPingRecaptcha
 
@@ -91,6 +93,79 @@ final class RecaptchaCommonTests: XCTestCase {
     XCTAssertEqual(code, "INVALID_CAPTCHA_TOKEN")
   }
 
+  // MARK: - Result Payload Shapes (cross-platform JS contract)
+
+  /// The success payload carries exactly `type` and `token`.
+  func testCreateResultPayloadSuccessShape() {
+    let payload = RNPingRecaptchaCommon.createResultPayload(type: "success", token: "the-token")
+
+    XCTAssertEqual(payload.count, 2)
+    XCTAssertEqual(payload["type"] as? String, "success")
+    XCTAssertEqual(payload["token"] as? String, "the-token")
+  }
+
+  /// The failure payload carries `type`, `code`, and `message` — and never a
+  /// token (the token is a credential-equivalent).
+  func testCreateFailureResultPayloadShape() {
+    let payload = RNPingRecaptchaCommon.createFailureResultPayload(
+      error: NSError(
+        domain: "test",
+        code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "network down"]
+      )
+    )
+
+    XCTAssertEqual(payload.count, 3)
+    XCTAssertEqual(payload["type"] as? String, "failure")
+    XCTAssertEqual(payload["code"] as? String, "UNKNOWN_ERROR")
+    XCTAssertEqual(payload["message"] as? String, "network down")
+    XCTAssertNil(payload["token"])
+  }
+
+  /// An empty native error description falls back to the fixed message,
+  /// mirroring Android's `failureMessage` fallback so payloads stay identical.
+  func testCreateFailureResultPayloadEmptyMessageFallback() {
+    let payload = RNPingRecaptchaCommon.createFailureResultPayload(
+      error: EmptyLocalizedError()
+    )
+
+    XCTAssertEqual(
+      payload["message"] as? String,
+      "reCAPTCHA Enterprise verification failed."
+    )
+  }
+
+  // MARK: - Config Forwarding
+
+  /// Bridge options land on the upstream config verbatim; a nil logger leaves
+  /// upstream's default (`LogManager.logger`) untouched.
+  func testApplyOptionsForwardsActionTimeoutPayloadAndLogger() {
+    let options = RNPingRecaptchaCommon.parseVerifyOptions([
+      "action": "signup",
+      "timeoutMs": 30000,
+      "payload": ["risk": "low"],
+    ])
+    let config = ReCaptchaEnterpriseConfig()
+
+    RNPingRecaptchaCommon.applyOptions(options, logger: nil, to: config)
+
+    XCTAssertEqual(config.action, "signup")
+    XCTAssertEqual(config.timeout, 30000)
+    XCTAssertEqual((config.payload as? [String: String])?["risk"], "low")
+  }
+
+  /// A resolved logger handle is attached to the config.
+  func testApplyOptionsAttachesResolvedLogger() async {
+    let options = RNPingRecaptchaCommon.parseVerifyOptions([:])
+    let loggerId = await CoreRuntime.loggerRegistry.register(TestLoggerHandle())
+    let logger = await RNPingRecaptchaCommon.resolveLoggerFromCore(loggerId)
+    let config = ReCaptchaEnterpriseConfig()
+
+    RNPingRecaptchaCommon.applyOptions(options, logger: logger, to: config)
+
+    XCTAssertNotNil(config.logger)
+  }
+
   // MARK: - Logger Forwarding
 
   func testResolveLoggerFromCoreReturnsLoggerForRegisteredHandle() async {
@@ -120,48 +195,77 @@ final class RecaptchaCommonTests: XCTestCase {
   /// With no Journey runtime registered in Core, any journey id resolves no
   /// callback, so the bridge must reject with the state-error contract.
   func testVerifyForJourneyRejectsCallbackNotFoundWhenNoRuntimeRegistered() async {
-    let (code, message, type) = await invokeVerifyForJourney(
+    let rejection = await invokeVerifyForJourney(
       journeyId: "journey-without-runtime",
       options: [:]
     )
 
-    XCTAssertEqual(code, "RECAPTCHA_CALLBACK_NOT_FOUND")
-    XCTAssertTrue(type == "state_error" || type.isEmpty, "type travels in the NSError payload: \(type)")
-    XCTAssertTrue(message?.contains("journey-without-runtime") == true)
+    XCTAssertEqual(rejection.code, "RECAPTCHA_CALLBACK_NOT_FOUND")
+    XCTAssertTrue(
+      rejection.type == "state_error" || rejection.type.isEmpty,
+      "type travels in the NSError payload: \(rejection.type)"
+    )
+    XCTAssertTrue(rejection.message?.contains("journey-without-runtime") == true)
   }
 
   // MARK: - Argument Validation
 
   func testVerifyForJourneyRejectsBlankJourneyIdBeforeNativeWork() async {
-    let (code, message, _) = await invokeVerifyForJourney(
+    let rejection = await invokeVerifyForJourney(
       journeyId: "   ",
       options: [:]
     )
 
-    XCTAssertEqual(code, "RECAPTCHA_ERROR")
-    XCTAssertTrue(message?.contains("empty") == true)
+    XCTAssertEqual(rejection.code, "RECAPTCHA_ERROR")
+    XCTAssertTrue(rejection.message?.contains("empty") == true)
   }
 
   // MARK: - Helpers
 
-  /// Invokes the bridge method and captures the rejection triple, resolving
-  /// into a sentinel when the promise unexpectedly resolves (no Journey
-  /// runtime is registered in these tests, so resolve paths are unreachable).
+  /// Rejection triple captured from the bridge method. A struct rather than a
+  /// tuple keeps the `withCheckedContinuation` inference surface small — the
+  /// tuple form made CI's Swift compiler fail with "Failed to produce
+  /// diagnostic for expression".
+  private struct VerifyRejection {
+    let code: String?
+    let message: String?
+    let type: String
+  }
+
+  /// Invokes the bridge method and captures the rejection, resolving into a
+  /// sentinel when the promise unexpectedly resolves (no Journey runtime is
+  /// registered in these tests, so resolve paths are unreachable).
+  ///
+  /// - Note: The rejection capture is split into a non-async helper taking an
+  ///   explicit completion so the `withCheckedContinuation` closure stays a
+  ///   single trivial call — the inline double-trailing-closure form tripped
+  ///   the compiler's "Failed to produce diagnostic for expression" bug.
   private func invokeVerifyForJourney(
     journeyId: String,
     options: NSDictionary
-  ) async -> (String?, String?, String) {
-    await withCheckedContinuation { continuation in
+  ) async -> VerifyRejection {
+    func perform(callback: @escaping (VerifyRejection) -> Void) {
+      func onResolve(_ result: Any?) {
+        callback(VerifyRejection(code: "UNEXPECTED_RESOLVE", message: nil, type: ""))
+      }
+      func onReject(_ code: String?, _ message: String?, _ error: Error?) {
+        var type = ""
+        if let nsError = error as NSError? {
+          type = (nsError.userInfo["type"] as? String) ?? ""
+        }
+        callback(VerifyRejection(code: code, message: message, type: type))
+      }
       RNPingRecaptchaCommon.verifyForJourney(
         journeyId,
         options: options,
-        config: [:]
-      ) { _ in
-        continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil, ""))
-      } rejecter: { code, message, error in
-        let type = (error?.userInfo["type"] as? String) ?? ""
-        continuation.resume(returning: (code, message, type))
-      }
+        config: [:],
+        resolver: onResolve,
+        rejecter: onReject
+      )
+    }
+
+    return await withCheckedContinuation { continuation in
+      perform { continuation.resume(returning: $0) }
     }
   }
 }
@@ -176,4 +280,10 @@ private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable 
     self.loggerLevel = "STANDARD"
     self.nativeLogger = LogManager.none
   }
+}
+
+/// Error whose `localizedDescription` is the empty string, exercising the
+/// failure-message fallback (NSError's default description is never empty).
+private struct EmptyLocalizedError: Error, LocalizedError {
+  var errorDescription: String? { "" }
 }
