@@ -309,15 +309,6 @@ Error semantics summary:
   module teardown; it completes in the background and its result is dropped.
   Neither platform rejects with `RECAPTCHA_VERIFY_ERROR` on cancellation.
 
-## E2E testing note
-
-Real Google verification requires an environment with a configured site key
-bound to the test app and a reCAPTCHA Enterprise-enabled journey tree. The
-PingTestRunner scenario (`PING_TEST_SCENARIO=recaptcha`) degrades
-deterministically without one: the verify attempt surfaces the failure or
-error payload, so E2E asserts bridge wiring rather than Google's service.
-True Google-service behavior is a manual / BrowserStack-config concern.
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

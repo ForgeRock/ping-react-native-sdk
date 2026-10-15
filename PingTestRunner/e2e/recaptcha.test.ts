@@ -19,8 +19,12 @@
  *      tree): start() renders the captcha field, verify surfaces the outcome,
  *      Next advances the flow.
  *
- * Real Google verification requires an environment-configured site key; this
- * suite asserts bridge wiring, not Google's service.
+ * Real Google verification requires an environment with a configured site key
+ * bound to the test app and a reCAPTCHA Enterprise-enabled journey tree; this
+ * suite degrades deterministically without one (the verify attempt surfaces the
+ * failure or error payload), asserting bridge wiring rather than Google's
+ * service. True Google-service behavior is a manual / BrowserStack-config
+ * concern.
  *
  * TODO-SDKS-5390: add a comprehensive full-journey e2e for Android and iOS —
  * drive the entire tree (start → NameCallback auto-fill from PING_TEST_USERNAME →
