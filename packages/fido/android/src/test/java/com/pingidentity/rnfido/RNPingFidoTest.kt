@@ -388,7 +388,7 @@ class RNPingFidoTest {
   }
 
   /**
-   * Ensures the NoCredentialException case (plan D8) keeps the bridge-local
+   * Ensures the NoCredentialException case keeps the bridge-local
    * cancelled code while clientError reports the server-parity UnknownError that
    * the native handleError fallback records; the two intentionally disagree.
    */
