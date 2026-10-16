@@ -13,14 +13,13 @@
  *    path and the host-mismatch FailureNode resolve path with no gateway.
  * 2. Live gateway tier — when `PING_BACKCHANNEL_CLIENT_ID` and
  *    `PING_BACKCHANNEL_CLIENT_SECRET` are set, the scenario simulates the
- *    gateway itself (client-credentials token + backchannel/initialize),
- *    mirroring the native QA harness
+ *    gateway itself (client-credentials token + backchannel/initialize).
  *    (ping-android-sdk BackchannelAuthenticationE2ETest, journey
- *    `back-channel-authentication`). Each live test initializes a fresh
+ *    `rn-back-channel-authentication`). Each live test initializes a fresh
  *    transaction and drives it through the app.
  */
 
-import { device, element, by, waitFor } from 'detox';
+import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import { assertAppReady, E2E_ENV } from './setup';
 import {
   backchannelConfigFromEnv,
@@ -86,18 +85,19 @@ describe('Journey — backchannel authentication', () => {
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
 
-    // The back-channel-authentication tree lands on login callbacks.
-    const usernameInput = by.id('backchannel-credential-username');
+    // The rn-back-channel-authentication tree binds the username at gateway
+    // initialize time, so the app receives only a PasswordCallback here.
     const passwordInput = by.id('backchannel-credential-password');
-    await waitFor(element(usernameInput))
+    await waitFor(element(passwordInput))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
-    await element(usernameInput).typeText(E2E_ENV.testUsername);
     await element(passwordInput).typeText(E2E_ENV.testPassword);
     await element(by.id('backchannel-submit-btn')).tap();
+
     await waitFor(element(by.id('backchannel-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    await detoxExpect(element(by.id('backchannel-success'))).toBeVisible();
   });
 
   it('unknown transaction id surfaces ErrorNode message', async () => {
