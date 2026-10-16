@@ -194,6 +194,14 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @remarks Unlike the standalone `register`, no per-call logger override applies
      * here: the client-level `config` is threaded to native but both platforms discard
      * it for DaVinci ceremonies, which keep the workflow-configured native logger.
+     * On ceremony failure the rejection carries `clientError`, the WebAuthn
+     * DOMException name reported by the native collector (see `FidoClientErrorName`).
+     * When `clientError` is defined, report the failure to the server by advancing
+     * the flow with `daVinci.next({ collectors: [] })` so the flow can branch on it;
+     * do not submit the node's collectors, a `SUBMIT_BUTTON` shadows the FIDO error.
+     * Without propagation the failure stays client-side and the server never observes
+     * it. Resolution failures such as `FIDO_COLLECTOR_NOT_FOUND` carry no `clientError`
+     * and must not be propagated.
      */
     async registerForDaVinci(
       daVinci: DaVinciInstance,
@@ -225,6 +233,14 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      * @remarks Unlike the standalone `authenticate`, no per-call logger override applies
      * here: the client-level `config` is threaded to native but both platforms discard
      * it for DaVinci ceremonies, which keep the workflow-configured native logger.
+     * On ceremony failure the rejection carries `clientError`, the WebAuthn
+     * DOMException name reported by the native collector (see `FidoClientErrorName`).
+     * When `clientError` is defined, report the failure to the server by advancing
+     * the flow with `daVinci.next({ collectors: [] })` so the flow can branch on it;
+     * do not submit the node's collectors, a `SUBMIT_BUTTON` shadows the FIDO error.
+     * Without propagation the failure stays client-side and the server never observes
+     * it. Resolution failures such as `FIDO_COLLECTOR_NOT_FOUND` carry no `clientError`
+     * and must not be propagated.
      */
     async authenticateForDaVinci(
       daVinci: DaVinciInstance,
@@ -262,6 +278,7 @@ export type {
   FidoDaVinciRegistrationOptions,
   FidoDaVinciResult,
   FidoErrorCode,
+  FidoClientErrorName,
   FidoJourneyAuthenticationOptions,
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
