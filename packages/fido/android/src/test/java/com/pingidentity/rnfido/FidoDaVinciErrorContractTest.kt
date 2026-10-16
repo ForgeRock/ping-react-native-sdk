@@ -130,7 +130,7 @@ class FidoDaVinciErrorContractTest {
 
     /**
      * Ensures NoCredentialException has no dedicated handleError branch and falls
-     * through to UnknownError (plan D8): the bridge keeps its own
+     * through to UnknownError: the bridge keeps its own
      * FIDO_AUTHENTICATE_CANCELLED classification while clientError reports the
      * server-parity UnknownError, and the two intentionally disagree.
      */
@@ -158,8 +158,8 @@ class FidoDaVinciErrorContractTest {
     }
 
     /**
-     * Ensures the empty-object error payload is keyed under the collector's own
-     * WebAuthn options field name, matching what the server-side action path reads.
+     * Ensures the event type matches the SDK's own constant, so a constant
+     * rename surfaces as a drift failure rather than a silent contract change.
      */
     @Test
     fun erroredAuthenticationCollectorEventTypeMatchesConstant() {
