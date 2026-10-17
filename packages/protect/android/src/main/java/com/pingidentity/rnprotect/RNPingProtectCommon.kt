@@ -53,10 +53,12 @@ object RNPingProtectCommon {
   /**
    * Records which path completed the native once-only Protect initialization.
    *
-   * NOTE: Initialization performed outside the bridge (for example by the DaVinci
-   * `ProtectCollector`) is not observable here because the native SDK exposes no
-   * initialized accessor. The value is intentionally not reset by [cleanup] because native
-   * Protect state persists and has no teardown API.
+   * NOTE: Only initialization through this module's own paths counts: app config via
+   * [initialize] or Journey tree config via [initializeForJourney]. Initialization performed
+   * internally by the DaVinci `ProtectCollector` is deliberately not tracked, because its
+   * config block carries collector-local settings only and no identity configuration such as
+   * envId. The value is intentionally not reset by [cleanup] because native Protect state
+   * persists and has no teardown API.
    */
   private val initialized = AtomicReference<InitializationSource?>(null)
 
@@ -245,7 +247,7 @@ object RNPingProtectCommon {
       return
     }
 
-    val index = journeyIndex(options)
+    val index = journeyIndex(options, logger)
 
     scope.launchBridge(promise, ProtectErrorCodes.COLLECT_ERROR) {
       logger?.i("Protect collectForJourney requested for callback index $index")
@@ -599,17 +601,29 @@ object RNPingProtectCommon {
    * Reads the position of the evaluation callback within the node's callback list.
    *
    * The index is derived from the server callback list, not supplied by the app. A missing or
-   * null or non-numeric index defaults to 0, and an index outside the matching callbacks is reported as
-   * callback-not-found by the caller.
+   * null index defaults to 0. A value that is not a whole number (a fractional number or a
+   * non-numeric type) logs a warning and defaults to 0. An index outside the matching callbacks
+   * is reported as callback-not-found by the caller. Negative values are not rejected here because
+   * the JS facade already validates that the index is a non-negative integer.
    *
    * @param options Per-call options payload.
-   * @return The callback index, or 0 when none is present.
+   * @param logger Optional logger used to report unrecognized index values.
+   * @return The callback index, or 0 when none is present or the value is unrecognized.
    */
-  private fun journeyIndex(options: ReadableMap): Int {
-    if (!options.hasKey(INDEX_KEY) || options.getType(INDEX_KEY) != ReadableType.Number) {
+  private fun journeyIndex(options: ReadableMap, logger: Logger?): Int {
+    if (!options.hasKey(INDEX_KEY) || options.getType(INDEX_KEY) == ReadableType.Null) {
       return 0
     }
-    return options.getDouble(INDEX_KEY).toInt()
+    if (options.getType(INDEX_KEY) != ReadableType.Number) {
+      logger?.w("Protect collectForJourney received non-numeric index of type ${options.getType(INDEX_KEY)}; defaulting to 0", null)
+      return 0
+    }
+    val value = options.getDouble(INDEX_KEY)
+    if (value % 1.0 != 0.0) {
+      logger?.w("Protect collectForJourney received fractional index $value; defaulting to 0", null)
+      return 0
+    }
+    return value.toInt()
   }
 
   /**

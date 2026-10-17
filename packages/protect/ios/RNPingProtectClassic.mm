@@ -132,8 +132,7 @@ RCT_EXPORT_METHOD(registerDaVinciSerializer:(RCTPromiseResolveBlock)resolve
 RCT_EXPORT_METHOD(registerJourneyCallbacks:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-  [RNPingProtectCommon registerJourneyCallbacks];
-  resolve([NSNull null]);
+  [RNPingProtectCommon registerJourneyCallbacksWithResolver:resolve rejecter:reject];
 }
 
 @end

@@ -998,6 +998,11 @@ export function useJourneyClientPanelController(
     if (!trimmedJourneyName) return false;
 
     try {
+      // App.tsx's startProtect initializes the Protect SDK for the DaVinci
+      // demo but does not register the Journey Protect callback types, so this
+      // panel registers them before start(). The docs recommend calling
+      // startProtectForJourney once at app startup in an app-level effect
+      // instead (like startProtect in App.tsx).
       await startProtectForJourney({ logger: protectLogger });
       await start(trimmedJourneyName, startOptions);
       form.reset();

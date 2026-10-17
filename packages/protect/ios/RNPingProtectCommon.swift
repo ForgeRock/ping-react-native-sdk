@@ -8,6 +8,7 @@
 import Foundation
 import PingDavinci
 import PingDavinciPlugin
+import PingJourneyPlugin
 import PingLogger
 import PingOneProtect
 import React
@@ -45,9 +46,11 @@ enum InitializationSource: String, Sendable {
 /// warning and never rejects, matching native behavior where the second call returns success.
 ///
 /// - Note: The state is never reset in production because native Protect state persists and
-///   has no teardown API. Initialization performed outside the bridge, for example by the
-///   DaVinci `ProtectCollector`, is invisible to this actor because the native SDK exposes no
-///   initialized accessor.
+///   has no teardown API. Only initialization through this module's own paths counts: app
+///   config via `initialize` or Journey tree config via `initializeForJourney`.
+///   Initialization performed internally by the DaVinci `ProtectCollector` is deliberately
+///   not tracked, because its config block carries collector-local settings only and no
+///   identity configuration such as envId.
 actor ProtectInitializationState {
   /// Shared process-wide instance.
   static let shared = ProtectInitializationState()
@@ -119,34 +122,43 @@ public class RNPingProtectCommon: NSObject {
 
   /// Registers the PingOne Protect Journey callbacks with the native callback registry.
   ///
-  /// - Note: The native `ProtectCallbacks` class is declared without `public`, so the bridge
-  ///   resolves it by name and invokes `registerCallbacks` through the Objective-C runtime.
-  ///   A missing class or selector logs a warning and leaves registration skipped.
+  /// The promise resolves only after both callback types are present in the registry, so a
+  /// Journey `start()` issued afterwards always parses them.
+  ///
+  /// - Parameters:
+  ///   - resolver: Promise resolver for void completion.
+  ///   - rejecter: Promise rejecter for errors.
+  /// - Note: The native `ProtectCallbacks.registerCallbacks()` is internal and schedules the
+  ///   registration in an unawaited `Task`, so the bridge registers the same public callback
+  ///   types directly and awaits the registry.
   // TODO-PARITY: iOS has no launch-time registration for Protect callbacks (Android registers
   // at app launch via androidx.startup). Native Journey probes optional modules by name and its
   // Protect probe does not match the class's module-qualified name ("PingProtect.ProtectCallbacks"
   // vs the real "PingOneProtect.ProtectCallbacks"; the naming difference is intentional upstream
   // as the PingProtect name is taken by the legacy iOS SDK), so native never registers Protect
   // callbacks and the bridge does it here instead.
-  @objc public static func registerJourneyCallbacks() {
-    let className = "PingOneProtect.ProtectCallbacks"
-    let selector = NSSelectorFromString("registerCallbacks")
-    guard let cls = NSClassFromString(className) as? NSObject.Type else {
-      LogManager.standard.w(
-        "Protect Journey callbacks not registered: class \(className) not found in this build",
-        error: nil
-      )
-      return
+  @objc
+  public static func registerJourneyCallbacks(
+    resolver: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    let handlers = PromiseBridge<NSNull>(resolver: resolver, rejecter: rejecter)
+    Task {
+      await registerJourneyCallbackTypes()
+      handlers.resolve(NSNull())
     }
-    guard cls.responds(to: selector) else {
-      LogManager.standard.w(
-        "Protect Journey callbacks not registered: class \(className) does not respond to "
-          + "selector '\(NSStringFromSelector(selector))'",
-        error: nil
-      )
-      return
-    }
-    cls.perform(selector)
+  }
+
+  /// Registers the Protect initialize and evaluation callbacks with `CallbackRegistry`.
+  static func registerJourneyCallbackTypes() async {
+    await CallbackRegistry.shared.register(
+      type: JourneyConstants.pingOneProtectInitializeCallback,
+      callback: PingOneProtectInitializeCallback.self
+    )
+    await CallbackRegistry.shared.register(
+      type: JourneyConstants.pingOneProtectEvaluationCallback,
+      callback: PingOneProtectEvaluationCallback.self
+    )
   }
 
   /// Registers the Protect collector serializer with the generic DaVinci mapper.
@@ -297,7 +309,7 @@ public class RNPingProtectCommon: NSObject {
       }
       logger?.i("Protect collectForJourney requested")
 
-      let callbackIndex = journeyIndex(options)
+      let callbackIndex = journeyIndex(options, logger: logger)
 
       let callbacks = await CoreRuntime.resolveJourneyCallbacks(journeyId) ?? []
       let matching = callbacks.compactMap { $0 as? PingOneProtectEvaluationCallback }
@@ -577,13 +589,31 @@ public class RNPingProtectCommon: NSObject {
   /// Reads the position of the evaluation callback within the node's callback list.
   ///
   /// The index is derived from the server callback list, not supplied by the app. A missing
-  /// or `NSNull` index defaults to 0, and an index outside the matching callbacks is reported
-  /// as callback-not-found by the caller.
+  /// or `NSNull` index defaults to 0. A value that is not a whole number (a fractional number,
+  /// a bridged boolean, or a non-numeric type) logs a warning and defaults to 0. An index outside
+  /// the matching callbacks, including a negative one, is reported as callback-not-found by the
+  /// caller. Negative values are not rejected here because the JS facade already validates that
+  /// the index is a non-negative integer.
   ///
-  /// - Parameter options: Per-call options payload.
-  /// - Returns: The callback index, or 0 when none is present.
-  static func journeyIndex(_ options: NSDictionary) -> Int {
-    return (options[indexKey] as? NSNumber)?.intValue ?? 0
+  /// - Parameters:
+  ///   - options: Per-call options payload.
+  ///   - logger: Optional logger used to report unrecognized index values.
+  /// - Returns: The callback index, or 0 when none is present or the value is unrecognized.
+  static func journeyIndex(_ options: NSDictionary, logger: PingLogger.Logger? = nil) -> Int {
+    guard let raw = options[indexKey], !(raw is NSNull) else {
+      return 0
+    }
+    guard let number = raw as? NSNumber,
+      CFGetTypeID(number) != CFBooleanGetTypeID(),
+      let index = Int(exactly: number.doubleValue)
+    else {
+      logger?.w(
+        "Protect collectForJourney received unrecognized index \(type(of: raw)) '\(raw)'; defaulting to 0",
+        error: nil
+      )
+      return 0
+    }
+    return index
   }
 
   /// Builds the `["type": "success"]` Journey result payload.

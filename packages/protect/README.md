@@ -331,8 +331,12 @@ the app instead, is a decision to validate against your tenant; the native
 sample-app example surfaces the error and does not advance.
 
 The not-initialized guard tracks initialization performed through this module
-only. Initialization done by any other path is invisible to the guard, and a
-Journey collect after such an initialization rejects `PROTECT_NOT_INITIALIZED`.
+only (`startProtect()` or `initializeProtectForJourney()`). The PingOne Protect
+Evaluation node requires that Protect was initialized beforehand, either by an
+Initialize node earlier in the journey or by initializing the SDK in the app
+itself, and both of those go through the two functions above. A Journey collect
+when neither has run rejects `PROTECT_NOT_INITIALIZED` with the
+initialize-first remedy.
 
 ### Once-only initialization ordering
 
@@ -342,10 +346,14 @@ behavioral-data resume/pause; its identity configuration (envId, customHost,
 deviceAttributesToIgnore, consoleLogEnabled, lazyMetadata) is not applied, and
 the bridge logs a warning naming both paths.
 
-Apps that use Protect through Journey must not call `startProtect()`: initialize
-configuration is server-driven, so the app cannot reproduce the tree's
-configuration reliably; call `startProtectForJourney()` at startup and let the
-journey initialize through `initializeProtectForJourney()` instead.
+Apps that use Protect through Journey with an initialize callback in the tree
+must not call `startProtect()`: initialize configuration is server-driven, so
+the app cannot reproduce the tree's configuration reliably; call
+`startProtectForJourney()` at startup and let the journey initialize through
+`initializeProtectForJourney()` instead. A journey with an evaluation callback
+and no initialize callback has no server-driven configuration to protect; the
+app initializes Protect itself with `startProtect()` beforehand, which is also
+what the Evaluation node's documented requirement expects.
 
 ### Marketplace and legacy trees
 

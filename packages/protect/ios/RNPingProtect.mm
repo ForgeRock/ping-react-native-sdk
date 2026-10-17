@@ -151,8 +151,7 @@ RCT_EXPORT_MODULE()
 - (void)registerJourneyCallbacks:(RCTPromiseResolveBlock)resolve
                           reject:(RCTPromiseRejectBlock)reject
 {
-  [RNPingProtectCommon registerJourneyCallbacks];
-  resolve([NSNull null]);
+  [RNPingProtectCommon registerJourneyCallbacksWithResolver:resolve rejecter:reject];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:

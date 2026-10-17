@@ -235,13 +235,45 @@ final class RNPingProtectCommonTests: XCTestCase {
   // MARK: - registerJourneyCallbacks
 
   func testRegisterJourneyCallbacksRegistersProtectCallbackTypes() async {
-    RNPingProtectCommon.registerJourneyCallbacks()
+    await RNPingProtectCommon.registerJourneyCallbackTypes()
 
-    let types = ["PingOneProtectInitializeCallback", "PingOneProtectEvaluationCallback"]
+    let types = [
+      JourneyConstants.pingOneProtectInitializeCallback,
+      JourneyConstants.pingOneProtectEvaluationCallback,
+    ]
     for type in types {
-      let registered = await waitForRegisteredCallback(type: type)
-      XCTAssertTrue(registered, "\(type) should be registered in the CallbackRegistry")
+      let registered = await CallbackRegistry.shared.type(for: type)
+      XCTAssertNotNil(registered, "\(type) should be registered in the CallbackRegistry")
     }
+  }
+
+  func testJourneyCallbackTypeKeysMatchServerCallbackTypeNames() {
+    XCTAssertEqual(
+      JourneyConstants.pingOneProtectInitializeCallback,
+      "PingOneProtectInitializeCallback"
+    )
+    XCTAssertEqual(
+      JourneyConstants.pingOneProtectEvaluationCallback,
+      "PingOneProtectEvaluationCallback"
+    )
+  }
+
+  func testRegisterJourneyCallbacksResolvesOnlyAfterRegistration() async {
+    let resolved = expectation(description: "resolved")
+    RNPingProtectCommon.registerJourneyCallbacks(
+      resolver: { _ in resolved.fulfill() },
+      rejecter: { _, _, _ in XCTFail("Unexpected rejection") }
+    )
+    await fulfillment(of: [resolved], timeout: 5)
+
+    let initializeRegistered = await CallbackRegistry.shared.type(
+      for: JourneyConstants.pingOneProtectInitializeCallback
+    )
+    let evaluationRegistered = await CallbackRegistry.shared.type(
+      for: JourneyConstants.pingOneProtectEvaluationCallback
+    )
+    XCTAssertNotNil(initializeRegistered)
+    XCTAssertNotNil(evaluationRegistered)
   }
 
   // MARK: - journeyIndex
@@ -254,6 +286,15 @@ final class RNPingProtectCommonTests: XCTestCase {
   func testJourneyIndexReadsProvidedValue() {
     XCTAssertEqual(RNPingProtectCommon.journeyIndex(["index": 2]), 2)
     XCTAssertEqual(RNPingProtectCommon.journeyIndex(["index": 2.0]), 2)
+  }
+
+  func testJourneyIndexWarnsAndDefaultsToZeroForUnrecognizedValues() {
+    let values: [Any] = [1.9, "1", NSNumber(value: true)]
+    for value in values {
+      let logger = RecordingLogger()
+      XCTAssertEqual(RNPingProtectCommon.journeyIndex(["index": value], logger: logger), 0)
+      XCTAssertEqual(logger.warnings.count, 1)
+    }
   }
 
   // MARK: - ProtectInitializationState
@@ -305,18 +346,6 @@ final class RNPingProtectCommonTests: XCTestCase {
   }
 
   // MARK: - Helpers
-
-  /// Registration runs in a detached `Task` inside the native SDK, so the registry is polled.
-  private func waitForRegisteredCallback(type: String, timeout: TimeInterval = 5) async -> Bool {
-    let deadline = Date().addingTimeInterval(timeout)
-    while Date() < deadline {
-      if await CallbackRegistry.shared.type(for: type) != nil {
-        return true
-      }
-      try? await Task.sleep(nanoseconds: 50_000_000)
-    }
-    return false
-  }
 
   private func makeEvaluationCallback() async -> PingOneProtectEvaluationCallback {
     let callback = PingOneProtectEvaluationCallback()

@@ -105,7 +105,7 @@ export async function startProtect(config: ProtectConfig = {}): Promise<void> {
  * initializing the Protect SDK.
  *
  * @param options - Optional logger.
- * @returns Resolves with `void` once registration completes.
+ * @returns Resolves with `void` once the callbacks are registered.
  * @throws {@link ProtectError} when the native registration call fails.
  *
  * @example
