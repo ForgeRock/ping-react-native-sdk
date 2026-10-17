@@ -168,18 +168,26 @@ server. Whether to advance and let the journey decide, or to surface the error i
 the app instead, is a decision to validate against your tenant; the native
 sample-app example surfaces the error and does not advance.</p>
 <p>The not-initialized guard tracks initialization performed through this module
-only. Initialization done by any other path is invisible to the guard, and a
-Journey collect after such an initialization rejects <code>PROTECT_NOT_INITIALIZED</code>.</p>
+only (<code>startProtect()</code> or <code>initializeProtectForJourney()</code>). The PingOne Protect
+Evaluation node requires that Protect was initialized beforehand, either by an
+Initialize node earlier in the journey or by initializing the SDK in the app
+itself, and both of those go through the two functions above. A Journey collect
+when neither has run rejects <code>PROTECT_NOT_INITIALIZED</code> with the
+initialize-first remedy.</p>
 <h3 id="once-only-initialization-ordering" class="tsd-anchor-link">Once-only initialization ordering<a href="#once-only-initialization-ordering" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <p>Native Protect initialization is once-only. Whichever initialize path succeeds
 first wins. A later successful initialize from the other path applies only its
 behavioral-data resume/pause; its identity configuration (envId, customHost,
 deviceAttributesToIgnore, consoleLogEnabled, lazyMetadata) is not applied, and
 the bridge logs a warning naming both paths.</p>
-<p>Apps that use Protect through Journey must not call <code>startProtect()</code>: initialize
-configuration is server-driven, so the app cannot reproduce the tree's
-configuration reliably; call <code>startProtectForJourney()</code> at startup and let the
-journey initialize through <code>initializeProtectForJourney()</code> instead.</p>
+<p>Apps that use Protect through Journey with an initialize callback in the tree
+must not call <code>startProtect()</code>: initialize configuration is server-driven, so
+the app cannot reproduce the tree's configuration reliably; call
+<code>startProtectForJourney()</code> at startup and let the journey initialize through
+<code>initializeProtectForJourney()</code> instead. A journey with an evaluation callback
+and no initialize callback has no server-driven configuration to protect; the
+app initializes Protect itself with <code>startProtect()</code> beforehand, which is also
+what the Evaluation node's documented requirement expects.</p>
 <h3 id="marketplace-and-legacy-trees" class="tsd-anchor-link">Marketplace and legacy trees<a href="#marketplace-and-legacy-trees" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <p>Journeys that emit Protect callbacks as a <code>MetadataCallback</code> with
 <code>_type: &quot;PingOneProtect&quot;</code> are handled the same way: call
