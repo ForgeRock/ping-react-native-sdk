@@ -82,6 +82,29 @@ const PROTECT_HANDLED_CALLBACK_TYPES: ReadonlySet<JourneyCallbackType> =
     'PingOneProtectEvaluationCallback',
   ]);
 
+const DEVICE_PROFILE_HANDLED_CALLBACK_TYPES: ReadonlySet<JourneyCallbackType> =
+  new Set<JourneyCallbackType>(['DeviceProfileCallback']);
+
+const PROTECT_INITIALIZE_CALLBACK_TYPE: JourneyCallbackType =
+  'PingOneProtectInitializeCallback';
+
+/**
+ * A node is auto-advanced only when every field that needs user input is one
+ * of the handled callback types and the submit plan has no outstanding issues.
+ */
+function isFullyAutoHandled(
+  node: JourneyNode,
+  fields: JourneyNormalizedField[],
+  handledTypes: ReadonlySet<JourneyCallbackType>,
+): boolean {
+  const hasPendingUserInput = fields.some(
+    (f) => f.requiresUserInput && !handledTypes.has(f.ref.type),
+  );
+  return (
+    !hasPendingUserInput && buildNextInput(node, {}, handledTypes).canSubmit
+  );
+}
+
 // ─── state type ─────────────────────────────────────────────────────────────
 
 type ScenarioState =
@@ -162,11 +185,22 @@ export default function JourneyScenario(): React.JSX.Element {
           (f.raw as { type?: string }).type === 'DeviceProfileCallback',
       );
 
-      if (hasDeviceProfile) {
+      if (
+        hasDeviceProfile &&
+        isFullyAutoHandled(
+          nextNode,
+          fields,
+          DEVICE_PROFILE_HANDLED_CALLBACK_TYPES,
+        )
+      ) {
         setState('collecting_profile');
         try {
           await collectDeviceProfileForJourney(journeyClient, []);
-          const { input } = buildNextInput(nextNode, {});
+          const { input } = buildNextInput(
+            nextNode,
+            {},
+            DEVICE_PROFILE_HANDLED_CALLBACK_TYPES,
+          );
           const after = await journeyClient.next(input);
           // eslint-disable-next-line react-hooks/immutability
           await advanceNode(journeyClient, after);
@@ -181,11 +215,19 @@ export default function JourneyScenario(): React.JSX.Element {
         PROTECT_HANDLED_CALLBACK_TYPES.has(f.ref.type),
       );
 
-      if (protectFields.length > 0) {
+      if (
+        protectFields.length > 0 &&
+        isFullyAutoHandled(nextNode, fields, PROTECT_HANDLED_CALLBACK_TYPES)
+      ) {
         setState('collecting_protect');
         try {
-          for (const field of protectFields) {
-            if (field.ref.type === 'PingOneProtectInitializeCallback') {
+          const initializeFirst = [...protectFields].sort(
+            (a, b) =>
+              Number(b.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE) -
+              Number(a.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE),
+          );
+          for (const field of initializeFirst) {
+            if (field.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE) {
               await initializeProtectForJourney(journeyClient);
             } else {
               await collectProtectForJourney(journeyClient, {
@@ -199,7 +241,6 @@ export default function JourneyScenario(): React.JSX.Element {
             PROTECT_HANDLED_CALLBACK_TYPES,
           );
           const after = await journeyClient.next(input);
-          // eslint-disable-next-line react-hooks/immutability
           await advanceNode(journeyClient, after);
         } catch (e) {
           setErrorMessage(e instanceof Error ? e.message : String(e));

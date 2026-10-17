@@ -351,6 +351,64 @@ class RNPingProtectTest {
   }
 
   /**
+   * Ensures collectForJourney warns and falls back to index 0 for a fractional index.
+   */
+  @Test
+  fun collectForJourneyWarnsAndDefaultsOnFractionalIndex() {
+    mockProtectSdk()
+    coEvery { Protect.data() } returns "signal"
+    initializeFromApp()
+    val logger = RecordingLogger()
+    val loggerId = registerLogger(logger)
+    val only = evaluationCallback()
+    CoreRuntime.journeyCallbackResolver = { listOf(only) }
+    val options = JavaOnlyMap()
+    options.putDouble("index", 1.9)
+    val promise = TestPromise()
+
+    RNPingProtectCommon.collectForJourney(
+      "journey-id",
+      options,
+      JavaOnlyMap.of("loggerId", loggerId),
+      promise
+    )
+
+    assertTrue(promise.await())
+    assertNull(promise.rejectCode)
+    assertEquals("signal", callbackInput(only, 0))
+    assertTrue(logger.warnings.any { it.contains("fractional index 1.9") })
+  }
+
+  /**
+   * Ensures collectForJourney warns and falls back to index 0 for a non-numeric index.
+   */
+  @Test
+  fun collectForJourneyWarnsAndDefaultsOnNonNumericIndex() {
+    mockProtectSdk()
+    coEvery { Protect.data() } returns "signal"
+    initializeFromApp()
+    val logger = RecordingLogger()
+    val loggerId = registerLogger(logger)
+    val only = evaluationCallback()
+    CoreRuntime.journeyCallbackResolver = { listOf(only) }
+    val options = JavaOnlyMap()
+    options.putString("index", "1")
+    val promise = TestPromise()
+
+    RNPingProtectCommon.collectForJourney(
+      "journey-id",
+      options,
+      JavaOnlyMap.of("loggerId", loggerId),
+      promise
+    )
+
+    assertTrue(promise.await())
+    assertNull(promise.rejectCode)
+    assertEquals("signal", callbackInput(only, 0))
+    assertTrue(logger.warnings.any { it.contains("non-numeric index of type String") })
+  }
+
+  /**
    * Ensures collectForJourney rejects with an explicit auth error when collect() fails.
    */
   @Test

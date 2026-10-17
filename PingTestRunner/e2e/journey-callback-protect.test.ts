@@ -66,6 +66,9 @@ describe('Journey — PingOne Protect callbacks', () => {
     }
     await element(by.id('journey-start-btn')).atIndex(0).tap();
     // JourneyScenario detects the Protect callbacks and auto-handles both
+    await waitFor(element(by.id('journey-collecting-protect')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
