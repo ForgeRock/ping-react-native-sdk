@@ -6,16 +6,21 @@
  */
 import {
   collectProtect,
+  collectProtectForJourney,
+  initializeProtectForJourney,
   startProtect,
+  startProtectForJourney,
   pauseBehavioralData,
   resumeBehavioralData,
 } from '../index';
+import { ProtectError } from '../types';
 
 jest.mock('../NativeRNPingProtect', () => ({
   __esModule: true,
   getNativeModule: jest.fn(),
   toNativeConfig: jest.fn((options) => options),
   toNativeProtectConfig: jest.fn((config) => config),
+  fromNativeJourneyResult: jest.fn((result) => result),
 }));
 
 import { getNativeModule } from '../NativeRNPingProtect';
@@ -238,6 +243,68 @@ describe('Protect API', () => {
     expect(logger.error).toHaveBeenCalledWith('Protect startProtect failed');
   });
 
+  // ─── startProtectForJourney() ─────────────────────────────────────────────
+
+  it('startProtectForJourney() registers Journey callbacks once without initializing', async () => {
+    const registerJourneyCallbacks = jest.fn().mockResolvedValue(null);
+    const initializeNative = jest.fn().mockResolvedValue(undefined);
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerJourneyCallbacks,
+      initialize: initializeNative,
+    });
+
+    await expect(startProtectForJourney()).resolves.toBeUndefined();
+
+    expect(registerJourneyCallbacks).toHaveBeenCalledTimes(1);
+    expect(initializeNative).not.toHaveBeenCalled();
+  });
+
+  it('startProtectForJourney() logs request and success', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerJourneyCallbacks: jest.fn().mockResolvedValue(null),
+    });
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    await startProtectForJourney({ logger });
+
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Protect startProtectForJourney requested',
+    );
+    expect(logger.info).toHaveBeenCalledWith(
+      'Protect startProtectForJourney success',
+    );
+  });
+
+  it('startProtectForJourney() wraps native failure as ProtectError and logs it', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerJourneyCallbacks: jest
+        .fn()
+        .mockRejectedValue(new Error('register failed')),
+    });
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    const result = startProtectForJourney({ logger });
+
+    await expect(result).rejects.toBeInstanceOf(ProtectError);
+    expect(logger.error).toHaveBeenCalledWith(
+      'Protect startProtectForJourney failed',
+    );
+  });
+
   // ─── pauseBehavioralData() ────────────────────────────────────────────────
 
   it('pauseBehavioralData() delegates to native module', async () => {
@@ -376,5 +443,273 @@ describe('Protect API', () => {
     await expect(collectProtect(daVinci)).rejects.toThrow(
       'PROTECT_COLLECT_ERROR',
     );
+  });
+
+  // ─── collectProtectForJourney() ───────────────────────────────────────────
+
+  it('collectProtectForJourney() calls getId() and passes default index to native', async () => {
+    const collectNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForJourney: collectNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+    await expect(collectProtectForJourney(journey)).resolves.toStrictEqual({
+      type: 'success',
+    });
+
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(collectNative).toHaveBeenCalledWith(
+      'journey-1',
+      { index: 0 },
+      { loggerId: undefined },
+    );
+  });
+
+  it('collectProtectForJourney() forwards index and loggerId to native', async () => {
+    const collectNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForJourney: collectNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+    const logger = {
+      nativeHandle: { id: 'logger-journey' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    await collectProtectForJourney(journey, { index: 2, logger });
+
+    expect(collectNative).toHaveBeenCalledWith(
+      'journey-1',
+      { index: 2 },
+      {
+        loggerId: 'logger-journey',
+      },
+    );
+  });
+
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    'collectProtectForJourney() rejects invalid index %s without calling getId() or native',
+    async (index) => {
+      const collectNative = jest.fn();
+      (getNativeModule as jest.Mock).mockReturnValue({
+        collectForJourney: collectNative,
+      });
+      const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+      const error = await collectProtectForJourney(journey, { index }).catch(
+        (caught) => caught,
+      );
+
+      expect(error).toBeInstanceOf(ProtectError);
+      expect(error.code).toBe('PROTECT_ARGUMENT_ERROR');
+      expect(error.type).toBe('argument_error');
+      expect(journey.getId).not.toHaveBeenCalled();
+      expect(collectNative).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'PROTECT_NOT_INITIALIZED',
+    'PROTECT_COLLECT_ERROR',
+    'PROTECT_CALLBACK_NOT_FOUND',
+  ])(
+    'collectProtectForJourney() wraps native %s as ProtectError',
+    async (code) => {
+      (getNativeModule as jest.Mock).mockReturnValue({
+        collectForJourney: jest
+          .fn()
+          .mockRejectedValue({ error: code, type: 'state_error' }),
+      });
+      const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+      const error = await collectProtectForJourney(journey).catch(
+        (caught) => caught,
+      );
+
+      expect(error).toBeInstanceOf(ProtectError);
+      expect(error).toBeInstanceOf(Error);
+      expect(error.code).toBe(code);
+    },
+  );
+
+  it('collectProtectForJourney() wraps getId() failure as ProtectError without calling native', async () => {
+    const collectNative = jest.fn();
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForJourney: collectNative,
+    });
+    const journey = {
+      getId: jest.fn().mockRejectedValue(new Error('id failure')),
+    };
+
+    const error = await collectProtectForJourney(journey).catch(
+      (caught) => caught,
+    );
+
+    expect(error).toBeInstanceOf(ProtectError);
+    expect(error).toBeInstanceOf(Error);
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(collectNative).not.toHaveBeenCalled();
+  });
+
+  it('collectProtectForJourney() logs lifecycle without leaking the collected signal', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForJourney: jest
+        .fn()
+        .mockResolvedValue({ type: 'success', signal: 'jws-secret' }),
+    });
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+    await collectProtectForJourney(journey, { logger });
+
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Protect collectProtectForJourney requested',
+    );
+    expect(logger.info).toHaveBeenCalledWith(
+      'Protect collectProtectForJourney success',
+    );
+    expect(logger.debug.mock.invocationCallOrder[0]).toBeLessThan(
+      logger.info.mock.invocationCallOrder[0],
+    );
+    expect(logger.error).not.toHaveBeenCalled();
+    for (const log of [logger.debug, logger.info, logger.warn, logger.error]) {
+      expect(log).not.toHaveBeenCalledWith(expect.stringContaining('jws'));
+    }
+  });
+
+  it('collectProtectForJourney() logs failure before rethrowing', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      collectForJourney: jest
+        .fn()
+        .mockRejectedValue({ error: 'PROTECT_COLLECT_ERROR' }),
+    });
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+    await expect(
+      collectProtectForJourney(journey, { logger }),
+    ).rejects.toBeInstanceOf(ProtectError);
+
+    expect(logger.debug.mock.invocationCallOrder[0]).toBeLessThan(
+      logger.error.mock.invocationCallOrder[0],
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Protect collectProtectForJourney failed',
+    );
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+
+  // ─── initializeProtectForJourney() ────────────────────────────────────────
+
+  it('initializeProtectForJourney() calls getId() and resolves success', async () => {
+    const initializeNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initializeForJourney: initializeNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+    await expect(initializeProtectForJourney(journey)).resolves.toStrictEqual({
+      type: 'success',
+    });
+
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(initializeNative).toHaveBeenCalledWith('journey-1', {
+      loggerId: undefined,
+    });
+  });
+
+  it('initializeProtectForJourney() forwards loggerId to native', async () => {
+    const initializeNative = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initializeForJourney: initializeNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+    const logger = {
+      nativeHandle: { id: 'logger-init' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    await initializeProtectForJourney(journey, { logger });
+
+    expect(initializeNative).toHaveBeenCalledWith('journey-1', {
+      loggerId: 'logger-init',
+    });
+  });
+
+  it('initializeProtectForJourney() wraps native error as ProtectError and logs failure', async () => {
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initializeForJourney: jest
+        .fn()
+        .mockRejectedValue({ error: 'PROTECT_INITIALIZE_ERROR' }),
+    });
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+
+    const error = await initializeProtectForJourney(journey, {
+      logger,
+    }).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(ProtectError);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.code).toBe('PROTECT_INITIALIZE_ERROR');
+    expect(logger.debug).toHaveBeenCalledWith(
+      'Protect initializeProtectForJourney requested',
+    );
+    expect(logger.debug.mock.invocationCallOrder[0]).toBeLessThan(
+      logger.error.mock.invocationCallOrder[0],
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      'Protect initializeProtectForJourney failed',
+    );
+    expect(logger.info).not.toHaveBeenCalled();
+  });
+
+  it('initializeProtectForJourney() wraps getId() failure as ProtectError without calling native', async () => {
+    const initializeNative = jest.fn();
+    (getNativeModule as jest.Mock).mockReturnValue({
+      initializeForJourney: initializeNative,
+    });
+    const journey = {
+      getId: jest.fn().mockRejectedValue(new Error('id failure')),
+    };
+
+    const error = await initializeProtectForJourney(journey).catch(
+      (caught) => caught,
+    );
+
+    expect(error).toBeInstanceOf(ProtectError);
+    expect(error).toBeInstanceOf(Error);
+    expect(journey.getId).toHaveBeenCalledTimes(1);
+    expect(initializeNative).not.toHaveBeenCalled();
   });
 });

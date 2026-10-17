@@ -9,13 +9,23 @@ import {
   noopLogger,
   registerIntegrationCollectorType,
 } from '@ping-identity/rn-types';
-import type { DaVinciInstance, LoggerInstance } from '@ping-identity/rn-types';
+import type {
+  DaVinciInstance,
+  JourneyInstance,
+  LoggerInstance,
+} from '@ping-identity/rn-types';
 import {
+  fromNativeJourneyResult,
   getNativeModule,
   toNativeConfig,
   toNativeProtectConfig,
 } from './NativeRNPingProtect';
-import type { ProtectConfig } from './types';
+import type {
+  ProtectConfig,
+  ProtectJourneyInitializeOptions,
+  ProtectJourneyOptions,
+  ProtectJourneyResult,
+} from './types';
 import { ProtectError } from './types/protect.types';
 
 function resolveLoggerId(logger?: LoggerInstance): string | undefined {
@@ -87,6 +97,40 @@ export async function startProtect(config: ProtectConfig = {}): Promise<void> {
     // Register only after initialization (and any requested resume) succeed, so
     // a failed startup does not leave PROTECT marked as supported.
     registerIntegrationCollectorType('PROTECT');
+  });
+}
+
+/**
+ * Makes the native Journey module aware of the PingOne Protect callbacks without
+ * initializing the Protect SDK.
+ *
+ * @param options - Optional logger.
+ * @returns Resolves with `void` once the callbacks are registered.
+ * @throws {@link ProtectError} when the native registration call fails.
+ *
+ * @example
+ * ```ts
+ * import { startProtectForJourney } from '@ping-identity/rn-protect';
+ * await startProtectForJourney();
+ * const node = await journey.start();
+ * ```
+ *
+ * @remarks
+ * Journey-only. Call this once at app startup, before the first Journey `start()` or
+ * `next()`. It does not initialize Protect: the initialize callback in the tree still
+ * supplies the configuration through {@link initializeProtectForJourney}. Do not call
+ * {@link startProtect} instead, because it initializes the SDK with app configuration
+ * and prevents the tree configuration from being applied. On Android the call only
+ * resolves.
+ *
+ * @public
+ */
+export async function startProtectForJourney(
+  options: { logger?: LoggerInstance } = {},
+): Promise<void> {
+  const logger = options.logger ?? noopLogger;
+  return withLogging('startProtectForJourney', logger, async () => {
+    await getNativeModule().registerJourneyCallbacks();
   });
 }
 
@@ -175,4 +219,112 @@ export async function collectProtect(daVinci: DaVinciInstance): Promise<void> {
   } catch (error) {
     throw ProtectError.from(error);
   }
+}
+
+/**
+ * Executes a Journey `PingOneProtectInitializeCallback`.
+ *
+ * This is the only Journey initialize path: the native initialize callback carries its
+ * own server-driven configuration, parsed from the direct `output[]` form or the
+ * MetadataCallback-derived form used by Marketplace and legacy trees, so this function
+ * deliberately takes no `ProtectConfig` argument. A tree whose initialize callback
+ * carries no parseable configuration fails natively as `PROTECT_INITIALIZE_ERROR`
+ * rather than falling back to app-supplied configuration.
+ *
+ * @param journey - Active Journey instance holding the Protect initialize callback.
+ * @param options - Optional logger.
+ * @returns Resolves with `{ type: 'success' }` when initialization completes.
+ * @throws {@link ProtectError} with codes `PROTECT_CALLBACK_NOT_FOUND` or
+ * `PROTECT_INITIALIZE_ERROR` on native failure.
+ *
+ * @example
+ * ```ts
+ * import { initializeProtectForJourney } from '@ping-identity/rn-protect';
+ * await initializeProtectForJourney(journey);
+ * ```
+ *
+ * @remarks
+ * Journey-only: use {@link startProtect} for DaVinci flows and pre-flow initialization.
+ * Native initialization is once-only, so whichever initialize path succeeds first wins;
+ * a subsequent initialize applies only its behavioral-data resume/pause, not its
+ * identity configuration. Declare the Protect callback types in `handledCallbackTypes`
+ * when calling `journey.next` so the Journey module leaves the callback state untouched.
+ *
+ * @public
+ */
+export async function initializeProtectForJourney(
+  journey: JourneyInstance,
+  options: ProtectJourneyInitializeOptions = {},
+): Promise<ProtectJourneyResult> {
+  const logger = options.logger ?? noopLogger;
+  const loggerId = resolveLoggerId(options.logger);
+
+  return withLogging('initializeProtectForJourney', logger, async () => {
+    const journeyId = await journey.getId();
+    const result = await getNativeModule().initializeForJourney(
+      journeyId,
+      toNativeConfig({ loggerId }),
+    );
+    return fromNativeJourneyResult(result);
+  });
+}
+
+/**
+ * Runs PingOne Protect risk evaluation for a Journey `PingOneProtectEvaluationCallback`.
+ *
+ * This is the Journey equivalent of {@link collectProtect}: it does not depend on a
+ * DaVinci flow or a `ProtectCollector`. The collected risk signal is written natively
+ * into the resolved Journey callback (or its sibling hidden-value fields) and is never
+ * returned to JavaScript; advance the flow with `journey.next(...)` afterwards.
+ *
+ * @param journey - Active Journey instance holding the Protect evaluation callback.
+ * @param options - Optional callback index and logger.
+ * @returns Resolves with `{ type: 'success' }` when collection completes.
+ * @throws {@link ProtectError} with code `PROTECT_ARGUMENT_ERROR` and type
+ * `argument_error` when `options.index` is negative or not an integer; the native
+ * module is not called in that case.
+ * @throws {@link ProtectError} with codes `PROTECT_NOT_INITIALIZED`,
+ * `PROTECT_CALLBACK_NOT_FOUND`, or `PROTECT_COLLECT_ERROR` on native failure.
+ *
+ * @example
+ * ```ts
+ * import { collectProtectForJourney } from '@ping-identity/rn-protect';
+ * await collectProtectForJourney(journey);
+ * await journey.next(buildNextInput(node, values, handledCallbackTypes).input);
+ * ```
+ *
+ * @remarks
+ * Journey-only: use {@link collectProtect} for DaVinci flows. Initialize Protect first
+ * with {@link initializeProtectForJourney} (or `startProtect()` for DaVinci and
+ * pre-flow initialization) or the native module rejects with `PROTECT_NOT_INITIALIZED`.
+ * Declare the Protect callback types in `handledCallbackTypes` when calling
+ * `journey.next` so the Journey module leaves the natively written signal untouched.
+ *
+ * @public
+ */
+export async function collectProtectForJourney(
+  journey: JourneyInstance,
+  options: ProtectJourneyOptions = {},
+): Promise<ProtectJourneyResult> {
+  const logger = options.logger ?? noopLogger;
+  const loggerId = resolveLoggerId(options.logger);
+
+  return withLogging('collectProtectForJourney', logger, async () => {
+    const index = options.index ?? 0;
+    if (!Number.isInteger(index) || index < 0) {
+      throw new ProtectError(
+        `[@ping-identity/rn-protect] Invalid index ${String(index)}. Provide a non-negative integer.`,
+        'PROTECT_ARGUMENT_ERROR',
+        'argument_error',
+      );
+    }
+
+    const journeyId = await journey.getId();
+    const result = await getNativeModule().collectForJourney(
+      journeyId,
+      { index },
+      toNativeConfig({ loggerId }),
+    );
+    return fromNativeJourneyResult(result);
+  });
 }

@@ -7,7 +7,11 @@
 
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
-import type { ProtectClientConfig, ProtectConfig } from './types';
+import type {
+  ProtectClientConfig,
+  ProtectConfig,
+  ProtectJourneyResult,
+} from './types';
 
 /**
  * Native module specification for RNPingProtect.
@@ -35,6 +39,37 @@ export interface Spec extends TurboModule {
     options: Object,
     config: Object,
   ): Promise<void>;
+
+  /**
+   * Runs PingOne Protect data collection for a Journey evaluation callback
+   * resolved from a Journey instance id.
+   *
+   * The collected risk signal is written natively into the Journey callback
+   * (or its sibling hidden-value fields) and is never returned to JavaScript.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param options Per-call options payload (index).
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @returns A promise that resolves to a Journey success payload.
+   */
+  collectForJourney(
+    journeyId: string,
+    options: Object,
+    config: Object,
+  ): Promise<Object>;
+
+  /**
+   * Executes a Journey initialize callback resolved from a Journey instance id.
+   *
+   * The callback carries its own server-driven configuration (parsed from the
+   * direct `output[]` form or the MetadataCallback-derived form), so no app
+   * `ProtectConfig` is passed.
+   *
+   * @param journeyId Native Journey instance id.
+   * @param config Per-client runtime configuration payload (loggerId).
+   * @returns A promise that resolves to a Journey success payload.
+   */
+  initializeForJourney(journeyId: string, config: Object): Promise<Object>;
 
   /**
    * Initializes the Protect SDK with the provided configuration.
@@ -67,6 +102,15 @@ export interface Spec extends TurboModule {
    * @returns A promise that resolves once registration completes. Idempotent.
    */
   registerDaVinciSerializer(): Promise<null>;
+
+  /**
+   * Registers the Protect callbacks with the native Journey callback registry without
+   * initializing the Protect SDK.
+   *
+   * @returns A promise that resolves once registration is requested. Idempotent. On
+   * Android the native SDK registers its callbacks at app launch, so this only resolves.
+   */
+  registerJourneyCallbacks(): Promise<null>;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
@@ -113,6 +157,23 @@ export function toNativeConfig(
   config: ProtectClientConfig,
 ): Record<string, unknown> {
   return config as unknown as Record<string, unknown>;
+}
+
+/**
+ * Casts the native payload to a Journey success result type.
+ *
+ * @param result - Payload resolved by the native `collectForJourney` or `initializeForJourney` call.
+ * @returns The payload typed as {@link ProtectJourneyResult}.
+ *
+ * @remarks
+ * The cast is safe because both platforms resolve these calls only with
+ * `{ type: 'success' }` (`createJourneyResultPayload`) and reject for every other
+ * outcome, so no non-success payload can reach this function.
+ *
+ * @internal
+ */
+export function fromNativeJourneyResult(result: object): ProtectJourneyResult {
+  return result as unknown as ProtectJourneyResult;
 }
 
 /**

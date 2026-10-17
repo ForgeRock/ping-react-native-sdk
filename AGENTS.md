@@ -50,6 +50,7 @@ Turbo orchestrates builds and tests across workspaces.
 - Keep changes DRY: reuse existing utilities; avoid copy/paste duplicate code
 - Prefer composition over inheritance
 - Use clear, intention-revealing names; avoid abbreviations unless domain-standard
+- Do NOT reference planning, decision, or workflow artifacts (plan files, task summaries, ticket notes, design docs) in code comments, doc comments, or changelog entries. Code comments explain the code itself.
 - Before adding native bridge/parsing helpers, check `packages/core/android/src/main/` (Kotlin) and `packages/core/ios/` (Swift) for available utilities.
 - Follow security best practices (OWASP); do not introduce insecure shortcuts (disabled TLS checks, hard-coded secrets, plaintext storage)
 - Call out potential security risks explicitly if present

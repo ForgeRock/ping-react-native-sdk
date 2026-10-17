@@ -317,16 +317,22 @@ jest.mock('../packages/external-idp/src/NativeRNPingExternalIdp', () => ({
 }));
 
 // ---------- rn-protect ----------
+// jest.setup.js mocks: collectForDaVinci, collectForJourney, initializeForJourney,
+//                      initialize, pauseBehavioralData, resumeBehavioralData, registerJourneyCallbacks
 jest.mock('../packages/protect/src/NativeRNPingProtect', () => ({
   __esModule: true,
   getNativeModule: jest.fn(() => ({
     collectForDaVinci: jest.fn(async () => undefined),
+    collectForJourney: jest.fn(async () => ({ type: 'success' })),
+    initializeForJourney: jest.fn(async () => ({ type: 'success' })),
     initialize: jest.fn(async () => undefined),
     pauseBehavioralData: jest.fn(async () => undefined),
     resumeBehavioralData: jest.fn(async () => undefined),
+    registerJourneyCallbacks: jest.fn(async () => null),
   })),
   toNativeProtectConfig: jest.fn((config) => config),
   toNativeConfig: jest.fn((config) => config),
+  fromNativeJourneyResult: jest.fn((result) => result),
 }));
 
 // ---------- rn-push ----------

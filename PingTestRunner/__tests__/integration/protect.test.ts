@@ -10,6 +10,8 @@
  *
  * Validates that the protect bridge layer:
  * - Exports startProtect, pauseBehavioralData, resumeBehavioralData, and ProtectError
+ * - Exports the Journey helpers startProtectForJourney, collectProtectForJourney and
+ *   initializeProtectForJourney
  * - Forwards config (including loggerId) to the native module
  * - Resolves void on success
  * - Propagates native rejections as ProtectError
@@ -22,8 +24,11 @@ export {};
 
 type NativeProtectMock = {
   initialize: jest.Mock;
+  collectForJourney: jest.Mock;
+  initializeForJourney: jest.Mock;
   pauseBehavioralData: jest.Mock;
   resumeBehavioralData: jest.Mock;
+  registerJourneyCallbacks: jest.Mock;
 };
 
 function makeMock(
@@ -31,8 +36,11 @@ function makeMock(
 ): NativeProtectMock {
   return {
     initialize: jest.fn(async () => undefined),
+    collectForJourney: jest.fn(async () => ({ type: 'success' })),
+    initializeForJourney: jest.fn(async () => ({ type: 'success' })),
     pauseBehavioralData: jest.fn(async () => undefined),
     resumeBehavioralData: jest.fn(async () => undefined),
+    registerJourneyCallbacks: jest.fn(async () => null),
     ...overrides,
   };
 }
@@ -44,6 +52,7 @@ async function loadProtect(nativeMock: NativeProtectMock) {
     getNativeModule: jest.fn(() => nativeMock),
     toNativeConfig: jest.fn((config: unknown) => config),
     toNativeProtectConfig: jest.fn((config: unknown) => config),
+    fromNativeJourneyResult: jest.fn((result: unknown) => result),
   }));
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('@ping-identity/rn-protect');
@@ -68,6 +77,21 @@ describe('@ping-identity/rn-protect — integration', () => {
     it('exports resumeBehavioralData', async () => {
       const mod = await loadProtect(makeMock());
       expect(typeof mod.resumeBehavioralData).toBe('function');
+    });
+
+    it('exports startProtectForJourney', async () => {
+      const mod = await loadProtect(makeMock());
+      expect(typeof mod.startProtectForJourney).toBe('function');
+    });
+
+    it('exports collectProtectForJourney', async () => {
+      const mod = await loadProtect(makeMock());
+      expect(typeof mod.collectProtectForJourney).toBe('function');
+    });
+
+    it('exports initializeProtectForJourney', async () => {
+      const mod = await loadProtect(makeMock());
+      expect(typeof mod.initializeProtectForJourney).toBe('function');
     });
 
     it('exports ProtectError', async () => {
@@ -250,6 +274,171 @@ describe('@ping-identity/rn-protect — integration', () => {
 
       await expect(mod.resumeBehavioralData()).rejects.toMatchObject({
         code: 'PROTECT_INITIALIZE_ERROR',
+      });
+    });
+  });
+
+  // ─── startProtectForJourney() ──────────────────────────────────────────────
+
+  describe('startProtectForJourney()', () => {
+    it('registers the Journey callbacks without initializing Protect', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+
+      await expect(mod.startProtectForJourney()).resolves.toBeUndefined();
+
+      expect(mock.registerJourneyCallbacks).toHaveBeenCalledTimes(1);
+      expect(mock.initialize).not.toHaveBeenCalled();
+    });
+
+    it('propagates a native registration failure as ProtectError', async () => {
+      const mock = makeMock({
+        registerJourneyCallbacks: jest.fn(async () => {
+          throw {
+            error: 'PROTECT_INITIALIZE_ERROR',
+            message: 'Registration failed.',
+            type: 'initialize_error',
+          };
+        }),
+      });
+      const mod = await loadProtect(mock);
+      const promise = mod.startProtectForJourney();
+
+      await expect(promise).rejects.toBeInstanceOf(mod.ProtectError);
+      await expect(promise).rejects.toMatchObject({
+        code: 'PROTECT_INITIALIZE_ERROR',
+        message: 'Registration failed.',
+      });
+    });
+  });
+
+  // ─── collectProtectForJourney() ────────────────────────────────────────────
+
+  describe('collectProtectForJourney()', () => {
+    const journey = { getId: async () => 'journey-1' };
+
+    it('forwards journey id, default index, and loggerId to the native module', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+
+      await expect(mod.collectProtectForJourney(journey)).resolves.toEqual({
+        type: 'success',
+      });
+
+      expect(mock.collectForJourney).toHaveBeenCalledWith(
+        'journey-1',
+        { index: 0 },
+        { loggerId: undefined },
+      );
+    });
+
+    it('forwards a custom index and loggerId from options', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+      const logger = {
+        nativeHandle: { id: 'logger-collect-1' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+
+      await mod.collectProtectForJourney(journey, { index: 2, logger });
+
+      expect(mock.collectForJourney).toHaveBeenCalledWith(
+        'journey-1',
+        { index: 2 },
+        { loggerId: 'logger-collect-1' },
+      );
+    });
+
+    it('rejects a negative index with argument_error before calling native', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+
+      await expect(
+        mod.collectProtectForJourney(journey, { index: -1 }),
+      ).rejects.toMatchObject({
+        code: 'PROTECT_ARGUMENT_ERROR',
+        type: 'argument_error',
+      });
+      expect(mock.collectForJourney).not.toHaveBeenCalled();
+    });
+
+    it('propagates a native not-initialized rejection as ProtectError', async () => {
+      const mock = makeMock({
+        collectForJourney: jest.fn(async () => {
+          throw {
+            code: 'PROTECT_NOT_INITIALIZED',
+            message: 'Protect is not initialized.',
+          };
+        }),
+      });
+      const mod = await loadProtect(mock);
+      const promise = mod.collectProtectForJourney(journey);
+
+      await expect(promise).rejects.toBeInstanceOf(mod.ProtectError);
+      await expect(promise).rejects.toMatchObject({
+        code: 'PROTECT_NOT_INITIALIZED',
+        message: 'Protect is not initialized.',
+      });
+    });
+  });
+
+  // ─── initializeProtectForJourney() ─────────────────────────────────────────
+
+  describe('initializeProtectForJourney()', () => {
+    const journey = { getId: async () => 'journey-1' };
+
+    it('forwards journey id and loggerId to the native module', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+
+      await expect(mod.initializeProtectForJourney(journey)).resolves.toEqual({
+        type: 'success',
+      });
+
+      expect(mock.initializeForJourney).toHaveBeenCalledWith('journey-1', {
+        loggerId: undefined,
+      });
+    });
+
+    it('forwards loggerId when logger is provided', async () => {
+      const mock = makeMock();
+      const mod = await loadProtect(mock);
+      const logger = {
+        nativeHandle: { id: 'logger-init-1' },
+        changeLevel: jest.fn(),
+        error: jest.fn(),
+        warn: jest.fn(),
+        info: jest.fn(),
+        debug: jest.fn(),
+      };
+
+      await mod.initializeProtectForJourney(journey, { logger });
+
+      expect(mock.initializeForJourney).toHaveBeenCalledWith('journey-1', {
+        loggerId: 'logger-init-1',
+      });
+    });
+
+    it('propagates a native callback-not-found rejection as ProtectError', async () => {
+      const mock = makeMock({
+        initializeForJourney: jest.fn(async () => {
+          throw {
+            code: 'PROTECT_CALLBACK_NOT_FOUND',
+            message: 'No Protect initialize callback found.',
+          };
+        }),
+      });
+      const mod = await loadProtect(mock);
+      const promise = mod.initializeProtectForJourney(journey);
+
+      await expect(promise).rejects.toBeInstanceOf(mod.ProtectError);
+      await expect(promise).rejects.toMatchObject({
+        code: 'PROTECT_CALLBACK_NOT_FOUND',
+        message: 'No Protect initialize callback found.',
       });
     });
   });

@@ -8,8 +8,6 @@
 /**
  * Gateway simulation for AM/AIC transactional backchannel E2E tests.
  *
- * Mirrors the native QA harness (ping-android-sdk
- * `BackchannelAuthenticationE2ETest.initializeBackchannelTransaction`):
  * 1. Obtain a gateway access token via the OAuth2 client-credentials grant
  *    (client `backchannelClientId` / `backchannelClientSecret`, scope
  *    `back_channel_authentication`).
@@ -43,7 +41,7 @@ export function backchannelConfigFromEnv(): BackchannelConfig | null {
   const clientSecret = process.env['PING_BACKCHANNEL_CLIENT_SECRET'] ?? '';
   const journeyName =
     process.env['PING_BACKCHANNEL_JOURNEY_NAME'] ??
-    'back-channel-authentication';
+    'rn-back-channel-authentication';
   const username = process.env['PING_TEST_USERNAME'] ?? '';
 
   if (!serverUrl || !clientId || !clientSecret || !username) {

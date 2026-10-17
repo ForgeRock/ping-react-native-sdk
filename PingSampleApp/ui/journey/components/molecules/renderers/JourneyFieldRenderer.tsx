@@ -37,12 +37,15 @@ function JourneyFieldRenderer(
   const isDeviceBindingCallback = field.type === 'DeviceBindingCallback';
   const isDeviceSigningVerifierCallback =
     field.type === 'DeviceSigningVerifierCallback';
+  const isProtectCallback =
+    field.type === 'PingOneProtectInitializeCallback' ||
+    field.type === 'PingOneProtectEvaluationCallback';
 
   if (field.type === 'HiddenValueCallback') {
     return null;
   }
 
-  if (isFidoAuthenticationCallback || isIdPCallback) {
+  if (isFidoAuthenticationCallback || isIdPCallback || isProtectCallback) {
     return null;
   }
 

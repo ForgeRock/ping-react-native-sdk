@@ -95,16 +95,20 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.pingidentity.sdks:android:2.1.0")
-  implementation("com.pingidentity.sdks:logger:2.1.0")
-  implementation("com.pingidentity.sdks:protect:2.1.0")
-  compileOnly("com.pingidentity.sdks:davinci:2.1.0") // CoreRuntime.resolveDaVinciCollectors and lifecycle hook APIs are provided by rn-davinci
+  implementation("com.pingidentity.sdks:android:2.2.0")
+  implementation("com.pingidentity.sdks:logger:2.2.0")
+  implementation("com.pingidentity.sdks:protect:2.2.0")
+  compileOnly("com.pingidentity.sdks:davinci:2.2.0") // CoreRuntime.resolveDaVinciCollectors and lifecycle hook APIs are provided by rn-davinci
+  // Compile-time only: AbstractCallback (supertype of PingOneProtect*Callback) ships at runtime via protect's own transitive journey-plugin
+  compileOnly("com.pingidentity.sdks:journey-plugin:2.2.0")
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
   implementation(project(":ping-identity_rn-core"))
 
   testImplementation "junit:junit:4.13.2"
   testImplementation "androidx.test:core:1.6.1"
   testImplementation "org.robolectric:robolectric:4.12.2"
-  testImplementation("com.pingidentity.sdks:protect:2.1.0")
-  testImplementation("com.pingidentity.sdks:davinci:2.1.0")
+  testImplementation("com.pingidentity.sdks:protect:2.2.0")
+  testImplementation("com.pingidentity.sdks:davinci:2.2.0")
+  testImplementation("com.pingidentity.sdks:journey-plugin:2.2.0")
+  testImplementation "io.mockk:mockk:1.13.12"
 }

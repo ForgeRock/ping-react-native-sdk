@@ -421,14 +421,17 @@ Integration-dependent families (for example, device profile, FIDO, PingOne Prote
 
 For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fido` (`registerForJourney(...)` / `authenticateForJourney(...)`) and then call `next(...)`.
 
+For PingOne Protect callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-protect` (`initializeProtectForJourney(...)` / `collectProtectForJourney(...)`) and then call `next(...)`. See [Use with Journey](../protect/README.md#use-with-journey) in the rn-protect README for the full flow.
+
 ### Native parity contract
 
-Journey FIDO callback handling is standardized across Android and iOS with the following native contract:
+Journey integration-callback handling (FIDO, PingOne Protect) is standardized across Android and iOS with the following native contract:
 
 | Area                         | Standardized behavior                                                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Callback type resolution     | Runtime native callback class is authoritative; raw callback JSON `type` is fallback only.                                            |
 | Callback execution ownership | FIDO callback execution is owned by `@ping-identity/rn-fido` Journey-scoped APIs, not `next(...)` callback mutations.                 |
+| Protect execution ownership  | Protect callback execution is owned by `@ping-identity/rn-protect` Journey-scoped APIs, not `next(...)` callback mutations.           |
 | Hidden callback ownership    | Journey/native callback execution remains the source of truth for callback state; helper layer does not force custom override values. |
 
 ## Error handling
