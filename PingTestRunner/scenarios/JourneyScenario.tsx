@@ -22,7 +22,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   Button,
-  Platform,
   Switch,
   Text,
   TextInput,
@@ -281,11 +280,7 @@ export default function JourneyScenario(): React.JSX.Element {
       });
       setClient(journeyClient);
       await journeyClient.init();
-      if (Platform.OS === 'ios') {
-        // rn-protect is excluded from Android autolinking in this app, and the
-        // call is a no-op on Android anyway.
-        await startProtectForJourney();
-      }
+      await startProtectForJourney();
       const startNode = await journeyClient.start(
         JOURNEY_NAME,
         NO_SESSION ? { noSession: true } : { forceAuth: true },

@@ -150,6 +150,17 @@ class BaseTestCase: XCTestCase {
         )
     }
 
+    /// Skips the test if the username-only Journey environment variables are not set.
+    /// Mirrors hasJourneyUsernameEnv from e2e/setup.ts.
+    func skipIfNoJourneyUsernameEnv(file: StaticString = #file, line: UInt = #line) throws {
+        try XCTSkipUnless(
+            env.hasJourneyUsernameEnv,
+            "Skipping: PING_SERVER_URL, PING_TEST_USERNAME not set.",
+            file: file,
+            line: line
+        )
+    }
+
     /// Skips the test if PING_CALLBACK_TREES_ENABLED is false.
     /// Mirrors hasCallbackTreesEnabled from e2e/setup.ts.
     func skipIfNoCallbackTrees(file: StaticString = #file, line: UInt = #line) throws {

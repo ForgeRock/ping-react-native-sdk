@@ -12,24 +12,28 @@
  * Server journey tree: TEST_PING_ONE_PROTECT_EVALUATE
  *
  * Flow:
- *   1. Start                  → PingOneProtectInitializeCallback
+ *   1. Start                  → ChoiceCallback:0 (select the "evaluate-default" variant)
+ *   2. Next node              → PingOneProtectInitializeCallback
  *                               (auto-handled by JourneyScenario via initializeProtectForJourney)
- *   2. Next node              → PingOneProtectEvaluationCallback
+ *   3. Next node              → NameCallback:0 (username only, no PasswordCallback)
+ *   4. Next node              → PingOneProtectEvaluationCallback
  *                               (auto-handled by JourneyScenario via collectProtectForJourney)
- *   3. SuccessNode
+ *   5. Next node              → TextOutputCallback:0 ("Success")
+ *   6. SuccessNode
  */
 
 import { device, element, by, waitFor, expect as detoxExpect } from 'detox';
 import {
   assertAppReady,
   hasCallbackTreesEnabled,
-  hasJourneyEnv,
+  hasJourneyUsernameEnv,
   E2E_ENV,
 } from './setup';
 
 const TREE = 'TEST_PING_ONE_PROTECT_EVALUATE';
+const VARIANT = 'evaluate-default';
 const SKIP_REASON =
-  'Protect callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL, PING_TEST_USERNAME, and PING_TEST_PASSWORD.';
+  'Protect callback journey tests require callback trees and live Journey env. Set PING_CALLBACK_TREES_ENABLED to not false, plus PING_SERVER_URL and PING_TEST_USERNAME.';
 const NET_TIMEOUT = 45000;
 
 describe('Journey — PingOne Protect callbacks', () => {
@@ -60,15 +64,29 @@ describe('Journey — PingOne Protect callbacks', () => {
   });
 
   it('start() initializes Protect, evaluates, and reaches SuccessNode (live)', async () => {
-    if (!hasCallbackTreesEnabled() || !hasJourneyEnv()) {
+    if (!hasCallbackTreesEnabled() || !hasJourneyUsernameEnv()) {
       console.warn(SKIP_REASON);
       return;
     }
     await element(by.id('journey-start-btn')).atIndex(0).tap();
-    // JourneyScenario detects the Protect callbacks and auto-handles both
-    await waitFor(element(by.id('journey-collecting-protect')))
+    await waitFor(element(by.id('journey-field-ChoiceCallback:0')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
+    await element(by.text(VARIANT)).tap();
+    await element(by.id('journey-submit-btn')).tap();
+    // Reaching the NameCallback proves the Initialize callback was auto-handled
+    await waitFor(element(by.id('journey-field-NameCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
+    await element(by.id('journey-field-NameCallback:0')).typeText(
+      E2E_ENV.testUsername,
+    );
+    await element(by.id('journey-submit-btn')).tap();
+    // Reaching the TextOutputCallback proves the Evaluation callback was auto-handled
+    await waitFor(element(by.id('journey-field-output-TextOutputCallback:0')))
+      .toBeVisible()
+      .withTimeout(NET_TIMEOUT);
+    await element(by.id('journey-submit-btn')).tap();
     await waitFor(element(by.id('journey-success')))
       .toBeVisible()
       .withTimeout(NET_TIMEOUT);
