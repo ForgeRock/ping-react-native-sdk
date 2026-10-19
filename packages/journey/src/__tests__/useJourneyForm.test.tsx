@@ -316,6 +316,42 @@ describe('useJourneyForm', () => {
     warnSpy.mockRestore();
   });
 
+  it('omits protect-managed hidden fields from input and buildInput when Protect is handled', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+      ],
+    };
+
+    let latest: JourneyFormResult | null = null;
+
+    function ProtectHarness(): React.ReactElement | null {
+      const form = useJourneyForm(node, {
+        handledCallbackTypes: new Set([
+          'PingOneProtectEvaluationCallback',
+        ] as const),
+      });
+      useEffect(() => {
+        latest = form;
+      }, [form]);
+      return null;
+    }
+
+    render(<ProtectHarness />);
+
+    const form = requireLatest(latest);
+    expect(form.values['HiddenValueCallback:0']).toBe('');
+    expect(form.input).toEqual({});
+    expect(form.buildInput().input).toEqual({});
+    expect(form.canSubmit).toBe(true);
+  });
+
   it('supports callback type based field lookup and updates', () => {
     const node: JourneyNode = {
       type: 'ContinueNode',

@@ -552,7 +552,30 @@ describe('Journey callback helpers', () => {
     });
   });
 
-  it('submits protect-managed hidden fields when the caller sets an explicit value', () => {
+  it('omits protect-managed hidden fields with hydrated values', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+      ],
+    };
+
+    const result = buildNextInput(
+      node,
+      { 'HiddenValueCallback:0': '' },
+      new Set(['PingOneProtectEvaluationCallback'] as const),
+    );
+
+    expect(result.input).toEqual({});
+  });
+
+  it('omits protect-managed hidden fields and warns when the caller sets a value', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const node: JourneyNode = {
       type: 'ContinueNode',
       callbacks: [
@@ -573,15 +596,11 @@ describe('Journey callback helpers', () => {
 
     expect(result.canSubmit).toBe(true);
     expect(result.issues).toEqual([]);
-    expect(result.input).toEqual({
-      callbacks: [
-        {
-          type: 'HiddenValueCallback',
-          index: 0,
-          value: 'caller-provided-value',
-        },
-      ],
-    });
+    expect(result.input).toEqual({});
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('HiddenValueCallback:0'),
+    );
+    warnSpy.mockRestore();
   });
 });
 

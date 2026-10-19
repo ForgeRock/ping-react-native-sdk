@@ -261,21 +261,14 @@ function isProtectHandled(
 }
 
 /**
- * Returns true when a hidden-value field's native-written value must be
- * preserved by omitting it from the built submit payload.
+ * Returns true when a hidden-value field is written by the native Protect SDK
+ * and must therefore be omitted from the built submit payload.
  *
  * @param field - Normalized callback field.
- * @param values - Form values keyed by normalized field id.
- * @returns True when the hidden field is Protect-managed and caller-unset.
+ * @returns True when the hidden field is Protect-managed.
  */
-function isProtectManagedHiddenField(
-  field: JourneyNormalizedField,
-  values: JourneyFormValues,
-): boolean {
+function isProtectManagedHiddenField(field: JourneyNormalizedField): boolean {
   if (field.type !== callbackType.HiddenValueCallback) {
-    return false;
-  }
-  if (values[field.id] !== undefined) {
     return false;
   }
   return protectManagedHiddenValueIds.some((managedId) =>
@@ -688,11 +681,12 @@ export function normalizeCallbacks(
  * @remarks
  * When the node contains a PingOne Protect callback and `handledCallbackTypes`
  * includes its type, `HiddenValueCallback` fields whose callback id contains
- * `pingone_risk_evaluation_signals` or `clientError` are omitted from the
- * payload unless the caller set an explicit value. The native Protect SDK
+ * `pingone_risk_evaluation_signals` or `clientError` are always omitted from
+ * the payload, regardless of form values, because the native Protect SDK
  * writes the risk signal and client error into those sibling hidden fields on
- * MetadataCallback-derived trees; resubmitting the stale default value would
- * overwrite the native-written result.
+ * MetadataCallback-derived trees and resubmitting a JS-side value would
+ * overwrite the native-written result. A caller-provided value that differs
+ * from the callback default is dropped with a dev-only console warning.
  */
 export function buildNextInput(
   node: JourneyNode | null | undefined,
@@ -725,7 +719,17 @@ export function buildNextInput(
       return;
     }
 
-    if (protectHandled && isProtectManagedHiddenField(field, values)) {
+    if (protectHandled && isProtectManagedHiddenField(field)) {
+      const callerValue = values[field.id];
+      if (
+        __DEV__ &&
+        callerValue !== undefined &&
+        callerValue !== field.defaultValue
+      ) {
+        console.warn(
+          `[buildNextInput] Ignoring value for Protect-managed field "${field.id}"; the native Protect SDK owns it.`,
+        );
+      }
       return;
     }
 

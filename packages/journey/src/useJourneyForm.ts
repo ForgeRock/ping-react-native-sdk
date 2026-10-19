@@ -327,12 +327,16 @@ export function useJourneyForm(
     (
       overrides: Partial<JourneyFormValues> = {},
     ): JourneyBuildNextInputResult => {
-      return buildNextInput(node, {
-        ...values,
-        ...overrides,
-      });
+      return buildNextInput(
+        node,
+        {
+          ...values,
+          ...overrides,
+        },
+        options.handledCallbackTypes,
+      );
     },
-    [node, values],
+    [node, values, options.handledCallbackTypes],
   );
 
   /**
