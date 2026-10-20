@@ -277,33 +277,49 @@ MetadataCallback-derived journeys.
 
 ### Journey flow example
 
-```ts
+```tsx
 import { callbackType } from '@ping-identity/rn-types';
-import { useJourney, useJourneyForm } from '@ping-identity/rn-journey';
+import {
+  createJourneyClient,
+  useJourney,
+  useJourneyForm,
+} from '@ping-identity/rn-journey';
 import {
   collectProtectForJourney,
   initializeProtectForJourney,
 } from '@ping-identity/rn-protect';
 
-const [node, actions] = useJourney(client);
-const form = useJourneyForm(node, {
-  handledCallbackTypes: new Set([
-    callbackType.PingOneProtectInitializeCallback,
-    callbackType.PingOneProtectEvaluationCallback,
-  ]),
+const client = createJourneyClient({
+  serverUrl: 'https://example.com/am',
+  realm: 'alpha',
+  cookie: 'iPlanetDirectoryPro',
 });
 
-for (const field of form.fields) {
-  if (field.ref.type === callbackType.PingOneProtectInitializeCallback) {
-    await initializeProtectForJourney(journey);
-  }
-  if (field.ref.type === callbackType.PingOneProtectEvaluationCallback) {
-    await collectProtectForJourney(journey, { index: field.ref.typeIndex });
-  }
-}
+function LoginScreen() {
+  const [node, actions] = useJourney(client);
+  const form = useJourneyForm(node, {
+    handledCallbackTypes: new Set([
+      callbackType.PingOneProtectInitializeCallback,
+      callbackType.PingOneProtectEvaluationCallback,
+    ]),
+  });
 
-if (form.canSubmit) {
-  await actions.next(form.input);
+  async function handleSubmit() {
+    for (const field of form.fields) {
+      if (field.ref.type === callbackType.PingOneProtectInitializeCallback) {
+        await initializeProtectForJourney(client);
+      }
+      if (field.ref.type === callbackType.PingOneProtectEvaluationCallback) {
+        await collectProtectForJourney(client, { index: field.ref.typeIndex });
+      }
+    }
+
+    if (form.canSubmit) {
+      await actions.next(form.input);
+    }
+  }
+
+  // ... render form fields and call handleSubmit from a submit button
 }
 ```
 
