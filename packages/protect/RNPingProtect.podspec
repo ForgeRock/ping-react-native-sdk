@@ -36,13 +36,13 @@ Pod::Spec.new do |s|
   s.swift_version = ['5.0', '5.1', '6.0']
 
   s.dependency "RNPingCore"
-  s.dependency "PingOneProtect", '2.1.0'
-  s.dependency "PingDavinci", '2.1.0'
-  s.dependency "PingDavinciPlugin", '2.1.0'
+  s.dependency "PingOneProtect", '2.2.0'
+  s.dependency "PingDavinci", '2.2.0'
+  s.dependency "PingDavinciPlugin", '2.2.0'
 
   s.test_spec "Tests" do |test_spec|
     test_spec.source_files = "ios/Tests/**/*.{swift}"
-    test_spec.dependency "PingOneProtect", '2.1.0'
+    test_spec.dependency "PingOneProtect", '2.2.0'
     test_spec.dependency "RNPingCore"
   end
 

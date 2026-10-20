@@ -66,7 +66,7 @@ const log = logger({ level: 'debug' });
 const fido = createFidoClient({
   logger: log,
   android: {
-    useFido2Client: true,
+    useFido2ApiClient: true,
   },
 });
 
@@ -114,11 +114,11 @@ const fido = createFidoClient({
 import { createFidoClient } from '@ping-identity/rn-fido';
 
 const fidoA = createFidoClient({
-  android: { useFido2Client: true },
+  android: { useFido2ApiClient: true },
 });
 
 const fidoB = createFidoClient({
-  android: { useFido2Client: false },
+  android: { useFido2ApiClient: false },
 });
 
 await fidoA.register({ challenge: '...' });
@@ -373,11 +373,11 @@ for the propagation contract and the full value table.
 
 ## Platform notes
 
-- `android.useFido2Client` is an Android-only override for the standalone `register` / `authenticate` operations.
+- `android.useFido2ApiClient` is an Android-only override of the FIDO2 API used for authentication. It applies to `authenticate`, `authenticateForJourney` and `authenticateForDaVinci`; registration is not affected.
   - `undefined` (default): native SDK auto-detection/default behavior.
   - `true`: force Google Play Services FIDO2 APIs.
   - `false`: force Android Credential Manager APIs.
-- Journey and DaVinci ceremony methods (`registerForJourney`, `authenticateForJourney`, `registerForDaVinci`, `authenticateForDaVinci`) currently ignore the client-level config on both platforms: ceremonies keep the workflow-configured native logger and native client defaults, so `android.useFido2Client` and the client-level logger id have no effect there.
+- Journey and DaVinci ceremony methods (`registerForJourney`, `authenticateForJourney`, `registerForDaVinci`, `authenticateForDaVinci`) ignore the client-level logger id on both platforms and keep the workflow-configured native logger. On Android, `authenticateForJourney` and `authenticateForDaVinci` honor `android.useFido2ApiClient`; the registration ceremonies ignore it.
 - iOS accepts the same config shape for API parity, but does not currently apply native client-level config.
 - Journey callback execution currently follows native SDK behavior; Android Journey callback APIs do not currently accept injected custom native `FidoClient` configuration.
 - Android requires a foreground `Activity` for FIDO calls.

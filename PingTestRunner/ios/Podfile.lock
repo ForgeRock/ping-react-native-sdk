@@ -48,70 +48,67 @@ PODS:
   - hermes-engine (0.80.1):
     - hermes-engine/Pre-built (= 0.80.1)
   - hermes-engine/Pre-built (0.80.1)
-  - PingAuthMigration (2.1.0):
-    - PingOath (~> 2.1.0)
-    - PingPush (~> 2.1.0)
-  - PingBinding (2.1.0):
-    - PingCommons (~> 2.1.0)
-    - PingDeviceId (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-  - PingBrowser (2.1.0):
-    - PingLogger (~> 2.1.0)
-  - PingCommons (2.1.0):
-    - PingLogger (~> 2.1.0)
-  - PingDavinci (2.1.0):
-    - PingDavinciPlugin (~> 2.1.0)
-    - PingOidc (~> 2.1.0)
-  - PingDavinciPlugin (2.1.0):
-    - PingOrchestrate (~> 2.1.0)
-  - PingDeviceClient (2.1.0):
-    - PingCommons (~> 2.1.0)
-    - PingNetwork (~> 2.1.0)
-  - PingDeviceId (2.1.0):
-    - PingLogger (~> 2.1.0)
-    - PingStorage (~> 2.1.0)
-  - PingDeviceProfile (2.1.0):
-    - PingDeviceId (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-    - PingTamperDetector (~> 2.1.0)
-  - PingExternalIdP (2.1.0):
-    - PingBrowser (~> 2.1.0)
-    - PingDavinciPlugin (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-  - PingFido (2.1.0):
-    - PingCommons (~> 2.1.0)
-    - PingDavinciPlugin (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-    - PingLogger (~> 2.1.0)
-  - PingJourney (2.1.0):
-    - PingDeviceProfile (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-    - PingOidc (~> 2.1.0)
-  - PingJourneyPlugin (2.1.0):
-    - PingOrchestrate (~> 2.1.0)
-  - PingLogger (2.1.0)
-  - PingNetwork (2.1.0):
-    - PingLogger (~> 2.1.0)
-  - PingOath (2.1.0):
-    - PingTamperDetector (~> 2.1.0)
-  - PingOidc (2.1.0):
-    - PingBrowser (~> 2.1.0)
-    - PingCommons (~> 2.1.0)
-    - PingOrchestrate (~> 2.1.0)
-  - PingOneProtect (2.1.0):
-    - PingDavinciPlugin (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
+  - PingBinding (2.2.0):
+    - PingCommons (~> 2.2.0)
+    - PingDeviceId (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
+  - PingBrowser (2.2.0):
+    - PingLogger (~> 2.2.0)
+  - PingCommons (2.2.0):
+    - PingLogger (~> 2.2.0)
+  - PingDavinci (2.2.0):
+    - PingDavinciPlugin (~> 2.2.0)
+    - PingOidc (~> 2.2.0)
+  - PingDavinciPlugin (2.2.0):
+    - PingOrchestrate (~> 2.2.0)
+  - PingDeviceClient (2.2.0):
+    - PingCommons (~> 2.2.0)
+    - PingNetwork (~> 2.2.0)
+  - PingDeviceId (2.2.0):
+    - PingLogger (~> 2.2.0)
+    - PingStorage (~> 2.2.0)
+  - PingDeviceProfile (2.2.0):
+    - PingDeviceId (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
+    - PingTamperDetector (~> 2.2.0)
+  - PingExternalIdP (2.2.0):
+    - PingBrowser (~> 2.2.0)
+    - PingDavinciPlugin (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
+  - PingFido (2.2.0):
+    - PingCommons (~> 2.2.0)
+    - PingDavinciPlugin (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
+    - PingLogger (~> 2.2.0)
+  - PingJourney (2.2.0):
+    - PingJourneyPlugin (~> 2.2.0)
+    - PingOidc (~> 2.2.0)
+  - PingJourneyPlugin (2.2.0):
+    - PingLogger (~> 2.2.0)
+    - PingOrchestrate (~> 2.2.0)
+  - PingLogger (2.2.0)
+  - PingNetwork (2.2.0):
+    - PingLogger (~> 2.2.0)
+  - PingOath (2.2.0):
+    - PingTamperDetector (~> 2.2.0)
+  - PingOidc (2.2.0):
+    - PingBrowser (~> 2.2.0)
+    - PingCommons (~> 2.2.0)
+    - PingOrchestrate (~> 2.2.0)
+  - PingOneProtect (2.2.0):
+    - PingDavinciPlugin (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
     - PingOneSignals (~> 5.4.0)
   - PingOneSignals (5.4.0)
-  - PingOrchestrate (2.1.0):
-    - PingNetwork (~> 2.1.0)
-    - PingStorage (~> 2.1.0)
-  - PingPush (2.1.0):
-    - PingNetwork (~> 2.1.0)
-    - PingTamperDetector (~> 2.1.0)
-  - PingStorage (2.1.0)
-  - PingTamperDetector (2.1.0):
-    - PingCommons (~> 2.1.0)
+  - PingOrchestrate (2.2.0):
+    - PingNetwork (~> 2.2.0)
+    - PingStorage (~> 2.2.0)
+  - PingPush (2.2.0):
+    - PingNetwork (~> 2.2.0)
+    - PingTamperDetector (~> 2.2.0)
+  - PingStorage (2.2.0)
+  - PingTamperDetector (2.2.0):
+    - PingCommons (~> 2.2.0)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2265,7 +2262,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBinding (= 2.1.0)
+    - PingBinding (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2296,7 +2293,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBinding (= 2.1.0)
+    - PingBinding (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2327,8 +2324,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBrowser (= 2.1.0)
-    - PingLogger (= 2.1.0)
+    - PingBrowser (= 2.2.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2360,8 +2357,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBrowser (= 2.1.0)
-    - PingLogger (= 2.1.0)
+    - PingBrowser (= 2.2.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2451,12 +2448,12 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinci (= 2.1.0)
-    - PingDavinciPlugin (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingDavinci (= 2.2.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2487,12 +2484,12 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinci (= 2.1.0)
-    - PingDavinciPlugin (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingDavinci (= 2.2.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2523,7 +2520,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceClient (= 2.1.0)
+    - PingDeviceClient (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2554,7 +2551,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceClient (= 2.1.0)
+    - PingDeviceClient (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2585,7 +2582,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceId (= 2.1.0)
+    - PingDeviceId (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2616,7 +2613,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceId (= 2.1.0)
+    - PingDeviceId (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2647,7 +2644,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceProfile (= 2.1.0)
+    - PingDeviceProfile (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2678,7 +2675,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDeviceProfile (= 2.1.0)
+    - PingDeviceProfile (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2709,7 +2706,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingExternalIdP (= 2.1.0)
+    - PingExternalIdP (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2740,7 +2737,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingExternalIdP (= 2.1.0)
+    - PingExternalIdP (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2771,8 +2768,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingFido (= 2.1.0)
-    - PingLogger (= 2.1.0)
+    - PingFido (= 2.2.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2803,8 +2800,8 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingFido (= 2.1.0)
-    - PingLogger (= 2.1.0)
+    - PingFido (= 2.2.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2835,13 +2832,13 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinciPlugin (= 2.1.0)
-    - PingJourney (= 2.1.0)
-    - PingJourneyPlugin (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingJourney (= 2.2.0)
+    - PingJourneyPlugin (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2872,14 +2869,14 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinciPlugin (= 2.1.0)
-    - PingFido (= 2.1.0)
-    - PingJourney (= 2.1.0)
-    - PingJourneyPlugin (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingFido (= 2.2.0)
+    - PingJourney (= 2.2.0)
+    - PingJourneyPlugin (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2910,7 +2907,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingLogger (= 2.1.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2941,7 +2938,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingLogger (= 2.1.0)
+    - PingLogger (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -2972,7 +2969,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingOath (= 2.1.0)
+    - PingOath (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3003,7 +3000,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingOath (= 2.1.0)
+    - PingOath (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3034,11 +3031,11 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBrowser (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingBrowser (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3069,11 +3066,11 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingBrowser (= 2.1.0)
-    - PingLogger (= 2.1.0)
-    - PingOidc (= 2.1.0)
-    - PingOrchestrate (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingBrowser (= 2.2.0)
+    - PingLogger (= 2.2.0)
+    - PingOidc (= 2.2.0)
+    - PingOrchestrate (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3104,9 +3101,9 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinci (= 2.1.0)
-    - PingDavinciPlugin (= 2.1.0)
-    - PingOneProtect (= 2.1.0)
+    - PingDavinci (= 2.2.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingOneProtect (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3137,9 +3134,9 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingDavinci (= 2.1.0)
-    - PingDavinciPlugin (= 2.1.0)
-    - PingOneProtect (= 2.1.0)
+    - PingDavinci (= 2.2.0)
+    - PingDavinciPlugin (= 2.2.0)
+    - PingOneProtect (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3170,9 +3167,9 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingLogger (~> 2.1.0)
-    - PingPush (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingLogger (= 2.2.0)
+    - PingPush (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3203,9 +3200,9 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingLogger (~> 2.1.0)
-    - PingPush (= 2.1.0)
-    - PingStorage (= 2.1.0)
+    - PingLogger (= 2.2.0)
+    - PingPush (= 2.2.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3236,7 +3233,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingStorage (= 2.1.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3267,7 +3264,7 @@ PODS:
     - fmt
     - glog
     - hermes-engine
-    - PingStorage (= 2.1.0)
+    - PingStorage (= 2.2.0)
     - RCT-Folly
     - RCT-Folly/Fabric
     - RCTRequired
@@ -3303,28 +3300,6 @@ DEPENDENCIES:
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - GoogleUtilities
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
-  - PingAuthMigration (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingBinding (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingBrowser (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingCommons (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingDavinci (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingDavinciPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingDeviceClient (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingDeviceId (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingDeviceProfile (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingExternalIdP (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingFido (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingJourney (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingJourneyPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingLogger (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingNetwork (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingOath (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingOidc (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingOneProtect (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingOrchestrate (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingPush (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingStorage (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
-  - PingTamperDetector (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
   - RCT-Folly (from `../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
@@ -3433,6 +3408,28 @@ SPEC REPOS:
     - GoogleUtilities
     - PingOneSignals
     - RecaptchaInterop
+    - PingBinding
+    - PingBrowser
+    - PingCommons
+    - PingDavinci
+    - PingDavinciPlugin
+    - PingDeviceClient
+    - PingDeviceId
+    - PingDeviceProfile
+    - PingExternalIdP
+    - PingFido
+    - PingJourney
+    - PingJourneyPlugin
+    - PingLogger
+    - PingNetwork
+    - PingOath
+    - PingOidc
+    - PingOneProtect
+    - PingOneSignals
+    - PingOrchestrate
+    - PingPush
+    - PingStorage
+    - PingTamperDetector
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -3451,72 +3448,6 @@ EXTERNAL SOURCES:
   hermes-engine:
     :podspec: "../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-2025-05-06-RNv0.80.0-4eb6132a5bf0450bf4c6c91987675381d7ac8bca
-  PingAuthMigration:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingBinding:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingBrowser:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingCommons:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDavinci:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDavinciPlugin:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceClient:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceId:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceProfile:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingExternalIdP:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingFido:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingJourney:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingJourneyPlugin:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingLogger:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingNetwork:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOath:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOidc:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOneProtect:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOrchestrate:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingPush:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingStorage:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingTamperDetector:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
   RCT-Folly:
     :podspec: "../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -3684,74 +3615,6 @@ EXTERNAL SOURCES:
   Yoga:
     :path: "../../node_modules/react-native/ReactCommon/yoga"
 
-CHECKOUT OPTIONS:
-  PingAuthMigration:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingBinding:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingBrowser:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingCommons:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDavinci:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDavinciPlugin:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceClient:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceId:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingDeviceProfile:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingExternalIdP:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingFido:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingJourney:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingJourneyPlugin:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingLogger:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingNetwork:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOath:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOidc:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOneProtect:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingOrchestrate:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingPush:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingStorage:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-  PingTamperDetector:
-    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
-    :git: https://github.com/ForgeRock/ping-ios-sdk.git
-
 SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
@@ -3761,29 +3624,28 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   GoogleUtilities: 7dc09b3fa9ecb5c2298b952313d14628b61b9da3
   hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
-  PingAuthMigration: 73ce3670f4c4fa04236960f091278bf362ee2ff3
-  PingBinding: e6c18b25ca49463faa790a8d7ab25d81197f67e0
-  PingBrowser: 9654254bfc8651cb81ca566cb7459459efa8a600
-  PingCommons: 62bde3af35f24a13e9b120e0ea098e467655cad6
-  PingDavinci: cb1e283b9fce8cf74ed409d8610ccfe9bc2dca41
-  PingDavinciPlugin: 7442a6d12d980368d2d1ce504e6e4c863826f4ca
-  PingDeviceClient: 7f61abbd4c2035b1551d57f97b35907adde85a9c
-  PingDeviceId: 60ca36f84b4c2d44a003f5552a6ef91dbaf9ec7a
-  PingDeviceProfile: 78f5b8fb8090457d50e6d96165da0e7b5f8e6a37
-  PingExternalIdP: 9f4f57dc168d8c182df79942e593333e4a8ab1ad
-  PingFido: 405240423b1865880811d0e24c6a40a4527f0b84
-  PingJourney: c60d7ac6f78c905d4fdaff35051e38ab2bff046c
-  PingJourneyPlugin: d2eb4c91a7b507466732caa0611321672d3175f7
-  PingLogger: 6e79b430564762c2a815b09cee7e099b9474d036
-  PingNetwork: 97b4a783caca3ff9382ecbfe2b6da1cff10ed647
-  PingOath: 34d6c81f32c87a4f568fceb48b531cd1be3e9464
-  PingOidc: e6d28c4d8c130691872d6aa3b12a1ef498567957
-  PingOneProtect: 4ced7b27c9e26d1ea9b8d29775121efd738d9000
+  PingBinding: 850125ec951fc99768a472e14a1c397bee004270
+  PingBrowser: f737892e1829b22045a28f39b1a9312d94715a28
+  PingCommons: ca294c672508e368d5f15c25d1bf9065c21c5e96
+  PingDavinci: acb96947265c451af7b0d0a085b0ca1f1b35fc38
+  PingDavinciPlugin: 99457d93adfe390b6bbe9867d378c293cdaf5967
+  PingDeviceClient: d79ff372a6eebe82be453bbf691085342947483e
+  PingDeviceId: 907a6d33cf9602b6e26cc4c369d9fb07b4a249d8
+  PingDeviceProfile: c03b2000192640aaa26f51eaa64ca1042c436c79
+  PingExternalIdP: 0702ba129c28dd3a32127d9375c2aec0a0608bb5
+  PingFido: b2d05dc291be14e08fbcd5a928af89b78313288b
+  PingJourney: 78e3623cd19bf46f9545ceecfebf74930b1c3df9
+  PingJourneyPlugin: 00f220ce726dc13d3035fcd3558154f748fd4d59
+  PingLogger: 9be84b2f400c64ef33ebb14a1576619e40df9a9e
+  PingNetwork: 7ed29bac14cba2313e7cec41682874999c687c21
+  PingOath: 53294bef82d2e1fc9dad4841b8a0357cfcba426d
+  PingOidc: 8d71b860ee4094de50a357e327bdc01ffb57c42c
+  PingOneProtect: 78e7e5d0a4e94c547630e3411afb8e490c7eb7d2
   PingOneSignals: 3d14d429201435960e062e3481356b9f21fa657f
-  PingOrchestrate: 90365995dc6fc5bd14f78ae5c04f07d46d265523
-  PingPush: aef2216cade878592b6c7166a90d8b15f1c0b649
-  PingStorage: fdaebdd80f4359dc7eb4f780429cc6840ed01cee
-  PingTamperDetector: 99159fd12d0ffc40db6096fcff99daf554f248c8
+  PingOrchestrate: 6906f1333742fc7dc2fcf719ba1e2685b8213a19
+  PingPush: d1936d0d0ec914421886826260898efc76c379b0
+  PingStorage: e19ca8fc7f895fb345090f235da81bd1cff55b51
+  PingTamperDetector: 351caabae1f1e53f608acac8614d8d307f5fff7f
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
@@ -3851,25 +3713,25 @@ SPEC CHECKSUMS:
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
-  RNPingBinding: 2d36e1a69ee11ee53f2bf98edb4968240429f335
-  RNPingBrowser: abea36612516b9187c1841c3485e0b5eabe6bcce
+  RNPingBinding: e4d2b04deac5fd415bc6c51183f8ab7f20a32cae
+  RNPingBrowser: c8c9c7d39ae023f2dd3c5d59c7b5577e2afb5093
   RNPingCore: f4a461e75fbe3fccf3263e2b91938d9887324b32
-  RNPingDavinci: f58fdf67db1830a7b7c41b583ab26a6b780cf794
-  RNPingDeviceClient: 018ce1c81f671b37d943f464f799852dbacd4d9a
-  RNPingDeviceId: 2537972a09ab70d4a03a7aa644d07770c59cc79f
-  RNPingDeviceProfile: 44fde49a965fb86123fca5db6cfc3075d29a28db
-  RNPingExternalIdp: ba514170a01d4ba51d141dcfe41d332bd092e300
-  RNPingFido: 6a17bfc93afcc20d5172c37ce39997a91e4576c6
-  RNPingJourney: f2907549187da7e4120e814c8704d4e96dcbdaa0
-  RNPingLogger: 493cca89cf636799f9e580115d46f37426afcbcb
-  RNPingOath: a84840889256fb6d360d6b0303b858fe6e5e1cd2
-  RNPingOidc: 3b1217530a24d2ab011be52c187bb7a7d3ba1bd4
-  RNPingProtect: db22b6fce139d3c9026797f10fb7a4366f468c69
-  RNPingPush: e276582ce2ee815d39b40f4f91c9399c4238728c
-  RNPingStorage: 75308e520dd9e0f8faf0802b73aa89e403f7ea3a
+  RNPingDavinci: 9b356e3b5bf6f0c3f956a20df788d2046d126bec
+  RNPingDeviceClient: ffede82b969dd2119f02a79735a3e87bf2bd5290
+  RNPingDeviceId: 24b703e3ae56c1e565fb3817916baa8874c51886
+  RNPingDeviceProfile: 2ec43b7ac75897523af8222688b7e98a5a695eb9
+  RNPingExternalIdp: 017fdda77ecf222960029213ad7a50bf54f9d067
+  RNPingFido: faf7fbaeeef3c4e0513091eacfc46dd45579baa8
+  RNPingJourney: 6cf81cf6036580d995ebf92e41843791251487bf
+  RNPingLogger: 0ce33153b0caf1790dc8156986557924767a1b69
+  RNPingOath: 58432fb0f7f72eaea13dc8c761a2fe45974da716
+  RNPingOidc: bd7d8b6f5dc7da893c1f0d713058500a16606a95
+  RNPingProtect: f80df46fd64be64c343ca1507315ec9093c53863
+  RNPingPush: 1043c9fcb01b0172b99690d2fe7f12d61948f49d
+  RNPingStorage: ce105d17812c024e043f8234ef62d1e5fdf80e25
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: 77b562ffbc1cd52fbd04b59a77f5f91ce5968332
+PODFILE CHECKSUM: 9ceaad74f9b24aba51880ae069d18f1dffba35e4
 
 COCOAPODS: 1.16.2

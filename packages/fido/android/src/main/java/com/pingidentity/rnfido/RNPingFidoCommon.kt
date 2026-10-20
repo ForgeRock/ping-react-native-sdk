@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.ReactApplicationContext
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.fido.Constants
+import com.pingidentity.fido.FidoAuthenticateCustomizer
 import com.pingidentity.fido.FidoClient
 import com.pingidentity.fido.FidoClientConfig
 import com.pingidentity.fido.davinci.AbstractFidoCollector
@@ -44,7 +45,7 @@ import kotlinx.serialization.json.put
 object RNPingFidoCommon {
   private const val TAG = "RNPingFidoCommon"
   private const val LOGGER_ID_KEY = "loggerId"
-  private const val USE_FIDO2_CLIENT_KEY = "useFido2Client"
+  private const val USE_FIDO2_API_CLIENT_KEY = "useFido2ApiClient"
   private const val FIDO2_COLLECTOR_TYPE = "FIDO2"
   private const val ACTION_REGISTER = "REGISTER"
   private const val ACTION_AUTHENTICATE = "AUTHENTICATE"
@@ -57,7 +58,7 @@ object RNPingFidoCommon {
    */
   private data class CallConfig(
     val loggerId: String?,
-    val useFido2Client: Boolean?
+    val useFido2ApiClient: Boolean?
   )
 
   /** Guards one-time DaVinci collector serializer registration. */
@@ -405,7 +406,7 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      callback.authenticate().fold(
+      callback.authenticate(authenticateCustomizer(parseCallConfig(config))).fold(
         onSuccess = {
           promise.resolve(createJourneyResultPayload(type = "success"))
         },
@@ -553,7 +554,7 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      collector.authenticate().fold(
+      collector.authenticate(authenticateCustomizer(parseCallConfig(config))).fold(
         onSuccess = { payload ->
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
@@ -678,6 +679,19 @@ object RNPingFidoCommon {
   }
 
   /**
+   * Builds the authentication customizer that applies the per-call FIDO2 API selection.
+   *
+   * The native SDK exposes API selection only on [FidoAuthenticateCustomizer], so the same
+   * customizer is used for standalone, Journey callback and DaVinci collector authentication.
+   * When no override is supplied the native auto-detection default is kept.
+   */
+  private fun authenticateCustomizer(
+    callConfig: CallConfig
+  ): FidoAuthenticateCustomizer.() -> Unit = {
+    callConfig.useFido2ApiClient?.let { useFido2ApiClient = it }
+  }
+
+  /**
    * Parses per-call configuration payload.
    */
   private fun parseCallConfig(config: ReadableMap): CallConfig {
@@ -688,17 +702,17 @@ object RNPingFidoCommon {
     } else {
       null
     }
-    val useFido2Client = if (
-      config.hasKey(USE_FIDO2_CLIENT_KEY) &&
-        config.getType(USE_FIDO2_CLIENT_KEY) == ReadableType.Boolean
+    val useFido2ApiClient = if (
+      config.hasKey(USE_FIDO2_API_CLIENT_KEY) &&
+        config.getType(USE_FIDO2_API_CLIENT_KEY) == ReadableType.Boolean
     ) {
-      config.getBoolean(USE_FIDO2_CLIENT_KEY)
+      config.getBoolean(USE_FIDO2_API_CLIENT_KEY)
     } else {
       null
     }
     return CallConfig(
       loggerId = loggerId,
-      useFido2Client = useFido2Client
+      useFido2ApiClient = useFido2ApiClient
     )
   }
 

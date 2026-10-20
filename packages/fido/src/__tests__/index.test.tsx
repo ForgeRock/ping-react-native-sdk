@@ -139,13 +139,13 @@ describe('FIDO API', () => {
     });
     const client = createFidoClient({
       logger,
-      android: { useFido2Client: true },
+      android: { useFido2ApiClient: true },
     });
 
     await client.register({ challenge: 'abc' });
     expect(registerNative).toHaveBeenCalledWith(
       { challenge: 'abc' },
-      { loggerId: 'logger-1', useFido2Client: true },
+      { loggerId: 'logger-1', useFido2ApiClient: true },
     );
   });
 
@@ -255,7 +255,7 @@ describe('FIDO API', () => {
         warn: jest.fn(),
         error: jest.fn(),
       },
-      android: { useFido2Client: true },
+      android: { useFido2ApiClient: true },
     });
 
     await expect(
@@ -270,7 +270,7 @@ describe('FIDO API', () => {
       },
       {
         loggerId: 'logger-1',
-        useFido2Client: true,
+        useFido2ApiClient: true,
       },
     );
   });
@@ -328,7 +328,7 @@ describe('FIDO API', () => {
       { challenge: 'abc' },
       {
         loggerId: undefined,
-        useFido2Client: undefined,
+        useFido2ApiClient: undefined,
       },
     );
   });
@@ -341,10 +341,10 @@ describe('FIDO API', () => {
     });
 
     const clientA = createFidoClient({
-      android: { useFido2Client: true },
+      android: { useFido2ApiClient: true },
     });
     const clientB = createFidoClient({
-      android: { useFido2Client: false },
+      android: { useFido2ApiClient: false },
     });
 
     await clientA.register({ challenge: 'a' });
@@ -355,7 +355,7 @@ describe('FIDO API', () => {
       { challenge: 'a' },
       {
         loggerId: undefined,
-        useFido2Client: true,
+        useFido2ApiClient: true,
       },
     );
     expect(registerNative).toHaveBeenNthCalledWith(
@@ -363,7 +363,7 @@ describe('FIDO API', () => {
       { challenge: 'b' },
       {
         loggerId: undefined,
-        useFido2Client: false,
+        useFido2ApiClient: false,
       },
     );
   });
@@ -437,7 +437,7 @@ describe('FIDO API', () => {
     };
     const client = createFidoClient({
       logger,
-      android: { useFido2Client: true },
+      android: { useFido2ApiClient: true },
     });
 
     await expect(
@@ -451,7 +451,7 @@ describe('FIDO API', () => {
       { index: 1 },
       {
         loggerId: 'logger-1',
-        useFido2Client: true,
+        useFido2ApiClient: true,
       },
     );
     expect(logger.info).toHaveBeenCalledWith(
@@ -492,7 +492,7 @@ describe('FIDO API', () => {
       { index: 2 },
       {
         loggerId: 'logger-2',
-        useFido2Client: undefined,
+        useFido2ApiClient: undefined,
       },
     );
     expect(logger.info).toHaveBeenCalledWith(
@@ -638,7 +638,7 @@ describe('FIDO API', () => {
       {},
       {
         loggerId: undefined,
-        useFido2Client: undefined,
+        useFido2ApiClient: undefined,
       },
     );
   });

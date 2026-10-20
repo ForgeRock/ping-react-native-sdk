@@ -17,10 +17,8 @@ import com.pingidentity.logger.Logger
 import com.pingidentity.mfa.commons.policy.BiometricAvailablePolicy
 import com.pingidentity.mfa.commons.policy.DeviceTamperingPolicy
 import com.pingidentity.mfa.commons.policy.MfaPolicyEvaluator
-import com.pingidentity.mfa.oath.OathAlgorithm
 import com.pingidentity.mfa.oath.OathClient
 import com.pingidentity.mfa.oath.OathCredential
-import com.pingidentity.mfa.oath.OathType
 import com.pingidentity.mfa.oath.storage.OathStorage
 import com.pingidentity.mfa.oath.storage.SQLOathStorage
 import com.pingidentity.rncore.CoreRuntime
@@ -39,7 +37,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import com.pingidentity.rncore.utils.launchBridge
-import java.util.Date
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
@@ -362,7 +359,7 @@ object RNPingOathCommon {
     )
     scope.launchBridge(promise, OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND, Dispatchers.Default) {
       try {
-        val decoded = decodeCredential(credential)
+        val decoded = decodeDisplayUpdate(credential)
         val saved = entry.mutex.withLock {
           val stored = entry.client.getCredential(decoded.id).getOrThrow()
           stored?.let {
@@ -618,65 +615,43 @@ object RNPingOathCommon {
   }
 
   /**
-   * Decode an [OathCredential] from a [ReadableMap] received from the React Native bridge.
+   * Fields of a credential that JS callers may edit through [saveCredential].
+   *
+   * @property id The identifier of the stored credential to update.
+   * @property displayIssuer The user-facing issuer label.
+   * @property displayAccountName The user-facing account label.
+   */
+  private data class CredentialDisplayUpdate(
+    val id: String,
+    val displayIssuer: String,
+    val displayAccountName: String
+  )
+
+  /**
+   * Decode the editable display fields of a credential from a [ReadableMap].
    *
    * @remarks
-   * All public credential fields are decoded from the map. The `secret` field is the **only**
-   * intentionally omitted field — the credential's secret is already stored natively by the time
-   * this is called and must never travel across the bridge. All other fields, including `createdAt`,
-   * are decoded to preserve round-trip fidelity.
-   * The `algorithm` field is decoded from its uppercase string name (e.g. `"SHA256"`) using
-   * [OathAlgorithm.valueOf]; missing or unrecognised values default to [OathAlgorithm.SHA1].
-   * The `createdAt` field is decoded from milliseconds since epoch (as sent by [encodeCredential]);
-   * when absent it defaults to `Date()` (now), consistent with [OathCredential]'s own default.
+   * A full [OathCredential] is deliberately not built here: its constructor rejects a blank
+   * `secret`, and the secret never travels across the bridge. The stored credential supplies every
+   * other field in [saveCredential].
+   * An absent display field falls back to the base `issuer`/`accountName` value, which overwrites
+   * a user-customised stored label on save. The JS facade always sends both display fields
+   * (required by the `OathCredential` type), so the fallback is only reachable by direct
+   * native-module callers.
    *
    * @param map The bridge map containing credential fields.
-   * @return A reconstructed [OathCredential].
-   * @throws IllegalArgumentException if required fields are missing or have invalid values.
+   * @return The credential id and display fields; display fields fall back to `issuer` and
+   *   `accountName` when absent.
+   * @throws IllegalArgumentException if `id`, `issuer`, or `accountName` is missing.
    */
-  private fun decodeCredential(map: ReadableMap): OathCredential {
-    val id = map.getString("id") ?: UUID.randomUUID().toString()
+  private fun decodeDisplayUpdate(map: ReadableMap): CredentialDisplayUpdate {
+    val id = requireNotNull(map.getString("id")) { "credential.id is required" }
     val issuer = requireNotNull(map.getString("issuer")) { "credential.issuer is required" }
     val accountName = requireNotNull(map.getString("accountName")) { "credential.accountName is required" }
-    val displayIssuer = map.getString("displayIssuer") ?: issuer
-    val displayAccountName = map.getString("displayAccountName") ?: accountName
-    val typeStr = map.getString("type") ?: "TOTP"
-    val oathType = OathType.fromString(typeStr)
-    val algorithmStr = map.getString("algorithm") ?: "SHA1"
-    val oathAlgorithm = runCatching { OathAlgorithm.valueOf(algorithmStr) }.getOrDefault(OathAlgorithm.SHA1)
-    val secret = map.getString("secret") ?: ""
-    val digits = if (map.hasKey("digits")) map.getInt("digits") else 6
-    val period = if (map.hasKey("period")) map.getInt("period") else 30
-    val counter = if (map.hasKey("counter")) map.getDouble("counter").toLong() else 0L
-    val userId = if (map.hasKey("userId")) map.getString("userId") else null
-    val resourceId = if (map.hasKey("resourceId")) map.getString("resourceId") else null
-    val imageURL = if (map.hasKey("imageURL")) map.getString("imageURL") else null
-    val backgroundColor = if (map.hasKey("backgroundColor")) map.getString("backgroundColor") else null
-    val isLocked = if (map.hasKey("isLocked")) map.getBoolean("isLocked") else false
-    val policies = if (map.hasKey("policies")) map.getString("policies") else null
-    val lockingPolicy = if (map.hasKey("lockingPolicy")) map.getString("lockingPolicy") else null
-    val createdAt = if (map.hasKey("createdAt")) Date(map.getDouble("createdAt").toLong()) else Date()
-
-    return OathCredential(
+    return CredentialDisplayUpdate(
       id = id,
-      userId = userId,
-      resourceId = resourceId,
-      issuer = issuer,
-      displayIssuer = displayIssuer,
-      accountName = accountName,
-      displayAccountName = displayAccountName,
-      oathType = oathType,
-      oathAlgorithm = oathAlgorithm,
-      secret = secret,
-      digits = digits,
-      period = period,
-      counter = counter,
-      imageURL = imageURL,
-      backgroundColor = backgroundColor,
-      isLocked = isLocked,
-      policies = policies,
-      lockingPolicy = lockingPolicy,
-      createdAt = createdAt
+      displayIssuer = map.getString("displayIssuer") ?: issuer,
+      displayAccountName = map.getString("displayAccountName") ?: accountName
     )
   }
 }

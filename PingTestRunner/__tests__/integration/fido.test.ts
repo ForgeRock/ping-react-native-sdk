@@ -314,7 +314,7 @@ describe('@ping-identity/rn-fido — integration', () => {
       await fido.register(options);
       expect(mock.registerCredential).toHaveBeenCalledWith(options, {
         loggerId: undefined,
-        useFido2Client: undefined,
+        useFido2ApiClient: undefined,
       });
     });
 
@@ -374,7 +374,7 @@ describe('@ping-identity/rn-fido — integration', () => {
       await fido.authenticate(options);
       expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {
         loggerId: undefined,
-        useFido2Client: undefined,
+        useFido2ApiClient: undefined,
       });
     });
 
@@ -444,7 +444,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
     });
@@ -465,7 +465,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
     });
@@ -503,7 +503,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         { index: 0, deviceName: 'SM-A566W' },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
@@ -545,7 +545,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         { index: 0 },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
@@ -585,7 +585,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         { index: 0 },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
       expect(result).toEqual({ attestationValue: { id: 'cred-1' } });
@@ -630,7 +630,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         { index: 0 },
         {
           loggerId: undefined,
-          useFido2Client: undefined,
+          useFido2ApiClient: undefined,
         },
       );
       expect(result).toEqual({ assertionValue: { id: 'cred-1' } });

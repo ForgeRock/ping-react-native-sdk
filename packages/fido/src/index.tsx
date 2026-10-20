@@ -52,7 +52,8 @@ import { FidoError, fidoCollectorType } from './types';
  * Logger integration is optional and uses `logger(...).nativeHandle.id` when provided.
  *
  * Current runtime behavior:
- * - Android applies `useFido2Client` for standalone FIDO operations.
+ * - Android applies `useFido2ApiClient` to standalone `authenticate`, `authenticateForJourney`
+ *   and `authenticateForDaVinci`. Registration has no API selection.
  * - The native logger id forwards to standalone iOS operations; Journey and
  *   DaVinci collector ceremonies keep their workflow-configured native logger.
  * - This call also registers `FIDO2` as an integration collector type, so
@@ -67,14 +68,14 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
   const logger = config.logger ?? noopLogger;
   const resolvedConfig: FidoClientConfig = {
     loggerId: logger.nativeHandle?.id?.trim() || undefined,
-    useFido2Client: config.android?.useFido2Client,
+    useFido2ApiClient: config.android?.useFido2ApiClient,
   };
 
   logger.debug(
     `FIDO createClient config ${JSON.stringify(
       {
         hasLogger: Boolean(resolvedConfig.loggerId),
-        android: { useFido2Client: resolvedConfig.useFido2Client },
+        android: { useFido2ApiClient: resolvedConfig.useFido2ApiClient },
       },
       null,
       2,

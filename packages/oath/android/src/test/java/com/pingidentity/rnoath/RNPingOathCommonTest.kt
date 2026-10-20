@@ -247,11 +247,12 @@ class RNPingOathCommonTest {
   }
 
   // ---------------------------------------------------------------------------
-  // decodeCredential field coverage: policies + lockingPolicy round-trip
+  // saveCredential fetch-then-patch: stored-field preservation
   //
   // When JS reads a credential, mutates it, and calls saveCredential() the
-  // bridge map includes `policies` and `lockingPolicy`. Before this fix those
-  // fields were silently dropped; after the fix they must survive the round-trip.
+  // bridge map carries only the editable display fields. `secret`, `policies`,
+  // and `lockingPolicy` are not editable over the bridge; they must be
+  // preserved from the stored credential, never taken from the map.
   // ---------------------------------------------------------------------------
 
   @Test
@@ -348,6 +349,74 @@ class RNPingOathCommonTest {
       OathErrorCodes.OATH_CREDENTIAL_NOT_FOUND,
       savePromise.rejectUserInfo!!.getString("error")
     )
+  }
+
+  // ---------------------------------------------------------------------------
+  // saveCredential required-field validation
+  //
+  // decodeDisplayUpdate() requires id, issuer, and accountName; a missing field
+  // surfaces as OATH_INVALID_PARAMETER (argument_error) rather than proceeding
+  // to a lookup that could never succeed.
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun saveCredential_missingId_rejectsWithInvalidParameterError() {
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val credMap = JavaOnlyMap().apply {
+      putString("issuer", "Ping")
+      putString("accountName", "user@example.com")
+    }
+
+    val promise = TestPromise()
+    RNPingOathCommon.saveCredential(handle, credMap, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val info = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals(OathErrorCodes.OATH_INVALID_PARAMETER, info.getString("error"))
+    assertEquals("argument_error", info.getString("type"))
+  }
+
+  @Test
+  fun saveCredential_missingIssuer_rejectsWithInvalidParameterError() {
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val credMap = JavaOnlyMap().apply {
+      putString("id", "cred-id")
+      putString("accountName", "user@example.com")
+    }
+
+    val promise = TestPromise()
+    RNPingOathCommon.saveCredential(handle, credMap, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val info = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals(OathErrorCodes.OATH_INVALID_PARAMETER, info.getString("error"))
+    assertEquals("argument_error", info.getString("type"))
+  }
+
+  @Test
+  fun saveCredential_missingAccountName_rejectsWithInvalidParameterError() {
+    val mockClient = io.mockk.mockk<OathClient>(relaxed = true)
+    val handle = createHandleWithMockedClient(mockClient)
+
+    val credMap = JavaOnlyMap().apply {
+      putString("id", "cred-id")
+      putString("issuer", "Ping")
+    }
+
+    val promise = TestPromise()
+    RNPingOathCommon.saveCredential(handle, credMap, promise)
+    scope.advanceUntilIdle()
+    promise.await()
+
+    val info = promise.rejectUserInfo ?: JavaOnlyMap()
+    assertEquals(OathErrorCodes.OATH_INVALID_PARAMETER, info.getString("error"))
+    assertEquals("argument_error", info.getString("type"))
   }
 
   @Test
