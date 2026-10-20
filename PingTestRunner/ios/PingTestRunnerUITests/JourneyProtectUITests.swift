@@ -24,7 +24,6 @@ import XCTest
 final class JourneyProtectUITests: BaseTestCase {
 
     private static let tree = "TEST_PING_ONE_PROTECT_EVALUATE"
-    private static let variant = "evaluate-default"
     private let protectNetTimeout: TimeInterval = 45
 
     /// Launches the journey scenario. Called from each test after its skip checks so a
@@ -50,7 +49,7 @@ final class JourneyProtectUITests: BaseTestCase {
         launchProtectJourney()
         elementWithTestID("journey-start-btn").tapWhenReady()
         waitForElementWithTestID("journey-field-ChoiceCallback:0", timeout: protectNetTimeout)
-        app.staticTexts[Self.variant].firstMatch.tapWhenReady()
+        elementWithTestID("journey-field-ChoiceCallback:0-option-0").tapWhenReady()
         elementWithTestID("journey-submit-btn").tapWhenReady()
         // Reaching the NameCallback proves the Initialize callback was auto-handled.
         waitForElementWithTestID("journey-field-NameCallback:0", timeout: protectNetTimeout)
