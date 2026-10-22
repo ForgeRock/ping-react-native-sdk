@@ -470,18 +470,26 @@ public class RNPingFidoCommon: NSObject {
         return
       }
 
-      let result = await matching[collectorIndex].register(window: window)
+      let collector = matching[collectorIndex]
+      let result = await collector.register(window: window)
       switch result {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
       case .failure(let error):
+        // The collector's errorCode is a WebAuthn DOMException name (set by
+        // handleError inside register()'s own failure path); forwarded as the
+        // clientError extra so apps can propagate it via next({collectors: []}).
+        let extras = FidoClientErrorMapper.extras(errorCode: collector.errorCode) {
+          collector.logger.w($0, error: nil)
+        }
         handlers.reject(
           GenericError(
             type: .fidoError,
             error: FidoErrorCode.registerError.rawValue,
-            message: error.localizedDescription
+            message: error.localizedDescription,
+            extras: extras
           ),
-          underlying: error as NSError
+          underlying: FidoClientErrorMapper.underlying(error, extras: extras)
         )
       }
     }
@@ -557,11 +565,18 @@ public class RNPingFidoCommon: NSObject {
         return
       }
 
-      let result = await matching[collectorIndex].authenticate(window: window)
+      let collector = matching[collectorIndex]
+      let result = await collector.authenticate(window: window)
       switch result {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
       case .failure(let error):
+        // The collector's errorCode is a WebAuthn DOMException name (set by
+        // handleError inside authenticate()'s own failure path); forwarded as the
+        // clientError extra so apps can propagate it via next({collectors: []}).
+        let extras = FidoClientErrorMapper.extras(errorCode: collector.errorCode) {
+          collector.logger.w($0, error: nil)
+        }
         let code = isRecoverableFidoAuthenticationFailure(error)
           ? FidoErrorCode.authenticateCancelled
           : FidoErrorCode.authenticateError
@@ -569,9 +584,10 @@ public class RNPingFidoCommon: NSObject {
           GenericError(
             type: .fidoError,
             error: code.rawValue,
-            message: error.localizedDescription
+            message: error.localizedDescription,
+            extras: extras
           ),
-          underlying: error as NSError
+          underlying: FidoClientErrorMapper.underlying(error, extras: extras)
         )
       }
     }
