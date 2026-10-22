@@ -196,6 +196,38 @@ function hasCallbackKey(callback: JourneyCallback, key: string): boolean {
 }
 
 /**
+ * Resolves the reCAPTCHA Enterprise site key from a callback payload.
+ *
+ * @param callback - Journey callback payload.
+ * @returns Site key from the callback payload, or an empty string when absent.
+ */
+function resolveRecaptchaSiteKey(callback: JourneyCallback): string {
+  // The AM server places the site key in the callback `output` array as
+  // `{ name: 'recaptchaSiteKey', value: <key> }`; the native bridge preserves
+  // the full AM JSON under `raw`. Also accept a top-level `recaptchaSiteKey`
+  // key for payloads that surface it directly.
+  const raw = callback.raw;
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const rawRecord = raw as Record<string, unknown>;
+    const outputs = readArray(rawRecord.output);
+    for (const output of outputs) {
+      if (!output || typeof output !== 'object') {
+        continue;
+      }
+      const entry = output as Record<string, unknown>;
+      if (entry.name === 'recaptchaSiteKey') {
+        return readString(entry.value, '');
+      }
+    }
+    const rawSiteKey = rawRecord.recaptchaSiteKey;
+    if (rawSiteKey !== undefined) {
+      return readString(rawSiteKey, '');
+    }
+  }
+  return readString(callback.recaptchaSiteKey, '');
+}
+
+/**
  * Resolves required flag from callback payload using common key variants.
  *
  * @param callback - Journey callback payload.
@@ -574,6 +606,14 @@ export function normalizeCallbacks(
 
     if (type === nativeExtensionCallbackType.SelectIdpCallback) {
       return { ...base, type };
+    }
+
+    if (type === callbackType.ReCaptchaEnterpriseCallback) {
+      return {
+        ...base,
+        type,
+        siteKey: resolveRecaptchaSiteKey(callback),
+      };
     }
 
     return { ...base, type };

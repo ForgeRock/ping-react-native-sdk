@@ -128,7 +128,8 @@ export default function JourneyContinuePanel(
       type === nativeExtensionCallbackType.IdpCallback ||
       type === nativeExtensionCallbackType.SelectIdpCallback ||
       type === 'DeviceBindingCallback' ||
-      type === 'DeviceSigningVerifierCallback',
+      type === 'DeviceSigningVerifierCallback' ||
+      type === 'ReCaptchaEnterpriseCallback',
     [],
   );
 

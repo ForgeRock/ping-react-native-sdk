@@ -44,6 +44,8 @@ module.exports = {
     '^@ping-identity/rn-protect$':
       '<rootDir>/../packages/protect/src/index.tsx',
     '^@ping-identity/rn-push$': '<rootDir>/../packages/push/src/index.tsx',
+    '^@ping-identity/rn-recaptcha$':
+      '<rootDir>/../packages/recaptcha/src/index.tsx',
     '^@ping-identity/rn-storage$':
       '<rootDir>/../packages/storage/src/index.tsx',
     '^@ping-identity/rn-types$': '<rootDir>/../packages/types/src/index.ts',

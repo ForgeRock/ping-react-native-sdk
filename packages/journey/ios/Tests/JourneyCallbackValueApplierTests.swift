@@ -184,6 +184,32 @@ final class JourneyCallbackValueApplierTests: XCTestCase {
     }
   }
   @MainActor
+  func testApplyRejectsReCaptchaIntegrationCallbacks() async {
+    class ReCaptchaCallback {}
+    class ReCaptchaEnterpriseCallback {}
+
+    let cases: [(Any, String, String)] = [
+      (ReCaptchaCallback(), "ReCaptchaCallback", "ReCaptchaCallback (v2/v3) has no native integration — ReCaptchaEnterpriseCallback via @ping-identity/rn-recaptcha is the supported option"),
+      (ReCaptchaEnterpriseCallback(), "ReCaptchaEnterpriseCallback", "@ping-identity/rn-recaptcha"),
+    ]
+
+    for (callback, type, expectedRequirement) in cases {
+      do {
+        let mutations = [
+          JourneyCallbackValueApplier.CallbackMutation(type: type, value: "token", index: nil)
+        ]
+        try await JourneyCallbackValueApplier.applyToCallbacks([callback], mutations: mutations)
+        XCTFail("Expected missing integration error for \(type)")
+      } catch let JourneyBridgeError.missingIntegration(message) {
+        XCTAssertTrue(message.contains("requires additional native integration"))
+        XCTAssertTrue(message.contains(expectedRequirement))
+      } catch {
+        XCTFail("Expected missing integration error for \(type), got \(error)")
+      }
+    }
+  }
+
+  @MainActor
   func testApplyNormalizesExternalIdpAliasInputsForIntegrationCallbacks() async {
     class IdpCallback {}
     class SelectIdpCallback {}

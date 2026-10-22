@@ -411,6 +411,33 @@ export type JourneySelectIdpField = JourneyBaseField & {
 };
 
 /**
+ * Normalized field for a `ReCaptchaEnterpriseCallback`.
+ *
+ * @remarks
+ * Use `rn-recaptcha` (`verifyForJourney`) to drive the verification flow — the
+ * native callback reads the site key from its own server payload and
+ * auto-submits the token into the callback inputs.
+ *
+ * {@link JourneyReCaptchaEnterpriseField.siteKey} is informational only (for
+ * example, rendering a "protected by reCAPTCHA" badge) and is never needed to
+ * execute verification.
+ *
+ * @public
+ */
+export type JourneyReCaptchaEnterpriseField = JourneyBaseField & {
+  type: 'ReCaptchaEnterpriseCallback';
+  /**
+   * reCAPTCHA Enterprise site key from the callback payload.
+   *
+   * @remarks
+   * Informational only — `verifyForJourney` (from `@ping-identity/rn-recaptcha`)
+   * reads the site key natively from the callback and never accepts it as an
+   * argument. Empty string when the server payload omits the key.
+   */
+  siteKey: string;
+};
+
+/**
  * Union of every normalized field with a dedicated subtype.
  *
  * @remarks
@@ -436,7 +463,8 @@ type SpecializedField =
   | JourneyDeviceSigningVerifierField
   | JourneyDeviceProfileField
   | JourneyIdpField
-  | JourneySelectIdpField;
+  | JourneySelectIdpField
+  | JourneyReCaptchaEnterpriseField;
 
 /**
  * Callback types claimed by a dedicated field subtype in
@@ -466,9 +494,10 @@ export type JourneyUnknownField = JourneyBaseField & {
  * named typed fields directly on the field (for example `JourneyChoiceField`
  * has `choices: string[]` and `defaultChoice: number`). Callbacks from other
  * SDK packages — FIDO (`rn-fido`), device binding (`rn-binding`), device
- * profile (`rn-device-profile`), and external IdP (`rn-external-idp`) — are
- * represented as marker types or typed variants where the bridge emits named
- * fields. All other types fall through to {@link JourneyUnknownField}.
+ * profile (`rn-device-profile`), external IdP (`rn-external-idp`), and
+ * reCAPTCHA Enterprise (`rn-recaptcha`) — are represented as marker types or
+ * typed variants where the bridge emits named fields. All other types fall
+ * through to {@link JourneyUnknownField}.
  *
  * `field.raw` is the original native callback payload and is preserved as an
  * escape hatch on every variant.

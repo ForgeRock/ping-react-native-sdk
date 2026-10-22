@@ -320,6 +320,34 @@ class JourneyCallbackValueApplierTest {
   }
 
   @Test
+  fun applyThrowsForReCaptchaIntegrationCallbacks() {
+    class ReCaptchaCallback
+    class ReCaptchaEnterpriseCallback
+
+    val callbacks = listOf(
+      Triple(ReCaptchaCallback(), "ReCaptchaCallback", "ReCaptchaCallback (v2/v3) has no native integration — ReCaptchaEnterpriseCallback via @ping-identity/rn-recaptcha is the supported option"),
+      Triple(ReCaptchaEnterpriseCallback(), "ReCaptchaEnterpriseCallback", "@ping-identity/rn-recaptcha")
+    )
+
+    callbacks.forEach { (callback, type, expectedRequirement) ->
+      try {
+        runBlocking {
+          JourneyCallbackValueApplier.applyToCallbacks(
+            listOf(callback),
+            listOf(JourneyCallbackValueApplier.CallbackMutation(type, "payload", null))
+          )
+        }
+      } catch (error: IllegalStateException) {
+        assertTrue(error.message?.contains("additional native integration") == true)
+        assertTrue(error.message?.contains(expectedRequirement) == true)
+        return@forEach
+      }
+
+      throw AssertionError("Expected IllegalStateException for $type integration callback")
+    }
+  }
+
+  @Test
   fun applyThrowsForUnsupportedCallback() {
     class UnknownCustomCallback
 

@@ -50,8 +50,8 @@ internal object JourneyCallbackValueApplier {
         "PingOneProtectEvaluationCallback" to "PingOne Protect integration",
         "SelectIdpCallback" to "@ping-identity/rn-external-idp",
         "IdpCallback" to "@ping-identity/rn-external-idp",
-        "ReCaptchaCallback" to "ReCaptcha integration",
-        "ReCaptchaEnterpriseCallback" to "ReCaptcha Enterprise integration",
+        "ReCaptchaCallback" to "ReCaptchaCallback (v2/v3) has no native integration — ReCaptchaEnterpriseCallback via @ping-identity/rn-recaptcha is the supported option",
+        "ReCaptchaEnterpriseCallback" to "@ping-identity/rn-recaptcha",
         "DeviceBindingCallback" to "@ping-identity/rn-binding",
         "DeviceSigningVerifierCallback" to "@ping-identity/rn-binding"
     )

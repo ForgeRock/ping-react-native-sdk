@@ -59,6 +59,8 @@ target 'PingSampleApp' do
   :path => '../../node_modules/@ping-identity/rn-binding'
   pod 'RNPingDeviceClient',
   :path => '../../node_modules/@ping-identity/rn-device-client'
+  pod 'RNPingRecaptcha',
+  :path => '../../node_modules/@ping-identity/rn-recaptcha'
 
   # PingExternalIdPGoogle -> GoogleSignIn -> AppCheckCore pulls these in; neither
   # defines a module, which Swift requires to import them under static linkage.

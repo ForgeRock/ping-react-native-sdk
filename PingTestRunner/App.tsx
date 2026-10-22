@@ -45,6 +45,9 @@ const BrowserScenario = React.lazy(() => import('./scenarios/BrowserScenario'));
 const UseJourneyScenario = React.lazy(
   () => import('./scenarios/UseJourneyScenario'),
 );
+const RecaptchaScenario = React.lazy(
+  () => import('./scenarios/RecaptchaScenario'),
+);
 const BackchannelScenario = React.lazy(
   () => import('./scenarios/BackchannelScenario'),
 );
@@ -88,6 +91,8 @@ function ScenarioContent(): React.JSX.Element {
       return <BrowserScenario />;
     case 'use-journey':
       return <UseJourneyScenario />;
+    case 'recaptcha':
+      return <RecaptchaScenario />;
     case 'journey-backchannel':
       return <BackchannelScenario />;
     case 'use-oidc':

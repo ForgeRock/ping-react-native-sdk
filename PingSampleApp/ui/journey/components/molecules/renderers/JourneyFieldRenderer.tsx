@@ -37,12 +37,18 @@ function JourneyFieldRenderer(
   const isDeviceBindingCallback = field.type === 'DeviceBindingCallback';
   const isDeviceSigningVerifierCallback =
     field.type === 'DeviceSigningVerifierCallback';
+  const isReCaptchaEnterpriseCallback =
+    field.type === 'ReCaptchaEnterpriseCallback';
 
   if (field.type === 'HiddenValueCallback') {
     return null;
   }
 
-  if (isFidoAuthenticationCallback || isIdPCallback) {
+  if (
+    isFidoAuthenticationCallback ||
+    isIdPCallback ||
+    isReCaptchaEnterpriseCallback
+  ) {
     return null;
   }
 

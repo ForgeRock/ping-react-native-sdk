@@ -40,6 +40,7 @@ When planning or implementing native bridge changes, refer to the upstream SDK s
 | `@ping-identity/rn-binding`        | Yes             | Native MFA device binding bridge                                                                            |
 | `@ping-identity/rn-oath`           | Yes             | OATH TOTP/HOTP token management                                                                             |
 | `@ping-identity/rn-push`           | Yes             | Push MFA — enrollment, credential management, notification processing, and approve/deny/challenge responses |
+| `@ping-identity/rn-recaptcha`      | Yes             | reCAPTCHA Enterprise verification for Journey flows                                                         |
 
 Turbo orchestrates builds and tests across workspaces.
 
