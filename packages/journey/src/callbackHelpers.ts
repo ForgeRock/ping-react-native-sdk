@@ -104,6 +104,16 @@ const kbaCallbackTypes = new Set<JourneyCallbackType>([
 ]);
 
 /**
+ * Hidden-value callback id fragments whose values are written natively by the
+ * PingOne Protect SDK into sibling `HiddenValueCallback` fields on
+ * Marketplace/legacy MetadataCallback-derived Journey trees.
+ */
+const protectManagedHiddenValueIds = [
+  'pingone_risk_evaluation_signals',
+  'clientError',
+];
+
+/**
  * Creates a stable callback key from callback type and type-local index.
  *
  * @param type - Callback type.
@@ -225,6 +235,45 @@ function resolveRecaptchaSiteKey(callback: JourneyCallback): string {
     }
   }
   return readString(callback.recaptchaSiteKey, '');
+}
+
+/**
+ * Returns true when a node carries a PingOne Protect callback field that the
+ * app handles via native integration.
+ *
+ * @param fields - Normalized callback fields for the node.
+ * @param handledCallbackTypes - Callback types already handled by the app.
+ * @returns True when Protect handling is active for the node.
+ */
+function isProtectHandled(
+  fields: JourneyNormalizedField[],
+  handledCallbackTypes?: ReadonlySet<JourneyCallbackType>,
+): boolean {
+  if (!handledCallbackTypes) {
+    return false;
+  }
+  return fields.some(
+    (field) =>
+      (field.ref.type === callbackType.PingOneProtectInitializeCallback ||
+        field.ref.type === callbackType.PingOneProtectEvaluationCallback) &&
+      handledCallbackTypes.has(field.ref.type),
+  );
+}
+
+/**
+ * Returns true when a hidden-value field is written by the native Protect SDK
+ * and must therefore be omitted from the built submit payload.
+ *
+ * @param field - Normalized callback field.
+ * @returns True when the hidden field is Protect-managed.
+ */
+function isProtectManagedHiddenField(field: JourneyNormalizedField): boolean {
+  if (field.type !== callbackType.HiddenValueCallback) {
+    return false;
+  }
+  return protectManagedHiddenValueIds.some((managedId) =>
+    field.callbackId.includes(managedId),
+  );
 }
 
 /**
@@ -629,6 +678,15 @@ export function normalizeCallbacks(
  *   native integration. Matching `integration_required` fields are excluded
  *   from submit issues so `canSubmit` reflects true readiness.
  * @returns Submit planning result with payload and issues.
+ * @remarks
+ * When the node contains a PingOne Protect callback and `handledCallbackTypes`
+ * includes its type, `HiddenValueCallback` fields whose callback id contains
+ * `pingone_risk_evaluation_signals` or `clientError` are always omitted from
+ * the payload, regardless of form values, because the native Protect SDK
+ * writes the risk signal and client error into those sibling hidden fields on
+ * MetadataCallback-derived trees and resubmitting a JS-side value would
+ * overwrite the native-written result. A caller-provided value that differs
+ * from the callback default is dropped with a dev-only console warning.
  */
 export function buildNextInput(
   node: JourneyNode | null | undefined,
@@ -649,6 +707,7 @@ export function buildNextInput(
   }
 
   const fields = normalizeCallbacks(node);
+  const protectHandled = isProtectHandled(fields, handledCallbackTypes);
   const callbacks: JourneyCallbackInput[] = [];
   const issues: JourneySubmitIssue[] = [];
 
@@ -657,6 +716,20 @@ export function buildNextInput(
     const callbackIndex = field.ref.typeIndex;
 
     if (field.executionMode === 'output_only') {
+      return;
+    }
+
+    if (protectHandled && isProtectManagedHiddenField(field)) {
+      const callerValue = values[field.id];
+      if (
+        __DEV__ &&
+        callerValue !== undefined &&
+        callerValue !== field.defaultValue
+      ) {
+        console.warn(
+          `[buildNextInput] Ignoring value for Protect-managed field "${field.id}"; the native Protect SDK owns it.`,
+        );
+      }
       return;
     }
 

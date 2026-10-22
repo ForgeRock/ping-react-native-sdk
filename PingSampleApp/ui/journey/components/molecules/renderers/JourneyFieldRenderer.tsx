@@ -39,6 +39,9 @@ function JourneyFieldRenderer(
     field.type === 'DeviceSigningVerifierCallback';
   const isReCaptchaEnterpriseCallback =
     field.type === 'ReCaptchaEnterpriseCallback';
+  const isProtectCallback =
+    field.type === 'PingOneProtectInitializeCallback' ||
+    field.type === 'PingOneProtectEvaluationCallback';
 
   if (field.type === 'HiddenValueCallback') {
     return null;
@@ -49,6 +52,9 @@ function JourneyFieldRenderer(
     isIdPCallback ||
     isReCaptchaEnterpriseCallback
   ) {
+    return null;
+  }
+  if (isFidoAuthenticationCallback || isIdPCallback || isProtectCallback) {
     return null;
   }
 

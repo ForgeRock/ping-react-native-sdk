@@ -63,6 +63,7 @@ jobs:
             :ping-identity_rn-logger:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-oath:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-oidc:generateCodegenArtifactsFromSchema \
+            :ping-identity_rn-protect:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-push:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-recaptcha:generateCodegenArtifactsFromSchema \
             :ping-identity_rn-storage:generateCodegenArtifactsFromSchema \

@@ -129,7 +129,9 @@ export default function JourneyContinuePanel(
       type === nativeExtensionCallbackType.SelectIdpCallback ||
       type === 'DeviceBindingCallback' ||
       type === 'DeviceSigningVerifierCallback' ||
-      type === 'ReCaptchaEnterpriseCallback',
+      type === 'ReCaptchaEnterpriseCallback' ||
+      type === 'PingOneProtectInitializeCallback' ||
+      type === 'PingOneProtectEvaluationCallback',
     [],
   );
 

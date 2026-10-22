@@ -91,7 +91,65 @@ export type ProtectClientConfig = {
 export type ProtectErrorCode =
   | 'PROTECT_COLLECT_ERROR'
   | 'PROTECT_COLLECTOR_NOT_FOUND'
-  | 'PROTECT_INITIALIZE_ERROR';
+  | 'PROTECT_INITIALIZE_ERROR'
+  | 'PROTECT_NOT_INITIALIZED'
+  | 'PROTECT_CALLBACK_NOT_FOUND'
+  | 'PROTECT_ARGUMENT_ERROR';
+
+/**
+ * Options for Journey-scoped PingOne Protect evaluation callback execution.
+ *
+ * @public
+ */
+export type ProtectJourneyOptions = {
+  /**
+   * Index of the evaluation callback to execute when a Journey node contains
+   * multiple PingOne Protect evaluation callbacks. This is the callback's position among
+   * the callbacks of its type on the node, for example `field.ref.typeIndex`, not an
+   * app-configured value. Must be a non-negative integer; anything else is rejected
+   * with `PROTECT_ARGUMENT_ERROR` before the native module is called.
+   *
+   * @defaultValue `0`
+   */
+  index?: number;
+
+  /**
+   * Optional logger instance for SDK debug output.
+   *
+   * @remarks
+   * When omitted, all logging is silently suppressed via a built-in no-op logger.
+   */
+  logger?: LoggerInstance;
+};
+
+/**
+ * Options for Journey-scoped PingOne Protect initialize callback execution.
+ *
+ * @public
+ */
+export type ProtectJourneyInitializeOptions = {
+  /**
+   * Optional logger instance for SDK debug output.
+   *
+   * @remarks
+   * When omitted, all logging is silently suppressed via a built-in no-op logger.
+   */
+  logger?: LoggerInstance;
+};
+
+/**
+ * Success payload returned by Journey-scoped Protect operations.
+ *
+ * @remarks
+ * The collected risk signal is written natively into the Journey callback
+ * (or its sibling hidden-value fields) and is never returned to JavaScript,
+ * so success carries no payload.
+ *
+ * @public
+ */
+export type ProtectJourneyResult = {
+  type: 'success';
+};
 
 /**
  * Error thrown by `@ping-identity/rn-protect` operations.

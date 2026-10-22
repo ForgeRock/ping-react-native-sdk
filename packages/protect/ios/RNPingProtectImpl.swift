@@ -54,6 +54,55 @@ public final class RNPingProtectImpl: NSObject, Sendable {
     )
   }
 
+  /// Runs PingOne Protect data collection for a Journey evaluation callback.
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - options: Per-call options payload (`index`).
+  ///   - config: Per-client runtime configuration payload.
+  ///   - resolve: Promise resolver for the `{ type: "success" }` result.
+  ///   - rejecter: Promise rejecter for errors.
+  // NOTE: @MainActor matches the isolation of `RNPingProtectCommon.collectForJourney`, which this forwards to.
+  @objc
+  @MainActor
+  public func collectForJourney(
+    _ journeyId: String,
+    options: NSDictionary,
+    config: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingProtectCommon.collectForJourney(
+      journeyId,
+      options: options,
+      config: config,
+      resolver: resolve,
+      rejecter: rejecter
+    )
+  }
+
+  /// Executes a Journey initialize callback using the configuration carried by the callback.
+  /// - Parameters:
+  ///   - journeyId: Native Journey instance id.
+  ///   - config: Per-client runtime configuration payload.
+  ///   - resolve: Promise resolver for the `{ type: "success" }` result.
+  ///   - rejecter: Promise rejecter for errors.
+  // NOTE: @MainActor matches the isolation of `RNPingProtectCommon.initializeForJourney`, which this forwards to.
+  @objc
+  @MainActor
+  public func initializeForJourney(
+    _ journeyId: String,
+    config: NSDictionary,
+    resolve: @escaping RCTPromiseResolveBlock,
+    rejecter: @escaping RCTPromiseRejectBlock
+  ) {
+    RNPingProtectCommon.initializeForJourney(
+      journeyId,
+      config: config,
+      resolver: resolve,
+      rejecter: rejecter
+    )
+  }
+
   /// Initializes the Protect SDK with the provided configuration.
   /// - Parameters:
   ///   - protectConfig: Protect SDK initialization config dictionary.

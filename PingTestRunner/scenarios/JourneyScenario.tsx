@@ -35,7 +35,13 @@ import {
   normalizeCallbacks,
 } from '@ping-identity/rn-journey';
 import { collectDeviceProfileForJourney } from '@ping-identity/rn-device-profile';
+import {
+  collectProtectForJourney,
+  initializeProtectForJourney,
+  startProtectForJourney,
+} from '@ping-identity/rn-protect';
 import type {
+  JourneyCallbackType,
   JourneyClient,
   JourneyFormValue,
   JourneyFormValues,
@@ -70,11 +76,41 @@ const DISCOVERY_ENDPOINT = args.PING_DISCOVERY_ENDPOINT ?? '';
 const REDIRECT_URI =
   args.PING_REDIRECT_URI ?? 'org.forgerock.demo://oauth2redirect';
 
+const PROTECT_HANDLED_CALLBACK_TYPES: ReadonlySet<JourneyCallbackType> =
+  new Set<JourneyCallbackType>([
+    'PingOneProtectInitializeCallback',
+    'PingOneProtectEvaluationCallback',
+  ]);
+
+const DEVICE_PROFILE_HANDLED_CALLBACK_TYPES: ReadonlySet<JourneyCallbackType> =
+  new Set<JourneyCallbackType>(['DeviceProfileCallback']);
+
+const PROTECT_INITIALIZE_CALLBACK_TYPE: JourneyCallbackType =
+  'PingOneProtectInitializeCallback';
+
+/**
+ * A node is auto-advanced only when every field that needs user input is one
+ * of the handled callback types and the submit plan has no outstanding issues.
+ */
+function isFullyAutoHandled(
+  node: JourneyNode,
+  fields: JourneyNormalizedField[],
+  handledTypes: ReadonlySet<JourneyCallbackType>,
+): boolean {
+  const hasPendingUserInput = fields.some(
+    (f) => f.requiresUserInput && !handledTypes.has(f.ref.type),
+  );
+  return (
+    !hasPendingUserInput && buildNextInput(node, {}, handledTypes).canSubmit
+  );
+}
+
 // ─── state type ─────────────────────────────────────────────────────────────
 
 type ScenarioState =
   | 'idle'
   | 'collecting_profile'
+  | 'collecting_protect'
   | 'form'
   | 'success'
   | 'failure'
@@ -149,13 +185,62 @@ export default function JourneyScenario(): React.JSX.Element {
           (f.raw as { type?: string }).type === 'DeviceProfileCallback',
       );
 
-      if (hasDeviceProfile) {
+      if (
+        hasDeviceProfile &&
+        isFullyAutoHandled(
+          nextNode,
+          fields,
+          DEVICE_PROFILE_HANDLED_CALLBACK_TYPES,
+        )
+      ) {
         setState('collecting_profile');
         try {
           await collectDeviceProfileForJourney(journeyClient, []);
-          const { input } = buildNextInput(nextNode, {});
+          const { input } = buildNextInput(
+            nextNode,
+            {},
+            DEVICE_PROFILE_HANDLED_CALLBACK_TYPES,
+          );
           const after = await journeyClient.next(input);
           // eslint-disable-next-line react-hooks/immutability
+          await advanceNode(journeyClient, after);
+        } catch (e) {
+          setErrorMessage(e instanceof Error ? e.message : String(e));
+          setState('error');
+        }
+        return;
+      }
+
+      const protectFields = fields.filter((f) =>
+        PROTECT_HANDLED_CALLBACK_TYPES.has(f.ref.type),
+      );
+
+      if (
+        protectFields.length > 0 &&
+        isFullyAutoHandled(nextNode, fields, PROTECT_HANDLED_CALLBACK_TYPES)
+      ) {
+        setState('collecting_protect');
+        try {
+          const initializeFirst = [...protectFields].sort(
+            (a, b) =>
+              Number(b.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE) -
+              Number(a.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE),
+          );
+          for (const field of initializeFirst) {
+            if (field.ref.type === PROTECT_INITIALIZE_CALLBACK_TYPE) {
+              await initializeProtectForJourney(journeyClient);
+            } else {
+              await collectProtectForJourney(journeyClient, {
+                index: field.ref.typeIndex,
+              });
+            }
+          }
+          const { input } = buildNextInput(
+            nextNode,
+            {},
+            PROTECT_HANDLED_CALLBACK_TYPES,
+          );
+          const after = await journeyClient.next(input);
           await advanceNode(journeyClient, after);
         } catch (e) {
           setErrorMessage(e instanceof Error ? e.message : String(e));
@@ -195,6 +280,7 @@ export default function JourneyScenario(): React.JSX.Element {
       });
       setClient(journeyClient);
       await journeyClient.init();
+      await startProtectForJourney();
       const startNode = await journeyClient.start(
         JOURNEY_NAME,
         NO_SESSION ? { noSession: true } : { forceAuth: true },
@@ -281,6 +367,11 @@ export default function JourneyScenario(): React.JSX.Element {
       {/* Collecting profile indicator */}
       {state === 'collecting_profile' && (
         <Text testID="journey-collecting-profile">Collecting profile…</Text>
+      )}
+
+      {/* Collecting Protect signals indicator */}
+      {state === 'collecting_protect' && (
+        <Text testID="journey-collecting-protect">Collecting Protect…</Text>
       )}
 
       {/* Generic callback form */}

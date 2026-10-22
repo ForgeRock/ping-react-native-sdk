@@ -37,6 +37,8 @@ import {
 import { bindingIntegration } from '../integrations/bindingIntegration';
 import { fidoIntegration } from '../integrations/fidoIntegration';
 import { recaptchaIntegration } from '../integrations/recaptchaIntegration';
+import { startProtectForJourney } from '@ping-identity/rn-protect';
+import { protectIntegration } from '../integrations/protectIntegration';
 import { useJourneySessionController } from './useJourneySessionController';
 import { useJourneyResumeController } from './useJourneyResumeController';
 import { useJourneyBackchannelController } from './useJourneyBackchannelController';
@@ -51,7 +53,7 @@ const SELECT_IDP_CALLBACK_TYPE: string = 'SelectIdpCallback';
 const REDIRECT_CALLBACK_TYPE: string = 'RedirectCallback';
 const IDP_CALLBACK_TYPES = new Set<string>(['IdPCallback', 'IdpCallback']);
 
-// Callback types handled by the fido, binding, and recaptcha integrations —
+// Callback types handled by the fido, binding, recaptcha and protect integrations —
 // passed to useJourneyForm so canSubmit is not blocked on integration_required
 // fields.
 const INTEGRATION_HANDLED_CALLBACK_TYPES = new Set<JourneyCallbackType>([
@@ -60,6 +62,8 @@ const INTEGRATION_HANDLED_CALLBACK_TYPES = new Set<JourneyCallbackType>([
   'DeviceBindingCallback',
   'DeviceSigningVerifierCallback',
   'ReCaptchaEnterpriseCallback',
+  'PingOneProtectInitializeCallback',
+  'PingOneProtectEvaluationCallback',
 ]);
 
 /**
@@ -421,6 +425,7 @@ export function useJourneyClientPanelController(
   const fido = useMemo(() => createFidoClient({}), []);
   const recaptcha = useMemo(() => createRecaptchaClient(), []);
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
+  const protectLogger = useMemo(() => logger({ level: 'debug' }), []);
   const externalIdpRedirectUriRef = useRef(externalIdpRedirectUri);
   const externalIdp = useMemo(
     () =>
@@ -591,11 +596,13 @@ export function useJourneyClientPanelController(
         resolveDefaultDeviceName: resolveDefaultSystemDeviceName,
       }),
       recaptchaIntegration(recaptcha),
+      protectIntegration({ logger: protectLogger }),
     ],
     [
       binding,
       fido,
       recaptcha,
+      protectLogger,
       readDeviceNameInput,
       resolveDefaultSystemDeviceName,
     ],
@@ -997,6 +1004,12 @@ export function useJourneyClientPanelController(
     if (!trimmedJourneyName) return false;
 
     try {
+      // App.tsx's startProtect initializes the Protect SDK for the DaVinci
+      // demo but does not register the Journey Protect callback types, so this
+      // panel registers them before start(). The docs recommend calling
+      // startProtectForJourney once at app startup in an app-level effect
+      // instead (like startProtect in App.tsx).
+      await startProtectForJourney({ logger: protectLogger });
       await start(trimmedJourneyName, startOptions);
       form.reset();
       setResumeUrl('');
@@ -1004,7 +1017,7 @@ export function useJourneyClientPanelController(
     } catch {
       return false;
     }
-  }, [form, journeyName, setResumeUrl, start, startOptions]);
+  }, [form, journeyName, protectLogger, setResumeUrl, start, startOptions]);
 
   useJourneyAutoStartEffect({
     autoStartOnMount,

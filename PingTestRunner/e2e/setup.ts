@@ -100,6 +100,14 @@ export function hasJourneyEnv(): boolean {
 }
 
 /**
+ * Returns true when the env needed for journeys that prompt only for a
+ * username (no PasswordCallback in the tree) is set.
+ */
+export function hasJourneyUsernameEnv(): boolean {
+  return !!(E2E_ENV.serverUrl && E2E_ENV.testUsername);
+}
+
+/**
  * Returns true when per-callback journey trees are provisioned on the server.
  * Set PING_CALLBACK_TREES_ENABLED=true to enable per-callback E2E tests.
  */

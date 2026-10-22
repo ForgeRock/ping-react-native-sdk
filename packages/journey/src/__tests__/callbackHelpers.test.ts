@@ -466,6 +466,142 @@ describe('Journey callback helpers', () => {
       },
     ]);
   });
+
+  it('omits protect-managed hidden fields from the payload when Protect is handled', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1clientError',
+          value: '',
+        },
+      ],
+    };
+
+    const result = buildNextInput(
+      node,
+      {},
+      new Set(['PingOneProtectEvaluationCallback'] as const),
+    );
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input).toEqual({});
+  });
+
+  it('keeps reporting INTEGRATION_REQUIRED for Protect callbacks without a handled set', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+      ],
+    };
+
+    const result = buildNextInput(node, {});
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      {
+        code: 'INTEGRATION_REQUIRED',
+        message:
+          'Callback "PingOneProtectEvaluationCallback" requires additional integration.',
+        fieldId: 'PingOneProtectEvaluationCallback:0',
+        callbackType: 'PingOneProtectEvaluationCallback',
+      },
+    ]);
+    expect(result.input).toEqual({
+      callbacks: [{ type: 'HiddenValueCallback', index: 0, value: '' }],
+    });
+  });
+
+  it('submits hidden fields with unrelated ids when Protect is handled', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'csrf-token',
+          value: 'abc123',
+        },
+      ],
+    };
+
+    const result = buildNextInput(
+      node,
+      {},
+      new Set(['PingOneProtectEvaluationCallback'] as const),
+    );
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input).toEqual({
+      callbacks: [{ type: 'HiddenValueCallback', index: 0, value: 'abc123' }],
+    });
+  });
+
+  it('omits protect-managed hidden fields with hydrated values', () => {
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+      ],
+    };
+
+    const result = buildNextInput(
+      node,
+      { 'HiddenValueCallback:0': '' },
+      new Set(['PingOneProtectEvaluationCallback'] as const),
+    );
+
+    expect(result.input).toEqual({});
+  });
+
+  it('omits protect-managed hidden fields and warns when the caller sets a value', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const node: JourneyNode = {
+      type: 'ContinueNode',
+      callbacks: [
+        { type: 'PingOneProtectEvaluationCallback' },
+        {
+          type: 'HiddenValueCallback',
+          id: 'IDToken1pingone_risk_evaluation_signals',
+          value: '',
+        },
+      ],
+    };
+
+    const result = buildNextInput(
+      node,
+      { 'HiddenValueCallback:0': 'caller-provided-value' },
+      new Set(['PingOneProtectEvaluationCallback'] as const),
+    );
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input).toEqual({});
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('HiddenValueCallback:0'),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe('normalizeCallbacks — typed named fields', () => {

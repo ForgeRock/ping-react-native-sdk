@@ -218,6 +218,13 @@ export default function App() {
   // client initialization, so `selectedJourneyProfile` changes must never
   // re-fire native `initialize`. Readiness is consumed by the DaVinci gate
   // below, not by the root render, so Journey/OIDC screens stay independent.
+  //
+  // This app also demos Protect with DaVinci, which needs Protect up before
+  // the first DaVinci operation. Native initialization is once-only and this
+  // call claims it with app config, so a Journey tree's own configuration is
+  // never applied. Apps that only use Protect through Journey must not do
+  // this: they call `startProtectForJourney` instead (see the Journey panel
+  // controller), and let `initializeProtectForJourney` initialize from the tree.
   useEffect(() => {
     if (protectStartRef.current) {
       return;

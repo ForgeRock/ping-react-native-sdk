@@ -72,6 +72,13 @@ struct TestEnvironment {
         !serverUrl.isEmpty && !testUsername.isEmpty && !testPassword.isEmpty
     }
 
+    /// True when the vars needed for journeys that prompt only for a username
+    /// (no PasswordCallback in the tree) are set.
+    /// Mirrors hasJourneyUsernameEnv() in e2e/setup.ts.
+    var hasJourneyUsernameEnv: Bool {
+        !serverUrl.isEmpty && !testUsername.isEmpty
+    }
+
     /// True when OIDC vars are also set (full live-auth flow).
     var hasLiveAuthEnv: Bool {
         hasJourneyEnv && !discoveryEndpoint.isEmpty && !clientId.isEmpty
