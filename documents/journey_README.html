@@ -302,8 +302,9 @@ no extra submit step is required in the app.</p>
 </table>
 <p>Integration-dependent families (for example, device profile, FIDO, PingOne Protect, redirect/IdP, and ReCaptcha callbacks) are surfaced in node payloads and require client-side integration before submission (<code>executionMode: 'integration_required'</code>).</p>
 <p>For FIDO callbacks, run explicit Journey-scoped APIs from <code>@ping-identity/rn-fido</code> (<code>registerForJourney(...)</code> / <code>authenticateForJourney(...)</code>) and then call <code>next(...)</code>.</p>
+<p>For PingOne Protect callbacks, run explicit Journey-scoped APIs from <code>@ping-identity/rn-protect</code> (<code>initializeProtectForJourney(...)</code> / <code>collectProtectForJourney(...)</code>) and then call <code>next(...)</code>. See <a href="protect_README.html#use-with-journey">Use with Journey</a> in the rn-protect README for the full flow.</p>
 <h3 id="native-parity-contract" class="tsd-anchor-link">Native parity contract<a href="#native-parity-contract" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<p>Journey FIDO callback handling is standardized across Android and iOS with the following native contract:</p>
+<p>Journey integration-callback handling (FIDO, PingOne Protect) is standardized across Android and iOS with the following native contract:</p>
 <table>
 <thead>
 <tr>
@@ -319,6 +320,10 @@ no extra submit step is required in the app.</p>
 <tr>
 <td>Callback execution ownership</td>
 <td>FIDO callback execution is owned by <code>@ping-identity/rn-fido</code> Journey-scoped APIs, not <code>next(...)</code> callback mutations.</td>
+</tr>
+<tr>
+<td>Protect execution ownership</td>
+<td>Protect callback execution is owned by <code>@ping-identity/rn-protect</code> Journey-scoped APIs, not <code>next(...)</code> callback mutations.</td>
 </tr>
 <tr>
 <td>Hidden callback ownership</td>
