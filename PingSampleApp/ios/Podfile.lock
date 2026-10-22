@@ -5,7 +5,7 @@ PODS:
   - AppAuth/Core (2.1.0)
   - AppAuth/ExternalUserAgent (2.1.0):
     - AppAuth/Core
-  - AppCheckCore (11.3.1):
+  - AppCheckCore (11.3.2):
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
@@ -14,15 +14,15 @@ PODS:
   - boost (1.84.0)
   - DoubleConversion (1.1.6)
   - fast_float (8.0.0)
-  - FBAEMKit (16.3.1):
-    - FBSDKCoreKit_Basics (= 16.3.1)
+  - FBAEMKit (18.1.1):
+    - FBSDKCoreKit_Basics (= 18.1.1)
   - FBLazyVector (0.80.1)
-  - FBSDKCoreKit (16.3.1):
-    - FBAEMKit (= 16.3.1)
-    - FBSDKCoreKit_Basics (= 16.3.1)
-  - FBSDKCoreKit_Basics (16.3.1)
-  - FBSDKLoginKit (16.3.1):
-    - FBSDKCoreKit (= 16.3.1)
+  - FBSDKCoreKit (18.1.1):
+    - FBAEMKit (= 18.1.1)
+    - FBSDKCoreKit_Basics (= 18.1.1)
+  - FBSDKCoreKit_Basics (18.1.1)
+  - FBSDKLoginKit (18.1.1):
+    - FBSDKCoreKit (= 18.1.1)
   - fmt (11.0.2)
   - glog (0.3.5)
   - GoogleDataTransport (10.1.1):
@@ -43,44 +43,44 @@ PODS:
     - GoogleToolboxForMac/Defines (= 4.2.1)
   - "GoogleToolboxForMac/NSData+zlib (4.2.1)":
     - GoogleToolboxForMac/Defines (= 4.2.1)
-  - GoogleUtilities (8.1.2):
-    - GoogleUtilities/AppDelegateSwizzler (= 8.1.2)
-    - GoogleUtilities/Environment (= 8.1.2)
-    - GoogleUtilities/Logger (= 8.1.2)
-    - GoogleUtilities/MethodSwizzler (= 8.1.2)
-    - GoogleUtilities/Network (= 8.1.2)
-    - "GoogleUtilities/NSData+zlib (= 8.1.2)"
-    - GoogleUtilities/Privacy (= 8.1.2)
-    - GoogleUtilities/Reachability (= 8.1.2)
-    - GoogleUtilities/SwizzlerTestHelpers (= 8.1.2)
-    - GoogleUtilities/UserDefaults (= 8.1.2)
-  - GoogleUtilities/AppDelegateSwizzler (8.1.2):
+  - GoogleUtilities (8.1.3):
+    - GoogleUtilities/AppDelegateSwizzler (= 8.1.3)
+    - GoogleUtilities/Environment (= 8.1.3)
+    - GoogleUtilities/Logger (= 8.1.3)
+    - GoogleUtilities/MethodSwizzler (= 8.1.3)
+    - GoogleUtilities/Network (= 8.1.3)
+    - "GoogleUtilities/NSData+zlib (= 8.1.3)"
+    - GoogleUtilities/Privacy (= 8.1.3)
+    - GoogleUtilities/Reachability (= 8.1.3)
+    - GoogleUtilities/SwizzlerTestHelpers (= 8.1.3)
+    - GoogleUtilities/UserDefaults (= 8.1.3)
+  - GoogleUtilities/AppDelegateSwizzler (8.1.3):
     - GoogleUtilities/Environment
     - GoogleUtilities/Logger
     - GoogleUtilities/Network
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Environment (8.1.2):
+  - GoogleUtilities/Environment (8.1.3):
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Logger (8.1.2):
+  - GoogleUtilities/Logger (8.1.3):
     - GoogleUtilities/Environment
     - GoogleUtilities/Privacy
-  - GoogleUtilities/MethodSwizzler (8.1.2):
+  - GoogleUtilities/MethodSwizzler (8.1.3):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Network (8.1.2):
+  - GoogleUtilities/Network (8.1.3):
     - GoogleUtilities/Logger
     - "GoogleUtilities/NSData+zlib"
     - GoogleUtilities/Privacy
     - GoogleUtilities/Reachability
-  - "GoogleUtilities/NSData+zlib (8.1.2)":
+  - "GoogleUtilities/NSData+zlib (8.1.3)":
     - GoogleUtilities/Privacy
-  - GoogleUtilities/Privacy (8.1.2)
-  - GoogleUtilities/Reachability (8.1.2):
+  - GoogleUtilities/Privacy (8.1.3)
+  - GoogleUtilities/Reachability (8.1.3):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - GoogleUtilities/SwizzlerTestHelpers (8.1.2):
+  - GoogleUtilities/SwizzlerTestHelpers (8.1.3):
     - GoogleUtilities/MethodSwizzler
-  - GoogleUtilities/UserDefaults (8.1.2):
+  - GoogleUtilities/UserDefaults (8.1.3):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GTMAppAuth (5.0.0):
@@ -173,6 +173,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - PingAuthMigration (2.1.0):
+    - PingOath (~> 2.1.0)
+    - PingPush (~> 2.1.0)
   - PingBinding (2.1.0):
     - PingCommons (~> 2.1.0)
     - PingDeviceId (~> 2.1.0)
@@ -203,7 +206,7 @@ PODS:
   - PingExternalIdPApple (2.1.0):
     - PingExternalIdP (~> 2.1.0)
   - PingExternalIdPFacebook (2.1.0):
-    - FBSDKLoginKit (~> 16.3.1)
+    - FBSDKLoginKit (< 19.0.0, >= 18.1.0)
     - PingExternalIdP (~> 2.1.0)
   - PingExternalIdPGoogle (2.1.0):
     - GoogleSignIn (~> 9.0.0)
@@ -239,10 +242,6 @@ PODS:
   - PingPush (2.1.0):
     - PingNetwork (~> 2.1.0)
     - PingTamperDetector (~> 2.1.0)
-  - PingReCaptchaEnterprise (2.1.0):
-    - PingCommons (~> 2.1.0)
-    - PingJourneyPlugin (~> 2.1.0)
-    - RecaptchaEnterprise (~> 18.8.1)
   - PingStorage (2.1.0)
   - PingTamperDetector (2.1.0):
     - PingCommons (~> 2.1.0)
@@ -2484,10 +2483,6 @@ PODS:
     - React-perflogger (= 0.80.1)
     - React-utils (= 0.80.1)
     - SocketRocket
-  - RecaptchaEnterprise (18.8.2):
-    - RecaptchaEnterpriseSDK (= 18.8.2)
-    - RecaptchaInterop (~> 101.0.0)
-  - RecaptchaEnterpriseSDK (18.8.2)
   - RecaptchaInterop (101.0.0)
   - RNCAsyncStorage (2.2.0):
     - boost
@@ -3003,38 +2998,6 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
-  - RNPingRecaptcha (1.1.0-beta.0):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - PingLogger (= 2.1.0)
-    - PingReCaptchaEnterprise (= 2.1.0)
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-hermes
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - RNPingCore
-    - SocketRocket
-    - Yoga
   - RNPingStorage (1.1.0-beta.0):
     - boost
     - DoubleConversion
@@ -3294,9 +3257,31 @@ DEPENDENCIES:
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - NitroImage (from `../../node_modules/react-native-nitro-image`)
   - NitroModules (from `../../node_modules/react-native-nitro-modules`)
-  - PingExternalIdPApple (= 2.1.0)
-  - PingExternalIdPFacebook (= 2.1.0)
-  - PingExternalIdPGoogle (= 2.1.0)
+  - PingAuthMigration (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingBinding (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingBrowser (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingCommons (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingDavinci (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingDavinciPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingDeviceClient (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingDeviceId (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingDeviceProfile (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingExternalIdP (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingExternalIdPApple (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingExternalIdPFacebook (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingExternalIdPGoogle (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingFido (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingJourney (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingJourneyPlugin (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingLogger (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingNetwork (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingOath (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingOidc (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingOneProtect (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingOrchestrate (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingPush (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingStorage (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
+  - PingTamperDetector (from `https://github.com/ForgeRock/ping-ios-sdk.git`, commit `df0acc60c0d4d699aa3fab78c43934f3b1344bdb`)
   - RCT-Folly (from `../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTDeprecation (from `../../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../../node_modules/react-native/Libraries/Required`)
@@ -3381,7 +3366,6 @@ DEPENDENCIES:
   - "RNPingOidc (from `../../node_modules/@ping-identity/rn-oidc`)"
   - "RNPingProtect (from `../../node_modules/@ping-identity/rn-protect`)"
   - "RNPingPush (from `../../node_modules/@ping-identity/rn-push`)"
-  - "RNPingRecaptcha (from `../../node_modules/@ping-identity/rn-recaptcha`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - RNScreens (from `../../node_modules/react-native-screens`)
   - RNSVG (from `../../node_modules/react-native-svg`)
@@ -3411,36 +3395,9 @@ SPEC REPOS:
     - MLKitCommon
     - MLKitVision
     - nanopb
-    - PingBinding
-    - PingBrowser
-    - PingCommons
-    - PingDavinci
-    - PingDavinciPlugin
-    - PingDeviceClient
-    - PingDeviceId
-    - PingDeviceProfile
-    - PingExternalIdP
-    - PingExternalIdPApple
-    - PingExternalIdPFacebook
-    - PingExternalIdPGoogle
-    - PingFido
-    - PingJourney
-    - PingJourneyPlugin
-    - PingLogger
-    - PingNetwork
-    - PingOath
-    - PingOidc
-    - PingOneProtect
     - PingOneSignals
-    - PingOrchestrate
-    - PingPush
-    - PingReCaptchaEnterprise
-    - PingStorage
-    - PingTamperDetector
     - PromisesObjC
     - PromisesSwift
-    - RecaptchaEnterprise
-    - RecaptchaEnterpriseSDK
     - RecaptchaInterop
     - SocketRocket
 
@@ -3464,6 +3421,81 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-nitro-image"
   NitroModules:
     :path: "../../node_modules/react-native-nitro-modules"
+  PingAuthMigration:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingBinding:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingBrowser:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingCommons:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinci:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinciPlugin:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceClient:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceId:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceProfile:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdP:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPApple:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPFacebook:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPGoogle:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingFido:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingJourney:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingJourneyPlugin:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingLogger:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingNetwork:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOath:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOidc:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOneProtect:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOrchestrate:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingPush:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingStorage:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingTamperDetector:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
   RCT-Folly:
     :podspec: "../../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec"
   RCTDeprecation:
@@ -3628,8 +3660,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-protect"
   RNPingPush:
     :path: "../../node_modules/@ping-identity/rn-push"
-  RNPingRecaptcha:
-    :path: "../../node_modules/@ping-identity/rn-recaptcha"
   RNPingStorage:
     :path: "../../node_modules/@ping-identity/rn-storage"
   RNScreens:
@@ -3645,24 +3675,101 @@ EXTERNAL SOURCES:
   Yoga:
     :path: "../../node_modules/react-native/ReactCommon/yoga"
 
+CHECKOUT OPTIONS:
+  PingAuthMigration:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingBinding:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingBrowser:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingCommons:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinci:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDavinciPlugin:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceClient:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceId:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingDeviceProfile:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdP:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPApple:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPFacebook:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingExternalIdPGoogle:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingFido:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingJourney:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingJourneyPlugin:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingLogger:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingNetwork:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOath:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOidc:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOneProtect:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingOrchestrate:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingPush:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingStorage:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+  PingTamperDetector:
+    :commit: df0acc60c0d4d699aa3fab78c43934f3b1344bdb
+    :git: https://github.com/ForgeRock/ping-ios-sdk.git
+
 SPEC CHECKSUMS:
   AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
-  AppCheckCore: e215d35177a9cf469927863e69c13e220df32a8b
+  AppCheckCore: be8fce5469f68d7f6a29aa94b25f097409ff7fdc
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
-  FBAEMKit: 6c7b5eb77c96861bb59e040842c6e55bf39512ce
+  FBAEMKit: fbb0a50e13109400d0615e7630a0db26ec6b8206
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427
-  FBSDKCoreKit: 5e4dd478947ab1bcc887e8cfadeae0727af1a942
-  FBSDKCoreKit_Basics: cd7b5f5d1e8868c26706917919d058999ca672c3
-  FBSDKLoginKit: 572cca0bc6c90067ef197187697cb3b584310c52
+  FBSDKCoreKit: 0063014b3b1f7e975e70b60232b0cf8003839746
+  FBSDKCoreKit_Basics: f4a1e0f38769eb71abaf6395b85e015318fcda49
+  FBSDKLoginKit: 0e6d0df30ae0a5b33f33d9050ca10ca21e0da234
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   GoogleDataTransport: a24e58982ab3ba2f64d79613e027fe7f57e88539
   GoogleMLKit: ddd51d7dff36ff28defa69afedd9cdce684fd857
   GoogleSignIn: c7f09cfbc85a1abf69187be091997c317cc33b77
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8
-  GoogleUtilities: 766ace00c6b10d8148408f329d10c4f051931850
+  GoogleUtilities: 4e0c2ad9fa0d0d18b5c4df8bf57b461cba35b0bb
   GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
@@ -3671,8 +3778,9 @@ SPEC CHECKSUMS:
   MLKitCommon: 26b779f072a182c1603d4c88a101c350cac837b1
   MLKitVision: fa8dea9012ac59497c79ddbe9ebf32051047ac4c
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  NitroImage: ee67d6f799e191273ae10439528e01c70c628d38
-  NitroModules: b6ae0e07aaae9c51cc144dd85f16e899de5eb1c6
+  NitroImage: 5c2e7ee0b9efd9179dbb18a5b6b14baab032fe85
+  NitroModules: 7f1f24e38a8c6138e4f624ce65f929116edfd706
+  PingAuthMigration: 73ce3670f4c4fa04236960f091278bf362ee2ff3
   PingBinding: e6c18b25ca49463faa790a8d7ab25d81197f67e0
   PingBrowser: 9654254bfc8651cb81ca566cb7459459efa8a600
   PingCommons: 62bde3af35f24a13e9b120e0ea098e467655cad6
@@ -3683,7 +3791,7 @@ SPEC CHECKSUMS:
   PingDeviceProfile: 78f5b8fb8090457d50e6d96165da0e7b5f8e6a37
   PingExternalIdP: 9f4f57dc168d8c182df79942e593333e4a8ab1ad
   PingExternalIdPApple: b563b76a92c25c8be795f2d8ecc20aec70add005
-  PingExternalIdPFacebook: b61d88fd333a2070e22fa3e5dd3dfd6ee98cb5bd
+  PingExternalIdPFacebook: 459e362ff2b49a894964c07fdb864bf9f2a4e0dd
   PingExternalIdPGoogle: b781736f39441b87ef0987562138947155c27078
   PingFido: 405240423b1865880811d0e24c6a40a4527f0b84
   PingJourney: c60d7ac6f78c905d4fdaff35051e38ab2bff046c
@@ -3696,12 +3804,11 @@ SPEC CHECKSUMS:
   PingOneSignals: 3d14d429201435960e062e3481356b9f21fa657f
   PingOrchestrate: 90365995dc6fc5bd14f78ae5c04f07d46d265523
   PingPush: aef2216cade878592b6c7166a90d8b15f1c0b649
-  PingReCaptchaEnterprise: 9fd67d0327196ae985ac87c6a4f6b084905c10fa
   PingStorage: fdaebdd80f4359dc7eb4f780429cc6840ed01cee
   PingTamperDetector: 99159fd12d0ffc40db6096fcff99daf554f248c8
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
-  RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
+  RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: efa5010912100e944a7ac9a93a157e1def1988fe
   RCTRequired: bbc4cf999ddc4a4b076e076c74dd1d39d0254630
   RCTTypeSafety: d877728097547d0a37786cc9130c43ad71739ac3
@@ -3767,35 +3874,32 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: afd905e84ee36e1678016ae04d7370c75ed539be
   ReactCodegen: 62690fdeb185860673cb78e3d9b049c7e1d40531
   ReactCommon: 17fd88849a174bf9ce45461912291aca711410fc
-  RecaptchaEnterprise: 2d06f415c94253c3e92214a4d1472b5875442cdc
-  RecaptchaEnterpriseSDK: 2fd06a12a27f943c24f643f8814404a27cc74288
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RNCAsyncStorage: 1f04c8d56558e533277beda29187f571cf7eecb2
-  RNPingBinding: ecb047e727ec2861b31ef1922aa1d8ffed8fbe30
-  RNPingBrowser: 9d8496cba4eddd7b0db1edc41b93a356832bb9f5
-  RNPingCore: 9473d1b32baca28a41bd39239311eb941ac66d9f
-  RNPingDavinci: 26a062b652ef50a84faf7e41aab1fa23d3c9a1b4
-  RNPingDeviceClient: 1722812461e0ead4fd6ec4c84102c179f3f02820
-  RNPingDeviceId: 4e2320041e3ec060250489e660ac39c2705fc908
-  RNPingDeviceProfile: 6bf3e5cec0fadbed0e6d0c470ffa149022502118
-  RNPingExternalIdp: 011432c3649a18ee284596905dcceeb20c8d1b72
-  RNPingFido: 01a0322bbcf7db5dbcd066b735e90558e20e789b
-  RNPingJourney: 0becd568fbbdc3892938b8580283269321146cb4
-  RNPingLogger: be70a45e453100193cb98e97f9b267c717ad0aa5
-  RNPingOath: 77541697d60b5585ce6e1e3bd54f1bd7aaa0d1e2
-  RNPingOidc: b2154c42cfe3f69106c8eeff937c98fca45cc39c
-  RNPingProtect: 264349428bb024584122d44252fb6977ebba2fee
-  RNPingPush: e96cd019fc4ff6934a2ce7449b6dec30c6d7098b
-  RNPingRecaptcha: 80adf2b7156e41f00748ab34cf7a83ac2a36cb32
-  RNPingStorage: d3a50f897cd7bac82038b3712831aac3374ce343
-  RNScreens: f35bcc83b6e3a871635b1c28728e63c9560f159a
-  RNSVG: 6c85ed4204fc8680c2f6fca3532277fd4f65e5ab
-  RNVectorIcons: be4d047a76ad307ffe54732208fb0498fcb8477f
+  RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
+  RNPingBinding: 697000dc3c2d6f3b029f793393498b830b6928bb
+  RNPingBrowser: e604b03d3bcf87e8fcc87586263d5482682ffd88
+  RNPingCore: e7d88b03a4d4c8f9233ee8e9c2522c90e6e8a26b
+  RNPingDavinci: 6d761386abc3ec8b18355b89a9c50a2173eb2387
+  RNPingDeviceClient: 63b56aab18aaa55e4d9e78059298a2aa3e02600e
+  RNPingDeviceId: 13da4c088675b9f2b2558999ce91a0694217d705
+  RNPingDeviceProfile: dbc5a7cf28296ee9b2717470f1c12a169ca0ade6
+  RNPingExternalIdp: 53ce3b2e6c8e1f0f131a4532563c2828787f63d8
+  RNPingFido: 3fbfeaad2fc00aa0a24e9750cd1321f6cb2acf51
+  RNPingJourney: 3eb20cc0387229496405f72dc6e7386ccf407359
+  RNPingLogger: bb9a68a084b5be5337bdb543460d17a9e2e21319
+  RNPingOath: 6ebd1aa93bc935f25db9be594b0398ee5b8fcaa3
+  RNPingOidc: c4f91fe3ebe59cf6128eb639d14e941a96e4603c
+  RNPingProtect: c2bc798ead435ad5e236c86a0dabc90c676581fb
+  RNPingPush: 4b4b0b67e23acf8dcec306cdc40faf15a64070c3
+  RNPingStorage: 9ac4947abd71d06496584a78b73f3a169d622cb5
+  RNScreens: 846d53087db560ed5fbc34feb0643adb5f9602c5
+  RNSVG: e8fb86f41fccd7b67c4480bb9e179e0ad5785b80
+  RNVectorIcons: 54df27a2e90ddeb674c7237d76060ec9762d0bc5
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   VisionCamera: e82024ee7ce0fb6168a4c468ef43c711f4486baa
   VisionCameraBarcodeScanner: a65d708fd3672e6d43e94cce39b548465851752b
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: 166aa9ce2c2ba3e0dd7ef408ebadc255a1e4a81a
+PODFILE CHECKSUM: 5182311ed80522ff433a9df006b29c172d5b0a2d
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

@@ -210,6 +210,67 @@ authorization response as the `verificationUri` start option of the
 the user, the native SDK extracts the `user_code` from that URL and approves
 the requesting device.
 
+### Backchannel (transactional) authentication
+
+When your app is the approving device in an AM/AIC **transactional
+authorization** flow, your backend calls
+`/authenticate/backchannel/initialize` (requires the
+`back_channel_authentication` scope) and delivers the returned `redirectUri`
+to the app through its own channel (push notification payload, QR code, deep
+link). Pass that URI to the `useJourney` `startBackchannel` action to drive
+the Journey flow; the SDK extracts `authIndexType`/`authIndexValue` from it
+and drives the standard authenticate flow to a node. The URI is treated as
+data and is never opened in a browser.
+
+```tsx
+function StepUpApprovalScreen({
+  payload,
+}: {
+  payload: { redirectUri: string };
+}) {
+  const [node, { startBackchannel, next, loading, error }] = useJourney(client);
+
+  useEffect(() => {
+    // The gateway delivered the transaction URI (push payload, QR code, deep link).
+    startBackchannel(payload.redirectUri).catch(showAlert);
+  }, [payload.redirectUri]);
+
+  if (loading) return <Spinner />;
+  if (error) return <Text>{error.message}</Text>;
+  if (node?.type === 'ContinueNode') {
+    // render callbacks exactly like any other journey (step-up, OTP, ...)
+    return <CallbackRenderer node={node} onSubmit={(v) => next(v)} />;
+  }
+  if (node?.type === 'ErrorNode') return <Text>{node.message}</Text>;
+  return node?.type === 'SuccessNode' ? <Text>Approved</Text> : null;
+}
+```
+
+Optional flags mirror `start`: `{ forceAuth: true }` forces re-authentication
+and `{ noSession: true }` completes without creating an AM session (both
+default to `false`):
+
+```ts
+await startBackchannel(payload.redirectUri, { noSession: true });
+```
+
+Validation failures never make a network call and resolve with a `FailureNode`
+payload: empty/malformed URI, `authIndexType`/`authIndexValue` missing or
+whitespace-only, or a URI host that does not match the configured `serverUrl`
+host (case-insensitive). Only a blank URI throws
+(`argument_error`/`JOURNEY_START_ERROR`). Expired, completed, or unknown
+transactions surface as `ErrorNode` payloads carrying AM's message, and
+network failures as `FailureNode` — the same node outcomes `start()` and
+`resume()` produce, so existing callback rendering and error UI work
+unchanged.
+
+The `startBackchannel` action shares node state with the rest of the hook
+stack (`JourneyProvider`, `useJourneyForm`), so backchannel nodes render and
+progress through `next()` exactly like `start`/`resume` flows without changes.
+
+> Note: polling `/authenticate/backchannel/info` for transaction status is a
+> server-side concern; the SDK terminates at the returned node.
+
 ### Post Authentication Operations
 
 After a Journey login succeeds, use the following operations to inspect and manage the active user session:

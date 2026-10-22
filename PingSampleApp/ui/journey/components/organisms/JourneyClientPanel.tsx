@@ -15,6 +15,7 @@ import { commonStyles } from '../../../../src/styles/common';
 import { journeyClientPanelStyles as styles } from '../../../../src/styles/journeyStyles';
 import { useJourneyClientPanelController } from '../../hooks/useJourneyClientPanelController';
 import { SHOW_JOURNEY_DEBUG_PANEL } from '../../utils/clientPanel';
+import PingTextInput from '../../../components/atoms/PingTextInput';
 import JourneyContinuePanel from './JourneyContinuePanel';
 import JourneyDebugPanel from './JourneyDebugPanel';
 import JourneyBindingPinModal from './JourneyBindingPinModal';
@@ -45,6 +46,11 @@ export type JourneyClientPanelProps = {
    */
   initialJourneyName?: string;
   /**
+   * Highlights the AM/AIC transactional backchannel entry when the panel has
+   * no active flow (dedicated Backchannel Auth entry point parity).
+   */
+  backchannelEntry?: boolean;
+  /**
    * Enables one-time auto-start behavior when panel mounts without an active session.
    */
   autoStartOnMount?: boolean;
@@ -67,7 +73,11 @@ export type JourneyClientPanelProps = {
 export default function JourneyClientPanel(
   props: JourneyClientPanelProps,
 ): React.ReactElement {
-  const { onAuthenticated, requireSuccessConfirmation = false } = props;
+  const {
+    onAuthenticated,
+    requireSuccessConfirmation = false,
+    backchannelEntry = false,
+  } = props;
   const {
     node,
     form,
@@ -80,6 +90,9 @@ export default function JourneyClientPanel(
     resumeUrl,
     setResumeUrl,
     onResume,
+    backchannelUri,
+    setBackchannelUri,
+    onStartBackchannel,
     onSubmit,
     onSelectIdpProvider,
     onLogout,
@@ -95,82 +108,152 @@ export default function JourneyClientPanel(
     <View style={styles.container}>
       <JourneyBindingUserKeyModal request={userKeyRequest} />
       <JourneyBindingPinModal request={pinRequest} />
-      <View style={commonStyles.card}>
-        {showCallbackScreen && node?.type === 'ContinueNode' ? (
-          <JourneyContinuePanel
-            form={form}
-            header={node.header}
-            description={node.description}
-            submitButtonText={node.submitButtonText}
-            pageFooter={node.pageFooter}
-            loading={loading}
-            pollingWaitMs={pollingWaitMs}
-            resumeUrl={resumeUrl}
-            onResumeUrlChange={setResumeUrl}
-            onResume={onResume}
-            onSubmit={onSubmit}
-            onSelectIdpProvider={onSelectIdpProvider}
-          />
-        ) : null}
-
-        {showSuccessScreen ? (
-          <View style={styles.successActionsContainer}>
-            <TouchableOpacity
-              style={commonStyles.buttonPrimary}
-              onPress={onLogout}
-            >
-              <Text style={commonStyles.buttonText}>Logout</Text>
-            </TouchableOpacity>
-            {requireSuccessConfirmation && onAuthenticated ? (
-              <TouchableOpacity
-                style={commonStyles.buttonSecondary}
-                onPress={onContinueAfterSuccess}
-              >
-                <Text style={commonStyles.buttonTextSecondary}>Continue</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        ) : null}
-
-        {node?.type === 'ErrorNode' ? (
-          <Text style={commonStyles.textError} selectable>
-            {typeof node.message === 'string'
-              ? node.message
-              : 'A server-side validation error occurred.'}
+      {backchannelEntry &&
+      !showCallbackScreen &&
+      !showSuccessScreen &&
+      !loading &&
+      !isSessionCheckRunning ? (
+        <View style={commonStyles.card}>
+          <Text style={styles.backchannelEntryTitle}>
+            Backchannel Authentication
           </Text>
-        ) : null}
-
-        {node?.type === 'FailureNode' ? (
-          <Text style={commonStyles.textError} selectable>
-            {typeof node.cause === 'string'
-              ? node.cause
-              : typeof node.message === 'string'
-                ? node.message
-                : 'An unexpected failure occurred.'}
-          </Text>
-        ) : null}
-
-        {error ? (
-          <Text style={commonStyles.textError} selectable>
-            {`[${error.code}] ${error.message}`}
-          </Text>
-        ) : null}
-
-        {externalIdpBrowserError ? (
-          <Text style={commonStyles.textError} selectable>
-            {externalIdpBrowserError}
-          </Text>
-        ) : null}
-
-        {!showCallbackScreen &&
-        !showSuccessScreen &&
-        !loading &&
-        !isSessionCheckRunning ? (
           <Text style={styles.autoPollingNote}>
-            No active Journey flow. Start from Journey Configuration.
+            Paste the backchannel URI. The SDK reads authIndexType /
+            authIndexValue from it and drives the authenticate journey.
           </Text>
-        ) : null}
-      </View>
+          <PingTextInput
+            label="Backchannel URI"
+            value={backchannelUri}
+            onChangeText={setBackchannelUri}
+            placeholder="https://tenant/am/UI/Login?authIndexType=transaction&authIndexValue=..."
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={[
+              commonStyles.buttonPrimary,
+              loading ? styles.disabledButton : null,
+              backchannelUri.trim() ? null : styles.disabledButton,
+            ]}
+            onPress={onStartBackchannel}
+            disabled={loading || !backchannelUri.trim()}
+          >
+            <Text style={commonStyles.buttonText}>Start Backchannel Auth</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+      {/* Skip the main card while the dedicated backchannel entry renders with
+          nothing to show in it, otherwise an empty card appears below the form. */}
+      {backchannelEntry &&
+      !showCallbackScreen &&
+      !showSuccessScreen &&
+      !loading &&
+      !isSessionCheckRunning &&
+      node?.type !== 'ErrorNode' &&
+      node?.type !== 'FailureNode' &&
+      !error &&
+      !externalIdpBrowserError ? null : (
+        <View style={commonStyles.card}>
+          {showCallbackScreen && node?.type === 'ContinueNode' ? (
+            <JourneyContinuePanel
+              form={form}
+              header={node.header}
+              description={node.description}
+              submitButtonText={node.submitButtonText}
+              pageFooter={node.pageFooter}
+              loading={loading}
+              pollingWaitMs={pollingWaitMs}
+              resumeUrl={resumeUrl}
+              onResumeUrlChange={setResumeUrl}
+              onResume={onResume}
+              onSubmit={onSubmit}
+              onSelectIdpProvider={onSelectIdpProvider}
+            />
+          ) : null}
+
+          {showSuccessScreen ? (
+            <View style={styles.successActionsContainer}>
+              <TouchableOpacity
+                style={commonStyles.buttonPrimary}
+                onPress={onLogout}
+              >
+                <Text style={commonStyles.buttonText}>Logout</Text>
+              </TouchableOpacity>
+              {requireSuccessConfirmation && onAuthenticated ? (
+                <TouchableOpacity
+                  style={commonStyles.buttonSecondary}
+                  onPress={onContinueAfterSuccess}
+                >
+                  <Text style={commonStyles.buttonTextSecondary}>Continue</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
+
+          {node?.type === 'ErrorNode' ? (
+            <Text style={commonStyles.textError} selectable>
+              {typeof node.message === 'string'
+                ? node.message
+                : 'A server-side validation error occurred.'}
+            </Text>
+          ) : null}
+
+          {node?.type === 'FailureNode' ? (
+            <Text style={commonStyles.textError} selectable>
+              {typeof node.cause === 'string'
+                ? node.cause
+                : typeof node.message === 'string'
+                  ? node.message
+                  : 'An unexpected failure occurred.'}
+            </Text>
+          ) : null}
+
+          {error ? (
+            <Text style={commonStyles.textError} selectable>
+              {`[${error.code}] ${error.message}`}
+            </Text>
+          ) : null}
+
+          {externalIdpBrowserError ? (
+            <Text style={commonStyles.textError} selectable>
+              {externalIdpBrowserError}
+            </Text>
+          ) : null}
+
+          {!showCallbackScreen &&
+          !showSuccessScreen &&
+          !loading &&
+          !isSessionCheckRunning &&
+          !backchannelEntry ? (
+            <>
+              <Text style={styles.autoPollingNote}>
+                No active Journey flow. Start from Journey Configuration, or
+                approve an AM/AIC transactional authorization by pasting the
+                gateway redirect URI below.
+              </Text>
+              <PingTextInput
+                label="Backchannel URI"
+                value={backchannelUri}
+                onChangeText={setBackchannelUri}
+                placeholder="https://tenant/am/UI/Login?authIndexType=transaction&authIndexValue=..."
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[
+                  commonStyles.buttonSecondary,
+                  loading ? styles.disabledButton : null,
+                  backchannelUri.trim() ? null : styles.disabledButton,
+                ]}
+                onPress={onStartBackchannel}
+                disabled={loading || !backchannelUri.trim()}
+              >
+                <Text style={commonStyles.buttonTextSecondary}>
+                  Start Backchannel Journey
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+        </View>
+      )}
       {SHOW_JOURNEY_DEBUG_PANEL ? (
         <JourneyDebugPanel entries={debugEntries} onClear={clearDebugEntries} />
       ) : null}

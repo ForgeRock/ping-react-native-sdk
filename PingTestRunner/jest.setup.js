@@ -226,6 +226,11 @@ jest.mock('../packages/journey/src/NativeRNPingJourney', () => ({
       type: 'ContinueNode',
       callbacks: [],
     })),
+    startBackchannel: jest.fn(async () => ({
+      id: 'n4',
+      type: 'ContinueNode',
+      callbacks: [],
+    })),
     getSession: jest.fn(async () => ({ accessToken: 'mock-access-token' })),
     refresh: jest.fn(async () => ({ accessToken: 'mock-refreshed-token' })),
     revoke: jest.fn(async () => true),

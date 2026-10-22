@@ -53,6 +53,23 @@ final class RNPingJourneyCommonTests: XCTestCase {
     }
   }
 
+  private final class NodePayloadCaptureBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue: [String: Any]?
+
+    func set(_ value: [String: Any]?) {
+      lock.lock()
+      storedValue = value
+      lock.unlock()
+    }
+
+    var value: [String: Any]? {
+      lock.lock()
+      defer { lock.unlock() }
+      return storedValue
+    }
+  }
+
   override func setUp() {
     super.setUp()
     RNPingJourneyCommon.cleanup()
@@ -236,6 +253,87 @@ final class RNPingJourneyCommonTests: XCTestCase {
         rejecter: rejecter
       )
     }
+  }
+
+  func testStartBackchannelRejectsWhenJourneyMissing() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.stateError.rawValue,
+      expectedType: .stateError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.startBackchannel(
+        "missing",
+        redirectUri: "https://tenant.example.com/am/UI/Login?authIndexType=transaction&authIndexValue=abc-123",
+        forceAuth: false,
+        noSession: false,
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  func testStartBackchannelRejectsWhenUriIsBlank() {
+    assertReject(
+      expectedCode: JourneyErrorCodes.startError.rawValue,
+      expectedType: .argumentError
+    ) { rejecter, resolver in
+      RNPingJourneyCommon.startBackchannel(
+        "any-id",
+        redirectUri: "   ",
+        forceAuth: false,
+        noSession: false,
+        resolver: resolver,
+        rejecter: rejecter
+      )
+    }
+  }
+
+  /// Bridge-owned branch: an unparseable URI on a configured journey resolves
+  /// a FailureNode payload (mirroring the native contract) instead of
+  /// rejecting. Native itself cannot be reached with such input, so this is
+  /// the only layer that exercises it.
+  func testStartBackchannelResolvesFailureNodeWhenUriUnparseable() {
+    let journeyId = configureJourneyAndWait(
+      [
+        "serverUrl": "https://example.com/am"
+      ]
+    )
+
+    let resolveExpectation = expectation(description: "resolve called")
+    let rejectExpectation = expectation(description: "reject not called")
+    rejectExpectation.isInverted = true
+    let capture = NodePayloadCaptureBox()
+
+    RNPingJourneyCommon.startBackchannel(
+      journeyId,
+      redirectUri: "://not a uri",
+      forceAuth: false,
+      noSession: false,
+      resolver: { payload in
+        capture.set(payload as? [String: Any])
+        Task { @MainActor in
+          resolveExpectation.fulfill()
+        }
+      },
+      rejecter: { _, _, _ in
+        Task { @MainActor in
+          rejectExpectation.fulfill()
+        }
+      }
+    )
+
+    wait(for: [resolveExpectation, rejectExpectation], timeout: 1.0)
+
+    let payload = capture.value
+    XCTAssertEqual(
+      payload?["type"] as? String,
+      "FailureNode",
+      "Unparseable URI should resolve a FailureNode payload"
+    )
+    let message = payload?["message"] as? String ?? ""
+    XCTAssertTrue(
+      message.contains("Invalid URI"),
+      "FailureNode message should surface the bridge validation cause, got: \(message)"
+    )
   }
 
   func testGetSessionRejectsWhenJourneyMissing() {

@@ -17,6 +17,7 @@
  *   davinci-start-btn                       → starts the flow
  *   davinci-field-{key}                     → per-collector input
  *   davinci-field-{key}-option-{value}      → option button for single/multi-select
+ *   davinci-field-{key}-image-url / -image-description / -image-hyperlink  → IMAGE display-only field (url, alt text, optional hyperlink)
  *   davinci-flow-{key}                      → FLOW_BUTTON / FLOW_LINK / ACTION
  *   davinci-submit-btn                      → first SUBMIT_BUTTON (or fallback submit)
  *   davinci-submit-{label}                  → additional SUBMIT_BUTTON collectors, keyed by label
@@ -561,6 +562,22 @@ function CollectorField({
 
   if (collector.type === 'QR_CODE') {
     return <Text testID={testID}>{collector.fallbackText}</Text>;
+  }
+
+  if (collector.type === 'IMAGE') {
+    return (
+      <View testID={testID}>
+        <Text testID={`${testID}-image-url`}>{collector.imageUrl}</Text>
+        <Text testID={`${testID}-image-description`}>
+          {collector.description}
+        </Text>
+        {collector.hyperlinkUrl ? (
+          <Text testID={`${testID}-image-hyperlink`}>
+            {collector.hyperlinkUrl}
+          </Text>
+        ) : null}
+      </View>
+    );
   }
 
   if (collector.type === 'POLLING') {
