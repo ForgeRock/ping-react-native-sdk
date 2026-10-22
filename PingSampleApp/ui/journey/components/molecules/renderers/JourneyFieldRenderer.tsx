@@ -47,7 +47,6 @@ function JourneyFieldRenderer(
     return null;
   }
 
-
   if (
     isFidoAuthenticationCallback ||
     isIdPCallback ||
