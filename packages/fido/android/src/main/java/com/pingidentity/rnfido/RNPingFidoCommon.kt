@@ -239,7 +239,7 @@ object RNPingFidoCommon {
       // useFido2Client contract unchanged (true GMS FIDO2 API, false Credential
       // Manager, undefined auto-detect via the customizer's GMS default).
       operation = { client, input, callConfig ->
-        client.authenticate(input) { callConfig.useFido2Client?.let { useFido2ApiClient = it } }
+        client.authenticate(input, authenticateCustomizer(callConfig))
       }
     )
   }

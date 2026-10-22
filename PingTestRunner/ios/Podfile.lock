@@ -106,6 +106,10 @@ PODS:
   - PingPush (2.2.0):
     - PingNetwork (~> 2.2.0)
     - PingTamperDetector (~> 2.2.0)
+  - PingReCaptchaEnterprise (2.2.0):
+    - PingCommons (~> 2.2.0)
+    - PingJourneyPlugin (~> 2.2.0)
+    - RecaptchaEnterprise (~> 18.9.1)
   - PingStorage (2.2.0)
   - PingTamperDetector (2.2.0):
     - PingCommons (~> 2.2.0)
@@ -2225,6 +2229,10 @@ PODS:
     - React-perflogger (= 0.80.1)
     - React-utils (= 0.80.1)
     - SocketRocket
+  - RecaptchaEnterprise (18.9.1):
+    - RecaptchaEnterpriseSDK (= 18.9.1)
+    - RecaptchaInterop (~> 101.0.0)
+  - RecaptchaEnterpriseSDK (18.9.1)
   - RecaptchaInterop (101.0.0)
   - RNCAsyncStorage (2.2.0):
     - boost
@@ -3226,6 +3234,70 @@ PODS:
     - RNPingCore
     - SocketRocket
     - Yoga
+  - RNPingRecaptcha (1.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger (= 2.2.0)
+    - PingReCaptchaEnterprise (= 2.2.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
+  - RNPingRecaptcha/Tests (1.1.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - PingLogger (= 2.2.0)
+    - PingReCaptchaEnterprise (= 2.2.0)
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNPingCore
+    - SocketRocket
+    - Yoga
   - RNPingStorage (1.1.0):
     - boost
     - DoubleConversion
@@ -3398,6 +3470,8 @@ DEPENDENCIES:
   - "RNPingProtect/Tests (from `../../node_modules/@ping-identity/rn-protect`)"
   - "RNPingPush (from `../../node_modules/@ping-identity/rn-push`)"
   - "RNPingPush/Tests (from `../../node_modules/@ping-identity/rn-push`)"
+  - "RNPingRecaptcha (from `../../node_modules/@ping-identity/rn-recaptcha`)"
+  - "RNPingRecaptcha/Tests (from `../../node_modules/@ping-identity/rn-recaptcha`)"
   - "RNPingStorage (from `../../node_modules/@ping-identity/rn-storage`)"
   - "RNPingStorage/Tests (from `../../node_modules/@ping-identity/rn-storage`)"
   - SocketRocket (~> 0.7.1)
@@ -3406,8 +3480,6 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - GoogleUtilities
-    - PingOneSignals
-    - RecaptchaInterop
     - PingBinding
     - PingBrowser
     - PingCommons
@@ -3428,8 +3500,12 @@ SPEC REPOS:
     - PingOneSignals
     - PingOrchestrate
     - PingPush
+    - PingReCaptchaEnterprise
     - PingStorage
     - PingTamperDetector
+    - RecaptchaEnterprise
+    - RecaptchaEnterpriseSDK
+    - RecaptchaInterop
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -3610,6 +3686,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@ping-identity/rn-protect"
   RNPingPush:
     :path: "../../node_modules/@ping-identity/rn-push"
+  RNPingRecaptcha:
+    :path: "../../node_modules/@ping-identity/rn-recaptcha"
   RNPingStorage:
     :path: "../../node_modules/@ping-identity/rn-storage"
   Yoga:
@@ -3644,6 +3722,7 @@ SPEC CHECKSUMS:
   PingOneSignals: 3d14d429201435960e062e3481356b9f21fa657f
   PingOrchestrate: 6906f1333742fc7dc2fcf719ba1e2685b8213a19
   PingPush: d1936d0d0ec914421886826260898efc76c379b0
+  PingReCaptchaEnterprise: 96fc365a138621a67c8034c487e8fabe3a0657ef
   PingStorage: e19ca8fc7f895fb345090f235da81bd1cff55b51
   PingTamperDetector: 351caabae1f1e53f608acac8614d8d307f5fff7f
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
@@ -3711,6 +3790,8 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: ba631a31783569c13056dd57ff39e19764abdd6f
   ReactCodegen: 1e9f3e8a3f56fa25fbf39ecd37b708a4838d9032
   ReactCommon: 96684b90b235d6ae340d126141edd4563b7a446a
+  RecaptchaEnterprise: a28429a5366cc0f687ac5e93a44c5caa2c685aa9
+  RecaptchaEnterpriseSDK: 72239ea30c486d9093918c7b31eb85629eff1a50
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RNCAsyncStorage: 767abb068db6ad28b5f59a129fbc9fab18b377e2
   RNPingBinding: e4d2b04deac5fd415bc6c51183f8ab7f20a32cae
@@ -3728,10 +3809,11 @@ SPEC CHECKSUMS:
   RNPingOidc: bd7d8b6f5dc7da893c1f0d713058500a16606a95
   RNPingProtect: f80df46fd64be64c343ca1507315ec9093c53863
   RNPingPush: 1043c9fcb01b0172b99690d2fe7f12d61948f49d
+  RNPingRecaptcha: 20ff6927ccac6cb4497e59c040eb9b778c323d48
   RNPingStorage: ce105d17812c024e043f8234ef62d1e5fdf80e25
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: 9ceaad74f9b24aba51880ae069d18f1dffba35e4
+PODFILE CHECKSUM: e25a144ddd440ff70c16c144481d74ab14b17bea
 
 COCOAPODS: 1.16.2

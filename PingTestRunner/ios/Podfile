@@ -80,6 +80,11 @@ target 'PingTestRunner' do
     :path => '../../node_modules/@ping-identity/rn-storage',
     :testspecs => ['Tests']
 
+  # PingExternalIdPGoogle -> GoogleSignIn -> AppCheckCore pulls these in; neither
+  # defines a module, which Swift requires to import them under static linkage.
+  pod 'RecaptchaInterop', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+
   post_install do |installer|
     react_native_post_install(
       installer,
