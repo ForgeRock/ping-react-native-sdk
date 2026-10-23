@@ -74,13 +74,13 @@ describe('fido native module wiring', () => {
         warn: jest.fn(),
         error: jest.fn(),
       },
-      android: { useFido2Client: false },
+      android: { useFido2ApiClient: false },
     });
 
     await client.register({ challenge: 'abc' });
     expect(registerNative).toHaveBeenCalledWith(
       { challenge: 'abc' },
-      { loggerId: 'logger-1', useFido2Client: false },
+      { loggerId: 'logger-1', useFido2ApiClient: false },
     );
   });
 

@@ -20,16 +20,20 @@ import com.facebook.react.bridge.WritableMap
 import com.facebook.soloader.SoLoader
 import com.facebook.soloader.nativeloader.NativeLoader
 import com.facebook.soloader.nativeloader.SystemDelegate
+import com.pingidentity.fido.FidoAuthenticateCustomizer
 import com.pingidentity.fido.davinci.FidoAuthenticationCollector
 import com.pingidentity.fido.davinci.FidoRegistrationCollector
+import com.pingidentity.fido.journey.FidoAuthenticationCallback
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.DaVinciCollectorResolver
+import com.pingidentity.rncore.JourneyCallbackResolver
 import com.pingidentity.rncore.utils.JsonBridgeMapper
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.slot
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
@@ -38,6 +42,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -58,6 +63,7 @@ import org.robolectric.shadows.ShadowLog
 class RNPingFidoTest {
 
   private var originalDaVinciCollectorResolver: DaVinciCollectorResolver? = null
+  private var originalJourneyCallbackResolver: JourneyCallbackResolver? = null
 
   @Before
   fun setUp() {
@@ -69,12 +75,15 @@ class RNPingFidoTest {
     RNPingFidoCommon.foregroundActivityProvider = { true }
     originalDaVinciCollectorResolver = CoreRuntime.davinciCollectorResolver
     CoreRuntime.davinciCollectorResolver = null
+    originalJourneyCallbackResolver = CoreRuntime.journeyCallbackResolver
+    CoreRuntime.journeyCallbackResolver = null
   }
 
   @After
   fun tearDown() {
     RNPingFidoCommon.foregroundActivityProvider = { true }
     CoreRuntime.davinciCollectorResolver = originalDaVinciCollectorResolver
+    CoreRuntime.journeyCallbackResolver = originalJourneyCallbackResolver
     unmockkStatic(Arguments::class)
     unmockkObject(JsonBridgeMapper)
   }
@@ -644,6 +653,44 @@ class RNPingFidoTest {
       rejectedMessage = message
       latch.countDown()
     }
+  }
+
+  /**
+   * Ensures DaVinci authentication hands the API selection customizer to the native
+   * collector and resolves on success.
+   */
+  @Test
+  fun authenticateForDaVinciPassesCustomizerBlockToCollector() {
+    val block = slot<FidoAuthenticateCustomizer.() -> Unit>()
+    val collector = mockk<FidoAuthenticationCollector>()
+    coEvery { collector.authenticate(capture(block)) } returns Result.success(JsonObject(emptyMap()))
+    CoreRuntime.davinciCollectorResolver = { listOf(collector) }
+    val promise = TestPromise()
+    val config = JavaOnlyMap().apply { putBoolean("useFido2ApiClient", false) }
+
+    RNPingFidoCommon.authenticateForDaVinci("dv-1", JavaOnlyMap(), config, promise)
+
+    assertTrue(promise.await())
+    assertTrue(block.isCaptured)
+  }
+
+  /**
+   * Ensures Journey authentication hands the API selection customizer to the native
+   * callback and resolves on success.
+   */
+  @Test
+  fun authenticateForJourneyPassesCustomizerBlockToCallback() {
+    val block = slot<FidoAuthenticateCustomizer.() -> Unit>()
+    val callback = mockk<FidoAuthenticationCallback>()
+    coEvery { callback.authenticate(capture(block)) } returns Result.success(JsonObject(emptyMap()))
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val promise = TestPromise()
+    val config = JavaOnlyMap().apply { putBoolean("useFido2ApiClient", true) }
+
+    RNPingFidoCommon.authenticateForJourney("journey-1", JavaOnlyMap(), config, promise)
+
+    assertTrue(promise.await())
+    assertTrue(block.isCaptured)
   }
 
   /**

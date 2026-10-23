@@ -136,7 +136,7 @@ export type NativeFidoConfig = {
   /** Optional native logger handle id resolved by JavaScript. */
   loggerId?: string;
   /** Optional Android-only API selection toggle. */
-  useFido2Client?: boolean;
+  useFido2ApiClient?: boolean;
 };
 
 /**

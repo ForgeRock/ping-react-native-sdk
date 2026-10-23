@@ -660,6 +660,11 @@ public class RNPingOathCommon: NSObject {
   /// milliseconds since epoch (matching `encodeCredential`'s encoding); missing values
   /// default to `Date()`.
   ///
+  /// An absent display field falls back to the base `issuer`/`accountName` value, which
+  /// overwrites a user-customised stored label on save. The JS facade always sends both
+  /// display fields (required by the `OathCredential` type), so the fallback is only
+  /// reachable by direct native-module callers.
+  ///
   /// If required fields (`issuer`, `accountName`) are missing, this method
   /// rejects through `rejecter` and returns `nil`.
   ///

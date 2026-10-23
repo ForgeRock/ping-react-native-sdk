@@ -210,15 +210,16 @@ export type FidoDaVinciAuthenticationOptions = {
  */
 export type FidoAndroidConfig = {
   /**
-   * Android API selection override.
+   * Android FIDO2 API selection override for authentication.
    *
    * @remarks
-   * Applies on Android only.
+   * Applies on Android only, to `authenticate`, `authenticateForJourney` and
+   * `authenticateForDaVinci`. Registration is not affected.
    * - `undefined`: Use native SDK auto-detection/default behavior.
    * - `true`: Force Google Play Services FIDO2 APIs.
    * - `false`: Force Android Credential Manager APIs.
    */
-  useFido2Client?: boolean;
+  useFido2ApiClient?: boolean;
 };
 
 /**
@@ -250,14 +251,15 @@ export type FidoClientConfig = {
    */
   loggerId?: string;
   /**
-   * Optional Android API selection override.
+   * Optional Android FIDO2 API selection override for authentication.
    *
    * @remarks
+   * Applied to standalone, Journey and DaVinci authentication.
    * - `undefined`: Use native SDK auto-detection/default behavior.
    * - `true`: Force Google Play Services FIDO2 APIs.
    * - `false`: Force Android Credential Manager APIs.
    */
-  useFido2Client?: boolean;
+  useFido2ApiClient?: boolean;
 };
 
 /**
