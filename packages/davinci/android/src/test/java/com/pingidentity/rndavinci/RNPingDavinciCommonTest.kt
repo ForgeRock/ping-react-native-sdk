@@ -16,6 +16,7 @@ import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.facebook.react.modules.core.DeviceEventManagerModule
 import com.pingidentity.davinci.collector.BooleanCollector
+import com.pingidentity.davinci.collector.MetadataCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PollingCollector
 import com.pingidentity.davinci.collector.SubmitCollector
@@ -361,6 +362,95 @@ class RNPingDavinciCommonTest {
             davinciId,
             collector.id(),
             collectorInput(collector.id(), "value"),
+            promise
+        )
+
+        assertEquals(0, (captureResolve(promise) as ReadableArray).size())
+    }
+
+    // ---- validate — MetadataCollector ----
+
+    @Test
+    fun validate_metadataCollectorUnsetResultResolvesRequiredError() {
+        // Unset (null) application is a no-op, so the native validate() still
+        // reports Required — the flow blocks until the app sets a result.
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("payload", buildJsonObject { put("sdk", "PROTECT") })
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "sdkMetadata",
+            collectorInputMap("sdkMetadata") { putNull("value") },
+            promise
+        )
+
+        val errors = captureResolve(promise) as ReadableArray
+        assertEquals(1, errors.size())
+        assertEquals("REQUIRED", errors.getMap(0)?.getString("code"))
+    }
+
+    @Test
+    fun validate_metadataCollectorSetResultResolvesEmptyArray() {
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("payload", buildJsonObject { put("sdk", "PROTECT") })
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "sdkMetadata",
+            collectorInputMap("sdkMetadata") {
+                putMap("value", JavaOnlyMap().apply {
+                    putString("status", "completed")
+                    putInt("score", 87)
+                })
+            },
+            promise
+        )
+
+        assertEquals(0, (captureResolve(promise) as ReadableArray).size())
+    }
+
+    @Test
+    fun validate_metadataCollectorErrorEnvelopeResolvesEmptyArray() {
+        // The well-formed error envelope is the collector's value (D1) — it satisfies
+        // validate() exactly like a success result; the connector routes on it.
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("payload", buildJsonObject { put("sdk", "PROTECT") })
+            })
+        }
+        val davinciId = registerDaVinciHandle(Workflow(WorkflowConfig()))
+        setContinueNode(davinciId, DummyContinueNode(actions = listOf(collector)))
+        val promise = TestPromise()
+
+        RNPingDavinciCommon.validate(
+            davinciId,
+            "sdkMetadata",
+            collectorInputMap("sdkMetadata") {
+                putMap("value", JavaOnlyMap().apply {
+                    putMap("error", JavaOnlyMap().apply {
+                        putString("code", "USER_CANCELLED")
+                        putString("message", "User abandoned the flow")
+                    })
+                })
+            },
             promise
         )
 

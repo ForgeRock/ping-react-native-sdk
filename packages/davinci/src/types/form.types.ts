@@ -15,6 +15,8 @@ import type {
   ImageCollector,
   IntegrationCollector,
   LabelCollector,
+  DaVinciMetadataResult,
+  MetadataCollector,
   MultiSelectCollector,
   PasswordCollector,
   PhoneNumberCollector,
@@ -46,6 +48,10 @@ import type {
  *                            package performs its action and then calls `next()`.
  *                            No base-registry collector maps to this mode in 2.0.1 —
  *                            plugin collectors registered by future packages will.
+ * - `metadata`             — SDK Integrator connector pause/resume (METADATA). The
+ *                            flow pauses with an opaque payload; the app performs
+ *                            the on-device work and sets a result value before
+ *                            calling `next()`.
  * - `unsupported`          — collector type not recognised by the bridge or any
  *                            registered integration; skipped in the submit payload
  *
@@ -59,6 +65,7 @@ export type DaVinciExecutionMode =
   | 'output_only'
   | 'immediate'
   | 'integration_required'
+  | 'metadata'
   | 'unsupported';
 
 /**
@@ -77,6 +84,7 @@ export type DaVinciExecutionMode =
  * - `polling`      — async out-of-band polling status (POLLING), driven by `pollStatus`
  * - `qrCode`       — display-only QR code image (QR_CODE)
  * - `image`        — display-only image (IMAGE)
+ * - `metadata`     — SDK Integrator connector pause/resume (METADATA)
  * - `flow`         — immediate-submit action (SUBMIT_BUTTON, ACTION, FLOW_BUTTON, FLOW_LINK)
  * - `integration`  — handled by an external integration package (future collectors)
  * - `unknown`      — unrecognised type
@@ -95,6 +103,7 @@ export type DaVinciFieldKind =
   | 'polling'
   | 'qrCode'
   | 'image'
+  | 'metadata'
   | 'flow'
   | 'integration'
   | 'unknown';
@@ -152,6 +161,7 @@ export type DaVinciNormalizedCollector =
   | (PollingCollector & DaVinciNormalizedMetadata<'polling'>)
   | (QRCodeCollector & DaVinciNormalizedMetadata<'qrCode'>)
   | (ImageCollector & DaVinciNormalizedMetadata<'image'>)
+  | (MetadataCollector & DaVinciNormalizedMetadata<'metadata'>)
   | (IntegrationCollector & DaVinciNormalizedMetadata<'integration'>)
   | (IntegrationCollector & DaVinciNormalizedMetadata<'unknown'>);
 
@@ -166,6 +176,7 @@ export type DaVinciFormValue =
   | boolean // SINGLE_CHECKBOX
   | { countryCode: string; phoneNumber: string; extension?: string } // PHONE_NUMBER
   | { type: string; id?: string; description?: string } // DEVICE_AUTHENTICATION
+  | DaVinciMetadataResult // METADATA (success result or error envelope — see DaVinciMetadataResult)
   | null;
 
 /**
@@ -178,13 +189,27 @@ export type DaVinciFormValues = Record<string, DaVinciFormValue | undefined>;
 /**
  * Stable issue code surfaced by the collector submit helper.
  *
+ * @remarks
+ * Blocking codes (they force `canSubmit: false`):
+ * `REQUIRED_VALUE_MISSING` — a required manual collector has no value;
+ * `INTEGRATION_REQUIRED` — an unhandled `integration_required` collector is
+ * present; `METADATA_RESULT_REQUIRED` — a {@link MetadataCollector} has no
+ * result set; `METADATA_RESULT_MALFORMED` — the supplied METADATA value is a
+ * non-object, array, empty object, or a malformed `{ error: ... }` envelope
+ * (the message names the offending value type). `UNSUPPORTED_COLLECTOR` is
+ * non-blocking: an unknown-type collector is skipped in the payload.
+ * `NO_ACTIVE_CONTINUE_NODE` blocks via the absence of a submittable node
+ * rather than the blocking set.
+ *
  * @public
  */
 export type DaVinciSubmitIssueCode =
   | 'NO_ACTIVE_CONTINUE_NODE'
   | 'REQUIRED_VALUE_MISSING'
   | 'UNSUPPORTED_COLLECTOR'
-  | 'INTEGRATION_REQUIRED';
+  | 'INTEGRATION_REQUIRED'
+  | 'METADATA_RESULT_REQUIRED'
+  | 'METADATA_RESULT_MALFORMED';
 
 /**
  * Helper issue record for collector submit planning.
@@ -240,6 +265,11 @@ export type DaVinciFormMeta = {
    * True when at least one collector requires an external package integration.
    */
   hasIntegrationRequired: boolean;
+  /**
+   * True when at least one {@link MetadataCollector} (SDK Integrator connector
+   * pause/resume) is present.
+   */
+  hasMetadata: boolean;
   /** True when at least one unsupported (unknown-type) collector is present. */
   hasUnsupported: boolean;
 };

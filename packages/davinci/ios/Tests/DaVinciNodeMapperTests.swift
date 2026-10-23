@@ -1071,6 +1071,210 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertNil(payload["unsupportedFields"])
   }
 
+  // MARK: - MetadataCollector serialization
+
+  private func makeMetadataCollector(
+    key: String,
+    type: String = "METADATA",
+    payload: Any?
+  ) -> MetadataCollector {
+    var json: [String: Any] = [
+      "key": key,
+      "type": type
+    ]
+    if let payload {
+      json["payload"] = payload
+    }
+    return MetadataCollector(with: json)
+  }
+
+  private static func makeMetadataNodeInput() -> [String: Any] {
+    return [
+      "form": [
+        "components": [
+          "fields": [
+            [
+              "key": "sdkMetadata",
+              "type": "METADATA",
+              "label": "SDK Metadata",
+              "required": true,
+              "payload": ["sdk": "PROTECT", "action": "INITIALIZE"]
+            ]
+          ]
+        ]
+      ]
+    ]
+  }
+
+  func testMapMetadataCollectorEmitsAllFields() {
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(
+          key: "sdkMetadata",
+          payload: ["sdk": "PROTECT", "action": "INITIALIZE"]
+        )
+      ],
+      input: DaVinciNodeMapperTests.makeMetadataNodeInput()
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["type"] as? String, "METADATA")
+    XCTAssertEqual(first?["key"] as? String, "sdkMetadata")
+    let metadata = first?["metadata"] as? [String: Any]
+    XCTAssertEqual(metadata?["sdk"] as? String, "PROTECT")
+    XCTAssertEqual(metadata?["action"] as? String, "INITIALIZE")
+  }
+
+  func testMapMetadataCollectorSynthesizesLabelAndRequiredFromRawFieldJson() {
+    // iOS's native MetadataCollector is an AnyFieldCollector with no native
+    // label/required (unlike Android's FieldCollector subtype); the bridge
+    // synthesizes both from the raw form field JSON.
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(
+          key: "sdkMetadata",
+          payload: ["sdk": "PROTECT"]
+        )
+      ],
+      input: DaVinciNodeMapperTests.makeMetadataNodeInput()
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["label"] as? String, "SDK Metadata")
+    XCTAssertEqual(first?["required"] as? Bool, true)
+  }
+
+  func testMapMetadataCollectorDefaultsLabelAndRequiredWhenFieldAbsent() {
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+      ]
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["label"] as? String, "")
+    XCTAssertEqual(first?["required"] as? Bool, false)
+  }
+
+  func testMapMetadataCollectorDefaultsLabelAndRequiredWhenFieldValuesAbsent() {
+    // A matching field entry without label/required keys still yields the defaults.
+    let input: [String: Any] = [
+      "form": [
+        "components": [
+          "fields": [
+            ["key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]]
+          ]
+        ]
+      ]
+    ]
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+      ],
+      input: input
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertEqual(first?["label"] as? String, "")
+    XCTAssertEqual(first?["required"] as? Bool, false)
+  }
+
+  func testMapMetadataCollectorEmitsEmptyMetadataWhenPayloadAbsent() {
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: nil)
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    let metadata = first?["metadata"] as? [String: Any]
+    XCTAssertNotNil(metadata)
+    XCTAssertTrue(metadata?.isEmpty ?? false)
+  }
+
+  func testMapMetadataCollectorWarnsAndEmitsEmptyMetadataForMalformedPayload() {
+    // iOS-only reachable: native init coerces a non-dictionary payload to [:]
+    // (Android's native init throws before the bridge sees the collector).
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: "not-a-dictionary")
+    let node = makeContinueNode(collectors: [collector])
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    let metadata = first?["metadata"] as? [String: Any]
+    XCTAssertNotNil(metadata)
+    XCTAssertTrue(metadata?.isEmpty ?? false)
+  }
+
+  func testMapMetadataCollectorIncludesRawFieldWhenFormInputPresent() {
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(
+          key: "sdkMetadata",
+          payload: ["sdk": "PROTECT", "action": "INITIALIZE"]
+        )
+      ],
+      input: DaVinciNodeMapperTests.makeMetadataNodeInput()
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let first = (payload["collectors"] as? [[String: Any]])?.first
+
+    XCTAssertNotNil(first?["raw"])
+  }
+
+  func testMapMetadataCollectorNotReportedAsUnsupportedField() {
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(
+          key: "sdkMetadata",
+          payload: ["sdk": "PROTECT", "action": "INITIALIZE"]
+        )
+      ],
+      input: DaVinciNodeMapperTests.makeMetadataNodeInput()
+    )
+
+    let payload = DaVinciNodeMapper.mapNodePayload(node)
+
+    XCTAssertNil(payload["unsupportedFields"])
+  }
+
+  func testMapNodeRoundTripWithMetadataCollector() {
+    // Full mapNode round-trip: the NSDictionary payload emitted for the bridge
+    // carries the same typed fields as the intermediate payload map.
+    let node = makeContinueNode(
+      collectors: [
+        makeMetadataCollector(
+          key: "sdkMetadata",
+          payload: ["sdk": "PROTECT", "action": "INITIALIZE", "nested": ["a": 1]]
+        )
+      ],
+      input: DaVinciNodeMapperTests.makeMetadataNodeInput()
+    )
+
+    let payload = DaVinciNodeMapper.mapNode(node)
+    let collectors = payload["collectors"] as? [[String: Any]]
+    let first = collectors?.first
+
+    XCTAssertEqual(first?["type"] as? String, "METADATA")
+    XCTAssertEqual(first?["key"] as? String, "sdkMetadata")
+    XCTAssertEqual(first?["label"] as? String, "SDK Metadata")
+    XCTAssertEqual(first?["required"] as? Bool, true)
+    let metadata = first?["metadata"] as? [String: Any]
+    XCTAssertEqual(metadata?["sdk"] as? String, "PROTECT")
+    XCTAssertEqual(metadata?["action"] as? String, "INITIALIZE")
+    let nested = metadata?["nested"] as? [String: Any]
+    XCTAssertEqual(nested?["a"] as? Int, 1)
+    XCTAssertNotNil(first?["raw"])
+  }
+
   // MARK: - ReadOnlyTextCollector serialization
 
   func testMapReadOnlyTextCollectorIncludesAllFields() {

@@ -592,6 +592,92 @@ export type ImageCollector = {
 };
 
 /**
+ * SDK Integrator connector pause/resume collector — a DaVinci flow pauses and
+ * hands the app an opaque payload; the app performs the on-device work and
+ * supplies a result before the flow can resume.
+ *
+ * @remarks
+ * Field names and defaults mirror the native 2.2 `MetadataCollector` exactly
+ * (iOS `Davinci/Davinci/collector/MetadataCollector.swift`, Android
+ * `davinci/src/main/kotlin/com/pingidentity/davinci/collector/MetadataCollector.kt`):
+ * the server field is `{ type: "METADATA", key: "sdkMetadata", payload: <object> }`.
+ *
+ * - `label`/`required` platform delta: Android's native collector extends
+ *   `FieldCollector<JsonObject>` and exposes both natively; iOS's native
+ *   collector is an `AnyFieldCollector` with no such properties, so the iOS
+ *   bridge synthesizes them from the raw form field JSON (defaults `""` and
+ *   `false`). The serialized bridge shape is identical across platforms.
+ * - `metadata` is opaque: the SDK does not validate or introspect the payload —
+ *   the app interprets the shape and performs the on-device work itself
+ *   (third-party SDK call, risk evaluation, payment, etc.).
+ * - Resume contract: the value set as the collector's form value is what the
+ *   native bridge applies and what lands in `formData.sdkMetadata` when the
+ *   flow resumes via `next()`. A plain non-empty object is the success result
+ *   ({@link DaVinciMetadataResult}); an object carrying a well-formed
+ *   `{ error: { code, message } }` envelope routes the connector's error
+ *   branch ({@link DaVinciMetadataErrorResult} — build one with
+ *   {@link buildMetadataError}). This intentionally differs from the FIDO2
+ *   collector error handling (SDKS-5383), where collector errors are bridge
+ *   rejections: for METADATA the error envelope IS the collector value, so a
+ *   well-formed envelope resolves the flow instead of rejecting it.
+ * - Submission gating is result-set-based: the native `validate()` reports
+ *   `REQUIRED` until a result is set and ignores the server `required` flag,
+ *   so the submit helper blocks with `METADATA_RESULT_REQUIRED` while no
+ *   result is set.
+ * - Degradation: on native SDKs below 2.2.0 the collector type is never
+ *   instantiated — the field surfaces in the node's `unsupportedFields` and
+ *   classifies as `executionMode: 'unsupported'`.
+ *
+ * @public
+ */
+export type MetadataCollector = BaseCollector & {
+  type: 'METADATA';
+  /**
+   * Opaque payload delivered by the connector (server field `payload`).
+   *
+   * @remarks
+   * Serialized as-is by the bridge — no transformation or filtering. The app
+   * interprets the shape and performs the on-device work itself.
+   */
+  metadata: Record<string, unknown>;
+};
+
+/**
+ * Success result for a {@link MetadataCollector} — the exact object applied to
+ * the native collector and POSTed as `formData.sdkMetadata` when the flow
+ * resumes.
+ *
+ * @remarks
+ * Must be a non-empty plain JSON object: Android's native resume envelope
+ * silently drops an empty result, so the bridge rejects empty objects on both
+ * platforms. An object carrying an `error` key is interpreted as a
+ * {@link DaVinciMetadataErrorResult} instead — build that shape with
+ * {@link buildMetadataError}.
+ *
+ * @public
+ */
+export type DaVinciMetadataResult = Record<string, unknown>;
+
+/**
+ * Structured error result for a {@link MetadataCollector}.
+ *
+ * @remarks
+ * Shapes the resume envelope `{ error: { code, message } }` that the
+ * server-side connector reads to route the flow to its client-error branch.
+ * Use {@link buildMetadataError} to construct one.
+ *
+ * @public
+ */
+export type DaVinciMetadataErrorResult = {
+  error: {
+    /** Short error code identifying the failure (e.g. `'USER_CANCELLED'`). */
+    code: string;
+    /** Human-readable description of the failure. */
+    message: string;
+  };
+};
+
+/**
  * Discriminated union of all collector types returned by the DaVinci bridge.
  *
  * @public
@@ -612,7 +698,8 @@ export type DaVinciCollector =
   | ReadOnlyTextCollector
   | PollingCollector
   | QRCodeCollector
-  | ImageCollector;
+  | ImageCollector
+  | MetadataCollector;
 
 /**
  * Discriminated union of streamed polling status events emitted by

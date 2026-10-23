@@ -297,13 +297,14 @@ if (errors.length > 0) {
 
 Each normalized collector includes `executionMode` and `requiresUserInput`.
 
-| `executionMode`        | Meaning                                                                                  | `requiresUserInput` default |
-| ---------------------- | ---------------------------------------------------------------------------------------- | --------------------------- |
-| `manual`               | Collector value is submitted from form/planned input.                                    | `true`                      |
-| `immediate`            | Activating the collector immediately advances the flow without waiting for other fields. | `false`                     |
-| `output_only`          | Display/label collector, no input value expected.                                        | `false`                     |
-| `integration_required` | Collector is handled by an external integration package before submit.                   | `false`                     |
-| `unsupported`          | Collector type is not currently handled by the bridge or any registered integration.     | `false`                     |
+| `executionMode`        | Meaning                                                                                                                                                | `requiresUserInput` default |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `manual`               | Collector value is submitted from form/planned input.                                                                                                  | `true`                      |
+| `immediate`            | Activating the collector immediately advances the flow without waiting for other fields.                                                               | `false`                     |
+| `output_only`          | Display/label collector, no input value expected.                                                                                                      | `false`                     |
+| `integration_required` | Collector is handled by an external integration package before submit.                                                                                 | `false`                     |
+| `metadata`             | SDK Integrator connector pause/resume — see [DaVinci SDK Connector metadata (METADATA collector)](#davinci-sdk-connector-metadata-metadata-collector). | `false`                     |
+| `unsupported`          | Collector type is not currently handled by the bridge or any registered integration.                                                                   | `false`                     |
 
 #### Flow collector submission
 
@@ -320,31 +321,32 @@ await form.submitFlow('forgot-password');
 
 The following collector types are supported on Android and iOS:
 
-| Collector Type          | Description                                                                            | Input Handling |
-| ----------------------- | -------------------------------------------------------------------------------------- | -------------- |
-| `TEXT`                  | Single-line text input.                                                                | Manual input   |
-| `PASSWORD`              | Masked password input.                                                                 | Manual input   |
-| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                           | Manual input   |
-| `SINGLE_SELECT`         | Single-select input.                                                                   | Manual input   |
-| `DROPDOWN`              | Single-select dropdown.                                                                | Manual input   |
-| `RADIO`                 | Single-select radio group.                                                             | Manual input   |
-| `MULTI_SELECT`          | Multi-select input.                                                                    | Manual input   |
-| `COMBOBOX`              | Multi-select combobox.                                                                 | Manual input   |
-| `CHECKBOX`              | Multi-select checkbox group.                                                           | Manual input   |
-| `PHONE_NUMBER`          | Phone number input with country code.                                                  | Manual input   |
-| `DEVICE_REGISTRATION`   | Device picker for registration.                                                        | Manual input   |
-| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                      | Manual input   |
-| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                  | Immediate      |
-| `ACTION`                | Action button that advances the flow immediately.                                      | Immediate      |
-| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                        | Immediate      |
-| `FLOW_LINK`             | Flow link that advances the flow immediately.                                          | Immediate      |
-| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                             | Manual input   |
-| `LABEL`                 | Read-only display content.                                                             | Output-only    |
-| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                    | Output-only    |
-| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows). | Output-only    |
-| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).    | Output-only    |
-| `IMAGE`                 | Display-only image with optional hyperlink.                                            | Output-only    |
-| `FIDO2`                 | FIDO passkey registration or authentication; narrow by `action`.                       | Integration    |
+| Collector Type          | Description                                                                                                                                            | Input Handling  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- |
+| `TEXT`                  | Single-line text input.                                                                                                                                | Manual input    |
+| `PASSWORD`              | Masked password input.                                                                                                                                 | Manual input    |
+| `PASSWORD_VERIFY`       | Password-confirmation variant of `PASSWORD`.                                                                                                           | Manual input    |
+| `SINGLE_SELECT`         | Single-select input.                                                                                                                                   | Manual input    |
+| `DROPDOWN`              | Single-select dropdown.                                                                                                                                | Manual input    |
+| `RADIO`                 | Single-select radio group.                                                                                                                             | Manual input    |
+| `MULTI_SELECT`          | Multi-select input.                                                                                                                                    | Manual input    |
+| `COMBOBOX`              | Multi-select combobox.                                                                                                                                 | Manual input    |
+| `CHECKBOX`              | Multi-select checkbox group.                                                                                                                           | Manual input    |
+| `PHONE_NUMBER`          | Phone number input with country code.                                                                                                                  | Manual input    |
+| `DEVICE_REGISTRATION`   | Device picker for registration.                                                                                                                        | Manual input    |
+| `DEVICE_AUTHENTICATION` | Device picker for authentication.                                                                                                                      | Manual input    |
+| `SUBMIT_BUTTON`         | Triggers form submission immediately.                                                                                                                  | Immediate       |
+| `ACTION`                | Action button that advances the flow immediately.                                                                                                      | Immediate       |
+| `FLOW_BUTTON`           | Flow button that advances the flow immediately.                                                                                                        | Immediate       |
+| `FLOW_LINK`             | Flow link that advances the flow immediately.                                                                                                          | Immediate       |
+| `SINGLE_CHECKBOX`       | Single checkbox or toggle (boolean field).                                                                                                             | Manual input    |
+| `LABEL`                 | Read-only display content.                                                                                                                             | Output-only     |
+| `READ_ONLY_TEXT`        | Read-only text / agreement content.                                                                                                                    | Output-only     |
+| `POLLING`               | Async polling collector — see [Polling and QR code flows](#polling-and-qr-code-flows).                                                                 | Output-only     |
+| `QR_CODE`               | Display-only QR code — see [Polling and QR code flows](#polling-and-qr-code-flows).                                                                    | Output-only     |
+| `IMAGE`                 | Display-only image with optional hyperlink.                                                                                                            | Output-only     |
+| `FIDO2`                 | FIDO passkey registration or authentication; narrow by `action`.                                                                                       | Integration     |
+| `METADATA`              | SDK Integrator connector pause/resume — see [DaVinci SDK Connector metadata (METADATA collector)](#davinci-sdk-connector-metadata-metadata-collector). | Metadata result |
 
 Integration-dependent collectors are surfaced in node payloads with
 `executionMode: 'integration_required'`. Their minimum generic shape is `key`,
@@ -398,6 +400,105 @@ await daVinci.next({ collectors: [] });
 The ceremony must be completed before calling `next`, and the FIDO collector key
 must not be passed in `next` input. These DaVinci methods use native ceremony
 defaults; no React Native ceremony customization options are exposed.
+
+### DaVinci SDK Connector metadata (METADATA collector)
+
+An SDK Integrator connector can pause a DaVinci flow by returning a form field
+of type `METADATA` carrying an opaque JSON payload. The bridge surfaces that
+field as a `MetadataCollector` (`type: 'METADATA'`) with the payload on
+`collector.metadata`. The SDK does not validate or introspect the payload —
+your app interprets it and performs the on-device work itself (third-party SDK
+call, risk evaluation, payment, and so on).
+
+Pause/resume contract:
+
+1. The flow pauses. The node arrives with a `MetadataCollector` in
+   `node.collectors` and `executionMode: 'metadata'`.
+2. The app reads `collector.metadata` and performs the on-device work.
+3. The app sets the result as the collector's form value —
+   `form.setValue(collector.key, result)` — and resumes with `next()` as usual.
+
+The value supplied as the form value is exactly what the native bridge applies
+to the collector and what lands in the resume payload (`formData.sdkMetadata`):
+
+- Any non-empty JSON object is a success result and is POSTed as-is.
+- An object carrying a well-formed `{ error: { code, message } }` envelope
+  routes the connector's error branch. Build one with `buildMetadataError`:
+
+```ts
+import {
+  buildMetadataError,
+  useDaVinci,
+  useDaVinciForm,
+} from '@ping-identity/rn-davinci';
+
+const { node, next } = useDaVinci(client);
+const form = useDaVinciForm(node);
+
+for (const collector of node?.type === 'ContinueNode' ? node.collectors : []) {
+  if (collector.type === 'METADATA') {
+    // Perform the on-device work the connector payload describes, then
+    // either store a success result or route the connector's error branch.
+    const result = await performOnDeviceWork(collector.metadata);
+    form.setValue(
+      collector.key,
+      result.ok
+        ? { status: 'success' }
+        : buildMetadataError('USER_CANCELLED', 'User dismissed the challenge.'),
+    );
+  }
+}
+
+if (form.canSubmit) {
+  await next(form.input);
+}
+```
+
+There are three distinct outcomes, and none of them fails silently:
+
+- **Success advance** — a non-empty result object is included in the `next()`
+  payload and the flow resumes into the connector's success path.
+- **Structured error** — a `buildMetadataError` envelope is POSTed as the
+  collector value; the server-side connector reads it and routes the flow to
+  its client-error branch. This intentionally differs from FIDO2, where
+  collector errors are promise rejections: for METADATA the error envelope IS
+  the collector value.
+- **Unset result** — submission is blocked with a
+  `METADATA_RESULT_REQUIRED` issue in `form.issues` and `canSubmit: false`
+  until a result is set. Gating is result-set-based: the native `validate()`
+  reports `REQUIRED` until a result is set and ignores the server `required`
+  flag.
+
+A value that is not an object (or is an array, an empty object, or carries a
+malformed `error` envelope) is blocked with `METADATA_RESULT_MALFORMED` naming
+the offending value type, instead of being silently POSTed.
+
+Platform notes:
+
+- **Label/required**: Android's native collector exposes `label` and `required`
+  natively; iOS's does not, so the iOS bridge synthesizes them from the raw
+  form field JSON (defaults `''` and `false`). The serialized bridge shape is
+  identical across platforms.
+- **Empty result objects are rejected on both platforms** with
+  `DAVINCI_COLLECTOR_APPLY_ERROR`: Android's native resume envelope silently
+  drops an empty result, so the bridge rejects the value up front rather than
+  resume with a silently missing entry (tracked by `TODO-PARITY SDKS-5384`).
+- **Malformed server payloads**: Android's native `MetadataCollector` init
+  throws on a non-object `payload`, which aborts node construction — the flow
+  surfaces a `FailureNode` carrying the `IllegalArgumentException` as its
+  cause (never an `unsupportedFields` entry) — while iOS defaults to an empty
+  `metadata` object. The JS shape is unaffected either way — narrow on
+  `type === 'METADATA'` and treat `metadata` as opaque.
+
+### Graceful degradation of METADATA below native 2.2.0
+
+The `MetadataCollector` native type ships with PingDavinci 2.2.0. On native SDK
+pins below 2.2.0 the native SDK never instantiates a `MetadataCollector`, so
+the field surfaces in `ContinueNode.unsupportedFields` and classifies as
+`executionMode: 'unsupported'` (see
+[Unsupported fields](#unsupported-fields)). There is no JavaScript shim — apps
+that must tolerate older native pins should render a placeholder for
+`unsupportedFields` entries with `type: 'METADATA'`.
 
 ### Unsupported fields
 

@@ -7,10 +7,11 @@
 
 import React, { useEffect } from 'react';
 import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
-
-const integrationType = 'TEST_INTEGRATION_COLLECTOR';
 import { render, act } from '@testing-library/react-native';
 import { useDaVinciForm } from '../useDavinciForm';
+import { buildMetadataError } from '../collectorHelpers';
+
+const integrationType = 'TEST_INTEGRATION_COLLECTOR';
 
 type ContinueNode = import('../types').ContinueNode;
 type DaVinciNode = import('../types').DaVinciNode;
@@ -714,6 +715,129 @@ describe('useDaVinciForm — unsupportedFields passthrough', () => {
         (f) => f.type === 'SOCIAL_LOGIN_BUTTON',
       ),
     ).toBe(true);
+  });
+});
+
+describe('useDaVinciForm — METADATA pause/resume (SDKS-5384)', () => {
+  const metadataNode: ContinueNode = {
+    type: 'ContinueNode',
+    collectors: [
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: { sdk: 'PROTECT', action: 'INITIALIZE' },
+      } as ContinueNode['collectors'][number],
+    ],
+  };
+
+  it('classifies the METADATA field as kind metadata with no required input', () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={metadataNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    const field = requireLatest(latest).getField('sdkMetadata');
+    expect(field).toBeDefined();
+    expect(field?.kind).toBe('metadata');
+    expect(field?.executionMode).toBe('metadata');
+    expect(field?.requiresUserInput).toBe(false);
+    expect(requireLatest(latest).meta.hasMetadata).toBe(true);
+  });
+
+  it('blocks submit while the metadata result is unset', () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={metadataNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    expect(requireLatest(latest).canSubmit).toBe(false);
+    expect(
+      requireLatest(latest).issues.some(
+        (i) => i.code === 'METADATA_RESULT_REQUIRED',
+      ),
+    ).toBe(true);
+  });
+
+  it('flows a success result set via setValue into values and buildInput()', async () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={metadataNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    const resultValue = { status: 'success', score: 0.87 };
+    await act(async () => {
+      requireLatest(latest).setValue('sdkMetadata', resultValue);
+    });
+
+    expect(requireLatest(latest).values['sdkMetadata']).toBe(resultValue);
+
+    const plan = requireLatest(latest).buildInput();
+    expect(plan.canSubmit).toBe(true);
+    expect(plan.issues).toEqual([]);
+    expect(plan.input.collectors).toEqual([
+      { key: 'sdkMetadata', value: resultValue },
+    ]);
+  });
+
+  it('flows a buildMetadataError envelope through setValue and buildInput()', async () => {
+    let latest: DaVinciFormResult | null = null;
+
+    render(
+      <FormHarness
+        node={metadataNode}
+        onResult={(r) => {
+          latest = r;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      requireLatest(latest).setValue(
+        'sdkMetadata',
+        buildMetadataError('USER_CANCELLED', 'User dismissed the challenge.'),
+      );
+    });
+
+    expect(requireLatest(latest).values['sdkMetadata']).toEqual({
+      error: {
+        code: 'USER_CANCELLED',
+        message: 'User dismissed the challenge.',
+      },
+    });
+
+    const plan = requireLatest(latest).buildInput();
+    expect(plan.canSubmit).toBe(true);
+    expect(plan.input.collectors).toEqual([
+      {
+        key: 'sdkMetadata',
+        value: {
+          error: {
+            code: 'USER_CANCELLED',
+            message: 'User dismissed the challenge.',
+          },
+        },
+      },
+    ]);
   });
 });
 

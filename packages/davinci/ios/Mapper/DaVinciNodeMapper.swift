@@ -18,6 +18,7 @@ enum DaVinciNodeMapper {
   private static let qrCode = "QR_CODE"
   private static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
   private static let image = "IMAGE"
+  private static let metadataType = "METADATA"
 
   /// Converts a native DaVinci node to a bridge-friendly dictionary payload.
   ///
@@ -304,6 +305,8 @@ enum DaVinciNodeMapper {
       return mapQRCodeCollector(qrCodeCollector, node: node, logger: logger)
     case let imageCollector as ImageCollector:
       map = mapImageCollector(imageCollector, node: node, logger: logger)
+    case let metadataCollector as MetadataCollector:
+      map = mapMetadataCollector(metadataCollector, node: node, logger: logger)
     default:
       // Try registered plugin serializers before generic server-type fallback.
       if let serialized = CoreRuntime.serializeDaVinciCollector(collector) {
@@ -629,6 +632,65 @@ enum DaVinciNodeMapper {
     ]
     if let hyperlinkUrl = collector.hyperlinkUrl {
       map["hyperlinkUrl"] = hyperlinkUrl
+    }
+    return map
+  }
+
+  /// Serializes a `MetadataCollector` to a bridge map.
+  ///
+  /// The collector is a resume-capable pause point: JS reads `metadata`, performs
+  /// on-device work, and POSTs a result back through `next()` (applied by
+  /// `DaVinciCollectorValueApplier`).
+  ///
+  /// - Note: iOS's native `MetadataCollector` is an `AnyFieldCollector` — it does not
+  ///   extend `FieldCollector` and therefore has no native `label`/`required` (unlike
+  ///   Android's `FieldCollector<JsonObject>` subtype, which exposes both natively).
+  ///   The bridge synthesizes `label` (`""` default) and `required` (`false` default)
+  ///   from the matching raw form field JSON so the serialized shape matches Android's.
+  ///   Actual submission gating is result-set-based (native `validate()` returns
+  ///   `.required` until `setResult`/`setError` is called), independent of the
+  ///   server `required` flag.
+  ///
+  /// - Note: The server's `payload` is the connector's contract with the app; it is
+  ///   serialized as `metadata` as-is (no transformation, no filtering). A `payload`
+  ///   present but not a dictionary is unreachable on Android — native `init` throws
+  ///   before the bridge ever sees the collector — so the warning + `[:]` fallback
+  ///   here is iOS-only behavior.
+  ///
+  /// - Parameters:
+  ///   - collector: MetadataCollector instance.
+  ///   - node: Active continue node providing form field context for the synthesized
+  ///     `label`/`required` and the `raw` lookup.
+  ///   - logger: Optional Ping logger for non-fatal mapping warnings.
+  /// - Returns: Serialized metadata collector map.
+  private static func mapMetadataCollector(
+    _ collector: MetadataCollector,
+    node: ContinueNode,
+    logger: Logger?
+  ) -> [String: Any] {
+    let field = findFieldJson(collector.key, node: node, logger: logger)
+    var metadata = collector.metadata
+    if let payload = field?["payload"], !(payload is [String: Any]) {
+      // No-silent-failure: native init coerces a non-dictionary payload to [:]
+      // (native 2.2 default). Surface the offending server value before emitting
+      // the documented default. Android never reaches this state: native init
+      // throws on a non-object payload, so the collector never exists to map.
+      logger?.w(
+        "[\(logTag)] METADATA collector key='\(collector.key)' has non-dictionary payload " +
+          "(server value: \(payload)); emitting empty metadata",
+        error: nil
+      )
+      metadata = [:]
+    }
+    var map: [String: Any] = [
+      "key": collector.key,
+      "type": metadataType,
+      "label": (field?["label"] as? String) ?? "",
+      "required": (field?["required"] as? Bool) ?? false,
+      "metadata": JsonBridgeMapper.encodeJsonObject(metadata)
+    ]
+    if let field {
+      map["raw"] = JsonBridgeMapper.encodeJsonObject(field)
     }
     return map
   }

@@ -14,6 +14,8 @@ import type {
   DaVinciFormMeta,
   DaVinciFormValue,
   DaVinciFormValues,
+  DaVinciMetadataErrorResult,
+  DaVinciMetadataResult,
   DaVinciNextInput,
   DaVinciNode,
   DaVinciNormalizedCollector,
@@ -81,6 +83,18 @@ export const flowCollectorTypes = new Set<string>([
 ]);
 
 /**
+ * SDK Integrator connector pause/resume collector types.
+ *
+ * @remarks
+ * A `METADATA` collector pauses the flow and hands the app an opaque payload;
+ * the app performs the on-device work and sets a result value before the flow
+ * can resume via `next()`.
+ *
+ * @public
+ */
+export const metadataCollectorTypes = new Set<string>(['METADATA']);
+
+/**
  * Collector type strings handled entirely by an external integration package.
  *
  * @remarks
@@ -138,6 +152,7 @@ const flowFieldKindTypes = new Set<string>([
  * resolveExecutionMode('TEXT');          // 'manual'
  * resolveExecutionMode('LABEL');         // 'output_only'
  * resolveExecutionMode('SUBMIT_BUTTON'); // 'immediate'
+ * resolveExecutionMode('METADATA');      // 'metadata'
  * resolveExecutionMode('UNKNOWN_TYPE');  // 'unsupported'
  * ```
  *
@@ -155,6 +170,9 @@ export function resolveExecutionMode(type: string): DaVinciExecutionMode {
   }
   if (immediateCollectorTypes.has(type)) {
     return 'immediate';
+  }
+  if (metadataCollectorTypes.has(type)) {
+    return 'metadata';
   }
   return 'unsupported';
 }
@@ -177,6 +195,7 @@ export function resolveExecutionMode(type: string): DaVinciExecutionMode {
  * resolveFieldKind('SUBMIT_BUTTON'); // 'flow'
  * resolveFieldKind('LABEL');         // 'output'
  * resolveFieldKind('IMAGE');         // 'image'
+ * resolveFieldKind('METADATA');      // 'metadata'
  * resolveFieldKind('UNKNOWN_TYPE');  // 'unknown'
  * ```
  *
@@ -218,6 +237,9 @@ export function resolveFieldKind(type: string): DaVinciFieldKind {
   }
   if (imageFieldKindTypes.has(type)) {
     return 'image';
+  }
+  if (metadataCollectorTypes.has(type)) {
+    return 'metadata';
   }
   if (flowFieldKindTypes.has(type)) {
     return 'flow';
@@ -395,6 +417,146 @@ export function normalizeCollectors(
 }
 
 /**
+ * Builds the structured error envelope for a {@link MetadataCollector} result.
+ *
+ * @remarks
+ * The returned object routes the server-side connector to its client-error
+ * branch: set it as the collector's form value (via `setValue`) and resume with
+ * `next()` as usual. This intentionally differs from the FIDO2 collector error
+ * handling (SDKS-5383), where collector errors are bridge rejections — for
+ * METADATA the error envelope IS the collector value the connector routes on,
+ * so a well-formed envelope resolves the flow instead of rejecting it.
+ *
+ * The envelope carries exactly `code` and `message`: extra keys inside the
+ * `error` object pass JS validation but are reconstructed (not forwarded) by
+ * the native `setError` call on both platforms, so additional context belongs
+ * in the message string, not in envelope extras.
+ *
+ * @param code - Short error code identifying the failure (e.g. `'USER_CANCELLED'`).
+ * @param message - Human-readable description of the failure.
+ * @returns The `{ error: { code, message } }` envelope to set as the
+ *   {@link MetadataCollector} value.
+ *
+ * @example
+ * ```ts
+ * form.setValue(
+ *   'sdkMetadata',
+ *   buildMetadataError('USER_CANCELLED', 'User dismissed the challenge.'),
+ * );
+ * await next(form.input);
+ * ```
+ *
+ * @public
+ */
+export function buildMetadataError(
+  code: string,
+  message: string,
+): DaVinciMetadataErrorResult {
+  return { error: { code, message } };
+}
+
+/**
+ * Returns a short runtime type description for an offending value.
+ *
+ * @remarks
+ * `typeof` alone reports `'object'` for both `null` and arrays, which would
+ * make malformed-value issues ambiguous — this distinguishes them.
+ *
+ * @param value - Offending value.
+ * @returns Human-readable type name (`'null'`, `'array'`, or the `typeof` result).
+ */
+function describeValueType(value: unknown): string {
+  if (value === null) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  return typeof value;
+}
+
+/**
+ * Validates a JS-supplied {@link MetadataCollector} result value.
+ *
+ * @remarks
+ * Mirrors the native appliers' contract (both platforms'
+ * `DaVinciCollectorValueApplier.applyMetadataValue`): `undefined`/`null` means
+ * the result is unset; a non-object, an array, an empty object, or an object
+ * carrying a malformed `error` envelope is rejected; any other non-empty plain
+ * object is a valid result. A well-formed `{ error: { code, message } }`
+ * envelope is also valid — it routes the connector's error branch.
+ *
+ * Pure helpers in this package stay logger-free (house pattern): malformed
+ * app-supplied values surface as blocking issues carrying the offending type
+ * instead of log lines.
+ *
+ * @param key - Collector key (used in issue messages).
+ * @param value - Candidate form value.
+ * @returns A blocking issue when the value is unset or malformed; `null` when valid.
+ */
+function validateMetadataValue(
+  key: string,
+  value: DaVinciFormValue | undefined,
+): DaVinciSubmitIssue | null {
+  if (value === undefined || value === null) {
+    return {
+      code: 'METADATA_RESULT_REQUIRED',
+      message: `MetadataCollector "${key}" requires a result before the flow can resume.`,
+      key,
+    };
+  }
+
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      code: 'METADATA_RESULT_MALFORMED',
+      message: `MetadataCollector "${key}" expects a JSON object result, got ${describeValueType(value)}.`,
+      key,
+    };
+  }
+
+  const result = value as DaVinciMetadataResult;
+  if (Object.keys(result).length === 0) {
+    return {
+      code: 'METADATA_RESULT_MALFORMED',
+      message: `MetadataCollector "${key}" result must not be an empty object — an empty success result cannot resume across platforms.`,
+      key,
+    };
+  }
+
+  if ('error' in result) {
+    const envelope = result['error'];
+    if (
+      typeof envelope !== 'object' ||
+      envelope === null ||
+      Array.isArray(envelope)
+    ) {
+      return {
+        code: 'METADATA_RESULT_MALFORMED',
+        message: `MetadataCollector "${key}" error envelope must be { error: { code: string, message: string } }, got ${describeValueType(envelope)}.`,
+        key,
+      };
+    }
+    const { code, message } = envelope as Record<string, unknown>;
+    if (typeof code !== 'string' || code.length === 0) {
+      return {
+        code: 'METADATA_RESULT_MALFORMED',
+        message: `MetadataCollector "${key}" error envelope "code" must be a non-empty string, got ${describeValueType(code)}.`,
+        key,
+      };
+    }
+    if (typeof message !== 'string') {
+      return {
+        code: 'METADATA_RESULT_MALFORMED',
+        message: `MetadataCollector "${key}" error envelope "message" must be a string, got ${describeValueType(message)}.`,
+        key,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Builds a `next()` payload from a DaVinci node and form values.
  *
  * @example
@@ -422,6 +584,14 @@ export function normalizeCollectors(
  * Integration-required collectors whose type appears in
  * `handledCollectorTypes` are silently skipped; those not in the set emit a
  * non-blocking `INTEGRATION_REQUIRED` issue and force `canSubmit: false`.
+ *
+ * METADATA collectors gate on the app-supplied result: an unset or `null`
+ * value blocks with `METADATA_RESULT_REQUIRED`; a non-object, array, empty
+ * object, or malformed `{ error: ... }` envelope blocks with
+ * `METADATA_RESULT_MALFORMED` (the message names the offending value type);
+ * a valid result object is included in the payload as-is. This mirrors the
+ * native appliers' contract on both platforms — gating is result-set-based,
+ * independent of the collector's server `required` flag.
  *
  * @param node - Current DaVinci node. Returns a `NO_ACTIVE_CONTINUE_NODE` issue when absent.
  * @param values - Form values keyed by collector key.
@@ -516,6 +686,21 @@ export function buildNextInput(
       return;
     }
 
+    if (collector.executionMode === 'metadata') {
+      const metadataIssue = validateMetadataValue(
+        collector.key,
+        values[collector.key],
+      );
+      if (metadataIssue) {
+        issues.push(metadataIssue);
+        return;
+      }
+      // The value type guard in validateMetadataValue guarantees a non-empty
+      // object here (null/undefined returned a REQUIRED issue instead).
+      payload.push({ key: collector.key, value: values[collector.key] });
+      return;
+    }
+
     const value = values[collector.key];
     const required = readRequired(collector);
     if (required && !hasManualValue(collector, value)) {
@@ -537,7 +722,9 @@ export function buildNextInput(
   const blocking = issues.some(
     (issue) =>
       issue.code === 'REQUIRED_VALUE_MISSING' ||
-      issue.code === 'INTEGRATION_REQUIRED',
+      issue.code === 'INTEGRATION_REQUIRED' ||
+      issue.code === 'METADATA_RESULT_REQUIRED' ||
+      issue.code === 'METADATA_RESULT_MALFORMED',
   );
 
   return {
@@ -577,6 +764,7 @@ export function computeFormMeta(
     hasIntegrationRequired: collectors.some(
       (c) => c.executionMode === 'integration_required',
     ),
+    hasMetadata: collectors.some((c) => c.executionMode === 'metadata'),
     hasUnsupported: collectors.some((c) => c.executionMode === 'unsupported'),
   };
 }
