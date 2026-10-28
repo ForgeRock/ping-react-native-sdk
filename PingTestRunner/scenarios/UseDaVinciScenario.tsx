@@ -18,6 +18,12 @@
  *   use-davinci-error                   → visible when actions.error !== null
  *   use-davinci-field-{key}             → per-collector field input
  *   use-davinci-field-{key}-option-{v}  → option button for single/multi-select
+ *   use-davinci-field-{key}-metadata-payload   → METADATA connector payload (JSON)
+ *   use-davinci-field-{key}-metadata-value     → current result value, or "Not set"
+ *   use-davinci-field-{key}-metadata-unset     → visible only while unset (blocking)
+ *   use-davinci-field-{key}-metadata-set-result → stores a demo success result
+ *   use-davinci-field-{key}-metadata-set-error  → stores a demo error envelope
+ *   use-davinci-field-{key}-metadata-clear     → clears the stored result
  *   use-davinci-flow-{key}              → FLOW_BUTTON / FLOW_LINK / ACTION
  *   use-davinci-submit-btn              → calls actions.next(form.input)
  *   use-davinci-success                 → visible on SuccessNode
@@ -585,6 +591,48 @@ function HookCollectorInput({
             }
           />
         ))}
+      </View>
+    );
+  }
+
+  if (collector.kind === 'metadata') {
+    const metadataCollector = collector as {
+      metadata?: Record<string, unknown>;
+    };
+    const isSet = value !== undefined && value !== null;
+    return (
+      <View testID={testID}>
+        <Text testID={`${testID}-metadata-payload`}>
+          {JSON.stringify(metadataCollector.metadata ?? {})}
+        </Text>
+        <Text testID={`${testID}-metadata-value`}>
+          {isSet ? JSON.stringify(value) : 'Not set'}
+        </Text>
+        {!isSet ? (
+          <Text testID={`${testID}-metadata-unset`}>
+            Result required before resume
+          </Text>
+        ) : null}
+        <Button
+          testID={`${testID}-metadata-set-result`}
+          title="Set result"
+          onPress={() => onValueChange({ status: 'success' })}
+        />
+        <Button
+          testID={`${testID}-metadata-set-error`}
+          title="Set error"
+          onPress={() =>
+            onValueChange({
+              error: { code: 'USER_CANCELLED', message: 'User cancelled' },
+            })
+          }
+        />
+        <Button
+          testID={`${testID}-metadata-clear`}
+          title="Clear"
+          disabled={!isSet}
+          onPress={() => onValueChange(null)}
+        />
       </View>
     );
   }

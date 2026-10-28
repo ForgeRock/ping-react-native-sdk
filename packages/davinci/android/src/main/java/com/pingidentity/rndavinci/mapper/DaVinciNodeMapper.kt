@@ -20,6 +20,7 @@ import com.pingidentity.davinci.collector.ImageCollector
 import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MaxRepeat
+import com.pingidentity.davinci.collector.MetadataCollector
 import com.pingidentity.davinci.collector.MinCharacters
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
@@ -280,6 +281,7 @@ internal object DaVinciNodeMapper {
             is ReadOnlyTextCollector -> mapReadOnlyTextCollector(collector)
             is PollingCollector -> mapPollingCollector(collector, logger)
             is ImageCollector -> mapImageCollector(collector, node, logger)
+            is MetadataCollector -> mapMetadataCollector(collector)
             else -> {
                 // Try registered plugin serializers before generic server-type fallback.
                 val serialized = CoreRuntime.serializeDaVinciCollector(collector)
@@ -589,6 +591,37 @@ internal object DaVinciNodeMapper {
             "description" to collector.description
         )
         collector.hyperlinkUrl?.let { map["hyperlinkUrl"] = it }
+        return map
+    }
+
+    /**
+     * Serialize a [MetadataCollector] to a payload map.
+     *
+     * The collector is a resume-capable pause point: JS reads [MetadataCollector.metadata]
+     * (the server's opaque `payload`), performs on-device work, and POSTs a result back
+     * through `next()` (applied by [com.pingidentity.rndavinci.collector.DaVinciCollectorValueApplier]).
+     *
+     * @remarks
+     * Label/required parity delta: Android's native `MetadataCollector` extends
+     * `FieldCollector<JsonObject>`, so `label`/`required` come from the native collector
+     * (parsed by `FieldCollector.init`). iOS's native collector is an `AnyFieldCollector`
+     * with no native `label`/`required` — the iOS bridge synthesizes both from the raw
+     * form field JSON (defaults `""`/`false`). The serialized bridge shape is identical
+     * across platforms; only the value source differs. Actual submission gating is
+     * result-set-based (native `validate()` returns `Required` until `setResult`/`setError`
+     * is called), independent of the server `required` flag.
+     *
+     * The server `payload` is serialized as `metadata` as-is — no transformation. A
+     * non-object `payload` never reaches this mapper: native `init` throws
+     * (`jsonObject` coercion) before the collector is constructed, so the node
+     * construction fails upstream.
+     *
+     * @param collector Native metadata collector.
+     * @return Serialized metadata collector map.
+     */
+    private fun mapMetadataCollector(collector: MetadataCollector): Map<String, Any?> {
+        val map = baseCollectorMap(collector)
+        map["metadata"] = JsonBridgeMapper.encodeJsonElement(collector.metadata)
         return map
     }
 

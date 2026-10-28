@@ -374,6 +374,205 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     }
   }
 
+  // MARK: - apply - MetadataCollector (success / error / unset)
+
+  private func makeMetadataCollector(key: String, payload: [String: Any]) -> MetadataCollector {
+    var json: [String: Any] = [
+      "key": key,
+      "type": "METADATA"
+    ]
+    if !payload.isEmpty {
+      json["payload"] = payload
+    }
+    return MetadataCollector(with: json)
+  }
+
+  func testApplyMetadataCollectorSetsResult() throws {
+    // Success object → native setResult; payload() returns the dictionary that
+    // the resume envelope POSTs as formData.sdkMetadata.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(
+        key: "sdkMetadata",
+        value: ["status": "completed", "score": 87] as NSDictionary
+      )
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+
+    let payload = collector.payload()
+    XCTAssertNotNil(payload)
+    XCTAssertEqual(payload?["status"] as? String, "completed")
+    XCTAssertEqual(payload?["score"] as? Int, 87)
+    XCTAssertTrue(collector.validate().isEmpty)
+  }
+
+  func testApplyMetadataCollectorErrorEnvelopeSetsStructuredError() throws {
+    // Well-formed { error: { code, message } } → native setError; the resulting
+    // payload() is the envelope the connector routes on.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(
+        key: "sdkMetadata",
+        value: ["error": ["code": "USER_CANCELLED", "message": "User abandoned the flow"]] as NSDictionary
+      )
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+
+    let payload = collector.payload()
+    XCTAssertNotNil(payload)
+    let error = payload?["error"] as? [String: Any]
+    XCTAssertEqual(error?["code"] as? String, "USER_CANCELLED")
+    XCTAssertEqual(error?["message"] as? String, "User abandoned the flow")
+    XCTAssertTrue(collector.validate().isEmpty)
+  }
+
+  func testApplyMetadataCollectorNilValueIsNoOp() throws {
+    // nil → no-op: a previously unset result stays unset, so validate() keeps
+    // returning [.required]. A previously set result is never cleared.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(key: "sdkMetadata", value: nil)
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+
+    XCTAssertNil(collector.payload())
+    XCTAssertEqual(collector.validate(), [.required])
+
+    // A second nil application must not clear an already-set result either.
+    collector.setResult(["status": "completed"])
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+    XCTAssertEqual(collector.payload()?["status"] as? String, "completed")
+  }
+
+  func testApplyMetadataCollectorEmptyDictionarySetsEmptyResult() throws {
+    // An empty object is forwarded to native setResult unchanged: the collector is
+    // considered ready (validate() passes) and payload() is the empty dictionary.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(key: "sdkMetadata", value: NSDictionary())
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+
+    XCTAssertNotNil(collector.payload())
+    XCTAssertEqual(collector.payload()?.count, 0)
+    XCTAssertTrue(collector.validate().isEmpty)
+  }
+
+  func testApplyMetadataCollectorMalformedErrorEnvelopeThrows() {
+    // An 'error' key that isn't a well-formed {code, message} envelope must
+    // not silently POST as a success result.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(
+        key: "sdkMetadata",
+        value: ["error": ["code": 42]] as NSDictionary
+      )
+    ]
+    XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("malformed error envelope"))
+      XCTAssertNil(collector.payload())
+    }
+  }
+
+  func testApplyMetadataCollectorNonDictionaryValueThrows() {
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+
+    for badValue in ["not-an-object", NSNumber(value: 7), true, ["a", "b"]] as [Any] {
+      let mutations = [
+        DaVinciCollectorValueApplier.CollectorMutation(key: "sdkMetadata", value: badValue)
+      ]
+      XCTAssertThrowsError(
+        try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+      ) { error in
+        guard case let DaVinciBridgeError.collectorApply(message) = error else {
+          return XCTFail("Expected collectorApply error, got \(error)")
+        }
+        XCTAssertTrue(message.contains("expects a JSON object result"))
+      }
+      XCTAssertNil(collector.payload())
+    }
+  }
+
+  func testApplyMetadataCollectorNestedResultRoundTrips() throws {
+    // Nested objects/arrays in a success result survive the bridge → collector path.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(
+        key: "sdkMetadata",
+        value: ["risk": ["score": 12, "level": "LOW"], "signals": ["device", "location"]] as NSDictionary
+      )
+    ]
+    _ = try DaVinciCollectorValueApplier.apply(node, mutations: mutations)
+
+    let payload = collector.payload()
+    let risk = payload?["risk"] as? [String: Any]
+    XCTAssertEqual(risk?["score"] as? Int, 12)
+    XCTAssertEqual(risk?["level"] as? String, "LOW")
+    XCTAssertEqual(payload?["signals"] as? [String], ["device", "location"])
+  }
+
+  // MARK: - MetadataCollector contract (real 2.2.0 native collector)
+
+  func testMetadataCollectorContractSetResultValidatesThenCloseResets() {
+    // Contract block against the real pods MetadataCollector: setResult →
+    // validate()==[] → close() → validate()==[.required].
+    let collector = MetadataCollector(with: [
+      "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+    ])
+
+    XCTAssertEqual(collector.validate(), [.required])
+    collector.setResult(["status": "completed"])
+    XCTAssertTrue(collector.validate().isEmpty)
+    XCTAssertEqual(collector.actionKey, "sdkMetadata")
+    collector.close()
+    XCTAssertEqual(collector.validate(), [.required])
+    XCTAssertNil(collector.payload())
+  }
+
+  func testMetadataCollectorContractSetErrorValidatesAndInitializeIsNoOp() {
+    // setError produces the { error: { code, message } } envelope; initialize(with:)
+    // is an intentional no-op (server-echo guard) and never satisfies validate().
+    let collector = MetadataCollector(with: [
+      "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+    ])
+
+    collector.setError(code: "USER_CANCELLED", message: "User abandoned the flow")
+    XCTAssertTrue(collector.validate().isEmpty)
+    let payload = collector.payload()
+    let error = payload?["error"] as? [String: Any]
+    XCTAssertEqual(error?["code"] as? String, "USER_CANCELLED")
+    XCTAssertEqual(error?["message"] as? String, "User abandoned the flow")
+
+    // initialize(with:) is an intentional no-op (server-echo guard): it must NOT
+    // overwrite the app-supplied result set via setError.
+    collector.initialize(with: "echoed-server-value")
+    let afterEcho = collector.payload()
+    let errorAfterEcho = afterEcho?["error"] as? [String: Any]
+    XCTAssertEqual(errorAfterEcho?["code"] as? String, "USER_CANCELLED")
+  }
+
+  func testMetadataCollectorContractInitializeIsNoOpKeepsRequiredState() {
+    let collector = MetadataCollector(with: [
+      "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+    ])
+
+    // Even when the server echoes a formData value, initialize() must not
+    // pre-satisfy validation — the result must come from setResult/setError.
+    collector.initialize(with: ["status": "completed"])
+    XCTAssertNil(collector.payload())
+    XCTAssertEqual(collector.validate(), [.required])
+  }
+
   // MARK: - Helpers
 
   private func makeContinueNode(collectors: [any Collector]) -> ContinueNode {

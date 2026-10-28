@@ -15,6 +15,7 @@ import com.pingidentity.davinci.collector.ImageCollector
 import com.pingidentity.davinci.collector.InvalidLength
 import com.pingidentity.davinci.collector.LabelCollector
 import com.pingidentity.davinci.collector.MaxRepeat
+import com.pingidentity.davinci.collector.MetadataCollector
 import com.pingidentity.davinci.collector.MinCharacters
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
@@ -43,9 +44,11 @@ import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
 import com.pingidentity.rncore.CoreRuntime
 import java.util.UUID
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -1456,5 +1459,162 @@ class DaVinciNodeMapperTest {
         val result = DaVinciNodeMapper.mapNodePayload(node)
 
         assertFalse(result.containsKey("unsupportedFields"))
+    }
+
+    // ---- MetadataCollector serialization ----
+
+    private fun metadataNodeInput() = buildJsonObject {
+        put("form", buildJsonObject {
+            put("components", buildJsonObject {
+                put("fields", buildJsonArray {
+                    add(buildJsonObject {
+                        put("key", "sdkMetadata")
+                        put("type", "METADATA")
+                        put("label", "SDK Metadata")
+                        put("required", true)
+                        put("payload", buildJsonObject {
+                            put("sdk", "PROTECT")
+                            put("action", "INITIALIZE")
+                        })
+                    })
+                })
+            })
+        })
+    }
+
+    @Test
+    fun mapMetadataCollectorEmitsAllFields() {
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("label", "SDK Metadata")
+                put("required", true)
+                put("payload", buildJsonObject {
+                    put("sdk", "PROTECT")
+                    put("action", "INITIALIZE")
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("METADATA", c["type"])
+        assertEquals("sdkMetadata", c["key"])
+        assertEquals("SDK Metadata", c["label"])
+        assertEquals(true, c["required"])
+        val metadata = c["metadata"] as? Map<*, *>
+        assertEquals("PROTECT", metadata?.get("sdk"))
+        assertEquals("INITIALIZE", metadata?.get("action"))
+    }
+
+    @Test
+    fun mapMetadataCollectorExposesNativeLabelAndRequired() {
+        // Android's native MetadataCollector extends FieldCollector<JsonObject>, so
+        // label/required come from the native collector. iOS synthesizes them from
+        // the raw form field JSON (AnyFieldCollector has no native accessors); the
+        // serialized bridge shape is identical across platforms.
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("label", "SDK Metadata")
+                put("required", true)
+                put("payload", buildJsonObject { put("sdk", "PROTECT") })
+            })
+        }
+        val node = makeNode(metadataNodeInput(), collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("SDK Metadata", c["label"])
+        assertEquals(true, c["required"])
+        assertNotNull(c["raw"])
+        assertFalse(result.containsKey("unsupportedFields"))
+    }
+
+    @Test
+    fun mapMetadataCollectorDefaultsLabelAndRequiredWhenAbsent() {
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("", c["label"])
+        assertEquals(false, c["required"])
+    }
+
+    @Test
+    fun mapMetadataCollectorEmitsEmptyMetadataWhenPayloadAbsent() {
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        val metadata = c["metadata"] as? Map<*, *>
+        assertNotNull(metadata)
+        assertTrue(metadata?.isEmpty() == true)
+    }
+
+    @Test
+    fun mapMetadataCollectorMetadataIncludesNestedStructures() {
+        val collector = MetadataCollector().apply {
+            init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("payload", buildJsonObject {
+                    put("sdk", "PROTECT")
+                    put("nested", buildJsonObject { put("a", 1) })
+                    putJsonArray("signals") {
+                        add("device")
+                        add("location")
+                    }
+                })
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+        val metadata = c["metadata"] as? Map<*, *>
+
+        assertEquals("PROTECT", metadata?.get("sdk"))
+        val nested = metadata?.get("nested") as? Map<*, *>
+        // JsonBridgeMapper emits integral numbers as Long (house bridge convention).
+        assertEquals(1L, nested?.get("a"))
+        val signals = metadata?.get("signals") as? List<*>
+        assertEquals(listOf("device", "location"), signals)
+    }
+
+    @Test
+    fun mapMetadataCollectorInitThrowsOnNonObjectPayload() {
+        // Android-only guard: native init throws on a non-object payload, so the
+        // malformed-payload fallback path documented for iOS is unreachable here.
+        val collector = MetadataCollector()
+        try {
+            collector.init(buildJsonObject {
+                put("key", "sdkMetadata")
+                put("type", "METADATA")
+                put("payload", "not-an-object")
+            })
+            throw AssertionError("expected IllegalArgumentException")
+        } catch (error: IllegalArgumentException) {
+            // Native jsonObject coercion — the collector never reaches the mapper.
+        }
     }
 }
