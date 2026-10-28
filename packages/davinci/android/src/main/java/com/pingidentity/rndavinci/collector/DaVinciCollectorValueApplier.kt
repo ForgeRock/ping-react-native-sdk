@@ -7,6 +7,7 @@
 
 package com.pingidentity.rndavinci.collector
 
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.pingidentity.davinci.collector.BooleanCollector
@@ -14,10 +15,17 @@ import com.pingidentity.davinci.collector.Device
 import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
+import com.pingidentity.davinci.collector.MetadataCollector
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
 import com.pingidentity.davinci.plugin.Collector
 import com.pingidentity.orchestrate.ContinueNode
+import com.pingidentity.rncore.utils.JsonBridgeMapper
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Applies collector value mutations from JS payloads to active DaVinci collectors.
@@ -133,6 +141,9 @@ internal object DaVinciCollectorValueApplier {
             is BooleanCollector -> {
                 collector.value = asBoolean(value, key)
             }
+            is MetadataCollector -> {
+                applyMetadataValue(collector, key, value)
+            }
             else -> {
                 // All remaining collectors (TextCollector, PasswordCollector, SingleValueCollector,
                 // SubmitCollector, FlowCollector) extend SingleValueCollector which has setValue(String).
@@ -143,6 +154,122 @@ internal object DaVinciCollectorValueApplier {
                 strCollector.value = asString(value, key)
             }
         }
+    }
+
+    /**
+     * Applies a JS-supplied result value to a [MetadataCollector].
+     *
+     * Semantics (SDKS-5384), mirroring the iOS applier:
+     * - `null` (JS null/undefined) → no-op: the collector's `validate()` keeps returning
+     *   `Required`, so an unset result blocks the flow instead of silently clearing a
+     *   previously set result.
+     * - Map containing an `error` key → strict envelope validation (a map with a non-empty
+     *   string `code` and a string `message`) → [MetadataCollector.setError]. A malformed
+     *   envelope throws rather than silently POSTing as a success result.
+     * - Any other map, including an empty one → [MetadataCollector.setResult] (the success
+     *   path), forwarded unchanged.
+     * - Non-map values → throw: the resume body must be a JSON object.
+     *
+     * @remarks
+     * This deviates from the FIDO2 error handling (SDKS-5383), where collector errors are
+     * bridge rejections. For METADATA the error envelope IS the value the server-side
+     * connector routes on, so a well-formed envelope resolves the flow.
+     *
+     * @param collector Target metadata collector.
+     * @param key Collector key (for error messages).
+     * @param value Value from JS.
+     * @throws IllegalArgumentException when the value cannot be applied.
+     */
+    private fun applyMetadataValue(collector: MetadataCollector, key: String, value: Any?) {
+        when (value) {
+            null -> return
+            is Map<*, *> -> {
+                if (value.containsKey("error")) {
+                    // ReadableNativeMap.toHashMap() converts nested maps recursively, but
+                    // the JavaOnlyMap unit-test double copies shallowly, so the nested
+                    // envelope can arrive as either a plain Map or a raw ReadableMap —
+                    // accept both.
+                    val envelope: Map<*, *>? = when (val rawEnvelope = value["error"]) {
+                        is Map<*, *> -> rawEnvelope
+                        is ReadableMap -> rawEnvelope.toHashMap()
+                        else -> null
+                    }
+                    val code = envelope?.get("code") as? String
+                    val message = envelope?.get("message") as? String
+                    if (envelope == null || code.isNullOrEmpty() || message == null) {
+                        throw IllegalArgumentException(
+                            "MetadataCollector key='$key': malformed error envelope $value — " +
+                                "expected { error: { code: string, message: string } }"
+                        )
+                    }
+                    collector.setError(code, message)
+                    return
+                }
+                // TODO-PARITY (SDKS-5545): in native 2.2.0 Collectors.asJson() omits an empty
+                // MetadataCollector result from the resume request, while iOS posts it as
+                // `{}`. The value is forwarded unchanged; the server answers an omitted
+                // result with INVALID_RESUME_PAYLOAD. Remove this note once native is fixed.
+                collector.setResult(toJsonObject(value))
+            }
+            else -> throw IllegalArgumentException(
+                "MetadataCollector key='$key' expects a JSON object result, got: " +
+                    "${value?.javaClass?.simpleName}"
+            )
+        }
+    }
+
+    /**
+     * Recursively converts a bridge map into a [JsonObject] for
+     * [MetadataCollector.setResult].
+     *
+     * @param value Bridge map (as produced by `readDynamicValue` for object values).
+     * @return The equivalent JSON object.
+     * @throws IllegalArgumentException when the map contains a non-string key, matching the
+     *   iOS applier rather than silently dropping the entry.
+     */
+    private fun toJsonObject(value: Map<*, *>): JsonObject = JsonObject(
+        value.entries.associate { (rawKey, rawValue) ->
+            val key = rawKey as? String
+                ?: throw IllegalArgumentException(
+                    "MetadataCollector result has a non-string key: $rawKey"
+                )
+            key to toJsonElement(rawValue)
+        }
+    )
+
+    /**
+     * Recursively converts a bridge value tree into a [JsonElement].
+     *
+     * The top-level value from `readDynamicValue` is a plain `Map`
+     * (`ReadableMap.toHashMap()`). In production `ReadableNativeMap.toHashMap()`
+     * converts nested maps and arrays recursively, but the `JavaOnlyMap` unit-test
+     * double copies shallowly, so nested entries can still be raw bridge objects
+     * (`ReadableMap`/`ReadableArray`) there. Both shapes are handled: nested
+     * `ReadableMap`/`ReadableArray` instances delegate to rn-core's
+     * [JsonBridgeMapper.decodeReadableMap]/[JsonBridgeMapper.decodeReadableArray],
+     * which recurse fully.
+     *
+     * `null` entries become [JsonNull] — `JsonObject` supports explicit nulls, so a JS
+     * `{ "answer": null }` result round-trips to the server faithfully. Numbers are
+     * normalized with [normalizeBridgeNumber] (integer-valued doubles collapse to
+     * `Long`, so JS `87` serializes as `87`, not `87.0`) — the same iOS-parity rule
+     * `readDynamicValue` applies to top-level numbers. Non-JSON scalar types (which
+     * the RN bridge does not produce) fall back to their string form, mirroring
+     * `JsonBridgeMapper`'s scalar handling.
+     *
+     * @param value Bridge value (`Map`/`ReadableMap`/`List`/`ReadableArray`/primitive).
+     * @return The equivalent JSON element.
+     */
+    private fun toJsonElement(value: Any?): JsonElement = when (value) {
+        null -> JsonNull
+        is Map<*, *> -> toJsonObject(value)
+        is ReadableMap -> JsonBridgeMapper.decodeReadableMap(value)
+        is ReadableArray -> JsonBridgeMapper.decodeReadableArray(value)
+        is List<*> -> JsonArray(value.map { toJsonElement(it) })
+        is String -> JsonPrimitive(value)
+        is Boolean -> JsonPrimitive(value)
+        is Number -> JsonPrimitive(normalizeBridgeNumber(value.toDouble()))
+        else -> JsonPrimitive(value.toString())
     }
 
     /**

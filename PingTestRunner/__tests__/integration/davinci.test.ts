@@ -1473,6 +1473,134 @@ describe('@ping-identity/rn-davinci — integration', () => {
     });
   });
 
+  // ─── METADATA — SDK Integrator pause/resume (SDKS-5384) ───────────────────
+  //
+  // The native mapper (packages/davinci native tests) already proves a
+  // MetadataCollector serialises to { key, type: 'METADATA', label, required,
+  // metadata: <payload> }. These tests exercise the JS composition layer:
+  // classification, pause gating (unset/malformed block), and resume
+  // pass-through (success object / error envelope reach the next() payload
+  // intact).
+
+  describe('METADATA — SDK Integrator pause/resume (SDKS-5384)', () => {
+    const metadataCollector = {
+      key: 'sdkMetadata',
+      type: 'METADATA',
+      label: '',
+      required: false,
+      metadata: { sdk: 'PROTECT', action: 'INITIALIZE' },
+    };
+
+    const metadataNode = {
+      type: 'ContinueNode',
+      collectors: [metadataCollector],
+    };
+
+    function loadWithMetadataNode(): Promise<{
+      mod: typeof import('@ping-identity/rn-davinci');
+      mock: NativeDaVinciMock;
+    }> {
+      const mock = makeMock({
+        start: jest.fn(async () => metadataNode),
+      });
+      return loadDaVinci(mock).then((mod) => ({ mod, mock }));
+    }
+
+    it('classifies METADATA as executionMode metadata + kind metadata (payload intact)', async () => {
+      const { mod } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const collectors = mod.normalizeCollectors(node.collectors);
+      expect(collectors).toHaveLength(1);
+      expect(collectors[0]).toMatchObject({
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        executionMode: 'metadata',
+        kind: 'metadata',
+        requiresUserInput: false,
+        metadata: { sdk: 'PROTECT', action: 'INITIALIZE' },
+      });
+    });
+
+    it('computeFormMeta reports hasMetadata for a metadata node', async () => {
+      const { mod } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      expect(
+        mod.computeFormMeta(mod.normalizeCollectors(node.collectors)),
+      ).toMatchObject({ hasMetadata: true });
+    });
+
+    it('unset value blocks with METADATA_RESULT_REQUIRED and sends nothing', async () => {
+      const { mod, mock } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const plan = mod.buildNextInput(node, {});
+      expect(plan.canSubmit).toBe(false);
+      expect(plan.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'METADATA_RESULT_REQUIRED',
+          key: 'sdkMetadata',
+        }),
+      );
+      await client.next(plan.input);
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [],
+      });
+    });
+
+    it('success result passes through to the next() payload intact', async () => {
+      const successValue = { status: 'success' };
+      const { mod, mock } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const plan = mod.buildNextInput(node, {
+        sdkMetadata: successValue,
+      });
+      expect(plan.canSubmit).toBe(true);
+      expect(plan.issues).toEqual([]);
+      await client.next(plan.input);
+      expect(mock.next).toHaveBeenCalledTimes(1);
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [{ key: 'sdkMetadata', value: { status: 'success' } }],
+      });
+    });
+
+    it('error envelope passes through to the next() payload intact', async () => {
+      const errorEnvelope = {
+        error: { code: 'USER_CANCELLED', message: 'User cancelled' },
+      };
+      const { mod, mock } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const plan = mod.buildNextInput(node, { sdkMetadata: errorEnvelope });
+      expect(plan.canSubmit).toBe(true);
+      expect(plan.issues).toEqual([]);
+      await client.next(plan.input);
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [{ key: 'sdkMetadata', value: errorEnvelope }],
+      });
+    });
+
+    it('malformed value (string) blocks with METADATA_RESULT_MALFORMED', async () => {
+      const { mod, mock } = await loadWithMetadataNode();
+      const client = mod.createDaVinciClient(VALID_CONFIG);
+      const node = asContinueNode(await client.start());
+      const plan = mod.buildNextInput(node, { sdkMetadata: 'not-an-object' });
+      expect(plan.canSubmit).toBe(false);
+      expect(plan.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'METADATA_RESULT_MALFORMED',
+          key: 'sdkMetadata',
+        }),
+      );
+      await client.next(plan.input);
+      expect(mock.next).toHaveBeenCalledWith('davinci-id-mock', {
+        collectors: [],
+      });
+    });
+  });
+
   // ─── terminal node shapes ──────────────────────────────────────────────────
   //
   // SuccessNode/ErrorNode/FailureNode pass through the bridge as-is. These

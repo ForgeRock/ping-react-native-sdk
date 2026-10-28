@@ -7,6 +7,7 @@
 
 import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
 import {
+  buildMetadataError,
   buildNextInput,
   computeFormMeta,
   normalizeCollectors,
@@ -16,6 +17,7 @@ import {
 import type {
   ContinueNode,
   DaVinciCollector,
+  DaVinciFormValue,
   DaVinciNormalizedCollector,
 } from '../types';
 
@@ -85,6 +87,10 @@ describe('resolveExecutionMode', () => {
 
   it('returns output_only for IMAGE', () => {
     expect(resolveExecutionMode('IMAGE')).toBe('output_only');
+  });
+
+  it('returns metadata for METADATA', () => {
+    expect(resolveExecutionMode('METADATA')).toBe('metadata');
   });
 
   it('never returns integration_required for any base-registry type', () => {
@@ -174,6 +180,10 @@ describe('resolveFieldKind', () => {
 
   it('returns image for IMAGE', () => {
     expect(resolveFieldKind('IMAGE')).toBe('image');
+  });
+
+  it('returns metadata for METADATA', () => {
+    expect(resolveFieldKind('METADATA')).toBe('metadata');
   });
 });
 
@@ -518,6 +528,291 @@ describe('normalizeCollectors — IMAGE', () => {
       kind: 'image',
     });
     expect(withoutHyperlink.defaultValue).toBeUndefined();
+  });
+});
+
+describe('normalizeCollectors — METADATA', () => {
+  const metadataCollector: DaVinciCollector = {
+    key: 'sdkMetadata',
+    type: 'METADATA',
+    label: 'SDK Metadata',
+    required: false,
+    metadata: { sdk: 'PROTECT', action: 'INITIALIZE' },
+    raw: { type: 'METADATA', key: 'sdkMetadata', payload: { sdk: 'PROTECT' } },
+  } as DaVinciCollector;
+
+  it('classifies METADATA as metadata mode with kind metadata and no required input', () => {
+    const [normalized] = normalizeCollectors([metadataCollector]);
+    expect(normalized).toMatchObject({
+      key: 'sdkMetadata',
+      type: 'METADATA',
+      executionMode: 'metadata',
+      requiresUserInput: false,
+      kind: 'metadata',
+    });
+  });
+
+  it('passes the opaque metadata payload through untouched', () => {
+    const [normalized] = normalizeCollectors([metadataCollector]);
+    expect(normalized.metadata).toEqual({
+      sdk: 'PROTECT',
+      action: 'INITIALIZE',
+    });
+  });
+
+  it('has no server-seeded defaultValue', () => {
+    const [normalized] = normalizeCollectors([metadataCollector]);
+    expect(normalized.defaultValue).toBeUndefined();
+  });
+});
+
+describe('buildNextInput — metadata path (SDKS-5384)', () => {
+  const makeMetadataNode = (): ContinueNode =>
+    makeNode([
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: { sdk: 'PROTECT' },
+      } as DaVinciCollector,
+    ]);
+
+  it.each([
+    ['unset (key absent)', undefined],
+    ['null', null],
+  ])('blocks with METADATA_RESULT_REQUIRED for %s result', (_label, value) => {
+    const values = value === undefined ? {} : { sdkMetadata: value };
+    const result = buildNextInput(makeMetadataNode(), values);
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: 'METADATA_RESULT_REQUIRED',
+        key: 'sdkMetadata',
+      }),
+    ]);
+    expect(result.input.collectors).toEqual([]);
+  });
+
+  it.each([
+    ['string', 'not-an-object', 'string'],
+    ['number', 42, 'number'],
+    ['array', ['not', 'an', 'object'], 'array'],
+    ['boolean', true, 'boolean'],
+  ])(
+    'blocks with METADATA_RESULT_MALFORMED for a %s result naming the offending type',
+    (_label, value, expectedType) => {
+      const result = buildNextInput(makeMetadataNode(), {
+        sdkMetadata: value as unknown as DaVinciFormValue,
+      });
+
+      expect(result.canSubmit).toBe(false);
+      expect(result.issues).toHaveLength(1);
+      expect(result.issues[0]).toMatchObject({
+        code: 'METADATA_RESULT_MALFORMED',
+        key: 'sdkMetadata',
+      });
+      expect(result.issues[0].message).toContain(expectedType);
+      expect(result.input.collectors).toEqual([]);
+    },
+  );
+
+  it('includes an empty object result in the payload unchanged', () => {
+    const result = buildNextInput(makeMetadataNode(), { sdkMetadata: {} });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input.collectors).toEqual([
+      { key: 'sdkMetadata', value: {} },
+    ]);
+  });
+
+  it('blocks with METADATA_RESULT_MALFORMED when the error envelope is malformed', () => {
+    const result = buildNextInput(makeMetadataNode(), {
+      sdkMetadata: { error: { code: 'X' } },
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues[0]).toMatchObject({
+      code: 'METADATA_RESULT_MALFORMED',
+      key: 'sdkMetadata',
+    });
+    expect(result.issues[0].message).toContain('envelope');
+    expect(result.input.collectors).toEqual([]);
+  });
+
+  it.each([
+    ['missing message', { error: { code: 'X' } }],
+    ['missing code', { error: { message: 'boom' } }],
+    ['empty code', { error: { code: '', message: 'boom' } }],
+    ['non-string message', { error: { code: 'X', message: 3 } }],
+    ['non-object envelope', { error: 'failed' }],
+  ])(
+    'blocks with METADATA_RESULT_MALFORMED for a malformed envelope: %s',
+    (_label, value) => {
+      const result = buildNextInput(makeMetadataNode(), {
+        sdkMetadata: value as unknown as DaVinciFormValue,
+      });
+
+      expect(result.canSubmit).toBe(false);
+      expect(result.issues).toEqual([
+        expect.objectContaining({
+          code: 'METADATA_RESULT_MALFORMED',
+          key: 'sdkMetadata',
+        }),
+      ]);
+      expect(result.input.collectors).toEqual([]);
+    },
+  );
+
+  it('includes a valid success object in the payload', () => {
+    const resultValue = { status: 'success', score: 0.87 };
+    const result = buildNextInput(makeMetadataNode(), {
+      sdkMetadata: resultValue,
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input.collectors).toEqual([
+      { key: 'sdkMetadata', value: resultValue },
+    ]);
+  });
+
+  it('includes a well-formed error envelope in the payload untouched', () => {
+    const resultValue = { error: { code: 'USER_CANCELLED', message: 'Nope' } };
+    const result = buildNextInput(makeMetadataNode(), {
+      sdkMetadata: resultValue,
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input.collectors).toEqual([
+      { key: 'sdkMetadata', value: resultValue },
+    ]);
+  });
+
+  it('includes a buildMetadataError value in the payload with its exact shape', () => {
+    const result = buildNextInput(makeMetadataNode(), {
+      sdkMetadata: buildMetadataError('A', 'b'),
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input.collectors).toEqual([
+      { key: 'sdkMetadata', value: { error: { code: 'A', message: 'b' } } },
+    ]);
+  });
+
+  it('includes the metadata result alongside SUBMIT_BUTTON and TEXT on a mixed node', () => {
+    const node = makeNode([
+      baseField('username', 'TEXT', true),
+      baseField('submit', 'SUBMIT_BUTTON'),
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: { sdk: 'PROTECT' },
+      } as DaVinciCollector,
+    ]);
+
+    const result = buildNextInput(node, {
+      username: 'alice',
+      sdkMetadata: { status: 'success' },
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
+    expect(result.input.collectors).toEqual([
+      { key: 'username', value: 'alice' },
+      { key: 'submit', value: 'submit' },
+      { key: 'sdkMetadata', value: { status: 'success' } },
+    ]);
+  });
+
+  it('blocks a mixed node on a malformed metadata result while other flows are unchanged', () => {
+    const node = makeNode([
+      baseField('username', 'TEXT', true),
+      baseField('submit', 'SUBMIT_BUTTON'),
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: {},
+      } as DaVinciCollector,
+    ]);
+
+    const result = buildNextInput(node, {
+      username: 'alice',
+      sdkMetadata: 'bogus',
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: 'METADATA_RESULT_MALFORMED',
+        key: 'sdkMetadata',
+      }),
+    ]);
+    expect(result.input.collectors).toEqual([
+      { key: 'username', value: 'alice' },
+      { key: 'submit', value: 'submit' },
+    ]);
+  });
+});
+
+describe('computeFormMeta — hasMetadata', () => {
+  it('flags hasMetadata when a METADATA collector is present', () => {
+    const collectors = normalizeCollectors([
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: { sdk: 'PROTECT' },
+      } as DaVinciCollector,
+    ]);
+
+    expect(computeFormMeta(collectors).hasMetadata).toBe(true);
+    expect(computeFormMeta(collectors).hasManual).toBe(false);
+  });
+
+  it('hasMetadata stays false for forms without a METADATA collector', () => {
+    const collectors = normalizeCollectors([
+      baseField('username', 'TEXT'),
+      { key: 'l', type: 'LABEL', content: 'x' } as DaVinciCollector,
+    ]);
+
+    expect(computeFormMeta(collectors).hasMetadata).toBe(false);
+  });
+});
+
+describe('buildMetadataError', () => {
+  it('returns the exact error envelope shape', () => {
+    expect(buildMetadataError('A', 'b')).toEqual({
+      error: { code: 'A', message: 'b' },
+    });
+  });
+
+  it('builds envelopes the metadata submit path accepts as valid', () => {
+    const node = makeNode([
+      {
+        key: 'sdkMetadata',
+        type: 'METADATA',
+        label: 'SDK Metadata',
+        required: false,
+        metadata: {},
+      } as DaVinciCollector,
+    ]);
+
+    const result = buildNextInput(node, {
+      sdkMetadata: buildMetadataError('USER_CANCELLED', 'dismissed'),
+    });
+
+    expect(result.canSubmit).toBe(true);
+    expect(result.issues).toEqual([]);
   });
 });
 
@@ -982,6 +1277,7 @@ describe('computeFormMeta', () => {
       hasOutputOnly: false,
       hasAutoCapable: false,
       hasIntegrationRequired: true,
+      hasMetadata: false,
       hasUnsupported: false,
     });
   });
@@ -992,6 +1288,7 @@ describe('computeFormMeta', () => {
       hasOutputOnly: false,
       hasAutoCapable: false,
       hasIntegrationRequired: false,
+      hasMetadata: false,
       hasUnsupported: false,
     });
   });
