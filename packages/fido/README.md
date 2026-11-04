@@ -45,6 +45,7 @@ yarn add @ping-identity/rn-logger
 - Configure Android origin domains for FIDO on your RP/server.
 - If you support Android API 33 and older, explicitly include `androidx.credentials:credentials-play-services-auth`.
 - If you need non-discoverable credentials / legacy security-key support, explicitly include `com.google.android.gms:play-services-fido`.
+- Define the `appRedirectUriScheme` manifest placeholder for release builds (for example `manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"` in `defaultConfig`). The transitive native browser module requires it; per the native SDK 2.2.0 release notes, debug builds receive a default.
 
 ### iOS
 

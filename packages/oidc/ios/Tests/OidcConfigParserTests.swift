@@ -81,6 +81,34 @@ final class OidcConfigParserTests: XCTestCase {
     XCTAssertNil(payload.par)
   }
 
+  func testParseClientConfigAcceptsOpenIdWithoutDiscoveryEndpoint() throws {
+    let config: NSDictionary = [
+      "clientId": "client-id",
+      "redirectUri": "com.example.app://callback",
+      "scopes": ["openid"],
+      "openId": [
+        "authorizationEndpoint": "https://example.com/oauth2/authorize",
+        "tokenEndpoint": "https://example.com/oauth2/token"
+      ]
+    ]
+
+    let payload = try OidcConfigParser.parseClientConfig(config)
+
+    XCTAssertNil(payload.discoveryEndpoint)
+    XCTAssertEqual(payload.openId?.tokenEndpoint, "https://example.com/oauth2/token")
+  }
+
+  func testParseClientConfigTreatsBlankDiscoveryEndpointAsAbsent() {
+    let config: NSDictionary = [
+      "clientId": "client-id",
+      "discoveryEndpoint": "   ",
+      "redirectUri": "com.example.app://callback",
+      "scopes": ["openid"]
+    ]
+
+    XCTAssertThrowsError(try OidcConfigParser.parseClientConfig(config))
+  }
+
   func testParseClientConfigRequiresDiscoveryOrOpenId() {
     let config: NSDictionary = [
       "clientId": "client-id",

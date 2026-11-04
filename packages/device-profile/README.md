@@ -108,13 +108,24 @@ const profile = await collectDeviceProfile(['platform', 'hardware', 'network']);
 
 Availability depends on platform and permissions.
 
-- `platform`: device and OS metadata.
+- `platform`: device and OS metadata. On iOS, `model` is the raw hardware identifier (for example `iPhone15,2`) and `modelName` carries the readable name (for example `iPhone 14 Pro`), matching Android's readable `model`. See [iOS `modelName`](#ios-modelname).
 - `hardware`: hardware and capability details.
 - `network`: connection status and network properties.
 - `telephony`: carrier and telephony metadata.
 - `browser`: default browser user agent details.
 - `bluetooth`: Bluetooth support status.
 - `location`: location coordinates (requires permissions; Android needs Play Services Location).
+
+### iOS `modelName`
+
+On iOS the `platform` collector adds `modelName`, the readable device name resolved offline from the raw `model` identifier (native SDK 2.2.0 or later):
+
+```json
+{ "platform": { "model": "iPhone15,2", "modelName": "iPhone 14 Pro" } }
+```
+
+- `modelName` is omitted, not `null`, when the identifier is not in the SDK's catalog. That is always the case on the iOS Simulator and on hardware released after your SDK version, so fall back to `model`.
+- The submitted profile gains one attribute. PingAM and PingOne AIC's **Device Match** node compares every attribute with the saved profile, so with the default _Acceptable Variance_ of `0`, returning iOS users can fail the match once until their profile is saved again (for example by a _Device Profile Save_ node). Raise _Acceptable Variance_ by one for the rollout, or match with a script that ignores `platform.modelName`.
 
 ## Android setup
 

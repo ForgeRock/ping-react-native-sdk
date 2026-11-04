@@ -551,7 +551,7 @@ final class DaVinciNodeMapperTests: XCTestCase {
   }
 
   func testMapNodePayloadOmitsSocialLoginWhenIdpCollectorSerialized() {
-    // IdpCollector.id (PingExternalIdP 2.1.0) falls back to a fresh random UUID per
+    // IdpCollector.id (PingExternalIdP 2.2.0) falls back to a fresh random UUID per
     // call, so the server field key never matches registeredKeys. When the registered
     // CoreRuntime serializer emits type=SOCIAL_LOGIN_BUTTON for a collector, the field
     // must not be reported as unsupported. A stand-in class mimics that contract.
@@ -878,8 +878,7 @@ final class DaVinciNodeMapperTests: XCTestCase {
   }
 
   func testMapQRCodeCollectorUsesStableKeyFromServerField() {
-    // Unlike Android 2.1.0 (whose native `id()` returns a random UUID per call), iOS's
-    // native `QRCodeCollector.key` is parsed from the server JSON and is stable.
+    // iOS's native `QRCodeCollector.key` is parsed from the server JSON and is stable.
     let node = makeContinueNode(collectors: [
       makeQRCodeCollector(key: "qr-field", content: "data:image/png;base64,iVBORw0KGgo=", fallbackText: "Scan")
     ])
@@ -890,27 +889,19 @@ final class DaVinciNodeMapperTests: XCTestCase {
     XCTAssertEqual(first?["key"] as? String, "qr-field")
   }
 
-  func testMapQRCodeCollectorReconstructsContentFromImageDataWhenRawFieldAbsent() {
-    let imageBytes = Data([0x01, 0x02, 0x03])
-    let base64 = imageBytes.base64EncodedString()
+  func testMapQRCodeCollectorPreservesFullDataUriWithOriginalMimeType() {
+    let dataUri = "data:image/jpeg;base64,\(Data([0x01, 0x02, 0x03]).base64EncodedString())"
     let node = makeContinueNode(collectors: [
-      makeQRCodeCollector(
-        key: "qr-field",
-        content: "data:image/png;base64,\(base64)",
-        fallbackText: "Scan"
-      )
+      makeQRCodeCollector(key: "qr-field", content: dataUri, fallbackText: "Scan")
     ])
 
     let payload = DaVinciNodeMapper.mapNodePayload(node)
     let first = (payload["collectors"] as? [[String: Any]])?.first
 
-    XCTAssertEqual(first?["content"] as? String, "data:image/png;base64,\(base64)")
+    XCTAssertEqual(first?["content"] as? String, dataUri)
   }
 
-  func testMapQRCodeCollectorDefaultsToEmptyStringWhenContentAndImageDataAbsent() {
-    // Omit "content" entirely (rather than passing an empty string) so
-    // QRCodeCollector.imageData stays nil — Data(base64Encoded: "") would otherwise
-    // decode to a non-nil empty Data, masking the mapper's final `?? ""` fallback.
+  func testMapQRCodeCollectorDefaultsToEmptyStringWhenContentAbsent() {
     let collector = QRCodeCollector(with: ["key": "qr-field", "fallbackText": "Scan"])
     let node = makeContinueNode(collectors: [collector])
 

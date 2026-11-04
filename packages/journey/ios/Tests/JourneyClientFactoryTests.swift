@@ -210,6 +210,106 @@ final class JourneyClientFactoryTests: XCTestCase {
     XCTAssertNotNil(journey)
   }
 
+  func testBuildAppliesOpenIdDirectlyWithoutDiscoveryEndpoint() async throws {
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: nil,
+      cookie: nil,
+      clientId: "client-id",
+      discoveryEndpoint: nil,
+      redirectUri: "com.example.app://oauth2redirect",
+      scopes: ["openid"],
+      openId: JourneyOpenIdPayload(
+        authorizationEndpoint: "https://example.com/oauth2/authorize",
+        tokenEndpoint: "https://example.com/oauth2/token",
+        userinfoEndpoint: nil,
+        endSessionEndpoint: nil,
+        pingEndIdpSessionEndpoint: nil,
+        revocationEndpoint: nil,
+        pushedAuthorizationRequestEndpoint: "https://example.com/oauth2/par",
+        deviceAuthorizationEndpoint: nil
+      ),
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: nil,
+      loggerId: nil,
+      oidcClientId: nil
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+    let oidcModule = journey.config.modules
+      .compactMap { $0.config as? OidcClientConfig }
+      .first
+
+    XCTAssertEqual(oidcModule?.openId?.authorizationEndpoint, "https://example.com/oauth2/authorize")
+    XCTAssertEqual(oidcModule?.openId?.tokenEndpoint, "https://example.com/oauth2/token")
+    XCTAssertEqual(oidcModule?.openId?.userinfoEndpoint, "")
+    XCTAssertEqual(oidcModule?.openId?.pushedAuthorizationRequestEndpoint, "https://example.com/oauth2/par")
+    XCTAssertNil(oidcModule?.openIdOverride)
+  }
+
+  func testBuildComposesWithOpenIdOnlyCoreHandle() async throws {
+    let oidcClientId = await CoreRuntime.oidcClientRegistry.register(
+      OidcHandleStub(
+        clientId: "client-id",
+        discoveryEndpoint: nil,
+        redirectUri: "com.example.app://oauth2redirect",
+        scopes: ["openid"],
+        openId: OidcOpenIdConfig(
+          authorizationEndpoint: "https://example.com/oauth2/authorize",
+          tokenEndpoint: "https://example.com/oauth2/token",
+          userinfoEndpoint: "https://example.com/oauth2/userinfo",
+          endSessionEndpoint: "https://example.com/oauth2/logout",
+          pingEndIdpSessionEndpoint: nil,
+          revocationEndpoint: "https://example.com/oauth2/revoke"
+        )
+      )
+    )
+    let payload = JourneyClientPayload(
+      serverUrl: "https://example.com/am",
+      timeout: nil,
+      realm: "alpha",
+      cookie: "iPlanetDirectoryPro",
+      clientId: nil,
+      discoveryEndpoint: nil,
+      redirectUri: nil,
+      scopes: [],
+      openId: nil,
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:],
+      sessionStorageId: nil,
+      oidcStorageId: nil,
+      loggerId: nil,
+      oidcClientId: oidcClientId
+    )
+
+    let journey = try await JourneyClientFactory().build(payload)
+    let oidcModule = journey.config.modules
+      .compactMap { $0.config as? OidcClientConfig }
+      .first
+
+    XCTAssertEqual(oidcModule?.openId?.tokenEndpoint, "https://example.com/oauth2/token")
+    XCTAssertEqual(oidcModule?.openId?.endSessionEndpoint, "https://example.com/oauth2/logout")
+  }
+
   func testBuildAllowsJourneyOnlyConfigurationWithoutOidc() async throws {
     let payload = JourneyClientPayload(
       serverUrl: "https://example.com/am",

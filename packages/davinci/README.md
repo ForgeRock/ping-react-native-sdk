@@ -26,6 +26,19 @@ yarn add @ping-identity/rn-storage
 yarn add @ping-identity/rn-logger
 ```
 
+### Android redirect URI scheme
+
+The native Android browser module is included transitively and declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. Per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails:
+
+```groovy
+android {
+  defaultConfig {
+    // For redirect URI "com.example.app://callback", configure:
+    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
+  }
+}
+```
+
 ## How to Use the SDK
 
 ### Step 1: Create a minimal client

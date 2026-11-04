@@ -9,7 +9,6 @@
 //
 
 import Foundation
-import AuthenticationServices
 import PingBrowser
 import PingOidc
 import PingOrchestrate
@@ -610,17 +609,9 @@ public class RNPingOidcCommon: NSObject {
         return
       }
 
-      // NOTE(SDKS-5295): PingOidc/PingBrowser 2.1.0's OidcWebClient.authorize()
-      // collapses every FailureNode.cause (including browser cancellation) into
-      // OidcError.unknown(message:) before returning it via `result`, discarding
-      // the typed BrowserError/ASWebAuthenticationSessionError. Because
-      // handle.web.authorize returns a Result rather than throwing on
-      // cancellation, the `catch let error as BrowserError` /
-      // `catch let error as ASWebAuthenticationSessionError` blocks below are
-      // dead code in the normal cancel flow — they only fire if authorize()
-      // itself throws before start() runs. Once the upstream fix preserves the
-      // typed cause, revisit whether cancellation detection should move into
-      // the `.failure(let error)` branch above instead.
+      // authorize() returns browser failures (including user cancellation) as a
+      // `.failure` result carrying the typed cause. It only throws when client
+      // initialization fails before the browser starts.
       do {
         let result = try await handle.web.authorize { config in
           config.additionalParameters = params
@@ -629,33 +620,14 @@ public class RNPingOidcCommon: NSObject {
         case .success:
           resolver(["type": "success"])
         case .failure(let error):
-        reject(OidcErrorMapper.mapOidcError(error, code: .authorizeError), rejecter: rejecter)
-        }
-      } catch let error as BrowserError {
-        if case .externalUserAgentCancelled = error {
-          resolver(["type": "cancel"])
-        } else {
-          let mapped = GenericError(
-            type: .internalError,
-            error: OidcErrorCodes.authorizeError.rawValue,
-            message: error.localizedDescription
-          )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
-        }
-      } catch let error as ASWebAuthenticationSessionError {
-        if error.code == .canceledLogin {
-          resolver(["type": "cancel"])
-        } else {
-          let mapped = GenericError(
-            type: .internalError,
-            error: OidcErrorCodes.authorizeError.rawValue,
-            message: error.localizedDescription,
-            code: error.code.rawValue
-          )
-          reject(mapped, rejecter: rejecter, underlyingError: error as NSError)
+          if OidcErrorMapper.isUserCancellation(error) {
+            resolver(["type": "cancel"])
+          } else {
+            reject(OidcErrorMapper.mapOidcError(error, code: .authorizeError), rejecter: rejecter)
+          }
         }
       } catch {
-      reject(OidcErrorMapper.mapAuthorizeThrowable(error), rejecter: rejecter, underlyingError: error as NSError)
+        reject(OidcErrorMapper.mapAuthorizeThrowable(error), rejecter: rejecter, underlyingError: error as NSError)
       }
     }
   }

@@ -171,7 +171,7 @@ public class RNPingDeviceProfileCommon: NSObject {
     for name in collectorNames {
       switch name {
       case "platform":
-        collectors.append(PlatformCollector())
+        collectors.append(PlatformCollector(includeModelName: true))
       case "hardware":
         collectors.append(HardwareCollector())
       case "network":

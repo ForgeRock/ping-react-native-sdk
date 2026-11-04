@@ -108,18 +108,13 @@ internal object JourneyNodeMapper {
                 payload["header"] = stringFieldOrEmpty(node.input["header"])
                 payload["description"] = stringFieldOrEmpty(node.input["description"])
                 payload["stage"] = stringFieldOrEmpty(node.input["stage"])
-                // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter locale matching only
-                // checks Locale.getDefault() here, while iOS iterates the full ordered
-                // preferred-locale list — identical server data + device settings can resolve
-                // different localized text per platform.
                 payload["submitButtonText"] = node.submitButtonText
                 payload["pageFooter"] = node.pageFooter
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"
-                // TODO(iOS SDK parity): Android Orchestrate ErrorNode currently does not expose
-                // an HTTP status field; iOS ErrorNode can include status metadata.
                 payload["message"] = node.message
+                node.status?.let { payload["status"] = it }
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
             }
             is SuccessNode -> {

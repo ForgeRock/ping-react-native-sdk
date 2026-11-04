@@ -67,6 +67,36 @@ final class JourneyErrorMapperTests: XCTestCase {
     XCTAssertEqual(mapped.status as? Int, 401)
   }
 
+  func testMapHandlesOidcUnknownErrorWithCause() {
+    // OidcError.unknown's first associated value is a cause Error, not a
+    // JS-serializable code; it must fold into the message, never into `code`.
+    let mapped = JourneyErrorMapper.map(
+      OidcError.unknown(
+        cause: NSError(domain: "test", code: 7, userInfo: [NSLocalizedDescriptionKey: "boom"]),
+        message: nil
+      ),
+      code: .userError
+    )
+
+    XCTAssertEqual(mapped.type, .unknownError)
+    XCTAssertEqual(mapped.error, JourneyErrorCodes.userError.rawValue)
+    XCTAssertEqual(mapped.message, "boom")
+    XCTAssertNil(mapped.code)
+  }
+
+  func testMapHandlesOidcUnknownErrorWithMessageAndCause() {
+    let mapped = JourneyErrorMapper.map(
+      OidcError.unknown(
+        cause: NSError(domain: "test", code: 7, userInfo: [NSLocalizedDescriptionKey: "boom"]),
+        message: "explicit message"
+      ),
+      code: .userError
+    )
+
+    XCTAssertEqual(mapped.message, "explicit message")
+    XCTAssertNil(mapped.code)
+  }
+
   func testMapHandlesBridgeError() {
     let mapped = JourneyErrorMapper.map(
       JourneyBridgeError.argument("bad input"),

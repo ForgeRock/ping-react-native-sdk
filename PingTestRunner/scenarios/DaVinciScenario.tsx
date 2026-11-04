@@ -9,7 +9,7 @@
  * DaVinciScenario — headless test screen for DaVinci E2E tests.
  *
  * Reads config from Detox launchArgs and renders a generic UI that handles all
- * collector types exposed by rn-davinci 2.0.1. Each collector gets a
+ * collector types exposed by rn-davinci. Each collector gets a
  * deterministic testID of the form `davinci-field-{key}` so per-test files can
  * locate fields without knowing anything else about the form.
  *

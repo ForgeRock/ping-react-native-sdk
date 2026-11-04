@@ -132,6 +132,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            // BouncyCastle jars (bcpkix/bcutil/bcprov) each bundle these files.
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/NOTICE.md"
         }
     }
     
@@ -152,7 +155,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     // Align with ping-android-sdk sample app for non-discoverable FIDO2 credential support.
     implementation("com.google.android.gms:play-services-fido:21.2.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
 

@@ -91,13 +91,7 @@ final class JourneyClientFactory {
           if !oidcConfig.additionalParameters.isEmpty {
             module.additionalParameters = oidcConfig.additionalParameters
           }
-          // PingOidc 2.1.0 made `openId` private(set); only `openIdOverride` (patches
-          // fields after discovery completes) is public now. `resolveOidcConfig` and
-          // `resolveOidcConfigFromHandle` reject configs that omit `discoveryEndpoint`,
-          // so `openId` here is always applied as an override, never as a standalone bypass.
-          if let openId = oidcConfig.openId {
-            module.openIdOverride = Self.openIdOverride(for: openId)
-          }
+          Self.applyOpenId(oidcConfig.openId, to: module)
           if let oidcStorage {
             module.storage = oidcStorage
           }
@@ -146,14 +140,7 @@ final class JourneyClientFactory {
     }
     let coreOpenId = oidcPayload.openId.map(Self.toCoreOpenId)
     let hasDiscoveryEndpoint = !(oidcPayload.discoveryEndpoint?.isEmpty ?? true)
-    // PingOidc 2.1.0 only applies `openId` as an override patched onto a successful
-    // discover() call — it can no longer be used to skip discovery entirely.
-    guard hasDiscoveryEndpoint else {
-      if coreOpenId != nil {
-        throw JourneyBridgeError.argument(
-          "Journey OIDC config is missing discoveryEndpoint. `openId` alone can no longer bypass discovery — provide discoveryEndpoint; openId will be applied as an override after discovery."
-        )
-      }
+    guard hasDiscoveryEndpoint || coreOpenId != nil else {
       return nil
     }
 
@@ -189,11 +176,9 @@ final class JourneyClientFactory {
     }
 
     let discoveryEndpoint = handle.discoveryEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines)
-    // PingOidc 2.1.0 only applies `openId` as an override patched onto a successful
-    // discover() call — it can no longer be used to skip discovery entirely.
-    if discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true {
+    if (discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true) && handle.openId == nil {
       throw JourneyBridgeError.argument(
-        "OIDC client id=\(oidcClientId) does not expose discoveryEndpoint. `openId` alone can no longer bypass discovery — configure OIDC with discoveryEndpoint before composing Journey."
+        "OIDC client id=\(oidcClientId) exposes neither discoveryEndpoint nor openId. Configure OIDC with one of them before composing Journey."
       )
     }
 
@@ -231,6 +216,35 @@ final class JourneyClientFactory {
       revocationEndpoint: payload.revocationEndpoint,
       pushedAuthorizationRequestEndpoint: payload.pushedAuthorizationRequestEndpoint,
       deviceAuthorizationEndpoint: payload.deviceAuthorizationEndpoint
+    )
+  }
+
+  /// Applies the shared OpenID payload to a native OIDC module configuration.
+  ///
+  /// With a `discoveryEndpoint`, the payload patches the discovered document through
+  /// `openIdOverride`, so only the supplied fields replace their discovered value. Without
+  /// one there is nothing to patch: the payload becomes the complete document, and any
+  /// endpoint it leaves unset is blank, matching the Android bridge.
+  ///
+  /// - Parameters:
+  ///   - openId: Shared OpenID configuration payload, if any.
+  ///   - config: Native OIDC configuration to update; `discoveryEndpoint` must already be set.
+  private static func applyOpenId(_ openId: OidcOpenIdConfig?, to config: OidcClientConfig) {
+    guard let openId else { return }
+    let hasDiscoveryEndpoint = !config.discoveryEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    if hasDiscoveryEndpoint {
+      config.openIdOverride = openIdOverride(for: openId)
+      return
+    }
+    config.openId = OpenIdConfiguration(
+      authorizationEndpoint: openId.authorizationEndpoint ?? "",
+      tokenEndpoint: openId.tokenEndpoint ?? "",
+      userinfoEndpoint: openId.userinfoEndpoint ?? "",
+      endSessionEndpoint: openId.endSessionEndpoint ?? "",
+      revocationEndpoint: openId.revocationEndpoint ?? "",
+      pingEndsessionEndpoint: openId.pingEndIdpSessionEndpoint,
+      pushedAuthorizationRequestEndpoint: openId.pushedAuthorizationRequestEndpoint,
+      deviceAuthorizationEndpoint: openId.deviceAuthorizationEndpoint
     )
   }
 

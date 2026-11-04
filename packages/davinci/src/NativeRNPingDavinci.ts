@@ -34,7 +34,7 @@ export type NativeDaVinciConfig = {
   scopes?: string[];
   /** Resolved OIDC storage handle id from the storage registry. */
   storageId?: string;
-  /** Sign-out redirect URI (Android only in 2.0.1). */
+  /** Sign-out redirect URI (Android only in 2.2.0). */
   signOutRedirectUri?: string;
   /** Login hint forwarded to the authorization endpoint. */
   loginHint?: string;

@@ -24,6 +24,19 @@ yarn add @ping-identity/rn-storage
 yarn add @ping-identity/rn-logger
 ```
 
+### Android redirect URI scheme
+
+The native Android browser module is included transitively and declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. Per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails:
+
+```groovy
+android {
+  defaultConfig {
+    // For redirect URI "com.example.app://callback", configure:
+    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
+  }
+}
+```
+
 ## How to Use the SDK
 
 ### Step 1: Create a minimal client
@@ -422,6 +435,8 @@ Integration-dependent families (for example, device profile, FIDO, PingOne Prote
 For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fido` (`registerForJourney(...)` / `authenticateForJourney(...)`) and then call `next(...)`.
 
 For PingOne Protect callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-protect` (`initializeProtectForJourney(...)` / `collectProtectForJourney(...)`) and then call `next(...)`. See [Use with Journey](../protect/README.md#use-with-journey) in the rn-protect README for the full flow.
+
+Device profile callbacks require `@ping-identity/rn-device-profile` (`collectDeviceProfileForJourney(...)`) before calling `next(...)`. On iOS, native Journey SDK 2.2.0 no longer depends on the device-profile module, so the package must be installed; on Android it is included transitively. See the rn-device-profile README for the Journey usage.
 
 ### Native parity contract
 

@@ -21,7 +21,7 @@ struct DaVinciOidcPayload: Sendable {
   let par: Bool?
   /// Optional OIDC storage handle id.
   let storageId: String?
-  /// Optional sign-out redirect URI (TODO-SDK-PARITY: Android only in 2.0.1 — iOS silently ignores).
+  /// Optional sign-out redirect URI (TODO-SDK-PARITY: Android only in 2.2.0 — iOS silently ignores).
   let signOutRedirectUri: String?
   /// Optional login hint.
   let loginHint: String?

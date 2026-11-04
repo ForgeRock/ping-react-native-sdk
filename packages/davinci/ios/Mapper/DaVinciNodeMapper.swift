@@ -152,7 +152,7 @@ enum DaVinciNodeMapper {
 
     let registeredKeys = Set(node.collectors.map { $0.id })
 
-    // TODO-SDK-PARITY: IdpCollector.id (PingExternalIdP 2.1.0) falls back to a fresh
+    // TODO-SDK-PARITY: IdpCollector.id (PingExternalIdP 2.2.0) falls back to a fresh
     // random UUID per call — it never matches the server field's real `key`. Excluding
     // SOCIAL_LOGIN_BUTTON here avoids reporting a field the SDK *did* instantiate a
     // collector for (and that the registered plugin serializer serialized) as
@@ -298,7 +298,7 @@ enum DaVinciNodeMapper {
     case let pollingCollector as PollingCollector:
       map = mapPollingCollector(pollingCollector)
     case let qrCodeCollector as QRCodeCollector:
-      // QRCodeCollector's `key` is parsed natively (unlike Android 2.1.0) but it does not
+      // QRCodeCollector's `key` is parsed natively but it does not
       // extend FieldCollector — no `label`/`required` — so it's fully serialized here and
       // returned early rather than routed through `applyRawField` below.
       return mapQRCodeCollector(qrCodeCollector, node: node, logger: logger)
@@ -576,14 +576,10 @@ enum DaVinciNodeMapper {
     logger: Logger?
   ) -> [String: Any] {
     let field = findFieldJson(collector.key, node: node, logger: logger)
-    let content = (field?["content"] as? String)
-      ?? collector.imageData.map { "data:image/png;base64,\($0.base64EncodedString())" }
-      ?? ""
-
     var map: [String: Any] = [
       "key": collector.key,
       "type": qrCode,
-      "content": content,
+      "content": collector.content,
       "fallbackText": collector.fallbackText
     ]
     if let field {

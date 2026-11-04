@@ -6,11 +6,36 @@
  */
 
 import XCTest
+import PingBrowser
 import PingOidc
 @testable import RNPingCore
 @testable import RNPingOidc
 
 final class OidcErrorMapperTests: XCTestCase {
+
+  func testIsUserCancellationTrueForBrowserCancelCause() {
+    let error = OidcError.authorizeError(
+      cause: BrowserError.externalUserAgentCancelled,
+      message: "Browser authorization failed"
+    )
+
+    XCTAssertTrue(OidcErrorMapper.isUserCancellation(error))
+  }
+
+  func testIsUserCancellationFalseForOtherBrowserCause() {
+    let error = OidcError.authorizeError(cause: BrowserError.externalUserAgentFailure, message: "failed")
+
+    XCTAssertFalse(OidcErrorMapper.isUserCancellation(error))
+  }
+
+  func testIsUserCancellationFalseWhenAuthorizeErrorHasNoCause() {
+    XCTAssertFalse(OidcErrorMapper.isUserCancellation(OidcError.authorizeError(message: "no code")))
+  }
+
+  func testIsUserCancellationFalseForNonAuthorizeErrors() {
+    XCTAssertFalse(OidcErrorMapper.isUserCancellation(OidcError.unknown(cause: BrowserError.externalUserAgentCancelled)))
+    XCTAssertFalse(OidcErrorMapper.isUserCancellation(OidcError.networkError(message: "timeout")))
+  }
 
   func testMapOidcErrorAuthorizeError() {
     let error = OidcError.authorizeError(message: "authorize failed")

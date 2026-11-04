@@ -36,7 +36,7 @@ internal class OidcClientFactory(
     val resolvedLogger = loggerResolver(config.loggerId)
     return OidcClientConfig().apply {
       resolvedLogger?.let { logger = it }
-      config.discoveryEndpoint?.let { discoveryEndpoint = it }
+      applyDiscoveryEndpoint(config.discoveryEndpoint)
       config.par?.let { par = it }
       clientId = config.clientId
       redirectUri = config.redirectUri
@@ -69,7 +69,7 @@ internal class OidcClientFactory(
     return OidcWebClient {
       module(Oidc) {
         resolvedLogger?.let { logger = it }
-        config.discoveryEndpoint?.let { discoveryEndpoint = it }
+        applyDiscoveryEndpoint(config.discoveryEndpoint)
         config.par?.let { par = it }
         clientId = config.clientId
         redirectUri = config.redirectUri
@@ -102,7 +102,7 @@ internal class OidcClientFactory(
     val resolvedLogger = loggerResolver(config.loggerId)
     return OidcClient {
       resolvedLogger?.let { logger = it }
-      config.discoveryEndpoint?.let { discoveryEndpoint = it }
+      applyDiscoveryEndpoint(config.discoveryEndpoint)
       config.par?.let { par = it }
       clientId = config.clientId
       redirectUri = config.redirectUri
@@ -139,6 +139,21 @@ internal class OidcClientFactory(
     storage {
       applyStorageConfig(storageConfig)
     }
+  }
+
+  /**
+   * Set the discovery endpoint, initializing it blank when the payload has none.
+   *
+   * TODO-PARITY: native Android 2.2.0 `OidcClientConfig.clone()` reads the `lateinit`
+   * `discoveryEndpoint`, so an `openId`-only config (no discovery endpoint) throws
+   * `UninitializedPropertyAccessException` as soon as the browser returns. `init()` skips
+   * discovery whenever `openId` is set, so a blank value is never used for a request. Remove
+   * once the native SDK stops requiring it; file against the native Android SDK.
+   *
+   * @param value Discovery endpoint from the JS payload, if any
+   */
+  private fun OidcClientConfig.applyDiscoveryEndpoint(value: String?) {
+    discoveryEndpoint = value.orEmpty()
   }
 
   /**

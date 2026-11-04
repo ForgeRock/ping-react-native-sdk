@@ -394,6 +394,14 @@ export type JourneyNode = Omit<Node, 'callbacks'> & {
   message?: string;
   /** Optional failure cause message for `FailureNode`. */
   cause?: string;
+  /**
+   * Optional HTTP status code for `ErrorNode` payloads.
+   *
+   * @remarks
+   * Present when the native `ErrorNode` carries a status. Requires native SDK
+   * 2.2.0 or later on Android; earlier Android versions do not expose it.
+   */
+  status?: number;
   /** Optional raw input payload from native node. */
   input?: Record<string, unknown>;
   /** Callback collection when additional user input is required. */

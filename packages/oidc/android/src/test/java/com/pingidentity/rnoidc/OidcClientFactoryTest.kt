@@ -125,6 +125,41 @@ class OidcClientFactoryTest {
   }
 
   @Test
+  fun buildOidcClient_openIdOnlyConfigInitializesDiscoveryEndpoint() {
+    // Native clone() reads the lateinit discoveryEndpoint; an uninitialized value threw
+    // UninitializedPropertyAccessException right after the browser returned. Reading it
+    // here would throw the same way if the factory left it unset.
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+    val payload = basePayload().copy(
+      discoveryEndpoint = null,
+      openId = OpenIdPayload(
+        authorizationEndpoint = "https://example.com/oauth2/authorize",
+        tokenEndpoint = "https://example.com/oauth2/token",
+        userinfoEndpoint = null,
+        endSessionEndpoint = null,
+        pingEndIdpSessionEndpoint = null,
+        revocationEndpoint = null,
+        pushedAuthorizationRequestEndpoint = null,
+        deviceAuthorizationEndpoint = null
+      )
+    )
+
+    val config = factory.buildOidcClient(payload).extractConfig()
+
+    assertEquals("", config.discoveryEndpoint)
+    assertEquals("https://example.com/oauth2/token", config.openId.tokenEndpoint)
+  }
+
+  @Test
+  fun buildOidcClient_keepsDiscoveryEndpointWhenProvided() {
+    val factory = OidcClientFactory(RecordingRegistry()) { null }
+
+    val config = factory.buildOidcClient(basePayload()).extractConfig()
+
+    assertEquals("https://example.com/.well-known/openid-configuration", config.discoveryEndpoint)
+  }
+
+  @Test
   fun buildOidcClient_mergesPartialOpenIdOverrideOntoDiscoveryWhenDiscoveryEndpointPresent() {
     // With a discoveryEndpoint present, a partial openId payload (here, only
     // deviceAuthorizationEndpoint -- the field Advanced Identity Cloud's own
