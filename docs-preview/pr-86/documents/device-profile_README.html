@@ -46,7 +46,7 @@ collector support, permissions, and device capabilities.</p>
 <h2 id="built-in-collectors" class="tsd-anchor-link">Built-in collectors<a href="#built-in-collectors" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>
 <p>Availability depends on platform and permissions.</p>
 <ul>
-<li><code>platform</code>: device and OS metadata. On iOS, <code>model</code> is the raw hardware identifier (for example <code>iPhone15,2</code>) and <code>modelName</code> carries the readable name (for example <code>iPhone 14 Pro</code>), matching Android's readable <code>model</code>. See <a href="#ios-modelname">iOS <code>modelName</code></a>.</li>
+<li><code>platform</code>: device and OS metadata. On iOS, <code>model</code> is the raw hardware identifier (for example <code>iPhone15,2</code>) and <code>modelName</code> optionally carries the readable name (for example <code>iPhone 14 Pro</code>), matching Android's readable <code>model</code>. See <a href="#ios-modelname">iOS <code>modelName</code></a>.</li>
 <li><code>hardware</code>: hardware and capability details.</li>
 <li><code>network</code>: connection status and network properties.</li>
 <li><code>telephony</code>: carrier and telephony metadata.</li>
@@ -55,7 +55,10 @@ collector support, permissions, and device capabilities.</p>
 <li><code>location</code>: location coordinates (requires permissions; Android needs Play Services Location).</li>
 </ul>
 <h3 id="ios" class="tsd-anchor-link">iOS <code>modelName</code><a href="#ios" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
-<p>On iOS the <code>platform</code> collector adds <code>modelName</code>, the readable device name resolved offline from the raw <code>model</code> identifier (native SDK 2.2.0 or later):</p>
+<p>On iOS the <code>platform</code> collector can add <code>modelName</code>, the readable device name resolved offline from the raw <code>model</code> identifier (native SDK 2.2.0 or later). Pass <code>includeModelName: true</code> to <code>collectDeviceProfile</code> or <code>collectDeviceProfileForJourney</code> to enable it; the default is <code>false</code>, mirroring native <code>PlatformCollector(includeModelName:)</code>, so profiles are unchanged unless the app opts in:</p>
+<pre><code class="ts"><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-0">collectDeviceProfile</span><span class="hl-1">([</span><span class="hl-2">&#39;platform&#39;</span><span class="hl-1">], { </span><span class="hl-3">includeModelName:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1"> });</span>
+</code><button type="button">Copy</button></pre>
+
 <pre><code class="json"><span class="hl-1">{ </span><span class="hl-13">&quot;platform&quot;</span><span class="hl-1">: { </span><span class="hl-13">&quot;model&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;iPhone15,2&quot;</span><span class="hl-1">, </span><span class="hl-13">&quot;modelName&quot;</span><span class="hl-1">: </span><span class="hl-2">&quot;iPhone 14 Pro&quot;</span><span class="hl-1"> } }</span>
 </code><button type="button">Copy</button></pre>
 

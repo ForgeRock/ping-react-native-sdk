@@ -33,7 +33,7 @@
 <li>Configure Android origin domains for FIDO on your RP/server.</li>
 <li>If you support Android API 33 and older, explicitly include <code>androidx.credentials:credentials-play-services-auth</code>.</li>
 <li>If you need non-discoverable credentials / legacy security-key support, explicitly include <code>com.google.android.gms:play-services-fido</code>.</li>
-<li>Define the <code>appRedirectUriScheme</code> manifest placeholder for release builds (for example <code>manifestPlaceholders[&quot;appRedirectUriScheme&quot;] = &quot;com.example.app&quot;</code> in <code>defaultConfig</code>). The transitive native browser module requires it; per the native SDK 2.2.0 release notes, debug builds receive a default.</li>
+<li>Define the <code>appRedirectUriScheme</code> manifest placeholder for release builds (for example <code>manifestPlaceholders[&quot;appRedirectUriScheme&quot;] = &quot;com.example.app&quot;</code> in <code>defaultConfig</code>). The Ping browser module that requires it is not part of rn-fido's dependency graph on its own (only <code>androidx.browser</code> is transitive); it reaches an app via <code>@ping-identity/rn-oidc</code> or <code>@ping-identity/rn-external-idp</code>. Per the native SDK 2.2.0 release notes, debug builds receive a default. Defining the placeholder is safe regardless.</li>
 </ul>
 <h3 id="ios" class="tsd-anchor-link">iOS<a href="#ios" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <ul>
