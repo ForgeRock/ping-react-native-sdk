@@ -144,11 +144,11 @@ internal class OidcClientFactory(
   /**
    * Set the discovery endpoint, initializing it blank when the payload has none.
    *
-   * TODO-PARITY: native Android 2.2.0 `OidcClientConfig.clone()` reads the `lateinit`
+   * TODO-PARITY SDKS-5570: native Android 2.2.0 `OidcClientConfig.clone()` reads the `lateinit`
    * `discoveryEndpoint`, so an `openId`-only config (no discovery endpoint) throws
    * `UninitializedPropertyAccessException` as soon as the browser returns. `init()` skips
    * discovery whenever `openId` is set, so a blank value is never used for a request. Remove
-   * once the native SDK stops requiring it; file against the native Android SDK.
+   * once the native SDK stops requiring it.
    *
    * @param value Discovery endpoint from the JS payload, if any
    */

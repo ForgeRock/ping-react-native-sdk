@@ -132,7 +132,8 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
-            // BouncyCastle jars (bcpkix/bcutil/bcprov) each bundle these files.
+            // BouncyCastle 1.85 jars (bcpkix/bcutil/bcprov) bundle META-INF/LICENSE.md
+            // (not NOTICE.md); NOTICE.md is excluded defensively.
             excludes += "/META-INF/LICENSE.md"
             excludes += "/META-INF/NOTICE.md"
         }

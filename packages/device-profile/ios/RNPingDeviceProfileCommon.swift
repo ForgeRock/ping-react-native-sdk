@@ -52,16 +52,24 @@ public class RNPingDeviceProfileCommon: NSObject {
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
   ///   - collectors: Ordered list of collector identifiers to execute.
+  ///   - includeModelName: Whether the iOS `platform` collector resolves the readable
+  ///     device name into `modelName`. Defaults to `false`, matching native
+  ///     `PlatformCollector(includeModelName:)`. No effect on Android.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
   /// - Note: Rejects with a `GenericError` payload on failure.
   @objc
   public static func collectDeviceProfile(
     _ collectors: [String],
+    includeModelName: Bool,
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
-    let nativeCollectors = buildCollectors(from: collectors, includeLocation: true)
+    let nativeCollectors = buildCollectors(
+      from: collectors,
+      includeLocation: true,
+      includeModelName: includeModelName
+    )
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
 
     Task {
@@ -97,6 +105,9 @@ public class RNPingDeviceProfileCommon: NSObject {
   ///   - journeyId: Journey instance identifier.
   ///   - collectors: Ordered list of collector identifiers to execute.
   ///   - loggerId: Optional logger configuration id resolved from the Logger module.
+  ///   - includeModelName: Whether the iOS `platform` collector resolves the readable
+  ///     device name into `modelName`. Defaults to `false`, matching native
+  ///     `PlatformCollector(includeModelName:)`. No effect on Android.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
   /// - Note: Rejects with a `GenericError` payload on failure.
@@ -105,11 +116,16 @@ public class RNPingDeviceProfileCommon: NSObject {
     _ journeyId: String,
     collectors: [String],
     loggerId: String?,
+    includeModelName: Bool,
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     let locationRequested = collectors.contains("location")
-    let metadataRequested = !buildCollectors(from: collectors, includeLocation: false).isEmpty
+    let metadataRequested = !buildCollectors(
+      from: collectors,
+      includeLocation: false,
+      includeModelName: includeModelName
+    ).isEmpty
     let handlers = PromiseBridge<Any?>(resolver: resolver, rejecter: rejecter)
 
     Task {
@@ -127,7 +143,13 @@ public class RNPingDeviceProfileCommon: NSObject {
         config.logger = resolvedLogger ?? LogManager.none
         config.metadata = callback.metadata && metadataRequested
         config.location = callback.location && locationRequested
-        config.collectors { buildCollectors(from: collectors, includeLocation: false) }
+        config.collectors {
+          buildCollectors(
+            from: collectors,
+            includeLocation: false,
+            includeModelName: includeModelName
+          )
+        }
       }
 
       switch result {
@@ -161,17 +183,21 @@ public class RNPingDeviceProfileCommon: NSObject {
   /// - Parameters:
   ///   - collectorNames: List of collector identifiers requested from JS.
   ///   - includeLocation: Whether to instantiate the LocationCollector.
+  ///   - includeModelName: Whether the `platform` collector resolves the readable device
+  ///     name (`modelName`). Mirrors native `PlatformCollector(includeModelName:)`, whose
+  ///     default is `false` so the payload stays identical unless the app opts in.
   /// - Returns: An array of initialized DeviceCollector instances corresponding to the requested types.
   private static func buildCollectors(
     from collectorNames: [String],
-    includeLocation: Bool
+    includeLocation: Bool,
+    includeModelName: Bool
   ) -> [any DeviceCollector] {
     var collectors: [any DeviceCollector] = []
 
     for name in collectorNames {
       switch name {
       case "platform":
-        collectors.append(PlatformCollector(includeModelName: true))
+        collectors.append(PlatformCollector(includeModelName: includeModelName))
       case "hardware":
         collectors.append(HardwareCollector())
       case "network":

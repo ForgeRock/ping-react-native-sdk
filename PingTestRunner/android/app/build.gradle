@@ -78,6 +78,10 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            // BouncyCastle 1.85 jars (bcpkix/bcutil/bcprov, pulled in via rn-binding)
+            // each bundle META-INF/LICENSE.md, which fails release packaging with
+            // "2 files found with path 'META-INF/LICENSE.md'".
+            excludes += "/META-INF/LICENSE.md"
         }
     }
     // The Ping Android SDK's 2.2.0 artifacts are compiled for JVM 21, and every

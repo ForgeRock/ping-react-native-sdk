@@ -214,6 +214,9 @@ class JourneyClientFactoryTest {
    *
    * Mirrors the native lookup (WorkflowConfig.modules -> Oidc module registry ->
    * config) so tests can assert on the exact `OidcClientConfig` the SDK will use.
+   *
+   * Brittle: reflects into the native registry's private `module`/`config` fields,
+   * so a native-internal rename fails here with an opaque reflection error.
    */
   private fun Workflow.oidcModuleConfig(): com.pingidentity.oidc.OidcClientConfig {
     val modules = options.modules

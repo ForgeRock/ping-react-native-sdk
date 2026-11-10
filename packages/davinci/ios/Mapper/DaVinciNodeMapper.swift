@@ -555,15 +555,10 @@ enum DaVinciNodeMapper {
 
   /// Serializes a `QRCodeCollector` to a bridge map.
   ///
-  /// - Note: iOS's native `QRCodeCollector` strips the `"data:...base64,"` prefix during
-  ///   `init` and retains only decoded `imageData` bytes — the original data URI string is
-  ///   discarded. The ticket contract requires exposing the full data URI as `content`.
-  ///   Preferred source: the raw `content` string from `node.input.form.components.fields[]`
-  ///   (via `findFieldJson`), which is the exact, untouched server value — no MIME type has
-  ///   to be guessed. Fallback: reconstruct from `imageData` (re-encode to base64, re-prepend
-  ///   a `"data:image/png;base64,"` prefix) when the raw field is absent, matching the MIME
-  ///   type QR codes are documented to use. Android's native `content` getter retains the raw
-  ///   data URI as received from the server and needs no reconstruction.
+  /// - Note: Native SDK 2.2.0's `QRCodeCollector.content` retains the complete data URI
+  ///   as received from the server, so the bridge passes it through directly. Android's
+  ///   native `content` getter behaves the same way. The bridge no longer needs to
+  ///   reconstruct the data URI from decoded `imageData` bytes.
   ///
   /// - Parameters:
   ///   - collector: QRCodeCollector instance.

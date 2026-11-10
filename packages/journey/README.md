@@ -26,7 +26,7 @@ yarn add @ping-identity/rn-logger
 
 ### Android redirect URI scheme
 
-The native Android browser module is included transitively and declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. Per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails:
+The Ping browser module (`com.pingidentity.sdks:browser`) is not part of rn-journey's dependency graph on its own (only `androidx.browser`, the Custom Tabs library, is transitive). It reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`, which declare it `compileOnly`, so include one of those packages when your flow redirects through a browser. The browser module declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder, and per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails. Defining the placeholder is safe regardless:
 
 ```groovy
 android {
@@ -436,7 +436,7 @@ For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fid
 
 For PingOne Protect callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-protect` (`initializeProtectForJourney(...)` / `collectProtectForJourney(...)`) and then call `next(...)`. See [Use with Journey](../protect/README.md#use-with-journey) in the rn-protect README for the full flow.
 
-Device profile callbacks require `@ping-identity/rn-device-profile` (`collectDeviceProfileForJourney(...)`) before calling `next(...)`. On iOS, native Journey SDK 2.2.0 no longer depends on the device-profile module, so the package must be installed; on Android it is included transitively. See the rn-device-profile README for the Journey usage.
+Device profile callbacks require `@ping-identity/rn-device-profile` (`collectDeviceProfileForJourney(...)`) before calling `next(...)`. Install it on both platforms: native Journey SDK 2.2.0 does not depend on the device-profile module on iOS, and on Android the device-profile dependency runs the other way (device-profile depends on journey-plugin), so it is never pulled in transitively by rn-journey. See the rn-device-profile README for the Journey usage.
 
 ### Native parity contract
 

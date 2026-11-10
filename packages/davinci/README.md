@@ -28,7 +28,7 @@ yarn add @ping-identity/rn-logger
 
 ### Android redirect URI scheme
 
-The native Android browser module is included transitively and declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. Per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails:
+The Ping browser module (`com.pingidentity.sdks:browser`) is not part of rn-davinci's dependency graph on its own (only `androidx.browser`, the Custom Tabs library, is transitive). It reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`, which declare it `compileOnly`, so include one of those packages when your flow redirects through a browser. The browser module declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder, and per the native SDK 2.2.0 release notes, debug builds receive a default, so your app must define the placeholder for release builds, or the manifest merge fails. Defining the placeholder is safe regardless:
 
 ```groovy
 android {

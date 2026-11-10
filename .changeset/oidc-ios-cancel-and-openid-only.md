@@ -9,5 +9,6 @@ rejecting. `openId`-only configs are accepted on iOS, and on Android the bridge
 initializes `discoveryEndpoint` to blank so the native SDK 2.2.0 `clone()` does
 not throw.
 
-On iOS, `OidcError.unknown`'s cause error is folded into the rejection message
-instead of being emitted as a non-serializable `code`.
+On iOS, the Journey and DaVinci error mappers now fold `OidcError.unknown`'s
+cause error into the rejection message instead of emitting it as a
+non-serializable `code`. rn-oidc's own mapper already behaved this way.

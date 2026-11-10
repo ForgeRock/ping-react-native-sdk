@@ -228,7 +228,8 @@ final class JourneyClientFactory {
   ///
   /// - Parameters:
   ///   - openId: Shared OpenID configuration payload, if any.
-  ///   - config: Native OIDC configuration to update; `discoveryEndpoint` must already be set.
+  ///   - config: Native OIDC configuration to update; `discoveryEndpoint` is honored when
+  ///     non-blank, and when blank `openId` becomes the complete document.
   private static func applyOpenId(_ openId: OidcOpenIdConfig?, to config: OidcClientConfig) {
     guard let openId else { return }
     let hasDiscoveryEndpoint = !config.discoveryEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

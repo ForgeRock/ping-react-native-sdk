@@ -45,7 +45,7 @@ const resolveLogger = (
  * ```
  *
  * @param collectors - Ordered list of predefined collectors to execute.
- * @param options - Optional logger overrides for this call.
+ * @param options - Optional logger and iOS model-name overrides for this call.
  * @returns A JSON-compatible device profile payload.
  */
 export async function collectDeviceProfile(
@@ -55,7 +55,10 @@ export async function collectDeviceProfile(
   const { logger } = resolveLogger(options);
   logger.debug('Device profile collect requested');
   try {
-    const profile = await getNativeModule().collectDeviceProfile(collectors);
+    const profile = await getNativeModule().collectDeviceProfile(
+      collectors,
+      options?.includeModelName ?? false,
+    );
     logger.info('Device profile collect success');
     return profile;
   } catch (error) {
@@ -88,7 +91,7 @@ export async function collectDeviceProfile(
  *
  * @param journey - Active Journey instance used to resolve the callback context.
  * @param collectors - Ordered list of predefined collectors to execute.
- * @param options - Optional logger overrides for this call.
+ * @param options - Optional logger and iOS model-name overrides for this call.
  * @returns Result object describing success.
  */
 export async function collectDeviceProfileForJourney(
@@ -115,6 +118,7 @@ export async function collectDeviceProfileForJourney(
       journeyId,
       collectors,
       loggerId,
+      options?.includeModelName ?? false,
     );
     logger.debug('Device profile metadata collection successful');
     return result;

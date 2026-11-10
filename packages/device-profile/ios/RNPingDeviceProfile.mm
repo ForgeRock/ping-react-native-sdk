@@ -31,14 +31,19 @@ RCT_EXPORT_MODULE()
  * Collects device profile data based on the requested collectors.
  *
  * @param collectors Array of strings representing the data to collect (e.g., "platform", "hardware").
+ * @param includeModelName Whether the iOS platform collector resolves the readable device name.
  * @param resolve Promise resolve block.
  * @param reject Promise reject block.
  */
 - (void)collectDeviceProfile:(NSArray<NSString *> *)collectors
+            includeModelName:(BOOL)includeModelName
                       resolve:(RCTPromiseResolveBlock)resolve
                        reject:(RCTPromiseRejectBlock)reject
 {
-  [[self swiftImpl] collectDeviceProfile:collectors resolver:resolve rejecter:reject];
+  [[self swiftImpl] collectDeviceProfile:collectors
+                       includeModelName:includeModelName
+                                 resolver:resolve
+                                 rejecter:reject];
 }
 
 /**
@@ -47,20 +52,23 @@ RCT_EXPORT_MODULE()
  * @param journeyId The ID of the journey to associate the collection with.
  * @param collectors Array of strings representing the data to collect.
  * @param loggerId Optional native logger handle id.
+ * @param includeModelName Whether the iOS platform collector resolves the readable device name.
  * @param resolve Promise resolve block.
  * @param reject Promise reject block.
  */
 - (void)collectDeviceProfileForJourney:(NSString *)journeyId
                             collectors:(NSArray<NSString *> *)collectors
                               loggerId:(NSString *)loggerId
-                               resolve:(RCTPromiseResolveBlock)resolve
-                                reject:(RCTPromiseRejectBlock)reject
+                      includeModelName:(BOOL)includeModelName
+                                resolve:(RCTPromiseResolveBlock)resolve
+                                 reject:(RCTPromiseRejectBlock)reject
 {
   [[self swiftImpl] collectDeviceProfileForJourney:journeyId
                                         collectors:collectors
                                           loggerId:loggerId
-                                           resolver:resolve
-                                           rejecter:reject];
+                                  includeModelName:includeModelName
+                                            resolver:resolve
+                                            rejecter:reject];
 }
 
 /**

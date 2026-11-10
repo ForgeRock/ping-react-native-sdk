@@ -108,7 +108,7 @@ const profile = await collectDeviceProfile(['platform', 'hardware', 'network']);
 
 Availability depends on platform and permissions.
 
-- `platform`: device and OS metadata. On iOS, `model` is the raw hardware identifier (for example `iPhone15,2`) and `modelName` carries the readable name (for example `iPhone 14 Pro`), matching Android's readable `model`. See [iOS `modelName`](#ios-modelname).
+- `platform`: device and OS metadata. On iOS, `model` is the raw hardware identifier (for example `iPhone15,2`) and `modelName` optionally carries the readable name (for example `iPhone 14 Pro`), matching Android's readable `model`. See [iOS `modelName`](#ios-modelname).
 - `hardware`: hardware and capability details.
 - `network`: connection status and network properties.
 - `telephony`: carrier and telephony metadata.
@@ -118,7 +118,11 @@ Availability depends on platform and permissions.
 
 ### iOS `modelName`
 
-On iOS the `platform` collector adds `modelName`, the readable device name resolved offline from the raw `model` identifier (native SDK 2.2.0 or later):
+On iOS the `platform` collector can add `modelName`, the readable device name resolved offline from the raw `model` identifier (native SDK 2.2.0 or later). Pass `includeModelName: true` to `collectDeviceProfile` or `collectDeviceProfileForJourney` to enable it; the default is `false`, mirroring native `PlatformCollector(includeModelName:)`, so profiles are unchanged unless the app opts in:
+
+```ts
+await collectDeviceProfile(['platform'], { includeModelName: true });
+```
 
 ```json
 { "platform": { "model": "iPhone15,2", "modelName": "iPhone 14 Pro" } }

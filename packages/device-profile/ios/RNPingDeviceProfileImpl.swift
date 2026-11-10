@@ -22,15 +22,19 @@ public class RNPingDeviceProfileImpl: NSObject, @unchecked Sendable {
   /// Collects device profile data outside of Journey flows.
   /// - Parameters:
   ///   - collectors: Ordered list of collector identifiers to execute.
+  ///   - includeModelName: Whether the iOS `platform` collector resolves the readable
+  ///     device name into `modelName`.
   ///   - resolver: Promise resolver for the collected profile payload.
   ///   - rejecter: Promise rejecter for collection errors.
   public func collectDeviceProfile(
     _ collectors: [String],
+    includeModelName: Bool,
     resolver: @escaping (NSDictionary) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
     RNPingDeviceProfileCommon.collectDeviceProfile(
       collectors,
+      includeModelName: includeModelName,
       resolver: resolver,
       rejecter: rejecter
     )
@@ -41,12 +45,15 @@ public class RNPingDeviceProfileImpl: NSObject, @unchecked Sendable {
   ///   - journeyId: Journey instance identifier.
   ///   - collectors: Ordered list of collector identifiers to execute.
   ///   - loggerId: Optional logger configuration id resolved from the Logger module.
+  ///   - includeModelName: Whether the iOS `platform` collector resolves the readable
+  ///     device name into `modelName`.
   ///   - resolver: Promise resolver invoked once the callback submission completes (no payload is returned).
   ///   - rejecter: Promise rejecter for collection errors.
   public func collectDeviceProfileForJourney(
     _ journeyId: String,
     collectors: [String],
     loggerId: String?,
+    includeModelName: Bool,
     resolver: @escaping (Any?) -> Void,
     rejecter: @escaping (String, String, NSError?) -> Void
   ) {
@@ -54,6 +61,7 @@ public class RNPingDeviceProfileImpl: NSObject, @unchecked Sendable {
       journeyId,
       collectors: collectors,
       loggerId: loggerId,
+      includeModelName: includeModelName,
       resolver: resolver,
       rejecter: rejecter
     )

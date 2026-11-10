@@ -95,4 +95,16 @@ export type DeviceProfileLoggerOptions = {
    * Optional JavaScript logger instance.
    */
   logger?: LoggerInstance;
+  /**
+   * On iOS, resolve the readable device name (for example `iPhone 14 Pro`) into
+   * `platform.modelName`. Defaults to `false`, matching the native
+   * `PlatformCollector(includeModelName:)` default.
+   *
+   * @remarks
+   * The submitted profile gains one attribute, and PingAM / PingOne AIC's Device
+   * Match node compares every attribute with the saved profile, so enabling this
+   * can change matching behavior. No effect on Android, whose `platform.model`
+   * is always the readable name.
+   */
+  includeModelName?: boolean;
 };
