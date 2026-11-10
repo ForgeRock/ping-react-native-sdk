@@ -32,16 +32,18 @@ RCT_EXPORT_MODULE()
  *
  * @param collectors Array of strings representing the data to collect (e.g., "platform", "hardware").
  * @param includeModelName Whether the iOS platform collector resolves the readable device name.
+ *        Generated from the optional boolean spec parameter, so it is an `NSNumber` (nil when
+ *        the JS caller omitted it); unwrapped to `BOOL` before reaching Swift.
  * @param resolve Promise resolve block.
  * @param reject Promise reject block.
  */
 - (void)collectDeviceProfile:(NSArray<NSString *> *)collectors
-            includeModelName:(BOOL)includeModelName
+            includeModelName:(NSNumber *)includeModelName
                       resolve:(RCTPromiseResolveBlock)resolve
                        reject:(RCTPromiseRejectBlock)reject
 {
   [[self swiftImpl] collectDeviceProfile:collectors
-                       includeModelName:includeModelName
+                       includeModelName:includeModelName.boolValue
                                  resolver:resolve
                                  rejecter:reject];
 }
@@ -53,20 +55,22 @@ RCT_EXPORT_MODULE()
  * @param collectors Array of strings representing the data to collect.
  * @param loggerId Optional native logger handle id.
  * @param includeModelName Whether the iOS platform collector resolves the readable device name.
+ *        Generated from the optional boolean spec parameter, so it is an `NSNumber` (nil when
+ *        the JS caller omitted it); unwrapped to `BOOL` before reaching Swift.
  * @param resolve Promise resolve block.
  * @param reject Promise reject block.
  */
 - (void)collectDeviceProfileForJourney:(NSString *)journeyId
                             collectors:(NSArray<NSString *> *)collectors
                               loggerId:(NSString *)loggerId
-                      includeModelName:(BOOL)includeModelName
+                      includeModelName:(NSNumber *)includeModelName
                                 resolve:(RCTPromiseResolveBlock)resolve
                                  reject:(RCTPromiseRejectBlock)reject
 {
   [[self swiftImpl] collectDeviceProfileForJourney:journeyId
                                         collectors:collectors
                                           loggerId:loggerId
-                                  includeModelName:includeModelName
+                                  includeModelName:includeModelName.boolValue
                                             resolver:resolve
                                             rejecter:reject];
 }

@@ -45,7 +45,7 @@ yarn add @ping-identity/rn-logger
 - Configure Android origin domains for FIDO on your RP/server.
 - If you support Android API 33 and older, explicitly include `androidx.credentials:credentials-play-services-auth`.
 - If you need non-discoverable credentials / legacy security-key support, explicitly include `com.google.android.gms:play-services-fido`.
-- Define the `appRedirectUriScheme` manifest placeholder for release builds (for example `manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"` in `defaultConfig`). The Ping browser module that requires it is not part of rn-fido's dependency graph on its own (only `androidx.browser` is transitive); it reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`. Per the native SDK 2.2.0 release notes, debug builds receive a default. Defining the placeholder is safe regardless.
+- Define the `appRedirectUriScheme` manifest placeholder for both debug and release builds (for example `manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"` in `defaultConfig`). The Ping browser module that requires it is not part of rn-fido's dependency graph on its own (only `androidx.browser` is transitive); it reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`. The placeholder default in the native SDK's own debug variant never reaches consuming apps, and the manifest merge fails while the placeholder is unresolved. Defining the placeholder is safe regardless.
 
 ### iOS
 
