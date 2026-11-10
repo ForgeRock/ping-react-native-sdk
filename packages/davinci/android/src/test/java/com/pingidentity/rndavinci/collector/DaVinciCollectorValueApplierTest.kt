@@ -30,6 +30,7 @@ import com.pingidentity.orchestrate.WorkflowConfig
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
@@ -607,6 +608,84 @@ class DaVinciCollectorValueApplierTest {
     }
 
     @Test
+    fun applyMetadataCollectorPlainMapErrorEnvelopeSetsStructuredError() {
+        // ReadableNativeMap.toHashMap() converts nested maps recursively, so in
+        // production the envelope arrives as a plain Map rather than a ReadableMap.
+        // JavaOnlyMap.of stores the raw value to reproduce that shape.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap.of(
+                    "error",
+                    mapOf("code" to "USER_CANCELLED", "message" to "User abandoned the flow")
+                )
+            )
+        )
+
+        val error = collector.payload()?.get("error")?.jsonObject
+        assertEquals("USER_CANCELLED", error?.get("code")?.jsonPrimitive?.content)
+        assertEquals("User abandoned the flow", error?.get("message")?.jsonPrimitive?.content)
+        assertTrue(collector.validate().isEmpty())
+    }
+
+    @Test
+    fun applyMetadataCollectorRecursivelyConvertedResultRoundTrips() {
+        // Same production shape as above for success results: nested values are already
+        // plain Map/List/Boolean/Number instances by the time the converter runs.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap.of(
+                    "flag", true,
+                    "score", 87.0,
+                    "tags", listOf("device", 7.0, null),
+                    "risk", mapOf("level" to "LOW"),
+                    "unit", 'x'
+                )
+            )
+        )
+
+        val payload = collector.payload()
+        assertEquals(true, payload?.get("flag")?.jsonPrimitive?.boolean)
+        // Integer-valued doubles serialize as integers (87, not 87.0).
+        assertEquals("87", payload?.get("score")?.jsonPrimitive?.content)
+        val tags = payload?.get("tags")?.jsonArray
+        assertEquals("device", tags?.get(0)?.jsonPrimitive?.content)
+        assertEquals("7", tags?.get(1)?.jsonPrimitive?.content)
+        assertTrue(tags?.get(2) is JsonNull)
+        assertEquals("LOW", payload?.get("risk")?.jsonObject?.get("level")?.jsonPrimitive?.content)
+        // A non-JSON scalar the bridge does not produce falls back to its string form.
+        assertEquals("x", payload?.get("unit")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun applyMetadataCollectorNonStringKeyMessageNamesTypeOnly() {
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        try {
+            DaVinciCollectorValueApplier.apply(
+                node,
+                inputWithCollectors(
+                    "sdkMetadata" to JavaOnlyMap.of("nested", mapOf(1 to "super-secret-token"))
+                )
+            )
+            throw AssertionError("expected IllegalArgumentException")
+        } catch (error: IllegalArgumentException) {
+            val message = error.message.orEmpty()
+            assertTrue(message.contains("non-string key of type Integer"))
+            assertFalse(message.contains("super-secret-token"))
+        }
+        assertNull(collector.payload())
+    }
+
+    @Test
     fun applyMetadataCollectorNullValueIsNoOp() {
         // null → no-op: an unset result stays unset (validate() keeps Required), and a
         // previously set result is never cleared.
@@ -662,6 +741,57 @@ class DaVinciCollectorValueApplierTest {
             assertTrue(error.message?.contains("malformed error envelope") == true)
             assertNull(collector.payload())
         }
+    }
+
+    @Test
+    fun applyMetadataCollectorMalformedErrorEnvelopeMessageDoesNotEchoValues() {
+        // Rejected values are described by type only, so result content never reaches
+        // logs or crash reports through the bridge rejection message.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        val malformedEnvelopes = listOf(
+            // 'error' is not an object.
+            JavaOnlyMap().apply { putString("error", "super-secret-token") },
+            // 'code' is not a string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putInt("code", 42)
+                    putString("message", "super-secret-token")
+                })
+            },
+            // 'message' is not a string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putString("code", "super-secret-token")
+                    putBoolean("message", true)
+                })
+            },
+            // 'code' is an empty string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putString("code", "")
+                    putString("message", "super-secret-token")
+                })
+            },
+            // Neither 'code' nor 'message' is present.
+            JavaOnlyMap().apply { putMap("error", JavaOnlyMap()) }
+        )
+
+        for (malformed in malformedEnvelopes) {
+            try {
+                DaVinciCollectorValueApplier.apply(
+                    node,
+                    inputWithCollectors("sdkMetadata" to malformed)
+                )
+                throw AssertionError("expected IllegalArgumentException")
+            } catch (error: IllegalArgumentException) {
+                val message = error.message.orEmpty()
+                assertTrue(message.contains("malformed error envelope"))
+                assertFalse(message.contains("super-secret-token"))
+            }
+        }
+        assertNull(collector.payload())
     }
 
     @Test

@@ -1473,7 +1473,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
     });
   });
 
-  // ─── METADATA — SDK Integrator pause/resume (SDKS-5384) ───────────────────
+  // ─── METADATA — SDK Integrator pause/resume ───────────────────
   //
   // The native mapper (packages/davinci native tests) already proves a
   // MetadataCollector serialises to { key, type: 'METADATA', label, required,
@@ -1482,7 +1482,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
   // pass-through (success object / error envelope reach the next() payload
   // intact).
 
-  describe('METADATA — SDK Integrator pause/resume (SDKS-5384)', () => {
+  describe('METADATA — SDK Integrator pause/resume', () => {
     const metadataCollector = {
       key: 'sdkMetadata',
       type: 'METADATA',
@@ -1550,12 +1550,11 @@ describe('@ping-identity/rn-davinci — integration', () => {
     });
 
     it('success result passes through to the next() payload intact', async () => {
-      const successValue = { status: 'success' };
       const { mod, mock } = await loadWithMetadataNode();
       const client = mod.createDaVinciClient(VALID_CONFIG);
       const node = asContinueNode(await client.start());
       const plan = mod.buildNextInput(node, {
-        sdkMetadata: successValue,
+        sdkMetadata: mod.buildMetadataResult({ status: 'success' }),
       });
       expect(plan.canSubmit).toBe(true);
       expect(plan.issues).toEqual([]);

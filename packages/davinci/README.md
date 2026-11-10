@@ -421,13 +421,17 @@ Pause/resume contract:
 The value supplied as the form value is exactly what the native bridge applies
 to the collector and what lands in the resume payload (`formData.sdkMetadata`):
 
-- Any JSON object is a success result and is POSTed as-is.
+- Any JSON object is a success result and is POSTed as-is. Wrap it with
+  `buildMetadataResult`. The form value type only accepts METADATA results
+  built this way, so a mis-shaped value for another collector (for example a
+  phone number missing `countryCode`) stays a compile-time error.
 - An object carrying a well-formed `{ error: { code, message } }` envelope
   routes the connector's error branch. Build one with `buildMetadataError`:
 
 ```ts
 import {
   buildMetadataError,
+  buildMetadataResult,
   useDaVinci,
   useDaVinciForm,
 } from '@ping-identity/rn-davinci';
@@ -443,7 +447,7 @@ for (const collector of node?.type === 'ContinueNode' ? node.collectors : []) {
     form.setValue(
       collector.key,
       result.ok
-        ? { status: 'success' }
+        ? buildMetadataResult({ status: 'success' })
         : buildMetadataError('USER_CANCELLED', 'User dismissed the challenge.'),
     );
   }
@@ -462,7 +466,10 @@ There are three distinct outcomes, and none of them fails silently:
   collector value; the server-side connector reads it and routes the flow to
   its client-error branch. This intentionally differs from FIDO2, where
   collector errors are promise rejections: for METADATA the error envelope IS
-  the collector value.
+  the collector value. The envelope carries exactly `code` and `message`.
+  Extra keys inside `error` pass validation but are not forwarded, because both
+  native bridges rebuild the envelope through `setError(code, message)`, so put
+  any additional context in `message`.
 - **Unset result** — submission is blocked with a
   `METADATA_RESULT_REQUIRED` issue in `form.issues` and `canSubmit: false`
   until a result is set. Gating is result-set-based: the native `validate()`

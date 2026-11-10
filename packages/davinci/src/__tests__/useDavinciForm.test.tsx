@@ -9,7 +9,7 @@ import React, { useEffect } from 'react';
 import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
 import { render, act } from '@testing-library/react-native';
 import { useDaVinciForm } from '../useDavinciForm';
-import { buildMetadataError } from '../collectorHelpers';
+import { buildMetadataError, buildMetadataResult } from '../collectorHelpers';
 
 const integrationType = 'TEST_INTEGRATION_COLLECTOR';
 
@@ -718,7 +718,7 @@ describe('useDaVinciForm — unsupportedFields passthrough', () => {
   });
 });
 
-describe('useDaVinciForm — METADATA pause/resume (SDKS-5384)', () => {
+describe('useDaVinciForm — METADATA pause/resume', () => {
   const metadataNode: ContinueNode = {
     type: 'ContinueNode',
     collectors: [
@@ -784,7 +784,7 @@ describe('useDaVinciForm — METADATA pause/resume (SDKS-5384)', () => {
       />,
     );
 
-    const resultValue = { status: 'success', score: 0.87 };
+    const resultValue = buildMetadataResult({ status: 'success', score: 0.87 });
     await act(async () => {
       requireLatest(latest).setValue('sdkMetadata', resultValue);
     });

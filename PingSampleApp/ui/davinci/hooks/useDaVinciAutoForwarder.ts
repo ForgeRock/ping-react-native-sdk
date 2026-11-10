@@ -81,6 +81,12 @@ export function useDaVinciAutoForwarder(
     if (lastNodeKeyRef.current === continueNodeKey) return;
 
     const { meta, canSubmit, input } = form;
+    if (meta.hasMetadata) {
+      // A METADATA node needs an app-supplied result and an explicit Continue.
+      // Consume the one-shot flag here so a later node is not auto-forwarded.
+      onForwarded();
+      return;
+    }
     if (meta.hasManual) return;
     if (meta.hasIntegrationRequired) return;
     if (meta.hasUnsupported) return;

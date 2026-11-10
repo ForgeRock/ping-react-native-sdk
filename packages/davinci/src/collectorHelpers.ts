@@ -415,15 +415,43 @@ export function normalizeCollectors(
 }
 
 /**
+ * Wraps a success result for a {@link MetadataCollector} so it can be set as the
+ * collector's form value.
+ *
+ * @remarks
+ * `DaVinciFormValue` accepts only this branded type (and the error envelope from
+ * {@link buildMetadataError}) for METADATA, so a plain object literal does not
+ * compile. That keeps mis-shaped values for other collector kinds a compile-time
+ * error. The brand is type-only: the returned value is the same object that was
+ * passed in, and the runtime checks (plain non-array object, well-formed `error`
+ * envelope when an `error` key is present) are unchanged.
+ *
+ * @param result - The JSON object to POST as `formData.sdkMetadata`.
+ * @returns The same object, typed as a {@link DaVinciMetadataResult}.
+ *
+ * @example
+ * ```ts
+ * form.setValue('sdkMetadata', buildMetadataResult({ status: 'success' }));
+ * await next(form.input);
+ * ```
+ *
+ * @public
+ */
+export function buildMetadataResult(
+  result: Record<string, unknown>,
+): DaVinciMetadataResult {
+  return result as DaVinciMetadataResult;
+}
+
+/**
  * Builds the structured error envelope for a {@link MetadataCollector} result.
  *
  * @remarks
  * The returned object routes the server-side connector to its client-error
  * branch: set it as the collector's form value (via `setValue`) and resume with
- * `next()` as usual. This intentionally differs from the FIDO2 collector error
- * handling (SDKS-5383), where collector errors are bridge rejections — for
- * METADATA the error envelope IS the collector value the connector routes on,
- * so a well-formed envelope resolves the flow instead of rejecting it.
+ * `next()` as usual. The error envelope is the collector's value, which the
+ * connector routes on, so a well-formed envelope resolves the flow instead of
+ * rejecting the bridge call.
  *
  * The envelope carries exactly `code` and `message`: extra keys inside the
  * `error` object pass JS validation but are reconstructed (not forwarded) by
@@ -513,7 +541,7 @@ function validateMetadataValue(
     };
   }
 
-  const result = value as DaVinciMetadataResult;
+  const result = value as Record<string, unknown>;
   if ('error' in result) {
     const envelope = result['error'];
     if (

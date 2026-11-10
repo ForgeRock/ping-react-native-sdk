@@ -15,6 +15,7 @@ import type {
   ImageCollector,
   IntegrationCollector,
   LabelCollector,
+  DaVinciMetadataErrorResult,
   DaVinciMetadataResult,
   MetadataCollector,
   MultiSelectCollector,
@@ -178,7 +179,8 @@ export type DaVinciFormValue =
   | boolean // SINGLE_CHECKBOX
   | { countryCode: string; phoneNumber: string; extension?: string } // PHONE_NUMBER
   | { type: string; id?: string; description?: string } // DEVICE_AUTHENTICATION
-  | DaVinciMetadataResult // METADATA (success result or error envelope — see DaVinciMetadataResult)
+  | DaVinciMetadataResult // METADATA success result (branded; see buildMetadataResult)
+  | DaVinciMetadataErrorResult // METADATA error envelope (see buildMetadataError)
   | null;
 
 /**

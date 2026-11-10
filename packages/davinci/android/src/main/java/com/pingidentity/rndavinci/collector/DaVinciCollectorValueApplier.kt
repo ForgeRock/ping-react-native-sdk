@@ -159,7 +159,7 @@ internal object DaVinciCollectorValueApplier {
     /**
      * Applies a JS-supplied result value to a [MetadataCollector].
      *
-     * Semantics (SDKS-5384), mirroring the iOS applier:
+     * Semantics, mirroring the iOS applier:
      * - `null` (JS null/undefined) → no-op: the collector's `validate()` keeps returning
      *   `Required`, so an unset result blocks the flow instead of silently clearing a
      *   previously set result.
@@ -171,9 +171,10 @@ internal object DaVinciCollectorValueApplier {
      * - Non-map values → throw: the resume body must be a JSON object.
      *
      * @remarks
-     * This deviates from the FIDO2 error handling (SDKS-5383), where collector errors are
-     * bridge rejections. For METADATA the error envelope IS the value the server-side
-     * connector routes on, so a well-formed envelope resolves the flow.
+     * The error envelope is the collector's value, which the server-side connector routes
+     * on, so a well-formed envelope resolves the flow instead of rejecting the bridge call.
+     * Messages for rejected values name only the offending types, never the values, so
+     * result content does not reach logs or crash reports.
      *
      * @param collector Target metadata collector.
      * @param key Collector key (for error messages).
@@ -189,17 +190,20 @@ internal object DaVinciCollectorValueApplier {
                     // the JavaOnlyMap unit-test double copies shallowly, so the nested
                     // envelope can arrive as either a plain Map or a raw ReadableMap —
                     // accept both.
-                    val envelope: Map<*, *>? = when (val rawEnvelope = value["error"]) {
+                    val rawEnvelope = value["error"]
+                    val envelope: Map<*, *>? = when (rawEnvelope) {
                         is Map<*, *> -> rawEnvelope
                         is ReadableMap -> rawEnvelope.toHashMap()
                         else -> null
                     }
-                    val code = envelope?.get("code") as? String
-                    val message = envelope?.get("message") as? String
-                    if (envelope == null || code.isNullOrEmpty() || message == null) {
+                    val code = envelope?.get("code")
+                    val message = envelope?.get("message")
+                    if (envelope == null || code !is String || code.isEmpty() || message !is String) {
                         throw IllegalArgumentException(
-                            "MetadataCollector key='$key': malformed error envelope $value — " +
-                                "expected { error: { code: string, message: string } }"
+                            "MetadataCollector key='$key': malformed error envelope, expected " +
+                                "{ error: { code: non-empty string, message: string } }, got " +
+                                "error: ${typeName(rawEnvelope)}, code: ${typeName(code)}, " +
+                                "message: ${typeName(message)}"
                         )
                     }
                     collector.setError(code, message)
@@ -213,10 +217,20 @@ internal object DaVinciCollectorValueApplier {
             }
             else -> throw IllegalArgumentException(
                 "MetadataCollector key='$key' expects a JSON object result, got: " +
-                    "${value?.javaClass?.simpleName}"
+                    typeName(value)
             )
         }
     }
+
+    /**
+     * Names the runtime type of a value for error messages, so rejected values are
+     * described without being echoed.
+     *
+     * @param value Any bridge value.
+     * @return The simple class name, or `"null"` when the value is null.
+     */
+    private fun typeName(value: Any?): String =
+        value?.let { it.javaClass.simpleName } ?: "null"
 
     /**
      * Recursively converts a bridge map into a [JsonObject] for
@@ -231,7 +245,7 @@ internal object DaVinciCollectorValueApplier {
         value.entries.associate { (rawKey, rawValue) ->
             val key = rawKey as? String
                 ?: throw IllegalArgumentException(
-                    "MetadataCollector result has a non-string key: $rawKey"
+                    "MetadataCollector result has a non-string key of type ${typeName(rawKey)}"
                 )
             key to toJsonElement(rawValue)
         }

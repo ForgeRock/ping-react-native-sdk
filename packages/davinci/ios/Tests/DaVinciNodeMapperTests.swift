@@ -11,6 +11,7 @@
 import XCTest
 import PingDavinci
 import PingDavinciPlugin
+import PingLogger
 import PingOrchestrate
 import RNPingCore
 @testable import RNPingDavinci
@@ -1201,16 +1202,43 @@ final class DaVinciNodeMapperTests: XCTestCase {
 
   func testMapMetadataCollectorWarnsAndEmitsEmptyMetadataForMalformedPayload() {
     // iOS-only reachable: native init coerces a non-dictionary payload to [:]
-    // (Android's native init throws before the bridge sees the collector).
+    // (Android's native init throws before the bridge sees the collector). The raw
+    // form field still carries the server value, which the mapper reports before
+    // falling back to empty metadata.
     let collector = makeMetadataCollector(key: "sdkMetadata", payload: "not-a-dictionary")
-    let node = makeContinueNode(collectors: [collector])
+    let node = makeContinueNode(
+      collectors: [collector],
+      input: [
+        "form": [
+          "components": [
+            "fields": [
+              ["key": "sdkMetadata", "type": "METADATA", "payload": "not-a-dictionary"]
+            ]
+          ]
+        ]
+      ]
+    )
+    let logger = RecordingLogger()
 
-    let payload = DaVinciNodeMapper.mapNodePayload(node)
+    let payload = DaVinciNodeMapper.mapNodePayload(node, logger: logger)
     let first = (payload["collectors"] as? [[String: Any]])?.first
 
     let metadata = first?["metadata"] as? [String: Any]
     XCTAssertNotNil(metadata)
     XCTAssertTrue(metadata?.isEmpty ?? false)
+    XCTAssertEqual(logger.warnings.count, 1)
+    XCTAssertTrue(logger.warnings.first?.contains("key='sdkMetadata'") ?? false)
+    XCTAssertTrue(logger.warnings.first?.contains("not-a-dictionary") ?? false)
+  }
+
+  func testMapMetadataCollectorDoesNotWarnForDictionaryPayload() {
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector], input: Self.makeMetadataNodeInput())
+    let logger = RecordingLogger()
+
+    _ = DaVinciNodeMapper.mapNodePayload(node, logger: logger)
+
+    XCTAssertTrue(logger.warnings.isEmpty)
   }
 
   func testMapMetadataCollectorIncludesRawFieldWhenFormInputPresent() {
@@ -1476,6 +1504,28 @@ final class DaVinciNodeMapperTests: XCTestCase {
 private final class TestContinueNode: ContinueNode {
   override func asRequest() -> Request {
     return workflow.config.httpClient.request()
+  }
+}
+
+/// Records warning messages so tests can assert on what the mapper logs.
+private final class RecordingLogger: Logger, @unchecked Sendable {
+  private let lock = NSLock()
+  private var recordedWarnings: [String] = []
+
+  var warnings: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return recordedWarnings
+  }
+
+  func d(_ message: String) {}
+  func i(_ message: String) {}
+  func e(_ message: String, error: Error?) {}
+
+  func w(_ message: String, error: Error?) {
+    lock.lock()
+    defer { lock.unlock() }
+    recordedWarnings.append(message)
   }
 }
 

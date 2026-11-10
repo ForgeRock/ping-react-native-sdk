@@ -45,6 +45,7 @@ import React, { useCallback, useState } from 'react';
 import { Button, Switch, Text, TextInput, View } from 'react-native';
 import { LaunchArguments } from 'react-native-launch-arguments';
 import {
+  buildMetadataResult,
   createDaVinciClient,
   normalizeCollectors,
 } from '@ping-identity/rn-davinci';
@@ -612,7 +613,9 @@ function CollectorField({
         <Button
           testID={`${testID}-metadata-set-result`}
           title="Set result"
-          onPress={() => onValueChange({ status: 'success' })}
+          onPress={() =>
+            onValueChange(buildMetadataResult({ status: 'success' }))
+          }
         />
         <Button
           testID={`${testID}-metadata-set-error`}

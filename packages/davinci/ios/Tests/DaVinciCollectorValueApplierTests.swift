@@ -482,6 +482,54 @@ final class DaVinciCollectorValueApplierTests: XCTestCase {
     }
   }
 
+  func testApplyMetadataCollectorMalformedEnvelopeMessageDoesNotEchoValues() {
+    // Rejected values are described by type only, so result content never reaches
+    // logs or crash reports through the bridge rejection message.
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let malformedEnvelopes: [NSDictionary] = [
+      // 'error' is not an object.
+      ["error": "super-secret-token"] as NSDictionary,
+      // 'code' is not a string.
+      ["error": ["code": 42, "message": "super-secret-token"]] as NSDictionary,
+      // 'message' is not a string.
+      ["error": ["code": "super-secret-token", "message": true]] as NSDictionary,
+      // 'code' is an empty string.
+      ["error": ["code": "", "message": "super-secret-token"]] as NSDictionary
+    ]
+
+    for malformed in malformedEnvelopes {
+      let mutations = [
+        DaVinciCollectorValueApplier.CollectorMutation(key: "sdkMetadata", value: malformed)
+      ]
+      XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
+        guard case let DaVinciBridgeError.collectorApply(message) = error else {
+          return XCTFail("Expected collectorApply error, got \(error)")
+        }
+        XCTAssertTrue(message.contains("malformed error envelope"))
+        XCTAssertFalse(message.contains("super-secret-token"))
+      }
+    }
+    XCTAssertNil(collector.payload())
+  }
+
+  func testApplyMetadataCollectorNonStringKeysMessageNamesTypesOnly() {
+    let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
+    let node = makeContinueNode(collectors: [collector])
+    let nonStringKeys = NSDictionary(object: "super-secret-token", forKey: NSNumber(value: 1))
+    let mutations = [
+      DaVinciCollectorValueApplier.CollectorMutation(key: "sdkMetadata", value: nonStringKeys)
+    ]
+    XCTAssertThrowsError(try DaVinciCollectorValueApplier.apply(node, mutations: mutations)) { error in
+      guard case let DaVinciBridgeError.collectorApply(message) = error else {
+        return XCTFail("Expected collectorApply error, got \(error)")
+      }
+      XCTAssertTrue(message.contains("non-string keys"))
+      XCTAssertFalse(message.contains("super-secret-token"))
+    }
+    XCTAssertNil(collector.payload())
+  }
+
   func testApplyMetadataCollectorNonDictionaryValueThrows() {
     let collector = makeMetadataCollector(key: "sdkMetadata", payload: ["sdk": "PROTECT"])
     let node = makeContinueNode(collectors: [collector])

@@ -9,6 +9,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   buildMetadataError,
+  buildMetadataResult,
   type MetadataCollector,
 } from '@ping-identity/rn-davinci';
 import { colors } from '../../../../src/styles/colors';
@@ -23,10 +24,10 @@ import type { DaVinciCollectorRendererProps } from './types';
  * A real integration replaces this with the object the connector expects —
  * any non-empty JSON object is a valid success result.
  */
-const DEMO_SUCCESS_RESULT: Record<string, unknown> = {
+const DEMO_SUCCESS_RESULT = buildMetadataResult({
   status: 'success',
   source: 'sample-app',
-};
+});
 
 /**
  * Renders a {@link MetadataCollector} pause field: the connector payload as

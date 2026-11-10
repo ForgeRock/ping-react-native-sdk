@@ -46,6 +46,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Switch, Text, TextInput, View } from 'react-native';
 import { LaunchArguments } from 'react-native-launch-arguments';
 import {
+  buildMetadataResult,
   createDaVinciClient,
   useDaVinci,
   useDaVinciForm,
@@ -616,7 +617,9 @@ function HookCollectorInput({
         <Button
           testID={`${testID}-metadata-set-result`}
           title="Set result"
-          onPress={() => onValueChange({ status: 'success' })}
+          onPress={() =>
+            onValueChange(buildMetadataResult({ status: 'success' }))
+          }
         />
         <Button
           testID={`${testID}-metadata-set-error`}

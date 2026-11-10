@@ -6,7 +6,7 @@
  */
 
 /**
- * E2E — DaVinci METADATA collector pause/resume (SDKS-5384)
+ * E2E — DaVinci METADATA collector pause/resume
  *
  * A DaVinci SDK Integrator connector pauses the flow with a `METADATA`
  * collector carrying an opaque payload; the app performs the on-device work
@@ -79,12 +79,9 @@ describe('DaVinci — METADATA pause/resume', () => {
   itLive(
     'METADATA field surfaces payload, blocks while unset, then resumes with a result (live)',
     async () => {
-      // The flow's first node is a "Select Test Form" whose SUBMIT_BUTTON
-      // collector is the "Metadata" capability — the bridge surfaces exactly
-      // one submit button here, so it carries the generic davinci-submit-btn
-      // testID (verified by probe: its label is "METADATA"). Tapping it is the
-      // same navigation the native MetadataCollectorE2ETest performs in
-      // navigateToMetadataNode().
+      // The flow's first node is a form whose single SUBMIT_BUTTON ("Metadata")
+      // leads to the METADATA pause. The bridge surfaces exactly one submit
+      // button here, so it carries the generic davinci-submit-btn testID.
       await element(by.id('davinci-start-btn')).tap();
       await waitFor(element(by.id('davinci-submit-btn')))
         .toBeVisible()
@@ -123,11 +120,9 @@ describe('DaVinci — METADATA pause/resume', () => {
       jestExpect(text).toContain('status');
 
       // Resume: with the result stored the flow must advance past the pause.
-      // The SDK-team metadata flow echoes the submitted result on an
-      // "Automation - Message" node and then loops back to the start form
-      // (same traversal the native MetadataCollectorE2ETest asserts), so the
-      // correct post-resume assertion is that a new form node arrived — not a
-      // terminal success screen.
+      // The flow echoes the submitted result on a message node and then loops
+      // back to its start form, so the post-resume assertion is that a new
+      // form node arrived rather than a terminal success screen.
       await element(by.id('davinci-submit-btn')).tap();
       await waitFor(element(by.id('davinci-start-btn')))
         .toBeVisible()

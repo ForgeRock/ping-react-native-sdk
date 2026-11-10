@@ -616,10 +616,9 @@ export type ImageCollector = {
  *   ({@link DaVinciMetadataResult}); an object carrying a well-formed
  *   `{ error: { code, message } }` envelope routes the connector's error
  *   branch ({@link DaVinciMetadataErrorResult} — build one with
- *   {@link buildMetadataError}). This intentionally differs from the FIDO2
- *   collector error handling (SDKS-5383), where collector errors are bridge
- *   rejections: for METADATA the error envelope IS the collector value, so a
- *   well-formed envelope resolves the flow instead of rejecting it.
+ *   {@link buildMetadataError}). The error envelope is the collector's value,
+ *   which the connector routes on, so a well-formed envelope resolves the flow
+ *   instead of rejecting the bridge call.
  * - Submission gating is result-set-based: the native `validate()` reports
  *   `REQUIRED` until a result is set and ignores the server `required` flag,
  *   so the submit helper blocks with `METADATA_RESULT_REQUIRED` while no
@@ -646,13 +645,21 @@ export type MetadataCollector = BaseCollector & {
 /**
  * Success result for a {@link MetadataCollector} — the exact object applied to
  * the native collector and POSTed as `formData.sdkMetadata` when the flow
- * resumes.
+ * resumes. Create one with {@link buildMetadataResult}.
  *
  * @remarks
- * Must be a plain JSON object, forwarded to the native collector unchanged
- * (an empty object is not special-cased). An object carrying an `error` key is
- * interpreted as a {@link DaVinciMetadataErrorResult} instead — build that
- * shape with {@link buildMetadataError}.
+ * The type is branded: only {@link buildMetadataResult} produces it, so a
+ * plain object literal is not assignable. That keeps a mis-shaped value for
+ * another collector kind (for example a phone number missing `countryCode`) a
+ * compile-time error instead of being absorbed by an "any object" member of
+ * {@link DaVinciFormValue}. The brand exists only in the type system; at
+ * runtime the value is the plain object passed to the helper.
+ *
+ * The wrapped object must be a plain JSON object, forwarded to the native
+ * collector unchanged (an empty object is not special-cased). An object
+ * carrying an `error` key is interpreted as a
+ * {@link DaVinciMetadataErrorResult} instead — build that shape with
+ * {@link buildMetadataError}.
  *
  * Platform difference in native 2.2.0: iOS posts an empty result as
  * `formData.sdkMetadata: {}`, which the server accepts. Android omits an empty
@@ -662,7 +669,10 @@ export type MetadataCollector = BaseCollector & {
  *
  * @public
  */
-export type DaVinciMetadataResult = Record<string, unknown>;
+export type DaVinciMetadataResult = {
+  /** Type-level brand. Never read or set it; use {@link buildMetadataResult}. */
+  readonly __metadataResult: true;
+};
 
 /**
  * Structured error result for a {@link MetadataCollector}.

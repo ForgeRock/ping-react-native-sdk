@@ -8,6 +8,7 @@
 import { registerIntegrationCollectorType } from '@ping-identity/rn-types';
 import {
   buildMetadataError,
+  buildMetadataResult,
   buildNextInput,
   computeFormMeta,
   normalizeCollectors,
@@ -566,7 +567,7 @@ describe('normalizeCollectors — METADATA', () => {
   });
 });
 
-describe('buildNextInput — metadata path (SDKS-5384)', () => {
+describe('buildNextInput — metadata path', () => {
   const makeMetadataNode = (): ContinueNode =>
     makeNode([
       {
@@ -648,6 +649,8 @@ describe('buildNextInput — metadata path (SDKS-5384)', () => {
     ['empty code', { error: { code: '', message: 'boom' } }],
     ['non-string message', { error: { code: 'X', message: 3 } }],
     ['non-object envelope', { error: 'failed' }],
+    ['null envelope', { error: null }],
+    ['array envelope', { error: [] }],
   ])(
     'blocks with METADATA_RESULT_MALFORMED for a malformed envelope: %s',
     (_label, value) => {
@@ -667,7 +670,7 @@ describe('buildNextInput — metadata path (SDKS-5384)', () => {
   );
 
   it('includes a valid success object in the payload', () => {
-    const resultValue = { status: 'success', score: 0.87 };
+    const resultValue = buildMetadataResult({ status: 'success', score: 0.87 });
     const result = buildNextInput(makeMetadataNode(), {
       sdkMetadata: resultValue,
     });
@@ -719,7 +722,7 @@ describe('buildNextInput — metadata path (SDKS-5384)', () => {
 
     const result = buildNextInput(node, {
       username: 'alice',
-      sdkMetadata: { status: 'success' },
+      sdkMetadata: buildMetadataResult({ status: 'success' }),
     });
 
     expect(result.canSubmit).toBe(true);
@@ -761,6 +764,20 @@ describe('buildNextInput — metadata path (SDKS-5384)', () => {
       { key: 'submit', value: 'submit' },
     ]);
   });
+
+  it('does not let buildMetadataResult bypass validation: a wrapped malformed envelope still blocks', () => {
+    const result = buildNextInput(makeMetadataNode(), {
+      sdkMetadata: buildMetadataResult({ error: 'failed' }),
+    });
+
+    expect(result.canSubmit).toBe(false);
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: 'METADATA_RESULT_MALFORMED',
+        key: 'sdkMetadata',
+      }),
+    ]);
+  });
 });
 
 describe('computeFormMeta — hasMetadata', () => {
@@ -786,6 +803,14 @@ describe('computeFormMeta — hasMetadata', () => {
     ]);
 
     expect(computeFormMeta(collectors).hasMetadata).toBe(false);
+  });
+});
+
+describe('buildMetadataResult', () => {
+  it('returns the same object it was given (the brand is type-only)', () => {
+    const input = { status: 'success', score: 0.87 };
+
+    expect(buildMetadataResult(input)).toBe(input);
   });
 });
 

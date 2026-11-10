@@ -150,11 +150,10 @@ enum DaVinciCollectorValueApplier {
       booleanCollector.value = try asBoolean(value, key: key)
 
     case let metadataCollector as MetadataCollector:
-      // Deviation from the SDKS-5383 FIDO2 pattern, by server contract: METADATA's
-      // error envelope is the collector's VALUE (the connector routes on
-      // formData.sdkMetadata), not a bridge-level rejection sidecar. A structured
-      // error therefore reaches setError(code:message:) and the flow RESUMES via
-      // next() — it must not reject the bridge call.
+      // The error envelope is the collector's VALUE (the connector routes on
+      // formData.sdkMetadata). A structured error therefore reaches
+      // setError(code:message:) and the flow resumes via next() instead of
+      // rejecting the bridge call.
       try applyMetadataValue(metadataCollector, key: key, value: value)
 
     default:
@@ -173,7 +172,7 @@ enum DaVinciCollectorValueApplier {
 
   /// Applies a JS-supplied result value to a `MetadataCollector`.
   ///
-  /// Semantics (SDKS-5384):
+  /// Semantics:
   /// - `nil` (JS `null`/undefined) → no-op: the collector's `validate()` keeps returning
   ///   `.required`, so an unset result blocks the flow instead of silently clearing a
   ///   previously set result.
@@ -184,9 +183,10 @@ enum DaVinciCollectorValueApplier {
   ///   forwarded unchanged.
   /// - Non-dictionary values → throw: the resume body must be a JSON object.
   ///
-  /// - Note: This deviates from the FIDO2 error handling (SDKS-5383), where collector
-  ///   errors are bridge rejections. For METADATA the error envelope IS the value the
-  ///   server-side connector routes on, so a well-formed envelope resolves the flow.
+  /// - Note: The error envelope is the collector's value, which the server-side connector
+  ///   routes on, so a well-formed envelope resolves the flow instead of rejecting the
+  ///   bridge call. Messages for rejected values name only the offending types, never the
+  ///   values, so result content does not reach logs or crash reports.
   ///
   /// - Note: An empty result is posted as `formData.sdkMetadata: {}`, which the server
   ///   accepts. In native 2.2.0 the Android SDK omits an empty result from the resume
@@ -209,23 +209,27 @@ enum DaVinciCollectorValueApplier {
       return
 
     case let dict as NSDictionary:
-      if dict["error"] != nil {
-        guard let envelope = dict["error"] as? NSDictionary,
+      if let rawEnvelope = dict["error"] {
+        guard let envelope = rawEnvelope as? NSDictionary,
           let code = envelope["code"] as? String,
           !code.isEmpty,
           let message = envelope["message"] as? String
         else {
+          let envelope = rawEnvelope as? NSDictionary
           throw DaVinciBridgeError.collectorApply(
-            "MetadataCollector key='\(key)': malformed error envelope \(dict) — expected " +
-              "{ error: { code: string, message: string } }"
+            "MetadataCollector key='\(key)': malformed error envelope, expected " +
+              "{ error: { code: non-empty string, message: string } }, got " +
+              "error: \(typeName(rawEnvelope)), code: \(typeName(envelope?["code"])), " +
+              "message: \(typeName(envelope?["message"]))"
           )
         }
         collector.setError(code: code, message: message)
         return
       }
       guard let result = dict as? [String: Any] else {
+        let keyTypes = Set(dict.allKeys.map { typeName($0) }).sorted().joined(separator: ", ")
         throw DaVinciBridgeError.collectorApply(
-          "MetadataCollector key='\(key)': result dictionary has non-string keys \(dict)"
+          "MetadataCollector key='\(key)': result dictionary has non-string keys (key types: \(keyTypes))"
         )
       }
       collector.setResult(result)
@@ -236,6 +240,16 @@ enum DaVinciCollectorValueApplier {
         "MetadataCollector key='\(key)' expects a JSON object result, got \(type(of: value))"
       )
     }
+  }
+
+  /// Names the runtime type of a value for error messages, so rejected values are
+  /// described without being echoed.
+  ///
+  /// - Parameter value: Any bridge value.
+  /// - Returns: The type name, or `"nil"` when the value is absent.
+  private static func typeName(_ value: Any?) -> String {
+    guard let value else { return "nil" }
+    return String(describing: type(of: value))
   }
 
   // MARK: - Value coercion helpers

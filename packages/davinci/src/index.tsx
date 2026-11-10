@@ -14,6 +14,7 @@ export { createDaVinciClient } from './davinci';
  */
 export {
   buildMetadataError,
+  buildMetadataResult,
   buildNextInput,
   computeFormMeta,
   normalizeCollectors,
