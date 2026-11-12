@@ -68,6 +68,23 @@ final class DaVinciErrorMapperTests: XCTestCase {
     XCTAssertEqual(mapped.message, "something weird")
   }
 
+  func testMapHandlesOidcUnknownErrorWithCause() {
+    // OidcError.unknown's first associated value is a cause Error, not a
+    // JS-serializable code; it must fold into the message, never into `code`.
+    let mapped = DaVinciErrorMapper.map(
+      OidcError.unknown(
+        cause: NSError(domain: "test", code: 7, userInfo: [NSLocalizedDescriptionKey: "boom"]),
+        message: nil
+      ),
+      code: .unknownError
+    )
+
+    XCTAssertEqual(mapped.type, .unknownError)
+    XCTAssertEqual(mapped.error, DaVinciErrorCodes.unknownError.rawValue)
+    XCTAssertEqual(mapped.message, "boom")
+    XCTAssertNil(mapped.code)
+  }
+
   func testMapHandlesBridgeArgumentError() {
     let mapped = DaVinciErrorMapper.map(
       DaVinciBridgeError.argument("bad input"),

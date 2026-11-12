@@ -39,6 +39,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -310,6 +311,21 @@ class JourneyNodeMapperTest {
         assertEquals("ErrorNode", map["type"])
         assertEquals("Invalid credentials", map["message"])
         assertNotNull(map["input"])
+        assertFalse(map.containsKey("status"))
+    }
+
+    @Test
+    fun mapErrorNodeIncludesStatusWhenPresent() {
+        val node = ErrorNode(
+            FlowContext(SharedContext(mutableMapOf())),
+            buildJsonObject { },
+            "Service unavailable",
+            503
+        )
+
+        val map = JourneyNodeMapper.mapNodePayload(node)
+
+        assertEquals(503, map["status"])
     }
 
     @Test

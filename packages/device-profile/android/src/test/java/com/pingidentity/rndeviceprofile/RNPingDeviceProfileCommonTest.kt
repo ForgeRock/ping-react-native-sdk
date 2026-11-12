@@ -114,7 +114,7 @@ class RNPingDeviceProfileCommonTest {
     }
     val promise = TestPromise()
 
-    RNPingDeviceProfileCommon.collectDeviceProfile(collectors, promise)
+    RNPingDeviceProfileCommon.collectDeviceProfile(collectors, includeModelName = false, promise)
 
     assertTrue(promise.awaitCompletion())
 
@@ -139,6 +139,7 @@ class RNPingDeviceProfileCommonTest {
       "journey-123",
       collectors,
       null,
+      includeModelName = false,
       promise
     )
 
@@ -163,6 +164,7 @@ class RNPingDeviceProfileCommonTest {
       "journey-456",
       collectors,
       null,
+      includeModelName = false,
       promise
     )
 
@@ -352,6 +354,7 @@ class RNPingDeviceProfileCommonTest {
       "",
       collectors,
       null,
+      includeModelName = false,
       promise
     )
 

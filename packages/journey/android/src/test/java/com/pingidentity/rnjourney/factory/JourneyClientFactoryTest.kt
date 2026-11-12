@@ -7,7 +7,9 @@
 
 package com.pingidentity.rnjourney
 
+import com.pingidentity.journey.options
 import com.pingidentity.rncore.CoreRuntime
+import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.rncore.oidc.OidcClientConfigHandle
 import com.pingidentity.rncore.oidc.OidcOpenIdConfig
 import com.pingidentity.rncore.registry.NativeHandle
@@ -198,6 +200,39 @@ class JourneyClientFactoryTest {
     val workflow = factory.build(payload)
 
     assertNotNull(workflow)
+
+    // Native clone() reads the lateinit discoveryEndpoint; an unset value made the
+    // web flow throw UninitializedPropertyAccessException once the browser returned.
+    // The factory must leave the config with an initialized (blank) endpoint.
+    val oidcConfig = workflow.oidcModuleConfig()
+    assertEquals("", oidcConfig.discoveryEndpoint)
+    assertEquals("https://example.com/oauth2/token", oidcConfig.openId.tokenEndpoint)
+  }
+
+  /**
+   * Extracts the OIDC module config from the built workflow.
+   *
+   * Mirrors the native lookup (WorkflowConfig.modules -> Oidc module registry ->
+   * config) so tests can assert on the exact `OidcClientConfig` the SDK will use.
+   *
+   * Brittle: reflects into the native registry's private `module`/`config` fields,
+   * so a native-internal rename fails here with an opaque reflection error.
+   */
+  private fun Workflow.oidcModuleConfig(): com.pingidentity.oidc.OidcClientConfig {
+    val modules = options.modules
+
+    val oidcRegistry = modules.first { registry ->
+      val module = registry?.javaClass
+        ?.getDeclaredField("module")
+        ?.apply { isAccessible = true }
+        ?.get(registry)
+      module == com.pingidentity.journey.module.Oidc
+    }
+    val moduleConfig = oidcRegistry!!.javaClass
+      .getDeclaredField("config")
+      .apply { isAccessible = true }
+      .get(oidcRegistry)
+    return moduleConfig as com.pingidentity.oidc.OidcClientConfig
   }
 
   @Test(expected = IllegalArgumentException::class)

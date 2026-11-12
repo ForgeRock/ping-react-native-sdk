@@ -41,7 +41,7 @@ internal object DaVinciCollectorValueApplier {
      *
      * Notes:
      * Intentionally non-`suspend` — unlike Journey's equivalent applier. Every DaVinci
-     * collector setter in the 2.0.1 SDK (`SingleValueCollector.value`,
+     * collector setter in the 2.2.0 SDK (`SingleValueCollector.value`,
      * `MultiSelectCollector.value`, `PhoneNumberCollector.countryCode`/`phoneNumber`,
      * `DeviceRegistrationCollector.value`, `DeviceAuthenticationCollector.value`) is a plain
      * `var` assignment with no async work; suspend overhead is unnecessary. The only

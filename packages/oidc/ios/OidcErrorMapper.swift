@@ -9,11 +9,29 @@
 //
 
 import Foundation
+import PingBrowser
 import PingOidc
 import RNPingCore
 
 /// Map native OIDC errors into shared JS error contracts.
 enum OidcErrorMapper {
+  /// Whether an OIDC error represents the user dismissing the browser session.
+  ///
+  /// The native web client wraps the browser failure as the `cause` of
+  /// `OidcError.authorizeError`; the browser layer already normalizes an
+  /// `ASWebAuthenticationSession` cancellation into
+  /// `BrowserError.externalUserAgentCancelled`.
+  ///
+  /// - Parameter error: Native OIDC error returned by `authorize()`.
+  /// - Returns: `true` when the user cancelled the browser session.
+  static func isUserCancellation(_ error: OidcError) -> Bool {
+    guard case .authorizeError(let cause, _) = error,
+      let browserError = cause as? BrowserError,
+      case .externalUserAgentCancelled = browserError
+    else { return false }
+    return true
+  }
+
   /// Map an OIDC error to the shared error contract.
   ///
   /// - Parameters:
@@ -42,11 +60,8 @@ enum OidcErrorMapper {
         status: status
       )
     case .configurationError(let message):
-      // Added in ping-ios-sdk develop (OidcError.configurationError): a
-      // configuration/setup failure is an argument-level error.
-      // TODO(SDKS-5380): re-verify this mapping (and the sample/test-runner
-      // develop pins it depends on) once the PingJourney pod ships 2.2.0 and
-      // the pins are bumped to it.
+      // OidcError.configurationError (PingOidc 2.2.0): a configuration/setup
+      // failure is an argument-level error.
       return GenericError(
         type: .argumentError,
         error: code.rawValue,

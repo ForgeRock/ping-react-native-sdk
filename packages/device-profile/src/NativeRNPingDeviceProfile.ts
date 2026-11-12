@@ -31,6 +31,7 @@ export interface Spec extends TurboModule {
    */
   collectDeviceProfile(
     collectors: DeviceProfileCollector[],
+    includeModelName?: boolean,
   ): Promise<DeviceProfile>;
 
   /**
@@ -43,6 +44,7 @@ export interface Spec extends TurboModule {
     journeyId: string,
     collectors: DeviceProfileCollector[],
     loggerId?: string,
+    includeModelName?: boolean,
   ): Promise<DeviceProfileJourneyResult>;
 }
 

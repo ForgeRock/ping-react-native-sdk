@@ -122,9 +122,8 @@ internal object DaVinciNodeMapper {
             }
             is ErrorNode -> {
                 payload["type"] = "ErrorNode"
-                // TODO-SDK-PARITY: Android Orchestrate ErrorNode currently does not expose
-                // an HTTP status field; iOS ErrorNode can include status metadata.
                 payload["message"] = node.message
+                node.status?.let { payload["status"] = it }
                 payload["input"] = JsonBridgeMapper.encodeJsonElement(node.input)
             }
             is FailureNode -> {
@@ -202,14 +201,7 @@ internal object DaVinciNodeMapper {
             .mapNotNull { it.id() }
             .toSet()
 
-        // TODO-SDK-PARITY: QRCodeCollector.id() (Android 2.1.0) falls back to the
-        // Collector interface default, which returns a fresh random UUID per call —
-        // it never matches the server field's real `key`. Excluding QR_CODE here
-        // avoids reporting a field the SDK *did* instantiate a collector for as
-        // dropped/unsupported. Remove this exclusion once the native SDK reads `key`.
-        val hasRegisteredQrCode = node.actions.filterIsInstance<QRCodeCollector>().isNotEmpty()
-
-        // TODO-SDK-PARITY: IdpCollector.id() (external-idp 2.1.0) falls back to the
+        // TODO-SDK-PARITY: IdpCollector.id() (external-idp 2.2.0) falls back to the
         // Collector interface default, which returns a fresh random UUID per call —
         // it never matches the server field's real `key`. Detected via the registered
         // CoreRuntime plugin serializer (which emits type=SOCIAL_LOGIN_BUTTON) so this
@@ -234,7 +226,6 @@ internal object DaVinciNodeMapper {
                     ?: fieldJson["type"]?.jsonPrimitive?.content
                     ?: continue
 
-                if (resolvedType == QR_CODE && hasRegisteredQrCode) continue
                 if (resolvedType == SOCIAL_LOGIN_BUTTON && hasRegisteredIdp) continue
 
                 // A field is supported when the SDK instantiated a collector for its key.
@@ -259,12 +250,6 @@ internal object DaVinciNodeMapper {
         node: ContinueNode,
         logger: Logger? = null
     ): Map<String, Any?>? {
-        // TODO-SDK-PARITY: QRCodeCollector (Android 2.1.0) does not override `id()`, so it
-        // falls back to the Collector interface default — a fresh random UUID on every call,
-        // never matching the server field's real `key`. Handled separately from the
-        // id()-based rawFieldKey() correlation below; mapQRCodeCollector emits `key: ""`.
-        if (collector is QRCodeCollector) return mapQRCodeCollector(collector)
-
         val payload = when (collector) {
             is TextCollector -> mapTextCollector(collector)
             is PasswordCollector -> mapPasswordCollector(collector)
@@ -280,6 +265,7 @@ internal object DaVinciNodeMapper {
             is ReadOnlyTextCollector -> mapReadOnlyTextCollector(collector)
             is PollingCollector -> mapPollingCollector(collector, logger)
             is ImageCollector -> mapImageCollector(collector, node, logger)
+            is QRCodeCollector -> mapQRCodeCollector(collector)
             else -> {
                 // Try registered plugin serializers before generic server-type fallback.
                 val serialized = CoreRuntime.serializeDaVinciCollector(collector)
@@ -503,7 +489,7 @@ internal object DaVinciNodeMapper {
      * falls back to the same default the native `PollingCollector.pollStatus()` uses internally
      * (`2000`/`60`) and logs a warning rather than leaking the raw string into a numeric field.
      *
-     * TODO-SDK-PARITY: Android's `PollingCollector.retriesAllowed` (2.1.0) resets to
+     * TODO-SDK-PARITY: Android's `PollingCollector.retriesAllowed` (2.2.0) resets to
      * `pollRetries.toInt()` on every `init(input)` — a fresh collector instance for the same
      * simple-polling node loses any decrement from a prior instance. iOS persists this via
      * `SharedContext.Keys.pollingRetriesRemaining(...)`, read back in `continueNode`'s `didSet`.
@@ -536,16 +522,13 @@ internal object DaVinciNodeMapper {
      * Serialize a [QRCodeCollector] to a payload map.
      *
      * @remarks
-     * TODO-SDK-PARITY: Android's native `QRCodeCollector` (2.1.0) does not parse a `key`
-     * from the server field JSON, even though the server sends one (unlike iOS's native
-     * collector, which does). Its `id()` also falls back to the `Collector` interface
-     * default — a fresh random UUID per call — so it cannot be used to correlate back to
-     * `node.input.form.components.fields[]` for a `raw` field lookup either. Emits `key: ""`
-     * until the native SDK exposes it; `raw` is omitted for the same reason.
+     * The native `QRCodeCollector` parses `key` from the server field JSON and returns it
+     * from `id()`, so the shared raw field lookup applies. `key` is `""` when the server
+     * omits it.
      */
     private fun mapQRCodeCollector(collector: QRCodeCollector): Map<String, Any?> {
         return linkedMapOf(
-            "key" to "",
+            "key" to collector.key,
             "type" to QR_CODE,
             "content" to collector.content,
             "fallbackText" to collector.fallbackText

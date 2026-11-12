@@ -24,6 +24,19 @@ yarn add @ping-identity/rn-storage
 yarn add @ping-identity/rn-logger
 ```
 
+### Android redirect URI scheme
+
+The Ping browser module (`com.pingidentity.sdks:browser`) is not part of rn-journey's dependency graph on its own (only `androidx.browser`, the Custom Tabs library, is transitive). It reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`, which declare it `compileOnly`, so include one of those packages when your flow redirects through a browser. The browser module declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. The placeholder default in the native SDK's own debug variant never reaches consuming apps (the published AAR is the release flavor and leaves the placeholder unresolved), so your app must define the placeholder for both debug and release builds, or the manifest merge fails. Defining the placeholder is safe regardless:
+
+```groovy
+android {
+  defaultConfig {
+    // For redirect URI "com.example.app://callback", configure:
+    manifestPlaceholders["appRedirectUriScheme"] = "com.example.app"
+  }
+}
+```
+
 ## How to Use the SDK
 
 ### Step 1: Create a minimal client
@@ -422,6 +435,8 @@ Integration-dependent families (for example, device profile, FIDO, PingOne Prote
 For FIDO callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-fido` (`registerForJourney(...)` / `authenticateForJourney(...)`) and then call `next(...)`.
 
 For PingOne Protect callbacks, run explicit Journey-scoped APIs from `@ping-identity/rn-protect` (`initializeProtectForJourney(...)` / `collectProtectForJourney(...)`) and then call `next(...)`. See [Use with Journey](../protect/README.md#use-with-journey) in the rn-protect README for the full flow.
+
+Device profile callbacks require `@ping-identity/rn-device-profile` (`collectDeviceProfileForJourney(...)`) before calling `next(...)`. Install it on both platforms: native Journey SDK 2.2.0 does not depend on the device-profile module on iOS, and on Android the device-profile dependency runs the other way (device-profile depends on journey-plugin), so it is never pulled in transitively by rn-journey. See the rn-device-profile README for the Journey usage.
 
 ### Native parity contract
 

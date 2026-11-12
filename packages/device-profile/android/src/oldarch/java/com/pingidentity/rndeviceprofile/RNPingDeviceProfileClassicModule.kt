@@ -35,14 +35,16 @@ class RNPingDeviceProfileClassicModule(
    * Collect device profile information outside of Journey flows.
    *
    * @param collectorNames Array of collector names to use.
+   * @param includeModelName Accepted for bridge parity; ignored on Android.
    * @param promise React Native promise that resolves with the collected device profile data or rejects with an error.
    */
   @ReactMethod
   fun collectDeviceProfile(
     collectorNames: ReadableArray,
+    includeModelName: Boolean,
     promise: Promise
   ) {
-    RNPingDeviceProfileCommon.collectDeviceProfile(collectorNames, promise)
+    RNPingDeviceProfileCommon.collectDeviceProfile(collectorNames, includeModelName, promise)
   }
 
   /**
@@ -51,6 +53,7 @@ class RNPingDeviceProfileClassicModule(
    * @param journeyId The unique identifier for the Journey flow.
    * @param collectorNames Array of collector names to use for profile collection.
    * @param loggerId Optional native logger handle id.
+   * @param includeModelName Accepted for bridge parity; ignored on Android.
    * @param promise React Native promise that resolves with the collected device profile result or rejects with an error.
    */
   @ReactMethod
@@ -58,12 +61,14 @@ class RNPingDeviceProfileClassicModule(
     journeyId: String,
     collectorNames: ReadableArray,
     loggerId: String?,
+    includeModelName: Boolean,
     promise: Promise
   ) {
     RNPingDeviceProfileCommon.collectDeviceProfileForJourney(
       journeyId,
       collectorNames,
       loggerId,
+      includeModelName,
       promise
     )
   }

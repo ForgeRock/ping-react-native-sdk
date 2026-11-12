@@ -508,12 +508,8 @@ export type PollingCollector = BaseCollector & {
  * Does not participate in form submission — native `payload()` always returns
  * `nil`/`null` on both platforms.
  *
- * `key` is not exposed by the native Android `QRCodeCollector` (2.1.0) — the
- * server sends it in the raw field JSON, but the collector's `init()` never
- * reads it, and its `id()` falls back to a fresh random UUID on every call.
- * On Android the bridge emits `key: ""` for this collector until the native
- * SDK exposes it; see `DaVinciNodeMapper.kt`'s `TODO-SDK-PARITY` comment.
- * iOS's native collector does parse `key` and is unaffected.
+ * `key` is empty (`""`) when the server omits it. Requires native SDK 2.2.0 or
+ * later on Android; earlier Android versions do not parse `key` and emit `""`.
  *
  * @public
  */
@@ -525,10 +521,9 @@ export type QRCodeCollector = {
    * Full data URI of the QR code image (e.g. `"data:image/png;base64,..."`).
    *
    * @remarks
-   * Android's native `content` getter retains the raw data URI as received
-   * from the server. iOS's native collector strips the `"data:...base64,"`
-   * prefix during `init` and only retains decoded `imageData` bytes — the
-   * bridge reconstructs the data URI on iOS (see `DaVinciNodeMapper.swift`).
+   * Both platforms return the data URI exactly as received from the server,
+   * including its MIME type. Requires native SDK 2.2.0 or later on iOS;
+   * earlier iOS versions stripped the `"data:...base64,"` prefix.
    */
   content: string;
   /** Alternative text to display when the QR code cannot be rendered or scanned. */
@@ -748,11 +743,6 @@ export type SuccessNode = {
 /**
  * Terminal error node — flow encountered a recoverable server error.
  *
- * @remarks
- * TODO-SDK-FUTURE-PARITY:`status` is present on iOS (the native `ErrorNode` carries the HTTP status code from the
- * server response). Android Orchestrate 2.0.1 does not expose an HTTP status field on
- * `ErrorNode`, so this field is absent on Android until the SDK is updated.
- *
  * @public
  */
 export type ErrorNode = {
@@ -763,7 +753,9 @@ export type ErrorNode = {
    * HTTP status code from the server error response.
    *
    * @remarks
-   * Present on iOS only — absent on Android (SDK parity gap, see Android `DaVinciNodeMapper`).
+   * Present on both platforms when the native `ErrorNode` carries a status.
+   * Requires native SDK 2.2.0 or later on Android; earlier Android versions
+   * do not expose it.
    */
   status?: number;
   /**

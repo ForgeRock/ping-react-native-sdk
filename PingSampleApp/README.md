@@ -120,7 +120,7 @@ KEY_PASSWORD=<your-password>
 
 > **Note: Android JVM 21 and Kotlin 2.2.10 (React Native 0.80)**
 >
-> This SDK depends on Ping Android SDK `2.1.0` artifacts, which are compiled for **JVM 21**, and every
+> This SDK depends on Ping Android SDK `2.2.0` artifacts, which are compiled for **JVM 21**, and every
 > `rn-*` package (and this app module) now targets JVM 21 to match — up from
 > JVM 17. This requires:
 >

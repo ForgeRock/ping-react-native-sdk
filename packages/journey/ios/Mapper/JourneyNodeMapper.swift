@@ -46,9 +46,6 @@ enum JourneyNodeMapper {
       payload["header"] = continueNode.pageHeader
       payload["description"] = continueNode.pageDescription
       payload["stage"] = continueNode.stage
-      // TODO-SDK-PARITY(SDKS-5310): submitButtonText/pageFooter here iterate the full ordered
-      // preferred-locale list, while Android only checks Locale.getDefault() — identical server
-      // data + device settings can resolve different localized text per platform.
       payload["submitButtonText"] = continueNode.submitButtonText
       payload["pageFooter"] = continueNode.pageFooter
       payload["callbacks"] = continueNode.callbacks.map { callback in

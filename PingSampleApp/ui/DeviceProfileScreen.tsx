@@ -8,6 +8,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Text,
   TouchableOpacity,
   View,
@@ -44,6 +45,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
   const [collectorSelections, setCollectorSelections] = useState<
     Record<DeviceProfileCollector, boolean>
   >(defaultCollectorSelections);
+  const [includeModelName, setIncludeModelName] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
   const [profile, setProfile] = useState<DeviceProfile | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -78,6 +80,7 @@ export default function DeviceProfileScreen(): React.ReactElement {
     try {
       const collectedProfile = await collectDeviceProfile(collectors, {
         logger: deviceProfileLogger,
+        includeModelName,
       });
       setProfile(collectedProfile);
     } catch (err: unknown) {
@@ -108,6 +111,16 @@ export default function DeviceProfileScreen(): React.ReactElement {
             />
           ))}
         </View>
+
+        {Platform.OS === 'ios' && (
+          <View style={styles.collectorList}>
+            <LabeledSwitchRow
+              label="Include model name"
+              value={includeModelName}
+              onValueChange={() => setIncludeModelName(prev => !prev)}
+            />
+          </View>
+        )}
 
         <TouchableOpacity
           style={commonStyles.buttonPrimary}
