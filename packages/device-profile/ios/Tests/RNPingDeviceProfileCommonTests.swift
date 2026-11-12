@@ -24,6 +24,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       [],
+      includeModelName: false,
       resolver: { payload in
         XCTAssertEqual(payload.count, 0)
         expectation.fulfill()
@@ -41,6 +42,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["unknown", "ignored", "", "Platform"],
+      includeModelName: false,
       resolver: { payload in
         XCTAssertEqual(payload.count, 0)
         expectation.fulfill()
@@ -58,6 +60,28 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["platform"],
+      includeModelName: false,
+      resolver: { payload in
+        XCTAssertNotNil(payload["platform"])
+        expectation.fulfill()
+      },
+      rejecter: { _, _, _ in
+        XCTFail("rejecter should not be called")
+      }
+    )
+
+    wait(for: [expectation], timeout: 1)
+  }
+
+  func testCollectDeviceProfileModelNameOptInControlsResolution() {
+    // On the simulator the raw model identifier is never in the native catalog,
+    // so an opt-in request still resolves (no crash), and the default-off payload
+    // shape is asserted by testCollectDeviceProfileResolvesPlatformData above.
+    let expectation = expectation(description: "resolver called")
+
+    RNPingDeviceProfileCommon.collectDeviceProfile(
+      ["platform"],
+      includeModelName: true,
       resolver: { payload in
         XCTAssertNotNil(payload["platform"])
         expectation.fulfill()
@@ -75,6 +99,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["platform", "unknown", "", "HARDWARE"],
+      includeModelName: false,
       resolver: { payload in
         XCTAssertNotNil(payload["platform"])
         XCTAssertNil(payload["unknown"])
@@ -99,6 +124,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
       journeyId,
       collectors: [],
       loggerId: nil,
+      includeModelName: false,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -128,6 +154,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
       journeyId,
       collectors: [],
       loggerId: nil,
+      includeModelName: false,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -146,6 +173,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["platform", "hardware", "network"],
+      includeModelName: false,
       resolver: { payload in
         XCTAssertNotNil(payload["platform"])
         XCTAssertNotNil(payload["hardware"])
@@ -172,6 +200,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
     // collector.key — later writes overwrite earlier ones for the same key.
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["platform", "platform", "hardware"],
+      includeModelName: false,
       resolver: { payload in
         XCTAssertNotNil(payload["platform"])
         XCTAssertNotNil(payload["hardware"])
@@ -197,6 +226,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["bluetooth"],
+      includeModelName: false,
       resolver: { payload in
         let bluetooth = payload["bluetooth"] as? [String: Any]
         XCTAssertEqual(payload.count, 1)
@@ -221,6 +251,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["location"],
+      includeModelName: false,
       resolver: { payload in
         let location = payload["location"] as? [String: Any]
         XCTAssertEqual(payload.count, 1)
@@ -250,6 +281,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
 
     RNPingDeviceProfileCommon.collectDeviceProfile(
       ["location"],
+      includeModelName: false,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },
@@ -270,6 +302,7 @@ final class RNPingDeviceProfileCommonTests: XCTestCase {
       "",
       collectors: ["platform"],
       loggerId: nil,
+      includeModelName: false,
       resolver: { _ in
         XCTFail("resolver should not be called")
       },

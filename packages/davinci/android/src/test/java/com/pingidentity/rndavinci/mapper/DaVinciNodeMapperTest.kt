@@ -121,6 +121,33 @@ class DaVinciNodeMapperTest {
     }
 
     @Test
+    fun mapErrorNodeIncludesStatusWhenPresent() {
+        val node = ErrorNode(
+            FlowContext(SharedContext(mutableMapOf())),
+            buildJsonObject { },
+            "Authentication failed",
+            401
+        )
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertEquals(401, result["status"])
+    }
+
+    @Test
+    fun mapErrorNodeOmitsStatusWhenNull() {
+        val node = ErrorNode(
+            FlowContext(SharedContext(mutableMapOf())),
+            buildJsonObject { },
+            "Authentication failed"
+        )
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertFalse(result.containsKey("status"))
+    }
+
+    @Test
     fun mapErrorNodeIncludesInputPayload() {
         val node = ErrorNode(
             FlowContext(SharedContext(mutableMapOf())),
@@ -507,7 +534,7 @@ class DaVinciNodeMapperTest {
 
     @Test
     fun mapContinueNodeExcludesSocialLoginWhenIdpCollectorSerialized() {
-        // IdpCollector.id() falls back to a random UUID (external-idp 2.1.0), so the
+        // IdpCollector.id() falls back to a random UUID (external-idp 2.2.0), so the
         // server field key never matches registeredKeys. When the registered CoreRuntime
         // serializer emits type=SOCIAL_LOGIN_BUTTON for a collector, the field must not
         // be reported as unsupported. A stand-in collector mimics that serializer contract.
@@ -1249,10 +1276,24 @@ class DaVinciNodeMapperTest {
     }
 
     @Test
-    fun mapQRCodeCollectorEmitsEmptyKeyBecauseNativeIdIsRandomUUID() {
-        // TODO-SDK-PARITY (see DaVinciNodeMapper.mapQRCodeCollector): Android's native
-        // QRCodeCollector.id() falls back to a random UUID per call, so it cannot be used
-        // as a stable key. The bridge emits "" until the native SDK exposes a real key.
+    fun mapQRCodeCollectorEmitsServerKey() {
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject {
+                put("key", "qr-field")
+                put("content", "data:image/png;base64,iVBORw0KGgo=")
+                put("fallbackText", "Scan this code")
+            })
+        }
+        val node = makeNode(collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+        val c = result.asList("collectors")!![0]
+
+        assertEquals("qr-field", c["key"])
+    }
+
+    @Test
+    fun mapQRCodeCollectorEmitsEmptyKeyWhenServerOmitsIt() {
         val collector = QRCodeCollector().apply {
             init(buildJsonObject {
                 put("content", "data:image/png;base64,iVBORw0KGgo=")
@@ -1268,9 +1309,10 @@ class DaVinciNodeMapperTest {
     }
 
     @Test
-    fun mapQRCodeCollectorOmitsRawFieldLookup() {
+    fun mapQRCodeCollectorIncludesRawFieldLookup() {
         val collector = QRCodeCollector().apply {
             init(buildJsonObject {
+                put("key", "qr-field")
                 put("content", "data:image/png;base64,iVBORw0KGgo=")
                 put("fallbackText", "Scan this code")
             })
@@ -1292,7 +1334,35 @@ class DaVinciNodeMapperTest {
         val result = DaVinciNodeMapper.mapNodePayload(node)
         val c = result.asList("collectors")!![0]
 
-        assertFalse(c.containsKey("raw"))
+        assertNotNull(c["raw"])
+    }
+
+    @Test
+    fun mapQRCodeCollectorNotReportedAsUnsupported() {
+        val collector = QRCodeCollector().apply {
+            init(buildJsonObject {
+                put("key", "qr-field")
+                put("content", "data:image/png;base64,iVBORw0KGgo=")
+                put("fallbackText", "Scan this code")
+            })
+        }
+        val input = buildJsonObject {
+            put("form", buildJsonObject {
+                put("components", buildJsonObject {
+                    put("fields", buildJsonArray {
+                        add(buildJsonObject {
+                            put("key", "qr-field")
+                            put("type", "QR_CODE")
+                        })
+                    })
+                })
+            })
+        }
+        val node = makeNode(input, collector)
+
+        val result = DaVinciNodeMapper.mapNodePayload(node)
+
+        assertFalse(result.containsKey("unsupportedFields"))
     }
 
     @Test
@@ -1428,7 +1498,7 @@ class DaVinciNodeMapperTest {
         val c = result.asList("collectors")!![0]
 
         // Android 2.2 ImageCollector.id() returns the stable key, so the shared
-        // raw lookup applies (unlike 2.1.0 QR_CODE's random-UUID id()).
+        // raw lookup applies.
         assertNotNull(c["raw"])
     }
 

@@ -68,6 +68,48 @@ final class OidcClientFactoryTests: XCTestCase {
     XCTAssertNil(discovered.pingEndsessionEndpoint)
   }
 
+  func testBuildOidcClientSetsOpenIdDirectlyWhenDiscoveryEndpointAbsent() {
+    let payload = OidcClientPayload(
+      clientId: "client-id",
+      discoveryEndpoint: nil,
+      openId: OpenIdPayload(
+        authorizationEndpoint: "https://example.com/oauth2/authorize",
+        tokenEndpoint: "https://example.com/oauth2/token",
+        userinfoEndpoint: nil,
+        endSessionEndpoint: nil,
+        pingEndIdpSessionEndpoint: nil,
+        revocationEndpoint: nil,
+        pushedAuthorizationRequestEndpoint: "https://example.com/oauth2/par",
+        deviceAuthorizationEndpoint: nil
+      ),
+      redirectUri: "com.example.app://callback",
+      scopes: ["openid"],
+      par: nil,
+      storageId: nil,
+      loggerId: nil,
+      browserType: nil,
+      browserMode: nil,
+      acrValues: nil,
+      signOutRedirectUri: nil,
+      state: nil,
+      nonce: nil,
+      uiLocales: nil,
+      refreshThreshold: nil,
+      loginHint: nil,
+      display: nil,
+      prompt: nil,
+      additionalParameters: [:]
+    )
+
+    let config = OidcClientFactory.buildOidcClient(payload, logger: nil)
+
+    XCTAssertEqual(config.openId?.authorizationEndpoint, "https://example.com/oauth2/authorize")
+    XCTAssertEqual(config.openId?.tokenEndpoint, "https://example.com/oauth2/token")
+    XCTAssertEqual(config.openId?.userinfoEndpoint, "")
+    XCTAssertEqual(config.openId?.pushedAuthorizationRequestEndpoint, "https://example.com/oauth2/par")
+    XCTAssertNil(config.openIdOverride)
+  }
+
   func testBuildOidcClientMergesPartialOpenIdOverrideOntoDiscovery() {
     // A partial openId override (only deviceAuthorizationEndpoint set, the
     // field Advanced Identity Cloud's discovery document omits) must merge

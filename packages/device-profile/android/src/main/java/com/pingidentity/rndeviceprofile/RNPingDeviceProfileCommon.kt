@@ -97,11 +97,14 @@ object RNPingDeviceProfileCommon {
    * collector is specified.
    *
    * @param collectorNames Array of collector names to use (e.g., "platform", "hardware", "network").
+   * @param includeModelName Accepted for bridge parity; ignored on Android, whose `platform.model`
+   *   is always the readable device name.
    * @param promise React Native promise that resolves with the collected device profile data or rejects with an error.
    */
   @JvmStatic
   fun collectDeviceProfile(
     collectorNames: ReadableArray,
+    includeModelName: Boolean,
     promise: Promise
   ) {
     val collectorTypes = readCollectors(collectorNames)
@@ -135,6 +138,8 @@ object RNPingDeviceProfileCommon {
    * @param journeyId The unique identifier for the Journey flow.
    * @param collectorNames Array of collector names to use for profile collection.
    * @param loggerId Optional native logger handle id, mapped to DeviceProfileConfig.logger.
+   * @param includeModelName Accepted for bridge parity; ignored on Android, whose `platform.model`
+   *   is always the readable device name.
    * @param promise React Native promise that resolves with the collected device profile result or rejects with an error.
    */
   @JvmStatic
@@ -142,6 +147,7 @@ object RNPingDeviceProfileCommon {
     journeyId: String,
     collectorNames: ReadableArray,
     loggerId: String?,
+    includeModelName: Boolean,
     promise: Promise
   ) {
     val resolvedLogger = resolveLoggerFromCore(loggerId)

@@ -128,7 +128,9 @@ export default function DaVinciClientPanel(
         {node?.type === 'ErrorNode' ? (
           <EmptyStateCard
             title="The server reported an error"
-            message={node.message || 'Please try again.'}
+            message={`${node.message || 'Please try again.'}${
+              node.status ? ` (HTTP ${node.status})` : ''
+            }`}
             ctaLabel="Retry"
             onCtaPress={onStart}
           />

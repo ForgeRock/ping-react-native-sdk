@@ -23,11 +23,9 @@ enum OidcConfigParser {
     let discoveryEndpoint = config["discoveryEndpoint"] as? String
     let openIdPayload = parseOpenId(config["openId"])
     let iosConfig = config["ios"] as? NSDictionary
-    // TODO-SDK-PARITY(SDKS-5301): iOS requires `discoveryEndpoint` and only applies `openId`
-    // as an override after a successful discover() call. Android still allows `openId` alone
-    // to bypass discovery entirely.
-    if discoveryEndpoint == nil || discoveryEndpoint?.isEmpty == true {
-      throw NSError(domain: "RNPingOidc", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing discoveryEndpoint. `openId` alone can no longer bypass discovery — provide discoveryEndpoint; openId will be applied as an override after discovery."])
+    let hasDiscoveryEndpoint = !(discoveryEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+    if !hasDiscoveryEndpoint && openIdPayload == nil {
+      throw NSError(domain: "RNPingOidc", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing discoveryEndpoint or openId"])
     }
     let redirectUri = try ReadableMapUtils.requireString(config, key: "redirectUri")
     let scopes = try ReadableMapUtils.requireStringArray(config, key: "scopes")
@@ -65,11 +63,10 @@ enum OidcConfigParser {
     guard let map = value as? NSDictionary else {
       return nil
     }
-    // Every field is an independently-optional override applied on top of
-    // discovery (iOS always requires discoveryEndpoint, see the check
-    // above), so a payload supplying only one endpoint -- for example
-    // deviceAuthorizationEndpoint for a provider whose discovery document
-    // omits it -- must not be dropped just because the others are absent.
+    // Every field is independently optional: with a discoveryEndpoint the payload
+    // patches the discovered document, so a payload supplying only one endpoint
+    // -- for example deviceAuthorizationEndpoint for a provider whose discovery
+    // document omits it -- must not be dropped just because the others are absent.
     return OpenIdPayload(
       authorizationEndpoint: map["authorizationEndpoint"] as? String,
       tokenEndpoint: map["tokenEndpoint"] as? String,

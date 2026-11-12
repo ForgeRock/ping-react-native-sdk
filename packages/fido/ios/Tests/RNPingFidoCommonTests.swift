@@ -30,8 +30,7 @@ final class RNPingFidoCommonTests: XCTestCase {
     XCTAssertEqual(map?["action"] as? String, "REGISTER")
     XCTAssertEqual(map?["label"] as? String, "Set up passkeys")
     XCTAssertEqual(map?["required"] as? Bool, true)
-    // P1 parity: `trigger` exists only on Android's base collector; iOS omits it.
-    XCTAssertNil(map?["trigger"])
+    XCTAssertEqual(map?["trigger"] as? String, "BUTTON")
 
     let options = try? XCTUnwrap(map?["publicKeyCredentialCreationOptions"] as? NSDictionary)
     XCTAssertEqual((options?["rp"] as? NSDictionary)?["id"] as? String, "example.com")
@@ -52,7 +51,7 @@ final class RNPingFidoCommonTests: XCTestCase {
     XCTAssertEqual(map?["action"] as? String, "AUTHENTICATE")
     XCTAssertEqual(map?["label"] as? String, "Sign in with passkey")
     XCTAssertEqual(map?["required"] as? Bool, false)
-    XCTAssertNil(map?["trigger"])
+    XCTAssertEqual(map?["trigger"] as? String, "")
 
     let options = try? XCTUnwrap(map?["publicKeyCredentialRequestOptions"] as? NSDictionary)
     XCTAssertEqual(options?["rpId"] as? String, "example.com")
@@ -60,15 +59,15 @@ final class RNPingFidoCommonTests: XCTestCase {
     XCTAssertEqual(options?["challenge"] as? String, "AQI=")
   }
 
-  func testDaVinciSerializerOmitsTriggerOnIos() {
+  func testDaVinciSerializerPassesThroughNonButtonTrigger() {
     RNPingFidoCommon.registerDaVinciSerializer()
 
-    let payload = CoreRuntime.serializeDaVinciCollector(
-      FidoRegistrationCollector(with: makeRegistrationJson())
-    )
+    var json = makeRegistrationJson()
+    json["trigger"] = "PAGE_LOAD"
+    let payload = CoreRuntime.serializeDaVinciCollector(FidoRegistrationCollector(with: json))
 
     let map = try? XCTUnwrap(payload)
-    XCTAssertFalse(map?.keys.contains("trigger") ?? false)
+    XCTAssertEqual(map?["trigger"] as? String, "PAGE_LOAD")
   }
 
   func testDaVinciSerializerReturnsNilForNonFidoCollector() {
@@ -318,6 +317,7 @@ final class RNPingFidoCommonTests: XCTestCase {
       "key": "fido-register-key",
       "label": "Set up passkeys",
       "required": true,
+      "trigger": "BUTTON",
       "publicKeyCredentialCreationOptions": [
         "rp": ["id": "example.com", "name": "Example"],
         "challenge": [72, 101]

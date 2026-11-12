@@ -54,12 +54,7 @@ enum OidcClientFactory {
       config.logger = logger
     }
 
-    // TODO-SDK-PARITY(SDKS-5301): iOS applies `openId` via `openIdOverride`, patched onto the
-    // result of a required discovery call. Android assigns `openId` directly and does not
-    // require discovery first.
-    if let openId = payload.openId {
-      config.openIdOverride = openIdOverride(for: openId)
-    }
+    applyOpenId(payload.openId, to: config)
 
     if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
       config.storage = storage
@@ -109,11 +104,7 @@ enum OidcClientFactory {
         if !payload.additionalParameters.isEmpty {
           oidc.additionalParameters = payload.additionalParameters
         }
-        // See buildOidcClient — `openId` is always applied as an override on top of a
-        // required discovery call (enforced by `OidcConfigParser`).
-        if let openId = payload.openId {
-          oidc.openIdOverride = openIdOverride(for: openId)
-        }
+        applyOpenId(payload.openId, to: oidc)
         if let storage = buildStorageDelegate(payload.storageId, queueKey: queueKey) {
           oidc.storage = storage
         }
@@ -194,6 +185,35 @@ enum OidcClientFactory {
     }
 
     return .NO_CACHE
+  }
+
+  /// Apply the JS `openId` payload to a native client configuration.
+  ///
+  /// With a `discoveryEndpoint`, the payload patches the discovered document through
+  /// `openIdOverride`, so only the supplied fields replace their discovered value. Without
+  /// one there is nothing to patch: the payload becomes the complete document, and any
+  /// endpoint it leaves unset is blank, matching the Android bridge.
+  ///
+  /// - Parameters:
+  ///   - openId: Parsed OpenID payload, if any.
+  ///   - config: Native client configuration to update.
+  private static func applyOpenId(_ openId: OpenIdPayload?, to config: OidcClientConfig) {
+    guard let openId else { return }
+    let hasDiscoveryEndpoint = !config.discoveryEndpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    if hasDiscoveryEndpoint {
+      config.openIdOverride = openIdOverride(for: openId)
+      return
+    }
+    config.openId = OpenIdConfiguration(
+      authorizationEndpoint: openId.authorizationEndpoint ?? "",
+      tokenEndpoint: openId.tokenEndpoint ?? "",
+      userinfoEndpoint: openId.userinfoEndpoint ?? "",
+      endSessionEndpoint: openId.endSessionEndpoint ?? "",
+      revocationEndpoint: openId.revocationEndpoint ?? "",
+      pingEndsessionEndpoint: openId.pingEndIdpSessionEndpoint,
+      pushedAuthorizationRequestEndpoint: openId.pushedAuthorizationRequestEndpoint,
+      deviceAuthorizationEndpoint: openId.deviceAuthorizationEndpoint
+    )
   }
 
   /// Build an `openIdOverride` closure that patches discovered endpoints from the JS payload.

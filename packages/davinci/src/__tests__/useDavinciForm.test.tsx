@@ -666,7 +666,7 @@ describe('useDaVinciForm — unsupportedFields passthrough', () => {
 
   it('a node whose SOCIAL_LOGIN_BUTTON field was serialized by the IdP plugin carries no unsupportedFields', () => {
     // Regression pin for the SOCIAL_LOGIN_BUTTON unsupportedFields false positive:
-    // IdpCollector.id (native SDKs 2.1.0) returns a random UUID instead of the
+    // IdpCollector.id (native SDKs 2.2.0) returns a random UUID instead of the
     // server field key, so the native diff must exclude SOCIAL_LOGIN_BUTTON when
     // the plugin serializer emitted an IdP collector. This pins the JS-visible
     // contract the sample app and SDKS-5166 manual testing depend on: the field

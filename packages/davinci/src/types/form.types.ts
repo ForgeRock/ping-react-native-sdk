@@ -47,7 +47,7 @@ import type {
  * - `integration_required` — collector is handled entirely by an external package.
  *                            The bridge serialises the collector data; the external
  *                            package performs its action and then calls `next()`.
- *                            No base-registry collector maps to this mode in 2.0.1 —
+ *                            No base-registry collector maps to this mode in 2.2.0 —
  *                            plugin collectors registered by future packages will.
  * - `metadata`             — SDK Integrator connector pause/resume (METADATA). The
  *                            flow pauses with an opaque payload; the app performs
@@ -259,7 +259,7 @@ export type DaVinciFormMeta = {
    *
    * @remarks
    * Stub for parity with {@link JourneyFormMeta.hasAutoCapable}. No collector
-   * type in the DaVinci 2.0.1 iOS/Android SDKs resolves to an `auto_capable`
+   * type in the DaVinci 2.2.0 iOS/Android SDKs resolves to an `auto_capable`
    * execution mode (see `resolveExecutionMode` in `collectorHelpers.ts`) — this
    * flag will be wired to live collector presence by future integration
    * stories once such a collector type is registered.

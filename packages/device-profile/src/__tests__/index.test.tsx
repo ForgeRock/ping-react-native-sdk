@@ -63,7 +63,7 @@ describe('device-profile package', () => {
     const collectors: DeviceProfileCollector[] = ['hardware', 'network'];
     const result = await collect(collectors);
 
-    expect(collectDeviceProfile).toHaveBeenCalledWith(collectors);
+    expect(collectDeviceProfile).toHaveBeenCalledWith(collectors, false);
     expect(result).toEqual({ hardware: { model: 'mock' } });
   });
 
@@ -89,6 +89,7 @@ describe('device-profile package', () => {
       'journey-123',
       collectors,
       undefined,
+      false,
     );
     expect(result).toEqual({ type: 'success' });
   });
@@ -116,6 +117,42 @@ describe('device-profile package', () => {
       'journey-logger-test',
       ['hardware'],
       'logger-from-options',
+      false,
+    );
+  });
+
+  it('passes includeModelName through when the option is set', async () => {
+    const collectDeviceProfile = jest.fn(() =>
+      Promise.resolve({ platform: { model: 'mock' } }),
+    );
+    const collectDeviceProfileForJourney = jest.fn(() =>
+      Promise.resolve({ type: 'success' }),
+    );
+    const {
+      collectDeviceProfile: collect,
+      collectDeviceProfileForJourney: collectForJourney,
+    } = await loadModule({
+      nativeModule: {
+        RNPingDeviceProfileClassic: {
+          collectDeviceProfile,
+          collectDeviceProfileForJourney,
+        },
+      },
+    });
+
+    const journey: JourneyInstance = {
+      getId: jest.fn(() => Promise.resolve('journey-model-name')),
+    };
+
+    await collect(['platform'], { includeModelName: true });
+    await collectForJourney(journey, ['platform'], { includeModelName: true });
+
+    expect(collectDeviceProfile).toHaveBeenCalledWith(['platform'], true);
+    expect(collectDeviceProfileForJourney).toHaveBeenCalledWith(
+      'journey-model-name',
+      ['platform'],
+      undefined,
+      true,
     );
   });
 

@@ -137,7 +137,7 @@ const flowFieldKindTypes = new Set<string>([
  * Resolves the execution mode for a collector type string.
  *
  * @remarks
- * Verified against the DaVinci 2.0.1 iOS/Android sources — no `auto_capable`
+ * Verified against the DaVinci 2.2.0 iOS/Android sources — no `auto_capable`
  * mode exists. `integration_required` is reserved for plugin packages
  * (e.g. `rn-external-idp`) and is returned only for collector types
  * registered in {@link integrationRequiredCollectorTypes}.
@@ -779,7 +779,7 @@ export function computeFormMeta(
   return {
     hasManual: collectors.some((c) => c.executionMode === 'manual'),
     hasOutputOnly: collectors.some((c) => c.executionMode === 'output_only'),
-    // No `auto_capable` execution mode exists in the DaVinci 2.0.1 SDKs — see
+    // No `auto_capable` execution mode exists in the DaVinci 2.2.0 SDKs — see
     // DaVinciFormMeta.hasAutoCapable remarks. Always false until a future
     // collector type is registered for that mode.
     hasAutoCapable: false,

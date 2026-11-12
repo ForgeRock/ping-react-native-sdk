@@ -38,6 +38,8 @@ type NativeJourneyNode = {
   message?: string;
   /** Optional failure cause string. */
   cause?: string;
+  /** Optional HTTP status code for error nodes. */
+  status?: number;
   /** Optional node input payload for debug/inspection use-cases. */
   input?: Object;
   /** Callback collection for continue nodes. */

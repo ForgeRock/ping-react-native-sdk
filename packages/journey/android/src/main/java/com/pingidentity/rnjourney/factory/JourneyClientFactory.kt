@@ -77,7 +77,11 @@ internal class JourneyClientFactory(
             resolveOidcConfig(payload)?.let { oidcConfig ->
                 module(Oidc) {
                     clientId = oidcConfig.clientId
-                    oidcConfig.discoveryEndpoint?.let { discoveryEndpoint = it }
+                    // TODO-PARITY SDKS-5570: native Android 2.2.0 OidcClientConfig.clone() reads the
+                    // lateinit discoveryEndpoint, so an openId-only config throws once the browser
+                    // returns. init() skips discovery whenever openId is set, so blank is never
+                    // requested. Remove once the native SDK stops requiring it.
+                    discoveryEndpoint = oidcConfig.discoveryEndpoint.orEmpty()
                     redirectUri = oidcConfig.redirectUri
                     scopes = oidcConfig.scopes.toMutableSet()
                     oidcConfig.par?.let { par = it }

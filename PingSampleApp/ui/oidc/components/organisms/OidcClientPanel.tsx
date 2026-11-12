@@ -179,6 +179,11 @@ export default function OidcClientPanel(
         <Text style={commonStyles.codeText}>
           {state.isAuthenticated ? 'Authenticated' : 'Not authenticated'}
         </Text>
+        {state.authorizeResult ? (
+          <Text style={commonStyles.codeText}>
+            {`Last authorize: ${state.authorizeResult.type}`}
+          </Text>
+        ) : null}
         <AsyncActionButton
           label="Restore Session"
           variant="secondary"
