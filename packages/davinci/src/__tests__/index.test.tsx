@@ -13,6 +13,8 @@ describe('@ping-identity/rn-davinci public export surface', () => {
   });
 
   it('exports collector helpers', () => {
+    expect(typeof DavinciIndex.buildMetadataError).toBe('function');
+    expect(typeof DavinciIndex.buildMetadataResult).toBe('function');
     expect(typeof DavinciIndex.buildNextInput).toBe('function');
     expect(typeof DavinciIndex.computeFormMeta).toBe('function');
     expect(typeof DavinciIndex.normalizeCollectors).toBe('function');

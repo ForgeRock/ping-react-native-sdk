@@ -149,6 +149,13 @@ enum DaVinciCollectorValueApplier {
     case let booleanCollector as BooleanCollector:
       booleanCollector.value = try asBoolean(value, key: key)
 
+    case let metadataCollector as MetadataCollector:
+      // The error envelope is the collector's VALUE (the connector routes on
+      // formData.sdkMetadata). A structured error therefore reaches
+      // setError(code:message:) and the flow resumes via next() instead of
+      // rejecting the bridge call.
+      try applyMetadataValue(metadataCollector, key: key, value: value)
+
     default:
       // All remaining collectors (TextCollector, PasswordCollector, SingleSelectCollector,
       // SubmitCollector, FlowCollector) extend SingleValueCollector which accepts a String
@@ -161,6 +168,88 @@ enum DaVinciCollectorValueApplier {
       let stringValue = try asString(value, key: key)
       collector.initialize(with: stringValue)
     }
+  }
+
+  /// Applies a JS-supplied result value to a `MetadataCollector`.
+  ///
+  /// Semantics:
+  /// - `nil` (JS `null`/undefined) → no-op: the collector's `validate()` keeps returning
+  ///   `.required`, so an unset result blocks the flow instead of silently clearing a
+  ///   previously set result.
+  /// - Dictionary containing an `error` key → strict envelope validation (a dictionary with
+  ///   a non-empty string `code` and a string `message`) → `setError(code:message:)`. A
+  ///   malformed envelope throws rather than silently POSTing as a success result.
+  /// - Any other dictionary, including an empty one → `setResult(dict)` (the success path),
+  ///   forwarded unchanged.
+  /// - Non-dictionary values → throw: the resume body must be a JSON object.
+  ///
+  /// - Note: The error envelope is the collector's value, which the server-side connector
+  ///   routes on, so a well-formed envelope resolves the flow instead of rejecting the
+  ///   bridge call. Messages for rejected values name only the offending types, never the
+  ///   values, so result content does not reach logs or crash reports.
+  ///
+  /// - Note: An empty result is posted as `formData.sdkMetadata: {}`, which the server
+  ///   accepts. In native 2.2.0 the Android SDK omits an empty result from the resume
+  ///   request instead, and the server answers with `INVALID_RESUME_PAYLOAD`.
+  ///
+  /// - Parameters:
+  ///   - collector: Target metadata collector.
+  ///   - key: Collector key (used for error messages).
+  ///   - value: Value from JS.
+  /// - Throws: `DaVinciBridgeError.collectorApply` when the value cannot be applied.
+  private static func applyMetadataValue(
+    _ collector: MetadataCollector,
+    key: String,
+    value: Any?
+  ) throws {
+    switch value {
+    case nil:
+      // Unset/null: keep the current state (validate() stays [.required] when unset).
+      // Never clear a previously set result — use node close/dispose for that.
+      return
+
+    case let dict as NSDictionary:
+      if let rawEnvelope = dict["error"] {
+        guard let envelope = rawEnvelope as? NSDictionary,
+          let code = envelope["code"] as? String,
+          !code.isEmpty,
+          let message = envelope["message"] as? String
+        else {
+          let envelope = rawEnvelope as? NSDictionary
+          throw DaVinciBridgeError.collectorApply(
+            "MetadataCollector key='\(key)': malformed error envelope, expected " +
+              "{ error: { code: non-empty string, message: string } }, got " +
+              "error: \(typeName(rawEnvelope)), code: \(typeName(envelope?["code"])), " +
+              "message: \(typeName(envelope?["message"]))"
+          )
+        }
+        collector.setError(code: code, message: message)
+        return
+      }
+      guard let result = dict as? [String: Any] else {
+        let keyTypes = Set(dict.allKeys.map { typeName($0) }).sorted().joined(separator: ", ")
+        throw DaVinciBridgeError.collectorApply(
+          "MetadataCollector key='\(key)': result dictionary has non-string keys (key types: \(keyTypes))"
+        )
+      }
+      collector.setResult(result)
+      return
+
+    default:
+      throw DaVinciBridgeError.collectorApply(
+        "MetadataCollector key='\(key)' expects a JSON object result, got \(type(of: value))"
+      )
+    }
+  }
+
+  /// Names the runtime type of a value for error messages, so rejected values are
+  /// described without being echoed.
+  ///
+  /// - Parameter value: Any bridge value.
+  /// - Returns: The type name, or `"nil"` when the value is absent.
+  private static func typeName(_ value: Any?) -> String {
+    guard let value else { return "nil" }
+    return String(describing: type(of: value))
   }
 
   // MARK: - Value coercion helpers

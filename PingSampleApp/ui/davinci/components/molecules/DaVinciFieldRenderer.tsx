@@ -13,6 +13,7 @@ import DaVinciFidoField from './DaVinciFidoField';
 import DaVinciIdpField from './DaVinciIdpField';
 import DaVinciImageField from './DaVinciImageField';
 import DaVinciLabelField from './DaVinciLabelField';
+import DaVinciMetadataField from './DaVinciMetadataField';
 import DaVinciMultiSelectField from './DaVinciMultiSelectField';
 import DaVinciPasswordField from './DaVinciPasswordField';
 import DaVinciPhoneNumberField from './DaVinciPhoneNumberField';
@@ -86,6 +87,8 @@ function DaVinciFieldRenderer(
       return <DaVinciQrCodeField {...props} />;
     case 'IMAGE':
       return <DaVinciImageField {...props} />;
+    case 'METADATA':
+      return <DaVinciMetadataField {...props} />;
     default:
       return <DaVinciUnsupportedField {...props} />;
   }

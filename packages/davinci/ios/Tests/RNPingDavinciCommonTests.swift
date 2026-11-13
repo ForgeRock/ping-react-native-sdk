@@ -465,6 +465,73 @@ final class RNPingDavinciCommonTests: XCTestCase {
     }
   }
 
+  // MARK: - validate — MetadataCollector
+
+  func testValidateMetadataCollectorUnsetResultResolvesRequiredError() {
+    // Unset (null) application is a no-op, so the native validate() still
+    // reports .required — the flow blocks until the app sets a result.
+    let davinciId = "validate-metadata-unset"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        MetadataCollector(with: [
+          "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "sdkMetadata",
+      value: NSNull()
+    ) { errors in
+      XCTAssertEqual(errors.count, 1)
+      XCTAssertEqual(errors.first?["code"] as? String, "REQUIRED")
+    }
+  }
+
+  func testValidateMetadataCollectorSetResultResolvesEmptyArray() {
+    let davinciId = "validate-metadata-set"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        MetadataCollector(with: [
+          "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "sdkMetadata",
+      value: ["status": "completed", "score": 87]
+    ) { errors in
+      XCTAssertTrue(errors.isEmpty)
+    }
+  }
+
+  func testValidateMetadataCollectorErrorEnvelopeResolvesEmptyArray() {
+    // The well-formed error envelope is the collector's value — it satisfies
+    // validate() exactly like a success result; the connector routes on it.
+    let davinciId = "validate-metadata-error-envelope"
+    RNPingDavinciCommon._setContinueNodeForTesting(
+      davinciId: davinciId,
+      node: makeContinueNode(collectors: [
+        MetadataCollector(with: [
+          "key": "sdkMetadata", "type": "METADATA", "payload": ["sdk": "PROTECT"]
+        ])
+      ])
+    )
+
+    assertValidateResolves(
+      davinciId: davinciId,
+      collectorKey: "sdkMetadata",
+      value: ["error": ["code": "USER_CANCELLED", "message": "User abandoned the flow"]]
+    ) { errors in
+      XCTAssertTrue(errors.isEmpty)
+    }
+  }
+
   // MARK: - getSession
 
   func testGetSessionRejectsWhenDaVinciMissing() {

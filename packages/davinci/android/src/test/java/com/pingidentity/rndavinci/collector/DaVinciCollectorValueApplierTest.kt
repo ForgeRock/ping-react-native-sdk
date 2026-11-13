@@ -14,6 +14,7 @@ import com.pingidentity.davinci.collector.DeviceAuthenticationCollector
 import com.pingidentity.davinci.collector.DeviceRegistrationCollector
 import com.pingidentity.davinci.collector.FlowCollector
 import com.pingidentity.davinci.collector.ImageCollector
+import com.pingidentity.davinci.collector.MetadataCollector
 import com.pingidentity.davinci.collector.MultiSelectCollector
 import com.pingidentity.davinci.collector.PasswordCollector
 import com.pingidentity.davinci.collector.PhoneNumberCollector
@@ -26,14 +27,21 @@ import com.pingidentity.orchestrate.FlowContext
 import com.pingidentity.orchestrate.SharedContext
 import com.pingidentity.orchestrate.Workflow
 import com.pingidentity.orchestrate.WorkflowConfig
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -533,5 +541,309 @@ class DaVinciCollectorValueApplierTest {
         } catch (error: UnsupportedOperationException) {
             assertTrue(error.message?.contains("is not supported by the bridge") == true)
         }
+    }
+
+    // ---- MetadataCollector (success / error / unset) ----
+
+    private fun metadataCollector(): MetadataCollector = MetadataCollector().apply {
+        init(buildJsonObject {
+            put("key", "sdkMetadata")
+            put("type", "METADATA")
+            put("payload", buildJsonObject { put("sdk", "PROTECT") })
+        })
+    }
+
+    @Test
+    fun applyMetadataCollectorSetsResult() {
+        // Success object → native setResult; payload() is the JsonObject the resume
+        // envelope POSTs as formData.sdkMetadata.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap().apply {
+                    putString("status", "completed")
+                    putInt("score", 87)
+                }
+            )
+        )
+
+        val payload = collector.payload()
+        assertNotNull(payload)
+        assertEquals("completed", payload?.get("status")?.jsonPrimitive?.content)
+        // putInt stores a Double in JavaOnlyMap; the applier's bridge-number
+        // normalization collapses integer-valued doubles back to Long (JSON "87").
+        assertEquals(87, payload?.get("score")?.jsonPrimitive?.int)
+        assertTrue(payload?.get("score")?.jsonPrimitive?.content == "87")
+        assertTrue(collector.validate().isEmpty())
+    }
+
+    @Test
+    fun applyMetadataCollectorErrorEnvelopeSetsStructuredError() {
+        // Well-formed { error: { code, message } } → native setError; the resulting
+        // payload() is the envelope the connector routes on.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap().apply {
+                    putMap("error", JavaOnlyMap().apply {
+                        putString("code", "USER_CANCELLED")
+                        putString("message", "User abandoned the flow")
+                    })
+                }
+            )
+        )
+
+        val payload = collector.payload()
+        assertNotNull(payload)
+        val error = payload?.get("error")?.jsonObject
+        assertEquals("USER_CANCELLED", error?.get("code")?.jsonPrimitive?.content)
+        assertEquals("User abandoned the flow", error?.get("message")?.jsonPrimitive?.content)
+        assertTrue(collector.validate().isEmpty())
+    }
+
+    @Test
+    fun applyMetadataCollectorPlainMapErrorEnvelopeSetsStructuredError() {
+        // ReadableNativeMap.toHashMap() converts nested maps recursively, so in
+        // production the envelope arrives as a plain Map rather than a ReadableMap.
+        // JavaOnlyMap.of stores the raw value to reproduce that shape.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap.of(
+                    "error",
+                    mapOf("code" to "USER_CANCELLED", "message" to "User abandoned the flow")
+                )
+            )
+        )
+
+        val error = collector.payload()?.get("error")?.jsonObject
+        assertEquals("USER_CANCELLED", error?.get("code")?.jsonPrimitive?.content)
+        assertEquals("User abandoned the flow", error?.get("message")?.jsonPrimitive?.content)
+        assertTrue(collector.validate().isEmpty())
+    }
+
+    @Test
+    fun applyMetadataCollectorRecursivelyConvertedResultRoundTrips() {
+        // Same production shape as above for success results: nested values are already
+        // plain Map/List/Boolean/Number instances by the time the converter runs.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap.of(
+                    "flag", true,
+                    "score", 87.0,
+                    "tags", listOf("device", 7.0, null),
+                    "risk", mapOf("level" to "LOW"),
+                    "unit", 'x'
+                )
+            )
+        )
+
+        val payload = collector.payload()
+        assertEquals(true, payload?.get("flag")?.jsonPrimitive?.boolean)
+        // Integer-valued doubles serialize as integers (87, not 87.0).
+        assertEquals("87", payload?.get("score")?.jsonPrimitive?.content)
+        val tags = payload?.get("tags")?.jsonArray
+        assertEquals("device", tags?.get(0)?.jsonPrimitive?.content)
+        assertEquals("7", tags?.get(1)?.jsonPrimitive?.content)
+        assertTrue(tags?.get(2) is JsonNull)
+        assertEquals("LOW", payload?.get("risk")?.jsonObject?.get("level")?.jsonPrimitive?.content)
+        // A non-JSON scalar the bridge does not produce falls back to its string form.
+        assertEquals("x", payload?.get("unit")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun applyMetadataCollectorNonStringKeyMessageNamesTypeOnly() {
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        try {
+            DaVinciCollectorValueApplier.apply(
+                node,
+                inputWithCollectors(
+                    "sdkMetadata" to JavaOnlyMap.of("nested", mapOf(1 to "super-secret-token"))
+                )
+            )
+            throw AssertionError("expected IllegalArgumentException")
+        } catch (error: IllegalArgumentException) {
+            val message = error.message.orEmpty()
+            assertTrue(message.contains("non-string key of type Integer"))
+            assertFalse(message.contains("super-secret-token"))
+        }
+        assertNull(collector.payload())
+    }
+
+    @Test
+    fun applyMetadataCollectorNullValueIsNoOp() {
+        // null → no-op: an unset result stays unset (validate() keeps Required), and a
+        // previously set result is never cleared.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors("sdkMetadata" to null))
+
+        assertNull(collector.payload())
+        assertTrue(collector.validate().isNotEmpty())
+
+        // A second null application must not clear an already-set result either.
+        collector.setResult(buildJsonObject { put("status", "completed") })
+        DaVinciCollectorValueApplier.apply(node, inputWithCollectors("sdkMetadata" to null))
+        assertEquals("completed", collector.payload()?.get("status")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun applyMetadataCollectorEmptyMapSetsEmptyResult() {
+        // An empty object is forwarded to native setResult unchanged: the collector is
+        // considered ready (validate() passes) and payload() is the empty object.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors("sdkMetadata" to JavaOnlyMap())
+        )
+
+        assertNotNull(collector.payload())
+        assertEquals(true, collector.payload()?.isEmpty())
+        assertTrue(collector.validate().isEmpty())
+    }
+
+    @Test
+    fun applyMetadataCollectorMalformedErrorEnvelopeThrows() {
+        // An 'error' key that isn't a well-formed {code, message} envelope must
+        // not silently POST as a success result.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        try {
+            DaVinciCollectorValueApplier.apply(
+                node,
+                inputWithCollectors(
+                    "sdkMetadata" to JavaOnlyMap().apply {
+                        putMap("error", JavaOnlyMap().apply { putInt("code", 42) })
+                    }
+                )
+            )
+            throw AssertionError("expected IllegalArgumentException")
+        } catch (error: IllegalArgumentException) {
+            assertTrue(error.message?.contains("malformed error envelope") == true)
+            assertNull(collector.payload())
+        }
+    }
+
+    @Test
+    fun applyMetadataCollectorMalformedErrorEnvelopeMessageDoesNotEchoValues() {
+        // Rejected values are described by type only, so result content never reaches
+        // logs or crash reports through the bridge rejection message.
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        val malformedEnvelopes = listOf(
+            // 'error' is not an object.
+            JavaOnlyMap().apply { putString("error", "super-secret-token") },
+            // 'code' is not a string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putInt("code", 42)
+                    putString("message", "super-secret-token")
+                })
+            },
+            // 'message' is not a string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putString("code", "super-secret-token")
+                    putBoolean("message", true)
+                })
+            },
+            // 'code' is an empty string.
+            JavaOnlyMap().apply {
+                putMap("error", JavaOnlyMap().apply {
+                    putString("code", "")
+                    putString("message", "super-secret-token")
+                })
+            },
+            // Neither 'code' nor 'message' is present.
+            JavaOnlyMap().apply { putMap("error", JavaOnlyMap()) }
+        )
+
+        for (malformed in malformedEnvelopes) {
+            try {
+                DaVinciCollectorValueApplier.apply(
+                    node,
+                    inputWithCollectors("sdkMetadata" to malformed)
+                )
+                throw AssertionError("expected IllegalArgumentException")
+            } catch (error: IllegalArgumentException) {
+                val message = error.message.orEmpty()
+                assertTrue(message.contains("malformed error envelope"))
+                assertFalse(message.contains("super-secret-token"))
+            }
+        }
+        assertNull(collector.payload())
+    }
+
+    @Test
+    fun applyMetadataCollectorNonMapValueThrows() {
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        for (badValue in listOf("not-an-object", 7, true, listOf("a", "b"))) {
+            try {
+                DaVinciCollectorValueApplier.apply(
+                    node,
+                    inputWithCollectors("sdkMetadata" to badValue)
+                )
+                throw AssertionError("expected IllegalArgumentException for value: $badValue")
+            } catch (error: IllegalArgumentException) {
+                assertTrue(error.message?.contains("expects a JSON object result") == true)
+            }
+            assertNull(collector.payload())
+        }
+    }
+
+    @Test
+    fun applyMetadataCollectorNestedResultRoundTrips() {
+        // Nested objects/arrays and explicit nulls in a success result survive the
+        // bridge → collector path (JsonObject supports JsonNull entries).
+        val collector = metadataCollector()
+        val node = nodeWith(collector)
+
+        DaVinciCollectorValueApplier.apply(
+            node,
+            inputWithCollectors(
+                "sdkMetadata" to JavaOnlyMap().apply {
+                    putMap("risk", JavaOnlyMap().apply {
+                        putInt("score", 12)
+                        putString("level", "LOW")
+                    })
+                    putArray("signals", JavaOnlyArray().apply {
+                        pushString("device")
+                        pushString("location")
+                    })
+                    putNull("answer")
+                }
+            )
+        )
+
+        val payload = collector.payload()
+        val risk = payload?.get("risk")?.jsonObject
+        assertEquals(12, risk?.get("score")?.jsonPrimitive?.int)
+        assertEquals("LOW", risk?.get("level")?.jsonPrimitive?.content)
+        val signals = payload?.get("signals")?.jsonArray
+        assertEquals(2, signals?.size)
+        assertEquals("device", signals?.get(0)?.jsonPrimitive?.content)
+        assertTrue(payload?.get("answer") is JsonNull)
     }
 }

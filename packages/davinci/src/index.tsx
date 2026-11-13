@@ -13,6 +13,8 @@ export { createDaVinciClient } from './davinci';
  * Headless collector normalisation and submit-planning helpers.
  */
 export {
+  buildMetadataError,
+  buildMetadataResult,
   buildNextInput,
   computeFormMeta,
   normalizeCollectors,
