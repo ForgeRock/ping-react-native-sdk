@@ -16,6 +16,7 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.bridge.ReadableType
 import com.pingidentity.android.ContextProvider
 import com.pingidentity.idp.IdpCanceledException
+import com.pingidentity.idp.IdpHandler
 import com.pingidentity.idp.UnsupportedIdPException
 import com.pingidentity.idp.davinci.IdpCollector as DaVinciIdpCollector
 import com.pingidentity.idp.journey.IdpCallback
@@ -80,6 +81,23 @@ object RNPingExternalIdpCommon {
 
   /** Guards one-time serializer registration. */
   private var serializerRegistered = false
+
+  /**
+   * Registers an app-supplied custom handler for a non-built-in external IdP provider.
+   *
+   * Intended for app startup (Application.onCreate), before any React context exists.
+   * The registry is process-scoped: it survives module cleanup and React context
+   * teardowns, so registration must not be repeated after a dev reload.
+   *
+   * @param provider Custom provider name as supplied by the app.
+   * @param handler Handler invoked when a Journey callback resolves this provider.
+   * @throws IllegalArgumentException when the provider name is blank or matches a reserved
+   * built-in token.
+   */
+  @JvmStatic
+  fun registerIdpHandler(provider: String, handler: IdpHandler) {
+    IdpHandlerRegistry.register(provider, handler)
+  }
 
   /**
    * Registers the IdpCollector serializer with CoreRuntime.
@@ -205,8 +223,24 @@ object RNPingExternalIdpCommon {
         }
 
         // TODO: Add browser fallback here when the Android native SDK supports it for AIC Journey flows.
+        val customHandler = IdpHandlerRegistry.resolve(callback.provider)
+        // Handlers launch provider login UI (activity launchers, browser tabs), which
+        // requires the main thread; the README documents this as the handler threading
+        // contract, so keep this hop when refactoring the authorize path.
         val result = withContext(Dispatchers.Main) {
-          parsedRedirectUri?.let { callback.authorize(it) } ?: callback.authorize()
+          when {
+            customHandler != null && parsedRedirectUri != null ->
+              // The SDK reads the redirectUri argument only when it resolves a built-in handler
+              // via the default parameter; with an explicit handler the client is built from the
+              // callback's own redirectUri, which the decorator below rewrites to the JS value.
+              callback.authorize(
+                parsedRedirectUri,
+                RedirectUriOverridingIdpHandler(customHandler, callConfig.redirectUri.trim())
+              )
+            customHandler != null -> callback.authorize(idpHandler = customHandler)
+            parsedRedirectUri != null -> callback.authorize(parsedRedirectUri)
+            else -> callback.authorize()
+          }
         }
 
         result.fold(

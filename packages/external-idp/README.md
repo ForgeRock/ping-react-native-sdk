@@ -14,6 +14,7 @@ This library abstracts away the complexities of dealing with different IDP proto
 - [iOS native configuration](#ios-native-configuration)
 - [Provider console setup](#provider-console-setup)
 - [Usage](#usage)
+- [Supporting additional social providers](#supporting-additional-social-providers)
 - [DaVinci usage](#davinci-usage)
 - [API reference](#api-reference)
 - [Errors](#errors)
@@ -353,6 +354,153 @@ if (form.canSubmit) {
   await actions.next(form.input);
 }
 ```
+
+---
+
+## Supporting additional social providers
+
+The built-in providers (apple, google, facebook, plus siwa on iOS) are fixed. To support a
+provider they do not cover, such as LINE or WeChat, implement the native SDK's
+`IdpHandler` interface in your app's native code and register it by provider
+name at startup. Registration is native-only: no JS API, TurboModule, or client
+configuration changes. Once registered, the existing `selectProviderForJourney`
+and `authorizeForJourney` calls route to your handler whenever the Journey
+callback's provider value matches. Custom handlers apply to Journey only:
+`authorizeForDaVinci` does not consult the registry.
+
+### 1. Implement `IdpHandler`
+
+Implement the handler interface on each platform you ship:
+
+| Platform | Interface                         | Members                                                                                               |
+| -------- | --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Android  | `com.pingidentity.idp.IdpHandler` | `var tokenType: String`, `suspend fun authorize(idpClient: IdpClient): IdpResult`                     |
+| iOS      | `PingExternalIdP.IdpHandler`      | `var tokenType: String { get set }`, `func authorize(idpClient: IdpClient) async throws -> IdpResult` |
+
+The iOS protocol inherits `Sendable`, so the conforming type must be a struct
+or a class that is safe to share across tasks (for example, immutable state
+or lock-guarded state with `@unchecked Sendable`). After `authorize` returns,
+the native callback reads `tokenType` from the handler and submits it with
+the token; set it to the token type your provider returns (the built-in
+Google handler uses `id_token`).
+
+`IdpClient` carries `clientId`, `redirectUri`, `scopes`, `nonce`, and
+`continueUrl`. `redirectUri` is the value the Journey callback supplies,
+except when a non-empty `redirectUri` was configured in
+`createExternalIdpClient`: your handler then receives the configured value,
+so the provider login can return to the app's registered scheme. The handler
+returns `IdpResult(token, additionalParameters)`;
+the token is submitted back to the server by the callback itself. Everything
+placed in `additionalParameters` is server-visible: the entries are replayed
+as request parameters when the callback is submitted, so never place session
+state or secrets there.
+
+Because the login flow is entirely provider-specific, you write the body of
+`authorize` yourself: launch the provider's login UI (typically through its
+own SDK, configured with `idpClient.scopes` and `idpClient.nonce`), obtain
+the token, and return it in an `IdpResult`. Declare the class wherever your
+app's native code lives, for example next to your `Application`/`AppDelegate`
+subclass. The registration step below then wires it up; the handler-contract
+section (section 3) covers the platform rules your implementation must
+follow, including threading and cancellation.
+
+### 2. Register at startup
+
+Register the handler once, before React boots. After a JS reload the
+registration survives; it must not be repeated on every activity or scene
+lifecycle event.
+
+**Android:** add the registration to your `MainApplication.onCreate()`,
+before `loadReactNative(this)`:
+
+```kotlin
+import com.pingidentity.rnexternalidp.RNPingExternalIdpCommon
+
+class MainApplication : Application(), ReactApplication {
+  // ... your existing reactNativeHost / reactHost overrides ...
+
+  override fun onCreate() {
+    super.onCreate()
+    // A thrown registration error (blank or reserved name) is a programming
+    // error; fail at startup rather than at first login.
+    RNPingExternalIdpCommon.registerIdpHandler("line", LineIdpHandler())
+    loadReactNative(this)
+  }
+}
+```
+
+Implementing `com.pingidentity.idp.IdpHandler` in app code works because the
+`rn-external-idp` Android module exposes `com.pingidentity.sdks:external-idp`
+at `api` scope, so its `com.pingidentity.idp.*` types resolve from app code
+without a separate dependency.
+
+**iOS:** add the registration to your `AppDelegate.didFinishLaunchingWithOptions`,
+before the React factory starts:
+
+```swift
+import RNPingExternalIdp
+
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
+  func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+  ) -> Bool {
+    // A thrown registration error (blank or reserved name) is a programming
+    // error; fail at startup rather than at first login.
+    try! RNPingExternalIdpCommon.registerIdpHandler("line", handler: LineIdpHandler())
+
+    // ... the rest of the React Native template body (delegate, factory,
+    // window, startReactNative) stays unchanged ...
+    return true
+  }
+}
+```
+
+The snippet is abbreviated: keep your app's existing `AppDelegate` and only
+add the two imports and the `try!` line before the React factory is created.
+For the complete method body see `PingSampleApp/ios/PingSampleApp/AppDelegate.swift`
+in the SDK repository.
+
+The AppDelegate needs `import RNPingExternalIdp` for the registration entry
+point; the file implementing the `IdpHandler` protocol also needs
+`import PingExternalIdP`. Both modules resolve without extra Podfile entries:
+`PingExternalIdP` is available transitively through the `RNPingExternalIdp`
+pod, so no `PingExternalIdP` Podfile entry is needed (provider pods such as
+`PingExternalIdPGoogle` are only required for the built-in providers, as
+described in [iOS native configuration](#ios-native-configuration)).
+
+### 3. Handler contract
+
+- **Resolution order:** the Journey callback's provider value resolves
+  through the registry first (exact match on the trimmed lowercase name),
+  then the built-ins (apple, google, facebook, plus siwa and fb-limited on
+  iOS), then the existing
+  unsupported-provider error (`EXTERNAL_IDP_CONFIG_ERROR` on Android,
+  `EXTERNAL_IDP_UNSUPPORTED_PROVIDER` on iOS).
+- **Reserved names:** registration rejects any name that contains a built-in
+  token (`apple`, `siwa`, `google`, `facebook`, `fb-limited`), matched
+  case-insensitively as a substring, mirroring how the built-ins route
+  provider names. Names like `pineapple-sso` or `my-google` are rejected
+  because they would route to a built-in at authorize time. `fb-limited` is
+  reserved on both platforms so registrations stay symmetric across them.
+  Android throws `IllegalArgumentException`; iOS throws
+  `IdpHandlerRegistrationError.reservedProvider`.
+- **Nonce:** pass `idpClient.nonce` to the provider login. It is required for
+  AIC token validation, which fails server-side without it.
+- **Cancellation:** on Android, throw
+  `com.pingidentity.idp.IdpCanceledException` on user cancel so it surfaces
+  as `EXTERNAL_IDP_CANCELLED`. On iOS a custom handler's cancellation is
+  indistinguishable from a failure: the native catch-all wraps every handler
+  error, which surfaces as `EXTERNAL_IDP_AUTHORIZE_ERROR`.
+- **Threading:** on Android the handler's `suspend authorize` body runs on
+  the main dispatcher; dispatch provider I/O off it, for example with
+  `withContext(Dispatchers.IO)`. On iOS the handler requirement is
+  nonisolated, so the body runs on the global executor, not the main thread;
+  wrap UI-touching code in `MainActor.run { }` when the main thread is
+  needed (a `@MainActor` handler type cannot satisfy the nonisolated
+  `tokenType` requirement without `@preconcurrency IdpHandler`). On both platforms
+  never log the token or the nonce.
 
 ---
 

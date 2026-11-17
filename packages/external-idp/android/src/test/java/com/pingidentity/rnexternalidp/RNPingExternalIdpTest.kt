@@ -11,7 +11,17 @@ import com.facebook.react.bridge.JavaOnlyMap
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
+import com.pingidentity.idp.IdpCanceledException
+import com.pingidentity.idp.IdpClient
+import com.pingidentity.idp.IdpHandler
+import com.pingidentity.idp.IdpResult
+import com.pingidentity.idp.journey.IdpCallback
 import com.pingidentity.idp.journey.SelectIdpCallback
+import com.pingidentity.network.HttpClient
+import com.pingidentity.network.HttpRequest
+import com.pingidentity.network.HttpResponse
+import com.pingidentity.orchestrate.Workflow
+import com.pingidentity.orchestrate.WorkflowConfig
 import com.pingidentity.rncore.CoreRuntime
 import com.pingidentity.rncore.DaVinciCollectorResolver
 import com.pingidentity.rncore.JourneyCallbackResolver
@@ -21,10 +31,25 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -40,6 +65,7 @@ import org.robolectric.annotation.Implements
 /**
  * Unit tests for External IdP module metadata and bridge behavior.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29], shadows = [ShadowExternalIdpArguments::class])
 class RNPingExternalIdpTest {
@@ -51,11 +77,13 @@ class RNPingExternalIdpTest {
    */
   @Before
   fun setUp() {
+    Dispatchers.setMain(UnconfinedTestDispatcher())
     originalJourneyCallbackResolver = CoreRuntime.journeyCallbackResolver
     originalDaVinciCollectorResolver = CoreRuntime.davinciCollectorResolver
     CoreRuntime.journeyCallbackResolver = null
     CoreRuntime.davinciCollectorResolver = null
     RNPingExternalIdpCommon.foregroundActivityProvider = { true }
+    IdpHandlerRegistry.clear()
   }
 
   /**
@@ -66,6 +94,8 @@ class RNPingExternalIdpTest {
     CoreRuntime.journeyCallbackResolver = originalJourneyCallbackResolver
     CoreRuntime.davinciCollectorResolver = originalDaVinciCollectorResolver
     RNPingExternalIdpCommon.foregroundActivityProvider = { true }
+    IdpHandlerRegistry.clear()
+    Dispatchers.resetMain()
   }
 
   /**
@@ -98,6 +128,18 @@ class RNPingExternalIdpTest {
 
     assertEquals(ExternalIdpErrorCodes.CANCELLED, result.first)
     assertEquals("[16] Account reauth failed.", result.second)
+  }
+
+  /**
+   * Ensures the SDK's public IdP cancellation exception maps to the public cancellation
+   * code, the convention custom handlers follow when the user cancels a provider login.
+   */
+  @Test
+  fun idpCanceledExceptionMapsToCancelled() {
+    val result = discriminateIdpError(IdpCanceledException())
+
+    assertEquals(ExternalIdpErrorCodes.CANCELLED, result.first)
+    assertEquals("Identity Provider authentication was canceled", result.second)
   }
 
   /**
@@ -302,6 +344,166 @@ class RNPingExternalIdpTest {
   }
 
   /**
+   * Ensures a registered custom handler routes the authorize call and the callback
+   * captures the returned token, exercising the public registration entry point.
+   */
+  @Test
+  fun registeredHandlerRoutesAuthorizeAndCapturesToken() {
+    val callback = idpCallback("line")
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val handler = RecordingIdpHandler()
+    RNPingExternalIdpCommon.registerIdpHandler("line", handler)
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap(),
+      promise
+    )
+
+    val resolved = captureResolve(promise)
+    assertEquals("custom-token", resolved?.getString("token"))
+    assertEquals(1, handler.observedClients.size)
+    // No JS redirect configured: the handler observes the callback's server value.
+    assertEquals(
+      "https://server.example.com/form_post/line",
+      handler.observedClients.single().redirectUri
+    )
+    val payload = callback.payload()
+    assertEquals(
+      "custom-token",
+      payload["input"]?.jsonArray?.get(0)?.jsonObject?.get("value")?.jsonPrimitive?.content
+    )
+  }
+
+  /**
+   * Ensures a JS-configured redirect URI reaches the custom handler in place of the
+   * callback's server-supplied value, proving the redirect-overriding decorator is
+   * wired into the authorize path.
+   */
+  @Test
+  fun registeredHandlerObservesConfiguredRedirectUriOverServerValue() {
+    val callback = idpCallback("line")
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val handler = RecordingIdpHandler()
+    RNPingExternalIdpCommon.registerIdpHandler("line", handler)
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap.of("redirectUri", "com.example://callback"),
+      promise
+    )
+
+    captureResolve(promise)
+    assertEquals("com.example://callback", handler.observedClients.single().redirectUri)
+  }
+
+  /**
+   * Ensures an unregistered custom provider falls through to the native built-in
+   * resolution and fails with the existing unsupported-provider error, code and message
+   * unchanged.
+   */
+  @Test
+  fun unregisteredCustomProviderFailsWithExistingUnsupportedProviderError() {
+    val callback = idpCallback("twitter")
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap(),
+      promise
+    )
+
+    val error = captureReject(promise)
+    assertEquals(ExternalIdpErrorCodes.CONFIG_ERROR, promise.rejectCode)
+    assertEquals(ErrorType.ARGUMENT_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.CONFIG_ERROR, error.getString("error"))
+    assertTrue(
+      error.getString("message")?.contains("Unsupported provider: twitter") == true
+    )
+  }
+
+  /**
+   * Ensures the callback's nonce reaches the custom handler's IdpClient payload.
+   */
+  @Test
+  fun registeredHandlerReceivesCallbackNonce() {
+    val callback = idpCallback("line", nonce = "test-nonce-123")
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val handler = RecordingIdpHandler()
+    RNPingExternalIdpCommon.registerIdpHandler("line", handler)
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap(),
+      promise
+    )
+
+    captureResolve(promise)
+    assertEquals("test-nonce-123", handler.observedClients.single().nonce)
+  }
+
+  /**
+   * Ensures the handler's token type propagates to the callback payload through the
+   * redirect-overriding decorator's delegation.
+   */
+  @Test
+  fun handlerTokenTypePropagatesThroughDecorator() {
+    val callback = idpCallback("line")
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    val handler = RecordingIdpHandler()
+    RNPingExternalIdpCommon.registerIdpHandler("line", handler)
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap.of("redirectUri", "com.example://callback"),
+      promise
+    )
+
+    captureResolve(promise)
+    val payload = callback.payload()
+    assertEquals(
+      "access_token",
+      payload["input"]?.jsonArray?.get(1)?.jsonObject?.get("value")?.jsonPrimitive?.content
+    )
+  }
+
+  /**
+   * Ensures a throwing custom handler surfaces as the authorize error code while the
+   * native callback's catch block can log against the parent journey.
+   */
+  @Test
+  fun throwingHandlerSurfacesAsAuthorizeError() {
+    val callback = idpCallback("line")
+    callback.journey = workflowWithPresetHttpClient()
+    CoreRuntime.journeyCallbackResolver = { listOf(callback) }
+    RNPingExternalIdpCommon.registerIdpHandler("line", ThrowingIdpHandler())
+    val promise = TestPromise()
+
+    RNPingExternalIdpCommon.authorizeForJourney(
+      "journey-id",
+      JavaOnlyMap(),
+      JavaOnlyMap(),
+      promise
+    )
+
+    val error = captureReject(promise)
+    assertEquals(ExternalIdpErrorCodes.AUTHORIZE_ERROR, promise.rejectCode)
+    assertEquals(ErrorType.INTERNAL_ERROR.rawValue, error.getString("type"))
+    assertEquals(ExternalIdpErrorCodes.AUTHORIZE_ERROR, error.getString("error"))
+    assertTrue(promise.rejectThrowable is IllegalStateException)
+  }
+
+  /**
    * Ensures DaVinci authorization rejects blank davinciId with the shared error payload.
    */
   @Test
@@ -394,24 +596,45 @@ class RNPingExternalIdpTest {
   }
 
   /**
+   * Waits for a promise resolution and returns the resolved value.
+   */
+  private fun captureResolve(promise: TestPromise): WritableMap? {
+    assertTrue(promise.await())
+    return promise.resolvedValue as? WritableMap
+  }
+
+  /**
+   * Builds an IdpCallback initialized from a server-style output payload.
+   */
+  private fun idpCallback(
+    provider: String,
+    nonce: String = "default-nonce"
+  ): IdpCallback {
+    val callback = IdpCallback()
+    callback.init(idpCallbackJson(provider, nonce))
+    return callback
+  }
+
+  /**
+   * Builds a real workflow whose HTTP client is pre-set so no network engine is
+   * constructed; only the callback's error-logging path reads this journey.
+   */
+  private fun workflowWithPresetHttpClient(): Workflow {
+    val config = WorkflowConfig()
+    config.httpClient = UnreachableHttpClient
+    return Workflow(config)
+  }
+
+  /**
    * Reflectively reads the private shared coroutine scope.
    */
-  private fun readScope(): CoroutineScope {
-    val field = RNPingExternalIdpCommon::class.java.getDeclaredField("scope")
-    field.isAccessible = true
-    return field.get(RNPingExternalIdpCommon) as CoroutineScope
-  }
+  private fun readScope(): CoroutineScope = CommonTestSeams.readScope()
 
   /**
    * Reflectively flips the private configured flag and invokes cleanup so the test
    * does not need to call configure() (which requires a ReactApplicationContext).
    */
-  private fun invokeCleanup() {
-    val configuredField = RNPingExternalIdpCommon::class.java.getDeclaredField("configured")
-    configuredField.isAccessible = true
-    configuredField.setBoolean(RNPingExternalIdpCommon, true)
-    RNPingExternalIdpCommon.cleanup()
-  }
+  private fun invokeCleanup() = CommonTestSeams.invokeCleanup()
 
   /**
    * Calls the private error discriminator for focused mapping tests.
@@ -448,6 +671,93 @@ class RNPingExternalIdpTest {
  * Test double with the same simple name as AndroidX Credential Manager's cancellation error.
  */
 private class GetCredentialCancellationException(message: String) : Exception(message)
+
+/**
+ * HTTP client fake that satisfies WorkflowConfig's lateinit requirement without
+ * constructing a network engine; never invoked by the authorize error path.
+ */
+private object UnreachableHttpClient : HttpClient {
+  override fun request(): HttpRequest = throw UnsupportedOperationException("not used")
+  override suspend fun request(request: HttpRequest): HttpResponse =
+    throw UnsupportedOperationException("not used")
+  override suspend fun request(requestBuilder: HttpRequest.() -> Unit): HttpResponse =
+    throw UnsupportedOperationException("not used")
+  override fun close() {}
+}
+
+/**
+ * Builds the JSON payload an AIC server would deliver for an IdP callback.
+ */
+private fun idpCallbackJson(provider: String, nonce: String): JsonObject =
+  buildJsonObject {
+    putJsonArray("output") {
+      addJsonObject {
+        put("name", JsonPrimitive("provider"))
+        put("value", JsonPrimitive(provider))
+      }
+      addJsonObject {
+        put("name", JsonPrimitive("clientId"))
+        put("value", JsonPrimitive("test-client"))
+      }
+      addJsonObject {
+        put("name", JsonPrimitive("redirectUri"))
+        put("value", JsonPrimitive("https://server.example.com/form_post/$provider"))
+      }
+      addJsonObject {
+        put("name", JsonPrimitive("scopes"))
+        putJsonArray("value") {
+          add(JsonPrimitive("openid"))
+        }
+      }
+      addJsonObject {
+        put("name", JsonPrimitive("nonce"))
+        put("value", JsonPrimitive(nonce))
+      }
+    }
+    put("input", buildJsonArray {
+      add(
+        buildJsonObject {
+          put("name", JsonPrimitive("IDToken1token"))
+          put("value", JsonPrimitive(""))
+        }
+      )
+      add(
+        buildJsonObject {
+          put("name", JsonPrimitive("IDToken1tokenType"))
+          put("value", JsonPrimitive(""))
+        }
+      )
+    })
+  }
+
+/**
+ * Recording handler double that captures every observed IdpClient payload.
+ *
+ * authorize() flips the token type mid-flight so the decorator's delegation is observable
+ * in the callback payload.
+ */
+private class RecordingIdpHandler : IdpHandler {
+  override var tokenType: String = "id_token"
+
+  val observedClients = mutableListOf<IdpClient>()
+
+  override suspend fun authorize(idpClient: IdpClient): IdpResult {
+    observedClients.add(idpClient)
+    tokenType = "access_token"
+    return IdpResult("custom-token", emptyMap())
+  }
+}
+
+/**
+ * Handler double that always fails, driving the native callback's error path.
+ */
+private class ThrowingIdpHandler : IdpHandler {
+  override var tokenType: String = "id_token"
+
+  override suspend fun authorize(idpClient: IdpClient): IdpResult {
+    throw IllegalStateException("Provider login failed")
+  }
+}
 
 /**
  * Robolectric shadow for React Native bridge map creation.
