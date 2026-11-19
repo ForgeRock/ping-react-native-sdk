@@ -9,12 +9,14 @@ export {};
 
 type ReactNativeMock = {
   NativeModules: Record<string, unknown>;
+  Platform: { OS: string };
   TurboModuleRegistry: { get: jest.Mock };
 };
 
 const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
   const base: ReactNativeMock = {
     NativeModules: {},
+    Platform: { OS: 'ios' },
     TurboModuleRegistry: { get: jest.fn(() => ({})) },
   };
 
@@ -24,9 +26,11 @@ const createReactNativeMock = (overrides: Partial<ReactNativeMock>) => {
 const loadModule = async ({
   nativeModule,
   turboModule,
+  platform = 'ios',
 }: {
   nativeModule?: Record<string, unknown>;
   turboModule?: Record<string, unknown>;
+  platform?: 'ios' | 'android';
 }) => {
   jest.resetModules();
   const get = jest.fn(() =>
@@ -38,6 +42,7 @@ const loadModule = async ({
   jest.doMock('react-native', () =>
     createReactNativeMock({
       NativeModules: nativeModule ?? {},
+      Platform: { OS: platform },
       TurboModuleRegistry: { get },
     }),
   );
@@ -64,6 +69,7 @@ describe('fido native module wiring', () => {
     const registerNative = jest.fn(() => Promise.resolve({ type: 'register' }));
     const { createFidoClient } = await loadModule({
       turboModule: { registerCredential: registerNative },
+      platform: 'android',
     });
     const client = createFidoClient({
       logger: {

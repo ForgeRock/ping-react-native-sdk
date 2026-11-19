@@ -36,6 +36,7 @@ import {
 } from '../utils/clientPanel';
 import { bindingIntegration } from '../integrations/bindingIntegration';
 import { fidoIntegration } from '../integrations/fidoIntegration';
+import { useFidoCeremonySettings } from '../../fido/FidoCeremonySettings';
 import { recaptchaIntegration } from '../integrations/recaptchaIntegration';
 import { startProtectForJourney } from '@ping-identity/rn-protect';
 import { protectIntegration } from '../integrations/protectIntegration';
@@ -423,6 +424,10 @@ export function useJourneyClientPanelController(
     [],
   );
   const fido = useMemo(() => createFidoClient({}), []);
+  const {
+    authenticationOptions: fidoAuthenticationOptions,
+    registrationOptions: fidoRegistrationOptions,
+  } = useFidoCeremonySettings();
   const recaptcha = useMemo(() => createRecaptchaClient(), []);
   const externalIdpLogger = useMemo(() => logger({ level: 'debug' }), []);
   const protectLogger = useMemo(() => logger({ level: 'debug' }), []);
@@ -590,6 +595,8 @@ export function useJourneyClientPanelController(
         readDeviceNameInput,
         resolveDefaultDeviceName: resolveDefaultSystemDeviceName,
         continueOnAuthenticationCancel: true,
+        authenticationOptions: fidoAuthenticationOptions,
+        registrationOptions: fidoRegistrationOptions,
       }),
       bindingIntegration(binding, {
         readDeviceNameInput,
@@ -601,6 +608,8 @@ export function useJourneyClientPanelController(
     [
       binding,
       fido,
+      fidoAuthenticationOptions,
+      fidoRegistrationOptions,
       recaptcha,
       protectLogger,
       readDeviceNameInput,

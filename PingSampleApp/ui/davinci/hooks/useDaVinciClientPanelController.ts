@@ -35,6 +35,7 @@ import {
 } from '@ping-identity/rn-protect';
 import { logger } from '@ping-identity/rn-logger';
 import Config from 'react-native-config';
+import { useFidoCeremonySettings } from '../../fido/FidoCeremonySettings';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
 import { useDaVinciAutoStartEffect } from './useDaVinciAutoStartEffect';
 import { useDaVinciAutoForwarder } from './useDaVinciAutoForwarder';
@@ -191,6 +192,10 @@ export function useDaVinciClientPanelController(
     () => createFidoClient({ logger: fidoLogger }),
     [fidoLogger],
   );
+  const {
+    authenticationOptions: fidoAuthenticationOptions,
+    registrationOptions: fidoRegistrationOptions,
+  } = useFidoCeremonySettings();
   const externalIdp = useMemo(
     () =>
       createExternalIdpClient({
@@ -324,10 +329,12 @@ export function useDaVinciClientPanelController(
       try {
         if (collector.action === 'REGISTER') {
           await fido.registerForDaVinci(davinciClient, {
+            ...fidoRegistrationOptions,
             index: collectorIndex,
           });
         } else {
           await fido.authenticateForDaVinci(davinciClient, {
+            ...fidoAuthenticationOptions,
             index: collectorIndex,
           });
         }
@@ -360,7 +367,15 @@ export function useDaVinciClientPanelController(
         setFidoError(fidoCeremonyErrorMessage(fidoErrorValue));
       }
     },
-    [davinciContext?.client, fido, form.fields, loading, next],
+    [
+      davinciContext?.client,
+      fido,
+      fidoAuthenticationOptions,
+      fidoRegistrationOptions,
+      form.fields,
+      loading,
+      next,
+    ],
   );
 
   const onIdpAuthorize = useCallback(

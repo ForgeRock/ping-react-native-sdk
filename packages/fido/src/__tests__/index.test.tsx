@@ -16,10 +16,13 @@ import type {
   FidoRegistrationCollector,
 } from '../types';
 
+jest.mock('react-native', () => ({
+  Platform: { OS: 'ios' },
+}));
+
 jest.mock('../NativeRNPingFido', () => ({
   __esModule: true,
   getNativeModule: jest.fn(),
-  toNativeConfigOptions: jest.fn((options) => options),
   toNativeRegistrationOptions: jest.fn((options) => options),
   toNativeAuthenticationOptions: jest.fn((options) => options),
   fromNativeRegistrationResult: jest.fn((result) => result),
@@ -37,7 +40,12 @@ jest.mock('@ping-identity/rn-types', () => ({
   registerIntegrationCollectorType: jest.fn(),
 }));
 
+import { Platform } from 'react-native';
 import { getNativeModule } from '../NativeRNPingFido';
+
+const setPlatform = (os: 'ios' | 'android') => {
+  (Platform as unknown as { OS: string }).OS = os;
+};
 
 describe('FIDO API', () => {
   beforeEach(() => {
@@ -45,6 +53,10 @@ describe('FIDO API', () => {
     (getNativeModule as jest.Mock).mockReturnValue({
       registerDaVinciSerializer: jest.fn(),
     });
+  });
+
+  afterEach(() => {
+    setPlatform('ios');
   });
 
   it('createFidoClient registers FIDO2 as an integration collector type', () => {
@@ -123,6 +135,7 @@ describe('FIDO API', () => {
   });
 
   it('createFidoClient resolves per-client config once', async () => {
+    setPlatform('android');
     const logger = {
       nativeHandle: { id: 'logger-1' },
       changeLevel: jest.fn(),
@@ -147,6 +160,18 @@ describe('FIDO API', () => {
       { challenge: 'abc' },
       { loggerId: 'logger-1', useFido2ApiClient: true },
     );
+
+    // iOS native does not recognize the key, so the client-level flag is
+    // never sent and a fresh client on iOS emits the config without it.
+    setPlatform('ios');
+    const iosClient = createFidoClient({
+      logger,
+      android: { useFido2ApiClient: true },
+    });
+    await iosClient.register({ challenge: 'abc' });
+    const iosConfig = registerNative.mock.calls[1][1];
+    expect(iosConfig).toEqual({ loggerId: 'logger-1' });
+    expect('useFido2ApiClient' in iosConfig).toBe(false);
   });
 
   it('register passes options through to native unchanged', async () => {
@@ -238,6 +263,7 @@ describe('FIDO API', () => {
   });
 
   it('registerForJourney resolves journey id and forwards to native', async () => {
+    setPlatform('android');
     const registerJourneyNative = jest
       .fn()
       .mockResolvedValue({ type: 'success' });
@@ -306,6 +332,95 @@ describe('FIDO API', () => {
     );
   });
 
+  it('honored Journey and DaVinci options never trigger unknown-key config warnings', async () => {
+    const registerJourneyNative = jest
+      .fn()
+      .mockResolvedValue({ type: 'success' });
+    const authenticateJourneyNative = jest
+      .fn()
+      .mockResolvedValue({ type: 'success' });
+    const registerDaVinciNative = jest
+      .fn()
+      .mockResolvedValue({ attestationValue: {} });
+    const authenticateDaVinciNative = jest
+      .fn()
+      .mockResolvedValue({ assertionValue: {} });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      registerCredentialForJourney: registerJourneyNative,
+      authenticateCredentialForJourney: authenticateJourneyNative,
+      registerCredentialForDaVinci: registerDaVinciNative,
+      authenticateCredentialForDaVinci: authenticateDaVinciNative,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-1') };
+    const logger = {
+      nativeHandle: { id: 'logger-1' },
+      changeLevel: jest.fn(),
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    const client = createFidoClient({ logger });
+
+    await client.registerForJourney(journey, {
+      index: 1,
+      deviceName: 'Pixel',
+      preferImmediatelyAvailableCredentials: true,
+    });
+    await client.authenticateForJourney(journey, {
+      index: 2,
+      preferImmediatelyAvailableCredentials: true,
+    });
+    await client.registerForDaVinci(daVinci, {
+      index: 3,
+      preferImmediatelyAvailableCredentials: true,
+    });
+    await client.authenticateForDaVinci(daVinci, {
+      index: 4,
+      preferImmediatelyAvailableCredentials: true,
+    });
+
+    expect(logger.warn).not.toHaveBeenCalled();
+    // The native options payload carries only the honored fields; ceremony
+    // keys travel only in the config payload.
+    expect(registerJourneyNative).toHaveBeenCalledWith(
+      'journey-1',
+      {
+        index: 1,
+        deviceName: 'Pixel',
+      },
+      { loggerId: 'logger-1', preferImmediatelyAvailableCredentials: true },
+    );
+    expect(registerDaVinciNative).toHaveBeenCalledWith(
+      'davinci-1',
+      { index: 3 },
+      { loggerId: 'logger-1', preferImmediatelyAvailableCredentials: true },
+    );
+    expect(authenticateDaVinciNative).toHaveBeenCalledWith(
+      'davinci-1',
+      { index: 4 },
+      { loggerId: 'logger-1', preferImmediatelyAvailableCredentials: true },
+    );
+    const journeyAuthOptions = authenticateJourneyNative.mock.calls[0][1];
+    expect(journeyAuthOptions).toEqual({ index: 2 });
+    expect('preferImmediatelyAvailableCredentials' in journeyAuthOptions).toBe(
+      false,
+    );
+    expect('android' in journeyAuthOptions).toBe(false);
+    const daVinciRegisterOptions = registerDaVinciNative.mock.calls[0][1];
+    expect(daVinciRegisterOptions).toEqual({ index: 3 });
+    expect(
+      'preferImmediatelyAvailableCredentials' in daVinciRegisterOptions,
+    ).toBe(false);
+    const daVinciAuthOptions = authenticateDaVinciNative.mock.calls[0][1];
+    expect(daVinciAuthOptions).toEqual({ index: 4 });
+    expect('preferImmediatelyAvailableCredentials' in daVinciAuthOptions).toBe(
+      false,
+    );
+  });
+
   it('normalizes blank logger id to undefined', async () => {
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
@@ -324,16 +439,11 @@ describe('FIDO API', () => {
     });
 
     await client.register({ challenge: 'abc' });
-    expect(registerNative).toHaveBeenCalledWith(
-      { challenge: 'abc' },
-      {
-        loggerId: undefined,
-        useFido2ApiClient: undefined,
-      },
-    );
+    expect(registerNative).toHaveBeenCalledWith({ challenge: 'abc' }, {});
   });
 
   it('keeps client configs isolated per instance', async () => {
+    setPlatform('android');
     const registerNative = jest.fn().mockResolvedValue({ ok: true });
     (getNativeModule as jest.Mock).mockReturnValue({
       registerDaVinciSerializer: jest.fn(),
@@ -353,18 +463,12 @@ describe('FIDO API', () => {
     expect(registerNative).toHaveBeenNthCalledWith(
       1,
       { challenge: 'a' },
-      {
-        loggerId: undefined,
-        useFido2ApiClient: true,
-      },
+      { useFido2ApiClient: true },
     );
     expect(registerNative).toHaveBeenNthCalledWith(
       2,
       { challenge: 'b' },
-      {
-        loggerId: undefined,
-        useFido2ApiClient: false,
-      },
+      { useFido2ApiClient: false },
     );
   });
 
@@ -419,6 +523,7 @@ describe('FIDO API', () => {
   });
 
   it('registerForDaVinci resolves davinci id and forwards to native', async () => {
+    setPlatform('android');
     const registerDaVinciNative = jest.fn().mockResolvedValue({
       attestationValue: { attestationObject: 'o2NmbXQ' },
     });
@@ -490,10 +595,7 @@ describe('FIDO API', () => {
     expect(authenticateDaVinciNative).toHaveBeenCalledWith(
       'davinci-xyz',
       { index: 2 },
-      {
-        loggerId: 'logger-2',
-        useFido2ApiClient: undefined,
-      },
+      { loggerId: 'logger-2' },
     );
     expect(logger.info).toHaveBeenCalledWith(
       'FIDO authenticateForDaVinci requested',
@@ -636,10 +738,7 @@ describe('FIDO API', () => {
     expect(authenticateDaVinciNative).toHaveBeenCalledWith(
       'davinci-xyz',
       {},
-      {
-        loggerId: undefined,
-        useFido2ApiClient: undefined,
-      },
+      {},
     );
   });
 });
@@ -661,6 +760,7 @@ describe('FIDO collector contract', () => {
     action: 'AUTHENTICATE',
     label: 'Sign in with passkey',
     required: false,
+    trigger: '',
     publicKeyCredentialRequestOptions: { challenge: 'abc' },
   };
 

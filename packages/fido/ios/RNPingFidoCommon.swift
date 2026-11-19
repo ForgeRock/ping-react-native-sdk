@@ -42,7 +42,9 @@ public class RNPingFidoCommon: NSObject {
   /// Stable error codes emitted by the FIDO module.
   ///
   /// Keep these in sync with JS `FidoErrorCode` and Android `FidoErrorCodes`.
-  private enum FidoErrorCode: String {
+  /// - Note: Internal (not `private`) so unit tests can observe the
+  ///   per-method failure-code classification contract.
+  enum FidoErrorCode: String {
     case fidoError = "FIDO_ERROR"
     case registerError = "FIDO_REGISTER_ERROR"
     case authenticateError = "FIDO_AUTHENTICATE_ERROR"
@@ -52,13 +54,63 @@ public class RNPingFidoCommon: NSObject {
     case collectorNotFound = "FIDO_COLLECTOR_NOT_FOUND"
   }
 
-  /// Per-call FIDO runtime configuration parsed from the bridge payload.
-  private struct CallConfig {
-    let loggerId: String?
-  }
-
   private static let fido2CollectorType = "FIDO2"
   private static let serializerState = SerializerState()
+
+  /// Internal seam for the standalone register entry point.
+  ///
+  /// - Note: Test-only override point so unit tests can drive the native
+  ///   register outcome without the pod singleton; production code never
+  ///   reassigns it. Main-actor isolated because every caller (entry points,
+  ///   tests) already runs there.
+  @MainActor
+  internal static var nativeRegisterInvoker: (
+    _ options: [String: Any],
+    _ window: ASPresentationAnchor,
+    _ logger: PingLogger.Logger?,
+    _ completion: @escaping (Result<[String: Any], Error>) -> Void
+  ) -> Void = { options, window, logger, completion in
+    Fido.shared.register(
+      options: options,
+      window: window,
+      logger: logger,
+      completion: completion
+    )
+  }
+
+  /// Internal seam for the standalone authenticate entry point.
+  ///
+  /// - Note: Test-only override point so unit tests can observe the native
+  ///   authenticate invocation without driving the pod singleton; production
+  ///   code never reassigns it. Main-actor isolated because every caller
+  ///   (entry points, tests) already runs there.
+  @MainActor
+  internal static var nativeAuthenticateInvoker: (
+    _ options: [String: Any],
+    _ window: ASPresentationAnchor,
+    _ preferImmediatelyAvailableCredentials: Bool,
+    _ logger: PingLogger.Logger?,
+    _ completion: @escaping (Result<[String: Any], Error>) -> Void
+  ) -> Void = { options, window, preferImmediatelyAvailableCredentials, logger, completion in
+    Fido.shared.authenticate(
+      options: options,
+      window: window,
+      preferImmediatelyAvailableCredentials: preferImmediatelyAvailableCredentials,
+      logger: logger,
+      completion: completion
+    )
+  }
+
+  /// Internal seam for the presentation-anchor resolution.
+  ///
+  /// - Note: Test-only override point so unit tests can satisfy the window
+  ///   guard in harnesses without a host application; production code never
+  ///   reassigns it. Returns an optional to mirror the real resolver. Main-actor
+  ///   isolated because every caller already runs there.
+  @MainActor
+  internal static var windowAnchorResolver: () -> ASPresentationAnchor? = {
+    PresentationAnchorResolver.resolveForegroundWindowAnchor()
+  }
 
   /// Registers the FIDO2 collector serializer with CoreRuntime.
   ///
@@ -146,8 +198,8 @@ public class RNPingFidoCommon: NSObject {
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    let callConfig = parseCallConfig(config)
     Task { @MainActor in
+      let callConfig = await FidoCallConfig.resolve(config, ceremony: .registration)
       let logger = await resolveLoggerFromCore(callConfig.loggerId)
       executeFidoOperation(
         options: options,
@@ -155,7 +207,7 @@ public class RNPingFidoCommon: NSObject {
         methodErrorCode: .registerError,
         handlers: handlers
       ) { optionsMap, window, completion in
-        Fido.shared.register(options: optionsMap, window: window, logger: logger, completion: completion)
+        nativeRegisterInvoker(optionsMap, window, logger, completion)
       }
     }
   }
@@ -175,16 +227,23 @@ public class RNPingFidoCommon: NSObject {
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
-    let callConfig = parseCallConfig(config)
     Task { @MainActor in
+      let callConfig = await FidoCallConfig.resolve(config, ceremony: .authentication)
       let logger = await resolveLoggerFromCore(callConfig.loggerId)
       executeFidoOperation(
         options: options,
         action: "authentication",
         methodErrorCode: .authenticateError,
+        cancellationCode: .authenticateCancelled,
         handlers: handlers
       ) { optionsMap, window, completion in
-        Fido.shared.authenticate(options: optionsMap, window: window, logger: logger, completion: completion)
+        nativeAuthenticateInvoker(
+          optionsMap,
+          window,
+          callConfig.preferImmediatelyAvailableCredentials ?? false,
+          logger,
+          completion
+        )
       }
     }
   }
@@ -205,7 +264,6 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -221,18 +279,21 @@ public class RNPingFidoCommon: NSObject {
     let callbackIndex = parseCallbackIndex(options)
     let deviceName = parseJourneyDeviceName(options)
 
-    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-      handlers.reject(
-        GenericError(
-          type: .fidoError,
-          error: FidoErrorCode.windowUnavailable.rawValue,
-          message: "No active application window is available for Journey FIDO registration."
-        )
-      )
-      return
-    }
-
     Task { @MainActor in
+      // The Journey callback carries its own workflow logger; parsing the call
+      // config here only surfaces option warnings (e.g. PIA on registration).
+      _ = await FidoCallConfig.resolve(config, ceremony: .registration)
+      guard let window = windowAnchorResolver() else {
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: FidoErrorCode.windowUnavailable.rawValue,
+            message: "No active application window is available for Journey FIDO registration."
+          )
+        )
+        return
+      }
+
       guard let callback = await resolveRegistrationCallback(
         journeyId: journeyId,
         index: callbackIndex
@@ -280,7 +341,6 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if journeyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -295,18 +355,19 @@ public class RNPingFidoCommon: NSObject {
 
     let callbackIndex = parseCallbackIndex(options)
 
-    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-      handlers.reject(
-        GenericError(
-          type: .fidoError,
-          error: FidoErrorCode.windowUnavailable.rawValue,
-          message: "No active application window is available for Journey FIDO authentication."
-        )
-      )
-      return
-    }
-
     Task { @MainActor in
+      let callConfig = await FidoCallConfig.resolve(config, ceremony: .authentication)
+      guard let window = windowAnchorResolver() else {
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: FidoErrorCode.windowUnavailable.rawValue,
+            message: "No active application window is available for Journey FIDO authentication."
+          )
+        )
+        return
+      }
+
       guard let callback = await resolveAuthenticationCallback(
         journeyId: journeyId,
         index: callbackIndex
@@ -321,18 +382,23 @@ public class RNPingFidoCommon: NSObject {
         return
       }
 
-      let result = await callback.authenticate(window: window)
+      let result = await journeyAuthenticateInvoker(
+        callback,
+        window,
+        callConfig.preferImmediatelyAvailableCredentials ?? false
+      )
       switch result {
       case .success:
         handlers.resolve(createJourneyResultPayload(type: "success"))
       case .failure(let error):
-        let code = isRecoverableFidoAuthenticationFailure(error)
-          ? FidoErrorCode.authenticateCancelled
-          : FidoErrorCode.authenticateError
         handlers.reject(
           GenericError(
             type: .fidoError,
-            error: code.rawValue,
+            error: failureCode(
+              error: error,
+              methodErrorCode: .authenticateError,
+              cancellationCode: .authenticateCancelled
+            ).rawValue,
             message: error.localizedDescription
           ),
           underlying: error as NSError
@@ -346,6 +412,9 @@ public class RNPingFidoCommon: NSObject {
   ///   - options: JS options payload.
   ///   - action: Human-readable action used in error messages.
   ///   - methodErrorCode: Stable method-specific error code.
+  ///   - cancellationCode: Error code emitted when the failure classifies as a
+  ///     user or no-credential cancellation; `nil` keeps `methodErrorCode` for
+  ///     every failure (registration has no cancellation outcome).
   ///   - handlers: Shared promise bridge handlers.
   ///   - operation: Native FIDO operation closure to execute.
   @MainActor
@@ -353,6 +422,7 @@ public class RNPingFidoCommon: NSObject {
     options: NSDictionary,
     action: String,
     methodErrorCode: FidoErrorCode,
+    cancellationCode: FidoErrorCode? = nil,
     handlers: PromiseBridge<NSDictionary>,
     operation: (
       _ options: [String: Any],
@@ -360,7 +430,7 @@ public class RNPingFidoCommon: NSObject {
       _ completion: @escaping (Result<[String: Any], Error>) -> Void
     ) -> Void
   ) {
-    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
+    guard let window = windowAnchorResolver() else {
       handlers.reject(
         GenericError(
           type: .fidoError,
@@ -387,16 +457,49 @@ public class RNPingFidoCommon: NSObject {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
       case .failure(let error):
+        let code = failureCode(
+          error: error,
+          methodErrorCode: methodErrorCode,
+          cancellationCode: cancellationCode
+        )
         handlers.reject(
           GenericError(
             type: .fidoError,
-            error: methodErrorCode.rawValue,
+            error: code.rawValue,
             message: error.localizedDescription
           ),
           underlying: error as NSError
         )
       }
     }
+  }
+
+  /// Selects the rejection code for a failed FIDO operation.
+  ///
+  /// Cancellation-shaped failures (user dismissal, or the no-credential
+  /// outcome of an authentication restricted to locally available
+  /// credentials) report the cancellation code when the method has one;
+  /// every other failure reports the method code.
+  ///
+  /// - Parameters:
+  ///   - error: Native failure from the ceremony.
+  ///   - methodErrorCode: Stable method-specific error code.
+  ///   - cancellationCode: Cancellation error code for the method, or `nil`
+  ///     when the method has no cancellation outcome (registration).
+  /// - Returns: The error code to reject with.
+  /// - Note: Internal (not `private`) for unit-test observability of the
+  ///   per-method classification contract, mirroring
+  ///   `isRecoverableFidoAuthenticationFailure`.
+  static func failureCode(
+    error: Error,
+    methodErrorCode: FidoErrorCode,
+    cancellationCode: FidoErrorCode?
+  ) -> FidoErrorCode {
+    guard let cancellationCode,
+          isRecoverableFidoAuthenticationFailure(error) else {
+      return methodErrorCode
+    }
+    return cancellationCode
   }
 
   /// Runs the native FIDO registration ceremony for an active DaVinci `FIDO2` registration collector.
@@ -419,7 +522,6 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if davinciId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -432,20 +534,23 @@ public class RNPingFidoCommon: NSObject {
       return
     }
 
-    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-      handlers.reject(
-        GenericError(
-          type: .fidoError,
-          error: FidoErrorCode.windowUnavailable.rawValue,
-          message: "No active application window is available for DaVinci FIDO registration."
-        )
-      )
-      return
-    }
-
     let collectorIndex = parseCallbackIndex(options)
 
     Task { @MainActor in
+      // The DaVinci collector carries its own workflow logger; parsing the call
+      // config here only surfaces option warnings (e.g. PIA on registration).
+      _ = await FidoCallConfig.resolve(config, ceremony: .registration)
+      guard let window = windowAnchorResolver() else {
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: FidoErrorCode.windowUnavailable.rawValue,
+            message: "No active application window is available for DaVinci FIDO registration."
+          )
+        )
+        return
+      }
+
       guard let collectors = await CoreRuntime.resolveDaVinciCollectors(davinciId) else {
         handlers.reject(
           GenericError(
@@ -514,7 +619,6 @@ public class RNPingFidoCommon: NSObject {
     resolver: @escaping RCTPromiseResolveBlock,
     rejecter: @escaping RCTPromiseRejectBlock
   ) {
-    _ = config
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     if davinciId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       handlers.reject(
@@ -527,20 +631,21 @@ public class RNPingFidoCommon: NSObject {
       return
     }
 
-    guard let window = PresentationAnchorResolver.resolveForegroundWindowAnchor() else {
-      handlers.reject(
-        GenericError(
-          type: .fidoError,
-          error: FidoErrorCode.windowUnavailable.rawValue,
-          message: "No active application window is available for DaVinci FIDO authentication."
-        )
-      )
-      return
-    }
-
     let collectorIndex = parseCallbackIndex(options)
 
     Task { @MainActor in
+      let callConfig = await FidoCallConfig.resolve(config, ceremony: .authentication)
+      guard let window = windowAnchorResolver() else {
+        handlers.reject(
+          GenericError(
+            type: .fidoError,
+            error: FidoErrorCode.windowUnavailable.rawValue,
+            message: "No active application window is available for DaVinci FIDO authentication."
+          )
+        )
+        return
+      }
+
       guard let collectors = await CoreRuntime.resolveDaVinciCollectors(davinciId) else {
         handlers.reject(
           GenericError(
@@ -565,7 +670,11 @@ public class RNPingFidoCommon: NSObject {
       }
 
       let collector = matching[collectorIndex]
-      let result = await collector.authenticate(window: window)
+      let result = await davinciAuthenticateInvoker(
+        collector,
+        window,
+        callConfig.preferImmediatelyAvailableCredentials ?? false
+      )
       switch result {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
@@ -576,13 +685,14 @@ public class RNPingFidoCommon: NSObject {
         let extras = FidoClientErrorMapper.extras(errorCode: collector.errorCode) {
           collector.logger.w($0, error: nil)
         }
-        let code = isRecoverableFidoAuthenticationFailure(error)
-          ? FidoErrorCode.authenticateCancelled
-          : FidoErrorCode.authenticateError
         handlers.reject(
           GenericError(
             type: .fidoError,
-            error: code.rawValue,
+            error: failureCode(
+              error: error,
+              methodErrorCode: .authenticateError,
+              cancellationCode: .authenticateCancelled
+            ).rawValue,
             message: error.localizedDescription,
             extras: extras
           ),
@@ -632,14 +742,40 @@ public class RNPingFidoCommon: NSObject {
     return matching[index]
   }
 
-  /// Parses per-call bridge configuration from the React Native payload.
+  /// Internal seam for the Journey authenticate entry point.
   ///
-  /// - Parameter config: Raw bridge configuration dictionary.
-  /// - Returns: Trimmed call configuration values.
-  private static func parseCallConfig(_ config: NSDictionary) -> CallConfig {
-    let trimmed = (config["loggerId"] as? String)?
-      .trimmingCharacters(in: .whitespacesAndNewlines)
-    return CallConfig(loggerId: (trimmed?.isEmpty == false) ? trimmed : nil)
+  /// - Note: Test-only override point so unit tests can observe the native
+  ///   callback invocation without a live Journey session; production code
+  ///   never reassigns it. Main-actor isolated because every caller (entry
+  ///   points, tests) already runs there.
+  @MainActor
+  internal static var journeyAuthenticateInvoker: (
+    _ callback: FidoAuthenticationCallback,
+    _ window: ASPresentationAnchor,
+    _ preferImmediatelyAvailableCredentials: Bool
+  ) async -> Result<[String: Any], Error> = { callback, window, preferImmediatelyAvailableCredentials in
+    await callback.authenticate(
+      window: window,
+      preferImmediatelyAvailableCredentials: preferImmediatelyAvailableCredentials
+    )
+  }
+
+  /// Internal seam for the DaVinci authenticate entry point.
+  ///
+  /// - Note: Test-only override point so unit tests can observe the native
+  ///   collector invocation without a live DaVinci session; production code
+  ///   never reassigns it. Main-actor isolated because every caller (entry
+  ///   points, tests) already runs there.
+  @MainActor
+  internal static var davinciAuthenticateInvoker: (
+    _ collector: FidoAuthenticationCollector,
+    _ window: ASPresentationAnchor,
+    _ preferImmediatelyAvailableCredentials: Bool
+  ) async -> Result<[String: Any], Error> = { collector, window, preferImmediatelyAvailableCredentials in
+    await collector.authenticate(
+      window: window,
+      preferImmediatelyAvailableCredentials: preferImmediatelyAvailableCredentials
+    )
   }
 
   /// Resolves a native logger from the shared Core logger registry.

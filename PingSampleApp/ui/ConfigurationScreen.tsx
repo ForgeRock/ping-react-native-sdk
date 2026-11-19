@@ -6,13 +6,27 @@
  */
 
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import type { RootStackParamList } from '../App';
 import type { SampleAppClientProfile, SampleConfigGroup } from '../src/clients';
 import { colors } from '../src/styles/colors';
 import { commonStyles } from '../src/styles/common';
+import LabeledSwitchRow from './components/atoms/LabeledSwitchRow';
+import { useFidoCeremonySettings } from './fido/FidoCeremonySettings';
+
+const PREFER_IMMEDIATE_CREDENTIALS_HINT = Platform.select({
+  ios: 'Applies to passkey authentication in Journey and DaVinci flows only and is not sent on registration. Sign-in is limited to credentials on this device. When none match, authentication is cancelled: Journey continues past the cancellation and DaVinci shows the ceremony error.',
+  default:
+    'Applied to passkey registration in Journey and DaVinci flows through the Credential Manager create request. For authentication, the current Android native SDK cannot apply it: a warning is logged and the default sign-in flow runs.',
+});
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Configuration'> & {
   profiles: readonly SampleAppClientProfile[];
@@ -63,6 +77,14 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
     onSelectOidcProfile,
     onSelectDeviceAuthProfile,
   } = props;
+  const {
+    preferImmediatelyAvailableCredentials,
+    setPreferImmediatelyAvailableCredentials,
+    androidPlayServicesTimeout,
+    setAndroidPlayServicesTimeout,
+    androidRegistrationAutoSelect,
+    setAndroidRegistrationAutoSelect,
+  } = useFidoCeremonySettings();
 
   const deviceAuthProfiles = profiles.filter(
     profile => profile.group === 'Auth Grant',
@@ -160,6 +182,48 @@ export default function ConfigurationScreen(props: Props): React.ReactElement {
           })}
         </View>
       ))}
+      <View style={commonStyles.configSection}>
+        <Text style={commonStyles.configSectionTitle}>Passkeys (FIDO)</Text>
+        <LabeledSwitchRow
+          label="Prefer immediately available credentials"
+          value={preferImmediatelyAvailableCredentials}
+          onValueChange={() =>
+            setPreferImmediatelyAvailableCredentials(
+              !preferImmediatelyAvailableCredentials,
+            )
+          }
+        />
+        <Text style={commonStyles.helperNote}>
+          {PREFER_IMMEDIATE_CREDENTIALS_HINT}
+        </Text>
+        {Platform.OS === 'android' ? (
+          <>
+            <LabeledSwitchRow
+              label="Use Play Services with a 60 second timeout"
+              value={androidPlayServicesTimeout}
+              onValueChange={() =>
+                setAndroidPlayServicesTimeout(!androidPlayServicesTimeout)
+              }
+            />
+            <Text style={commonStyles.helperNote}>
+              Android only. Routes passkey authentication through Google Play
+              Services and requires its FIDO API on the device.
+            </Text>
+            <LabeledSwitchRow
+              label="Allow auto-select on registration"
+              value={androidRegistrationAutoSelect}
+              onValueChange={() =>
+                setAndroidRegistrationAutoSelect(!androidRegistrationAutoSelect)
+              }
+            />
+            <Text style={commonStyles.helperNote}>
+              Android only. Sets the auto-select flag on the Credential Manager
+              create request for passkey registration. The flag is passed to the
+              credential provider, which decides whether it changes the prompt.
+            </Text>
+          </>
+        ) : null}
+      </View>
     </ScrollView>
   );
 }

@@ -24,16 +24,17 @@ import PingExternalIdPGoogle
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
+  // Mirror of the scene's key window. React Native core modules message
+  // `application.delegate.window` (RCTDeviceInfo, RCTLogBoxView); SceneDelegate
+  // keeps this reference current.
   var window: UIWindow?
-  var reactNativeDelegate: ReactNativeDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
 
-  // Capture cold-start payload before the React bridge loads so consumePendingMessages
-  // can drain it when the first PushClient is created.
   func application(
     _ application: UIApplication,
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Background relaunch (app killed, push arrives): payload comes through
+    // didFinishLaunching; scene cold start is handled in SceneDelegate.
     if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
       RNPingPushCommon.enqueuePendingMessage(userInfo)
     }
@@ -50,21 +51,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       didFinishLaunchingWithOptions: launchOptions,
     )
 #endif
-
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
-
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "PingSampleApp",
-      in: window,
-      launchOptions: launchOptions
-    )
 
     UNUserNotificationCenter.current().delegate = self
     UNUserNotificationCenter.current().requestAuthorization(
@@ -123,17 +109,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    var handled = false
+    Self.handleOpenURL(url: url, options: options)
+    return true
+  }
+
+  static func handleOpenURL(url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) {
 #if canImport(PingExternalIdPFacebook)
-    handled = FacebookHandler.handleOpenURL(application, url: url, options: options)
+    FacebookHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
 #endif
 #if canImport(PingExternalIdPGoogle)
-    handled = GoogleHandler.handleOpenURL(application, url: url, options: options) || handled
+    GoogleHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
 #endif
-    return handled
   }
 }
-
 
 /// React Native factory delegate that resolves JS bundle locations.
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

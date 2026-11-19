@@ -17,6 +17,7 @@ import com.pingidentity.fido.Constants
 import com.pingidentity.fido.FidoAuthenticateCustomizer
 import com.pingidentity.fido.FidoClient
 import com.pingidentity.fido.FidoClientConfig
+import com.pingidentity.fido.FidoRegistrationCustomizer
 import com.pingidentity.fido.davinci.AbstractFidoCollector
 import com.pingidentity.fido.davinci.FidoAuthenticationCollector
 import com.pingidentity.fido.davinci.FidoRegistrationCollector
@@ -43,23 +44,14 @@ import kotlinx.serialization.json.put
  * Shared implementation for FIDO operations on Android.
  */
 object RNPingFidoCommon {
-  private const val TAG = "RNPingFidoCommon"
-  private const val LOGGER_ID_KEY = "loggerId"
-  private const val USE_FIDO2_API_CLIENT_KEY = "useFido2ApiClient"
+  private const val TAG = FidoWarningSink.TAG
   private const val FIDO2_COLLECTOR_TYPE = "FIDO2"
   private const val ACTION_REGISTER = "REGISTER"
   private const val ACTION_AUTHENTICATE = "AUTHENTICATE"
 
   /** Coroutine scope for executing FIDO operations asynchronously on the IO dispatcher. */
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-  /**
-   * Per-call FIDO runtime configuration.
-   */
-  private data class CallConfig(
-    val loggerId: String?,
-    val useFido2ApiClient: Boolean?
-  )
+  private val authenticateCustomizerFactory = FidoAuthenticateCustomizerFactory()
 
   /** Guards one-time DaVinci collector serializer registration. */
   private var serializerRegistered = false
@@ -199,9 +191,10 @@ object RNPingFidoCommon {
       errorCode = FidoErrorCodes.FIDO_REGISTER_ERROR,
       invalidOptionsMessage = "Invalid FIDO registration options payload.",
       defaultFailureMessage = "FIDO registration failed.",
-      // Registration has no API selection in either SDK version; callConfig is
-      // unused and register always runs through Credential Manager.
-      operation = { client, input, _ -> client.register(input) }
+      ceremony = FidoCallConfig.Ceremony.REGISTRATION,
+      operation = { client, input, callConfig ->
+        client.register(input, registrationCustomizer(callConfig))
+      }
     )
   }
 
@@ -234,6 +227,8 @@ object RNPingFidoCommon {
       errorCode = FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
       invalidOptionsMessage = "Invalid FIDO authentication options payload.",
       defaultFailureMessage = "FIDO authentication failed.",
+      ceremony = FidoCallConfig.Ceremony.AUTHENTICATION,
+      cancellationCode = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
       // NOTE: SDK 2.2.0 moved API selection from FidoClientConfig.useFido2Client
       // to the per-call FidoAuthenticateCustomizer. Applying it here keeps the JS
       // useFido2Client contract unchanged (true GMS FIDO2 API, false Credential
@@ -246,6 +241,9 @@ object RNPingFidoCommon {
 
   /**
    * Executes a standalone FIDO operation with shared payload decoding and error handling.
+   *
+   * @param cancellationCode When non-null, failures recognised by
+   *   [isRecoverableFidoAuthenticationFailure] reject with this code instead of [errorCode].
    */
   private fun executeFidoOperation(
     options: ReadableMap,
@@ -254,7 +252,9 @@ object RNPingFidoCommon {
     errorCode: String,
     invalidOptionsMessage: String,
     defaultFailureMessage: String,
-    operation: suspend (client: FidoClient, input: JsonObject, callConfig: CallConfig) -> Result<JsonObject>
+    ceremony: FidoCallConfig.Ceremony,
+    cancellationCode: String? = null,
+    operation: suspend (client: FidoClient, input: JsonObject, callConfig: FidoCallConfig) -> Result<JsonObject>
   ) {
     scope.launchBridge(promise, errorCode) {
       val input = try {
@@ -271,7 +271,7 @@ object RNPingFidoCommon {
       // Each call builds a fresh client, so thread the parsed config through to
       // the operation as well; per-call options (useFido2Client) are applied by
       // the operation itself, not at client construction.
-      val callConfig = parseCallConfig(config)
+      val callConfig = parseCallConfig(config, ceremony)
       val client = createFidoClient(callConfig)
       val result = operation(client, input, callConfig)
       result.fold(
@@ -279,6 +279,15 @@ object RNPingFidoCommon {
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
         onFailure = { error ->
+          if (cancellationCode != null && isRecoverableFidoAuthenticationFailure(error)) {
+            rejectWithError(
+              promise = promise,
+              code = cancellationCode,
+              message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
+              throwable = error
+            )
+            return@fold
+          }
           rejectWithError(
             promise = promise,
             code = errorCode,
@@ -336,12 +345,10 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      val deviceName = parseDeviceName(options)
-      val result = if (deviceName == null) {
-        callback.register()
-      } else {
-        callback.register(deviceName)
-      }
+      val result = callback.register(
+        parseDeviceName(options),
+        registrationCustomizer(parseCallConfig(config, FidoCallConfig.Ceremony.REGISTRATION))
+      )
 
       result.fold(
         onSuccess = {
@@ -406,7 +413,9 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      callback.authenticate(authenticateCustomizer(parseCallConfig(config))).fold(
+      callback.authenticate(
+        authenticateCustomizer(parseCallConfig(config, FidoCallConfig.Ceremony.AUTHENTICATION))
+      ).fold(
         onSuccess = {
           promise.resolve(createJourneyResultPayload(type = "success"))
         },
@@ -481,7 +490,9 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      collector.register().fold(
+      collector.register(
+        registrationCustomizer(parseCallConfig(config, FidoCallConfig.Ceremony.REGISTRATION))
+      ).fold(
         onSuccess = { payload ->
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
@@ -554,7 +565,9 @@ object RNPingFidoCommon {
         return@launchBridge
       }
 
-      collector.authenticate(authenticateCustomizer(parseCallConfig(config))).fold(
+      collector.authenticate(
+        authenticateCustomizer(parseCallConfig(config, FidoCallConfig.Ceremony.AUTHENTICATION))
+      ).fold(
         onSuccess = { payload ->
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
@@ -671,49 +684,47 @@ object RNPingFidoCommon {
    * `FidoClientConfig` has no `useFido2Client` property and API selection is a
    * per-call authenticate customizer decision (see [authenticate]).
    */
-  private fun createFidoClient(callConfig: CallConfig): FidoClient {
+  private fun createFidoClient(callConfig: FidoCallConfig): FidoClient {
     val clientConfig = FidoClientConfig().apply {
-      resolveLoggerFromCore(callConfig.loggerId)?.let { logger = it }
+      callConfig.logger?.let { logger = it }
     }
     return FidoClient(clientConfig)
   }
 
   /**
-   * Builds the authentication customizer that applies the per-call FIDO2 API selection.
+   * Builds the authentication customizer that applies the per-call API routing and the
+   * Credential Manager or Play Services request overrides.
    *
-   * The native SDK exposes API selection only on [FidoAuthenticateCustomizer], so the same
+   * The native SDK exposes these hooks only on [FidoAuthenticateCustomizer], so the same
    * customizer is used for standalone, Journey callback and DaVinci collector authentication.
    * When no override is supplied the native auto-detection default is kept.
    */
   private fun authenticateCustomizer(
-    callConfig: CallConfig
-  ): FidoAuthenticateCustomizer.() -> Unit = {
-    callConfig.useFido2ApiClient?.let { useFido2ApiClient = it }
+    callConfig: FidoCallConfig
+  ): FidoAuthenticateCustomizer.() -> Unit {
+    return authenticateCustomizerFactory.create(callConfig)
+  }
+
+  /**
+   * Builds the registration customizer that applies the per-call Credential Manager
+   * create-request overrides.
+   *
+   * The same customizer is used for standalone, Journey callback and DaVinci collector
+   * registration. When no overrides were supplied the native request is kept unchanged.
+   */
+  private fun registrationCustomizer(
+    callConfig: FidoCallConfig
+  ): FidoRegistrationCustomizer.() -> Unit {
+    val spec = callConfig.createRequestSpec ?: return {}
+    val createRequestCustomizer = FidoCreateRequestCustomizer(spec, callConfig.warningSink())
+    return { onCreatePublicKeyCredentialRequest(createRequestCustomizer::customize) }
   }
 
   /**
    * Parses per-call configuration payload.
    */
-  private fun parseCallConfig(config: ReadableMap): CallConfig {
-    val loggerId = if (
-      config.hasKey(LOGGER_ID_KEY) && config.getType(LOGGER_ID_KEY) == ReadableType.String
-    ) {
-      config.getString(LOGGER_ID_KEY)?.trim()?.takeIf { it.isNotEmpty() }
-    } else {
-      null
-    }
-    val useFido2ApiClient = if (
-      config.hasKey(USE_FIDO2_API_CLIENT_KEY) &&
-        config.getType(USE_FIDO2_API_CLIENT_KEY) == ReadableType.Boolean
-    ) {
-      config.getBoolean(USE_FIDO2_API_CLIENT_KEY)
-    } else {
-      null
-    }
-    return CallConfig(
-      loggerId = loggerId,
-      useFido2ApiClient = useFido2ApiClient
-    )
+  private fun parseCallConfig(config: ReadableMap, ceremony: FidoCallConfig.Ceremony): FidoCallConfig {
+    return FidoCallConfig.resolve(config, ceremony, ::resolveLoggerFromCore)
   }
 
   /**

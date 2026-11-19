@@ -8,10 +8,14 @@
 export { FidoError, fidoCollectorType } from './fido.types';
 export type {
   FidoAndroidConfig,
+  FidoAndroidCredentialManagerOptions,
+  FidoAndroidPlayServicesOptions,
+  FidoAndroidRegistrationOptions,
   FidoClient,
-  FidoClientConfig,
+  FidoNativeCeremonyConfig,
   FidoClientErrorName,
   FidoConfig,
+  FidoAuthenticationCeremonyOptions,
   FidoAuthenticationCollector,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
@@ -24,6 +28,7 @@ export type {
   FidoJourneyRegistrationOptions,
   FidoJourneyResult,
   FidoJsonValue,
+  FidoRegistrationCeremonyOptions,
   FidoRegistrationCollector,
   FidoRegistrationOptions,
   FidoRegistrationResult,
