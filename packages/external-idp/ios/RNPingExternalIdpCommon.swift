@@ -80,6 +80,26 @@ public class RNPingExternalIdpCommon: NSObject {
   private static let socialLoginButton = "SOCIAL_LOGIN_BUTTON"
   private static let serializerState = SerializerState()
 
+  /// Registers an app-supplied custom handler for a non-built-in external IdP
+  /// provider.
+  ///
+  /// Intended for app startup (`AppDelegate.didFinishLaunchingWithOptions`),
+  /// before React boots. The registry is process-scoped: registration is not
+  /// repeated after a dev reload or React context teardown.
+  ///
+  /// Declared Swift-only (non-`@objc`): the native `IdpHandler` protocol is not
+  /// `@objc`, so handler types cannot cross the ObjC boundary in either
+  /// direction.
+  ///
+  /// - Parameters:
+  ///   - provider: Custom provider name as supplied by the app.
+  ///   - handler: Handler invoked when a Journey callback resolves this provider.
+  /// - Throws: `IdpHandlerRegistrationError.reservedProvider` when the name is
+  ///   blank or matches a reserved built-in token.
+  public static func registerIdpHandler(_ provider: String, handler: any IdpHandler) throws {
+    try IdpHandlerRegistry.shared.register(provider, handler: handler)
+  }
+
   /// Registers the `IdpCollector` serializer with CoreRuntime.
   ///
   /// Safe to call multiple times — subsequent calls are no-ops.
@@ -378,6 +398,12 @@ public class RNPingExternalIdpCommon: NSObject {
   }
 
   /// Authorizes a Journey IdP callback, optionally overriding its native redirect URI.
+  ///
+  /// Resolution order: a registered custom handler first, then the existing
+  /// built-in branches. With a registered handler, a non-empty redirect URI is
+  /// applied through `RedirectUriOverridingIdpHandler` because the native
+  /// `IdpCallback.authorize` builds the `IdpClient` from the callback's own
+  /// redirect URI, not the JS-configured override.
   /// - Parameters:
   ///   - callback: Journey-scoped callback resolved from Core runtime.
   ///   - redirectUri: Optional redirect URI override forwarded from JS.
@@ -388,6 +414,17 @@ public class RNPingExternalIdpCommon: NSObject {
     callback: IdpCallback,
     redirectUri: String
   ) async -> Result<IdpResult, IdpExceptions> {
+    if let customHandler = IdpHandlerRegistry.shared.handler(for: callback.provider) {
+      guard !redirectUri.isEmpty else {
+        return await callback.authorize(idpHandler: customHandler)
+      }
+      let overridingHandler = RedirectUriOverridingIdpHandler(
+        baseHandler: customHandler,
+        redirectUri: redirectUri
+      )
+      return await callback.authorize(idpHandler: overridingHandler)
+    }
+
     guard !redirectUri.isEmpty else {
       return await callback.authorize()
     }

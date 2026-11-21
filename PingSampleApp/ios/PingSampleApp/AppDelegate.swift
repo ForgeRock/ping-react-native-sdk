@@ -9,6 +9,8 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import LineSDK
+import RNPingExternalIdp
 import RNPingPush
 import UserNotifications
 #if canImport(FBSDKCoreKit)
@@ -51,6 +53,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     )
 #endif
 
+    // A rejected registration (blank or built-in provider name) is a programming
+    // error that must fail at launch, not at the first login attempt.
+    registerLineIdpHandler()
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -76,6 +82,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
 
     return true
+  }
+
+  /// Registers the LINE IdP handler under every provider name the Journey
+  /// callback may carry: the AIC instance name verbatim plus, when prefixed,
+  /// the `react-native-`-stripped alias. The external IdP registry resolves
+  /// handlers by exact match on the callback's provider name, so the prefixed
+  /// AIC instance name in use on this tenant ("line" was already taken) must
+  /// be registered verbatim for resolution to succeed.
+  private func registerLineIdpHandler() {
+    let handler = LineIdpHandler()
+    let instanceName = "react-native-line"
+    try! RNPingExternalIdpCommon.registerIdpHandler(instanceName, handler: handler)
+    if let alias = Self.strippedReactNativePrefix(from: instanceName) {
+      try! RNPingExternalIdpCommon.registerIdpHandler(alias, handler: handler)
+    }
+  }
+
+  /// Strips the `react-native-` prefix from an IdP provider name.
+  ///
+  /// - Parameter providerName: Provider name from the AIC IdP instance.
+  /// - Returns: The name without the prefix, or nil when the name carries no
+  /// prefix or nothing remains after stripping.
+  private static func strippedReactNativePrefix(from providerName: String) -> String? {
+    let prefix = "react-native-"
+    let stripped = providerName.dropFirst(prefix.count)
+    guard providerName.hasPrefix(prefix), !stripped.isEmpty else { return nil }
+    return String(stripped)
   }
 
   func application(
@@ -124,8 +157,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
     var handled = false
+    // LINE fails the in-flight login for any URL that is not its own callback,
+    // so unrelated deep links must not reach it.
+    if url.scheme?.hasPrefix("line3rdp.") == true {
+      handled = LoginManager.shared.application(application, open: url, options: options)
+    }
 #if canImport(PingExternalIdPFacebook)
-    handled = FacebookHandler.handleOpenURL(application, url: url, options: options)
+    handled = FacebookHandler.handleOpenURL(application, url: url, options: options) || handled
 #endif
 #if canImport(PingExternalIdPGoogle)
     handled = GoogleHandler.handleOpenURL(application, url: url, options: options) || handled

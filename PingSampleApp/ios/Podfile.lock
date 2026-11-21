@@ -90,6 +90,9 @@ PODS:
   - hermes-engine (0.80.1):
     - hermes-engine/Pre-built (= 0.80.1)
   - hermes-engine/Pre-built (0.80.1)
+  - LineSDKSwift (5.17.0):
+    - LineSDKSwift/Core (= 5.17.0)
+  - LineSDKSwift/Core (5.17.0)
   - MLImage (1.0.0-beta7)
   - MLKitBarcodeScanning (7.0.0):
     - MLKitCommon (~> 13.0)
@@ -3292,6 +3295,7 @@ DEPENDENCIES:
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - GoogleUtilities
   - hermes-engine (from `../../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
+  - LineSDKSwift (~> 5.9)
   - NitroImage (from `../../node_modules/react-native-nitro-image`)
   - NitroModules (from `../../node_modules/react-native-nitro-modules`)
   - PingExternalIdPApple (= 2.2.0)
@@ -3406,6 +3410,7 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
+    - LineSDKSwift
     - MLImage
     - MLKitBarcodeScanning
     - MLKitCommon
@@ -3646,7 +3651,7 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
+  AppAuth: 3a08d0739dfbebc98104f5baa69d23201122bfd9
   AppCheckCore: be8fce5469f68d7f6a29aa94b25f097409ff7fdc
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
@@ -3660,12 +3665,13 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   GoogleDataTransport: a24e58982ab3ba2f64d79613e027fe7f57e88539
   GoogleMLKit: ddd51d7dff36ff28defa69afedd9cdce684fd857
-  GoogleSignIn: c7f09cfbc85a1abf69187be091997c317cc33b77
+  GoogleSignIn: 6833f07f101074e6d9f58b1ae0daad4b25ed0339
   GoogleToolboxForMac: d1a2cbf009c453f4d6ded37c105e2f67a32206d8
   GoogleUtilities: 4e0c2ad9fa0d0d18b5c4df8bf57b461cba35b0bb
-  GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
+  GTMAppAuth: 9566e1a3451fd6967b58188fa15286fb6ae7914f
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 4f07404533b808de66cf48ac4200463068d0e95a
+  LineSDKSwift: 93e306ec2316c2919852845cc3c53eab32a0e050
   MLImage: 2ab9c968e75f57911c16f4c9d9e8a8e9604a86a1
   MLKitBarcodeScanning: 72c6437f13a900833b400136be53a8a5d86f42fa
   MLKitCommon: 26b779f072a182c1603d4c88a101c350cac837b1
@@ -3796,6 +3802,6 @@ SPEC CHECKSUMS:
   VisionCameraBarcodeScanner: 0b6fe2e3c52ca68a0dbd5d25719c7523c68d807f
   Yoga: daa1e4de4b971b977b23bc842aaa3e135324f1f3
 
-PODFILE CHECKSUM: eec32d08778dd48ff707beab7100598d6569759a
+PODFILE CHECKSUM: f4cc9bf8edf74ffe93de1657f63588a4b81d480a
 
 COCOAPODS: 1.15.2

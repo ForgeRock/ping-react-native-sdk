@@ -10,6 +10,7 @@ import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
 import WebKit
+import RNPingExternalIdp
 
 @main
 /// UIApplication delegate that bootstraps the React Native sample app.
@@ -24,6 +25,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Register before React boots; process-scoped, so a JS reload does not
+    // repeat it. try! is intentional in the harness: a reserved-name typo
+    // should fail startup loudly.
+    try! RNPingExternalIdpCommon.registerIdpHandler("stubprovider", handler: StubIdpHandler())
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()

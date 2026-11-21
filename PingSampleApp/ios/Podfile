@@ -48,6 +48,9 @@ target 'PingSampleApp' do
   pod 'PingExternalIdPFacebook', '2.2.0'
   pod 'PingExternalIdPGoogle', '2.2.0'
 
+  # Provider SDK for the custom LINE IdpHandler.
+  pod 'LineSDKSwift', '~> 5.9'
+
   # PingExternalIdPGoogle -> GoogleSignIn -> AppCheckCore pulls these in; neither
   # defines a module, which Swift requires to import them under static linkage.
   pod 'RecaptchaInterop', :modular_headers => true
