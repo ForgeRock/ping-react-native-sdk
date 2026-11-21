@@ -156,7 +156,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    var handled = LoginManager.shared.application(application, open: url, options: options)
+    var handled = false
+    // LINE fails the in-flight login for any URL that is not its own callback,
+    // so unrelated deep links must not reach it.
+    if url.scheme?.hasPrefix("line3rdp.") == true {
+      handled = LoginManager.shared.application(application, open: url, options: options)
+    }
 #if canImport(PingExternalIdPFacebook)
     handled = FacebookHandler.handleOpenURL(application, url: url, options: options) || handled
 #endif

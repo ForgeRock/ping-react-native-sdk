@@ -10,12 +10,15 @@ package com.pingidentity.rnsampleapp
 import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.linecorp.linesdk.Scope
 import com.linecorp.linesdk.auth.LineAuthenticationParams
 import com.linecorp.linesdk.auth.LineLoginApi
 import com.linecorp.linesdk.auth.LineLoginResult
 import java.util.UUID
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -26,12 +29,14 @@ import kotlinx.coroutines.withContext
  * `MainActivity` needs no result forwarding.
  *
  * Limitation: the launcher is registered per call under a random key with no
- * `LifecycleOwner`. If the hosting activity is destroyed and recreated while
- * the login UI is in the foreground (rotation, memory pressure, "don't keep
- * activities"), the recreated instance never re-registers the key, the result
- * has no callback to reach, and the suspended coroutine never resumes. A
- * production handler would register once in `onCreate` under a fixed key with
- * the activity as `LifecycleOwner`, at the cost of editing the host activity.
+ * `LifecycleOwner`. If the hosting activity is destroyed while the login UI is
+ * in the foreground (memory pressure, "don't keep activities", or a
+ * configuration change not covered by the manifest's `configChanges`), the
+ * recreated instance never re-registers the key, so the result cannot be
+ * delivered. The call fails fast with an [IllegalStateException] on activity
+ * destruction instead of suspending indefinitely. A production handler would
+ * register once in `onCreate` under a fixed key with the activity as
+ * `LifecycleOwner`, at the cost of editing the host activity.
  */
 internal object LineLoginBridge {
 
@@ -49,6 +54,8 @@ internal object LineLoginBridge {
      * @param scopes LINE scope codes to request, for example `openid`.
      * @param nonce Optional anti-replay value echoed into the ID token.
      * @return The LINE login result, including cancellation and error outcomes.
+     * @throws IllegalStateException when the activity is destroyed before LINE
+     * returns a result.
      */
     suspend fun authorize(
         activity: ComponentActivity,
@@ -63,13 +70,32 @@ internal object LineLoginBridge {
         val loginIntent = LineLoginApi.getLoginIntent(activity, channelId, params)
 
         suspendCancellableCoroutine { continuation ->
+            lateinit var destroyObserver: LifecycleEventObserver
             val launcher = activity.activityResultRegistry.register(
                 "line-login-${UUID.randomUUID()}",
                 ActivityResultContracts.StartActivityForResult(),
             ) { result ->
+                activity.lifecycle.removeObserver(destroyObserver)
                 continuation.resume(LineLoginApi.getLoginResultFromIntent(result.data ?: Intent()))
             }
-            continuation.invokeOnCancellation { launcher.unregister() }
+            destroyObserver = LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_DESTROY) {
+                    launcher.unregister()
+                    activity.lifecycle.removeObserver(destroyObserver)
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(
+                            IllegalStateException("Activity was destroyed during LINE login")
+                        )
+                    }
+                }
+            }
+            activity.lifecycle.addObserver(destroyObserver)
+            continuation.invokeOnCancellation {
+                activity.runOnUiThread {
+                    launcher.unregister()
+                    activity.lifecycle.removeObserver(destroyObserver)
+                }
+            }
             launcher.launch(loginIntent)
         }
     }
