@@ -26,6 +26,16 @@ yarn add @ping-identity/rn-storage
 yarn add @ping-identity/rn-logger
 ```
 
+### Android build requirements
+
+> **Note:** Building this package on Android requires JDK 21 and Kotlin 2.2 or later. The Ping
+> Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
+> also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
+> set `react.internal.disableJavaVersionAlignment=true` in your app's `android/gradle.properties` to
+> let the JVM 21 target apply.
+
+See the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) section in the repository README for optional settings and framework support.
+
 ### Android redirect URI scheme
 
 The Ping browser module (`com.pingidentity.sdks:browser`) is not part of rn-davinci's dependency graph on its own (only `androidx.browser`, the Custom Tabs library, is transitive). It reaches an app via `@ping-identity/rn-oidc` or `@ping-identity/rn-external-idp`, which declare it `compileOnly`, so include one of those packages when your flow redirects through a browser. The browser module declares a redirect activity whose scheme comes from the `appRedirectUriScheme` manifest placeholder. The placeholder default in the native SDK's own debug variant never reaches consuming apps (the published AAR is the release flavor and leaves the placeholder unresolved), so your app must define the placeholder for both debug and release builds, or the manifest merge fails. Defining the placeholder is safe regardless:

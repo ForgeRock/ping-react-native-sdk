@@ -36,6 +36,16 @@ Optional integration packages:
 yarn add @ping-identity/rn-logger
 ```
 
+### Android build requirements
+
+> **Note:** Building this package on Android requires JDK 21 and Kotlin 2.2 or later. The Ping
+> Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
+> also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
+> set `react.internal.disableJavaVersionAlignment=true` in your app's `android/gradle.properties` to
+> let the JVM 21 target apply.
+
+See the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) section in the repository README for optional settings and framework support.
+
 ## FIDO prerequisites
 
 ### Android
@@ -259,6 +269,14 @@ and `UnknownError` are the only values iOS reports. Android reports an open
 set: credential exceptions map to their WebAuthn DOMException names, so other
 valid names (for example `SecurityError`) can appear. Unknown names pass
 through to the server unmodified.
+
+### iOS passkey registration limitation
+
+> **Note:** The iOS SDK version this package currently depends on (PingFido
+> `2.2.0`) registers DaVinci passkeys with an incorrect user ID, which causes
+> PingOne to reject sign-in with the same passkey with `ASSERTION.CHECK_FAILED`.
+> The fix is merged in the iOS SDK but has not been released yet, and will be
+> included in a future release of this package.
 
 ## `useJourneyForm` integration
 

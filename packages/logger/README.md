@@ -38,6 +38,16 @@ yarn add @ping-identity/rn-logger
 cd ios && pod install
 ```
 
+### Android build requirements
+
+> **Note:** Building this package on Android requires JDK 21 and Kotlin 2.2 or later. The Ping
+> Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
+> also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
+> set `react.internal.disableJavaVersionAlignment=true` in your app's `android/gradle.properties` to
+> let the JVM 21 target apply.
+
+See the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) section in the repository README for optional settings and framework support.
+
 ## How to use the SDK
 
 ### Create a logger instance
