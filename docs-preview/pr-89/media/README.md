@@ -1,0 +1,212 @@
+[![Ping Identity](https://www.pingidentity.com/content/dam/picr/nav/Ping-Logo-2.svg)](https://github.com/ForgeRock/ping-react-native-sdk)
+
+# Ping Identity React Native Sample App
+
+A reference application for the Ping Identity React Native SDK. It demonstrates
+Journey authentication, DaVinci orchestration, OIDC authorization, device
+management, FIDO/WebAuthn, device binding, external IdP login, and
+token/session inspection — all wired together with the SDK's native-backed
+modules.
+
+## Prerequisites
+
+- [React Native 0.80.1](https://reactnative.dev/docs/0.80/set-up-your-environment) environment set up (Node, Xcode, Android Studio)
+- Ruby >= 3.3.6 + Bundler (iOS only)
+- A Ping Identity server (ForgeRock/PingAM or PingOne/PingAdvancedIdentityCloud)
+
+## Step 1: Configure your environment
+
+Copy the example env file and fill in your server details:
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env` with your values:
+
+```sh
+# Journey / PingAM
+JOURNEY_SERVER_URL=https://openam.example.com/am
+JOURNEY_REALM=alpha
+JOURNEY_COOKIE=iPlanetDirectoryPro
+JOURNEY_CLIENT_ID=my-client-id
+JOURNEY_DISCOVERY_ENDPOINT=https://openam.example.com/am/oauth2/alpha/.well-known/openid-configuration
+JOURNEY_REDIRECT_URI=com.example.app://oauth2redirect
+JOURNEY_SCOPES=openid,profile,email
+JOURNEY_PAR=false
+
+# PingAdvancedIdentityCloud (optional second profile)
+AIC_SERVER_URL=...
+AIC_PAR=false
+
+# PingOne OIDC (optional)
+PINGONE_CLIENT_ID=...
+PINGONE_DISCOVERY_ENDPOINT=...
+PINGONE_REDIRECT_URI=...
+PINGONE_PAR=false
+```
+
+Set `JOURNEY_PAR`, `AIC_PAR`, or `PINGONE_PAR` to `true` only when the
+provider's OIDC discovery document advertises a PAR endpoint. `JOURNEY_PAR`
+controls the Journey OIDC clients, `AIC_PAR` controls the Advanced Identity
+Cloud OIDC clients, and `PINGONE_PAR` controls the PingOne OIDC and DaVinci
+clients. PAR applies to OIDC web flows; native Journey and DaVinci flows do not
+use it. The values are parsed as booleans at build time, default to the native
+SDK behavior when omitted or set to `false`, and require an app rebuild after
+changes.
+
+> The DaVinci screen reuses the `PINGONE_*` variables above — DaVinci flows
+> are configured against the same PingOne tenant discovery endpoint, so no
+> separate `DAVINCI_*` keys are needed.
+
+See `.env.example` for the full list of supported keys including external IdP
+(Facebook, Google) configuration.
+
+> The app is rebuilt with the new values each time you run `yarn ios` or
+> `yarn android` — no runtime config UI is needed.
+
+## Step 2: Install dependencies
+
+This project is part of a Yarn workspace. Run the following from the **repo
+root** (not from `PingSampleApp/`) — this installs all workspace dependencies
+and builds the SDK packages the sample app links against:
+
+```sh
+# from repo root
+yarn install
+yarn packages:build
+```
+
+### iOS — install CocoaPods
+
+The first time, or after any native dependency changes, run from `PingSampleApp/`:
+
+```sh
+cd PingSampleApp
+yarn clean-install
+```
+
+This installs Bundler dependencies, CocoaPods, and cleans stale build artifacts in one step.
+
+### Android — keystore setup
+
+The debug build requires a keystore. Generate your own from the **repo root**:
+
+```sh
+keytool -genkeypair -v \
+  -keystore PingSampleApp/android/app/pingsampleapp-debug.jks \
+  -alias androiddebugkey \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storepass <your-password> -keypass <your-password> \
+  -dname "CN=Android Debug,O=Android,C=US"
+```
+
+Then add your credentials to your **global** Gradle properties file (`~/.gradle/gradle.properties`):
+
+```properties
+KEYSTORE_PASSWORD=<your-password>
+KEY_PASSWORD=<your-password>
+```
+
+### Android — SDK location
+
+> **Note:** The Android build requires `ANDROID_HOME` to be set in your environment.
+>
+> If it is not set, create `PingSampleApp/android/local.properties` containing `sdk.dir=/path/to/your/Android/SDK` before running the app.
+>
+> You can find the Android SDK path in Android Studio under **Settings** > **Languages & Frameworks** > **Android SDK**.
+
+### Android — JVM 21 / Kotlin requirements
+
+> **Note: Android JVM 21 and Kotlin 2.2.10 (React Native 0.80)**
+>
+> This SDK depends on Ping Android SDK `2.2.0` artifacts, which are compiled for **JVM 21**, and every
+> `rn-*` package (and this app module) now targets JVM 21 to match — up from
+> JVM 17. This requires:
+>
+> - **JDK 21** available to Gradle. Set `JAVA_HOME` to a JDK 21 installation
+>   (or configure it in Android Studio under **Settings** > **Build Tools** >
+>   **Gradle** > **Gradle JDK**).
+> - **Kotlin `2.2.10`**, pinned explicitly in `PingSampleApp/android/build.gradle`.
+>   React Native 0.80's Gradle plugin (RNGP) otherwise resolves an unrelated,
+>   often older, Kotlin compiler version — which then fails on `kotlin-stdlib`
+>   metadata pulled in transitively by the Ping Android SDK (e.g. via
+>   `ktor-client`).
+>
+> `PingSampleApp/android/gradle.properties` sets two flags to make this work
+> under RNGP:
+>
+> - `react.internal.disableJavaVersionAlignment=true` — RNGP normally
+>   force-installs JVM target 17 on every Android/Kotlin module. This opts out
+>   so the JVM 21 settings above actually take effect.
+> - `kotlin.jvm.target.validation.mode=warning` — downgrades JVM-target-mismatch
+>   errors (surfaced by third-party `node_modules` that relied on RNGP's
+>   alignment to mask their own internal Java/Kotlin version split) to warnings
+>   instead of hard build failures.
+>
+> If you see a JVM target mismatch or an internal Kotlin compiler error during
+> `yarn android`, confirm your Gradle JDK is 21 and re-run `yarn packages:build`
+> from the repo root so the packages pick up the same Kotlin version.
+
+## Step 3: Start Metro
+
+```sh
+cd PingSampleApp
+yarn start
+```
+
+## Step 4: Run the app
+
+Open a second terminal from the `PingSampleApp` directory.
+
+### iOS
+
+```sh
+yarn ios
+```
+
+### Android
+
+```sh
+yarn android
+```
+
+If Gradle sync fails in Android Studio with a missing `node` error, launch
+Android Studio from a terminal that has Node on PATH:
+
+```sh
+open -a "Android Studio"
+```
+
+## What the sample app demonstrates
+
+| Screen                   | SDK modules used                                                              |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Journey (Full)           | `rn-journey`, `rn-binding`, `rn-fido`, `rn-external-idp`, `rn-device-profile` |
+| Journey (Form / Minimal) | `rn-journey`                                                                  |
+| DaVinci                  | `rn-davinci`                                                                  |
+| OIDC                     | `rn-oidc`, `rn-browser`                                                       |
+| Token                    | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
+| User Profile             | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
+| Logout                   | `rn-oidc`, `rn-journey`, `rn-davinci`                                         |
+| Devices                  | `rn-device-client`                                                            |
+| Device Profile           | `rn-device-profile`                                                           |
+| Binding Keys             | `rn-binding`                                                                  |
+| Browser                  | `rn-browser`                                                                  |
+| Storage                  | `rn-storage`                                                                  |
+| Logger                   | `rn-logger`                                                                   |
+
+Use the **Configuration** screen (gear icon) to switch between the Journey,
+PingAdvancedIdentityCloud, and PingOne profiles configured in your `.env`.
+
+## Troubleshooting
+
+- **`react-native: command not found`** — run `yarn install` from the repo root first; the CLI is a workspace dependency, not a global install.
+- **`DidYouMean::SPELL_CHECKERS` / old Bundler** — run `gem update bundler` then retry `yarn clean-install`.
+- **Android build fails with keystore error** — ensure `pingsampleapp-debug.jks` exists at `PingSampleApp/android/app/` and that `KEYSTORE_PASSWORD`/`KEY_PASSWORD` in `~/.gradle/gradle.properties` match the password used when generating it.
+- **Android Gradle missing node** — open Android Studio from a terminal with Node on PATH: `open -a "Android Studio"`.
+- **Metro cache issues** — run `yarn start --reset-cache`.
+- **iOS build errors after dependency changes** — re-run `bundle exec pod install --project-directory=ios`.
+- **Redirect URI mismatch** — ensure `JOURNEY_REDIRECT_URI` / `PINGONE_REDIRECT_URI` in `.env` matches the redirect scheme registered in your server and in `android/app/build.gradle` (`appRedirectUriScheme`).
+
+For general React Native 0.80.0 issues see the [Troubleshooting guide](https://reactnative.dev/docs/0.80/troubleshooting).
