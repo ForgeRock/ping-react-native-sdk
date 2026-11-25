@@ -45,8 +45,13 @@
 <li><strong>JDK 21 or newer</strong> must run Gradle. The Ping Android SDK artifacts are compiled to Java 21
 bytecode, which older JDKs cannot read.</li>
 <li><strong>Kotlin 2.2 or newer</strong> is required. This is a minimum for the Kotlin compiler and is separate
-from the JVM target: the Ktor client used by the Ping Android SDK is built with Kotlin 2.2
-metadata. The packages in this repository are built with Kotlin <code>2.2.10</code>.</li>
+from the JVM target: the Ktor client used by the Ping Android SDK ships Kotlin 2.3 metadata,
+which requires a Kotlin 2.2 or newer compiler. The packages in this repository are built with
+Kotlin <code>2.2.10</code>.</li>
+<li><strong>Pin the Kotlin Gradle plugin on your app's root <code>build.gradle</code> classpath</strong> (for example
+<code>classpath(&quot;org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10&quot;)</code>). React Native <code>0.80.1</code> otherwise
+resolves Kotlin <code>2.1.20</code> for your build, which predates Kotlin 2.2 and fails on the Ktor
+metadata.</li>
 <li><strong>Modules that compile against the Ping Android SDK must use JVM target 21.</strong></li>
 </ul>
 <p>The React Native Gradle plugin aligns every Android module to JVM 17. To let the JVM 21 target

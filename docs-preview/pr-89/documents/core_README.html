@@ -8,11 +8,12 @@
 
 <h3 id="android-build-requirements" class="tsd-anchor-link">Android build requirements<a href="#android-build-requirements" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <blockquote>
-<p><strong>Note:</strong> Building this package on Android requires JDK 21 and Kotlin 2.2 or later. The Ping
-Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
-also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
-set <code>react.internal.disableJavaVersionAlignment=true</code> in your app's <code>android/gradle.properties</code> to
-let the JVM 21 target apply.</p>
+<p><strong>Note:</strong> Building this package on Android requires JDK 21 and Kotlin 2.2 or later. This package
+compiles with a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17,
+so set <code>react.internal.disableJavaVersionAlignment=true</code> in your app's <code>android/gradle.properties</code>
+to let the JVM 21 target apply. If third-party Kotlin modules in your app fail with a JVM target
+mismatch after setting it, you can optionally set <code>kotlin.jvm.target.validation.mode=warning</code> in
+the same file.</p>
 </blockquote>
 <p>See the <a href="https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements">Android build requirements</a> section in the repository README for optional settings and framework support.</p>
 <h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h2>

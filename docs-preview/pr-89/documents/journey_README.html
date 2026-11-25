@@ -18,7 +18,9 @@
 Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
 also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
 set <code>react.internal.disableJavaVersionAlignment=true</code> in your app's <code>android/gradle.properties</code> to
-let the JVM 21 target apply.</p>
+let the JVM 21 target apply. If third-party Kotlin modules in your app fail with a JVM target
+mismatch after setting it, you can optionally set <code>kotlin.jvm.target.validation.mode=warning</code> in
+the same file.</p>
 </blockquote>
 <p>See the <a href="https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements">Android build requirements</a> section in the repository README for optional settings and framework support.</p>
 <h3 id="android-redirect-uri-scheme" class="tsd-anchor-link">Android redirect URI scheme<a href="#android-redirect-uri-scheme" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
