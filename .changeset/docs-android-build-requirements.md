@@ -23,7 +23,6 @@ docs: document Android JVM 21 and Kotlin 2.2 build requirements
 
 Adds an "Android build requirements" section to the repository README and a
 short note to each native package README covering JDK 21, Kotlin 2.2 or later,
-the JVM 21 target, and the `react.internal.disableJavaVersionAlignment`
-property needed while React Native aligns Android modules to JVM 17. The
-`rn-fido` README also notes that DaVinci passkey registration on iOS is affected
-by an unreleased PingFido user ID fix.
+the JVM 21 target, and the React Native Gradle plugin settings needed while it
+aligns Android modules to JVM 17. The `rn-fido` README also notes that DaVinci
+passkey registration on iOS is affected by an unreleased PingFido user ID fix.
