@@ -50,6 +50,18 @@ dependencies {
 
 **APNs setup (iOS)** — enable Push Notifications capability in Xcode and add the APNs key in your Apple Developer portal.
 
+### Android build requirements
+
+> **Note:** Building this package on Android requires JDK 21 and Kotlin 2.2 or later. The Ping
+> Android SDK artifacts are compiled to Java 21 bytecode, so modules that compile against them must
+> also use a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17, so
+> set `react.internal.disableJavaVersionAlignment=true` in your app's `android/gradle.properties` to
+> let the JVM 21 target apply. If third-party Kotlin modules in your app fail with a JVM target
+> mismatch after setting it, you can optionally set `kotlin.jvm.target.validation.mode=warning` in
+> the same file.
+
+See the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) section in the repository README for optional settings and framework support.
+
 ## Native setup
 
 The SDK needs to receive the platform push token and incoming messages from your existing push infrastructure. Choose the scenario that matches your app.

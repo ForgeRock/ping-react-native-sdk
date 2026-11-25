@@ -13,6 +13,17 @@ yarn add @ping-identity/rn-core
 cd ios && pod install
 ```
 
+### Android build requirements
+
+> **Note:** Building this package on Android requires JDK 21 and Kotlin 2.2 or later. This package
+> compiles with a JVM target of 21. The React Native Gradle plugin aligns Android modules to JVM 17,
+> so set `react.internal.disableJavaVersionAlignment=true` in your app's `android/gradle.properties`
+> to let the JVM 21 target apply. If third-party Kotlin modules in your app fail with a JVM target
+> mismatch after setting it, you can optionally set `kotlin.jvm.target.validation.mode=warning` in
+> the same file.
+
+See the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) section in the repository README for optional settings and framework support.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details

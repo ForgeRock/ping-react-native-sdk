@@ -14,6 +14,10 @@ Add the package to your workspace:
 yarn add @ping-identity/rn-types
 ```
 
+> **Note:** This package is TypeScript-only and has no native build requirements of its own. The
+> native `@ping-identity/rn-*` packages you use alongside it require JDK 21, a JVM target of 21 and
+> Kotlin 2.2 or newer on Android; see the [Android build requirements](https://github.com/ForgeRock/ping-react-native-sdk#android-build-requirements) in the repository README.
+
 ## How to Use the SDK
 
 ### Design principles

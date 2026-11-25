@@ -36,7 +36,41 @@ The repository packages use:
 - `targetSdkVersion`: `36`
 - `minSdkVersion`: `29`
 - `kotlinVersion`: `2.2.10`
-- JVM target: `21` (Java/Kotlin `sourceCompatibility`/`targetCompatibility`/`jvmTarget`) — required by the Ping Android SDK `2.2.0` artifacts; consuming apps must target JVM 21 as well
+- JVM target: `21` (Java/Kotlin `sourceCompatibility`/`targetCompatibility`/`jvmTarget`)
+
+#### Android build requirements
+
+- **JDK 21 or newer** must run Gradle. The Ping Android SDK artifacts are compiled to Java 21
+  bytecode, which older JDKs cannot read.
+- **Kotlin 2.2 or newer** is required. This is a minimum for the Kotlin compiler and is separate
+  from the JVM target: the Ktor client used by the Ping Android SDK ships Kotlin 2.3 metadata,
+  which requires a Kotlin 2.2 or newer compiler. The packages in this repository are built with
+  Kotlin `2.2.10`.
+- **Pin the Kotlin Gradle plugin on your app's root `build.gradle` classpath** (for example
+  `classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10")`). React Native `0.80.1` otherwise
+  resolves Kotlin `2.1.20` for your build, which predates Kotlin 2.2 and fails on the Ktor
+  metadata.
+- **Modules that compile against the Ping Android SDK must use JVM target 21.**
+
+The React Native Gradle plugin aligns every Android module to JVM 17. To let the JVM 21 target
+apply, set this property in your app's `android/gradle.properties`:
+
+```properties
+react.internal.disableJavaVersionAlignment=true
+```
+
+This is an internal React Native property, not a supported public setting. It is needed for as long
+as React Native aligns Android modules to JVM 17.
+
+If third-party Kotlin modules in your app fail with a JVM target mismatch after setting it, you can
+optionally set `kotlin.jvm.target.validation.mode=warning`. This downgrades the mismatch check to a
+warning for every Kotlin module in the app, so it can hide real misconfigurations; use it only when
+needed.
+
+The SDK is validated against bare React Native. Expo is not yet a supported framework, and these
+settings have not been verified under Expo prebuild.
+
+See the sample app's [Android JVM 21 / Kotlin requirements](./PingSampleApp/README.md#android--jvm-21--kotlin-requirements) note for a worked configuration.
 
 ### iOS deployment target
 
