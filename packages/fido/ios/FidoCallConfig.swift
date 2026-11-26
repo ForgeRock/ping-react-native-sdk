@@ -35,6 +35,14 @@ struct FidoCallConfig: Sendable {
   /// `nil` when absent, blank, or not a string.
   let loggerId: String?
 
+  /// Native logger resolved from the Core registry for this call.
+  ///
+  /// Carried so the ceremony logger and the option-warning sink share one
+  /// registry lookup, mirroring the Android call config. `nil` when no handle
+  /// was supplied or none resolved; the ceremony then runs without an explicit
+  /// logger and warnings fall back to the PingLogger global default.
+  let logger: PingLogger.Logger?
+
   /// When `true`, restricts authentication to credentials already present on
   /// the device: no QR or nearby-device fallback is offered and the ceremony
   /// cancels when no local credential matches.
@@ -49,9 +57,12 @@ struct FidoCallConfig: Sendable {
   /// sink resolved for this call before any fallback applies.
   ///
   /// The payload is parsed twice: once silently to resolve the parsed logger
-  /// handle for the sink, then once with warnings. Parsing is synchronous and
-  /// pure, so the two passes are equivalent and the sink is resolved from the
-  /// same trimmed handle the ceremony logger uses.
+  /// handle, then once with warnings. The single registry resolution is carried
+  /// on the config as the ceremony logger, mirroring the Android call config,
+  /// and option warnings route to that same logger. When none resolves
+  /// (absent, mistyped, or unknown handle) the ceremony runs without an
+  /// explicit logger and warnings fall back to the PingLogger global default,
+  /// mirroring the native collectors' fallback.
   ///
   /// - Parameters:
   ///   - config: Raw bridge configuration payload.
@@ -62,9 +73,11 @@ struct FidoCallConfig: Sendable {
   ///   and entry points already run there; parsing itself is synchronous.
   @MainActor
   static func resolve(_ config: NSDictionary, ceremony: Ceremony) async -> FidoCallConfig {
-    let parsed = parse(config, ceremony: ceremony) { _ in }
-    let sink = await warningSink(loggerId: parsed.loggerId)
-    return parse(config, ceremony: ceremony) { sink.w($0, error: nil) }
+    let loggerId = parse(config, ceremony: ceremony) { _ in }.loggerId
+    let logger = await RNPingFidoCommon.resolveLoggerFromCore(loggerId)
+    return parse(config, ceremony: ceremony, logger: logger) {
+      (logger ?? LogManager.logger).w($0, error: nil)
+    }
   }
 
   /// Parses the raw bridge configuration dictionary.
@@ -72,11 +85,14 @@ struct FidoCallConfig: Sendable {
   /// - Parameters:
   ///   - config: Raw bridge configuration payload.
   ///   - ceremony: Ceremony the call drives.
+  ///   - logger: Registry logger resolved for this call; `nil` when no handle
+  ///     was supplied or none resolved (test parses default to `nil`).
   ///   - warn: Sink for option warnings; invoked before each fallback applies.
   /// - Returns: Parsed call configuration.
   static func parse(
     _ config: NSDictionary,
     ceremony: Ceremony,
+    logger: PingLogger.Logger? = nil,
     warn: (String) -> Void
   ) -> FidoCallConfig {
     let loggerId = parseLoggerId(config, warn: warn)
@@ -89,26 +105,9 @@ struct FidoCallConfig: Sendable {
     warnIfUnknownKeysPresent(config, warn: warn)
     return FidoCallConfig(
       loggerId: loggerId,
+      logger: logger,
       preferImmediatelyAvailableCredentials: preferImmediatelyAvailableCredentials
     )
-  }
-
-  /// Resolves the warning sink for one call.
-  ///
-  /// The registry logger resolved from the parsed logger handle is used so
-  /// option warnings reach the same sink as the ceremony logs. When none
-  /// resolves (absent, mistyped, or unknown handle) the PingLogger global
-  /// default applies, mirroring the native collectors' fallback.
-  ///
-  /// - Parameter loggerId: Parsed, trimmed logger handle identifier.
-  /// - Returns: Warning sink for the call.
-  /// - Note: Main-actor isolated; called from `resolve` on the main actor.
-  @MainActor
-  static func warningSink(loggerId: String?) async -> Logger {
-    if let resolved = await RNPingFidoCommon.resolveLoggerFromCore(loggerId) {
-      return resolved
-    }
-    return LogManager.logger
   }
 
   // MARK: - Key parsers

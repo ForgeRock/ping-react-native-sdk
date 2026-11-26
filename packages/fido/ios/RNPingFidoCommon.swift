@@ -200,14 +200,13 @@ public class RNPingFidoCommon: NSObject {
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       let callConfig = await FidoCallConfig.resolve(config, ceremony: .registration)
-      let logger = await resolveLoggerFromCore(callConfig.loggerId)
       executeFidoOperation(
         options: options,
         action: "registration",
         methodErrorCode: .registerError,
         handlers: handlers
       ) { optionsMap, window, completion in
-        nativeRegisterInvoker(optionsMap, window, logger, completion)
+        nativeRegisterInvoker(optionsMap, window, callConfig.logger, completion)
       }
     }
   }
@@ -229,19 +228,17 @@ public class RNPingFidoCommon: NSObject {
     let handlers = PromiseBridge<NSDictionary>(resolver: resolver, rejecter: rejecter)
     Task { @MainActor in
       let callConfig = await FidoCallConfig.resolve(config, ceremony: .authentication)
-      let logger = await resolveLoggerFromCore(callConfig.loggerId)
       executeFidoOperation(
         options: options,
         action: "authentication",
         methodErrorCode: .authenticateError,
-        cancellationCode: .authenticateCancelled,
         handlers: handlers
       ) { optionsMap, window, completion in
         nativeAuthenticateInvoker(
           optionsMap,
           window,
           callConfig.preferImmediatelyAvailableCredentials ?? false,
-          logger,
+          callConfig.logger,
           completion
         )
       }
@@ -422,7 +419,6 @@ public class RNPingFidoCommon: NSObject {
     options: NSDictionary,
     action: String,
     methodErrorCode: FidoErrorCode,
-    cancellationCode: FidoErrorCode? = nil,
     handlers: PromiseBridge<NSDictionary>,
     operation: (
       _ options: [String: Any],
@@ -457,15 +453,10 @@ public class RNPingFidoCommon: NSObject {
       case .success(let payload):
         handlers.resolve(JsonBridgeMapper.encodeJsonObject(payload))
       case .failure(let error):
-        let code = failureCode(
-          error: error,
-          methodErrorCode: methodErrorCode,
-          cancellationCode: cancellationCode
-        )
         handlers.reject(
           GenericError(
             type: .fidoError,
-            error: code.rawValue,
+            error: methodErrorCode.rawValue,
             message: error.localizedDescription
           ),
           underlying: error as NSError

@@ -30,16 +30,7 @@ that is not applied is logged as a warning. Supplying both blocks is allowed.
 The client-level `android.useFido2ApiClient` flag is deprecated in favor of the
 per-call flag and remains supported.
 
-Standalone `authenticate` now rejects with `FIDO_AUTHENTICATE_CANCELLED` on both
-platforms when the user cancels or no usable credential is available, matching
-`authenticateForJourney` and `authenticateForDaVinci`. Previously standalone
-`authenticate` rejected these cases with `FIDO_AUTHENTICATE_ERROR`, so callers
-that branch on that code for user dismissal must also handle the new code.
-`register` is unchanged and rejects with `FIDO_REGISTER_ERROR`.
-
-`trigger` is now a required `string` on both DaVinci collector types (the raw
-server value, `""` when omitted).
-
-The `FidoClientConfig` type is no longer exported. It described the internal
-native payload and no public function accepted or returned it, so only code that
-imported the type directly is affected. The replacement is internal.
+The `FidoClientConfig` type remains exported for compatibility with its
+original 1.1.0 shape (`loggerId`, `useFido2Client`). It is deprecated: it
+describes an internal native payload and no public function accepts or returns
+it.

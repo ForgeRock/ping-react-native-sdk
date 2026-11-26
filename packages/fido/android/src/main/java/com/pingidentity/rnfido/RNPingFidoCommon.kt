@@ -228,10 +228,9 @@ object RNPingFidoCommon {
       invalidOptionsMessage = "Invalid FIDO authentication options payload.",
       defaultFailureMessage = "FIDO authentication failed.",
       ceremony = FidoCallConfig.Ceremony.AUTHENTICATION,
-      cancellationCode = FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
       // NOTE: SDK 2.2.0 moved API selection from FidoClientConfig.useFido2Client
       // to the per-call FidoAuthenticateCustomizer. Applying it here keeps the JS
-      // useFido2Client contract unchanged (true GMS FIDO2 API, false Credential
+      // useFido2ApiClient contract unchanged (true GMS FIDO2 API, false Credential
       // Manager, undefined auto-detect via the customizer's GMS default).
       operation = { client, input, callConfig ->
         client.authenticate(input, authenticateCustomizer(callConfig))
@@ -241,9 +240,6 @@ object RNPingFidoCommon {
 
   /**
    * Executes a standalone FIDO operation with shared payload decoding and error handling.
-   *
-   * @param cancellationCode When non-null, failures recognised by
-   *   [isRecoverableFidoAuthenticationFailure] reject with this code instead of [errorCode].
    */
   private fun executeFidoOperation(
     options: ReadableMap,
@@ -253,7 +249,6 @@ object RNPingFidoCommon {
     invalidOptionsMessage: String,
     defaultFailureMessage: String,
     ceremony: FidoCallConfig.Ceremony,
-    cancellationCode: String? = null,
     operation: suspend (client: FidoClient, input: JsonObject, callConfig: FidoCallConfig) -> Result<JsonObject>
   ) {
     scope.launchBridge(promise, errorCode) {
@@ -279,15 +274,6 @@ object RNPingFidoCommon {
           promise.resolve(JsonBridgeMapper.encodeJsonObject(payload))
         },
         onFailure = { error ->
-          if (cancellationCode != null && isRecoverableFidoAuthenticationFailure(error)) {
-            rejectWithError(
-              promise = promise,
-              code = cancellationCode,
-              message = "FIDO authentication cancelled: ${error.localizedMessage ?: error}",
-              throwable = error
-            )
-            return@fold
-          }
           rejectWithError(
             promise = promise,
             code = errorCode,

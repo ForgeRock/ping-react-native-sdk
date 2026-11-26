@@ -19,8 +19,8 @@ import RNPingCore
 /// - Off-platform (`android`) and mistyped option values are reported and
 ///   fall back to the native defaults.
 /// - Authentication failures that classify as cancellation reject with
-///   `FIDO_AUTHENTICATE_CANCELLED`; registration keeps `FIDO_REGISTER_ERROR`
-///   for the same failure shapes.
+///   `FIDO_AUTHENTICATE_CANCELLED` in the Journey and DaVinci scopes;
+///   registration keeps `FIDO_REGISTER_ERROR` for the same failure shapes.
 @MainActor
 final class FidoCallConfigTests: XCTestCase {
 
@@ -272,31 +272,41 @@ final class FidoCallConfigTests: XCTestCase {
     XCTAssertEqual(code, .registerError)
   }
 
-  // MARK: - Warning sink resolution
+  // MARK: - Registry logger resolution
 
-  func testWarningSinkFallsBackToLogManagerWhenLoggerIdUnknown() async {
-    let sink = await FidoCallConfig.warningSink(loggerId: "unknown-handle")
-
-    XCTAssertTrue((sink as AnyObject) === (LogManager.logger as AnyObject))
-  }
-
-  func testWarningSinkUsesRegistryLoggerForKnownHandle() async {
+  func testResolveCarriesRegistryLoggerForKnownHandle() async {
     let handleLogger = LogManager.none
     let loggerId = await CoreRuntime.loggerRegistry.register(
       ConfigTestLoggerHandle(logger: handleLogger)
     )
 
-    let sink = await FidoCallConfig.warningSink(loggerId: loggerId)
+    let config = await FidoCallConfig.resolve(
+      ["loggerId": loggerId],
+      ceremony: .authentication
+    )
 
-    XCTAssertTrue((sink as AnyObject) === (handleLogger as AnyObject))
+    XCTAssertTrue((config.logger as AnyObject) === (handleLogger as AnyObject))
   }
 
-  func testWarningSinkFallsBackForPaddedKnownHandle() async {
-    // A padded id fails the exact-match registry lookup; the sink falls back
-    // to the same default as the ceremony logger would for the same input.
-    let sink = await FidoCallConfig.warningSink(loggerId: "  unknown-handle  ")
+  func testResolveLeavesLoggerNilWhenHandleUnknown() async {
+    let config = await FidoCallConfig.resolve(
+      ["loggerId": "unknown-handle"],
+      ceremony: .authentication
+    )
 
-    XCTAssertTrue((sink as AnyObject) === (LogManager.logger as AnyObject))
+    XCTAssertNil(config.logger)
+  }
+
+  func testResolveLeavesLoggerNilWhenHandlePadded() async {
+    // A padded id fails the exact-match registry lookup; the config carries
+    // no logger, the same outcome the ceremony logger would have for the
+    // same input.
+    let config = await FidoCallConfig.resolve(
+      ["loggerId": "  unknown-handle  "],
+      ceremony: .authentication
+    )
+
+    XCTAssertNil(config.logger)
   }
 }
 

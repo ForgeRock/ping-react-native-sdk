@@ -17,7 +17,10 @@ import {
   toNativeJourneyRegistrationOptions,
   toNativeRegistrationOptions,
 } from './NativeRNPingFido';
-import { buildNativeConfig } from './ceremonyConfig';
+import {
+  buildNativeConfig,
+  validateWorkflowOptionsBag,
+} from './ceremonyConfig';
 import {
   noopLogger,
   registerIntegrationCollectorType,
@@ -147,9 +150,11 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      *   {@link FidoAuthenticationCeremonyOptions}.
      * @returns A promise that resolves to the authentication result payload.
      * @throws FidoError with `argument_error` for invalid ceremony options or
-     *   routing conflicts; with code `FIDO_AUTHENTICATE_CANCELLED` when the user
-     *   cancels or no usable credential is available; or with
-     *   `FIDO_AUTHENTICATE_ERROR` for any other native authentication failure.
+     *   routing conflicts; or with `FIDO_AUTHENTICATE_ERROR` for any native
+     *   authentication failure, including user cancellation. Standalone
+     *   authentication has no cancellation-specific code; only
+     *   `authenticateForJourney` and `authenticateForDaVinci` reject with
+     *   `FIDO_AUTHENTICATE_CANCELLED`.
      */
     async authenticate(
       options: FidoAuthenticationOptions,
@@ -189,7 +194,14 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
     ): Promise<FidoJourneyResult> {
       logger.info('FIDO registerForJourney requested');
       try {
+        validateWorkflowOptionsBag('registerForJourney', options);
         const { index: _index, deviceName: _deviceName, ...ceremony } = options;
+        const nativeConfig = buildNativeConfig(
+          resolvedConfig,
+          'registration',
+          ceremony,
+          logger,
+        );
         const journeyId = await journey.getId();
         const result = await getNativeModule().registerCredentialForJourney(
           journeyId,
@@ -197,7 +209,7 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
             index: options.index,
             deviceName: options.deviceName,
           }),
-          buildNativeConfig(resolvedConfig, 'registration', ceremony, logger),
+          nativeConfig,
         );
         logger.debug('FIDO registerForJourney success');
         return fromNativeJourneyResult(result);
@@ -218,6 +230,8 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
      *   routing conflicts; with code `FIDO_AUTHENTICATE_CANCELLED` when the user
      *   cancels or no usable credential is available; or with
      *   `FIDO_AUTHENTICATE_ERROR` for any other callback execution failure.
+     *   Unlike standalone `authenticate`, this scope carries a
+     *   cancellation-specific code.
      */
     async authenticateForJourney(
       journey: JourneyInstance,
@@ -225,12 +239,19 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
     ): Promise<FidoJourneyResult> {
       logger.info('FIDO authenticateForJourney requested');
       try {
+        validateWorkflowOptionsBag('authenticateForJourney', options);
         const { index: _index, ...ceremony } = options;
+        const nativeConfig = buildNativeConfig(
+          resolvedConfig,
+          'authentication',
+          ceremony,
+          logger,
+        );
         const journeyId = await journey.getId();
         const result = await getNativeModule().authenticateCredentialForJourney(
           journeyId,
           toNativeJourneyAuthenticationOptions({ index: options.index }),
-          buildNativeConfig(resolvedConfig, 'authentication', ceremony, logger),
+          nativeConfig,
         );
         logger.debug('FIDO authenticateForJourney success');
         return fromNativeJourneyResult(result);
@@ -270,12 +291,19 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
     ): Promise<FidoDaVinciResult> {
       logger.info('FIDO registerForDaVinci requested');
       try {
+        validateWorkflowOptionsBag('registerForDaVinci', options);
         const { index: _index, ...ceremony } = options;
+        const nativeConfig = buildNativeConfig(
+          resolvedConfig,
+          'registration',
+          ceremony,
+          logger,
+        );
         const davinciId = await daVinci.getId();
         const result = await getNativeModule().registerCredentialForDaVinci(
           davinciId,
           toNativeDaVinciRegistrationOptions({ index: options.index }),
-          buildNativeConfig(resolvedConfig, 'registration', ceremony, logger),
+          nativeConfig,
         );
         logger.debug('FIDO registerForDaVinci success');
         return fromNativeDaVinciResult(result);
@@ -319,12 +347,19 @@ export function createFidoClient(config: FidoConfig = {}): FidoClient {
     ): Promise<FidoDaVinciResult> {
       logger.info('FIDO authenticateForDaVinci requested');
       try {
+        validateWorkflowOptionsBag('authenticateForDaVinci', options);
         const { index: _index, ...ceremony } = options;
+        const nativeConfig = buildNativeConfig(
+          resolvedConfig,
+          'authentication',
+          ceremony,
+          logger,
+        );
         const davinciId = await daVinci.getId();
         const result = await getNativeModule().authenticateCredentialForDaVinci(
           davinciId,
           toNativeDaVinciAuthenticationOptions({ index: options.index }),
-          buildNativeConfig(resolvedConfig, 'authentication', ceremony, logger),
+          nativeConfig,
         );
         logger.debug('FIDO authenticateForDaVinci success');
         return fromNativeDaVinciResult(result);
@@ -343,6 +378,7 @@ export type {
   FidoAndroidPlayServicesOptions,
   FidoAndroidRegistrationOptions,
   FidoClient,
+  FidoClientConfig,
   FidoConfig,
   FidoAuthenticationCeremonyOptions,
   FidoAuthenticationCollector,

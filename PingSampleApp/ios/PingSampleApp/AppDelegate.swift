@@ -114,11 +114,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
   }
 
   static func handleOpenURL(url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) {
+    // Only registered provider callbacks reach the IdP SDKs: Facebook uses the
+    // `fb<app-id>` scheme, Google the reversed client ID. Unrelated deep links
+    // must not be forwarded.
+    let scheme = url.scheme?.lowercased()
 #if canImport(PingExternalIdPFacebook)
-    FacebookHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    if scheme?.hasPrefix("fb") == true {
+      FacebookHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    }
 #endif
 #if canImport(PingExternalIdPGoogle)
-    GoogleHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    if scheme?.hasPrefix("com.googleusercontent.apps.") == true {
+      GoogleHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    }
 #endif
   }
 }

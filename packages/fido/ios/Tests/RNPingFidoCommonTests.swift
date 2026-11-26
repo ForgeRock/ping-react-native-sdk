@@ -372,10 +372,10 @@ final class RNPingFidoCommonTests: XCTestCase {
     XCTAssertEqual(receivedFlag, false)
   }
 
-  /// The PIA no-credential outcome (an `ASAuthorizationError.canceled` from
-  /// the native ceremony) classifies as authentication cancellation when the
-  /// invoker fails; this pins the standalone rejection code end to end.
-  func testStandaloneAuthenticateRejectsWithCancelledForPIANoCredential() async {
+  /// A user cancellation through the real standalone authenticate entry point
+  /// rejects with the stable method error code; only Journey and DaVinci
+  /// authentication carry a cancellation outcome.
+  func testStandaloneAuthenticateRejectsWithAuthenticateErrorWhenUserCancels() async {
     let previousAnchor = installStubWindowAnchor()
     defer { restoreWindowAnchor(previousAnchor) }
     let previous = RNPingFidoCommon.nativeAuthenticateInvoker
@@ -389,11 +389,10 @@ final class RNPingFidoCommonTests: XCTestCase {
       config: ["preferImmediatelyAvailableCredentials": true]
     )
 
-    XCTAssertEqual(code, "FIDO_AUTHENTICATE_CANCELLED")
+    XCTAssertEqual(code, "FIDO_AUTHENTICATE_ERROR")
   }
 
-  /// Registration has no cancellation outcome: the same user cancellation that
-  /// authenticate maps to `FIDO_AUTHENTICATE_CANCELLED` stays
+  /// Registration has no cancellation outcome: user cancellation stays
   /// `FIDO_REGISTER_ERROR` through the real standalone register entry point.
   func testStandaloneRegisterRejectsWithRegisterErrorWhenUserCancels() async {
     let previousAnchor = installStubWindowAnchor()

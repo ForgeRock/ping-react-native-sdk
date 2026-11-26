@@ -146,8 +146,10 @@ export type FidoRegistrationCollector = {
    * iOS derives an internal `isAutomatic` launch flag from it (false when
    * empty or case-insensitively `"BUTTON"`, true otherwise) that JS does not
    * expose, so the raw value carries no cross-platform launch semantic.
+   * Typed optional for consumers written against releases where the iOS
+   * collector omitted the field; both platforms now always emit it.
    */
-  trigger: string;
+  trigger?: string;
   /**
    * WebAuthn public key credential creation options returned by the server.
    *
@@ -186,8 +188,10 @@ export type FidoAuthenticationCollector = {
    * iOS derives an internal `isAutomatic` launch flag from it (false when
    * empty or case-insensitively `"BUTTON"`, true otherwise) that JS does not
    * expose, so the raw value carries no cross-platform launch semantic.
+   * Typed optional for consumers written against releases where the iOS
+   * collector omitted the field; both platforms now always emit it.
    */
-  trigger: string;
+  trigger?: string;
   /**
    * WebAuthn public key credential request options returned by the server.
    *
@@ -647,6 +651,32 @@ export type FidoNativeCeremonyConfig = {
 };
 
 /**
+ * Resolved per-client FIDO configuration as exported before release 1.2.
+ *
+ * @deprecated Internal wire payload; no public function accepts or returns
+ * this type. The runtime Android API-selection flag is
+ * `FidoAndroidConfig.useFido2ApiClient` (client level) or the per-call
+ * `android.useFido2ApiClient` ceremony option.
+ *
+ * @public
+ */
+export type FidoClientConfig = {
+  /**
+   * Optional native logger handle id resolved from `logger.nativeHandle.id`.
+   */
+  loggerId?: string;
+  /**
+   * Optional Android FIDO2 API selection override.
+   *
+   * @remarks
+   * - `undefined`: Use native SDK auto-detection/default behavior.
+   * - `true`: Force Google Play Services FIDO2 APIs.
+   * - `false`: Force Android Credential Manager APIs.
+   */
+  useFido2Client?: boolean;
+};
+
+/**
  * Result payload returned by a successful DaVinci FIDO ceremony.
  *
  * @remarks
@@ -692,7 +722,11 @@ export interface FidoClient {
    *   {@link FidoAuthenticationCeremonyOptions}.
    * @returns A promise that resolves to the authentication result payload.
    * @throws FidoError with `argument_error` for invalid ceremony options or
-   *   routing conflicts, or when native authentication fails.
+   *   routing conflicts, or with code `FIDO_AUTHENTICATE_ERROR` for any native
+   *   authentication failure, including user cancellation. Standalone
+   *   authentication has no cancellation-specific code; only
+   *   `authenticateForJourney` and `authenticateForDaVinci` reject with
+   *   `FIDO_AUTHENTICATE_CANCELLED`.
    * @example
    * ```ts
    * const result = await fido.authenticate(
@@ -851,8 +885,8 @@ export interface FidoClient {
  * DOMException names, so any valid name can appear. iOS reports a closed set
  * of exactly the five names listed. For example, Android classifies a missing
  * credential as `UnknownError` while the bridge keeps the rejection `code` as
- * `FIDO_AUTHENTICATE_CANCELLED`: `clientError` is the server-parity value and
- * the two fields can intentionally disagree.
+ * `FIDO_AUTHENTICATE_CANCELLED` in the DaVinci scope: `clientError` is the
+ * server-parity value and the two fields can intentionally disagree.
  *
  * @public
  */

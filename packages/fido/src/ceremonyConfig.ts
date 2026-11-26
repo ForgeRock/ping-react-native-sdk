@@ -228,6 +228,33 @@ function argumentError(message: string): FidoError {
 }
 
 /**
+ * Validates a workflow options bag before its fields are destructured and the
+ * instance id is resolved, so caller mistakes surface as argument errors even
+ * when the instance is invalid.
+ *
+ * @param methodName Public method name used in the error message.
+ * @param optionsBag Options bag passed to a workflow method.
+ * @throws FidoError with `argument_error` when the bag is neither undefined
+ *   nor an object; omitted options and `{}` stay valid.
+ * @internal
+ */
+export function validateWorkflowOptionsBag(
+  methodName: string,
+  optionsBag: unknown,
+): void {
+  if (
+    optionsBag !== undefined &&
+    (optionsBag === null ||
+      typeof optionsBag !== 'object' ||
+      Array.isArray(optionsBag))
+  ) {
+    throw argumentError(
+      `[@ping-identity/rn-fido] ${methodName} options must be an object (received ${describeValueType(optionsBag)}).`,
+    );
+  }
+}
+
+/**
  * Validates the optional `requestJson` of a Credential Manager block.
  */
 function validateRequestJson(block: Record<string, unknown>): void {

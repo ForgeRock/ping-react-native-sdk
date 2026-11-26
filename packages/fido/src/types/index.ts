@@ -12,6 +12,7 @@ export type {
   FidoAndroidPlayServicesOptions,
   FidoAndroidRegistrationOptions,
   FidoClient,
+  FidoClientConfig,
   FidoNativeCeremonyConfig,
   FidoClientErrorName,
   FidoConfig,

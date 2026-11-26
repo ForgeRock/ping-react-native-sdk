@@ -341,33 +341,20 @@ class FidoAuthenticationWiringTest {
   }
 
   /**
-   * Ensures a Credential Manager cancellation rejects standalone authentication with the
-   * cancelled code, matching the Journey and DaVinci scopes.
+   * Ensures standalone authentication keeps the generic authenticate error code
+   * for every failure shape; only the Journey and DaVinci scopes carry a
+   * cancellation outcome.
    */
   @Test
-  fun standaloneCancellationRejectsWithCancelledCode() {
+  fun standaloneFailuresKeepAuthenticateErrorCode() {
     assertEquals(
-      FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
+      FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
       rejectedCodeOf(GetCredentialCancellationException("Cancelled by user"))
     )
-  }
-
-  /**
-   * Ensures a missing credential rejects standalone authentication with the cancelled code.
-   */
-  @Test
-  fun standaloneNoCredentialRejectsWithCancelledCode() {
     assertEquals(
-      FidoErrorCodes.FIDO_AUTHENTICATE_CANCELLED,
+      FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
       rejectedCodeOf(NoCredentialException("No eligible passkey credential"))
     )
-  }
-
-  /**
-   * Ensures a non-recoverable failure keeps the generic authenticate error code.
-   */
-  @Test
-  fun standaloneOtherFailureKeepsAuthenticateErrorCode() {
     assertEquals(
       FidoErrorCodes.FIDO_AUTHENTICATE_ERROR,
       rejectedCodeOf(GetCredentialUnknownException("boom"))

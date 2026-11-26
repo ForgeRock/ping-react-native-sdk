@@ -741,6 +741,88 @@ describe('FIDO API', () => {
       {},
     );
   });
+
+  it('workflow methods accept omitted options and an empty options object', async () => {
+    const native = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      registerCredentialForJourney: native,
+      authenticateCredentialForJourney: native,
+      registerCredentialForDaVinci: native,
+      authenticateCredentialForDaVinci: native,
+    });
+    const journey = { getId: jest.fn().mockResolvedValue('journey-1') };
+    const daVinci = { getId: jest.fn().mockResolvedValue('davinci-1') };
+    const client = createFidoClient();
+
+    await client.registerForJourney(journey);
+    await client.registerForJourney(journey, {});
+    await client.authenticateForJourney(journey, {});
+    await client.registerForDaVinci(daVinci, {});
+    await client.authenticateForDaVinci(daVinci, {});
+
+    expect(native).toHaveBeenCalledTimes(5);
+  });
+
+  it.each([
+    ['registerForJourney', null],
+    ['registerForJourney', ['a']],
+    ['authenticateForJourney', null],
+    ['authenticateForJourney', ['a']],
+    ['registerForDaVinci', null],
+    ['registerForDaVinci', ['a']],
+    ['authenticateForDaVinci', null],
+    ['authenticateForDaVinci', ['a']],
+  ] as const)(
+    '%s rejects %s options as argument_error before resolving the instance id',
+    async (method, badOptions) => {
+      const native = jest.fn().mockResolvedValue({ type: 'success' });
+      (getNativeModule as jest.Mock).mockReturnValue({
+        registerDaVinciSerializer: jest.fn(),
+        registerCredentialForJourney: native,
+        authenticateCredentialForJourney: native,
+        registerCredentialForDaVinci: native,
+        authenticateCredentialForDaVinci: native,
+      });
+      const instance = { getId: jest.fn().mockResolvedValue('instance-1') };
+      const client = createFidoClient();
+
+      const call = (
+        client[method] as (
+          instance: unknown,
+          options: unknown,
+        ) => Promise<unknown>
+      )(instance, badOptions) as Promise<FidoError>;
+      const err = await call.catch((e) => e);
+
+      expect(err).toBeInstanceOf(FidoError);
+      expect(err.code).toBe('FIDO_INVALID_PARAMETER');
+      expect(err.type).toBe('argument_error');
+      expect(err.message).toContain(`${method} options must be an object`);
+      expect(instance.getId).not.toHaveBeenCalled();
+      expect(native).not.toHaveBeenCalled();
+    },
+  );
+
+  it('workflow methods report malformed ceremony options before getId rejects', async () => {
+    const native = jest.fn().mockResolvedValue({ type: 'success' });
+    (getNativeModule as jest.Mock).mockReturnValue({
+      registerDaVinciSerializer: jest.fn(),
+      registerCredentialForDaVinci: native,
+    });
+    const daVinci = { getId: jest.fn().mockRejectedValue(new Error('stale')) };
+    const client = createFidoClient();
+
+    const err = await client
+      .registerForDaVinci(daVinci, {
+        preferImmediatelyAvailableCredentials: 'yes' as never,
+      })
+      .catch((e) => e);
+
+    expect(err).toBeInstanceOf(FidoError);
+    expect(err.type).toBe('argument_error');
+    expect(daVinci.getId).not.toHaveBeenCalled();
+  });
 });
 
 describe('FIDO collector contract', () => {

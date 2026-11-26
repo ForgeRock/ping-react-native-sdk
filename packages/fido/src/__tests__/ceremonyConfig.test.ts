@@ -10,7 +10,10 @@ jest.mock('react-native', () => ({
 }));
 
 import { Platform } from 'react-native';
-import { buildNativeConfig } from '../ceremonyConfig';
+import {
+  buildNativeConfig,
+  validateWorkflowOptionsBag,
+} from '../ceremonyConfig';
 import { FidoError } from '../types';
 import type { LoggerInstance } from '@ping-identity/rn-types';
 import type {
@@ -857,6 +860,34 @@ describe('buildNativeConfig: argument validation', () => {
       expect(error).toBeInstanceOf(FidoError);
       expect((error as FidoError).type).toBe('argument_error');
       expect((error as FidoError).code).toBe('FIDO_INVALID_PARAMETER');
+    }
+  });
+
+  it('validateWorkflowOptionsBag accepts omitted options and empty object', () => {
+    expect(() =>
+      validateWorkflowOptionsBag('authenticateForJourney', undefined),
+    ).not.toThrow();
+    expect(() =>
+      validateWorkflowOptionsBag('authenticateForJourney', {}),
+    ).not.toThrow();
+  });
+
+  it('validateWorkflowOptionsBag rejects null, arrays and primitives with argument_error', () => {
+    for (const bad of [null, ['a'], 'yes', 42]) {
+      let thrown: unknown;
+      try {
+        validateWorkflowOptionsBag('registerForJourney', bad);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(FidoError);
+      expect(thrown).toMatchObject({
+        code: 'FIDO_INVALID_PARAMETER',
+        type: 'argument_error',
+      });
+      expect((thrown as FidoError).message).toContain(
+        'registerForJourney options must be an object',
+      );
     }
   });
 });
