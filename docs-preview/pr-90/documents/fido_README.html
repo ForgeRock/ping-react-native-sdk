@@ -136,7 +136,7 @@ action).</p>
 <tbody>
 <tr>
 <td><code>NotAllowedError</code></td>
-<td>User cancellation or dismissal of the passkey UI.</td>
+<td>User cancellation or dismissal of the passkey UI; on iOS, also a generic OS failure in the DaVinci scope (see <a href="#errors">Error code contract</a>).</td>
 </tr>
 <tr>
 <td><code>TimeoutError</code></td>
@@ -185,15 +185,23 @@ blocking submit issues. Run each integration, then submit when <code>form.canSub
 <li><code>FIDO_COLLECTOR_NOT_FOUND</code></li>
 <li><code>FIDO_INVALID_PARAMETER</code>: invalid caller input rejected before any native call, with <code>type: 'argument_error'</code>.</li>
 </ul>
-<p>Error code contract, identical on both platforms and in the standalone,
-Journey and DaVinci scopes:</p>
+<p>Error code contract, identical on both platforms and stable within each
+scope; the standalone scope intentionally differs from Journey and DaVinci:</p>
 <ul>
-<li><code>authenticate</code>, <code>authenticateForJourney</code> and <code>authenticateForDaVinci</code> reject
-with <code>FIDO_AUTHENTICATE_CANCELLED</code> when the user cancels or no usable
+<li><code>authenticateForJourney</code> and <code>authenticateForDaVinci</code> reject with
+<code>FIDO_AUTHENTICATE_CANCELLED</code> when the user cancels or no usable
 credential is available (Android: Credential Manager cancellation or no
 credential; iOS: user cancellation, including the cancel produced by
 <code>preferImmediatelyAvailableCredentials</code> when no local credential matches).
-Every other authentication failure rejects with <code>FIDO_AUTHENTICATE_ERROR</code>.</li>
+Every other authentication failure rejects with <code>FIDO_AUTHENTICATE_ERROR</code>.
+On iOS in the DaVinci scope, a hard failure can also be classified as
+<code>FIDO_AUTHENTICATE_CANCELLED</code>: the native collector transforms both user
+cancellation and generic OS failure (<code>ASAuthorizationError.failed</code>) to the
+same error before the bridge classifies it. The Journey scope is not
+affected: only genuine user cancellation is classified as
+<code>FIDO_AUTHENTICATE_CANCELLED</code> there.</li>
+<li>Standalone <code>authenticate</code> rejects with <code>FIDO_AUTHENTICATE_ERROR</code> for every
+failure, user cancellation included; it has no cancellation-specific code.</li>
 <li><code>register</code>, <code>registerForJourney</code> and <code>registerForDaVinci</code> always reject with
 <code>FIDO_REGISTER_ERROR</code>, user cancellation included.</li>
 </ul>
@@ -247,7 +255,7 @@ and an Android-only <code>android.credentialManager</code> block
 (<code>FidoAndroidRegistrationOptions</code>). Registration always uses Credential Manager
 on Android, so a supplied <code>android.playServices</code> block is ignored with a
 warning.</p>
-<pre><code class="ts"><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">registrationResult</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">fido</span><span class="hl-1">.</span><span class="hl-0">register</span><span class="hl-1">(</span><br/><span class="hl-1">  {</span><br/><span class="hl-1">    </span><span class="hl-3">challenge:</span><span class="hl-1"> </span><span class="hl-2">&#39;base64url-challenge&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">rp:</span><span class="hl-1"> { </span><span class="hl-3">id:</span><span class="hl-1"> </span><span class="hl-2">&#39;example.com&#39;</span><span class="hl-1">, </span><span class="hl-3">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example Inc.&#39;</span><span class="hl-1"> },</span><br/><span class="hl-1">    </span><span class="hl-3">user:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">id:</span><span class="hl-1"> </span><span class="hl-2">&#39;base64url-user-id&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;user@example.com&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">displayName:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example User&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">    </span><span class="hl-3">pubKeyCredParams:</span><span class="hl-1"> [{ </span><span class="hl-3">type:</span><span class="hl-1"> </span><span class="hl-2">&#39;public-key&#39;</span><span class="hl-1">, </span><span class="hl-3">alg:</span><span class="hl-1"> -</span><span class="hl-8">7</span><span class="hl-1"> }],</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  {</span><br/><span class="hl-1">    </span><span class="hl-3">preferImmediatelyAvailableCredentials:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">android:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">credentialManager:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-4">// JSON merge patch (RFC 7386) on the SDK-transformed create request:</span><br/><span class="hl-1">        </span><span class="hl-4">// nested objects merge, arrays replace, null deletes.</span><br/><span class="hl-1">        </span><span class="hl-3">requestJson:</span><span class="hl-1"> { </span><span class="hl-3">user:</span><span class="hl-1"> { </span><span class="hl-3">displayName:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example User&#39;</span><span class="hl-1"> } },</span><br/><span class="hl-1">        </span><span class="hl-4">// Base64url (padded or unpadded) of the SHA-256 hash of your own</span><br/><span class="hl-1">        </span><span class="hl-4">// client data; the sample value is a placeholder, not a real hash.</span><br/><span class="hl-1">        </span><span class="hl-3">clientDataHash:</span><span class="hl-1"> </span><span class="hl-2">&#39;aGVsbG8&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-3">preferImmediatelyAvailableCredentials:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-3">isAutoSelectAllowed:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-4">// See &quot;Host permissions&quot; below.</span><br/><span class="hl-1">        </span><span class="hl-3">origin:</span><span class="hl-1"> </span><span class="hl-2">&#39;https://example.com&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      },</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">);</span>
+<pre><code class="ts"><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">registrationResult</span><span class="hl-1"> = </span><span class="hl-5">await</span><span class="hl-1"> </span><span class="hl-3">fido</span><span class="hl-1">.</span><span class="hl-0">register</span><span class="hl-1">(</span><br/><span class="hl-1">  {</span><br/><span class="hl-1">    </span><span class="hl-3">challenge:</span><span class="hl-1"> </span><span class="hl-2">&#39;base64url-challenge&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">rp:</span><span class="hl-1"> { </span><span class="hl-3">id:</span><span class="hl-1"> </span><span class="hl-2">&#39;example.com&#39;</span><span class="hl-1">, </span><span class="hl-3">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example Inc.&#39;</span><span class="hl-1"> },</span><br/><span class="hl-1">    </span><span class="hl-3">user:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">id:</span><span class="hl-1"> </span><span class="hl-2">&#39;base64url-user-id&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">name:</span><span class="hl-1"> </span><span class="hl-2">&#39;user@example.com&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      </span><span class="hl-3">displayName:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example User&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">    </span><span class="hl-3">pubKeyCredParams:</span><span class="hl-1"> [{ </span><span class="hl-3">type:</span><span class="hl-1"> </span><span class="hl-2">&#39;public-key&#39;</span><span class="hl-1">, </span><span class="hl-3">alg:</span><span class="hl-1"> -</span><span class="hl-8">7</span><span class="hl-1"> }],</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">  {</span><br/><span class="hl-1">    </span><span class="hl-3">preferImmediatelyAvailableCredentials:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-3">android:</span><span class="hl-1"> {</span><br/><span class="hl-1">      </span><span class="hl-3">credentialManager:</span><span class="hl-1"> {</span><br/><span class="hl-1">        </span><span class="hl-4">// JSON merge patch (RFC 7396) on the SDK-transformed create request:</span><br/><span class="hl-1">        </span><span class="hl-4">// nested objects merge, arrays replace, null deletes.</span><br/><span class="hl-1">        </span><span class="hl-3">requestJson:</span><span class="hl-1"> { </span><span class="hl-3">user:</span><span class="hl-1"> { </span><span class="hl-3">displayName:</span><span class="hl-1"> </span><span class="hl-2">&#39;Example User&#39;</span><span class="hl-1"> } },</span><br/><span class="hl-1">        </span><span class="hl-4">// Base64url (padded or unpadded) of the SHA-256 hash of your own</span><br/><span class="hl-1">        </span><span class="hl-4">// client data; the sample value is a placeholder, not a real hash.</span><br/><span class="hl-1">        </span><span class="hl-3">clientDataHash:</span><span class="hl-1"> </span><span class="hl-2">&#39;aGVsbG8&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-3">preferImmediatelyAvailableCredentials:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-3">isAutoSelectAllowed:</span><span class="hl-1"> </span><span class="hl-6">true</span><span class="hl-1">,</span><br/><span class="hl-1">        </span><span class="hl-4">// See &quot;Host permissions&quot; below.</span><br/><span class="hl-1">        </span><span class="hl-3">origin:</span><span class="hl-1"> </span><span class="hl-2">&#39;https://example.com&#39;</span><span class="hl-1">,</span><br/><span class="hl-1">      },</span><br/><span class="hl-1">    },</span><br/><span class="hl-1">  },</span><br/><span class="hl-1">);</span>
 </code><button type="button">Copy</button></pre>
 
 <p><code>preferDefaultProvider</code> takes a flattened component name (<code>package/class</code>) and
@@ -292,9 +300,11 @@ ceremonies:</p>
 <ul>
 <li><strong>iOS</strong> applies it to <code>authenticate</code>, <code>authenticateForJourney</code> and
 <code>authenticateForDaVinci</code> in all scopes. When no local credential matches,
-the ceremony cancels; rejections map to <code>FIDO_AUTHENTICATE_CANCELLED</code>. On
-registration the value is reported by native and the full registration flow
-applies.</li>
+the ceremony cancels in all three scopes; rejections map to
+<code>FIDO_AUTHENTICATE_CANCELLED</code> for <code>authenticateForJourney</code> and
+<code>authenticateForDaVinci</code>, and to <code>FIDO_AUTHENTICATE_ERROR</code> for standalone
+<code>authenticate</code>. On registration the value is reported by native and the
+full registration flow applies.</li>
 <li><strong>Android</strong> applies it to registration (<code>register</code>, <code>registerForJourney</code>,
 <code>registerForDaVinci</code>) through the Credential Manager create request. On
 authentication the current Android native SDK cannot apply it: a warning is
