@@ -24,18 +24,19 @@ import PingExternalIdPGoogle
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
+  // Mirror of the scene's key window. React Native core modules message
+  // `application.delegate.window` (RCTDeviceInfo, RCTLogBoxView); SceneDelegate
+  // keeps this reference current.
   var window: UIWindow?
-  var reactNativeDelegate: ReactNativeDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
 
-  // Capture cold-start payload before the React bridge loads so consumePendingMessages
-  // can drain it when the first PushClient is created.
   func application(
     _ application: UIApplication,
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Background relaunch (app killed, push arrives): payload comes through
+    // didFinishLaunching; scene cold start is handled in SceneDelegate.
     if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
-      RNPingPushCommon.enqueuePendingMessage(userInfo)
+      Self.enqueueColdStartPush(userInfo)
     }
     return true
   }
@@ -50,21 +51,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
       didFinishLaunchingWithOptions: launchOptions,
     )
 #endif
-
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
-
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "PingSampleApp",
-      in: window,
-      launchOptions: launchOptions
-    )
 
     UNUserNotificationCenter.current().delegate = self
     UNUserNotificationCenter.current().requestAuthorization(
@@ -123,17 +109,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    var handled = false
+    Self.handleOpenURL(url: url, options: options)
+    return true
+  }
+
+  private static let enqueuedPushLock = NSLock()
+  private nonisolated(unsafe) static var enqueuedPushMessageIds = Set<String>()
+
+  /// Forwards a cold-start push payload to the bridge once per `messageId`, since the bridge
+  /// buffer is append-only and both launch paths can report the same notification.
+  static func enqueueColdStartPush(_ userInfo: [AnyHashable: Any]) {
+    let aps = userInfo["aps"] as? [AnyHashable: Any]
+    let messageId = (aps?["messageId"] as? String) ?? (userInfo["messageId"] as? String)
+    if let messageId, !messageId.isEmpty {
+      enqueuedPushLock.lock()
+      let isNew = enqueuedPushMessageIds.insert(messageId).inserted
+      enqueuedPushLock.unlock()
+      if !isNew {
+        NSLog("Skipping duplicate cold-start push with messageId %@", messageId)
+        return
+      }
+    }
+    RNPingPushCommon.enqueuePendingMessage(userInfo)
+  }
+
+  static func handleOpenURL(url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) {
+    // Only registered provider callbacks reach the IdP SDKs: Facebook uses the
+    // `fb<app-id>` scheme, Google the reversed client ID. Unrelated deep links
+    // must not be forwarded.
+    let scheme = url.scheme?.lowercased()
 #if canImport(PingExternalIdPFacebook)
-    handled = FacebookHandler.handleOpenURL(application, url: url, options: options)
+    if scheme?.hasPrefix("fb") == true {
+      FacebookHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    }
 #endif
 #if canImport(PingExternalIdPGoogle)
-    handled = GoogleHandler.handleOpenURL(application, url: url, options: options) || handled
+    if scheme?.hasPrefix("com.googleusercontent.apps.") == true {
+      GoogleHandler.handleOpenURL(UIApplication.shared, url: url, options: options)
+    }
 #endif
-    return handled
   }
 }
-
 
 /// React Native factory delegate that resolves JS bundle locations.
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

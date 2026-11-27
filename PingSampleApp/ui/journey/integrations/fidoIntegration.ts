@@ -5,7 +5,11 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-import type { FidoClient } from '@ping-identity/rn-fido';
+import type {
+  FidoAuthenticationCeremonyOptions,
+  FidoClient,
+  FidoRegistrationCeremonyOptions,
+} from '@ping-identity/rn-fido';
 import type { JourneyIntegration } from './types';
 
 /**
@@ -32,6 +36,14 @@ export type FidoIntegrationOptions = {
    * outcome instead of being rethrown.
    */
   continueOnAuthenticationCancel?: boolean;
+  /**
+   * Ceremony options merged into every FIDO authentication call.
+   */
+  authenticationOptions?: FidoAuthenticationCeremonyOptions;
+  /**
+   * Ceremony options merged into every FIDO registration call.
+   */
+  registrationOptions?: FidoRegistrationCeremonyOptions;
 };
 
 /**
@@ -64,6 +76,7 @@ export function fidoIntegration(
             ? input
             : await options.resolveDefaultDeviceName();
         await fido.registerForJourney(journey, {
+          ...options.registrationOptions,
           index: field.ref.typeIndex,
           deviceName,
         });
@@ -73,6 +86,7 @@ export function fidoIntegration(
       if (field.type === 'FidoAuthenticationCallback') {
         try {
           await fido.authenticateForJourney(journey, {
+            ...options.authenticationOptions,
             index: field.ref.typeIndex,
           });
           return {};

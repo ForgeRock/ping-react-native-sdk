@@ -14,6 +14,12 @@
  * - Returns the native result unchanged
  * - Propagates native rejections to the caller
  * - Surfaces clientError on DaVinci ceremony rejections
+ * - Forwards ceremony options (preferImmediatelyAvailableCredentials, Android
+ *   ceremony blocks) into the native per-call config in every scope
+ * - Selects the Android FIDO2 API per call or per client, never by a ceremony
+ *   block, and forwards both blocks to native
+ * - Rejects invalid ceremony options with argument_error before any native call
+ * - Keeps native payloads unchanged when no ceremony options are supplied
  */
 
 export {};
@@ -81,7 +87,6 @@ async function loadFido(nativeMock: NativeFidoMock) {
   jest.doMock('../../../packages/fido/src/NativeRNPingFido', () => ({
     __esModule: true,
     getNativeModule: jest.fn(() => nativeMock),
-    toNativeConfigOptions: jest.fn((options: unknown) => options),
     toNativeRegistrationOptions: jest.fn((options: unknown) => options),
     toNativeAuthenticationOptions: jest.fn((options: unknown) => options),
     fromNativeRegistrationResult: jest.fn((result: unknown) => result),
@@ -127,7 +132,6 @@ async function loadJourneyAndFido(
   jest.doMock('../../../packages/fido/src/NativeRNPingFido', () => ({
     __esModule: true,
     getNativeModule: jest.fn(() => nativeFidoMock),
-    toNativeConfigOptions: jest.fn((options: unknown) => options),
     toNativeRegistrationOptions: jest.fn((options: unknown) => options),
     toNativeAuthenticationOptions: jest.fn((options: unknown) => options),
     fromNativeRegistrationResult: jest.fn((result: unknown) => result),
@@ -183,7 +187,6 @@ async function loadDaVinciAndFido(
   jest.doMock('../../../packages/fido/src/NativeRNPingFido', () => ({
     __esModule: true,
     getNativeModule: jest.fn(() => nativeFidoMock),
-    toNativeConfigOptions: jest.fn((options: unknown) => options),
     toNativeRegistrationOptions: jest.fn((options: unknown) => options),
     toNativeAuthenticationOptions: jest.fn((options: unknown) => options),
     fromNativeRegistrationResult: jest.fn((result: unknown) => result),
@@ -221,6 +224,57 @@ function getTypeIndexMap(
     indices[String(callbackIndex)] = typeIndex;
   });
   return indices;
+}
+
+/**
+ * Loads the fido package with a platform-aware react-native mock so
+ * `buildNativeConfig` exercises its real Android/iOS pruning and routing
+ * logic (jest.setup.js pins Platform.OS to 'ios').
+ *
+ * The NativeRNPingFido mock keeps the identity converters so the real facade
+ * runs, while getNativeModule returns the supplied native mock so assertions
+ * can inspect the exact per-call config the facade builds.
+ */
+async function loadFidoForPlatform(
+  platform: 'ios' | 'android',
+  nativeMock: NativeFidoMock,
+  clientConfig: Record<string, unknown> = {},
+) {
+  jest.resetModules();
+  jest.doMock('react-native', () => ({
+    Platform: {
+      OS: platform,
+      select: (spec: { ios?: unknown; default?: unknown }) =>
+        spec.ios ?? spec.default,
+    },
+    NativeModules: {},
+    TurboModuleRegistry: {
+      get: jest.fn(() => null),
+      getEnforcing: jest.fn(() => null),
+    },
+  }));
+  jest.doMock('../../../packages/fido/src/NativeRNPingFido', () => ({
+    __esModule: true,
+    getNativeModule: jest.fn(() => nativeMock),
+    toNativeRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeAuthenticationOptions: jest.fn((options: unknown) => options),
+    fromNativeRegistrationResult: jest.fn((result: unknown) => result),
+    fromNativeAuthenticationResult: jest.fn((result: unknown) => result),
+    toNativeJourneyRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeJourneyAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
+    fromNativeJourneyResult: jest.fn((result: unknown) => result),
+    toNativeDaVinciRegistrationOptions: jest.fn((options: unknown) => options),
+    toNativeDaVinciAuthenticationOptions: jest.fn(
+      (options: unknown) => options,
+    ),
+    fromNativeDaVinciResult: jest.fn((result: unknown) => result),
+  }));
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('@ping-identity/rn-fido');
+  const fidoClient = mod.createFidoClient(clientConfig);
+  return { mod, fidoClient };
 }
 
 async function executeRNWebAuthnStep(
@@ -312,10 +366,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         rp: { id: 'example.com', name: 'Example' },
       };
       await fido.register(options);
-      expect(mock.registerCredential).toHaveBeenCalledWith(options, {
-        loggerId: undefined,
-        useFido2ApiClient: undefined,
-      });
+      expect(mock.registerCredential).toHaveBeenCalledWith(options, {});
     });
 
     it('returns the native result', async () => {
@@ -372,10 +423,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         allowCredentials: [],
       };
       await fido.authenticate(options);
-      expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {
-        loggerId: undefined,
-        useFido2ApiClient: undefined,
-      });
+      expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {});
     });
 
     it('returns the native result', async () => {
@@ -442,10 +490,7 @@ describe('@ping-identity/rn-fido — integration', () => {
           index: 1,
           deviceName: 'Device A',
         },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
+        {},
       );
     });
   });
@@ -463,10 +508,7 @@ describe('@ping-identity/rn-fido — integration', () => {
         {
           index: 0,
         },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
+        {},
       );
     });
   });
@@ -501,10 +543,7 @@ describe('@ping-identity/rn-fido — integration', () => {
       expect(nativeFidoMock.registerCredentialForJourney).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
         { index: 0, deviceName: 'SM-A566W' },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
+        {},
       );
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
@@ -540,14 +579,7 @@ describe('@ping-identity/rn-fido — integration', () => {
 
       expect(
         nativeFidoMock.authenticateCredentialForJourney,
-      ).toHaveBeenCalledWith(
-        'journey-id-rn-webauthn',
-        { index: 0 },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
-      );
+      ).toHaveBeenCalledWith('journey-id-rn-webauthn', { index: 0 }, {});
       expect(nativeJourneyMock.next).toHaveBeenCalledWith(
         'journey-id-rn-webauthn',
         '',
@@ -583,10 +615,7 @@ describe('@ping-identity/rn-fido — integration', () => {
       expect(nativeFidoMock.registerCredentialForDaVinci).toHaveBeenCalledWith(
         'davinci-id-fido-mock',
         { index: 0 },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
+        {},
       );
       expect(result).toEqual({ attestationValue: { id: 'cred-1' } });
 
@@ -625,14 +654,7 @@ describe('@ping-identity/rn-fido — integration', () => {
       ).toHaveBeenCalledTimes(1);
       expect(
         nativeFidoMock.authenticateCredentialForDaVinci,
-      ).toHaveBeenCalledWith(
-        'davinci-id-fido-mock',
-        { index: 0 },
-        {
-          loggerId: undefined,
-          useFido2ApiClient: undefined,
-        },
-      );
+      ).toHaveBeenCalledWith('davinci-id-fido-mock', { index: 0 }, {});
       expect(result).toEqual({ assertionValue: { id: 'cred-1' } });
 
       await daVinciClient.next({ collectors: [] });
@@ -838,6 +860,692 @@ describe('@ping-identity/rn-fido — integration', () => {
         type: 'state_error',
       });
       expect(err.clientError).toBeUndefined();
+    });
+  });
+
+  describe('ceremony options forwarding', () => {
+    describe('preferImmediatelyAvailableCredentials per scope', () => {
+      it('standalone register forwards PIA on Android', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const options = { challenge: 'abc' };
+
+        await fidoClient.register(options, {
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(mock.registerCredential).toHaveBeenCalledWith(options, {
+          preferImmediatelyAvailableCredentials: true,
+        });
+      });
+
+      it('standalone authenticate forwards PIA on iOS', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('ios', mock);
+        const options = { challenge: 'def' };
+
+        await fidoClient.authenticate(options, {
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {
+          preferImmediatelyAvailableCredentials: true,
+        });
+      });
+
+      it('registerForJourney forwards PIA alongside execution options', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-pia-reg') };
+
+        await fidoClient.registerForJourney(journey, {
+          index: 1,
+          deviceName: 'Pixel 8',
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(journey.getId).toHaveBeenCalledTimes(1);
+        expect(mock.registerCredentialForJourney).toHaveBeenCalledWith(
+          'journey-pia-reg',
+          { index: 1, deviceName: 'Pixel 8' },
+          { preferImmediatelyAvailableCredentials: true },
+        );
+      });
+
+      it('registerForJourney does not mutate the caller-supplied options', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-copy-on-merge') };
+        const options = {
+          index: 1,
+          deviceName: 'Pixel 8',
+          preferImmediatelyAvailableCredentials: true,
+        };
+
+        await fidoClient.registerForJourney(journey, options);
+
+        expect(options).toEqual({
+          index: 1,
+          deviceName: 'Pixel 8',
+          preferImmediatelyAvailableCredentials: true,
+        });
+        expect('preferImmediatelyAvailableCredentials' in options).toBe(true);
+      });
+
+      it('authenticateForJourney forwards PIA on iOS', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('ios', mock);
+        const journey = { getId: jest.fn(async () => 'journey-pia-auth') };
+
+        await fidoClient.authenticateForJourney(journey, {
+          index: 0,
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(mock.authenticateCredentialForJourney).toHaveBeenCalledWith(
+          'journey-pia-auth',
+          { index: 0 },
+          { preferImmediatelyAvailableCredentials: true },
+        );
+      });
+
+      it('registerForDaVinci forwards PIA on Android', async () => {
+        const mock = makeMock({
+          registerCredentialForDaVinci: jest.fn(async () => ({
+            attestationValue: { id: 'cred-1' },
+          })),
+        });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const daVinci = { getId: jest.fn(async () => 'davinci-pia-reg') };
+
+        await fidoClient.registerForDaVinci(daVinci, {
+          index: 0,
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(mock.registerCredentialForDaVinci).toHaveBeenCalledWith(
+          'davinci-pia-reg',
+          { index: 0 },
+          { preferImmediatelyAvailableCredentials: true },
+        );
+      });
+
+      it('authenticateForDaVinci forwards PIA on Android', async () => {
+        const mock = makeMock({
+          authenticateCredentialForDaVinci: jest.fn(async () => ({
+            assertionValue: { id: 'cred-1' },
+          })),
+        });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const daVinci = { getId: jest.fn(async () => 'davinci-pia-auth') };
+
+        await fidoClient.authenticateForDaVinci(daVinci, {
+          index: 0,
+          preferImmediatelyAvailableCredentials: true,
+        });
+
+        expect(mock.authenticateCredentialForDaVinci).toHaveBeenCalledWith(
+          'davinci-pia-auth',
+          { index: 0 },
+          { preferImmediatelyAvailableCredentials: true },
+        );
+      });
+    });
+
+    describe('Android Credential Manager and Play Services blocks', () => {
+      it('credentialManager block never adds useFido2ApiClient', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          {
+            android: {
+              credentialManager: {
+                allowedProviders: ['com.example/.Provider'],
+              },
+            },
+          },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            android: {
+              credentialManager: {
+                allowedProviders: ['com.example/.Provider'],
+              },
+            },
+          },
+        );
+      });
+
+      it('playServices block never adds useFido2ApiClient and forwards flat transports', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          {
+            android: {
+              playServices: { transports: ['usb', 'nfc'], timeoutSeconds: 60 },
+            },
+          },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            android: {
+              playServices: { transports: ['usb', 'nfc'], timeoutSeconds: 60 },
+            },
+          },
+        );
+      });
+
+      it('forwards the client flag next to a playServices block', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          android: { useFido2ApiClient: true },
+        });
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          {
+            android: { playServices: { timeoutSeconds: 60 } },
+          },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            useFido2ApiClient: true,
+            android: { playServices: { timeoutSeconds: 60 } },
+          },
+        );
+      });
+
+      it('forwards the client flag next to a credentialManager block', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          android: { useFido2ApiClient: false },
+        });
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          {
+            android: {
+              credentialManager: {
+                allowedProviders: ['com.example/.Provider'],
+              },
+            },
+          },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            useFido2ApiClient: false,
+            android: {
+              credentialManager: {
+                allowedProviders: ['com.example/.Provider'],
+              },
+            },
+          },
+        );
+      });
+
+      it('forwards both blocks to native without rejecting', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const android = {
+          credentialManager: { clientDataHash: 'YWJj' },
+          playServices: { timeoutSeconds: 60 },
+        };
+
+        await fidoClient.authenticate({ challenge: 'abc' }, { android });
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          { android },
+        );
+      });
+
+      it('forwards a block next to a contradicting client flag without rejecting', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          android: { useFido2ApiClient: true },
+        });
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          { android: { credentialManager: { clientDataHash: 'YWJj' } } },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            useFido2ApiClient: true,
+            android: { credentialManager: { clientDataHash: 'YWJj' } },
+          },
+        );
+      });
+
+      it('per-call useFido2ApiClient is forwarded as the top-level key in every scope', async () => {
+        const authenticateCredentialForDaVinci = jest.fn(
+          async (..._args: unknown[]) => ({
+            assertionValue: { id: 'cred-1' },
+          }),
+        );
+        const mock = makeMock({ authenticateCredentialForDaVinci });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-flag-ok') };
+        const daVinci = { getId: jest.fn(async () => 'davinci-flag-ok') };
+        const ceremony = {
+          android: {
+            useFido2ApiClient: true,
+            playServices: { timeoutSeconds: 60 },
+          },
+        };
+        const expected = {
+          useFido2ApiClient: true,
+          android: { playServices: { timeoutSeconds: 60 } },
+        };
+
+        await fidoClient.authenticate({ challenge: 'abc' }, ceremony);
+        await fidoClient.authenticateForJourney(journey, ceremony);
+        await fidoClient.authenticateForDaVinci(daVinci, ceremony);
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          expected,
+        );
+        expect(mock.authenticateCredentialForJourney.mock.calls[0][2]).toEqual(
+          expected,
+        );
+        expect(authenticateCredentialForDaVinci).toHaveBeenCalledWith(
+          'davinci-flag-ok',
+          expect.anything(),
+          expected,
+        );
+      });
+
+      it('per-call useFido2ApiClient overrides the client flag for that call only', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          android: { useFido2ApiClient: true },
+        });
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          { android: { useFido2ApiClient: false } },
+        );
+        await fidoClient.authenticate({ challenge: 'abc' });
+
+        expect(mock.authenticateCredential.mock.calls[0][1]).toEqual({
+          useFido2ApiClient: false,
+        });
+        expect(mock.authenticateCredential.mock.calls[1][1]).toEqual({
+          useFido2ApiClient: true,
+        });
+      });
+
+      it('iOS prunes the per-call useFido2ApiClient and never sends the key', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('ios', mock);
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          { android: { useFido2ApiClient: true } },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {},
+        );
+      });
+
+      it('registration forwards credentialManager without implying routing', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await fidoClient.register(
+          { challenge: 'abc' },
+          {
+            android: {
+              credentialManager: {
+                preferImmediatelyAvailableCredentials: true,
+              },
+            },
+          },
+        );
+
+        expect(mock.registerCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {
+            android: {
+              credentialManager: {
+                preferImmediatelyAvailableCredentials: true,
+              },
+            },
+          },
+        );
+        const config = mock.registerCredential.mock.calls[0][1];
+        expect('useFido2ApiClient' in config).toBe(false);
+      });
+
+      it('registration drops playServices with a warning naming only the key', async () => {
+        const mock = makeMock();
+        const logger = {
+          nativeHandle: { id: '' },
+          changeLevel: jest.fn(),
+          error: jest.fn(),
+          warn: jest.fn(),
+          info: jest.fn(),
+          debug: jest.fn(),
+        };
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          logger,
+        });
+
+        await fidoClient.register(
+          { challenge: 'abc' },
+          { android: { playServices: { transports: ['usb'] } } },
+        );
+
+        expect(mock.registerCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {},
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "FIDO config key 'android.playServices' received an Object",
+          ),
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'registration uses Credential Manager and this block is ignored',
+          ),
+        );
+        for (const warnArgs of logger.warn.mock.calls) {
+          for (const arg of warnArgs) {
+            expect(String(arg)).not.toContain('usb');
+          }
+        }
+      });
+
+      it('warns a string android block naming key, String type and length only', async () => {
+        const mock = makeMock();
+        const logger = {
+          nativeHandle: { id: '' },
+          changeLevel: jest.fn(),
+          error: jest.fn(),
+          warn: jest.fn(),
+          info: jest.fn(),
+          debug: jest.fn(),
+        };
+        const { fidoClient } = await loadFidoForPlatform('android', mock, {
+          logger,
+        });
+
+        await fidoClient.register(
+          { challenge: 'abc' },
+          { android: 'not-an-object' as never },
+        );
+
+        expect(mock.registerCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {},
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          "FIDO config key 'android' received a String of length 13; an Object is expected and the block is ignored",
+        );
+        for (const warnArgs of logger.warn.mock.calls) {
+          for (const arg of warnArgs) {
+            expect(String(arg)).not.toContain('not-an-object');
+          }
+        }
+      });
+
+      it('iOS omits the routing flag and prunes android ceremony blocks', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('ios', mock, {
+          android: { useFido2ApiClient: true },
+        });
+
+        await fidoClient.authenticate(
+          { challenge: 'abc' },
+          {
+            android: { credentialManager: { clientDataHash: 'YWJj' } },
+          },
+        );
+
+        expect(mock.authenticateCredential).toHaveBeenCalledTimes(1);
+        const [, config] = mock.authenticateCredential.mock.calls[0];
+        expect(config).toEqual({});
+        expect('loggerId' in config).toBe(false);
+        expect('useFido2ApiClient' in config).toBe(false);
+        expect('android' in config).toBe(false);
+        expect('preferImmediatelyAvailableCredentials' in config).toBe(false);
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(
+          { challenge: 'abc' },
+          {},
+        );
+      });
+    });
+
+    describe('argument errors reject before any native call', () => {
+      it('standalone authenticate rejects a non-boolean per-call useFido2ApiClient before native', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await expect(
+          fidoClient.authenticate(
+            { challenge: 'abc' },
+            { android: { useFido2ApiClient: 'yes' as never } },
+          ),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.authenticateCredential).not.toHaveBeenCalled();
+      });
+
+      it('authenticateForJourney rejects a non-boolean per-call useFido2ApiClient before native', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-flag') };
+
+        await expect(
+          fidoClient.authenticateForJourney(journey, {
+            android: { useFido2ApiClient: 1 as never },
+          }),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.authenticateCredentialForJourney).not.toHaveBeenCalled();
+      });
+
+      it('authenticateForDaVinci rejects a non-boolean per-call useFido2ApiClient before native', async () => {
+        const mock = makeMock({
+          authenticateCredentialForDaVinci: jest.fn(async () => ({
+            assertionValue: { id: 'cred-1' },
+          })),
+        });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const daVinci = { getId: jest.fn(async () => 'davinci-flag') };
+
+        await expect(
+          fidoClient.authenticateForDaVinci(daVinci, {
+            android: { useFido2ApiClient: null as never },
+          }),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.authenticateCredentialForDaVinci).not.toHaveBeenCalled();
+      });
+
+      it('standalone register rejects an invalid base64url clientDataHash before native', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await expect(
+          fidoClient.register(
+            { challenge: 'abc' },
+            {
+              android: {
+                credentialManager: { clientDataHash: '%%%not-valid%' },
+              },
+            },
+          ),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.registerCredential).not.toHaveBeenCalled();
+      });
+
+      it('registerForJourney rejects preferDefaultProvider combined with isConditional before native', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-reg-conflict') };
+
+        await expect(
+          fidoClient.registerForJourney(journey, {
+            android: {
+              credentialManager: {
+                preferDefaultProvider: 'com.example/.Provider',
+                isConditional: true,
+              },
+            },
+          }),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.registerCredentialForJourney).not.toHaveBeenCalled();
+      });
+
+      it('registerForDaVinci rejects an invalid preferDefaultProvider component name before native', async () => {
+        const mock = makeMock({
+          registerCredentialForDaVinci: jest.fn(async () => ({
+            attestationValue: { id: 'cred-1' },
+          })),
+        });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const daVinci = { getId: jest.fn(async () => 'davinci-reg-conflict') };
+
+        await expect(
+          fidoClient.registerForDaVinci(daVinci, {
+            android: {
+              credentialManager: {
+                preferDefaultProvider: 'com.example.Provider',
+              },
+            },
+          }),
+        ).rejects.toMatchObject({
+          name: 'FidoError',
+          code: 'FIDO_INVALID_PARAMETER',
+          type: 'argument_error',
+        });
+        expect(mock.registerCredentialForDaVinci).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('absent ceremony options keep native payloads unchanged', () => {
+      it('register without ceremony options sends an empty native config', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const options = { challenge: 'abc', rp: { id: 'example.com' } };
+
+        await fidoClient.register(options);
+
+        expect(mock.registerCredential).toHaveBeenCalledTimes(1);
+        const [, config] = mock.registerCredential.mock.calls[0];
+        expect(config).toEqual({});
+        expect('preferImmediatelyAvailableCredentials' in config).toBe(false);
+        expect('useFido2ApiClient' in config).toBe(false);
+        expect('android' in config).toBe(false);
+        expect(mock.registerCredential).toHaveBeenCalledWith(options, {});
+      });
+
+      it('authenticate without ceremony options sends an empty native config', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const options = { challenge: 'def', rpId: 'example.com' };
+
+        await fidoClient.authenticate(options);
+
+        expect(mock.authenticateCredential).toHaveBeenCalledTimes(1);
+        const [, config] = mock.authenticateCredential.mock.calls[0];
+        expect(config).toEqual({});
+        expect('preferImmediatelyAvailableCredentials' in config).toBe(false);
+        expect('useFido2ApiClient' in config).toBe(false);
+        expect('android' in config).toBe(false);
+        expect(mock.authenticateCredential).toHaveBeenCalledWith(options, {});
+      });
+
+      it('registerForJourney without ceremony options forwards only execution options', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const journey = { getId: jest.fn(async () => 'journey-absent') };
+
+        await fidoClient.registerForJourney(journey, {
+          index: 1,
+          deviceName: 'Pixel 8',
+        });
+
+        expect(mock.registerCredentialForJourney).toHaveBeenCalledWith(
+          'journey-absent',
+          { index: 1, deviceName: 'Pixel 8' },
+          {},
+        );
+      });
+
+      it('authenticateForDaVinci without ceremony options forwards only the index', async () => {
+        const mock = makeMock({
+          authenticateCredentialForDaVinci: jest.fn(async () => ({
+            assertionValue: { id: 'cred-1' },
+          })),
+        });
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+        const daVinci = { getId: jest.fn(async () => 'davinci-absent') };
+
+        await fidoClient.authenticateForDaVinci(daVinci, { index: 0 });
+
+        expect(mock.authenticateCredentialForDaVinci).toHaveBeenCalledWith(
+          'davinci-absent',
+          { index: 0 },
+          {},
+        );
+      });
+
+      it('routing from one call does not leak into a following options-free call', async () => {
+        const mock = makeMock();
+        const { fidoClient } = await loadFidoForPlatform('android', mock);
+
+        await fidoClient.authenticate(
+          { challenge: 'first' },
+          { android: { credentialManager: { clientDataHash: 'YWJj' } } },
+        );
+        await fidoClient.authenticate({ challenge: 'second' });
+
+        expect(mock.authenticateCredential).toHaveBeenNthCalledWith(
+          2,
+          { challenge: 'second' },
+          {},
+        );
+        const secondConfig = mock.authenticateCredential.mock.calls[1][1];
+        expect('useFido2ApiClient' in secondConfig).toBe(false);
+        expect('android' in secondConfig).toBe(false);
+      });
     });
   });
 });

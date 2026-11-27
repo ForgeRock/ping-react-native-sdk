@@ -7,7 +7,6 @@
 import type { TurboModule } from 'react-native';
 import { NativeModules, TurboModuleRegistry } from 'react-native';
 import type {
-  FidoClientConfig,
   FidoAuthenticationOptions,
   FidoAuthenticationResult,
   FidoDaVinciAuthenticationOptions,
@@ -32,12 +31,29 @@ import type {
  * @interface
  */
 /* eslint-disable @typescript-eslint/no-wrapper-object-types -- RN TurboModule codegen requires Object in native spec signatures. */
+/**
+ * Keys carried by the per-call `config` payload of every FIDO Spec method:
+ *
+ * - `loggerId` (string, optional): native logger handle id resolved by JS.
+ * - `useFido2ApiClient` (boolean, optional): authentication API routing;
+ *   emitted on Android only, as the per-call flag when defined, else the
+ *   client-level flag. Omitted lets native auto-detect the route; iOS omits
+ *   the key entirely. The `android` blocks never change the route.
+ * - `preferImmediatelyAvailableCredentials` (boolean, optional): credential
+ *   preference. Android applies it to registration via the Credential Manager
+ *   create request; Android logs it as unsupported on authentication. iOS
+ *   applies it to authentication and reports it on registration.
+ * - `android` (Object, optional): `{ credentialManager?, playServices? }`
+ *   ceremony blocks. Android only; authentication accepts both blocks and
+ *   applies the one matching the selected route, registration only
+ *   `credentialManager`. Pruned with a warning on iOS.
+ */
 export interface Spec extends TurboModule {
   /**
    * Registers a new FIDO credential.
    *
    * @param options Registration options payload.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to the registration result payload.
    */
   registerCredential(options: Object, config: Object): Promise<Object>;
@@ -46,7 +62,7 @@ export interface Spec extends TurboModule {
    * Authenticates with an existing FIDO credential.
    *
    * @param options Authentication options payload.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to the authentication result payload.
    */
   authenticateCredential(options: Object, config: Object): Promise<Object>;
@@ -56,7 +72,7 @@ export interface Spec extends TurboModule {
    *
    * @param journeyId Native Journey instance id.
    * @param options Registration callback execution options.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to a Journey success payload.
    */
   registerCredentialForJourney(
@@ -70,7 +86,7 @@ export interface Spec extends TurboModule {
    *
    * @param journeyId Native Journey instance id.
    * @param options Authentication callback execution options.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to a Journey success payload.
    */
   authenticateCredentialForJourney(
@@ -85,7 +101,7 @@ export interface Spec extends TurboModule {
    *
    * @param davinciId Native DaVinci instance id.
    * @param options Registration ceremony options.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to the WebAuthn attestation payload.
    * @remarks On ceremony failure the rejection carries an optional
    * `userInfo.clientError` string with the WebAuthn DOMException name reported
@@ -103,7 +119,7 @@ export interface Spec extends TurboModule {
    *
    * @param davinciId Native DaVinci instance id.
    * @param options Authentication ceremony options.
-   * @param config Per-client FIDO runtime configuration payload.
+   * @param config Per-call FIDO runtime configuration payload.
    * @returns A promise that resolves to the WebAuthn assertion payload.
    * @remarks On ceremony failure the rejection carries an optional
    * `userInfo.clientError` string with the WebAuthn DOMException name reported
@@ -128,16 +144,6 @@ export interface Spec extends TurboModule {
   registerDaVinciSerializer(): void;
 }
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
-
-/**
- * Native configuration shape sent over the bridge.
- */
-export type NativeFidoConfig = {
-  /** Optional native logger handle id resolved by JavaScript. */
-  loggerId?: string;
-  /** Optional Android-only API selection toggle. */
-  useFido2ApiClient?: boolean;
-};
 
 /**
  * Resolves the native module by probing TurboModule first, then falling back to the classic bridge module.
@@ -179,15 +185,6 @@ export function toNativeRegistrationOptions(
   options: FidoRegistrationOptions,
 ): Record<string, unknown> {
   return options as unknown as Record<string, unknown>;
-}
-
-/**
- * Casts configure options to a codegen-compatible object.
- */
-export function toNativeConfigOptions(
-  config: FidoClientConfig,
-): Record<string, unknown> {
-  return config as unknown as Record<string, unknown>;
 }
 
 /**

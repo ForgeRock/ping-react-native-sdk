@@ -1273,6 +1273,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
                 action: 'REGISTER',
                 label: 'Register a passkey',
                 required: false,
+                trigger: 'BUTTON',
                 publicKeyCredentialCreationOptions: {
                   challenge: 'mock-challenge',
                 },
@@ -1291,6 +1292,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
         executionMode: 'integration_required',
         requiresUserInput: false,
         kind: 'integration',
+        trigger: 'BUTTON',
       });
     });
 
@@ -1308,6 +1310,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
                 action: 'REGISTER',
                 label: 'Register a passkey',
                 required: false,
+                trigger: 'BUTTON',
               },
               {
                 key: 'submit',
@@ -1345,6 +1348,7 @@ describe('@ping-identity/rn-davinci — integration', () => {
                 action: 'REGISTER',
                 label: 'Register a passkey',
                 required: false,
+                trigger: 'BUTTON',
               },
               {
                 key: 'submit',

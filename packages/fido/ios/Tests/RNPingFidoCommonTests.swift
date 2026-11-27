@@ -232,11 +232,243 @@ final class RNPingFidoCommonTests: XCTestCase {
     XCTAssertFalse(RNPingFidoCommon.isRecoverableFidoAuthenticationFailure(ASAuthorizationError(.unknown)))
   }
 
+  // MARK: - Registration Option Warning Tests
+
+  /// The registration ceremonies have no credential-preference parameter, so a
+  /// supplied value must be reported through the fallback logger sink before
+  /// the call proceeds; each register scope must surface it.
+  func testRegisterWarnsWhenPreferImmediatelyAvailableCredentialsSupplied() async {
+    let capture = CaptureLogger()
+    let previous = LogManager.logger
+    LogManager.logger = capture
+    defer { LogManager.logger = previous }
+
+    _ = await invokeRegister(
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(capture.warningMessages.count, 1)
+    XCTAssertTrue(capture.warningMessages[0].contains("preferImmediatelyAvailableCredentials"))
+  }
+
+  func testRegisterForJourneyWarnsWhenPreferImmediatelyAvailableCredentialsSupplied() async {
+    let capture = CaptureLogger()
+    let previous = LogManager.logger
+    LogManager.logger = capture
+    defer { LogManager.logger = previous }
+
+    _ = await invokeRegisterForJourney(
+      journeyId: "journey-1",
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(capture.warningMessages.count, 1)
+    XCTAssertTrue(capture.warningMessages[0].contains("preferImmediatelyAvailableCredentials"))
+  }
+
+  func testRegisterForDaVinciWarnsWhenPreferImmediatelyAvailableCredentialsSupplied() async {
+    let capture = CaptureLogger()
+    let previous = LogManager.logger
+    LogManager.logger = capture
+    defer { LogManager.logger = previous }
+
+    _ = await invokeRegisterForDaVinci(
+      davinciId: "davinci-1",
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(capture.warningMessages.count, 1)
+    XCTAssertTrue(capture.warningMessages[0].contains("preferImmediatelyAvailableCredentials"))
+  }
+
+  /// An off-platform `android` block is reported on iOS across scopes; the
+  /// authentication path must emit it before the ceremony rejects.
+  func testAuthenticateWarnsWhenAndroidConfigSupplied() async {
+    let capture = CaptureLogger()
+    let previous = LogManager.logger
+    LogManager.logger = capture
+    defer { LogManager.logger = previous }
+
+    _ = await invokeAuthenticate(
+      options: [:],
+      config: ["android": ["useFido2ApiClient": true]]
+    )
+
+    XCTAssertEqual(capture.warningMessages.count, 1)
+    XCTAssertTrue(capture.warningMessages[0].contains("android"))
+  }
+
+  // MARK: - PIA Forwarding Tests
+
+  /// Installs a stub window anchor so the window guard is satisfied in the
+  /// no-host-app test harness and returns the production resolver it replaced.
+  private func installStubWindowAnchor() -> () -> ASPresentationAnchor? {
+    let previous = RNPingFidoCommon.windowAnchorResolver
+    RNPingFidoCommon.windowAnchorResolver = { ASPresentationAnchor() }
+    return previous
+  }
+
+  /// Restores the supplied production window resolver on scope exit.
+  private func restoreWindowAnchor(_ previous: @escaping () -> ASPresentationAnchor?) {
+    RNPingFidoCommon.windowAnchorResolver = previous
+  }
+
+  /// Standalone authenticate forwards the parsed credential preference to the
+  /// native invoker.
+  func testStandaloneAuthenticateForwardsPreferImmediatelyAvailableCredentials() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    var receivedFlag: Bool?
+    let previousInvoker = RNPingFidoCommon.nativeAuthenticateInvoker
+    RNPingFidoCommon.nativeAuthenticateInvoker = { _, _, flag, _, completion in
+      receivedFlag = flag
+      completion(.failure(ASAuthorizationError(.canceled)))
+    }
+    defer { RNPingFidoCommon.nativeAuthenticateInvoker = previousInvoker }
+
+    _ = await invokeAuthenticate(
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(receivedFlag, true)
+  }
+
+  func testStandaloneAuthenticateForwardsFalsePreference() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    var receivedFlag: Bool?
+    let previous = RNPingFidoCommon.nativeAuthenticateInvoker
+    RNPingFidoCommon.nativeAuthenticateInvoker = { _, _, flag, _, completion in
+      receivedFlag = flag
+      completion(.failure(ASAuthorizationError(.canceled)))
+    }
+    defer { RNPingFidoCommon.nativeAuthenticateInvoker = previous }
+
+    _ = await invokeAuthenticate(
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": false]
+    )
+
+    XCTAssertEqual(receivedFlag, false)
+  }
+
+  func testStandaloneAuthenticateDefaultsToFalseWhenPreferenceAbsent() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    var receivedFlag: Bool?
+    let previous = RNPingFidoCommon.nativeAuthenticateInvoker
+    RNPingFidoCommon.nativeAuthenticateInvoker = { _, _, flag, _, completion in
+      receivedFlag = flag
+      completion(.failure(ASAuthorizationError(.canceled)))
+    }
+    defer { RNPingFidoCommon.nativeAuthenticateInvoker = previous }
+
+    _ = await invokeAuthenticate(options: [:])
+
+    XCTAssertEqual(receivedFlag, false)
+  }
+
+  /// A user cancellation through the real standalone authenticate entry point
+  /// rejects with the stable method error code; only Journey and DaVinci
+  /// authentication carry a cancellation outcome.
+  func testStandaloneAuthenticateRejectsWithAuthenticateErrorWhenUserCancels() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    let previous = RNPingFidoCommon.nativeAuthenticateInvoker
+    RNPingFidoCommon.nativeAuthenticateInvoker = { _, _, _, _, completion in
+      completion(.failure(ASAuthorizationError(.canceled)))
+    }
+    defer { RNPingFidoCommon.nativeAuthenticateInvoker = previous }
+
+    let (code, _) = await invokeAuthenticate(
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(code, "FIDO_AUTHENTICATE_ERROR")
+  }
+
+  /// Registration has no cancellation outcome: user cancellation stays
+  /// `FIDO_REGISTER_ERROR` through the real standalone register entry point.
+  func testStandaloneRegisterRejectsWithRegisterErrorWhenUserCancels() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    var invokerCalled = false
+    let previous = RNPingFidoCommon.nativeRegisterInvoker
+    RNPingFidoCommon.nativeRegisterInvoker = { _, _, _, completion in
+      invokerCalled = true
+      completion(.failure(ASAuthorizationError(.canceled)))
+    }
+    defer { RNPingFidoCommon.nativeRegisterInvoker = previous }
+
+    let (code, _) = await invokeRegister(options: [:])
+
+    XCTAssertTrue(invokerCalled)
+    XCTAssertEqual(code, "FIDO_REGISTER_ERROR")
+    XCTAssertNotEqual(code, "FIDO_AUTHENTICATE_CANCELLED")
+  }
+
+  /// Journey authenticate forwards the parsed credential preference to the
+  /// native callback through the invoker seam.
+  func testJourneyAuthenticateForwardsPreferImmediatelyAvailableCredentials() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    CoreRuntime.setJourneyCallbackResolver { _ in [FidoAuthenticationCallback()] }
+    defer { CoreRuntime.setJourneyCallbackResolver(nil) }
+    var receivedFlag: Bool?
+    let previous = RNPingFidoCommon.journeyAuthenticateInvoker
+    RNPingFidoCommon.journeyAuthenticateInvoker = { _, _, flag in
+      receivedFlag = flag
+      return .failure(ASAuthorizationError(.canceled))
+    }
+    defer { RNPingFidoCommon.journeyAuthenticateInvoker = previous }
+
+    _ = await invokeAuthenticateForJourney(
+      journeyId: "journey-1",
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(receivedFlag, true)
+  }
+
+  /// DaVinci authenticate forwards the parsed credential preference to the
+  /// native collector through the invoker seam.
+  func testDaVinciAuthenticateForwardsPreferImmediatelyAvailableCredentials() async {
+    let previousAnchor = installStubWindowAnchor()
+    defer { restoreWindowAnchor(previousAnchor) }
+    let collector = FidoAuthenticationCollector(with: makeAuthenticationJson())
+    CoreRuntime.setDaVinciCollectorResolver { _ in [collector] }
+    defer { CoreRuntime.setDaVinciCollectorResolver(nil) }
+    var receivedFlag: Bool?
+    let previous = RNPingFidoCommon.davinciAuthenticateInvoker
+    RNPingFidoCommon.davinciAuthenticateInvoker = { _, _, flag in
+      receivedFlag = flag
+      return .failure(ASAuthorizationError(.canceled))
+    }
+    defer { RNPingFidoCommon.davinciAuthenticateInvoker = previous }
+
+    _ = await invokeAuthenticateForDaVinci(
+      davinciId: "davinci-1",
+      options: [:],
+      config: ["preferImmediatelyAvailableCredentials": true]
+    )
+
+    XCTAssertEqual(receivedFlag, true)
+  }
+
   // MARK: - Helpers
 
-  private func invokeRegister(options: NSDictionary) async -> (String?, String?) {
+  private func invokeRegister(
+    options: NSDictionary,
+    config: NSDictionary = [:]
+  ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.register(options, config: [:]) { _ in
+      RNPingFidoCommon.register(options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -244,9 +476,12 @@ final class RNPingFidoCommonTests: XCTestCase {
     }
   }
 
-  private func invokeAuthenticate(options: NSDictionary) async -> (String?, String?) {
+  private func invokeAuthenticate(
+    options: NSDictionary,
+    config: NSDictionary = [:]
+  ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.authenticate(options, config: [:]) { _ in
+      RNPingFidoCommon.authenticate(options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -256,10 +491,11 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeRegisterForJourney(
     journeyId: String,
-    options: NSDictionary
+    options: NSDictionary,
+    config: NSDictionary = [:]
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.registerForJourney(journeyId, options: options, config: [:]) { _ in
+      RNPingFidoCommon.registerForJourney(journeyId, options: options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -269,10 +505,11 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeAuthenticateForJourney(
     journeyId: String,
-    options: NSDictionary
+    options: NSDictionary,
+    config: NSDictionary = [:]
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.authenticateForJourney(journeyId, options: options, config: [:]) { _ in
+      RNPingFidoCommon.authenticateForJourney(journeyId, options: options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -282,10 +519,11 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeRegisterForDaVinci(
     davinciId: String,
-    options: NSDictionary
+    options: NSDictionary,
+    config: NSDictionary = [:]
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.registerForDaVinci(davinciId, options: options, config: [:]) { _ in
+      RNPingFidoCommon.registerForDaVinci(davinciId, options: options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -295,10 +533,11 @@ final class RNPingFidoCommonTests: XCTestCase {
 
   private func invokeAuthenticateForDaVinci(
     davinciId: String,
-    options: NSDictionary
+    options: NSDictionary,
+    config: NSDictionary = [:]
   ) async -> (String?, String?) {
     await withCheckedContinuation { continuation in
-      RNPingFidoCommon.authenticateForDaVinci(davinciId, options: options, config: [:]) { _ in
+      RNPingFidoCommon.authenticateForDaVinci(davinciId, options: options, config: config) { _ in
         continuation.resume(returning: ("UNEXPECTED_RESOLVE", nil))
       } rejecter: { code, message, _ in
         continuation.resume(returning: (code, message))
@@ -352,4 +591,25 @@ private final class TestLoggerHandle: LoggerHandleContract, @unchecked Sendable 
     self.loggerLevel = "STANDARD"
     self.nativeLogger = LogManager.none
   }
+}
+
+/// Log sink double capturing warning messages emitted by config parsing.
+private final class CaptureLogger: Logger, @unchecked Sendable {
+  private let lock = NSLock()
+  private var capturedWarnings: [String] = []
+
+  var warningMessages: [String] {
+    lock.lock()
+    defer { lock.unlock() }
+    return capturedWarnings
+  }
+
+  func d(_ message: String) {}
+  func i(_ message: String) {}
+  func w(_ message: String, error: Error?) {
+    lock.lock()
+    defer { lock.unlock() }
+    capturedWarnings.append(message)
+  }
+  func e(_ message: String, error: Error?) {}
 }
