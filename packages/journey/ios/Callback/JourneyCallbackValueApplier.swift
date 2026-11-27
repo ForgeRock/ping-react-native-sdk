@@ -174,6 +174,22 @@ enum JourneyCallbackValueApplier {
           "Callback type \(mutation.type) is output-only and cannot be mutated"
         )
 
+      case let callback as AbstractCallback:
+        // Generic positional write-back for plugin callbacks (e.g. Recognize)
+        // whose field contract is owned by the caller. JS supplies values in
+        // the server-documented input order. `input(_ values: Any...)` is
+        // variadic, so the array cannot be spread dynamically; write each
+        // slot through the named variant instead, matching the positional
+        // contract of the callback's own input array.
+        let slotValues = try asStringList(value, type: mutation.type)
+        let inputArray = (callback.json["input"] as? [[String: Any]]) ?? []
+        for (index, slot) in inputArray.enumerated() where index < slotValues.count {
+          guard let slotName = slot["name"] as? String, !slotName.isEmpty else {
+            continue
+          }
+          callback.input(slotValues[index], forKey: slotName)
+        }
+
       default:
         let normalizedType = normalizedCallbackType(mutation.type)
         if outputOnlyCallbackTypes.contains(normalizedType) {
@@ -431,5 +447,15 @@ enum JourneyCallbackValueApplier {
       mapped[key] = item
     }
     return mapped
+  }
+
+  /// Coerces a dynamic value to an ordered string array for positional input write-back.
+  private static func asStringList(_ value: Any?, type: String) throws -> [String] {
+    if let array = value as? [Any] {
+      return try array.enumerated().map { index, item in
+        try asString(item, fieldName: "\(type)[\(index)]")
+      }
+    }
+    return [try asString(value, fieldName: type)]
   }
 }

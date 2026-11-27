@@ -96,6 +96,15 @@ export const nativeExtensionCallbackType = {
   BindingCallback: 'BindingCallback',
   DeviceBindingCallback: 'DeviceBindingCallback',
   DeviceSigningVerifierCallback: 'DeviceSigningVerifierCallback',
+  /**
+   * Native type string for the PingOne Recognize biometric callback.
+   *
+   * @remarks
+   * Handled by the optional `@ping-identity/rn-recognize` integration; the
+   * main Journey screens surface it as requiring that module rather than
+   * collecting a value for it.
+   */
+  PingOneRecognizeCallback: 'PingOneRecognizeCallback',
 } as const;
 
 /**

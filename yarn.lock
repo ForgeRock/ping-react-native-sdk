@@ -3238,6 +3238,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@ping-identity/rn-recognize@workspace:*, @ping-identity/rn-recognize@workspace:packages/recognize":
+  version: 0.0.0-use.local
+  resolution: "@ping-identity/rn-recognize@workspace:packages/recognize"
+  dependencies:
+    "@ping-identity/rn-types": "workspace:^"
+    jest: "npm:^30.2.0"
+    react-native-builder-bob: "npm:^0.40.14"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    "@ping-identity/rn-core": "workspace:^"
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "@ping-identity/rn-storage@workspace:*, @ping-identity/rn-storage@workspace:packages/storage":
   version: 0.0.0-use.local
   resolution: "@ping-identity/rn-storage@workspace:packages/storage"
@@ -3641,6 +3656,18 @@ __metadata:
   bin:
     rnc-cli: build/bin.js
   checksum: 10c0/a221a037ced3814db76db75624b37ad1422aa647af4a4c3998bed358dd1887986b21171f436bc751dd3c7089bf6ac57d8d751f3c68f8ca68e5497f36e19d8e90
+  languageName: node
+  linkType: hard
+
+"@react-native-keyless/sdk@file:/private/tmp/kl-rn-poc/packages/sdk::locator=rn-sample-app%40workspace%3APingSampleApp":
+  version: 6.0.0
+  resolution: "@react-native-keyless/sdk@file:/private/tmp/kl-rn-poc/packages/sdk#/private/tmp/kl-rn-poc/packages/sdk::hash=e01073&locator=rn-sample-app%40workspace%3APingSampleApp"
+  dependencies:
+    js-base64: "npm:^3.7.0"
+  peerDependencies:
+    react: ">=18.2.0"
+    react-native: ">=0.77.0"
+  checksum: 10c0/b8fab075525b74fab76c27064bb91462f055b633aa8e57be7bc7a082398900493fa06e64ecc83ac2ddacf7867df81e1fb9c9d3b0bc3097d699b7f6b793432ee2
   languageName: node
   linkType: hard
 
@@ -9847,6 +9874,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"js-base64@npm:^3.7.0":
+  version: 3.9.7
+  resolution: "js-base64@npm:3.9.7"
+  checksum: 10c0/5cf4989bf47fcbd7c5fe5c9053e0a860128aa6eee23c40e025f69e255b0afe59c6cedb6c79cdb48858a6d10b0c9e603a3b74b93cb16703496bae20ca1729aaab
+  languageName: node
+  linkType: hard
+
 "js-message@npm:1.0.7":
   version: 1.0.7
   resolution: "js-message@npm:1.0.7"
@@ -12469,12 +12503,14 @@ __metadata:
     "@ping-identity/rn-protect": "workspace:*"
     "@ping-identity/rn-push": "workspace:*"
     "@ping-identity/rn-recaptcha": "workspace:*"
+    "@ping-identity/rn-recognize": "workspace:*"
     "@ping-identity/rn-storage": "workspace:*"
     "@ping-identity/rn-types": "workspace:*"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"
     "@react-native-community/cli": "npm:19.1.2"
     "@react-native-community/cli-platform-android": "npm:19.1.2"
     "@react-native-community/cli-platform-ios": "npm:19.1.2"
+    "@react-native-keyless/sdk": "file:/private/tmp/kl-rn-poc/packages/sdk"
     "@react-native/babel-preset": "npm:0.80.1"
     "@react-native/eslint-config": "npm:0.80.1"
     "@react-native/metro-config": "npm:0.80.1"

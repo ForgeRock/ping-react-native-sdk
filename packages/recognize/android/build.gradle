@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2026 Ping Identity Corporation. All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the MIT license. See the LICENSE file for details.
+ */
+buildscript {
+  ext.RNPingRecognize = [
+    kotlinVersion: "2.2.10",
+    minSdkVersion: 29,
+    compileSdkVersion: 36,
+    targetSdkVersion: 36
+  ]
+
+  ext.getExtOrDefault = { prop ->
+    if (rootProject.ext.has(prop)) {
+      return rootProject.ext.get(prop)
+    }
+
+    return RNPingRecognize[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+  }
+}
+
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+apply plugin: "com.facebook.react"
+
+def newArchEnabled = project.hasProperty("newArchEnabled") &&
+        project.newArchEnabled.toBoolean()
+
+android {
+  namespace "com.pingidentity.rnrecognize"
+
+  compileSdkVersion getExtOrDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrDefault("minSdkVersion")
+    targetSdkVersion getExtOrDefault("targetSdkVersion")
+    buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", newArchEnabled.toString()
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lint {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_21
+    targetCompatibility JavaVersion.VERSION_21
+  }
+
+  kotlinOptions {
+    jvmTarget = "21"
+  }
+
+  sourceSets {
+    main {
+      // POC: new architecture only, no oldarch source set.
+      java.srcDirs += ["src/newarch/java", "generated/java"]
+    }
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+  implementation("com.pingidentity.sdks:journey:2.2.0")
+  // Collector supertype for the DaVinci Recognize collectors.
+  implementation("com.pingidentity.sdks:davinci:2.2.0")
+  // Keyless io.keyless:keyless-mobile-sdk:6.0.0 arrives transitively from a private
+  // Cloudsmith Maven repository; the consuming app must declare that repository.
+  implementation("com.pingidentity.sdks:recognize:2.2.0")
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0"
+  // Required for Dispatchers.Main, which Keyless needs for its camera UI.
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
+  implementation(project(":ping-identity_rn-core"))
+}

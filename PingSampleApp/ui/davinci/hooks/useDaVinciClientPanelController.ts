@@ -33,6 +33,8 @@ import {
   collectProtect,
   protectCollectorType,
 } from '@ping-identity/rn-protect';
+import { recognizeCollectorType } from '@ping-identity/rn-recognize';
+import { createRecognizeExecutor } from '../../../src/recognizeExecutor';
 import { logger } from '@ping-identity/rn-logger';
 import Config from 'react-native-config';
 import { useDaVinciSessionController } from './useDaVinciSessionController';
@@ -55,6 +57,8 @@ export type UseDaVinciClientPanelControllerResult = {
   idpError: string | null;
   /** Last FIDO ceremony error message (cleared on next start). */
   fidoError: string | null;
+  /** Last Recognize ceremony error message (cleared on next start). */
+  recognizeError: string | null;
   /** Last Protect collect error message (cleared on next start). */
   protectError: string | null;
   /** True when a session is confirmed active for the current DaVinci client. */
@@ -109,6 +113,16 @@ export type UseDaVinciClientPanelControllerResult = {
    * @param collector - The FIDO collector to process.
    */
   onFidoCeremony: (collector: FidoCollector) => Promise<void>;
+  /**
+   * Runs the native Recognize ceremony for a RECOGNIZE collector, then
+   * advances the DaVinci flow.
+   *
+   * @remarks
+   * See the implementation remarks for the failure-advance semantics.
+   *
+   * @param collectorKey - RECOGNIZE collector key to process.
+   */
+  onRecognizeCeremony: (collectorKey: string) => Promise<void>;
   /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector},
    * automatically advancing the flow via `next()` once a terminal status
@@ -199,16 +213,26 @@ export function useDaVinciClientPanelController(
       }),
     [externalIdpLogger],
   );
+  const recognizeExecutor = useMemo(() => {
+    try {
+      return createRecognizeExecutor();
+    } catch (error) {
+      console.warn('[DaVinci] recognize executor unavailable:', error);
+      return null;
+    }
+  }, []);
   const form = useDaVinciForm(node, {
     handledCollectorTypes: new Set([
       socialLoginCollectorType,
       protectCollectorType,
       fidoCollectorType,
+      recognizeCollectorType,
     ]),
   });
 
   const [idpError, setIdpError] = useState<string | null>(null);
   const [fidoError, setFidoError] = useState<string | null>(null);
+  const [recognizeError, setRecognizeError] = useState<string | null>(null);
   const [protectError, setProtectError] = useState<string | null>(null);
   const [idpJustAuthorized, setIdpJustAuthorized] = useState<boolean>(false);
 
@@ -222,6 +246,7 @@ export function useDaVinciClientPanelController(
     setIdpError(null);
     setFidoError(null);
     setProtectError(null);
+    setRecognizeError(null);
     try {
       await start(verificationUri ? { verificationUri } : undefined);
       return true;
@@ -363,6 +388,65 @@ export function useDaVinciClientPanelController(
     [davinciContext?.client, fido, form.fields, loading, next],
   );
 
+  /**
+   * Runs the native Recognize ceremony for a RECOGNIZE collector, then
+   * advances the DaVinci flow.
+   *
+   * @remarks
+   * Both `success` and ceremony `failure` results mean the native collector
+   * already recorded the outcome, so the flow is advanced with
+   * `next({ collectors: [] })` either way to let the server branch.
+   * Bridge-level throws and the keyless-vendor DaVinci gate (no native
+   * write-back happened) are shown via `recognizeError` without advancing.
+   *
+   * @param collectorKey - RECOGNIZE collector key to process.
+   */
+  const onRecognizeCeremony = useCallback(
+    async (collectorKey: string): Promise<void> => {
+      if (loading) {
+        return;
+      }
+      setRecognizeError(null);
+      const davinciClient = davinciContext?.client;
+      if (!davinciClient) {
+        console.warn('[DaVinci] Recognize: no DaVinci client in context');
+        return;
+      }
+      if (!recognizeExecutor) {
+        console.warn('[DaVinci] Recognize: executor unavailable');
+        return;
+      }
+      const recognizeFields = form.fields.filter(
+        f => f.type === recognizeCollectorType,
+      );
+      const index = recognizeFields.findIndex(f => f.key === collectorKey);
+      const collectorIndex = index >= 0 ? index : 0;
+      try {
+        const result = await recognizeExecutor.runForDaVinci(davinciClient, {
+          index: collectorIndex,
+        });
+        console.log(`[DaVinci] Recognize[${collectorIndex}] -> ${result.type}`);
+        await next({ collectors: [] });
+        if (result.type === 'failure') {
+          console.warn(
+            `[DaVinci] Recognize ceremony failed: ${result.code} ${result.message}`,
+          );
+          setRecognizeError(`Recognize failed: ${result.message}`);
+        }
+      } catch (ceremonyError) {
+        // Bridge-level failure (no collector, no native module, vendor gate):
+        // nothing was recorded natively, so the node stays for retry.
+        const message =
+          ceremonyError instanceof Error
+            ? ceremonyError.message
+            : String(ceremonyError);
+        console.warn('[DaVinci] Recognize ceremony failed:', ceremonyError);
+        setRecognizeError(message);
+      }
+    },
+    [davinciContext?.client, form.fields, loading, next, recognizeExecutor],
+  );
+
   const onIdpAuthorize = useCallback(
     async (collector: IdpCollector): Promise<void> => {
       if (loading) {
@@ -456,6 +540,7 @@ export function useDaVinciClientPanelController(
     error,
     idpError,
     fidoError,
+    recognizeError,
     protectError,
     hasActiveSession,
     isSessionCheckRunning,
@@ -464,6 +549,7 @@ export function useDaVinciClientPanelController(
     onFlowAction,
     onIdpAuthorize,
     onFidoCeremony,
+    onRecognizeCeremony,
     onPollStatus,
     onStart: onStartAction,
     onLogout,

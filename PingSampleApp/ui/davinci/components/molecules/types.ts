@@ -75,6 +75,12 @@ export type DaVinciCollectorRendererProps = {
    */
   onFidoCeremony: (collector: FidoCollector) => Promise<void>;
   /**
+   * Runs the native Recognize ceremony for a RECOGNIZE collector.
+   *
+   * @param collectorKey The collector key to process.
+   */
+  onRecognizeCeremony?: (collectorKey: string) => Promise<void>;
+  /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
    *
    * @remarks

@@ -75,6 +75,7 @@ export default function DaVinciClientPanel(
     onFlowAction,
     onIdpAuthorize,
     onFidoCeremony,
+    onRecognizeCeremony,
     onPollStatus,
     onStart,
     onLogout,
@@ -99,6 +100,7 @@ export default function DaVinciClientPanel(
             onFlowAction={onFlowAction}
             onIdpAuthorize={onIdpAuthorize}
             onFidoCeremony={onFidoCeremony}
+            onRecognizeCeremony={onRecognizeCeremony}
             onPollStatus={onPollStatus}
           />
         ) : null}

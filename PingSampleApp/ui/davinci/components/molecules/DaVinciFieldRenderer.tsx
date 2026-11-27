@@ -18,6 +18,7 @@ import DaVinciPasswordField from './DaVinciPasswordField';
 import DaVinciPhoneNumberField from './DaVinciPhoneNumberField';
 import DaVinciPollingField from './DaVinciPollingField';
 import DaVinciQrCodeField from './DaVinciQrCodeField';
+import DaVinciRecognizeField from './DaVinciRecognizeField';
 import DaVinciReadOnlyTextField from './DaVinciReadOnlyTextField';
 import DaVinciSingleSelectField from './DaVinciSingleSelectField';
 import DaVinciSubmitButton from './DaVinciSubmitButton';
@@ -77,6 +78,20 @@ function DaVinciFieldRenderer(
     case fidoCollectorType:
       return (
         <DaVinciFidoField {...props} onFidoCeremony={props.onFidoCeremony} />
+      );
+    case 'RECOGNIZE':
+      return (
+        <DaVinciRecognizeField
+          {...props}
+          onRecognizeCeremony={
+            props.onRecognizeCeremony ??
+            (async () => {
+              console.warn(
+                '[DaVinci] RECOGNIZE collector rendered without onRecognizeCeremony',
+              );
+            })
+          }
+        />
       );
     case protectCollectorType:
       return null;

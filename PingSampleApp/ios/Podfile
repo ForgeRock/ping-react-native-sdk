@@ -12,6 +12,19 @@ require Pod::Executable.execute_command('node', ['-p',
   )', __dir__]).strip
 
 platform :ios, '16.0'
+
+# PingOne Recognize (proof of concept): the Keyless pod `keyless-mobile-sdk` is
+# served by a private Cloudsmith CocoaPods source. Export the token in the shell
+# before `pod install`; it is read from the environment and never written here.
+#   export CLOUDSMITH_TOKEN_RECOGNIZE=<token from the Recognize team>
+# Declaring any explicit `source` disables the implicit CDN, so it is repeated.
+source 'https://cdn.cocoapods.org/'
+if ENV['CLOUDSMITH_TOKEN_RECOGNIZE'].to_s.empty?
+  Pod::UI.warn 'CLOUDSMITH_TOKEN_RECOGNIZE is not set: PingRecognize and keyless-mobile-sdk will not resolve.'
+else
+  source "https://dl.cloudsmith.io/#{ENV['CLOUDSMITH_TOKEN_RECOGNIZE']}/keyless/partners/cocoapods/index.git"
+end
+
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -43,6 +56,13 @@ target 'PingSampleApp' do
 
   pod 'RNPingRecaptcha',
   :path => '../../node_modules/@ping-identity/rn-recaptcha'
+
+  # PingRecognize has no CocoaPods trunk release (podspec removed upstream), so it
+  # is resolved from the vendored podspec that points at the 2.2.0 git tag.
+  pod 'RNPingRecognize',
+  :path => '../../node_modules/@ping-identity/rn-recognize'
+  pod 'PingRecognize',
+  :podspec => '../../packages/recognize/ios/vendor/PingRecognize.podspec'
 
   pod 'PingExternalIdPApple', '2.2.0'
   pod 'PingExternalIdPFacebook', '2.2.0'

@@ -28,6 +28,7 @@ import com.pingidentity.journey.callback.TextInputCallback
 import com.pingidentity.journey.callback.TextOutputCallback
 import com.pingidentity.journey.callback.ValidatedPasswordCallback
 import com.pingidentity.journey.callback.ValidatedUsernameCallback
+import com.pingidentity.journey.plugin.AbstractCallback
 import com.pingidentity.journey.plugin.callbacks
 import com.pingidentity.orchestrate.ContinueNode
 
@@ -164,6 +165,13 @@ internal object JourneyCallbackValueApplier {
                     throw UnsupportedOperationException(
                         "Callback type ${mutation.type} is output-only and cannot be mutated"
                     )
+                }
+                is AbstractCallback -> {
+                    // Generic positional write-back for plugin callbacks (e.g. Recognize)
+                    // whose field contract is owned by the caller. JS supplies values in
+                    // the server-documented input order.
+                    val fields = asStringList(value, mutation.type)
+                    callback.input(*fields.toTypedArray())
                 }
                 else -> {
                     val normalizedType = normalizedCallbackType(mutation.type)
@@ -377,5 +385,21 @@ internal object JourneyCallbackValueApplier {
             val key = entry.key as? String ?: return@mapNotNull null
             key to entry.value
         }.toMap()
+    }
+
+    /**
+     * Coerces a dynamic value to an ordered string list for positional input write-back.
+     *
+     * @param value Dynamic value to coerce.
+     * @param type Callback type for error context.
+     * @return Ordered string values.
+     */
+    private fun asStringList(value: Any?, type: String): List<String> {
+        return when (value) {
+            is List<*> -> value.mapIndexed { index, item ->
+                asString(item, "$type[$index]")
+            }
+            else -> listOf(asString(value, type))
+        }
     }
 }

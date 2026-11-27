@@ -75,6 +75,7 @@ const integrationRequiredCallbackTypes = new Set<JourneyCallbackType>([
   nativeExtensionCallbackType.BindingCallback,
   nativeExtensionCallbackType.DeviceBindingCallback,
   nativeExtensionCallbackType.DeviceSigningVerifierCallback,
+  nativeExtensionCallbackType.PingOneRecognizeCallback,
 ]);
 
 /**

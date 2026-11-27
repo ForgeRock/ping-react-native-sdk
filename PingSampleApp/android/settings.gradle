@@ -10,12 +10,24 @@ plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
 rootProject.name = 'PingSampleApp'
 
+// Supplied as -PcloudsmithTokenRecognize=... or in ~/.gradle/gradle.properties. Never commit it.
+def cloudsmithTokenRecognize = settings.providers.gradleProperty("cloudsmithTokenRecognize").getOrElse("").trim()
+def cloudsmithTokenAesWrap = settings.providers.gradleProperty("cloudsmithTokenAesWrap").getOrElse("").trim()
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
         maven { url "https://central.sonatype.com/repository/maven-snapshots/" }
+        if (cloudsmithTokenRecognize) {
+            // Private Keyless artifacts required by com.pingidentity.sdks:recognize.
+            maven { url "https://dl.cloudsmith.io/${cloudsmithTokenRecognize}/keyless/partners/maven/" }
+        }
+        if (cloudsmithTokenAesWrap) {
+            // AES wrap artifacts, required by the Ping Android SDK's Recognize sample when the dependency graph needs them.
+            maven { url "https://dl.cloudsmith.io/${cloudsmithTokenAesWrap}/keyless/aeswrap/maven/" }
+        }
     }
 }
 
@@ -28,3 +40,5 @@ include(":ping-identity_rn-oidc")
 project(":ping-identity_rn-oidc").projectDir = file("../../packages/oidc/android")
 include(":ping-identity_rn-recaptcha")
 project(":ping-identity_rn-recaptcha").projectDir = file("../../packages/recaptcha/android")
+include(":ping-identity_rn-recognize")
+project(":ping-identity_rn-recognize").projectDir = file("../../packages/recognize/android")

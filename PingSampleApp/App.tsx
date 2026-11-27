@@ -16,6 +16,9 @@ import ConfigurationScreen from './ui/ConfigurationScreen';
 import JourneyRouteScreen from './ui/JourneyRouteScreen';
 import JourneyHelperScreen from './ui/JourneyHelperScreen';
 import JourneyFullScreen from './ui/JourneyFullScreen';
+import RecognizePocScreen from './ui/RecognizePocScreen';
+import RecognizeOption1PocScreen from './ui/RecognizeOption1PocScreen';
+import RecognizeDaVinciPocScreen from './ui/RecognizeDaVinciPocScreen';
 import BrowserScreen from './ui/BrowserScreen';
 import LoggerScreen from './ui/LoggerScreen';
 import OidcScreen from './ui/OidcScreen';
@@ -38,6 +41,7 @@ import { DeviceAuthGrantProvider, OidcProvider } from '@ping-identity/rn-oidc';
 import { DaVinciProvider } from '@ping-identity/rn-davinci';
 import {
   deviceAuthClient,
+  recognizeDaVinciConfig,
   sampleAppClientProfiles,
   sampleDaVinciConfig,
 } from './src/clients';
@@ -75,6 +79,9 @@ export type RootStackParamList = {
       }
     | undefined;
   JourneyFull: undefined;
+  RecognizePoc: undefined;
+  RecognizeOption1Poc: undefined;
+  RecognizeDaVinciPoc: undefined;
   Browser: undefined;
   Logger: undefined;
   Oidc: undefined;
@@ -458,6 +465,40 @@ export default function App() {
                     }
                   </Stack.Screen>
                   <Stack.Screen
+                    name="RecognizePoc"
+                    options={{ title: 'Recognize POC' }}
+                  >
+                    {props =>
+                      selectedJourneyProfile ? (
+                        <RecognizePocScreen
+                          journeyClient={selectedJourneyProfile.journeyClient}
+                        />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select a Journey configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="RecognizeOption1Poc"
+                    options={{ title: 'Recognize POC (Option 1)' }}
+                  >
+                    {props =>
+                      selectedJourneyProfile ? (
+                        <RecognizeOption1PocScreen
+                          journeyClient={selectedJourneyProfile.journeyClient}
+                        />
+                      ) : (
+                        <ConfigurationRequiredScreen
+                          {...props}
+                          message="Please select a Journey configuration first."
+                        />
+                      )
+                    }
+                  </Stack.Screen>
+                  <Stack.Screen
                     name="Browser"
                     component={BrowserScreen}
                     options={{ title: 'Browser Demo' }}
@@ -548,6 +589,18 @@ export default function App() {
                     options={{ title: 'DaVinci Flow' }}
                   >
                     {props => davinciGate ?? <DaVinciScreen {...props} />}
+                  </Stack.Screen>
+                  <Stack.Screen
+                    name="RecognizeDaVinciPoc"
+                    options={{ title: 'Recognize DaVinci POC' }}
+                  >
+                    {() =>
+                      davinciGate ?? (
+                        <RecognizeDaVinciPocScreen
+                          config={recognizeDaVinciConfig}
+                        />
+                      )
+                    }
                   </Stack.Screen>
                 </Stack.Navigator>
               </NavigationContainer>

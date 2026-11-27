@@ -97,6 +97,23 @@ export const journeyConfig = {
 };
 
 /**
+ * Recognize EA tenant configuration (SDKS-5533 POC) resolved from
+ * `RECOGNIZE_*` environment variables.
+ */
+export const recognizeConfig = {
+  serverUrl: Config.RECOGNIZE_SERVER_URL!,
+  realm: Config.RECOGNIZE_REALM!,
+  cookie: Config.RECOGNIZE_COOKIE!,
+  clientId: Config.RECOGNIZE_CLIENT_ID!,
+  discoveryEndpoint: Config.RECOGNIZE_DISCOVERY_ENDPOINT!,
+  redirectUri: Config.RECOGNIZE_REDIRECT_URI!,
+  scopes: (Config.RECOGNIZE_SCOPES ?? '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean),
+};
+
+/**
  * Base Advanced Identity Cloud configuration resolved from environment
  * variables.
  */
@@ -472,6 +489,25 @@ export const loginClient = createJourneyClient({
 });
 
 /**
+ * Journey client for the Recognize EA tenant (SDKS-5533 POC).
+ */
+export const recognizeLoginClient = createJourneyClient({
+  timeout: 10000,
+  serverUrl: recognizeConfig.serverUrl,
+  realm: recognizeConfig.realm,
+  cookie: recognizeConfig.cookie,
+  logger: appLogger,
+  modules: {
+    oidc: {
+      clientId: recognizeConfig.clientId,
+      discoveryEndpoint: recognizeConfig.discoveryEndpoint,
+      redirectUri: recognizeConfig.redirectUri,
+      scopes: recognizeConfig.scopes,
+    },
+  },
+});
+
+/**
  * DaVinci storage handle dedicated to the sample DaVinci flow.
  */
 const davinciOidcStorage = configureOidcStorage({
@@ -505,6 +541,31 @@ export const sampleDaVinciConfig: DaVinciConfig = {
       scopes: pingOneScopes,
       par: pingOnePar,
       acrValues: Config.PINGONE_ACR_VALUES || undefined,
+      storage: davinciOidcStorage,
+    },
+  },
+};
+
+/**
+ * DaVinci client configuration for the Recognize POC (SDKS-5533).
+ *
+ * @remarks
+ * Kept separate from {@link sampleDaVinciConfig} so the Recognize flow's
+ * PingOne application, DaVinci policy and endpoints never disturb the
+ * existing sample DaVinci configuration.
+ */
+export const recognizeDaVinciConfig: DaVinciConfig = {
+  logger: appLogger,
+  modules: {
+    oidc: {
+      clientId: Config.RECOGNIZE_DAVINCI_CLIENT_ID!,
+      discoveryEndpoint: Config.RECOGNIZE_DAVINCI_DISCOVERY_ENDPOINT!,
+      redirectUri: Config.RECOGNIZE_DAVINCI_REDIRECT_URI!,
+      scopes: (Config.RECOGNIZE_DAVINCI_SCOPES ?? '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean),
+      acrValues: Config.RECOGNIZE_DAVINCI_ACR_VALUES || undefined,
       storage: davinciOidcStorage,
     },
   },
@@ -613,6 +674,17 @@ export const sampleAppClientProfiles: readonly SampleAppClientProfile[] = [
     oidcClient: sampleOidcWebClient,
     oidcClientConfig: sampleOidcClientConfig,
     externalIdpRedirectUri: journeyConfig.redirectUri,
+  },
+  {
+    key: 'journey-recognize-ea',
+    group: 'Journey',
+    name: 'Journey Recognize EA (POC)',
+    host: hostnameFrom(recognizeConfig.serverUrl),
+    environment: recognizeConfig.realm,
+    journeyClient: recognizeLoginClient,
+    oidcClient: sampleOidcWebClient,
+    oidcClientConfig: sampleOidcClientConfig,
+    externalIdpRedirectUri: recognizeConfig.redirectUri,
   },
   {
     key: 'oidc-forgeblock',

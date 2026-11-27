@@ -91,6 +91,24 @@ export default function HomeScreen({
       screen: 'JourneyHelper',
       params: { backchannelEntry: true },
     },
+    {
+      title: 'Recognize POC',
+      subtitle: 'Journey with a PingOne Recognize node',
+      icon: 'face',
+      screen: 'RecognizePoc',
+    },
+    {
+      title: 'Recognize POC (Option 1)',
+      subtitle: 'Keyless SDK driven directly from JS',
+      icon: 'face-retouching-natural',
+      screen: 'RecognizeOption1Poc',
+    },
+    {
+      title: 'Recognize DaVinci POC',
+      subtitle: 'DaVinci flow with a RECOGNIZE collector (Android only)',
+      icon: 'face',
+      screen: 'RecognizeDaVinciPoc',
+    },
   ];
 
   const userManagementItems: HomeScreenMenuItem[] = [

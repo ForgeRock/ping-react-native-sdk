@@ -77,6 +77,12 @@ export type DaVinciContinueNodePanelProps = {
    */
   onFidoCeremony: (collector: FidoCollector) => Promise<void>;
   /**
+   * Runs the native Recognize ceremony for a RECOGNIZE collector.
+   *
+   * @param collectorKey The collector key to process.
+   */
+  onRecognizeCeremony?: (collectorKey: string) => Promise<void>;
+  /**
    * Streams {@link PollingStatus} updates for a {@link PollingCollector}.
    *
    * @param collector The PollingCollector to poll.
@@ -189,6 +195,7 @@ export default function DaVinciContinueNodePanel(
     onFlowAction,
     onIdpAuthorize,
     onFidoCeremony,
+    onRecognizeCeremony,
     onPollStatus,
   } = props;
   const { fields, values, canSubmit, issues, setValue } = form;
@@ -222,6 +229,7 @@ export default function DaVinciContinueNodePanel(
           onFlowAction={onFlowAction}
           onIdpAuthorize={onIdpAuthorize}
           onFidoCeremony={onFidoCeremony}
+          onRecognizeCeremony={onRecognizeCeremony}
           onPollStatus={onPollStatus}
           loading={loading}
           canSubmit={canSubmit}
