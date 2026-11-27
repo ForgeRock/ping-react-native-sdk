@@ -264,13 +264,13 @@ try {
 
 `FidoError.clientError` values and their typical outcomes:
 
-| `clientError`       | Typical outcome                                                        |
-| ------------------- | ---------------------------------------------------------------------- |
-| `NotAllowedError`   | User cancellation or dismissal of the passkey UI.                      |
-| `TimeoutError`      | The ceremony timed out.                                                |
-| `NotSupportedError` | Passkeys are unsupported on the device or blocked by policy.           |
-| `InvalidStateError` | The credential is invalid or already registered (excluded credential). |
-| `UnknownError`      | Any other failure, including an unrecognized native error.             |
+| `clientError`       | Typical outcome                                                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NotAllowedError`   | User cancellation or dismissal of the passkey UI; on iOS, also a generic OS failure in the DaVinci scope (see [Error code contract](#errors)). |
+| `TimeoutError`      | The ceremony timed out.                                                                                                                        |
+| `NotSupportedError` | Passkeys are unsupported on the device or blocked by policy.                                                                                   |
+| `InvalidStateError` | The credential is invalid or already registered (excluded credential).                                                                         |
+| `UnknownError`      | Any other failure, including an unrecognized native error.                                                                                     |
 
 `NotAllowedError`, `TimeoutError`, `NotSupportedError`, `InvalidStateError`,
 and `UnknownError` are the only values iOS reports. Android reports an open
@@ -382,15 +382,23 @@ Stable error codes:
 - `FIDO_COLLECTOR_NOT_FOUND`
 - `FIDO_INVALID_PARAMETER`: invalid caller input rejected before any native call, with `type: 'argument_error'`.
 
-Error code contract, identical on both platforms and in the standalone,
-Journey and DaVinci scopes:
+Error code contract, identical on both platforms and stable within each
+scope; the standalone scope intentionally differs from Journey and DaVinci:
 
-- `authenticate`, `authenticateForJourney` and `authenticateForDaVinci` reject
-  with `FIDO_AUTHENTICATE_CANCELLED` when the user cancels or no usable
+- `authenticateForJourney` and `authenticateForDaVinci` reject with
+  `FIDO_AUTHENTICATE_CANCELLED` when the user cancels or no usable
   credential is available (Android: Credential Manager cancellation or no
   credential; iOS: user cancellation, including the cancel produced by
   `preferImmediatelyAvailableCredentials` when no local credential matches).
   Every other authentication failure rejects with `FIDO_AUTHENTICATE_ERROR`.
+  On iOS in the DaVinci scope, a hard failure can also be classified as
+  `FIDO_AUTHENTICATE_CANCELLED`: the native collector transforms both user
+  cancellation and generic OS failure (`ASAuthorizationError.failed`) to the
+  same error before the bridge classifies it. The Journey scope is not
+  affected: only genuine user cancellation is classified as
+  `FIDO_AUTHENTICATE_CANCELLED` there.
+- Standalone `authenticate` rejects with `FIDO_AUTHENTICATE_ERROR` for every
+  failure, user cancellation included; it has no cancellation-specific code.
 - `register`, `registerForJourney` and `registerForDaVinci` always reject with
   `FIDO_REGISTER_ERROR`, user cancellation included.
 
@@ -460,7 +468,7 @@ const registrationResult = await fido.register(
     preferImmediatelyAvailableCredentials: true,
     android: {
       credentialManager: {
-        // JSON merge patch (RFC 7386) on the SDK-transformed create request:
+        // JSON merge patch (RFC 7396) on the SDK-transformed create request:
         // nested objects merge, arrays replace, null deletes.
         requestJson: { user: { displayName: 'Example User' } },
         // Base64url (padded or unpadded) of the SHA-256 hash of your own
@@ -576,9 +584,11 @@ ceremonies:
 
 - **iOS** applies it to `authenticate`, `authenticateForJourney` and
   `authenticateForDaVinci` in all scopes. When no local credential matches,
-  the ceremony cancels; rejections map to `FIDO_AUTHENTICATE_CANCELLED`. On
-  registration the value is reported by native and the full registration flow
-  applies.
+  the ceremony cancels in all three scopes; rejections map to
+  `FIDO_AUTHENTICATE_CANCELLED` for `authenticateForJourney` and
+  `authenticateForDaVinci`, and to `FIDO_AUTHENTICATE_ERROR` for standalone
+  `authenticate`. On registration the value is reported by native and the
+  full registration flow applies.
 - **Android** applies it to registration (`register`, `registerForJourney`,
   `registerForDaVinci`) through the Credential Manager create request. On
   authentication the current Android native SDK cannot apply it: a warning is

@@ -9,7 +9,6 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
-import RNPingPush
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -28,7 +27,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // the UIScene lifecycle, not through didFinishLaunching launchOptions.
     if let userInfo = connectionOptions.notificationResponse?.notification.request.content
       .userInfo {
-      RNPingPushCommon.enqueuePendingMessage(userInfo)
+      AppDelegate.enqueueColdStartPush(userInfo)
     }
 
     let delegate = ReactNativeDelegate()

@@ -143,7 +143,9 @@ struct FidoCallConfig: Sendable {
       )
       return nil
     }
-    // TODO-PARITY: iOS applies preferImmediatelyAvailableCredentials to authenticate only (register ignores it) while Android 2.2.0 applies it to registration only - needs native defect ticket
+    // TODO-PARITY (SDKS-5624): iOS applies preferImmediatelyAvailableCredentials to
+    // authenticate only (register ignores it) while Android 2.2.0 applies it to
+    // registration only - tracked as a native defect ticket
     if ceremony == .registration {
       warnOption(
         preferImmediatelyAvailableCredentialsKey,

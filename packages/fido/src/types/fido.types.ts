@@ -353,7 +353,7 @@ export type FidoConfig = {
  */
 export type FidoAndroidRegistrationOptions = {
   /**
-   * JSON merge patch (RFC 7386) applied to the SDK-transformed registration
+   * JSON merge patch (RFC 7396) applied to the SDK-transformed registration
    * request JSON: nested objects merge, arrays replace, `null` deletes.
    */
   requestJson?: Record<string, FidoJsonValue>;
@@ -419,7 +419,7 @@ export type FidoAndroidRegistrationOptions = {
  */
 export type FidoAndroidCredentialManagerOptions = {
   /**
-   * JSON merge patch (RFC 7386) applied to the SDK-transformed sign-in
+   * JSON merge patch (RFC 7396) applied to the SDK-transformed sign-in
    * request JSON: nested objects merge, arrays replace, `null` deletes.
    */
   requestJson?: Record<string, FidoJsonValue>;

@@ -36,7 +36,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     // Background relaunch (app killed, push arrives): payload comes through
     // didFinishLaunching; scene cold start is handled in SceneDelegate.
     if let userInfo = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
-      RNPingPushCommon.enqueuePendingMessage(userInfo)
+      Self.enqueueColdStartPush(userInfo)
     }
     return true
   }
@@ -111,6 +111,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
   ) -> Bool {
     Self.handleOpenURL(url: url, options: options)
     return true
+  }
+
+  private static let enqueuedPushLock = NSLock()
+  private nonisolated(unsafe) static var enqueuedPushMessageIds = Set<String>()
+
+  /// Forwards a cold-start push payload to the bridge once per `messageId`, since the bridge
+  /// buffer is append-only and both launch paths can report the same notification.
+  static func enqueueColdStartPush(_ userInfo: [AnyHashable: Any]) {
+    let aps = userInfo["aps"] as? [AnyHashable: Any]
+    let messageId = (aps?["messageId"] as? String) ?? (userInfo["messageId"] as? String)
+    if let messageId, !messageId.isEmpty {
+      enqueuedPushLock.lock()
+      let isNew = enqueuedPushMessageIds.insert(messageId).inserted
+      enqueuedPushLock.unlock()
+      if !isNew {
+        NSLog("Skipping duplicate cold-start push with messageId %@", messageId)
+        return
+      }
+    }
+    RNPingPushCommon.enqueuePendingMessage(userInfo)
   }
 
   static func handleOpenURL(url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) {

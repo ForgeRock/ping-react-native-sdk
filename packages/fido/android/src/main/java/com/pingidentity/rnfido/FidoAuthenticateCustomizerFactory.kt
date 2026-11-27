@@ -61,10 +61,11 @@ internal class FidoAuthenticateCustomizerFactory(
         }
       }
     }
-    // TODO-PARITY: once the consumed native release exposes
+    // TODO: once the consumed native release exposes
     // FidoAuthenticateCustomizer.onGetCredentialRequest, apply
     // callConfig.preferImmediatelyAvailableCredentials there and remove the unsupported-option
-    // warning in FidoCallConfig.authenticationPreference. iOS applies this option to
+    // warning in FidoCallConfig.authenticationPreference. 
+    // TODO-PARITY (SDKS-5624): iOS applies this option to
     // authentication only, while Android 2.2.0 applies it to registration only.
     return {
       explicit?.let { useFido2ApiClient = it }
